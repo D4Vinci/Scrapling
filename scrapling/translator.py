@@ -9,7 +9,12 @@ which will be important in future releases but most importantly...
 import re
 
 from w3lib.html import HTML5_WHITESPACE
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional
+try:
+    from typing import Protocol
+except ImportError:
+    # Added in Python 3.8
+    Protocol = object
 
 from scrapling.utils import cache
 
