@@ -50,7 +50,7 @@ setup(
     install_requires=[
         "requests>=2.3",
         "lxml>=4.5",
-        "cssselect>=1.2",
+        "cssselect>=1.0",
         "w3lib",
         "orjson>=3",
         "tldextract",
