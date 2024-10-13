@@ -1,5 +1,5 @@
 # 🕷️ Scrapling: Lightning-Fast, Adaptive Web Scraping for Python
-[![PyPI version](https://badge.fury.io/py/scrapling.svg)](https://badge.fury.io/py/scrapling) [![Supported Python versions](https://img.shields.io/pypi/pyversions/scrapling.svg)](https://pypi.org/project/scrapling/) [![License](https://img.shields.io/badge/License-BSD--3-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![PyPI version](https://badge.fury.io/py/Scrapling.svg)](https://badge.fury.io/py/Scrapling) [![Supported Python versions](https://img.shields.io/pypi/pyversions/scrapling.svg)](https://pypi.org/project/scrapling/) [![License](https://img.shields.io/badge/License-BSD--3-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 Dealing with failing web scrapers due to website changes? Meet Scrapling.
 
@@ -37,7 +37,7 @@ products = page.css('.product', auto_match=True)  # Still finds them!
 
 ## Getting Started
 
-Let's walk through a basic example that demonstrates small group of Scrapling's core features:
+Let's walk through a basic example that demonstrates a small group of Scrapling's core features:
 
 ```python
 import requests
