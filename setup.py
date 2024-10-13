@@ -50,12 +50,12 @@ setup(
     install_requires=[
         "requests>=2.3",
         "lxml>=4.5",
-        "cssselect>=1.0",
+        "cssselect>=1.2",
         "w3lib",
         "orjson>=3",
         "tldextract",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     url="https://github.com/D4Vinci/Scrapling",
     project_urls={
         "Documentation": "https://github.com/D4Vinci/Scrapling/Docs",  # For now

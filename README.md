@@ -70,7 +70,7 @@ quote.path  # DOM path to element (List)
 To keep it simple, all methods can be chained on top of each other as long as you are chaining methods that return an element (It's called an `Adaptor` object) or a List of Adaptors (It's called `Adaptors` object)
 
 ### Installation
-Scrapling is a breeze to get started with - We only require at least Python 3.6 to work and the rest of the requirements are installed automatically with the package.
+Scrapling is a breeze to get started with - We only require at least Python 3.7 to work and the rest of the requirements are installed automatically with the package.
 ```bash
 # Using pip
 pip install scrapling
