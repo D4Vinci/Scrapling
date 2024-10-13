@@ -1,6 +1,11 @@
 import os
 from difflib import SequenceMatcher
-from typing import Any, Dict, List, Tuple, Optional, Pattern, SupportsIndex, Union, Callable, Generator
+from typing import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator
+try:
+    from typing import SupportsIndex
+except ImportError:
+    # 'SupportsIndex' got added in Python 3.8
+    SupportsIndex = None
 
 from scrapling.translator import HTMLTranslator
 from scrapling.mixins import SelectorsGeneration
