@@ -50,8 +50,8 @@ body:
       label: 'Are you using a separate virtual environment?'
       description: "Please pay attention to this question"
       options:
-        - No
-        - Yes
+        - 'No'
+        - 'Yes'
       default: 0
     validations:
       required: true
