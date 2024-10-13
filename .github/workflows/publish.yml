@@ -13,7 +13,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"  # Latest available Python version
+          python-version: 3.12
 
       - name: Upgrade pip
         run: python3 -m pip install --upgrade pip
@@ -25,7 +25,7 @@ jobs:
         run: python3 -m build --sdist --wheel --outdir dist/
 
       - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.10.3
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
