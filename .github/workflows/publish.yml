@@ -3,6 +3,9 @@ name: Publish Python 🐍 distributions 📦 to PyPI
 on:
   release:
     types: [created]
+  push:
+    branches:
+      - master
 
 jobs:
   build-n-publish:
