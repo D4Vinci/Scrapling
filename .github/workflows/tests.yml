@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - python-version: "3.6.7"
+        - python-version: "3.6.15"
           env:
             TOXENV: py36
         - python-version: "3.7"
