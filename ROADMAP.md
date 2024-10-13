@@ -1,0 +1,13 @@
+## TODOs
+- Add more tests and increase the code coverage.
+- Structure the tests folder in a better way.
+- Add more documentation.
+- Add the browsing ability.
+- Create detailed documentation for 'readthedocs' website, preferably add Github action for deploying it.
+- Create a Scrapy plugin/decorator to make it replace parsel in the response argument when needed.
+- Need to add more functionality to `AttributesHandler` and more navigation functions to `Adaptor` object (ex: functions similar to map, filter, and reduce functions but here pass it to the element and the function is executed on children, siblings, next elements, etc...)
+- Add `.filter` method to `Adaptors` object and other similar methods.
+- Add functionality to automatically detect pagination URLs
+- Add the ability to auto-detect schemas in pages and manipulate them
+- Add ability to generate a regex from a group of elements (Like for all href attributes)
+- 

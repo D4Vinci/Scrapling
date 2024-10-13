@@ -1,0 +1,48 @@
+name: Tests
+on: [push, pull_request]
+
+concurrency:
+  group: ${{github.workflow}}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - python-version: "3.6"
+          env:
+            TOXENV: py
+        - python-version: "3.7"
+          env:
+            TOXENV: py
+        - python-version: "3.8"
+          env:
+            TOXENV: py
+        - python-version: "3.9"
+          env:
+            TOXENV: py
+        - python-version: "3.10"
+          env:
+            TOXENV: py
+        - python-version: "3.11"
+          env:
+            TOXENV: py
+        - python-version: "3.12"
+          env:
+            TOXENV: py
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Run tests
+      env: ${{ matrix.env }}
+      run: |
+        pip install -U tox
+        tox

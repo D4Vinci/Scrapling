@@ -1,0 +1,82 @@
+name: Bug report
+description: Create a bug report to help us address errors in the repository
+labels: [bug]
+body:
+  - type: checkboxes
+    attributes:
+      label: Have you searched if there an existing issue for this?
+      description: Please search [existing issues](https://github.com/D4Vinci/Scrapling/labels/bug).
+      options:
+        - label: I have searched the existing issues
+          required: true
+
+  - type: input
+    attributes:
+      label: "Python version (python --version)"
+      placeholder: "Python 3.8"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: "Scrapling version (scrapling.__version__)"
+      placeholder: "0.1"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Dependencies version (pip3 freeze)"
+      description: >
+        This is the output of the command `pip3 freeze --all`. Note that the
+        actual output might be different as compared to the placeholder text.
+      placeholder: |
+        cssselect==1.2.0
+        lxml==5.3.0
+        orjson==3.10.7
+        ...
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: "What's your operating system?"
+      placeholder: "Windows 10"
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: 'Are you using a separate virtual environment?'
+      description: "Please pay attention to this question"
+      options:
+        - No
+        - Yes
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Expected behavior"
+      description: "Describe the behavior you expect. May include images or videos."
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Actual behavior (Remember to use `debug` parameter)"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. In this environment...
+        2. With this config...
+        3. Run '...'
+        4. See error...
+    validations:
+      required: false

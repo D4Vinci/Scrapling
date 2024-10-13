@@ -1,0 +1,31 @@
+name: Publish Python 🐍 distributions 📦 to PyPI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-n-publish:
+    name: Build and publish Python 🐍 distributions 📦 to PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"  # Latest available Python version
+
+      - name: Upgrade pip
+        run: python3 -m pip install --upgrade pip
+
+      - name: Install build
+        run: python3 -m pip install --upgrade build twine setuptools
+
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build --sdist --wheel --outdir dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1.10.3
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}

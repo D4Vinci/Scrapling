@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest features, propose improvements, discuss new ideas.
+labels: [enhancement]
+body:
+  - type: checkboxes
+    attributes:
+      label: Have you searched if there an existing feature request for this?
+      description: Please search [existing requests](https://github.com/D4Vinci/Scrapling/labels/enhancement).
+      options:
+        - label: I have searched the existing requests
+          required: true
+
+  - type: textarea
+    attributes:
+      label: "Feature description"
+      description: >
+        This could include new topics or improving any existing features/implementations.
+    validations:
+      required: true

@@ -1,0 +1,5 @@
+include LICENSE
+include scrapling/py.typed
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
