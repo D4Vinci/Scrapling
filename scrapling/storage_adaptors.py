@@ -20,7 +20,7 @@ class StorageSystemMixin(ABC):
         """
         self.url = url
 
-    @cache
+    @cache(None, typed=True)
     def _get_base_url(self, default_value: str = 'default') -> str:
         if not self.url or type(self.url) is not str:
             return default_value
@@ -52,7 +52,7 @@ class StorageSystemMixin(ABC):
         raise NotImplementedError('Storage system must implement `save` method')
 
     @staticmethod
-    @cache
+    @cache(None, typed=True)
     def _get_hash(identifier: str) -> str:
         """If you want to hash identifier in your storage system, use this safer"""
         identifier = identifier.lower().strip()
