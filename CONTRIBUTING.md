@@ -27,4 +27,4 @@ Also, consider setting `debug` to `True` while initializing the Adaptor object s
  - Fork Scrapling [git repository](https://github.com/D4Vinci/Scrapling).
  - Make your changes.
  - Ensure tests work.
- - Create a Pull Request against the [**dev**](https://github.com/D4Vinci/Scraplin/tree/dev) branch of Scrapling.
+ - Create a Pull Request against the [**dev**](https://github.com/D4Vinci/Scrapling/tree/dev) branch of Scrapling.
