@@ -43,7 +43,7 @@
 - Link to documentation pull request: **
 
 ### Checklist:
-* [ ] I have read [CONTRIBUTING.md](/CONTRIBUTING.md).
+* [ ] I have read [CONTRIBUTING.md](https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md).
 * [ ] This pull request is all my own work -- I have not plagiarized.
 * [ ] I know that pull requests will not be merged if they fail the automated tests.
 * [ ] All new Python files are placed inside an existing directory.

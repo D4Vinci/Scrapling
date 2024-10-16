@@ -10,8 +10,8 @@ So first to make your storage class work, it must do the big 3:
         * The first one is of type `lxml.html.HtmlElement` which is the element itself, ofc. It must be converted to dictionary using the function `scrapling.utils._StorageTools.element_to_dict` so we keep the same format then saved to your database as you wish.
         * The second one is string which is the identifier used for retrieval. The combination of this identifier and the `url` argument from initialization must be unique for each row or the auto-match will be messed up.
    - The method `retrieve` takes a string which is the identifier, using it with the `url` passed on initialization the element's dictionary is retrieved from the database and returned if it exist otherwise it returns `None`
-> If the instructions weren't clear enough for you, you can check my implementation using SQLite3 in [storage_adaptors](/scrapling/storage_adaptors.py) file
+> If the instructions weren't clear enough for you, you can check my implementation using SQLite3 in [storage_adaptors](https://github.com/D4Vinci/Scrapling/blob/main/scrapling/storage_adaptors.py) file
 
 If your class satisfy this, the rest is easy. If you are planning to use the library in a threaded application, make sure that your class supports it. The default used class is thread-safe.
 
-There are some helper functions added to the abstract class if you want to use it. It's easier to see it for yourself in the [code](/scrapling/storage_adaptors.py), it's heavily commented :)
+There are some helper functions added to the abstract class if you want to use it. It's easier to see it for yourself in the [code](https://github.com/D4Vinci/Scrapling/blob/main/scrapling/storage_adaptors.py), it's heavily commented :)

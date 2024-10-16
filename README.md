@@ -108,7 +108,7 @@ As you see, Scrapling is on par with Scrapy and slightly faster than Lxml which 
 
 Scrapling can find elements with more methods and it returns full element `Adaptor` objects not only the text like AutoScraper. So, to make this test fair, both libraries will extract an element with text, find similar elements, and then extract the text content for all of them. As you see, Scrapling is still 4.5 times faster at same task.
 
-> All benchmarks' results are an average of 100 runs. See our [benchmarks.py](/benchmarks.py) for methodology and to run your comparisons.
+> All benchmarks' results are an average of 100 runs. See our [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology and to run your comparisons.
 
 ## Advanced Features
 ### Smart Navigation
@@ -217,7 +217,7 @@ To increase the complexity a little bit, let's say we want to get all books' dat
 {'name': 'Sharp Objects', 'price': '47.82', 'stock': 'In stock'}
 ...
 ```
-The [documentation](/docs/Examples) will provide more advanced examples.
+The [documentation](https://github.com/D4Vinci/Scrapling/tree/main/docs/Examples) will provide more advanced examples.
 
 ### Handling Structural Changes
 > Because [the internet archive](https://web.archive.org/) is down at the time of writing this, I can't use real websites as examples even though I tested that before (I mean browsing an old version of a website and then counting the current version of the website as structural changes)
@@ -366,7 +366,7 @@ Scrapling is under active development so expect many more features coming soon :
 
 ## More Advanced Usage
 
-There are a lot of deep details skipped here to make this as short as possible so to take a deep dive, head to the [docs](/docs) section. I will try to keep it updated as possible and add complex examples. There I will explain points like how to write your storage system, write spiders that don't depend on selectors at all, and more...
+There are a lot of deep details skipped here to make this as short as possible so to take a deep dive, head to the [docs](https://github.com/D4Vinci/Scrapling/tree/main/docs) section. I will try to keep it updated as possible and add complex examples. There I will explain points like how to write your storage system, write spiders that don't depend on selectors at all, and more...
 
 Note that implementing your storage system can be complex as there are some strict rules such as inheriting from the same abstract class, following the singleton design pattern used in other classes, and more. So make sure to read the docs first.
 
@@ -421,14 +421,14 @@ Yes, Scrapling instances are thread-safe. Each Adaptor instance maintains its ow
 ## Contributing
 Everybody is invited and welcome to contribute to Scrapling. There is a lot to do!
 
-Please read the [contributing file](/CONTRIBUTING.md) before doing anything.
+Please read the [contributing file](https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md) before doing anything.
 
 ## License
 This work is licensed under BSD-3
 
 ## Acknowledgments
 This project includes code adapted from:
-- Parsel (BSD License) - Used for [translator](/scrapling/translator.py) submodule
+- Parsel (BSD License) - Used for [translator](https://github.com/D4Vinci/Scrapling/blob/main/scrapling/translator.py) submodule
 
 ## Known Issues
 - In the auto-matching save process, the unique properties of the first element from the selection results are the only ones that get saved. So if the selector you are using selects different elements on the page that are in different locations, auto-matching will probably return to you the first element only when you relocate it later. This doesn't include combined CSS selectors (Using commas to combine more than one selector for example) as these selectors get separated and each selector gets executed alone.
