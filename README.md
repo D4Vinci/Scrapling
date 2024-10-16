@@ -1,5 +1,5 @@
 # 🕷️ Scrapling: Lightning-Fast, Adaptive Web Scraping for Python
-[![Tests](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg)](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml) [![PyPI version](https://badge.fury.io/py/Scrapling.svg)](https://badge.fury.io/py/Scrapling) [![Supported Python versions](https://img.shields.io/pypi/pyversions/scrapling.svg)](https://pypi.org/project/scrapling/) [![License](https://img.shields.io/badge/License-BSD--3-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![Tests](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg)](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml) [![PyPI version](https://badge.fury.io/py/Scrapling.svg)](https://badge.fury.io/py/Scrapling) [![Supported Python versions](https://img.shields.io/pypi/pyversions/scrapling.svg)](https://pypi.org/project/scrapling/) [![PyPI Downloads](https://static.pepy.tech/badge/scrapling)](https://pepy.tech/project/scrapling)
 
 Dealing with failing web scrapers due to website changes? Meet Scrapling.
 
@@ -414,6 +414,9 @@ Of course, you can find elements by text/regex, find similar elements in a more 
 
 ### Is Scrapling thread-safe?
 Yes, Scrapling instances are thread-safe. Each Adaptor instance maintains its own state.
+
+## Sponsors
+[![Capsolver Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/CapSolver.png)](https://www.capsolver.com/?utm_source=github&utm_medium=repo&utm_campaign=scraping&utm_term=Scrapling)
 
 ## Contributing
 Everybody is invited and welcome to contribute to Scrapling. There is a lot to do!

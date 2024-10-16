@@ -78,7 +78,7 @@ class Adaptor(SelectorsGeneration):
 
             parser = html.HTMLParser(
                 # https://lxml.de/api/lxml.etree.HTMLParser-class.html
-                recover=True, remove_blank_text=True, remove_comments=(keep_comments is True), encoding=encoding,
+                recover=True, remove_blank_text=True, remove_comments=(keep_comments is False), encoding=encoding,
                 compact=True, huge_tree=huge_tree, default_doctype=True
             )
             self._root = etree.fromstring(body, parser=parser, base_url=url)
@@ -142,7 +142,8 @@ class Adaptor(SelectorsGeneration):
             if issubclass(type(element), html.HtmlMixin):
                 return self.__class__(
                     root=element, url=self.url, encoding=self.encoding, auto_match=self.__auto_match_enabled,
-                    keep_comments=self.__keep_comments, huge_tree=self.__huge_tree_enabled, debug=self.__debug
+                    keep_comments=True,  # if the comments are already removed in initialization, no need to try to delete them in sub-elements
+                    huge_tree=self.__huge_tree_enabled, debug=self.__debug
                 )
             return element
 
@@ -186,7 +187,19 @@ class Adaptor(SelectorsGeneration):
     def text(self) -> TextHandler:
         """Get text content of the element"""
         if not self.__text:
-            self.__text = TextHandler(self._root.text)
+            if self.__keep_comments:
+                # If use chose to keep comments, remove comments from text
+                # Escape lxml default behaviour and remove comments like this `<span>CONDITION: <!-- -->Excellent</span>`
+                # This issue is present in parsel/scrapy as well so no need to repeat it here so the user can run regex on the full text.
+                code = self.html_content
+                parser = html.HTMLParser(
+                    recover=True, remove_blank_text=True, remove_comments=True, encoding=self.encoding,
+                    compact=True, huge_tree=self.__huge_tree_enabled, default_doctype=True
+                )
+                fragment_root = html.fragment_fromstring(code, parser=parser)
+                self.__text = TextHandler(fragment_root.text)
+            else:
+                self.__text = TextHandler(self._root.text)
         return self.__text
 
     def get_all_text(self, separator: str = "\n", strip: bool = False, ignore_tags: Tuple = ('script', 'style',), valid_values: bool = True) -> TextHandler:
