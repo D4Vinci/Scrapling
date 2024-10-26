@@ -331,6 +331,6 @@ class TestParser(unittest.TestCase):
         self.assertLess(end_time - start_time, 0.1)
 
 
-# Use `coverage run -m unittest --verbose tests/test_all_functions.py` instead for the coverage report
+# Use `coverage run -m unittest --verbose tests/test_parser_functions.py` instead for the coverage report
 # if __name__ == '__main__':
 #     unittest.main(verbosity=2)
