@@ -4,9 +4,10 @@ from itertools import chain
 # Using cache on top of a class is brilliant way to achieve Singleton design pattern without much code
 from functools import lru_cache as cache  # functools.cache is available on Python 3.9+ only so let's keep lru_cache
 
-from typing import Dict, Iterable, Any
+from scrapling._types import Dict, Iterable, Any
 
 from lxml import html
+
 html_forbidden = {html.HtmlComment, }
 logging.basicConfig(
         level=logging.ERROR,
