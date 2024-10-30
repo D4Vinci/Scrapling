@@ -1,4 +1,4 @@
-# 🕷️ Scrapling: Lightning-Fast, Adaptive Web Scraping for Python
+# 🕷️ ScrapLing: Lightning-Fast, Adaptive Web Scraping for Python
 [![Tests](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg)](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml) [![PyPI version](https://badge.fury.io/py/Scrapling.svg)](https://badge.fury.io/py/Scrapling) [![Supported Python versions](https://img.shields.io/pypi/pyversions/scrapling.svg)](https://pypi.org/project/scrapling/) [![PyPI Downloads](https://static.pepy.tech/badge/scrapling)](https://pepy.tech/project/scrapling)
 
 Dealing with failing web scrapers due to website changes? Meet Scrapling.
@@ -69,15 +69,6 @@ quote.path  # DOM path to element (List)
 ```
 To keep it simple, all methods can be chained on top of each other as long as you are chaining methods that return an element (It's called an `Adaptor` object) or a List of Adaptors (It's called `Adaptors` object)
 
-### Installation
-Scrapling is a breeze to get started with - We only require at least Python 3.7 to work and the rest of the requirements are installed automatically with the package.
-```bash
-# Using pip
-pip install scrapling
-
-# Or the latest from GitHub
-pip install git+https://github.com/D4Vinci/Scrapling.git@master
-```
 
 ## Performance
 
@@ -109,6 +100,55 @@ As you see, Scrapling is on par with Scrapy and slightly faster than Lxml which 
 Scrapling can find elements with more methods and it returns full element `Adaptor` objects not only the text like AutoScraper. So, to make this test fair, both libraries will extract an element with text, find similar elements, and then extract the text content for all of them. As you see, Scrapling is still 4.5 times faster at same task.
 
 > All benchmarks' results are an average of 100 runs. See our [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology and to run your comparisons.
+
+## Installation
+Scrapling is a breeze to get started with - Starting from version 0.2, we require at least Python 3.8 to work.
+```bash
+# Using pip
+pip install scrapling
+
+# Or the latest from GitHub
+pip install git+https://github.com/D4Vinci/Scrapling.git@main
+```
+Then in the commandline download the browser with
+<details><summary>Windows OS</summary>
+
+```bash
+camoufox fetch
+```
+</details>
+<details><summary>MacOS</summary>
+
+```bash
+python3 -m camoufox fetch
+```
+</details>
+<details><summary>Linux</summary>
+
+```bash
+python -m camoufox fetch
+```
+On a fresh installation of Linux, you may also need the following Firefox dependencies:
+- Debian-based distros
+    ```bash
+    sudo apt install -y libgtk-3-0 libx11-xcb1 libasound2
+    ```
+- Arch-based distros
+    ```bash
+    sudo pacman -S gtk3 libx11 libxcb cairo libasound alsa-lib
+    ```
+</details>
+
+> You can head to the official [Camoufox documentation](https://camoufox.com/python/installation/#download-the-browser) for more info on installation
+
+Or if you are going to use the other browsers options, then install playwright browsers with:
+```commandline
+playwright install
+```
+and then update the user agents files with:
+```commandline
+python -m browserforge update
+```
 
 ## Advanced Features
 ### Smart Navigation
@@ -272,7 +312,7 @@ if not element:  # One day website changes?
     element = page.css('#p1', auto_match=True)  # Still finds it!
 # the rest of the code...
 ```
-> How does the auto-matching work? Check the [FAQs](#FAQs) section for that and other possible issues while auto-matching.
+> How does the auto-matching work? Check the [FAQs](#-enlightening-questions-and-faqs) section for that and other possible issues while auto-matching.
 
 **Notes:**
 1. Passing the `auto_save` argument without setting `auto_match` to `True` while initializing the Adaptor object will only result in ignoring the `auto_save` argument value and the following warning message
@@ -371,7 +411,7 @@ There are a lot of deep details skipped here to make this as short as possible s
 Note that implementing your storage system can be complex as there are some strict rules such as inheriting from the same abstract class, following the singleton design pattern used in other classes, and more. So make sure to read the docs first.
 
 
-## FAQs
+## ⚡ Enlightening Questions and FAQs
 This section addresses common questions about Scrapling, please read this section before opening an issue.
 
 ### How does auto-matching work?
@@ -423,6 +463,9 @@ Everybody is invited and welcome to contribute to Scrapling. There is a lot to d
 
 Please read the [contributing file](https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md) before doing anything.
 
+## Disclaimer for Scrapling Project
+> This library is provided for educational and research purposes only. By using this library, you agree to comply with local and international laws regarding data scraping and privacy. The authors and contributors are not responsible for any misuse of this software. This library should not be used to violate the rights of others, for unethical purposes, or to use data in an unauthorized or illegal manner. Do not use it on any website unless you have permission from the website owner or within their allowed rules like `robots.txt` file, for example.
+
 ## License
 This work is licensed under BSD-3
 
@@ -430,8 +473,14 @@ This work is licensed under BSD-3
 This project includes code adapted from:
 - Parsel (BSD License) - Used for [translator](https://github.com/D4Vinci/Scrapling/blob/main/scrapling/translator.py) submodule
 
+## Thanks and References
+- [brotector](https://github.com/kaliiiiiiiiii/brotector)
+- [fakebrowser](https://github.com/kkoooqq/fakebrowser)
+- [rebrowser-patches](https://github.com/rebrowser/rebrowser-patches)
+
 ## Known Issues
 - In the auto-matching save process, the unique properties of the first element from the selection results are the only ones that get saved. So if the selector you are using selects different elements on the page that are in different locations, auto-matching will probably return to you the first element only when you relocate it later. This doesn't include combined CSS selectors (Using commas to combine more than one selector for example) as these selectors get separated and each selector gets executed alone.
 - Currently, Scrapling is not compatible with async/await.
 
-<div align="center"><small>Made with ❤️ by Karim Shoair</small></div><br>
+---
+<div align="center"><small>Designed & crafted with ❤️ by Karim Shoair.</small></div><br>
