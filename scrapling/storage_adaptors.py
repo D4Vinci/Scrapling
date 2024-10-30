@@ -4,8 +4,8 @@ import logging
 import threading
 from hashlib import sha256
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Union
 
+from scrapling._types import Dict, Optional, Union
 from scrapling.utils import _StorageTools, cache
 
 from lxml import html
