@@ -1,6 +1,8 @@
 include LICENSE
 include *.db
+include *.js
 include scrapling/*.db
+include scrapling/*.db*
 include scrapling/py.typed
 
 recursive-exclude * __pycache__
