@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="scrapling",
-    version="0.1.2",
+    version="0.2",
     description="""Scrapling is a powerful, flexible, and high-performance web scraping library for Python. It 
     simplifies the process of extracting data from websites, even when they undergo structural changes, and offers 
     impressive speed improvements over many popular scraping tools.""",
@@ -15,7 +15,7 @@ setup(
     author="Karim Shoair",
     author_email="karim.shoair@pm.me",
     license="BSD",
-    packages=["scrapling",],
+    packages=find_packages(),
     zip_safe=False,
     package_dir={
         "scrapling": "scrapling",
@@ -32,16 +32,17 @@ setup(
         "Natural Language :: English",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Text Processing :: Markup",
+        "Topic :: Internet :: WWW/HTTP :: Browsers",
         "Topic :: Text Processing :: Markup :: HTML",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: Implementation :: CPython",
         "Typing :: Typed",
     ],
@@ -53,8 +54,13 @@ setup(
         "w3lib",
         "orjson>=3",
         "tldextract",
+        'httpx[brotli,zstd]',
+        'playwright',
+        'rebrowser-playwright',
+        'camoufox',
+        'browserforge',
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     url="https://github.com/D4Vinci/Scrapling",
     project_urls={
         "Documentation": "https://github.com/D4Vinci/Scrapling/tree/main/docs",  # For now
