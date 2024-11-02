@@ -1,43 +1,17 @@
 import json
 import logging
-from scrapling._types import Union, Callable, Optional, List, Dict
+from scrapling.core._types import Union, Callable, Optional, List, Dict
 
-from .tools import check_type_validity, generate_headers, js_bypass_path, construct_websocket_url, generate_convincing_referer
-
-# Disable loading these resources for speed
-DEFAULT_DISABLED_RESOURCES = ['beacon', 'csp_report', 'font', 'image', 'imageset', 'media', 'object', 'texttrack', 'stylesheet', 'websocket']
-DEFAULT_STEALTH_FLAGS = [
-    # Explanation: https://peter.sh/experiments/chromium-command-line-switches/
-    # Generally this will make the browser faster and less detectable
-    '--incognito', '--accept-lang=en-US', '--lang=en-US', '--no-pings', '--mute-audio', '--no-first-run', '--no-default-browser-check', '--disable-cloud-import',
-    '--disable-gesture-typing', '--disable-offer-store-unmasked-wallet-cards', '--disable-offer-upload-credit-cards', '--disable-print-preview', '--disable-voice-input',
-    '--disable-wake-on-wifi', '--disable-cookie-encryption', '--ignore-gpu-blocklist', '--enable-async-dns', '--enable-simple-cache-backend', '--enable-tcp-fast-open',
-    '--prerender-from-omnibox=disabled', '--enable-web-bluetooth', '--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process,TranslateUI,BlinkGenPropertyTrees',
-    '--aggressive-cache-discard', '--disable-ipc-flooding-protection', '--disable-blink-features=AutomationControlled', '--test-type',
-    '--enable-features=NetworkService,NetworkServiceInProcess,TrustTokens,TrustTokensAlwaysAllowIssuance',
-    '--disable-breakpad', '--disable-component-update', '--disable-domain-reliability', '--disable-sync', '--disable-client-side-phishing-detection',
-    '--disable-hang-monitor', '--disable-popup-blocking', '--disable-prompt-on-repost', '--metrics-recording-only', '--safebrowsing-disable-auto-update', '--password-store=basic',
-    '--autoplay-policy=no-user-gesture-required', '--use-mock-keychain', '--force-webrtc-ip-handling-policy=disable_non_proxied_udp',
-    '--webrtc-ip-handling-policy=disable_non_proxied_udp', '--disable-session-crashed-bubble', '--disable-crash-reporter', '--disable-dev-shm-usage', '--force-color-profile=srgb',
-    '--disable-translate', '--disable-background-networking', '--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-infobars',
-    '--hide-scrollbars', '--disable-renderer-backgrounding', '--font-render-hinting=none', '--disable-logging', '--enable-surface-synchronization',
-    '--run-all-compositor-stages-before-draw', '--disable-threaded-animation', '--disable-threaded-scrolling', '--disable-checker-imaging',
-    '--disable-new-content-rendering-timeout', '--disable-image-animation-resync', '--disable-partial-raster',
-    '--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4',
-    '--disable-layer-tree-host-memory-pressure',
-    '--window-position=0,0',
-    '--disable-features=site-per-process',
-    '--disable-default-apps',
-    '--disable-component-extensions-with-background-pages',
-    '--disable-extensions',
-    # "--disable-reading-from-canvas",  # For Firefox
-    '--start-maximized'  # For headless check bypass
-]
-
-
-def _do_nothing(page):
-    # Anything
-    return page
+from scrapling.engines.constants import DEFAULT_STEALTH_FLAGS, NSTBROWSER_DEFAULT_QUERY
+from scrapling.engines.toolbelt import (
+    Response,
+    do_nothing,
+    js_bypass_path,
+    generate_headers,
+    check_type_validity,
+    construct_websocket_url,
+    generate_convincing_referer,
+)
 
 
 class PlaywrightEngine:
@@ -47,7 +21,7 @@ class PlaywrightEngine:
             useragent: Optional[str] = None,
             network_idle: Optional[bool] = False,
             timeout: Optional[float] = 30000,
-            page_action: Callable = _do_nothing,
+            page_action: Callable = do_nothing,
             wait_selector: Optional[str] = None,
             wait_selector_state: Optional[str] = 'attached',
             stealth: bool = False,
@@ -56,6 +30,7 @@ class PlaywrightEngine:
             cdp_url: Optional[str] = None,
             nstbrowser_mode: bool = False,
             nstbrowser_config: Optional[Dict] = None,
+            adaptor_arguments: Dict = None
     ):
         self.headless = headless
         self.disable_resources = disable_resources
@@ -69,13 +44,14 @@ class PlaywrightEngine:
         if callable(page_action):
             self.page_action = page_action
         else:
-            self.page_action = _do_nothing
+            self.page_action = do_nothing
             logging.error('[Ignored] Argument "page_action" must be callable')
 
         self.wait_selector = wait_selector
         self.wait_selector_state = wait_selector_state
         self.nstbrowser_mode = bool(nstbrowser_mode)
         self.nstbrowser_config = nstbrowser_config
+        self.adaptor_arguments = adaptor_arguments if adaptor_arguments else {}
 
     def _cdp_url_logic(self, flags: Optional[dict] = None):
         cdp_url = self.cdp_url
@@ -83,23 +59,7 @@ class PlaywrightEngine:
             if self.nstbrowser_config and type(self.nstbrowser_config) is Dict:
                 config = self.nstbrowser_config
             else:
-                # Defaulting to the docker mode, token doesn't matter in it as it's passed for the container
-                query = {
-                    "once": True,
-                    "headless": True,
-                    "autoClose": True,
-                    "fingerprint": {
-                        "flags": {
-                            "timezone": "BasedOnIp",
-                            "screen": "Custom"
-                        },
-                        "platform": 'linux',  # support: windows, mac, linux
-                        "kernel": 'chromium',  # only support: chromium
-                        "kernelMilestone": '128',
-                        "hardwareConcurrency": 8,
-                        "deviceMemory": 8,
-                    },
-                }
+                query = NSTBROWSER_DEFAULT_QUERY.copy()
                 if flags:
                     query.update({
                         "args": dict(zip(flags, [''] * len(flags))),  # browser args should be a dictionary
@@ -113,7 +73,7 @@ class PlaywrightEngine:
 
         return cdp_url
 
-    def fetch(self, url):
+    def fetch(self, url) -> Response:
         if not self.stealth:
             from playwright.sync_api import sync_playwright
         else:
@@ -192,7 +152,7 @@ class PlaywrightEngine:
                 page.add_init_script(path=js_bypass_path('screen_props.js'))
                 page.add_init_script(path=js_bypass_path('playwright_fingerprint.js'))
 
-            page.goto(url, referer=generate_convincing_referer(url) if self.stealth else None)
+            res = page.goto(url, referer=generate_convincing_referer(url) if self.stealth else None)
             page.wait_for_load_state(state="load")
             page.wait_for_load_state(state="domcontentloaded")
             if self.network_idle:
@@ -204,6 +164,23 @@ class PlaywrightEngine:
                 waiter = page.locator(self.wait_selector)
                 waiter.wait_for(state=self.wait_selector_state)
 
-            html = page.content()
+            content_type = res.headers.get('content-type', '')
+            # Parse charset from content-type
+            encoding = 'utf-8'  # default encoding
+            if 'charset=' in content_type.lower():
+                encoding = content_type.lower().split('charset=')[-1].split(';')[0].strip()
+
+            response = Response(
+                url=res.url,
+                text=res.text(),
+                content=res.body(),
+                status=res.status,
+                reason=res.status_text,
+                encoding=encoding,
+                cookies={cookie['name']: cookie['value'] for cookie in page.context.cookies()},
+                headers=res.all_headers(),
+                request_headers=res.request.all_headers(),
+                adaptor_arguments=self.adaptor_arguments
+            )
             page.close()
-        return html
+        return response

@@ -9,8 +9,8 @@ which will be important in future releases but most importantly...
 import re
 
 from w3lib.html import HTML5_WHITESPACE
-from scrapling.utils import cache
-from scrapling._types import Any, Optional, Protocol, Self
+from scrapling.core.utils import cache
+from scrapling.core._types import Any, Optional, Protocol, Self
 
 from cssselect.xpath import ExpressionError
 from cssselect.xpath import XPathExpr as OriginalXPathExpr

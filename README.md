@@ -477,6 +477,8 @@ This project includes code adapted from:
 - [brotector](https://github.com/kaliiiiiiiiii/brotector)
 - [fakebrowser](https://github.com/kkoooqq/fakebrowser)
 - [rebrowser-patches](https://github.com/rebrowser/rebrowser-patches)
+- [Vinyzu](https://github.com/Vinyzu)'s work on Playwright's mock on [Botright](https://github.com/Vinyzu/Botright)
+- [Daijro](https://github.com/daijro)'s brilliant work on both [BrowserForge](https://github.com/daijro/browserforge) and [Camoufox](https://github.com/daijro/camoufox)
 
 ## Known Issues
 - In the auto-matching save process, the unique properties of the first element from the selection results are the only ones that get saved. So if the selector you are using selects different elements on the page that are in different locations, auto-matching will probably return to you the first element only when you relocate it later. This doesn't include combined CSS selectors (Using commas to combine more than one selector for example) as these selectors get separated and each selector gets executed alone.

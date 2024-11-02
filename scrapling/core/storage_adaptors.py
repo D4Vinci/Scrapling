@@ -5,8 +5,8 @@ import threading
 from hashlib import sha256
 from abc import ABC, abstractmethod
 
-from scrapling._types import Dict, Optional, Union
-from scrapling.utils import _StorageTools, cache
+from scrapling.core._types import Dict, Optional, Union
+from scrapling.core.utils import _StorageTools, cache
 
 from lxml import html
 from tldextract import extract as tld

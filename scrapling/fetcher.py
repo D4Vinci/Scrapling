@@ -1,65 +1,87 @@
-from scrapling._types import Any, Dict, Optional, Union
+from scrapling.core._types import Dict, Optional, Union, Callable, List
 
-from scrapling.engines import CamoufoxEngine, StaticEngine, check_if_engine_usable
-from scrapling.parser import Adaptor, SQLiteStorageSystem
+from scrapling.engines.toolbelt import Response, BaseFetcher, do_nothing
+from scrapling.engines import CamoufoxEngine, PlaywrightEngine, StaticEngine, check_if_engine_usable
 
 
-class Fetcher:
-    def __init__(
-            self,
-            browser_engine: Optional[object] = None,
-            # Adaptor class parameters
-            response_encoding: str = "utf8",
-            huge_tree: bool = True,
-            keep_comments: Optional[bool] = False,
-            auto_match: Optional[bool] = False,
-            storage: Any = SQLiteStorageSystem,
-            storage_args: Optional[Dict] = None,
-            debug: Optional[bool] = True,
-    ):
-        if browser_engine is not None:
-            self.engine = check_if_engine_usable(browser_engine)
-        else:
-            self.engine = CamoufoxEngine()
-        # I won't validate Adaptor's class parameters here again, I will leave it to be validated later
-        self.__encoding = response_encoding
-        self.__huge_tree = huge_tree
-        self.__keep_comments = keep_comments
-        self.__auto_match = auto_match
-        self.__storage = storage
-        self.__storage_args = storage_args
-        self.__debug = debug
+class Fetcher(BaseFetcher):
+    def get(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).get(url, stealthy_headers, **kwargs)
+        return response_object
 
-    def __generate_adaptor(self, url, html_content):
-        """To make the code less repetitive and manage return result from one function"""
-        return Adaptor(
-            text=html_content,
-            url=url,
-            encoding=self.__encoding,
-            huge_tree=self.__huge_tree,
-            keep_comments=self.__keep_comments,
-            auto_match=self.__auto_match,
-            storage=self.__storage,
-            storage_args=self.__storage_args,
-            debug=self.__debug,
+    def post(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).post(url, stealthy_headers, **kwargs)
+        return response_object
+
+    def put(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).put(url, stealthy_headers, **kwargs)
+        return response_object
+
+    def delete(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).delete(url, stealthy_headers, **kwargs)
+        return response_object
+
+
+class StealthyFetcher(BaseFetcher):
+    def fetch(
+            self, url: str, headless: Union[bool, str] = True, block_images: Optional[bool] = False, block_webrtc: Optional[bool] = False,
+            network_idle: Optional[bool] = False, timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None,
+            wait_selector_state: str = 'attached',
+    ) -> Response:
+        engine = CamoufoxEngine(
+            timeout=timeout,
+            headless=headless,
+            page_action=page_action,
+            block_images=block_images,
+            block_webrtc=block_webrtc,
+            network_idle=network_idle,
+            wait_selector=wait_selector,
+            wait_selector_state=wait_selector_state,
+            adaptor_arguments=self.adaptor_arguments,
         )
+        return engine.fetch(url)
 
-    def fetch(self, url: str) -> Adaptor:
-        html_content = self.engine.fetch(url)
-        return self.__generate_adaptor(url, html_content)
 
-    def get(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Adaptor:
-        html_content = StaticEngine(follow_redirects, timeout).get(url, stealthy_headers, **kwargs)
-        return self.__generate_adaptor(url, html_content)
+class PlayWrightFetcher(BaseFetcher):
+    def fetch(
+            self,
+            url: str,
+            headless: Union[bool, str] = True,
+            disable_resources: Optional[List] = None,
+            useragent: Optional[str] = None,
+            network_idle: Optional[bool] = False,
+            timeout: Optional[float] = 30000,
+            page_action: Callable = do_nothing,
+            wait_selector: Optional[str] = None,
+            wait_selector_state: Optional[str] = 'attached',
+            stealth: bool = False,
+            hide_canvas: bool = True,
+            disable_webgl: bool = False,
+            cdp_url: Optional[str] = None,
+            nstbrowser_mode: bool = False,
+            nstbrowser_config: Optional[Dict] = None,
+    ) -> Response:
+        engine = PlaywrightEngine(
+            timeout=timeout,
+            stealth=stealth,
+            cdp_url=cdp_url,
+            headless=headless,
+            useragent=useragent,
+            page_action=page_action,
+            hide_canvas=hide_canvas,
+            network_idle=network_idle,
+            wait_selector=wait_selector,
+            disable_webgl=disable_webgl,
+            nstbrowser_mode=nstbrowser_mode,
+            nstbrowser_config=nstbrowser_config,
+            disable_resources=disable_resources,
+            wait_selector_state=wait_selector_state,
+            adaptor_arguments=self.adaptor_arguments,
+        )
+        return engine.fetch(url)
 
-    def post(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Adaptor:
-        html_content = StaticEngine(follow_redirects, timeout).post(url, stealthy_headers, **kwargs)
-        return self.__generate_adaptor(url, html_content)
 
-    def put(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Adaptor:
-        html_content = StaticEngine(follow_redirects, timeout).put(url, stealthy_headers, **kwargs)
-        return self.__generate_adaptor(url, html_content)
-
-    def delete(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Adaptor:
-        html_content = StaticEngine(follow_redirects, timeout).delete(url, stealthy_headers, **kwargs)
-        return self.__generate_adaptor(url, html_content)
+class CustomFetcher(BaseFetcher):
+    def fetch(self, url: str, browser_engine, **kwargs) -> Response:
+        engine = check_if_engine_usable(browser_engine)(adaptor_arguments=self.adaptor_arguments, **kwargs)
+        return engine.fetch(url)

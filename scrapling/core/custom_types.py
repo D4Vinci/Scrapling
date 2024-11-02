@@ -2,8 +2,8 @@ import re
 from types import MappingProxyType
 from collections.abc import Mapping
 
-from scrapling.utils import _is_iterable, flatten
-from scrapling._types import Dict, List, Union, Pattern
+from scrapling.core.utils import _is_iterable, flatten
+from scrapling.core._types import Dict, List, Union, Pattern
 
 from orjson import loads, dumps
 from w3lib.html import replace_entities as _replace_entities

@@ -1,12 +1,12 @@
 import os
 from difflib import SequenceMatcher
 
-from scrapling.translator import HTMLTranslator
-from scrapling.mixins import SelectorsGeneration
-from scrapling.custom_types import TextHandler, AttributesHandler
-from scrapling.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
-from scrapling.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden
-from scrapling._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex
+from scrapling.core.translator import HTMLTranslator
+from scrapling.core.mixins import SelectorsGeneration
+from scrapling.core.custom_types import TextHandler, AttributesHandler
+from scrapling.core.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
+from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden
+from scrapling.core._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex
 
 from lxml import etree, html
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
