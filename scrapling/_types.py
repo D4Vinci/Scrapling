@@ -7,13 +7,13 @@ from typing import (
 )
 
 try:
-    from scrapling._types import Protocol
+    from typing import Protocol
 except ImportError:
     # Added in Python 3.8
     Protocol = object
 
 try:
-    from scrapling._types import SupportsIndex
+    from typing import SupportsIndex
 except ImportError:
     # 'SupportsIndex' got added in Python 3.8
     SupportsIndex = None
