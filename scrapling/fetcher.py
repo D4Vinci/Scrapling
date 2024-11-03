@@ -80,7 +80,7 @@ class StealthyFetcher(BaseFetcher):
         :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-        :param disable_resources: Drop requests to unnecessary resources for speed boost.
+        :param disable_resources: Drop requests of unnecessary resources for speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
@@ -109,24 +109,50 @@ class StealthyFetcher(BaseFetcher):
 
 
 class PlayWrightFetcher(BaseFetcher):
+    """A `Fetcher` class type that provide many options, all of them are based on PlayWright.
+
+     Using this Fetcher class, you can do requests with:
+        - Vanilla Playwright without any modifications other than the ones you chose.
+        - Stealthy Playwright with the stealth mode I wrote for it. It's still a work in progress but it bypasses many online tests like bot.sannysoft.com
+        Some of the things stealth mode do includes:
+            1) Patches the CDP runtime fingerprint.
+            2) Mimics some of real browsers' properties by injects several JS files and using custom options.
+            3) Using custom flags on launch to hide playwright even more and make it faster.
+            4) Sets the referer of every request as if this request came from Google's search of this URL's domain.
+            5) Generates real browser's headers of the same type and same user OS then append it to the request.
+        - Real browsers by passing the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
+        - NSTBrowser's docker browserless option by passing the CDP URL and enabling `nstbrowser_mode` option.
+        > Note that these are the main options with PlayWright but it can be mixed together.
+    """
     def fetch(
-            self,
-            url: str,
-            headless: Union[bool, str] = True,
-            disable_resources: Optional[List] = None,
-            useragent: Optional[str] = None,
-            network_idle: Optional[bool] = False,
-            timeout: Optional[float] = 30000,
-            page_action: Callable = do_nothing,
-            wait_selector: Optional[str] = None,
-            wait_selector_state: Optional[str] = 'attached',
+            self, url: str, headless: Union[bool, str] = True, disable_resources: Optional[List] = None,
+            useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
+            page_action: Callable = do_nothing, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
+            hide_canvas: bool = True, disable_webgl: bool = False,
             stealth: bool = False,
-            hide_canvas: bool = True,
-            disable_webgl: bool = False,
             cdp_url: Optional[str] = None,
-            nstbrowser_mode: bool = False,
-            nstbrowser_config: Optional[Dict] = None,
+            nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
     ) -> Response:
+        """Opens up a browser and do your request based on your chosen options below.
+        :param url: Target url.
+        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
+        :param disable_resources: Drop requests of unnecessary resources for speed boost.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
+        :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
+        :param network_idle: Wait for the page to not do do any requests.
+        :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
+        :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
+        :param wait_selector: Wait for a specific css selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
+        :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
+        :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
+        :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
+        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
+        :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
+        :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
+        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        """
         engine = PlaywrightEngine(
             timeout=timeout,
             stealth=stealth,
