@@ -5,6 +5,7 @@ from scrapling.engines.toolbelt import (
     Response,
     do_nothing,
     get_os_name,
+    intercept_route,
     check_type_validity,
     generate_convincing_referer,
 )
@@ -16,6 +17,7 @@ class CamoufoxEngine:
     def __init__(
             self, headless: Union[bool, str] = True,
             block_images: Optional[bool] = False,
+            disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False,
             allow_webgl: Optional[bool] = False,
             network_idle: Optional[bool] = False,
@@ -27,6 +29,7 @@ class CamoufoxEngine:
     ):
         self.headless = headless
         self.block_images = bool(block_images)
+        self.disable_resources = bool(disable_resources)
         self.block_webrtc = bool(block_webrtc)
         self.allow_webgl = bool(allow_webgl)
         self.network_idle = bool(network_idle)
@@ -52,6 +55,9 @@ class CamoufoxEngine:
             page = browser.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
+            if self.disable_resources:
+                page.route("**/*", intercept_route)
+
             res = page.goto(url, referer=generate_convincing_referer(url))
             page.wait_for_load_state(state="load")
             page.wait_for_load_state(state="domcontentloaded")
