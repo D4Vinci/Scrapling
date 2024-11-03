@@ -601,7 +601,10 @@ class Adaptor(SelectorsGeneration):
     # Operations on text functions
     def json(self) -> Dict:
         """Return json response if the response is jsonable otherwise throws error"""
-        return self.text.json()
+        if self.text:
+            return self.text.json()
+        else:
+            return self.get_all_text(strip=True).json()
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True) -> 'List[str]':
         """Apply the given regex to the current text and return a list of strings with the matches.
