@@ -59,17 +59,38 @@ class Fetcher(BaseFetcher):
 
 
 class StealthyFetcher(BaseFetcher):
+    """A `Fetcher` class type that is completely stealthy fetcher that uses a modified version of Firefox.
+
+     It works as real browsers passing almost all online tests/protections based on Camoufox.
+    """
     def fetch(
             self, url: str, headless: Union[bool, str] = True, block_images: Optional[bool] = False, block_webrtc: Optional[bool] = False,
+            allow_webgl: Optional[bool] = False,
             network_idle: Optional[bool] = False, timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None,
             wait_selector_state: str = 'attached',
     ) -> Response:
+        """
+        Opens up a browser and do your request based on your chosen options below.
+        :param url: Target url.
+        :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
+        :param block_images: Prevent the loading of images through Firefox preferences.
+            This can help save your proxy usage but careful with this option as it makes some websites never finish loading.
+        :param block_webrtc: Blocks WebRTC entirely.
+        :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
+        :param network_idle: Wait for the page to not do do any requests.
+        :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
+        :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
+        :param wait_selector: Wait for a specific css selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
+        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        """
         engine = CamoufoxEngine(
             timeout=timeout,
             headless=headless,
             page_action=page_action,
             block_images=block_images,
             block_webrtc=block_webrtc,
+            allow_webgl=allow_webgl,
             network_idle=network_idle,
             wait_selector=wait_selector,
             wait_selector_state=wait_selector_state,
