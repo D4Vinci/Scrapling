@@ -4,27 +4,32 @@ Functions related to generating headers and fingerprints generally
 
 import platform
 
+from scrapling.core._types import Union, Dict
+
 from tldextract import extract
-from browserforge.fingerprints import FingerprintGenerator
 from browserforge.headers import HeaderGenerator, Browser
+from browserforge.fingerprints import FingerprintGenerator, Fingerprint
 
 
-def generate_convincing_referer(url):
-    """
-    Takes the domain from the URL without the subdomain/suffix and make it look like you were searching google for this website
+def generate_convincing_referer(url: str) -> str:
+    """Takes the domain from the URL without the subdomain/suffix and make it look like you were searching google for this website
 
     >>> generate_convincing_referer('https://www.somewebsite.com/blah')
     'https://www.google.com/search?q=somewebsite'
 
     :param url: The URL you are about to fetch.
-    :return:
+    :return: Google's search URL of the domain name
     """
     website_name = extract(url).domain
     return f'https://www.google.com/search?q={website_name}'
 
 
-def get_os_name():
-    # Get the OS name in the same format needed for browserforge
+def get_os_name() -> Union[str, None]:
+    """Get the current OS name in the same format needed for browserforge
+
+    :return: Current OS name or `None` otherwise
+    """
+    #
     os_name = platform.system()
     return {
         'Linux': 'linux',
@@ -35,17 +40,25 @@ def get_os_name():
     }.get(os_name)
 
 
-def generate_suitable_fingerprint():
-    # This would be for Browserforge playwright injector
-    os_name = get_os_name()
+def generate_suitable_fingerprint() -> Fingerprint:
+    """Generates a browserforge's fingerprint that matches current OS, desktop device, and Chrome with version 128 at least.
+
+    This function was originally created to test Browserforge's injector.
+    :return: `Fingerprint` object
+    """
     return FingerprintGenerator(
         browser=[Browser(name='chrome', min_version=128)],
-        os=os_name,  # None is ignored
+        os=get_os_name(),  # None is ignored
         device='desktop'
     ).generate()
 
 
-def generate_headers(browser_mode=False):
+def generate_headers(browser_mode: bool = False) -> Dict:
+    """Generate real browser-like headers using browserforge's generator
+
+    :param browser_mode: If enabled, the headers created are used for playwright so it have to match everything
+    :return: A dictionary of the generated headers
+    """
     if browser_mode:
         # In this mode we don't care about anything other than matching the OS and the browser type with the browser we are using
         # So we don't raise any inconsistency red flags while websites fingerprinting us
