@@ -3,7 +3,18 @@ Functions related to files and URLs
 """
 
 import os
+import logging
 from urllib.parse import urlparse, urlencode
+from playwright.sync_api import Route
+
+from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
+
+
+def intercept_route(route: Route):
+    if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
+        logging.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
+        return route.abort()
+    return route.continue_()
 
 
 def construct_websocket_url(base_url, query_params):
