@@ -64,9 +64,9 @@ class StealthyFetcher(BaseFetcher):
      It works as real browsers passing almost all online tests/protections based on Camoufox.
     """
     def fetch(
-            self, url: str, headless: Union[bool, str] = True, block_images: Optional[bool] = False, block_webrtc: Optional[bool] = False,
-            allow_webgl: Optional[bool] = False,
-            network_idle: Optional[bool] = False, timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None,
+            self, url: str, headless: Union[bool, str] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = True,
+            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False,
+            timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None,
             wait_selector_state: str = 'attached',
     ) -> Response:
         """
@@ -74,7 +74,10 @@ class StealthyFetcher(BaseFetcher):
         :param url: Target url.
         :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
-            This can help save your proxy usage but careful with this option as it makes some websites never finish loading.
+            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
+        :param disable_resources: Drop requests to unnecessary resources for speed boost.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
         :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
         :param network_idle: Wait for the page to not do do any requests.
@@ -91,6 +94,7 @@ class StealthyFetcher(BaseFetcher):
             block_images=block_images,
             block_webrtc=block_webrtc,
             allow_webgl=allow_webgl,
+            disable_resources=disable_resources,
             network_idle=network_idle,
             wait_selector=wait_selector,
             wait_selector_state=wait_selector_state,
