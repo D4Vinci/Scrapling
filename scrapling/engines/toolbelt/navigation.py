@@ -8,27 +8,39 @@ from urllib.parse import urlparse, urlencode
 from playwright.sync_api import Route
 
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
+from scrapling.core._types import Union, Dict
 
 
-def intercept_route(route: Route):
+def intercept_route(route: Route) -> Union[Route, None]:
+    """This is just a route handler but it drops requests that its type falls in `DEFAULT_DISABLED_RESOURCES`
+
+    :param route: PlayWright `Route` object of the current page
+    :return: PlayWright `Route` object
+    """
     if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
         logging.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
         return route.abort()
     return route.continue_()
 
 
-def construct_websocket_url(base_url, query_params):
-    # Validate the base URL structure
+def construct_cdp_url(cdp_url: str, query_params: Dict) -> str:
+    """Takes a CDP URL, reconstruct it to check it's valid, then adds encoded parameters if exists
+
+    :param cdp_url: The target URL.
+    :param query_params: A dictionary of the parameters to add.
+    :return: The new CDP URL.
+    """
     try:
-        parsed = urlparse(base_url)
+        # Validate the base URL structure
+        parsed = urlparse(cdp_url)
 
         # Check scheme
         if parsed.scheme not in ('ws', 'wss'):
-            raise ValueError("URL must use 'ws://' or 'wss://' scheme")
+            raise ValueError("CDP URL must use 'ws://' or 'wss://' scheme")
 
         # Validate hostname and port
         if not parsed.netloc:
-            raise ValueError("Invalid hostname")
+            raise ValueError("Invalid hostname for the CDP URL")
 
         # Ensure path starts with /
         path = parsed.path
@@ -46,9 +58,14 @@ def construct_websocket_url(base_url, query_params):
         return validated_base
 
     except Exception as e:
-        raise ValueError(f"Invalid WebSocket URL: {str(e)}")
+        raise ValueError(f"Invalid CDP URL: {str(e)}")
 
 
-def js_bypass_path(filename):
+def js_bypass_path(filename: str) -> str:
+    """Takes the base filename of JS file inside the `bypasses` folder then return the full path of it
+
+    :param filename: The base filename of the JS file.
+    :return: The full path of the JS file.
+    """
     current_directory = os.path.dirname(__file__)
     return os.path.join(current_directory, 'bypasses', filename)

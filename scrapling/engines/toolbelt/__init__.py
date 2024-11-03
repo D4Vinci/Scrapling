@@ -15,5 +15,5 @@ from .custom import (
 from .navigation import (
     js_bypass_path,
     intercept_route,
-    construct_websocket_url,
+    construct_cdp_url,
 )

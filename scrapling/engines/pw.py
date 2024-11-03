@@ -10,7 +10,7 @@ from scrapling.engines.toolbelt import (
     intercept_route,
     generate_headers,
     check_type_validity,
-    construct_websocket_url,
+    construct_cdp_url,
     generate_convincing_referer,
 )
 
@@ -95,7 +95,7 @@ class PlaywrightEngine:
                     'config': json.dumps(query),
                     # 'token': ''
                 }
-            cdp_url = construct_websocket_url(cdp_url, config)
+            cdp_url = construct_cdp_url(cdp_url, config)
 
         return cdp_url
 
