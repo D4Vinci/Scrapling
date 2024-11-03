@@ -110,23 +110,23 @@ pip install scrapling
 # Or the latest from GitHub
 pip install git+https://github.com/D4Vinci/Scrapling.git@main
 ```
-Then in the commandline download the browser with
+- For using the `StealthyFetcher`, go in the commandline and download the browser with
 <details><summary>Windows OS</summary>
 
 ```bash
-camoufox fetch
+camoufox fetch --browserforge
 ```
 </details>
 <details><summary>MacOS</summary>
 
 ```bash
-python3 -m camoufox fetch
+python3 -m camoufox fetch --browserforge
 ```
 </details>
 <details><summary>Linux</summary>
 
 ```bash
-python -m camoufox fetch
+python -m camoufox fetch --browserforge
 ```
 On a fresh installation of Linux, you may also need the following Firefox dependencies:
 - Debian-based distros
@@ -139,13 +139,13 @@ On a fresh installation of Linux, you may also need the following Firefox depend
     ```
 </details>
 
-> You can head to the official [Camoufox documentation](https://camoufox.com/python/installation/#download-the-browser) for more info on installation
+<small> See the official <a href="https://camoufox.com/python/installation/#download-the-browser">Camoufox documentation</a> for more info on installation</small>
 
-Or if you are going to use the other browsers options, then install playwright browsers with:
+- If you are going to use the `PlayWrightFetcher` options, then install playwright browsers with:
 ```commandline
 playwright install
 ```
-and then update the user agents files with:
+- If you are going to use normal requests only with `Fetcher` class then update the fingerprints files with:
 ```commandline
 python -m browserforge update
 ```
