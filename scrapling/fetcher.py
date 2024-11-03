@@ -64,7 +64,7 @@ class StealthyFetcher(BaseFetcher):
      It works as real browsers passing almost all online tests/protections based on Camoufox.
     """
     def fetch(
-            self, url: str, headless: Union[bool, str] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = True,
+            self, url: str, headless: Union[bool, str] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None,
             wait_selector_state: str = 'attached',
