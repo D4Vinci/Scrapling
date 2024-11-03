@@ -104,11 +104,7 @@ Scrapling can find elements with more methods and it returns full element `Adapt
 ## Installation
 Scrapling is a breeze to get started with - Starting from version 0.2, we require at least Python 3.8 to work.
 ```bash
-# Using pip
-pip install scrapling
-
-# Or the latest from GitHub
-pip install git+https://github.com/D4Vinci/Scrapling.git@main
+pip3 install scrapling
 ```
 - For using the `StealthyFetcher`, go in the commandline and download the browser with
 <details><summary>Windows OS</summary>
