@@ -7,6 +7,7 @@ from scrapling.engines.toolbelt import (
     Response,
     do_nothing,
     js_bypass_path,
+    intercept_route,
     generate_headers,
     check_type_validity,
     construct_websocket_url,
@@ -17,7 +18,7 @@ from scrapling.engines.toolbelt import (
 class PlaywrightEngine:
     def __init__(
             self, headless: Union[bool, str] = True,
-            disable_resources: Optional[List] = None,
+            disable_resources: Optional[bool] = False,
             useragent: Optional[str] = None,
             network_idle: Optional[bool] = False,
             timeout: Optional[float] = 30000,
@@ -134,6 +135,9 @@ class PlaywrightEngine:
             page = context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
+            if self.disable_resources:
+                page.route("**/*", intercept_route)
+
             if self.stealth:
                 # Basic bypasses nothing fancy as I'm still working on it
                 # But with adding these bypasses to the above config, it bypasses many online tests like
