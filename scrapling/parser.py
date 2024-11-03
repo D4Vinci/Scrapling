@@ -27,7 +27,7 @@ class Adaptor(SelectorsGeneration):
             huge_tree: bool = True,
             root: Optional[html.HtmlElement] = None,
             keep_comments: Optional[bool] = False,
-            auto_match: Optional[bool] = False,
+            auto_match: Optional[bool] = True,
             storage: Any = SQLiteStorageSystem,
             storage_args: Optional[Dict] = None,
             debug: Optional[bool] = True,
