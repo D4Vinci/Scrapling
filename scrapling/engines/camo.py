@@ -15,18 +15,28 @@ from camoufox.sync_api import Camoufox
 
 class CamoufoxEngine:
     def __init__(
-            self, headless: Union[bool, str] = True,
-            block_images: Optional[bool] = False,
-            disable_resources: Optional[bool] = False,
-            block_webrtc: Optional[bool] = False,
-            allow_webgl: Optional[bool] = False,
-            network_idle: Optional[bool] = False,
-            timeout: Optional[float] = 30000,
-            page_action: Callable = do_nothing,
-            wait_selector: Optional[str] = None,
-            wait_selector_state: str = 'attached',
-            adaptor_arguments: Dict = None
+            self, headless: Union[bool, str] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
+            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False,
+            timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None,
+            wait_selector_state: str = 'attached', adaptor_arguments: Dict = None
     ):
+        """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
+
+        :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
+        :param block_images: Prevent the loading of images through Firefox preferences.
+            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
+        :param disable_resources: Drop requests of unnecessary resources for speed boost.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
+        :param block_webrtc: Blocks WebRTC entirely.
+        :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
+        :param network_idle: Wait for the page to not do do any requests.
+        :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
+        :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
+        :param wait_selector: Wait for a specific css selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
+        :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
+        """
         self.headless = headless
         self.block_images = bool(block_images)
         self.disable_resources = bool(disable_resources)
@@ -45,6 +55,11 @@ class CamoufoxEngine:
         self.adaptor_arguments = adaptor_arguments if adaptor_arguments else {}
 
     def fetch(self, url: str) -> Response:
+        """Opens up the browser and do your request based on your chosen options.
+
+        :param url: Target url.
+        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        """
         with Camoufox(
                 headless=self.headless,
                 block_images=self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
