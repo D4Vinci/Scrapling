@@ -5,10 +5,11 @@ Functions related to files and URLs
 import os
 import logging
 from urllib.parse import urlparse, urlencode
-from playwright.sync_api import Route
 
-from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 from scrapling.core._types import Union, Dict
+from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
+
+from playwright.sync_api import Route
 
 
 def intercept_route(route: Route) -> Union[Route, None]:

@@ -5,13 +5,14 @@ import inspect
 import logging
 from dataclasses import dataclass, field
 
-from scrapling.parser import Adaptor, SQLiteStorageSystem
 from scrapling.core.utils import setup_basic_logging
-from scrapling.core._types import Any, List, Type, Union, Optional, Dict
+from scrapling.parser import Adaptor, SQLiteStorageSystem
+from scrapling.core._types import Any, List, Type, Union, Optional, Dict, Callable
 
 
 @dataclass(frozen=True)
 class Response:
+    """This class is returned by all engines as a way to unify response type between different libraries."""
     url: str
     text: str
     content: bytes
@@ -24,7 +25,8 @@ class Response:
     adaptor_arguments: Dict = field(default_factory=dict)
 
     @property
-    def adaptor(self):
+    def adaptor(self) -> Union[Adaptor, None]:
+        """Generate Adaptor instance from this response if possible, otherwise return None"""
         if self.content:
             return Adaptor(body=self.content, url=self.url, encoding=self.encoding, **self.adaptor_arguments)
         elif self.text:
@@ -67,7 +69,13 @@ class BaseFetcher:
         setup_basic_logging(level='debug' if debug else 'info')
 
 
-def check_if_engine_usable(engine):
+def check_if_engine_usable(engine: Callable) -> Union[Callable, None]:
+    """This function check if the passed engine can be used by a Fetcher-type class or not.
+
+    :param engine: The engine class itself
+    :return: The engine class again if all checks out, otherwise raises error
+    :raise TypeError: If engine class don't have fetch method, If engine class have fetch attribute not method, or If engine class have fetch function but it doesn't take arguments
+    """
     # if isinstance(engine, type):
     #     raise TypeError("Expected an engine instance, not a class definition of the engine")
 
