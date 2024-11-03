@@ -137,9 +137,9 @@ On a fresh installation of Linux, you may also need the following Firefox depend
 
 <small> See the official <a href="https://camoufox.com/python/installation/#download-the-browser">Camoufox documentation</a> for more info on installation</small>
 
-- If you are going to use the `PlayWrightFetcher` options, then install playwright browsers with:
+- If you are going to use the `PlayWrightFetcher` options, then install playwright's chromium browser with:
 ```commandline
-playwright install
+playwright install chromium
 ```
 - If you are going to use normal requests only with `Fetcher` class then update the fingerprints files with:
 ```commandline
