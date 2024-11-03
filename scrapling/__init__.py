@@ -1,5 +1,5 @@
 # Declare top-level shortcuts
-from scrapling.fetcher import Fetcher, StealthyFetcher, PlayWrightFetcher, CustomFetcher
+from scrapling.fetchers import Fetcher, StealthyFetcher, PlayWrightFetcher, CustomFetcher
 from scrapling.parser import Adaptor, Adaptors
 from scrapling.core.custom_types import TextHandler, AttributesHandler
 
