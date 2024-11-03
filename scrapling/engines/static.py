@@ -45,7 +45,7 @@ class StaticEngine:
             encoding=response.encoding or 'utf-8',
             cookies=dict(response.cookies),
             headers=dict(response.headers),
-            request_headers=response.request.headers,
+            request_headers=dict(response.request.headers),
             adaptor_arguments=self.adaptor_arguments
         )
 
