@@ -17,6 +17,7 @@ class CamoufoxEngine:
             self, headless: Union[bool, str] = True,
             block_images: Optional[bool] = False,
             block_webrtc: Optional[bool] = False,
+            allow_webgl: Optional[bool] = False,
             network_idle: Optional[bool] = False,
             timeout: Optional[float] = 30000,
             page_action: Callable = do_nothing,
@@ -27,6 +28,7 @@ class CamoufoxEngine:
         self.headless = headless
         self.block_images = bool(block_images)
         self.block_webrtc = bool(block_webrtc)
+        self.allow_webgl = bool(allow_webgl)
         self.network_idle = bool(network_idle)
         self.timeout = check_type_validity(timeout, [int, float], 30000)
         if callable(page_action):
@@ -45,6 +47,7 @@ class CamoufoxEngine:
                 block_images=self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
                 os=get_os_name(),
                 block_webrtc=self.block_webrtc,
+                allow_webgl=self.allow_webgl,
         ) as browser:
             page = browser.new_page()
             page.set_default_navigation_timeout(self.timeout)
