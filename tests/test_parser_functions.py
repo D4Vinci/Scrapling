@@ -127,16 +127,16 @@ class TestParser(unittest.TestCase):
     def test_expected_errors(self):
         """Test errors that should raised if it does"""
         with self.assertRaises(ValueError):
-            _ = Adaptor()
+            _ = Adaptor(auto_match=False)
 
         with self.assertRaises(TypeError):
-            _ = Adaptor(root="ayo")
+            _ = Adaptor(root="ayo", auto_match=False)
 
         with self.assertRaises(TypeError):
-            _ = Adaptor(text=1)
+            _ = Adaptor(text=1, auto_match=False)
 
         with self.assertRaises(TypeError):
-            _ = Adaptor(body=1)
+            _ = Adaptor(body=1, auto_match=False)
 
         with self.assertRaises(ValueError):
             _ = Adaptor(self.html, storage=object, auto_match=True)
