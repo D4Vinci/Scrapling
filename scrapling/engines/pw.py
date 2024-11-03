@@ -33,6 +33,26 @@ class PlaywrightEngine:
             nstbrowser_config: Optional[Dict] = None,
             adaptor_arguments: Dict = None
     ):
+        """An engine that utilizes PlayWright library, check the `PlayWrightFetcher` class for more documentation.
+
+        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
+        :param disable_resources: Drop requests of unnecessary resources for speed boost.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
+        :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
+        :param network_idle: Wait for the page to not do do any requests.
+        :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
+        :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
+        :param wait_selector: Wait for a specific css selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
+        :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
+        :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
+        :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
+        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
+        :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
+        :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
+        :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
+        """
         self.headless = headless
         self.disable_resources = disable_resources
         self.network_idle = bool(network_idle)
@@ -54,7 +74,12 @@ class PlaywrightEngine:
         self.nstbrowser_config = nstbrowser_config
         self.adaptor_arguments = adaptor_arguments if adaptor_arguments else {}
 
-    def _cdp_url_logic(self, flags: Optional[dict] = None):
+    def _cdp_url_logic(self, flags: Optional[List] = None) -> str:
+        """Constructs new CDP URL if NSTBrowser is enabled otherwise return CDP URL as it is
+
+        :param flags: Chrome flags to be added to NSTBrowser query
+        :return: CDP URL
+        """
         cdp_url = self.cdp_url
         if self.nstbrowser_mode:
             if self.nstbrowser_config and type(self.nstbrowser_config) is Dict:
@@ -74,7 +99,12 @@ class PlaywrightEngine:
 
         return cdp_url
 
-    def fetch(self, url) -> Response:
+    def fetch(self, url: str) -> Response:
+        """Opens up the browser and do your request based on your chosen options.
+
+        :param url: Target url.
+        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        """
         if not self.stealth:
             from playwright.sync_api import sync_playwright
         else:
