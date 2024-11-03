@@ -24,10 +24,10 @@ class Response:
 
     @property
     def adaptor(self):
-        if self.text:
-            return Adaptor(text=self.text, url=self.url, encoding=self.encoding, **self.adaptor_arguments)
-        elif self.content:
+        if self.content:
             return Adaptor(body=self.content, url=self.url, encoding=self.encoding, **self.adaptor_arguments)
+        elif self.text:
+            return Adaptor(text=self.text, url=self.url, encoding=self.encoding, **self.adaptor_arguments)
         return None
 
     def __repr__(self):
