@@ -28,3 +28,8 @@ Also, consider setting `debug` to `True` while initializing the Adaptor object s
  - Make your changes.
  - Ensure tests work.
  - Create a Pull Request against the [**dev**](https://github.com/D4Vinci/Scrapling/tree/dev) branch of Scrapling.
+
+### Installing the latest changes from the dev branch
+```commandline
+pip3 install git+https://github.com/D4Vinci/Scrapling.git@dev
+```
