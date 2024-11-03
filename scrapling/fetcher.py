@@ -14,7 +14,8 @@ class Fetcher(BaseFetcher):
         :param url: Target url.
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
         :param timeout: The time to wait for the request to finish in seconds. Default is 10 seconds.
-        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and create a referer header as if this request had came from Google's search.
+        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
+            create a referer header as if this request had came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
@@ -26,7 +27,8 @@ class Fetcher(BaseFetcher):
         :param url: Target url.
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
         :param timeout: The time to wait for the request to finish in seconds. Default is 10 seconds.
-        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and create a referer header as if this request had came from Google's search.
+        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
+            create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
@@ -38,7 +40,8 @@ class Fetcher(BaseFetcher):
         :param url: Target url
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
         :param timeout: The time to wait for the request to finish in seconds. Default is 10 seconds.
-        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and create a referer header as if this request had came from Google's search.
+        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
+        create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
@@ -50,7 +53,8 @@ class Fetcher(BaseFetcher):
         :param url: Target url
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
         :param timeout: The time to wait for the request to finish in seconds. Default is 10 seconds.
-        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and create a referer header as if this request had came from Google's search.
+        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
+            create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
@@ -62,6 +66,7 @@ class StealthyFetcher(BaseFetcher):
     """A `Fetcher` class type that is completely stealthy fetcher that uses a modified version of Firefox.
 
      It works as real browsers passing almost all online tests/protections based on Camoufox.
+     Other added flavors include setting the faked OS fingerprints to match the user's OS and the referer of every request is set as if this request came from Google's search of this URL's domain.
     """
     def fetch(
             self, url: str, headless: Union[bool, str] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
