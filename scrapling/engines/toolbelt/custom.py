@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass, field
 
 from scrapling.parser import Adaptor, SQLiteStorageSystem
+from scrapling.core.utils import setup_basic_logging
 from scrapling.core._types import Any, List, Type, Union, Optional, Dict
 
 
@@ -36,15 +37,23 @@ class Response:
 
 class BaseFetcher:
     def __init__(
-            self,
-            # Adaptor class parameters
-            huge_tree: bool = True,
-            keep_comments: Optional[bool] = False,
-            auto_match: Optional[bool] = False,
-            storage: Any = SQLiteStorageSystem,
-            storage_args: Optional[Dict] = None,
-            debug: Optional[bool] = True,
+            self, huge_tree: bool = True, keep_comments: Optional[bool] = False, auto_match: Optional[bool] = True,
+            storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None, debug: Optional[bool] = True,
     ):
+        """Arguments below are the same from the Adaptor class so you can pass them directly, the rest of Adaptor's arguments
+        are detected and passed automatically from the Fetcher based on the response for accessibility.
+
+        :param huge_tree: Enabled by default, should always be enabled when parsing large HTML documents. This controls
+            libxml2 feature that forbids parsing certain large documents to protect from possible memory exhaustion.
+        :param keep_comments: While parsing the HTML body, drop comments or not. Disabled by default for obvious reasons
+        :param auto_match: Globally turn-off the auto-match feature in all functions, this argument takes higher
+            priority over all auto-match related arguments/functions in the class.
+        :param storage: The storage class to be passed for auto-matching functionalities, see ``Docs`` for more info.
+        :param storage_args: A dictionary of ``argument->value`` pairs to be passed for the storage class.
+            If empty, default values will be used.
+        :param debug: Enable debug mode
+        """
+        # Adaptor class parameters
         # I won't validate Adaptor's class parameters here again, I will leave it to be validated later
         self.adaptor_arguments = dict(
             huge_tree=huge_tree,
@@ -54,6 +63,8 @@ class BaseFetcher:
             storage_args=storage_args,
             debug=debug,
         )
+        # If the user used fetchers first, then configure the logger from here instead of the `Adaptor` class
+        setup_basic_logging(level='debug' if debug else 'info')
 
 
 def check_if_engine_usable(engine):
