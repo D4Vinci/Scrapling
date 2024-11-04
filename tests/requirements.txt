@@ -1,2 +1,6 @@
 pytest
 pytest-cov
+playwright
+camoufox
+pytest-httpbin
+pytest-playwright
