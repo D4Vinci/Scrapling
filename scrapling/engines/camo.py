@@ -25,7 +25,7 @@ class CamoufoxEngine:
         :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-        :param disable_resources: Drop requests of unnecessary resources for speed boost.
+        :param disable_resources: Drop requests of unnecessary resources for speed boost. It depends but it made requests ~25% faster in my tests for some websites.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
