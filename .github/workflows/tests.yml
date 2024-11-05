@@ -49,8 +49,9 @@ jobs:
 
     - name: Install Camoufox Dependencies
       run: |
-        pip install camoufox
-        python -m camoufox fetch --browserforge
+        python3 -m pip install --upgrade pip
+        python3 -m pip install camoufox
+        python3 -m camoufox fetch --browserforge
 
     - name: Run tests
       env: ${{ matrix.env }}
