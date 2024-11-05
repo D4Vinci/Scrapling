@@ -867,17 +867,18 @@ class Adaptors(List[Adaptor]):
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True):
         """Call the ``.re_first()`` method for each element in this list and return
-        their results flattened as List of TextHandler.
+        the first result or the default value otherwise.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param default: The default value to be returned if there is no match
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
 
         """
-        results = [
-            n.text.re_first(regex, default, replace_entities) for n in self
-        ]
-        return flatten(results)
+        for n in self:
+            result = n.re_first(regex, None, replace_entities)
+            if result:
+                return result
+        return default
 
     # def __getattr__(self, name):
     #     if name in dir(self.__class__):
