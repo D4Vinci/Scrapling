@@ -7,7 +7,10 @@ concurrency:
 
 jobs:
   tests:
+    timeout-minutes: 60
     runs-on: ${{ matrix.os }}
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.48.0-jammy
     strategy:
       fail-fast: false
       matrix:
@@ -43,12 +46,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Install Playwright Dependencies
-      run: |
-        pip install playwright
-        playwright install chromium
-        playwright install-deps chromium
+        cache: 'pip'
 
     - name: Install Camoufox Dependencies
       run: |

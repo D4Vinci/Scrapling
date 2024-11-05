@@ -1,6 +1,6 @@
-pytest
+pytest>=2.8.0,<9
 pytest-cov
 playwright
 camoufox
-pytest-httpbin
-pytest-playwright
+pytest-httpbin==2.1.0
+httpbin~=0.10.0
