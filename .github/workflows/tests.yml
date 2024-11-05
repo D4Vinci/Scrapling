@@ -46,8 +46,8 @@ jobs:
     # Install lsb-release before setup-python so the cache work
     - name: Install lsb-release
       run: |
-        sudo apt-get update
-        sudo apt-get install -y lsb-release
+        apt-get update
+        apt-get install -y lsb-release
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
