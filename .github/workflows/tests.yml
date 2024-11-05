@@ -53,14 +53,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-        cache-dependency-path: |
-          setup.py
-          requirements*.txt
-          tox.ini
 
     - name: Install Camoufox Dependencies
       run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install camoufox
         python3 -m camoufox fetch --browserforge
 
     # Cache tox environments
