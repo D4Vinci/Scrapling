@@ -59,7 +59,7 @@ quotes = page.css('.quote').css('.text::text')  # Chained selectors
 quotes = [element.text for element in page.css('.quote').css('.text')]  # Slower than bulk query above
 
 # Get the first quote element
-quote = page.css('.quote').first  # or [0] or .get()
+quote = page.css_first('.quote')  # or page.css('.quote').first or [0] or .get()
 
 # Working with elements
 quote.html_content  # Inner HTML
@@ -244,8 +244,8 @@ To increase the complexity a little bit, let's say we want to get all books' dat
 ```python
 >>> for product in page.find_by_text('Tipping the Velvet').parent.parent.find_similar():
         print({
-            "name": product.css('h3 a::text')[0],
-            "price": product.css('.price_color')[0].re_first(r'[\d\.]+'),
+            "name": product.css_first('h3 a::text'),
+            "price": product.css_first('.price_color').re_first(r'[\d\.]+'),
             "stock": product.css('.availability::text')[-1].clean()
         })
 {'name': 'A Light in the ...', 'price': '51.77', 'stock': 'In stock'}

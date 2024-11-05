@@ -394,6 +394,58 @@ class Adaptor(SelectorsGeneration):
                 return self.__convert_results(score_table[highest_probability])
         return []
 
+    def css_first(self, selector: str, identifier: str = '',
+                  auto_match: bool = False, auto_save: bool = False, percentage: int = 0
+                  ) -> Union['Adaptors[Adaptor]', List, None]:
+        """Search current tree with CSS3 selectors and return the first result if possible, otherwise return `None`
+
+        **Important:
+        It's recommended to use the identifier argument if you plan to use different selector later
+        and want to relocate the same element(s)**
+
+        :param selector: The CSS3 selector to be used.
+        :param auto_match: Enabled will make function try to relocate the element if it was 'saved' before
+        :param identifier: A string that will be used to save/retrieve element's data in auto-matching
+         otherwise the selector will be used.
+        :param auto_save: Automatically save new elements for `auto_match` later
+        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+         Be aware that the percentage calculation depends solely on the page structure so don't play with this
+         number unless you must know what you are doing!
+
+        :return: List as :class:`Adaptors`
+        """
+        try:
+            return self.css(selector, identifier, auto_match, auto_save, percentage)[0]
+        except (IndexError, TypeError,):
+            return None
+
+    def xpath_first(self, selector: str, identifier: str = '',
+                    auto_match: bool = False, auto_save: bool = False, percentage: int = 0, **kwargs: Any
+                    ) -> Union['Adaptors[Adaptor]', List, None]:
+        """Search current tree with XPath selectors and return the first result if possible, otherwise return `None`
+
+        **Important:
+        It's recommended to use the identifier argument if you plan to use different selector later
+        and want to relocate the same element(s)**
+
+         Note: **Additional keyword arguments will be passed as XPath variables in the XPath expression!**
+
+        :param selector: The XPath selector to be used.
+        :param auto_match: Enabled will make function try to relocate the element if it was 'saved' before
+        :param identifier: A string that will be used to save/retrieve element's data in auto-matching
+         otherwise the selector will be used.
+        :param auto_save: Automatically save new elements for `auto_match` later
+        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+         Be aware that the percentage calculation depends solely on the page structure so don't play with this
+         number unless you must know what you are doing!
+
+        :return: List as :class:`Adaptors`
+        """
+        try:
+            return self.xpath(selector, identifier, auto_match, auto_save, percentage, **kwargs)[0]
+        except (IndexError, TypeError,):
+            return None
+
     def css(self, selector: str, identifier: str = '',
             auto_match: bool = False, auto_save: bool = False, percentage: int = 0
             ) -> Union['Adaptors[Adaptor]', List]:
