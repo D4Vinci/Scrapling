@@ -52,7 +52,7 @@ jobs:
     - name: Install Camoufox Dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m playwright install-deps firefox
+        playwright install-deps firefox
         python3 -m pip install camoufox
         python3 -m camoufox fetch --browserforge
 
