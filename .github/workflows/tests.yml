@@ -11,7 +11,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     container:
       image: mcr.microsoft.com/playwright/python:v1.48.0-jammy
-      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
