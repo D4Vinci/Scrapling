@@ -51,9 +51,8 @@ jobs:
 
     - name: Install Camoufox Dependencies
       run: |
-        python3 -m pip install --upgrade pip
-        playwright install-deps firefox
-        python3 -m pip install camoufox
+        python3 -m pip install --upgrade pip playwright camoufox
+        python3 -m playwright install-deps firefox
         python3 -m camoufox fetch --browserforge
 
     # Cache tox environments
