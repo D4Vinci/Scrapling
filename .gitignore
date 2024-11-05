@@ -14,6 +14,7 @@ __pycache__/
 .appveyor.token
 *.bak
 *.db
+*.db-*
 
 # installation package
 *.egg-info/
