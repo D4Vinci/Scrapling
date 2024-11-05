@@ -66,6 +66,7 @@ class CamoufoxEngine:
                 os=get_os_name(),
                 block_webrtc=self.block_webrtc,
                 allow_webgl=self.allow_webgl,
+                i_know_what_im_doing=True,  # To turn warnings off with user configurations
         ) as browser:
             page = browser.new_page()
             page.set_default_navigation_timeout(self.timeout)
