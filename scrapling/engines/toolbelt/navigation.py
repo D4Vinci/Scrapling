@@ -6,7 +6,7 @@ import os
 import logging
 from urllib.parse import urlparse, urlencode
 
-from scrapling.core._types import Union, Dict
+from scrapling.core._types import Union, Dict, Optional
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
 from playwright.sync_api import Route
@@ -24,7 +24,7 @@ def intercept_route(route: Route) -> Union[Route, None]:
     return route.continue_()
 
 
-def construct_cdp_url(cdp_url: str, query_params: Dict) -> str:
+def construct_cdp_url(cdp_url: str, query_params: Optional[Dict] = None) -> str:
     """Takes a CDP URL, reconstruct it to check it's valid, then adds encoded parameters if exists
 
     :param cdp_url: The target URL.

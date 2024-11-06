@@ -96,6 +96,9 @@ class PlaywrightEngine:
                     # 'token': ''
                 }
             cdp_url = construct_cdp_url(cdp_url, config)
+        else:
+            # To validate it
+            cdp_url = construct_cdp_url(cdp_url)
 
         return cdp_url
 
