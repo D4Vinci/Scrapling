@@ -396,7 +396,7 @@ class Adaptor(SelectorsGeneration):
 
     def css_first(self, selector: str, identifier: str = '',
                   auto_match: bool = False, auto_save: bool = False, percentage: int = 0
-                  ) -> Union['Adaptors[Adaptor]', List, None]:
+                  ) -> Union['Adaptor', 'TextHandler', None]:
         """Search current tree with CSS3 selectors and return the first result if possible, otherwise return `None`
 
         **Important:
@@ -421,7 +421,7 @@ class Adaptor(SelectorsGeneration):
 
     def xpath_first(self, selector: str, identifier: str = '',
                     auto_match: bool = False, auto_save: bool = False, percentage: int = 0, **kwargs: Any
-                    ) -> Union['Adaptors[Adaptor]', List, None]:
+                    ) -> Union['Adaptor', 'TextHandler', None]:
         """Search current tree with XPath selectors and return the first result if possible, otherwise return `None`
 
         **Important:
