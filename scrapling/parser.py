@@ -416,10 +416,9 @@ class Adaptor(SelectorsGeneration):
 
         :return: List as :class:`Adaptors`
         """
-        try:
-            return self.css(selector, identifier, auto_match, auto_save, percentage)[0]
-        except (IndexError, TypeError,):
-            return None
+        for element in self.css(selector, identifier, auto_match, auto_save, percentage):
+            return element
+        return None
 
     def xpath_first(self, selector: str, identifier: str = '',
                     auto_match: bool = False, auto_save: bool = False, percentage: int = 0, **kwargs: Any
@@ -443,10 +442,9 @@ class Adaptor(SelectorsGeneration):
 
         :return: List as :class:`Adaptors`
         """
-        try:
-            return self.xpath(selector, identifier, auto_match, auto_save, percentage, **kwargs)[0]
-        except (IndexError, TypeError,):
-            return None
+        for element in self.xpath(selector, identifier, auto_match, auto_save, percentage, **kwargs):
+            return element
+        return None
 
     def css(self, selector: str, identifier: str = '',
             auto_match: bool = False, auto_save: bool = False, percentage: int = 0
