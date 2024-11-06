@@ -1,4 +1,4 @@
-from scrapling.core._types import Dict, Optional, Union, Callable, List
+from scrapling.core._types import Dict, Optional, Union, Callable, List, Literal
 
 from scrapling.engines.toolbelt import Response, BaseFetcher, do_nothing
 from scrapling.engines import CamoufoxEngine, PlaywrightEngine, StaticEngine, check_if_engine_usable
@@ -69,7 +69,7 @@ class StealthyFetcher(BaseFetcher):
      Other added flavors include setting the faked OS fingerprints to match the user's OS and the referer of every request is set as if this request came from Google's search of this URL's domain.
     """
     def fetch(
-            self, url: str, headless: Union[bool, str] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
+            self, url: str, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: str = 'attached',
@@ -77,7 +77,7 @@ class StealthyFetcher(BaseFetcher):
         """
         Opens up a browser and do your request based on your chosen options below.
         :param url: Target url.
-        :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
+        :param headless: Run the browser in headless/hidden (default), 'virtual' screen mode, or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param disable_resources: Drop requests of unnecessary resources for speed boost. It depends but it made requests ~25% faster in my tests for some websites.

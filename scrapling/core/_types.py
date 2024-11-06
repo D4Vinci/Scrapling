@@ -3,7 +3,7 @@ Type definitions for type checking purposes.
 """
 
 from typing import (
-    Dict, Optional, Union, Callable, Any, List, Tuple, Pattern, Generator, Iterable, Type, TYPE_CHECKING
+    Dict, Optional, Union, Callable, Any, List, Tuple, Pattern, Generator, Iterable, Type, TYPE_CHECKING, Literal
 )
 
 try:
