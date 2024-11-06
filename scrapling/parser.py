@@ -120,7 +120,7 @@ class Adaptor(SelectorsGeneration):
     def _is_text_node(element: Union[html.HtmlElement, etree._ElementUnicodeResult]) -> bool:
         """Return True if given element is a result of a string expression
         Examples:
-            Xpath -> '/text()', '/@attribute' etc...
+            XPath -> '/text()', '/@attribute' etc...
             CSS3  -> '::text', '::attr(attrib)'...
         """
         # Faster than checking `element.is_attribute or element.is_text or element.is_tail`
@@ -1007,28 +1007,25 @@ class Adaptors(List[Adaptor]):
                 return result
         return default
 
-    # def __getattr__(self, name):
-    #     if name in dir(self.__class__):
-    #         return super().__getattribute__(name)
-    #
-    #     # Execute the method itself on each Adaptor
-    #     results = []
-    #     for item in self:
-    #         results.append(getattr(item, name))
-    #
-    #     if all(callable(r) for r in results):
-    #         def call_all(*args, **kwargs):
-    #             final_results = [r(*args, **kwargs) for r in results]
-    #             if all([isinstance(r, (Adaptor, Adaptors,)) for r in results]):
-    #                 return self.__class__(final_results)
-    #             return final_results
-    #
-    #         return call_all
-    #     else:
-    #         # Flatten the result if it's a single-item list containing a list
-    #         if len(self) == 1 and isinstance(results[0], list):
-    #             return self.__class__(results[0])
-    #         return self.__class__(results)
+    def search(self, func: Callable[['Adaptor'], bool]) -> Union['Adaptor', None]:
+        """Loop over all current elements and return the first element that matches the passed function
+        :param func: A function that takes each element as an argument and returns True/False
+        :return: The first element that match the function or ``None`` otherwise.
+        """
+        for element in self:
+            if func(element):
+                return element
+        return None
+
+    def filter(self, func: Callable[['Adaptor'], bool]) -> Union['Adaptors', List]:
+        """Filter current elements based on the passed function
+        :param func: A function that takes each element as an argument and returns True/False
+        :return: The new `Adaptors` object or empty list otherwise.
+        """
+        results = [
+            element for element in self if func(element)
+        ]
+        return self.__class__(results) if results else results
 
     def get(self, default=None):
         """Returns the first item of the current list
