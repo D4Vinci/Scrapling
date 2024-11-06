@@ -927,8 +927,7 @@ class Adaptors(List[Adaptor]):
 
         """
         for n in self:
-            result = n.re_first(regex, None, replace_entities)
-            if result:
+            for result in n.re(regex, replace_entities):
                 return result
         return default
 
