@@ -3,7 +3,7 @@ from difflib import SequenceMatcher
 
 from scrapling.core.translator import HTMLTranslator
 from scrapling.core.mixins import SelectorsGeneration
-from scrapling.core.custom_types import TextHandler, AttributesHandler
+from scrapling.core.custom_types import TextHandler, TextHandlers, AttributesHandler
 from scrapling.core.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
 from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden
 from scrapling.core._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex
@@ -158,6 +158,8 @@ class Adaptor(SelectorsGeneration):
             results = [self.__get_correct_result(n) for n in result]
             if all(isinstance(res, self.__class__) for res in results):
                 return Adaptors(results)
+            elif all(isinstance(res, TextHandler) for res in results):
+                return TextHandlers(results)
             return results
 
         return self.__get_correct_result(result)
