@@ -64,10 +64,10 @@ jobs:
       with:
         path: .tox
         # Include python version and os in cache key
-        key: tox-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('tox.ini', 'setup.py', 'requirements*.txt') }}
+        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('tox.ini', 'setup.py', 'requirements*.txt') }}
         restore-keys: |
-          tox-${{ runner.os }}-py${{ matrix.python-version }}-
-          tox-${{ runner.os }}-
+          tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-
+          tox-v1-${{ runner.os }}-
 
     - name: Run tests
       env: ${{ matrix.env }}
