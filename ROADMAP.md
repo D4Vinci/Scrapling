@@ -1,6 +1,6 @@
 ## TODOs
-- [ ] Add more tests and increase the code coverage.
-- [ ] Structure the tests folder in a better way.
+- [x] Add more tests and increase the code coverage.
+- [x] Structure the tests folder in a better way.
 - [ ] Add more documentation.
 - [x] Add the browsing ability.
 - [ ] Create detailed documentation for 'readthedocs' website, preferably add Github action for deploying it.
