@@ -116,7 +116,7 @@ class TestParser(unittest.TestCase):
         similar_products = first_product.find_similar()
         self.assertEqual(len(similar_products), 2)
 
-        first_review = self.page.css('.review')[0]
+        first_review = self.page.find('div', class_='review')
         similar_high_rated_reviews = [
             review
             for review in first_review.find_similar()
@@ -197,7 +197,7 @@ class TestParser(unittest.TestCase):
         parent_siblings = parent.siblings
         self.assertEqual(len(parent_siblings), 1)
 
-        child = table.css('[data-id="1"]')[0]
+        child = table.find({'data-id': "1"})
         next_element = child.next
         self.assertEqual(next_element.attrib['data-id'], '2')
 
@@ -261,7 +261,7 @@ class TestParser(unittest.TestCase):
         key_value = list(products[0].attrib.search_values('1', partial=True))
         self.assertEqual(list(key_value[0].keys()), ['data-id'])
 
-        attr_json = self.page.css('#products')[0].attrib['schema'].json()
+        attr_json = self.page.css_first('#products').attrib['schema'].json()
         self.assertEqual(attr_json, {'jsonable': 'data'})
         self.assertEqual(type(self.page.css('#products')[0].attrib.json_string), bytes)
 
