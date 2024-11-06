@@ -5,8 +5,8 @@ from scrapling.core.translator import HTMLTranslator
 from scrapling.core.mixins import SelectorsGeneration
 from scrapling.core.custom_types import TextHandler, TextHandlers, AttributesHandler
 from scrapling.core.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
-from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden
-from scrapling.core._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex
+from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, _is_iterable, html_forbidden
+from scrapling.core._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex, Iterable
 
 from lxml import etree, html
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
@@ -541,6 +541,72 @@ class Adaptor(SelectorsGeneration):
 
         except (SelectorError, SelectorSyntaxError, etree.XPathError, etree.XPathEvalError):
             raise SelectorSyntaxError(f"Invalid XPath selector: {selector}")
+
+    def find_all(self, *args, **kwargs) -> Union['Adaptors[Adaptor]', List]:
+        """Find elements by their tag name and filter them based on attributes for ease..
+
+        :param args: Tag name(s), an iterable of tag names, or a dictionary of elements' attributes. Leave empty for selecting all.
+        :param kwargs: The attributes you want to filter elements based on it.
+        :return: The `Adaptors` object of the elements or empty list
+        """
+        # Attributes that are Python reserved words and can't be used directly
+        # Ex: find_all('a', class="blah") -> find_all('a', class_="blah")
+        whitelisted = {
+            'id_': 'id',
+            'class_': 'class',
+        }
+
+        if not args and not kwargs:
+            raise TypeError('You have to pass something to search with, like tag name(s), tag attributes, or both.')
+
+        tags = set()
+        selectors = []
+        attributes = dict()
+        # Brace yourself for a wonderful journey!
+        for arg in args:
+            if type(arg) is str:
+                tags.add(arg)
+
+            elif type(arg) in [list, tuple, set]:
+                if not all(map(lambda x: type(x) is str, arg)):
+                    raise TypeError('Nested Iterables are not accepted, only iterables of tag names are accepted')
+                tags.update(set(arg))
+
+            elif type(arg) is dict:
+                if not all([(type(k) is str and type(v) is str) for k, v in arg.items()]):
+                    raise TypeError('Nested dictionaries are not accepted, only string keys and string values are accepted')
+                attributes.update(arg)
+
+            else:
+                raise TypeError(f'Argument with type "{type(arg)}" is not accepted, please read the docs.')
+
+        if not all([(type(k) is str and type(v) is str) for k, v in kwargs.items()]):
+            raise TypeError('Only string values are accepted for arguments')
+        attributes.update(kwargs)
+
+        # It's easier and faster to build a selector than traversing the tree
+        tags = tags or ['']
+        for tag in tags:
+            selector = tag
+            for key, value in attributes.items():
+                key = whitelisted.get(key, key)
+                value = value.replace('"', r'\"')  # Escape double quotes in user input
+                # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
+                selector += '[{}="{}"]'.format(key, value)
+            selectors.append(selector)
+
+        return self.css(', '.join(selectors))
+
+    def find(self, *args, **kwargs) -> Union['Adaptor', None]:
+        """Find elements by their tag name and filter them based on attributes for ease then return the first result. Otherwise return `None`.
+
+        :param args: Tag name(s), an iterable of tag names, or a dictionary of elements' attributes. Leave empty for selecting all.
+        :param kwargs: The attributes you want to filter elements based on it.
+        :return: The `Adaptor` object of the element or `None` if the result didn't match
+        """
+        for element in self.find_all(*args, **kwargs):
+            return element
+        return None
 
     def __calculate_similarity_score(self, original: Dict, candidate: html.HtmlElement) -> float:
         """Used internally to calculate a score that shows how candidate element similar to the original one
