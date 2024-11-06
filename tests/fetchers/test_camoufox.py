@@ -6,10 +6,9 @@ from scrapling import StealthyFetcher
 
 @pytest_httpbin.use_class_based_httpbin
 # @pytest_httpbin.use_class_based_httpbin_secure
-class TestParser(unittest.TestCase):
+class TestStealthyFetcher(unittest.TestCase):
     def setUp(self):
         self.fetcher = StealthyFetcher(auto_match=False)
-        # httpsbin = self.httpbin_secure.url
         url = self.httpbin.url
         self.status_200 = f'{url}/status/200'
         self.status_404 = f'{url}/status/404'
