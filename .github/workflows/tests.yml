@@ -55,7 +55,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install playwright camoufox
-        python3 -m playwright install-deps firefox
+        python3 -m playwright install-deps chromium firefox
         python3 -m camoufox fetch --browserforge
 
     # Cache tox environments
