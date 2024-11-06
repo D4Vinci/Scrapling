@@ -125,7 +125,7 @@ class PlayWrightFetcher(BaseFetcher):
         > Note that these are the main options with PlayWright but it can be mixed together.
     """
     def fetch(
-            self, url: str, headless: Union[bool, str] = True, disable_resources: Optional[List] = None,
+            self, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
             useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
             page_action: Callable = do_nothing, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
             hide_canvas: bool = True, disable_webgl: bool = False,

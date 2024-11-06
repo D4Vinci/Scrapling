@@ -18,7 +18,7 @@ from scrapling.engines.toolbelt import (
 class PlaywrightEngine:
     def __init__(
             self, headless: Union[bool, str] = True,
-            disable_resources: Optional[bool] = False,
+            disable_resources: bool = False,
             useragent: Optional[str] = None,
             network_idle: Optional[bool] = False,
             timeout: Optional[float] = 30000,
