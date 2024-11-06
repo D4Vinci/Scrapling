@@ -70,8 +70,8 @@ class StealthyFetcher(BaseFetcher):
     """
     def fetch(
             self, url: str, headless: Union[bool, str] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
-            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False,
-            timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None,
+            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
+            timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: str = 'attached',
     ) -> Response:
         """
@@ -84,6 +84,8 @@ class StealthyFetcher(BaseFetcher):
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
+        :param addons: List of Firefox addons to use. Must be paths to extracted addons.
+        :param humanize: Humanize the cursor movement. Takes either True, or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
         :param network_idle: Wait for the page to not do do any requests.
         :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
@@ -98,6 +100,8 @@ class StealthyFetcher(BaseFetcher):
             page_action=page_action,
             block_images=block_images,
             block_webrtc=block_webrtc,
+            addons=addons,
+            humanize=humanize,
             allow_webgl=allow_webgl,
             disable_resources=disable_resources,
             network_idle=network_idle,

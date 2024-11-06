@@ -1,5 +1,5 @@
 import logging
-from scrapling.core._types import Union, Callable, Optional, Dict
+from scrapling.core._types import Union, Callable, Optional, Dict, List
 
 from scrapling.engines.toolbelt import (
     Response,
@@ -16,8 +16,8 @@ from camoufox.sync_api import Camoufox
 class CamoufoxEngine:
     def __init__(
             self, headless: Union[bool, str] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
-            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False,
-            timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None,
+            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, humanize: Optional[Union[bool, float]] = True,
+            timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
             wait_selector_state: str = 'attached', adaptor_arguments: Dict = None
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
@@ -29,6 +29,8 @@ class CamoufoxEngine:
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
+        :param addons: List of Firefox addons to use. Must be paths to extracted addons.
+        :param humanize: Humanize the cursor movement. Takes either True, or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
         :param network_idle: Wait for the page to not do do any requests.
         :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
@@ -43,6 +45,8 @@ class CamoufoxEngine:
         self.block_webrtc = bool(block_webrtc)
         self.allow_webgl = bool(allow_webgl)
         self.network_idle = bool(network_idle)
+        self.addons = addons or []
+        self.humanize = humanize
         self.timeout = check_type_validity(timeout, [int, float], 30000)
         if callable(page_action):
             self.page_action = page_action
@@ -66,6 +70,8 @@ class CamoufoxEngine:
                 os=get_os_name(),
                 block_webrtc=self.block_webrtc,
                 allow_webgl=self.allow_webgl,
+                addons=self.addons,
+                humanize=self.humanize,
                 i_know_what_im_doing=True,  # To turn warnings off with user configurations
         ) as browser:
             page = browser.new_page()
