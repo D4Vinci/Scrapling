@@ -658,23 +658,28 @@ class Adaptor(SelectorsGeneration):
         else:
             return self.get_all_text(strip=True).json()
 
-    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True) -> 'List[str]':
+    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True,
+           clean_match: bool = False, case_sensitive: bool = False) -> 'List[str]':
         """Apply the given regex to the current text and return a list of strings with the matches.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
         """
-        return self.text.re(regex, replace_entities)
+        return self.text.re(regex, replace_entities, clean_match, case_sensitive)
 
-    def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True):
+    def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
+                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
         """Apply the given regex to text and return the first match if found, otherwise return the default value.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param default: The default value to be returned if there is no match
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
-
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
         """
-        return self.text.re_first(regex, default, replace_entities)
+        return self.text.re_first(regex, default, replace_entities, clean_match, case_sensitive)
 
     def find_similar(
             self,
@@ -905,29 +910,34 @@ class Adaptors(List[Adaptor]):
         ]
         return self.__class__(flatten(results))
 
-    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True) -> 'List[str]':
+    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True,
+           clean_match: bool = False, case_sensitive: bool = False) -> 'List[str]':
         """Call the ``.re()`` method for each element in this list and return
         their results flattened as List of TextHandler.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
         """
         results = [
-            n.text.re(regex, replace_entities) for n in self
+            n.text.re(regex, replace_entities, clean_match, case_sensitive) for n in self
         ]
         return flatten(results)
 
-    def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True):
+    def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
+                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
         """Call the ``.re_first()`` method for each element in this list and return
         the first result or the default value otherwise.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param default: The default value to be returned if there is no match
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
-
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
         """
         for n in self:
-            for result in n.re(regex, replace_entities):
+            for result in n.re(regex, replace_entities, clean_match, case_sensitive):
                 return result
         return default
 
