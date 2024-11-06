@@ -4,6 +4,7 @@ Functions related to generating headers and fingerprints generally
 
 import platform
 
+from scrapling.core.utils import cache
 from scrapling.core._types import Union, Dict
 
 from tldextract import extract
@@ -11,6 +12,7 @@ from browserforge.headers import HeaderGenerator, Browser
 from browserforge.fingerprints import FingerprintGenerator, Fingerprint
 
 
+@cache(None, typed=True)
 def generate_convincing_referer(url: str) -> str:
     """Takes the domain from the URL without the subdomain/suffix and make it look like you were searching google for this website
 
@@ -24,6 +26,7 @@ def generate_convincing_referer(url: str) -> str:
     return f'https://www.google.com/search?q={website_name}'
 
 
+@cache(None, typed=True)
 def get_os_name() -> Union[str, None]:
     """Get the current OS name in the same format needed for browserforge
 

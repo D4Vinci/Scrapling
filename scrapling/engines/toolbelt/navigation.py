@@ -6,6 +6,7 @@ import os
 import logging
 from urllib.parse import urlparse, urlencode
 
+from scrapling.core.utils import cache
 from scrapling.core._types import Union, Dict, Optional
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
@@ -62,6 +63,7 @@ def construct_cdp_url(cdp_url: str, query_params: Optional[Dict] = None) -> str:
         raise ValueError(f"Invalid CDP URL: {str(e)}")
 
 
+@cache(None, typed=True)
 def js_bypass_path(filename: str) -> str:
     """Takes the base filename of JS file inside the `bypasses` folder then return the full path of it
 
