@@ -551,9 +551,10 @@ class Adaptor(SelectorsGeneration):
         """
         # Attributes that are Python reserved words and can't be used directly
         # Ex: find_all('a', class="blah") -> find_all('a', class_="blah")
+        # https://www.w3schools.com/python/python_ref_keywords.asp
         whitelisted = {
-            'id_': 'id',
             'class_': 'class',
+            'for_': 'for',
         }
 
         if not args and not kwargs:
@@ -582,14 +583,17 @@ class Adaptor(SelectorsGeneration):
 
         if not all([(type(k) is str and type(v) is str) for k, v in kwargs.items()]):
             raise TypeError('Only string values are accepted for arguments')
-        attributes.update(kwargs)
+
+        for attribute_name, value in kwargs.items():
+            # Only replace names for kwargs, replacing them in dictionaries doesn't make sense
+            attribute_name = whitelisted.get(attribute_name, attribute_name)
+            attributes[attribute_name] = value
 
         # It's easier and faster to build a selector than traversing the tree
         tags = tags or ['']
         for tag in tags:
             selector = tag
             for key, value in attributes.items():
-                key = whitelisted.get(key, key)
                 value = value.replace('"', r'\"')  # Escape double quotes in user input
                 # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
                 selector += '[{}="{}"]'.format(key, value)
