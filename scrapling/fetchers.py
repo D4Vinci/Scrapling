@@ -87,7 +87,7 @@ class StealthyFetcher(BaseFetcher):
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
         :param humanize: Humanize the cursor movement. Takes either True, or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
-        :param network_idle: Wait for the page to not do do any requests.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
         :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
@@ -144,7 +144,7 @@ class PlayWrightFetcher(BaseFetcher):
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
-        :param network_idle: Wait for the page to not do do any requests.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
         :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
