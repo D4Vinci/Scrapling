@@ -87,11 +87,7 @@ class CamoufoxEngine:
             if self.extra_headers:
                 page.set_extra_http_headers(self.extra_headers)
 
-            if self.google_search:
-                res = page.goto(url, referer=generate_convincing_referer(url))
-            else:
-                res = page.goto(url)
-
+            res = page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
             page.wait_for_load_state(state="load")
             page.wait_for_load_state(state="domcontentloaded")
             if self.network_idle:
