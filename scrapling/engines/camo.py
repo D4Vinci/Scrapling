@@ -1,5 +1,5 @@
 import logging
-from scrapling.core._types import Union, Callable, Optional, Dict, List
+from scrapling.core._types import Union, Callable, Optional, Dict, List, Literal
 
 from scrapling.engines.toolbelt import (
     Response,
@@ -15,7 +15,7 @@ from camoufox.sync_api import Camoufox
 
 class CamoufoxEngine:
     def __init__(
-            self, headless: Union[bool, str] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
+            self, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, humanize: Optional[Union[bool, float]] = True,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
             wait_selector_state: str = 'attached', adaptor_arguments: Dict = None
