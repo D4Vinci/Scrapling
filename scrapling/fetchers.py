@@ -126,8 +126,7 @@ class PlayWrightFetcher(BaseFetcher):
             1) Patches the CDP runtime fingerprint.
             2) Mimics some of real browsers' properties by injects several JS files and using custom options.
             3) Using custom flags on launch to hide playwright even more and make it faster.
-            4) Sets the referer of every request as if this request came from Google's search of this URL's domain.
-            5) Generates real browser's headers of the same type and same user OS then append it to the request.
+            4) Generates real browser's headers of the same type and same user OS then append it to the request.
         - Real browsers by passing the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
         - NSTBrowser's docker browserless option by passing the CDP URL and enabling `nstbrowser_mode` option.
         > Note that these are the main options with PlayWright but it can be mixed together.
@@ -136,7 +135,7 @@ class PlayWrightFetcher(BaseFetcher):
             self, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
             useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
             page_action: Callable = do_nothing, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
-            hide_canvas: bool = True, disable_webgl: bool = False,
+            hide_canvas: bool = True, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
             stealth: bool = False,
             cdp_url: Optional[str] = None,
             nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
@@ -156,6 +155,8 @@ class PlayWrightFetcher(BaseFetcher):
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
+        :param extra_headers: A dictionary of extra headers to add to headers on the request. The referer set by the `google_search` argument overwrites the referer set here if used together.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
         :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
@@ -170,6 +171,8 @@ class PlayWrightFetcher(BaseFetcher):
             page_action=page_action,
             hide_canvas=hide_canvas,
             network_idle=network_idle,
+            google_search=google_search,
+            extra_headers=extra_headers,
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
             nstbrowser_mode=nstbrowser_mode,

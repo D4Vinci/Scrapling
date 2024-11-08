@@ -31,12 +31,14 @@ class PlaywrightEngine:
             cdp_url: Optional[str] = None,
             nstbrowser_mode: bool = False,
             nstbrowser_config: Optional[Dict] = None,
+            google_search: Optional[bool] = True,
+            extra_headers: Optional[Dict[str, str]] = None,
             adaptor_arguments: Dict = None
     ):
         """An engine that utilizes PlayWright library, check the `PlayWrightFetcher` class for more documentation.
 
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for speed boost. It depends but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends but it made requests ~25% faster in my tests for some websites.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
@@ -50,6 +52,8 @@ class PlaywrightEngine:
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
+        :param extra_headers: A dictionary of extra headers to add to headers on the request. The referer set by the `google_search` argument takes priority over the referer set here if used together.
         :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
@@ -59,6 +63,8 @@ class PlaywrightEngine:
         self.stealth = bool(stealth)
         self.hide_canvas = bool(hide_canvas)
         self.disable_webgl = bool(disable_webgl)
+        self.google_search = bool(google_search)
+        self.extra_headers = extra_headers or {}
         self.cdp_url = cdp_url
         self.useragent = useragent
         self.timeout = check_type_validity(timeout, [int, float], 30000)
@@ -168,6 +174,10 @@ class PlaywrightEngine:
             page = context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
+
+            if self.extra_headers:
+                page.set_extra_http_headers(self.extra_headers)
+
             if self.disable_resources:
                 page.route("**/*", intercept_route)
 
@@ -189,7 +199,7 @@ class PlaywrightEngine:
                 page.add_init_script(path=js_bypass_path('screen_props.js'))
                 page.add_init_script(path=js_bypass_path('playwright_fingerprint.js'))
 
-            res = page.goto(url, referer=generate_convincing_referer(url) if self.stealth else None)
+            res = page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
             page.wait_for_load_state(state="load")
             page.wait_for_load_state(state="domcontentloaded")
             if self.network_idle:
