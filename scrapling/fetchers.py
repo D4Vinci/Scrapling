@@ -72,7 +72,7 @@ class StealthyFetcher(BaseFetcher):
             self, url: str, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
-            wait_selector_state: str = 'attached',
+            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -80,7 +80,7 @@ class StealthyFetcher(BaseFetcher):
         :param headless: Run the browser in headless/hidden (default), 'virtual' screen mode, or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-        :param disable_resources: Drop requests of unnecessary resources for speed boost. It depends but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends but it made requests ~25% faster in my tests for some websites.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
@@ -92,6 +92,8 @@ class StealthyFetcher(BaseFetcher):
         :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
+        :param extra_headers: A dictionary of extra headers to add to headers on the request. The referer set by the `google_search` argument takes priority over the referer set here if used together.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
         engine = CamoufoxEngine(
@@ -107,6 +109,8 @@ class StealthyFetcher(BaseFetcher):
             network_idle=network_idle,
             wait_selector=wait_selector,
             wait_selector_state=wait_selector_state,
+            google_search=google_search,
+            extra_headers=extra_headers,
             adaptor_arguments=self.adaptor_arguments,
         )
         return engine.fetch(url)

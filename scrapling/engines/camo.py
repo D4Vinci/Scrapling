@@ -18,14 +18,14 @@ class CamoufoxEngine:
             self, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, humanize: Optional[Union[bool, float]] = True,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
-            wait_selector_state: str = 'attached', adaptor_arguments: Dict = None
+            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, adaptor_arguments: Dict = None
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
 
         :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-        :param disable_resources: Drop requests of unnecessary resources for speed boost. It depends but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends but it made requests ~25% faster in my tests for some websites.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
@@ -37,6 +37,8 @@ class CamoufoxEngine:
         :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
+        :param extra_headers: A dictionary of extra headers to add to headers on the request. The referer set by the `google_search` argument takes priority over the referer set here if used together.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
         self.headless = headless
@@ -45,6 +47,8 @@ class CamoufoxEngine:
         self.block_webrtc = bool(block_webrtc)
         self.allow_webgl = bool(allow_webgl)
         self.network_idle = bool(network_idle)
+        self.google_search = bool(google_search)
+        self.extra_headers = extra_headers or {}
         self.addons = addons or []
         self.humanize = humanize
         self.timeout = check_type_validity(timeout, [int, float], 30000)
@@ -80,7 +84,14 @@ class CamoufoxEngine:
             if self.disable_resources:
                 page.route("**/*", intercept_route)
 
-            res = page.goto(url, referer=generate_convincing_referer(url))
+            if self.extra_headers:
+                page.set_extra_http_headers(self.extra_headers)
+
+            if self.google_search:
+                res = page.goto(url, referer=generate_convincing_referer(url))
+            else:
+                res = page.goto(url)
+
             page.wait_for_load_state(state="load")
             page.wait_for_load_state(state="domcontentloaded")
             if self.network_idle:
