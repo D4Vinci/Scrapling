@@ -1,13 +1,14 @@
 import os
+import re
+import inspect
 from difflib import SequenceMatcher
 
 from scrapling.core.translator import HTMLTranslator
 from scrapling.core.mixins import SelectorsGeneration
 from scrapling.core.custom_types import TextHandler, TextHandlers, AttributesHandler
 from scrapling.core.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
-from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, _is_iterable, html_forbidden
+from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden
 from scrapling.core._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex, Iterable
-
 from lxml import etree, html
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
 
@@ -542,10 +543,10 @@ class Adaptor(SelectorsGeneration):
         except (SelectorError, SelectorSyntaxError, etree.XPathError, etree.XPathEvalError):
             raise SelectorSyntaxError(f"Invalid XPath selector: {selector}")
 
-    def find_all(self, *args, **kwargs) -> Union['Adaptors[Adaptor]', List]:
-        """Find elements by their tag name and filter them based on attributes for ease..
+    def find_all(self, *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]], **kwargs: str) -> Union['Adaptors[Adaptor]', List]:
+        """Find elements by filters of your creations for ease..
 
-        :param args: Tag name(s), an iterable of tag names, or a dictionary of elements' attributes. Leave empty for selecting all.
+        :param args: Tag name(s), an iterable of tag names, regex patterns, function, or a dictionary of elements' attributes. Leave empty for selecting all.
         :param kwargs: The attributes you want to filter elements based on it.
         :return: The `Adaptors` object of the elements or empty list
         """
@@ -560,9 +561,18 @@ class Adaptor(SelectorsGeneration):
         if not args and not kwargs:
             raise TypeError('You have to pass something to search with, like tag name(s), tag attributes, or both.')
 
-        tags = set()
-        selectors = []
         attributes = dict()
+        tags, patterns = set(), set()
+        results, functions, selectors = [], [], []
+
+        def _search_tree(element: Adaptor, filter_function: Callable) -> None:
+            """Collect element if it fulfills passed function otherwise, traverse the children tree and iterate"""
+            if filter_function(element):
+                results.append(element)
+
+            for branch in element.children:
+                _search_tree(branch, filter_function)
+
         # Brace yourself for a wonderful journey!
         for arg in args:
             if type(arg) is str:
@@ -577,6 +587,15 @@ class Adaptor(SelectorsGeneration):
                 if not all([(type(k) is str and type(v) is str) for k, v in arg.items()]):
                     raise TypeError('Nested dictionaries are not accepted, only string keys and string values are accepted')
                 attributes.update(arg)
+
+            elif type(arg) is re.Pattern:
+                patterns.add(arg)
+
+            elif callable(arg):
+                if len(inspect.signature(arg).parameters) > 0:
+                    functions.append(arg)
+                else:
+                    raise TypeError("Callable filter function must have at least one argument to take `Adaptor` objects.")
 
             else:
                 raise TypeError(f'Argument with type "{type(arg)}" is not accepted, please read the docs.')
@@ -597,14 +616,32 @@ class Adaptor(SelectorsGeneration):
                 value = value.replace('"', r'\"')  # Escape double quotes in user input
                 # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
                 selector += '[{}="{}"]'.format(key, value)
-            selectors.append(selector)
+            if selector:
+                selectors.append(selector)
 
-        return self.css(', '.join(selectors))
+        if selectors:
+            results = self.css(', '.join(selectors))
+            if results:
+                # From the results, get the ones that fulfill passed regex patterns
+                for pattern in patterns:
+                    results = results.filter(lambda e: e.text.re(pattern, check_match=True))
 
-    def find(self, *args, **kwargs) -> Union['Adaptor', None]:
-        """Find elements by their tag name and filter them based on attributes for ease then return the first result. Otherwise return `None`.
+                # From the results, get the ones that fulfill passed functions
+                for function in functions:
+                    results = results.filter(function)
+        else:
+            for pattern in patterns:
+                results.extend(self.find_by_regex(pattern, first_match=False))
 
-        :param args: Tag name(s), an iterable of tag names, or a dictionary of elements' attributes. Leave empty for selecting all.
+            for function in functions:
+                _search_tree(self, function)
+
+        return self.__convert_results(results)
+
+    def find(self, *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]], **kwargs: str) -> Union['Adaptor', None]:
+        """Find elements by filters of your creations for ease then return the first result. Otherwise return `None`.
+
+        :param args: Tag name(s), an iterable of tag names, regex patterns, function, or a dictionary of elements' attributes. Leave empty for selecting all.
         :param kwargs: The attributes you want to filter elements based on it.
         :return: The `Adaptor` object of the element or `None` if the result didn't match
         """
@@ -882,10 +919,10 @@ class Adaptor(SelectorsGeneration):
         return self.__convert_results(results)
 
     def find_by_regex(
-            self, query: str, first_match: bool = True, case_sensitive: bool = False, clean_match: bool = True
+            self, query: Union[str, Pattern[str]], first_match: bool = True, case_sensitive: bool = False, clean_match: bool = True
     ) -> Union['Adaptors[Adaptor]', 'Adaptor', List]:
         """Find elements that its text content matches the input regex pattern.
-        :param query: Regex query to match
+        :param query: Regex query/pattern to match
         :param first_match: Return first element that matches conditions, enabled by default
         :param case_sensitive: if enabled, letters case will be taken into consideration in the regex
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
