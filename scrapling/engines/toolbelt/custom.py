@@ -27,10 +27,11 @@ class Response:
     @property
     def adaptor(self) -> Union[Adaptor, None]:
         """Generate Adaptor instance from this response if possible, otherwise return None"""
+        automatch_domain = self.adaptor_arguments.pop('automatch_domain', None)
         if self.content:
-            return Adaptor(body=self.content, url=self.url, encoding=self.encoding, **self.adaptor_arguments)
+            return Adaptor(body=self.content, url=automatch_domain or self.url, encoding=self.encoding, **self.adaptor_arguments)
         elif self.text:
-            return Adaptor(text=self.text, url=self.url, encoding=self.encoding, **self.adaptor_arguments)
+            return Adaptor(text=self.text, url=automatch_domain or self.url, encoding=self.encoding, **self.adaptor_arguments)
         return None
 
     def __repr__(self):
@@ -41,6 +42,7 @@ class BaseFetcher:
     def __init__(
             self, huge_tree: bool = True, keep_comments: Optional[bool] = False, auto_match: Optional[bool] = True,
             storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None, debug: Optional[bool] = True,
+            automatch_domain: Optional[str] = None,
     ):
         """Arguments below are the same from the Adaptor class so you can pass them directly, the rest of Adaptor's arguments
         are detected and passed automatically from the Fetcher based on the response for accessibility.
@@ -53,6 +55,8 @@ class BaseFetcher:
         :param storage: The storage class to be passed for auto-matching functionalities, see ``Docs`` for more info.
         :param storage_args: A dictionary of ``argument->value`` pairs to be passed for the storage class.
             If empty, default values will be used.
+        :param automatch_domain: For cases where you want to automatch selectors across different websites as if they were on the same website, use this argument to unify them.
+            Otherwise, the domain of the request is used by default.
         :param debug: Enable debug mode
         """
         # Adaptor class parameters
@@ -67,6 +71,11 @@ class BaseFetcher:
         )
         # If the user used fetchers first, then configure the logger from here instead of the `Adaptor` class
         setup_basic_logging(level='debug' if debug else 'info')
+        if automatch_domain:
+            if type(automatch_domain) is not str:
+                logging.warning('[Ignored] The argument "automatch_domain" must be of string type')
+            else:
+                self.adaptor_arguments.update({'automatch_domain': automatch_domain})
 
 
 def check_if_engine_usable(engine: Callable) -> Union[Callable, None]:
