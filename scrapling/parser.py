@@ -633,8 +633,9 @@ class Adaptor(SelectorsGeneration):
             for pattern in patterns:
                 results.extend(self.find_by_regex(pattern, first_match=False))
 
-            for function in functions:
-                _search_tree(self, function)
+            for result in (results or [self]):
+                for function in functions:
+                    _search_tree(result, function)
 
         return self.__convert_results(results)
 
