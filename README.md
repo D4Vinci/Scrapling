@@ -1,30 +1,77 @@
-# 🕷️ ScrapLing: Lightning-Fast, Adaptive Web Scraping for Python
+# 🕷️ Scrapling: Undetectable, Lightning-Fast, Adaptive Web Scraping for Python
 [![Tests](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg)](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml) [![PyPI version](https://badge.fury.io/py/Scrapling.svg)](https://badge.fury.io/py/Scrapling) [![Supported Python versions](https://img.shields.io/pypi/pyversions/scrapling.svg)](https://pypi.org/project/scrapling/) [![PyPI Downloads](https://static.pepy.tech/badge/scrapling)](https://pepy.tech/project/scrapling)
 
-Dealing with failing web scrapers due to website changes? Meet Scrapling.
+Dealing with failing web scrapers due to anti-bot protections or website changes? Meet Scrapling.
 
 Scrapling is a high-performance, intelligent web scraping library for Python that automatically adapts to website changes while significantly outperforming popular alternatives. Whether you're a beginner or an expert, Scrapling provides powerful features while maintaining simplicity.
 
 ```python
-from scrapling import Adaptor
-
-# Scrape data that survives website changes
-page = Adaptor(html, auto_match=True)
-products = page.css('.product', auto_save=True)
-# Later, even if selectors change:
-products = page.css('.product', auto_match=True)  # Still finds them!
+>> from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
+# Fetch websites' source under the radar!
+>> fetcher = StealthyFetcher().fetch('https://example.com', headless=True, disable_resources=True)
+>> print(fetcher.status)
+200
+>> page = fetcher.adaptor
+>> products = page.css('.product', auto_save=True)  # Scrape data that survives website design changes!
+>> # Later, if the website structure changes, pass `auto_match=True`
+>> products = page.css('.product', auto_match=True)  # and Scrapling still finds them!
 ```
+
+## Table of content
+  * [Key Features](#key-features)
+    * [Fetch websites as you prefer](#fetch-websites-as-you-prefer)
+    * [Adaptive Scraping](#adaptive-scraping)
+    * [Performance](#performance)
+    * [Developing Experience](#developing-experience)
+  * [Getting Started](#getting-started)
+  * [Parsing Performance](#parsing-performance)
+    * [Text Extraction Speed Test (5000 nested elements).](#text-extraction-speed-test-5000-nested-elements)
+    * [Extraction By Text Speed Test](#extraction-by-text-speed-test)
+  * [Installation](#installation)
+  * [Fetching Websites Features](#fetching-websites-features)
+    * [Fetcher](#fetcher)
+    * [StealthyFetcher](#stealthyfetcher)
+    * [PlayWrightFetcher](#playwrightfetcher)
+  * [Advanced Parsing Features](#advanced-parsing-features)
+    * [Smart Navigation](#smart-navigation)
+    * [Content-based Selection & Finding Similar Elements](#content-based-selection--finding-similar-elements)
+    * [Handling Structural Changes](#handling-structural-changes)
+      * [Real World Scenario](#real-world-scenario)
+    * [Find elements by filters](#find-elements-by-filters)
+    * [Is That All?](#is-that-all)
+  * [More Advanced Usage](#more-advanced-usage)
+  * [⚡ Enlightening Questions and FAQs](#-enlightening-questions-and-faqs)
+    * [How does auto-matching work?](#how-does-auto-matching-work)
+    * [How does the auto-matching work if I didn't pass a URL while initializing the Adaptor object?](#how-does-the-auto-matching-work-if-i-didnt-pass-a-url-while-initializing-the-adaptor-object)
+    * [If all things about an element can change or get removed, what are the unique properties to be saved?](#if-all-things-about-an-element-can-change-or-get-removed-what-are-the-unique-properties-to-be-saved)
+    * [I have enabled the `auto_save`/`auto_match` parameter while selecting and it got completely ignored with a warning message](#i-have-enabled-the-auto_saveauto_match-parameter-while-selecting-and-it-got-completely-ignored-with-a-warning-message)
+    * [I have done everything as the docs but the auto-matching didn't return anything, what's wrong?](#i-have-done-everything-as-the-docs-but-the-auto-matching-didnt-return-anything-whats-wrong)
+    * [Can Scrapling replace code built on top of BeautifulSoup4?](#can-scrapling-replace-code-built-on-top-of-beautifulsoup4)
+    * [Can Scrapling replace code built on top of AutoScraper?](#can-scrapling-replace-code-built-on-top-of-autoscraper)
+    * [Is Scrapling thread-safe?](#is-scrapling-thread-safe)
+  * [Sponsors](#sponsors)
+  * [Contributing](#contributing)
+  * [Disclaimer for Scrapling Project](#disclaimer-for-scrapling-project)
+  * [License](#license)
+  * [Acknowledgments](#acknowledgments)
+  * [Thanks and References](#thanks-and-references)
+  * [Known Issues](#known-issues)
 
 ## Key Features
 
+### Fetch websites as you prefer
+- **HTTP requests**: Stealthy and fast HTTP requests with `Fetcher`
+- **Stealthy fetcher**: Annoying anti-bot protection? No problem! Scrapling can bypass almost all of them with `StealthyFetcher` with default configuration!
+- **Your preferred browser**: Use your real browser with CDP, [NSTbrowser](https://app.nstbrowser.io/r/1vO5e5)'s browserless, PlayWright with stealth mode, or even vanilla PlayWright -  All is possible with `PlayWrightFetcher`!
+
 ### Adaptive Scraping
 - 🔄 **Smart Element Tracking**: Locate previously identified elements after website structure changes, using an intelligent similarity system and integrated storage.
-- 🎯 **Flexible Querying**: Use CSS selectors, XPath, text search, or regex - chain them however you want!
+- 🎯 **Flexible Querying**: Use CSS selectors, XPath, Elements filters, text search, or regex - chain them however you want!
 - 🔍 **Find Similar Elements**: Automatically locate elements similar to the element you want on the page (Ex: other products like the product you found on the page).
-- 🧠 **Smart Content Scraping**: Extract data from multiple websites without specific selectors using its powerful features.
+- 🧠 **Smart Content Scraping**: Extract data from multiple websites without specific selectors using Scrapling powerful features.
 
 ### Performance
-- 🚀 **Lightning Fast**: Built from the ground up with performance in mind, outperforming most popular Python scraping libraries (outperforming BeautifulSoup by up to 237x in our tests).
+- 🚀 **Lightning Fast**: Built from the ground up with performance in mind, outperforming most popular Python scraping libraries (outperforming BeautifulSoup in parsing by up to 620x in our tests).
 - 🔋 **Memory Efficient**: Optimized data structures for minimal memory footprint.
 - ⚡ **Fast JSON serialization**: 10x faster JSON serialization than the standard json library with more options.
 
@@ -32,23 +79,18 @@ products = page.css('.product', auto_match=True)  # Still finds them!
 - 🛠️ **Powerful Navigation API**: Traverse the DOM tree easily in all directions and get the info you want (parent, ancestors, sibling, children, next/previous element, and more).
 - 🧬 **Rich Text Processing**: All strings have built-in methods for regex matching, cleaning, and more. All elements' attributes are read-only dictionaries that are faster than standard dictionaries with added methods.
 - 📝 **Automatic Selector Generation**: Create robust CSS/XPath selectors for any element.
-- 🔌 **Scrapy-Compatible API**: Familiar methods and similar pseudo-elements for Scrapy users.
-- 📘 **Type hints**: Complete type coverage for better IDE support and fewer bugs.
+- 🔌 **API Similar to Scrapy/BeautifulSoup**: Familiar methods and similar pseudo-elements for Scrapy and BeautifulSoup users.
+- 📘 **Type hints and test coverage**: Complete type coverage and almost full test coverage for better IDE support and fewer bugs, respectively.
 
 ## Getting Started
 
-Let's walk through a basic example that demonstrates a small group of Scrapling's core features:
-
 ```python
-import requests
-from scrapling import Adaptor
+from scrapling import Fetcher
 
-# Fetch a web page
-url = 'https://quotes.toscrape.com/'
-response = requests.get(url)
+fetcher = Fetcher(auto_match=False)
 
-# Create an Adaptor instance
-page = Adaptor(response.text, url=url)
+# Fetch a web page and create an Adaptor instance
+page = fetcher.get('https://quotes.toscrape.com/', stealthy_headers=True).adaptor
 # Get all strings in the full page
 page.get_all_text(ignore_tags=('script', 'style'))
 
@@ -56,10 +98,17 @@ page.get_all_text(ignore_tags=('script', 'style'))
 quotes = page.css('.quote .text::text')  # CSS selector
 quotes = page.xpath('//span[@class="text"]/text()')  # XPath
 quotes = page.css('.quote').css('.text::text')  # Chained selectors
-quotes = [element.text for element in page.css('.quote').css('.text')]  # Slower than bulk query above
+quotes = [element.text for element in page.css('.quote .text')]  # Slower than bulk query above
 
 # Get the first quote element
-quote = page.css_first('.quote')  # or page.css('.quote').first or [0] or .get()
+quote = page.css_first('.quote')  # / page.css('.quote').first / page.css('.quote')[0]
+
+# Tired of selectors? Use find_all/find
+quotes = page.find_all('div', {'class': 'quote'})
+# Same as
+quotes = page.find_all('div', class_='quote')
+quotes = page.find_all(['div'], class_='quote')
+quotes = page.find_all(class_='quote')  # and so on...
 
 # Working with elements
 quote.html_content  # Inner HTML
@@ -67,10 +116,9 @@ quote.prettify()  # Prettified version of Inner HTML
 quote.attrib  # Element attributes
 quote.path  # DOM path to element (List)
 ```
-To keep it simple, all methods can be chained on top of each other as long as you are chaining methods that return an element (It's called an `Adaptor` object) or a List of Adaptors (It's called `Adaptors` object)
+To keep it simple, all methods can be chained on top of each other!
 
-
-## Performance
+## Parsing Performance
 
 Scrapling isn't just powerful - it's also blazing fast. Scrapling implements many best practices, design patterns, and numerous optimizations to save fractions of seconds. All of that while focusing exclusively on parsing HTML documents.
 Here are benchmarks comparing Scrapling to popular Python libraries in two tests. 
@@ -146,7 +194,101 @@ playwright install chromium
 python -m browserforge update
 ```
 
-## Advanced Features
+## Fetching Websites Features
+All fetcher-type classes are imported with the same way
+```python
+from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
+```
+And all of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `storage`, `storage_args`, and `debug` which are the same ones you give to `Adaptor` class.
+> [!NOTE]
+> The `auto_match` argument is enabled by default which is the one you should care about the most as you will see later.
+### Fetcher
+This class is built on top of [httpx](https://www.python-httpx.org/) with some flavors, here you can do `GET`, `POST`, `PUT`, and `DELETE` requests.
+
+For all methods, you have `stealth_headers` which makes `Fetcher` create and use real browser's headers then create a referer header as if this request came from Google's search of this URL's domain. It's enabled by default.
+```python
+>> page = Fetcher().get('https://httpbin.org/get', stealth_headers=True, follow_redirects=True)
+>> page = Fetcher().post('https://httpbin.org/post', data={'key': 'value'})
+>> page = Fetcher().put('https://httpbin.org/put', data={'key': 'value'})
+>> page = Fetcher().delete('https://httpbin.org/delete')
+```
+### StealthyFetcher
+This class is built on top of [Camoufox](https://github.com/daijro/camoufox) which is by default bypasses most of anti-bot protections. Scrapling adds extra layers of flavors and configurations to increase performance and undetectability even further.
+```python
+>> page = StealthyFetcher().fetch('https://www.browserscan.net/bot-detection')  # Running headless by default
+>> page.status == 200
+True
+```
+<details><summary><strong>For the sake of simplicity, expand this for the complete list of arguments</strong></summary>
+
+|      Argument       | Description                                                                                                                                                                                                                                                                                                                                                                                                     | Optional |
+|:-------------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
+|         url         | Target url                                                                                                                                                                                                                                                                                                                                                                                                      |    ❌     |
+|      headless       | Pass `True` to run the browser in headless/hidden (**default**), `virtual` to run it in virtual screen mode, or `False` for headful/visible mode. The `virtual` mode requires having `xvfb` installed.                                                                                                                                                                                                          |    ✔️    |
+|    block_images     | Prevent the loading of images through Firefox preferences. _This can help save your proxy usage but be careful with this option as it makes some websites never finish loading._                                                                                                                                                                                                                                |    ✔️    |
+|  disable_resources  | Drop requests of unnecessary resources for a speed boost. It depends but it made requests ~25% faster in my tests for some websites.<br/>Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`. _This can help save your proxy usage but be careful with this option as it makes some websites never finish loading._ |    ✔️    |
+|    google_search    | Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.                                                                                                                                                                                                                                                                    |    ✔️    |
+|    extra_headers    | A dictionary of extra headers to add with the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._                                                                                                                                                                                                                                             |    ✔️    |
+|    block_webrtc     | Blocks WebRTC entirely.                                                                                                                                                                                                                                                                                                                                                                                         |    ✔️    |
+|     page_action     | Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.                                                                                                                                                                                                                                                                                            |    ✔️    |
+|       addons        | List of Firefox addons to use. **Must be paths to extracted addons.**                                                                                                                                                                                                                                                                                                                                           |    ✔️    |
+|      humanize       | Humanize the cursor movement. Takes either True, or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.                                                                                                                                                                                                                                 |    ✔️    |
+|     allow_webgl     | Whether to allow WebGL. To prevent leaks, only use this for special cases.                                                                                                                                                                                                                                                                                                                                      |    ✔️    |
+|    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                                                                                                                                                                                                   |    ✔️    |
+|       timeout       | The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.                                                                                                                                                                                                                                                                                                         |    ✔️    |
+|    wait_selector    | Wait for a specific css selector to be in a specific state.                                                                                                                                                                                                                                                                                                                                                     |    ✔️    |
+| wait_selector_state | The state to wait for the selector given with `wait_selector`. _Default state is `attached`._                                                                                                                                                                                                                                                                                                                   |    ✔️    |
+
+</details>
+
+This list isn't final so expect a lot more additions and flexibility to be added in the next versions!
+
+### PlayWrightFetcher
+This class is built on top of [Playwright](https://playwright.dev/python/) which currently provides 4 main run options but they can be mixed together as you want.
+```python
+>> page = PlayWrightFetcher().fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # Vanilla Playwright option
+>> page.adaptor.css_first("#search a::attr(href)")
+'https://github.com/D4Vinci/Scrapling'
+```
+Using this Fetcher class, you can do requests with:
+  1) Vanilla Playwright without any modifications other than the ones you chose.
+  2) Stealthy Playwright with the stealth mode I wrote for it. It's still a WIP but it bypasses many online tests like [Sannysoft's](https://bot.sannysoft.com/).</br> Some of the things this fetcher's stealth mode do includes:
+     * Patching the CDP runtime fingerprint.
+     * Mimics some of real browsers' properties by injects several JS files and using custom options.
+     * Using custom flags on launch to hide playwright even more and make it faster.
+     * Generates real browser's headers of the same type and same user OS then append it to the request's headers.
+  3) Real browsers by passing the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
+  4) [NSTBrowser](https://app.nstbrowser.io/r/1vO5e5)'s [docker browserless](https://hub.docker.com/r/nstbrowser/browserless) option by passing the CDP URL and enabling `nstbrowser_mode` option.
+
+Add that to a lot of controlling/hiding options as you will see in the arguments list below.
+
+<details><summary><strong>Expand this for the complete list of arguments</strong></summary>
+
+|      Argument       | Description                                                                                                                                                                                                                                                                                                                                                                                                     | Optional |
+|:-------------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
+|         url         | Target url                                                                                                                                                                                                                                                                                                                                                                                                      |    ❌     |
+|      headless       | Pass `True` to run the browser in headless/hidden (**default**), or `False` for headful/visible mode.                                                                                                                                                                                                                                                                                                           |    ✔️    |
+|  disable_resources  | Drop requests of unnecessary resources for a speed boost. It depends but it made requests ~25% faster in my tests for some websites.<br/>Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`. _This can help save your proxy usage but be careful with this option as it makes some websites never finish loading._ |    ✔️    |
+|      useragent      | Pass a useragent string to be used. **Otherwise the fetcher will generate a real Useragent of the same browser and use it.**                                                                                                                                                                                                                                                                                    |    ✔️    |
+|    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                                                                                                                                                                                                   |    ✔️    |
+|       timeout       | The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.                                                                                                                                                                                                                                                                                                         |    ✔️    |
+|     page_action     | Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.                                                                                                                                                                                                                                                                                            |    ✔️    |
+|    wait_selector    | Wait for a specific css selector to be in a specific state.                                                                                                                                                                                                                                                                                                                                                     |    ✔️    |
+| wait_selector_state | The state to wait for the selector given with `wait_selector`. _Default state is `attached`._                                                                                                                                                                                                                                                                                                                   |    ✔️    |
+|    google_search    | Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.                                                                                                                                                                                                                                                                    |    ✔️    |
+|    extra_headers    | A dictionary of extra headers to add with the request. The referer set by the `google_search` argument takes priority over the referer set here if used together.                                                                                                                                                                                                                                               |    ✔️    |
+|     hide_canvas     | Add random noise to canvas operations to prevent fingerprinting.                                                                                                                                                                                                                                                                                                                                                |    ✔️    |
+|    disable_webgl    | Disables WebGL and WebGL 2.0 support entirely.                                                                                                                                                                                                                                                                                                                                                                  |    ✔️    |
+|       stealth       | Enables stealth mode, always check the documentation to see what stealth mode does currently.                                                                                                                                                                                                                                                                                                                   |    ✔️    |
+|       cdp_url       | Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.                                                                                                                                                                                                                                                                                           |    ✔️    |
+|   nstbrowser_mode   | Enables NSTBrowser mode, **it have to be used with `cdp_url` argument or it will get completely ignored.**                                                                                                                                                                                                                                                                                                      |    ✔️    |
+|  nstbrowser_config  | The config you want to send with requests to the NSTBrowser. _If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config._                                                                                                                                                                                                                                                        |    ✔️    |
+
+</details>
+
+This list isn't final so expect a lot more additions and flexibility to be added in the next versions!
+
+## Advanced Parsing Features
 ### Smart Navigation
 ```python
 >>> quote.tag
@@ -166,14 +308,13 @@ python -m browserforge update
 >>> quote.siblings
 [<data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
  <data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
- <data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
 ...]
 
 >>> quote.next  # gets the next element, the same logic applies to `quote.previous`
 <data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>
 
->>> quote.children.css(".author::text")
-['Albert Einstein']
+>>> quote.children.css_first(".author::text")
+'Albert Einstein'
 
 >>> quote.has_class('quote')
 True
@@ -182,7 +323,7 @@ True
 >>> quote.css_selector
 'body > div > div:nth-of-type(2) > div > div'
 
-# Test these selectors on your favorite browser or reuse them again in the library in other methods!
+# Test these selectors on your favorite browser or reuse them again in the library's methods!
 >>> quote.xpath_selector
 '//body/div/div[2]/div/div'
 ```
@@ -200,9 +341,7 @@ You can search for a specific ancestor of an element that satisfies a function, 
 ### Content-based Selection & Finding Similar Elements
 You can select elements by their text content in multiple ways, here's a full example on another website:
 ```python
->>> response = requests.get('https://books.toscrape.com/index.html')
-
->>> page = Adaptor(response.text, url=response.url)
+>>> page = Fetcher().get('https://books.toscrape.com/index.html').adaptor
 
 >>> page.find_by_text('Tipping the Velvet')  # Find the first element that its text fully matches this text
 <data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>
@@ -256,8 +395,6 @@ To increase the complexity a little bit, let's say we want to get all books' dat
 The [documentation](https://github.com/D4Vinci/Scrapling/tree/main/docs/Examples) will provide more advanced examples.
 
 ### Handling Structural Changes
-> Because [the internet archive](https://web.archive.org/) is down at the time of writing this, I can't use real websites as examples even though I tested that before (I mean browsing an old version of a website and then counting the current version of the website as structural changes)
-
 Let's say you are scraping a page with a structure like this:
 ```html
 <div class="container">
@@ -301,30 +438,136 @@ When website owners implement structural changes like
 The selector will no longer function and your code needs maintenance. That's where Scrapling auto-matching feature comes into play.
 
 ```python
+from scrapling import Adaptor
 # Before the change
-page = Adaptor(page_source, url='example.com', auto_match=True)
+page = Adaptor(page_source, url='example.com')
 element = page.css('#p1' auto_save=True)
 if not element:  # One day website changes?
-    element = page.css('#p1', auto_match=True)  # Still finds it!
+    element = page.css('#p1', auto_match=True)  # Scrapling still finds it!
 # the rest of the code...
 ```
 > How does the auto-matching work? Check the [FAQs](#-enlightening-questions-and-faqs) section for that and other possible issues while auto-matching.
 
+#### Real World Scenario
+Let's use a real website as an example and use one of the fetchers to fetch its source. To do this we need to find a website that will change its design/structure soon and take a copy of its source then wait for the website to do the change. Of course, that's nearly impossible to know unless I know website's owner but that will make it a staged test haha.
+
+To solve this issue, I will use [The Web Archive](https://archive.org/)'s [Wayback Machine](https://web.archive.org/). Here is a copy of [StackOverFlow's website in 2010](https://web.archive.org/web/20100102003420/http://stackoverflow.com/), pretty old huh?</br>Let's test if the automatch feature can extract the same button in the old design from 2010 and the current design using the same selector :)
+
+If I want to extract the Questions button from the old design I can use a selector like this `#hmenus > div:nth-child(1) > ul > li:nth-child(1) > a` this selector is too specific because it was generated by Google Chrome.
+Now let's test the same selector in both versions
+```python
+>> from scrapling import Fetcher
+>> selector = '#hmenus > div:nth-child(1) > ul > li:nth-child(1) > a'
+>> old_url = "https://web.archive.org/web/20100102003420/http://stackoverflow.com/"
+>> new_url = "https://stackoverflow.com/"
+>> 
+>> page = Fetcher(automatch_domain='stackoverflow.com').get(old_url, timeout=30).adaptor
+>> element1 = page.css_first(selector, auto_save=True)
+>> 
+>> # Same selector but used in the updated website
+>> page = Fetcher(automatch_domain="stackoverflow.com").get(new_url).adaptor
+>> element2 = page.css_first(selector, auto_match=True)
+>> 
+>> if element1.text == element2.text:
+...    print('Scrapling found the same element in the old design and the new design!')
+'Scrapling found the same element in the old design and the new design!'
+```
+Note that I used a new argument called `automatch_domain`, this because for Scrapling these are two different URLs not the website so it isolates their data. To tell Scrapling they are the same website, we the pass the domain we want to use for saving auto-match data for them both so Scrapling doesn't isolate them.
+
+In real world scenario, the code will be the same expect it will use the same URL for both requests so you won't need to use `automatch_domain` argument. This is the closest example I can give to real world cases so I hope it didn't confuse you :)
+
 **Notes:**
-1. Passing the `auto_save` argument without setting `auto_match` to `True` while initializing the Adaptor object will only result in ignoring the `auto_save` argument value and the following warning message
+1. For the two examples above I used one time the `Adaptor` class and the second time the `Fetcher` class just to show you that you can create the `Adaptor` object by yourself if you have the source or fetch the source using any `Fetcher` class then it will create the `Adaptor` object for you on the `.adaptor` property.
+2. Passing the `auto_save` argument with the `auto_match` argument set to `False` while initializing the Adaptor/Fetcher object will only result in ignoring the `auto_save` argument value and the following warning message
     ```text
     Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.
     ```
     This behavior is purely for performance reasons so the database gets created/connected only when you are planning to use the auto-matching features. Same case with the `auto_match` argument.
 
-2. The `auto_match` parameter works only for `Adaptor` instances not `Adaptors` so if you do something like this you will get an error
+3. The `auto_match` parameter works only for `Adaptor` instances not `Adaptors` so if you do something like this you will get an error
     ```python
     page.css('body').css('#p1', auto_match=True)
     ```
     because you can't auto-match a whole list, you have to be specific and do something like
     ```python
-    page.css('body')[0].css('#p1', auto_match=True)
+    page.css_first('body').css('#p1', auto_match=True)
     ```
+
+### Find elements by filters
+Inspired by BeautifulSoup's `find_all` function you can find elements by using `find_all`/`find` methods. Both methods can take multiple types of filters and returns all elements in the pages that all these filters apply to.
+
+* To be more specific:
+  * Any string passed is considered a tag name 
+  * Any iterable passed like List/Tuple/Set is considered an iterable of tag names.
+  * Any dictionary is considered a mapping of HTML element(s) attributes name and attributes values.
+  * Any regex patterns passed are used as filters
+  * Any functions passed are used as filters
+  * Any keyword argument passed is considered as a HTML element attribute with its value.
+
+So the way it works is after collecting all passed arguments and keywords, each filter passes its results to the following filter in a waterfall-like filtering system.
+<br/>It filters all elements in the current page/element in the following order:
+
+1. All elements with the passed tag name(s).
+2. All elements that matches all passed attribute(s).
+3. All elements that matches all passed regex patterns.
+4. All elements that fulfills all passed function(s).
+
+Note: The filtering process always starts from the first filter it finds in the filtering order above so if no tag name(s) are passed but attributes passed, the process starts from that layer and so one. **But the order in which you pass the arguments doesn't matter.**
+
+Examples to clear any confusion :)
+
+```python
+>> from scrapling import Fetcher
+>> page = Fetcher().get('https://quotes.toscrape.com/').adaptor
+# Find all elements with tag name `div`.
+>> page.find_all('div')
+[<data='<div class="container"> <div class="row...' parent='<body> <div class="container"> <div clas...'>,
+ <data='<div class="row header-box"> <div class=...' parent='<div class="container"> <div class="row...'>,
+...]
+
+# Find all div elements with class that equals `quote`.
+>> page.find_all('div', class_='quote')
+[<data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
+ <data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
+...]
+
+# Same as above.
+>> page.find_all('div', {'class': 'quote'})
+[<data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
+ <data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
+...]
+
+# Find all elements with class that equals `quote`.
+>> page.find_all({'class': 'quote'})
+[<data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
+ <data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
+...]
+
+# Find all div elements with class that equals `quote`, and contains the element `.text` which contains the word 'world' in its content.
+>> page.find_all('div', {'class': 'quote'}, lambda e: "world" in e.css_first('.text::text'))
+[<data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>]
+
+# Find all elements that contains the word 'world' in its content.
+>> page.find_all(lambda e: "world" in e.text)
+[<data='<span class="text" itemprop="text">“The...' parent='<div class="quote" itemscope itemtype="h...'>,
+ <data='<a class="tag" href="/tag/world/page/1/"...' parent='<div class="tags"> Tags: <meta class="ke...'>]
+
+# Find all span elements that matches the given regex
+>> page.find_all('span', re.compile(r'world'))
+[<data='<span class="text" itemprop="text">“The...' parent='<div class="quote" itemscope itemtype="h...'>]
+
+# Find all div and span elements with class 'quote' (No span elements like that so only div returned)
+>> page.find_all(['div', 'span'], {'class': 'quote'})
+[<data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
+ <data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>,
+...]
+
+# Mix things up
+>> page.find_all({'itemtype':"http://schema.org/CreativeWork"}, 'div').css('.author::text')
+['Albert Einstein',
+ 'J.K. Rowling',
+...]
+```
 
 ### Is That All?
 Here's what else you can do with Scrapling:
@@ -355,11 +598,36 @@ Here's what else you can do with Scrapling:
     [<Element a at 0x105a2a7b0>]
     ```
 
+- Filtering results based on a function
+```python
+# Find all products over $50
+expensive_products = page.css('.product_pod').filter(
+    lambda p: float(p.css('.price_color').re_first(r'[\d\.]+')) > 50
+)
+```
+
+- Searching results for the first one that matches a function
+```python
+# Find all the product with price '53.23'
+page.css('.product_pod').search(
+    lambda p: float(p.css('.price_color').re_first(r'[\d\.]+')) == 54.23
+)
+```
+
 - Doing operations on element content is the same as scrapy
     ```python
-    quote.re(r'somethings')  # Get all strings (TextHandlers) that match the regex pattern
-    quote.re_first(r'something')  # Get the first string (TextHandler) only
+    quote.re(r'regex_pattern')  # Get all strings (TextHandlers) that match the regex pattern
+    quote.re_first(r'regex_pattern')  # Get the first string (TextHandler) only
     quote.json()  # If the content text is jsonable, then convert it to json using `orjson` which is 10x faster than the standard json library and provides more options
+    ```
+    except that you can do more with them like
+    ```python
+    quote.re(
+        r'regex_pattern',
+        replace_entities=True,  # Character entity references are replaced by their corresponding character
+        clean_match=True,       # This will ignore all whitespaces and consecutive spaces while matching
+        case_sensitive= False,  # Set the regex to ignore letters case while compiling it
+    )
     ```
     Hence all of these methods are actually methods from the `TextHandler` within that contains the text content so the same can be done directly if you call the `.text` property or equivalent selector function.
 
@@ -373,9 +641,9 @@ Here's what else you can do with Scrapling:
     ```python
     page.xpath('//script/text()').re_first(r'var dataLayer = (.+);').json()
     ```
-  - Sort all characters in the string as if it were a list and return the new string
+  - Sort all characters in the string as if it was a list and return the new string
     ```python
-    quote.sort()
+    quote.sort(reverse=False)
     ```
   > To be clear, `TextHandler` is a sub-class of Python's `str` so all normal operations/methods that work with Python strings will work with it.
 
@@ -406,6 +674,7 @@ There are a lot of deep details skipped here to make this as short as possible s
 
 Note that implementing your storage system can be complex as there are some strict rules such as inheriting from the same abstract class, following the singleton design pattern used in other classes, and more. So make sure to read the docs first.
 
+To give a detailed documentation of the library, it will need a website. I'm trying to rush creating the website, researching new ideas, and add more features/tests/benchmarks but time is tight with too many spinning plates between work, personal life, and working on Scrapling. But you can help by using the [sponsor button](https://github.com/sponsors/D4Vinci) above :)
 
 ## ⚡ Enlightening Questions and FAQs
 This section addresses common questions about Scrapling, please read this section before opening an issue.
@@ -460,6 +729,7 @@ Everybody is invited and welcome to contribute to Scrapling. There is a lot to d
 Please read the [contributing file](https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md) before doing anything.
 
 ## Disclaimer for Scrapling Project
+> [!CAUTION]
 > This library is provided for educational and research purposes only. By using this library, you agree to comply with local and international laws regarding data scraping and privacy. The authors and contributors are not responsible for any misuse of this software. This library should not be used to violate the rights of others, for unethical purposes, or to use data in an unauthorized or illegal manner. Do not use it on any website unless you have permission from the website owner or within their allowed rules like `robots.txt` file, for example.
 
 ## License
@@ -470,11 +740,11 @@ This project includes code adapted from:
 - Parsel (BSD License) - Used for [translator](https://github.com/D4Vinci/Scrapling/blob/main/scrapling/translator.py) submodule
 
 ## Thanks and References
+- [Daijro](https://github.com/daijro)'s brilliant work on both [BrowserForge](https://github.com/daijro/browserforge) and [Camoufox](https://github.com/daijro/camoufox)
+- [Vinyzu](https://github.com/Vinyzu)'s work on Playwright's mock on [Botright](https://github.com/Vinyzu/Botright)
 - [brotector](https://github.com/kaliiiiiiiiii/brotector)
 - [fakebrowser](https://github.com/kkoooqq/fakebrowser)
 - [rebrowser-patches](https://github.com/rebrowser/rebrowser-patches)
-- [Vinyzu](https://github.com/Vinyzu)'s work on Playwright's mock on [Botright](https://github.com/Vinyzu/Botright)
-- [Daijro](https://github.com/daijro)'s brilliant work on both [BrowserForge](https://github.com/daijro/browserforge) and [Camoufox](https://github.com/daijro/camoufox)
 
 ## Known Issues
 - In the auto-matching save process, the unique properties of the first element from the selection results are the only ones that get saved. So if the selector you are using selects different elements on the page that are in different locations, auto-matching will probably return to you the first element only when you relocate it later. This doesn't include combined CSS selectors (Using commas to combine more than one selector for example) as these selectors get separated and each selector gets executed alone.
