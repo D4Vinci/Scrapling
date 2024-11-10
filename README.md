@@ -1,9 +1,9 @@
-# 🕷️ Scrapling: Undetectable, Lightning-Fast, Adaptive Web Scraping for Python
+# 🕷️ Scrapling: Undetectable, Lightning-Fast, and Adaptive Web Scraping for Python
 [![Tests](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg)](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml) [![PyPI version](https://badge.fury.io/py/Scrapling.svg)](https://badge.fury.io/py/Scrapling) [![Supported Python versions](https://img.shields.io/pypi/pyversions/scrapling.svg)](https://pypi.org/project/scrapling/) [![PyPI Downloads](https://static.pepy.tech/badge/scrapling)](https://pepy.tech/project/scrapling)
 
 Dealing with failing web scrapers due to anti-bot protections or website changes? Meet Scrapling.
 
-Scrapling is a high-performance, intelligent web scraping library for Python that automatically adapts to website changes while significantly outperforming popular alternatives. Whether you're a beginner or an expert, Scrapling provides powerful features while maintaining simplicity.
+Scrapling is a high-performance, intelligent web scraping library for Python that automatically adapts to website changes while significantly outperforming popular alternatives. For both beginners and experts, Scrapling provides powerful features while maintaining simplicity.
 
 ```python
 >> from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
@@ -203,7 +203,7 @@ And all of them can take these initialization arguments: `auto_match`, `huge_tre
 > [!NOTE]
 > The `auto_match` argument is enabled by default which is the one you should care about the most as you will see later.
 ### Fetcher
-This class is built on top of [httpx](https://www.python-httpx.org/) with some flavors, here you can do `GET`, `POST`, `PUT`, and `DELETE` requests.
+This class is built on top of [httpx](https://www.python-httpx.org/) with additional configuration options, here you can do `GET`, `POST`, `PUT`, and `DELETE` requests.
 
 For all methods, you have `stealth_headers` which makes `Fetcher` create and use real browser's headers then create a referer header as if this request came from Google's search of this URL's domain. It's enabled by default.
 ```python
@@ -320,11 +320,11 @@ This list isn't final so expect a lot more additions and flexibility to be added
 True
 
 # Generate new selectors for any element
->>> quote.css_selector
+>>> quote.generate_css_selector
 'body > div > div:nth-of-type(2) > div > div'
 
 # Test these selectors on your favorite browser or reuse them again in the library's methods!
->>> quote.xpath_selector
+>>> quote.generate_xpath_selector
 '//body/div/div[2]/div/div'
 ```
 If your case needs more than the element's parent, you can iterate over the whole ancestors' tree of any element like below
