@@ -199,9 +199,7 @@ class PlaywrightEngine:
                 page.add_init_script(path=js_bypass_path('screen_props.js'))
                 page.add_init_script(path=js_bypass_path('playwright_fingerprint.js'))
 
-            res = page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
-            page.wait_for_load_state(state="load")
-            page.wait_for_load_state(state="domcontentloaded")
+            res = page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None, wait_until="domcontentloaded")
             if self.network_idle:
                 page.wait_for_load_state('networkidle')
 
