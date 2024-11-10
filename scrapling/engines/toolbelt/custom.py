@@ -28,10 +28,14 @@ class Response:
     def adaptor(self) -> Union[Adaptor, None]:
         """Generate Adaptor instance from this response if possible, otherwise return None"""
         automatch_domain = self.adaptor_arguments.pop('automatch_domain', None)
-        if self.content:
-            return Adaptor(body=self.content, url=automatch_domain or self.url, encoding=self.encoding, **self.adaptor_arguments)
-        elif self.text:
+        if self.text:
+            # For playwright that will be the response after all JS executed
             return Adaptor(text=self.text, url=automatch_domain or self.url, encoding=self.encoding, **self.adaptor_arguments)
+        elif self.content:
+            # For playwright, that's after all JS is loaded but not all of them executed, because playwright doesn't offer something like page.content()
+            # To get response Bytes after the load states
+            # Reference: https://playwright.dev/python/docs/api/class-page
+            return Adaptor(body=self.content, url=automatch_domain or self.url, encoding=self.encoding, **self.adaptor_arguments)
         return None
 
     def __repr__(self):
