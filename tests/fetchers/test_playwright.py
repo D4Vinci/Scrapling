@@ -15,6 +15,8 @@ class TestPlayWrightFetcher(unittest.TestCase):
         self.status_501 = f'{url}/status/501'
         self.basic_url = f'{url}/get'
         self.html_url = f'{url}/html'
+        self.delayed_url = f'{url}/delay/10'  # 10 Seconds delay response
+        self.cookies_url = f"{url}/cookies/set/test/value"
 
     def test_basic_fetch(self):
         """Test doing basic fetch request with multiple statuses"""
@@ -33,6 +35,10 @@ class TestPlayWrightFetcher(unittest.TestCase):
     def test_waiting_selector(self):
         """Test if waiting for a selector make page does not finish loading or not"""
         self.assertEqual(self.fetcher.fetch(self.html_url, wait_selector='h1').status, 200)
+
+    def test_cookies_loading(self):
+        """Test if cookies are set after the request"""
+        self.assertEqual(self.fetcher.fetch(self.cookies_url).cookies, {'test': 'value'})
 
     def test_automation(self):
         """Test if automation break the code or not"""
@@ -65,4 +71,4 @@ class TestPlayWrightFetcher(unittest.TestCase):
 
     def test_infinite_timeout(self):
         """Test if infinite timeout breaks the code or not"""
-        self.assertEqual(self.fetcher.fetch(self.html_url, timeout=None).status, 200)
+        self.assertEqual(self.fetcher.fetch(self.delayed_url, timeout=None).status, 200)
