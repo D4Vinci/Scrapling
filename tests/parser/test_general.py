@@ -169,8 +169,8 @@ class TestParser(unittest.TestCase):
     def test_selectors_generation(self):
         """Try to create selectors for all elements in the page"""
         def _traverse(element: Adaptor):
-            self.assertTrue(type(element.css_selector) is str)
-            self.assertTrue(type(element.xpath_selector) is str)
+            self.assertTrue(type(element.generate_css_selector) is str)
+            self.assertTrue(type(element.generate_xpath_selector) is str)
             for branch in element.children:
                 _traverse(branch)
 
