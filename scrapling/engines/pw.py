@@ -43,8 +43,8 @@ class PlaywrightEngine:
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
-        :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
@@ -53,7 +53,7 @@ class PlaywrightEngine:
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
         :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
-        :param extra_headers: A dictionary of extra headers to add to headers on the request. The referer set by the `google_search` argument takes priority over the referer set here if used together.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
