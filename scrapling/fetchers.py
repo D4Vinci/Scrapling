@@ -13,7 +13,7 @@ class Fetcher(BaseFetcher):
         """Make basic HTTP GET request for you but with some added flavors.
         :param url: Target url.
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
-        :param timeout: The time to wait for the request to finish in seconds. Default is 10 seconds.
+        :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
@@ -26,7 +26,7 @@ class Fetcher(BaseFetcher):
         """Make basic HTTP POST request for you but with some added flavors.
         :param url: Target url.
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
-        :param timeout: The time to wait for the request to finish in seconds. Default is 10 seconds.
+        :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
@@ -39,7 +39,7 @@ class Fetcher(BaseFetcher):
         """Make basic HTTP PUT request for you but with some added flavors.
         :param url: Target url
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
-        :param timeout: The time to wait for the request to finish in seconds. Default is 10 seconds.
+        :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
         create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
@@ -52,7 +52,7 @@ class Fetcher(BaseFetcher):
         """Make basic HTTP DELETE request for you but with some added flavors.
         :param url: Target url
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
-        :param timeout: The time to wait for the request to finish in seconds. Default is 10 seconds.
+        :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
@@ -85,15 +85,15 @@ class StealthyFetcher(BaseFetcher):
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
-        :param humanize: Humanize the cursor movement. Takes either True, or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
+        :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
-        :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
-        :param extra_headers: A dictionary of extra headers to add to headers on the request. The referer set by the `google_search` argument takes priority over the referer set here if used together.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
         engine = CamoufoxEngine(
@@ -122,10 +122,10 @@ class PlayWrightFetcher(BaseFetcher):
      Using this Fetcher class, you can do requests with:
         - Vanilla Playwright without any modifications other than the ones you chose.
         - Stealthy Playwright with the stealth mode I wrote for it. It's still a work in progress but it bypasses many online tests like bot.sannysoft.com
-        Some of the things stealth mode do includes:
+        Some of the things stealth mode does include:
             1) Patches the CDP runtime fingerprint.
-            2) Mimics some of real browsers' properties by injects several JS files and using custom options.
-            3) Using custom flags on launch to hide playwright even more and make it faster.
+            2) Mimics some of the real browsers' properties by injecting several JS files and using custom options.
+            3) Using custom flags on launch to hide Playwright even more and make it faster.
             4) Generates real browser's headers of the same type and same user OS then append it to the request.
         - Real browsers by passing the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
         - NSTBrowser's docker browserless option by passing the CDP URL and enabling `nstbrowser_mode` option.
@@ -148,15 +148,15 @@ class PlayWrightFetcher(BaseFetcher):
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: The timeout in milliseconds that's used in all operations and waits through the page. Default is 30000.
-        :param page_action: Added for automation. A function that takes the `page` object, do the automation you need, then return `page` again.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
-        :param extra_headers: A dictionary of extra headers to add to headers on the request. The referer set by the `google_search` argument overwrites the referer set here if used together.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
         :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
         :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
