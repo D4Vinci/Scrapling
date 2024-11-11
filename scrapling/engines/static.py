@@ -12,7 +12,7 @@ class StaticEngine:
         """An engine that utilizes httpx library, check the `Fetcher` class for more documentation.
 
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
-        :param timeout: The time to wait for the request to finish in seconds. Default is 10 seconds.
+        :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
         self.timeout = timeout
