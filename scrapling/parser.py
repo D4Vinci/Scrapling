@@ -1,18 +1,14 @@
 import os
+import re
+import inspect
 from difflib import SequenceMatcher
-from typing import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator
-try:
-    from typing import SupportsIndex
-except ImportError:
-    # 'SupportsIndex' got added in Python 3.8
-    SupportsIndex = None
 
-from scrapling.translator import HTMLTranslator
-from scrapling.mixins import SelectorsGeneration
-from scrapling.custom_types import TextHandler, AttributesHandler
-from scrapling.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
-from scrapling.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden
-
+from scrapling.core.translator import HTMLTranslator
+from scrapling.core.mixins import SelectorsGeneration
+from scrapling.core.custom_types import TextHandler, TextHandlers, AttributesHandler
+from scrapling.core.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
+from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden
+from scrapling.core._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex, Iterable
 from lxml import etree, html
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
 
@@ -32,7 +28,7 @@ class Adaptor(SelectorsGeneration):
             huge_tree: bool = True,
             root: Optional[html.HtmlElement] = None,
             keep_comments: Optional[bool] = False,
-            auto_match: Optional[bool] = False,
+            auto_match: Optional[bool] = True,
             storage: Any = SQLiteStorageSystem,
             storage_args: Optional[Dict] = None,
             debug: Optional[bool] = True,
@@ -125,7 +121,7 @@ class Adaptor(SelectorsGeneration):
     def _is_text_node(element: Union[html.HtmlElement, etree._ElementUnicodeResult]) -> bool:
         """Return True if given element is a result of a string expression
         Examples:
-            Xpath -> '/text()', '/@attribute' etc...
+            XPath -> '/text()', '/@attribute' etc...
             CSS3  -> '::text', '::attr(attrib)'...
         """
         # Faster than checking `element.is_attribute or element.is_text or element.is_tail`
@@ -163,6 +159,8 @@ class Adaptor(SelectorsGeneration):
             results = [self.__get_correct_result(n) for n in result]
             if all(isinstance(res, self.__class__) for res in results):
                 return Adaptors(results)
+            elif all(isinstance(res, TextHandler) for res in results):
+                return TextHandlers(results)
             return results
 
         return self.__get_correct_result(result)
@@ -399,6 +397,56 @@ class Adaptor(SelectorsGeneration):
                 return self.__convert_results(score_table[highest_probability])
         return []
 
+    def css_first(self, selector: str, identifier: str = '',
+                  auto_match: bool = False, auto_save: bool = False, percentage: int = 0
+                  ) -> Union['Adaptor', 'TextHandler', None]:
+        """Search current tree with CSS3 selectors and return the first result if possible, otherwise return `None`
+
+        **Important:
+        It's recommended to use the identifier argument if you plan to use different selector later
+        and want to relocate the same element(s)**
+
+        :param selector: The CSS3 selector to be used.
+        :param auto_match: Enabled will make function try to relocate the element if it was 'saved' before
+        :param identifier: A string that will be used to save/retrieve element's data in auto-matching
+         otherwise the selector will be used.
+        :param auto_save: Automatically save new elements for `auto_match` later
+        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+         Be aware that the percentage calculation depends solely on the page structure so don't play with this
+         number unless you must know what you are doing!
+
+        :return: List as :class:`Adaptors`
+        """
+        for element in self.css(selector, identifier, auto_match, auto_save, percentage):
+            return element
+        return None
+
+    def xpath_first(self, selector: str, identifier: str = '',
+                    auto_match: bool = False, auto_save: bool = False, percentage: int = 0, **kwargs: Any
+                    ) -> Union['Adaptor', 'TextHandler', None]:
+        """Search current tree with XPath selectors and return the first result if possible, otherwise return `None`
+
+        **Important:
+        It's recommended to use the identifier argument if you plan to use different selector later
+        and want to relocate the same element(s)**
+
+         Note: **Additional keyword arguments will be passed as XPath variables in the XPath expression!**
+
+        :param selector: The XPath selector to be used.
+        :param auto_match: Enabled will make function try to relocate the element if it was 'saved' before
+        :param identifier: A string that will be used to save/retrieve element's data in auto-matching
+         otherwise the selector will be used.
+        :param auto_save: Automatically save new elements for `auto_match` later
+        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+         Be aware that the percentage calculation depends solely on the page structure so don't play with this
+         number unless you must know what you are doing!
+
+        :return: List as :class:`Adaptors`
+        """
+        for element in self.xpath(selector, identifier, auto_match, auto_save, percentage, **kwargs):
+            return element
+        return None
+
     def css(self, selector: str, identifier: str = '',
             auto_match: bool = False, auto_save: bool = False, percentage: int = 0
             ) -> Union['Adaptors[Adaptor]', List]:
@@ -494,6 +542,113 @@ class Adaptor(SelectorsGeneration):
 
         except (SelectorError, SelectorSyntaxError, etree.XPathError, etree.XPathEvalError):
             raise SelectorSyntaxError(f"Invalid XPath selector: {selector}")
+
+    def find_all(self, *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]], **kwargs: str) -> Union['Adaptors[Adaptor]', List]:
+        """Find elements by filters of your creations for ease..
+
+        :param args: Tag name(s), an iterable of tag names, regex patterns, function, or a dictionary of elements' attributes. Leave empty for selecting all.
+        :param kwargs: The attributes you want to filter elements based on it.
+        :return: The `Adaptors` object of the elements or empty list
+        """
+        # Attributes that are Python reserved words and can't be used directly
+        # Ex: find_all('a', class="blah") -> find_all('a', class_="blah")
+        # https://www.w3schools.com/python/python_ref_keywords.asp
+        whitelisted = {
+            'class_': 'class',
+            'for_': 'for',
+        }
+
+        if not args and not kwargs:
+            raise TypeError('You have to pass something to search with, like tag name(s), tag attributes, or both.')
+
+        attributes = dict()
+        tags, patterns = set(), set()
+        results, functions, selectors = [], [], []
+
+        def _search_tree(element: Adaptor, filter_function: Callable) -> None:
+            """Collect element if it fulfills passed function otherwise, traverse the children tree and iterate"""
+            if filter_function(element):
+                results.append(element)
+
+            for branch in element.children:
+                _search_tree(branch, filter_function)
+
+        # Brace yourself for a wonderful journey!
+        for arg in args:
+            if type(arg) is str:
+                tags.add(arg)
+
+            elif type(arg) in [list, tuple, set]:
+                if not all(map(lambda x: type(x) is str, arg)):
+                    raise TypeError('Nested Iterables are not accepted, only iterables of tag names are accepted')
+                tags.update(set(arg))
+
+            elif type(arg) is dict:
+                if not all([(type(k) is str and type(v) is str) for k, v in arg.items()]):
+                    raise TypeError('Nested dictionaries are not accepted, only string keys and string values are accepted')
+                attributes.update(arg)
+
+            elif type(arg) is re.Pattern:
+                patterns.add(arg)
+
+            elif callable(arg):
+                if len(inspect.signature(arg).parameters) > 0:
+                    functions.append(arg)
+                else:
+                    raise TypeError("Callable filter function must have at least one argument to take `Adaptor` objects.")
+
+            else:
+                raise TypeError(f'Argument with type "{type(arg)}" is not accepted, please read the docs.')
+
+        if not all([(type(k) is str and type(v) is str) for k, v in kwargs.items()]):
+            raise TypeError('Only string values are accepted for arguments')
+
+        for attribute_name, value in kwargs.items():
+            # Only replace names for kwargs, replacing them in dictionaries doesn't make sense
+            attribute_name = whitelisted.get(attribute_name, attribute_name)
+            attributes[attribute_name] = value
+
+        # It's easier and faster to build a selector than traversing the tree
+        tags = tags or ['']
+        for tag in tags:
+            selector = tag
+            for key, value in attributes.items():
+                value = value.replace('"', r'\"')  # Escape double quotes in user input
+                # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
+                selector += '[{}="{}"]'.format(key, value)
+            if selector:
+                selectors.append(selector)
+
+        if selectors:
+            results = self.css(', '.join(selectors))
+            if results:
+                # From the results, get the ones that fulfill passed regex patterns
+                for pattern in patterns:
+                    results = results.filter(lambda e: e.text.re(pattern, check_match=True))
+
+                # From the results, get the ones that fulfill passed functions
+                for function in functions:
+                    results = results.filter(function)
+        else:
+            for pattern in patterns:
+                results.extend(self.find_by_regex(pattern, first_match=False))
+
+            for result in (results or [self]):
+                for function in functions:
+                    _search_tree(result, function)
+
+        return self.__convert_results(results)
+
+    def find(self, *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]], **kwargs: str) -> Union['Adaptor', None]:
+        """Find elements by filters of your creations for ease then return the first result. Otherwise return `None`.
+
+        :param args: Tag name(s), an iterable of tag names, regex patterns, function, or a dictionary of elements' attributes. Leave empty for selecting all.
+        :param kwargs: The attributes you want to filter elements based on it.
+        :return: The `Adaptor` object of the element or `None` if the result didn't match
+        """
+        for element in self.find_all(*args, **kwargs):
+            return element
+        return None
 
     def __calculate_similarity_score(self, original: Dict, candidate: html.HtmlElement) -> float:
         """Used internally to calculate a score that shows how candidate element similar to the original one
@@ -606,25 +761,33 @@ class Adaptor(SelectorsGeneration):
     # Operations on text functions
     def json(self) -> Dict:
         """Return json response if the response is jsonable otherwise throws error"""
-        return self.text.json()
+        if self.text:
+            return self.text.json()
+        else:
+            return self.get_all_text(strip=True).json()
 
-    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True) -> 'List[str]':
+    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True,
+           clean_match: bool = False, case_sensitive: bool = False) -> 'List[str]':
         """Apply the given regex to the current text and return a list of strings with the matches.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
         """
-        return self.text.re(regex, replace_entities)
+        return self.text.re(regex, replace_entities, clean_match, case_sensitive)
 
-    def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True):
+    def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
+                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
         """Apply the given regex to text and return the first match if found, otherwise return the default value.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param default: The default value to be returned if there is no match
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
-
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
         """
-        return self.text.re_first(regex, default, replace_entities)
+        return self.text.re_first(regex, default, replace_entities, clean_match, case_sensitive)
 
     def find_similar(
             self,
@@ -757,10 +920,10 @@ class Adaptor(SelectorsGeneration):
         return self.__convert_results(results)
 
     def find_by_regex(
-            self, query: str, first_match: bool = True, case_sensitive: bool = False, clean_match: bool = True
+            self, query: Union[str, Pattern[str]], first_match: bool = True, case_sensitive: bool = False, clean_match: bool = True
     ) -> Union['Adaptors[Adaptor]', 'Adaptor', List]:
         """Find elements that its text content matches the input regex pattern.
-        :param query: Regex query to match
+        :param query: Regex query/pattern to match
         :param first_match: Return first element that matches conditions, enabled by default
         :param case_sensitive: if enabled, letters case will be taken into consideration in the regex
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
@@ -855,54 +1018,56 @@ class Adaptors(List[Adaptor]):
         ]
         return self.__class__(flatten(results))
 
-    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True) -> 'List[str]':
+    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True,
+           clean_match: bool = False, case_sensitive: bool = False) -> 'List[str]':
         """Call the ``.re()`` method for each element in this list and return
         their results flattened as List of TextHandler.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
         """
         results = [
-            n.text.re(regex, replace_entities) for n in self
+            n.text.re(regex, replace_entities, clean_match, case_sensitive) for n in self
         ]
         return flatten(results)
 
-    def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True):
+    def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
+                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
         """Call the ``.re_first()`` method for each element in this list and return
-        their results flattened as List of TextHandler.
+        the first result or the default value otherwise.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param default: The default value to be returned if there is no match
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
+        """
+        for n in self:
+            for result in n.re(regex, replace_entities, clean_match, case_sensitive):
+                return result
+        return default
 
+    def search(self, func: Callable[['Adaptor'], bool]) -> Union['Adaptor', None]:
+        """Loop over all current elements and return the first element that matches the passed function
+        :param func: A function that takes each element as an argument and returns True/False
+        :return: The first element that match the function or ``None`` otherwise.
+        """
+        for element in self:
+            if func(element):
+                return element
+        return None
+
+    def filter(self, func: Callable[['Adaptor'], bool]) -> Union['Adaptors', List]:
+        """Filter current elements based on the passed function
+        :param func: A function that takes each element as an argument and returns True/False
+        :return: The new `Adaptors` object or empty list otherwise.
         """
         results = [
-            n.text.re_first(regex, default, replace_entities) for n in self
+            element for element in self if func(element)
         ]
-        return flatten(results)
-
-    # def __getattr__(self, name):
-    #     if name in dir(self.__class__):
-    #         return super().__getattribute__(name)
-    #
-    #     # Execute the method itself on each Adaptor
-    #     results = []
-    #     for item in self:
-    #         results.append(getattr(item, name))
-    #
-    #     if all(callable(r) for r in results):
-    #         def call_all(*args, **kwargs):
-    #             final_results = [r(*args, **kwargs) for r in results]
-    #             if all([isinstance(r, (Adaptor, Adaptors,)) for r in results]):
-    #                 return self.__class__(final_results)
-    #             return final_results
-    #
-    #         return call_all
-    #     else:
-    #         # Flatten the result if it's a single-item list containing a list
-    #         if len(self) == 1 and isinstance(results[0], list):
-    #             return self.__class__(results[0])
-    #         return self.__class__(results)
+        return self.__class__(results) if results else results
 
     def get(self, default=None):
         """Returns the first item of the current list

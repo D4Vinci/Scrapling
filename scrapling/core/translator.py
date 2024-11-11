@@ -9,23 +9,13 @@ which will be important in future releases but most importantly...
 import re
 
 from w3lib.html import HTML5_WHITESPACE
-from typing import TYPE_CHECKING, Any, Optional
-try:
-    from typing import Protocol
-except ImportError:
-    # Added in Python 3.8
-    Protocol = object
-
-from scrapling.utils import cache
+from scrapling.core.utils import cache
+from scrapling.core._types import Any, Optional, Protocol, Self
 
 from cssselect.xpath import ExpressionError
 from cssselect.xpath import XPathExpr as OriginalXPathExpr
 from cssselect import HTMLTranslator as OriginalHTMLTranslator
 from cssselect.parser import Element, FunctionalPseudoElement, PseudoElement
-
-if TYPE_CHECKING:
-    # typing.Self requires Python 3.11
-    from typing_extensions import Self
 
 
 regex = f"[{HTML5_WHITESPACE}]+"

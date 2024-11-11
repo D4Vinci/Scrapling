@@ -1,14 +1,13 @@
 import re
-import os
 import logging
 from itertools import chain
-from logging import handlers
 # Using cache on top of a class is brilliant way to achieve Singleton design pattern without much code
 from functools import lru_cache as cache  # functools.cache is available on Python 3.9+ only so let's keep lru_cache
 
-from typing import Dict, Iterable, Any
+from scrapling.core._types import Dict, Iterable, Any
 
 from lxml import html
+
 html_forbidden = {html.HtmlComment, }
 logging.basicConfig(
         level=logging.ERROR,
@@ -43,64 +42,6 @@ def flatten(lst: Iterable):
 def _is_iterable(s: Any):
     # This will be used only in regex functions to make sure it's iterable but not string/bytes
     return isinstance(s, (list, tuple,))
-
-
-@cache(None, typed=True)
-class _Logger(object):
-    # I will leave this class here for now in case I decide I want to come back to use it :)
-    __slots__ = ('console_logger', 'logger_file_path',)
-    levels = {
-        'debug': logging.DEBUG,
-        'info': logging.INFO,
-        'warning': logging.WARNING,
-        'error': logging.ERROR,
-        'critical': logging.CRITICAL
-    }
-
-    def __init__(self, filename: str = 'debug.log', level: str = 'debug', when: str = 'midnight', backcount: int = 1):
-        os.makedirs(os.path.join(os.path.dirname(__file__), 'logs'), exist_ok=True)
-        format_str = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S")
-
-        # on-screen output
-        lvl = self.levels[level.lower()]
-        self.console_logger = logging.getLogger('Scrapling')
-        self.console_logger.setLevel(lvl)
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(lvl)
-        console_handler.setFormatter(format_str)
-        self.console_logger.addHandler(console_handler)
-
-        if lvl == logging.DEBUG:
-            filename = os.path.join(os.path.dirname(__file__), 'logs', filename)
-            self.logger_file_path = filename
-            # Automatically generates the logging file at specified intervals
-            file_handler = handlers.TimedRotatingFileHandler(
-                # If more than (backcount+1) existed, oldest logs will be deleted
-                filename=filename, when=when, backupCount=backcount, encoding='utf-8'
-            )
-            file_handler.setLevel(lvl)
-            file_handler.setFormatter(format_str)
-            # This for the logger when it appends the date to the new log
-            file_handler.namer = lambda name: name.replace(".log", "") + ".log"
-            self.console_logger.addHandler(file_handler)
-            self.debug(f'Debug log path: {self.logger_file_path}')
-        else:
-            self.logger_file_path = None
-
-    def debug(self, message: str) -> None:
-        self.console_logger.debug(message)
-
-    def info(self, message: str) -> None:
-        self.console_logger.info(message)
-
-    def warning(self, message: str) -> None:
-        self.console_logger.warning(message)
-
-    def error(self, message: str) -> None:
-        self.console_logger.error(message)
-
-    def critical(self, message: str) -> None:
-        self.console_logger.critical(message)
 
 
 class _StorageTools:

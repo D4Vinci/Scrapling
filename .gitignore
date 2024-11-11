@@ -13,6 +13,8 @@ __pycache__/
 .bootstrap
 .appveyor.token
 *.bak
+*.db
+*.db-*
 
 # installation package
 *.egg-info/

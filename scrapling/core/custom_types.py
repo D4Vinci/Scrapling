@@ -1,9 +1,9 @@
 import re
 from types import MappingProxyType
 from collections.abc import Mapping
-from typing import Dict, List, Union, Pattern
 
-from scrapling.utils import _is_iterable, flatten
+from scrapling.core.utils import _is_iterable, flatten
+from scrapling.core._types import Dict, List, Union, Pattern, SupportsIndex
 
 from orjson import loads, dumps
 from w3lib.html import replace_entities as _replace_entities
@@ -69,7 +69,7 @@ class TextHandler(str):
         return [TextHandler(_replace_entities(s)) for s in results]
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
-                 clean_match: bool = False, case_sensitive: bool = False,):
+                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
         """Apply the given regex to text and return the first match if found, otherwise return the default value.
 
         :param regex: Can be either a compiled regular expression or a string.
@@ -81,6 +81,51 @@ class TextHandler(str):
         """
         result = self.re(regex, replace_entities, clean_match=clean_match, case_sensitive=case_sensitive)
         return result[0] if result else default
+
+
+class TextHandlers(List[TextHandler]):
+    """
+    The :class:`TextHandlers` class is a subclass of the builtin ``List`` class, which provides a few additional methods.
+    """
+    __slots__ = ()
+
+    def __getitem__(self, pos: Union[SupportsIndex, slice]) -> Union[TextHandler, "TextHandlers[TextHandler]"]:
+        lst = super().__getitem__(pos)
+        if isinstance(pos, slice):
+            return self.__class__(lst)
+        else:
+            return lst
+
+    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True, clean_match: bool = False,
+            case_sensitive: bool = False) -> 'List[str]':
+        """Call the ``.re()`` method for each element in this list and return
+        their results flattened as TextHandlers.
+
+        :param regex: Can be either a compiled regular expression or a string.
+        :param replace_entities: if enabled character entity references are replaced by their corresponding character
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
+        """
+        results = [
+            n.re(regex, replace_entities, clean_match, case_sensitive) for n in self
+        ]
+        return flatten(results)
+
+    def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
+                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
+        """Call the ``.re_first()`` method for each element in this list and return
+        the first result or the default value otherwise.
+
+        :param regex: Can be either a compiled regular expression or a string.
+        :param default: The default value to be returned if there is no match
+        :param replace_entities: if enabled character entity references are replaced by their corresponding character
+        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
+        """
+        for n in self:
+            for result in n.re(regex, replace_entities, clean_match, case_sensitive):
+                return result
+        return default
 
 
 class AttributesHandler(Mapping):

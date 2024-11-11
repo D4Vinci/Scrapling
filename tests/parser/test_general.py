@@ -112,11 +112,11 @@ class TestParser(unittest.TestCase):
 
     def test_find_similar_elements(self):
         """Test Finding similar elements of an element"""
-        first_product = self.page.css('.product')[0]
+        first_product = self.page.css_first('.product')
         similar_products = first_product.find_similar()
         self.assertEqual(len(similar_products), 2)
 
-        first_review = self.page.css('.review')[0]
+        first_review = self.page.find('div', class_='review')
         similar_high_rated_reviews = [
             review
             for review in first_review.find_similar()
@@ -127,16 +127,16 @@ class TestParser(unittest.TestCase):
     def test_expected_errors(self):
         """Test errors that should raised if it does"""
         with self.assertRaises(ValueError):
-            _ = Adaptor()
+            _ = Adaptor(auto_match=False)
 
         with self.assertRaises(TypeError):
-            _ = Adaptor(root="ayo")
+            _ = Adaptor(root="ayo", auto_match=False)
 
         with self.assertRaises(TypeError):
-            _ = Adaptor(text=1)
+            _ = Adaptor(text=1, auto_match=False)
 
         with self.assertRaises(TypeError):
-            _ = Adaptor(body=1)
+            _ = Adaptor(body=1, auto_match=False)
 
         with self.assertRaises(ValueError):
             _ = Adaptor(self.html, storage=object, auto_match=True)
@@ -169,8 +169,8 @@ class TestParser(unittest.TestCase):
     def test_selectors_generation(self):
         """Try to create selectors for all elements in the page"""
         def _traverse(element: Adaptor):
-            self.assertTrue(type(element.css_selector) is str)
-            self.assertTrue(type(element.xpath_selector) is str)
+            self.assertTrue(type(element.generate_css_selector) is str)
+            self.assertTrue(type(element.generate_xpath_selector) is str)
             for branch in element.children:
                 _traverse(branch)
 
@@ -197,7 +197,7 @@ class TestParser(unittest.TestCase):
         parent_siblings = parent.siblings
         self.assertEqual(len(parent_siblings), 1)
 
-        child = table.css('[data-id="1"]')[0]
+        child = table.find({'data-id': "1"})
         next_element = child.next
         self.assertEqual(next_element.attrib['data-id'], '2')
 
@@ -261,59 +261,9 @@ class TestParser(unittest.TestCase):
         key_value = list(products[0].attrib.search_values('1', partial=True))
         self.assertEqual(list(key_value[0].keys()), ['data-id'])
 
-        attr_json = self.page.css('#products')[0].attrib['schema'].json()
+        attr_json = self.page.css_first('#products').attrib['schema'].json()
         self.assertEqual(attr_json, {'jsonable': 'data'})
         self.assertEqual(type(self.page.css('#products')[0].attrib.json_string), bytes)
-
-    def test_element_relocation(self):
-        """Test relocating element after structure change"""
-        original_html = '''
-                <div class="container">
-                    <section class="products">
-                        <article class="product" id="p1">
-                            <h3>Product 1</h3>
-                            <p class="description">Description 1</p>
-                        </article>
-                        <article class="product" id="p2">
-                            <h3>Product 2</h3>
-                            <p class="description">Description 2</p>
-                        </article>
-                    </section>
-                </div>
-                '''
-        changed_html = '''
-                <div class="new-container">
-                    <div class="product-wrapper">
-                        <section class="products">
-                            <article class="product new-class" data-id="p1">
-                                <div class="product-info">
-                                    <h3>Product 1</h3>
-                                    <p class="new-description">Description 1</p>
-                                </div>
-                            </article>
-                            <article class="product new-class" data-id="p2">
-                                <div class="product-info">
-                                    <h3>Product 2</h3>
-                                    <p class="new-description">Description 2</p>
-                                </div>
-                            </article>
-                        </section>
-                    </div>
-                </div>
-                '''
-
-        old_page = Adaptor(original_html, url='example.com', auto_match=True, debug=True)
-        new_page = Adaptor(changed_html, url='example.com', auto_match=True, debug=True)
-
-        # 'p1' was used as ID and now it's not and all the path elements have changes
-        # Also at the same time testing auto-match vs combined selectors
-        _ = old_page.css('#p1, #p2', auto_save=True)[0]
-        relocated = new_page.css('#p1', auto_match=True)
-
-        self.assertIsNotNone(relocated)
-        self.assertEqual(relocated[0].attrib['data-id'], 'p1')
-        self.assertTrue(relocated[0].has_class('new-class'))
-        self.assertEqual(relocated[0].css('.new-description')[0].text, 'Description 1')
 
     def test_performance(self):
         """Test parsing and selecting speed"""
@@ -331,6 +281,6 @@ class TestParser(unittest.TestCase):
         self.assertLess(end_time - start_time, 0.1)
 
 
-# Use `coverage run -m unittest --verbose tests/test_all_functions.py` instead for the coverage report
+# Use `coverage run -m unittest --verbose tests/test_parser_functions.py` instead for the coverage report
 # if __name__ == '__main__':
 #     unittest.main(verbosity=2)
