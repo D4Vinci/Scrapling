@@ -547,8 +547,15 @@ Examples to clear any confusion :)
 >> page.find_all('div', {'class': 'quote'}, lambda e: "world" in e.css_first('.text::text'))
 [<data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>]
 
+# Find all elements that doesn't have children.
+>> page.find_all(lambda element: len(element.children) > 0)
+[<data='<html lang="en"><head><meta charset="UTF...'>,
+ <data='<head><meta charset="UTF-8"><title>Quote...' parent='<html lang="en"><head><meta charset="UTF...'>,
+ <data='<body> <div class="container"> <div clas...' parent='<html lang="en"><head><meta charset="UTF...'>,
+...]
+
 # Find all elements that contains the word 'world' in its content.
->> page.find_all(lambda e: "world" in e.text)
+>> page.find_all(lambda element: "world" in element.text)
 [<data='<span class="text" itemprop="text">“The...' parent='<div class="quote" itemscope itemtype="h...'>,
  <data='<a class="tag" href="/tag/world/page/1/"...' parent='<div class="tags"> Tags: <meta class="ke...'>]
 
