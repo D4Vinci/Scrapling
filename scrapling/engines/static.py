@@ -71,7 +71,7 @@ class StaticEngine:
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
-        headers = self._headers_job(kwargs.get('headers'), url, stealthy_headers)
+        headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
         request = httpx.get(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
         return self._prepare_response(request)
 
@@ -83,7 +83,7 @@ class StaticEngine:
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
-        headers = self._headers_job(kwargs.get('headers'), url, stealthy_headers)
+        headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
         request = httpx.post(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
         return self._prepare_response(request)
 
@@ -95,7 +95,7 @@ class StaticEngine:
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
-        headers = self._headers_job(kwargs.get('headers'), url, stealthy_headers)
+        headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
         request = httpx.delete(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
         return self._prepare_response(request)
 
@@ -107,6 +107,6 @@ class StaticEngine:
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
-        headers = self._headers_job(kwargs.get('headers'), url, stealthy_headers)
+        headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
         request = httpx.put(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
         return self._prepare_response(request)
