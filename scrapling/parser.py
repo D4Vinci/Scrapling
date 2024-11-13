@@ -7,10 +7,9 @@ from scrapling.core.translator import HTMLTranslator
 from scrapling.core.mixins import SelectorsGeneration
 from scrapling.core.custom_types import TextHandler, TextHandlers, AttributesHandler
 from scrapling.core.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
-from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden
+from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden, is_jsonable
 from scrapling.core._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex, Iterable
 from lxml import etree, html
-from lxml.etree import XMLSyntaxError
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
 
 
@@ -75,19 +74,12 @@ class Adaptor(SelectorsGeneration):
                 body = text.strip().replace("\x00", "").encode(encoding) or b"<html/>"
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
-            try:
-                # Test with recover set to False first so if this is a text body like a json response, we get error
-                parser = html.HTMLParser(
-                    recover=False, remove_blank_text=True, remove_comments=(keep_comments is False), encoding=encoding,
-                    compact=True, huge_tree=huge_tree, default_doctype=True
-                )
-                self._root = etree.fromstring(body, parser=parser, base_url=url)
-            except XMLSyntaxError:
-                parser = html.HTMLParser(
-                    recover=True, remove_blank_text=True, remove_comments=(keep_comments is False), encoding=encoding,
-                    compact=True, huge_tree=huge_tree, default_doctype=True
-                )
-                self._root = etree.fromstring(body, parser=parser, base_url=url)
+            parser = html.HTMLParser(
+                recover=True, remove_blank_text=True, remove_comments=(keep_comments is False), encoding=encoding,
+                compact=True, huge_tree=huge_tree, default_doctype=True
+            )
+            self._root = etree.fromstring(body, parser=parser, base_url=url)
+            if is_jsonable(text or body.decode()):
                 self.__text = TextHandler(text or body.decode())
 
         else:
