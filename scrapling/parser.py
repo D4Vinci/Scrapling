@@ -187,23 +187,9 @@ class Adaptor(SelectorsGeneration):
     def text(self) -> TextHandler:
         """Get text content of the element"""
         if not self.__text:
-            if self.__keep_comments:
-                if not self.children:
-                    # If use chose to keep comments, remove comments from text
-                    # Escape lxml default behaviour and remove comments like this `<span>CONDITION: <!-- -->Excellent</span>`
-                    # This issue is present in parsel/scrapy as well so no need to repeat it here so the user can run regex on the full text.
-                    code = self.html_content
-                    parser = html.HTMLParser(
-                        recover=True, remove_blank_text=True, remove_comments=True, encoding=self.encoding,
-                        compact=True, huge_tree=self.__huge_tree_enabled, default_doctype=True
-                    )
-                    fragment_root = html.fragment_fromstring(code, parser=parser)
-                    self.__text = TextHandler(fragment_root.text)
-                else:
-                    self.__text = TextHandler(self._root.text)
-            else:
-                # If user already chose to not keep comments then all is good
-                self.__text = TextHandler(self._root.text)
+            # If you want to escape lxml default behaviour and remove comments like this `<span>CONDITION: <!-- -->Excellent</span>`
+            # before extracting text then keep `keep_comments` set to False while initializing the first class
+            self.__text = TextHandler(self._root.text)
         return self.__text
 
     def get_all_text(self, separator: str = "\n", strip: bool = False, ignore_tags: Tuple = ('script', 'style',), valid_values: bool = True) -> TextHandler:
