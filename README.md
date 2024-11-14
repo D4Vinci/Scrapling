@@ -19,17 +19,17 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 # Sponsors 
 
-[Evomi](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling) is your Swiss Quality Proxy Provider, starting at $0.49/GB
+[Evomi](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling) is your Swiss Quality Proxy Provider, starting at **$0.49/GB**
 
-- 👩‍💻 $0.49 per GB Residential Proxies: Our price is unbeatable
-- 👩‍💻 24/7 Expert Support: We will join your Slack Channel
-- 🌍 Global Presence: Available in 150+ Countries
-- ⚡ Low Latency
-- 🔒 Swiss Quality and Privacy
-- 🎁 Free Trial
-- 🛡️ 99.9% Uptime
-- 🤝 Special IP Pool selection: Optimize for fast, quality, or quantity of ips
-- 🔧 Easy Integration: Compatible with most software and programming languages
+- 👩‍💻 **$0.49 per GB Residential Proxies**: Our price is unbeatable
+- 👩‍💻 **24/7 Expert Support**: We will join your Slack Channel
+- 🌍 **Global Presence**: Available in 150+ Countries
+- ⚡ **Low Latency**
+- 🔒 **Swiss Quality and Privacy**
+- 🎁 **Free Trial**
+- 🛡️ **99.9% Uptime**
+- 🤝 **Special IP Pool selection**: Optimize for fast, quality or quantity of ips
+- 🔧 **Easy Integration**: Compatible with most software and programming languages
 
 [![Evomi Banner](https://my.evomi.com/images/brand/cta.png)](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling)
 ---
