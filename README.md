@@ -17,6 +17,23 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 >> products = page.css('.product', auto_match=True)  # and Scrapling still finds them!
 ```
 
+# Sponsors 
+
+[Evomi](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling) is your Swiss Quality Proxy Provider, starting at **$0.49/GB**
+
+- 👩‍💻 **$0.49 per GB Residential Proxies**: Our price is unbeatable
+- 👩‍💻 **24/7 Expert Support**: We will join your Slack Channel
+- 🌍 **Global Presence**: Available in 150+ Countries
+- ⚡ **Low Latency**
+- 🔒 **Swiss Quality and Privacy**
+- 🎁 **Free Trial**
+- 🛡️ **99.9% Uptime**
+- 🤝 **Special IP Pool selection**: Optimize for fast, quality or quantity of ips
+- 🔧 **Easy Integration**: Compatible with most software and programming languages
+
+[![Evomi Banner](https://my.evomi.com/images/brand/cta.png)](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling)
+---
+
 ## Table of content
   * [Key Features](#key-features)
     * [Fetch websites as you prefer](#fetch-websites-as-you-prefer)
@@ -49,7 +66,7 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
     * [Can Scrapling replace code built on top of BeautifulSoup4?](#can-scrapling-replace-code-built-on-top-of-beautifulsoup4)
     * [Can Scrapling replace code built on top of AutoScraper?](#can-scrapling-replace-code-built-on-top-of-autoscraper)
     * [Is Scrapling thread-safe?](#is-scrapling-thread-safe)
-  * [Sponsors](#sponsors)
+  * [More Sponsors!](#more-sponsors)
   * [Contributing](#contributing)
   * [Disclaimer for Scrapling Project](#disclaimer-for-scrapling-project)
   * [License](#license)
@@ -727,7 +744,7 @@ Of course, you can find elements by text/regex, find similar elements in a more 
 ### Is Scrapling thread-safe?
 Yes, Scrapling instances are thread-safe. Each Adaptor instance maintains its state.
 
-## Sponsors
+## More Sponsors!
 [![Capsolver Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/CapSolver.png)](https://www.capsolver.com/?utm_source=github&utm_medium=repo&utm_campaign=scraping&utm_term=Scrapling)
 
 ## Contributing
