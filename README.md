@@ -703,7 +703,10 @@ There are a lot of deep details skipped here to make this as short as possible s
 
 Note that implementing your storage system can be complex as there are some strict rules such as inheriting from the same abstract class, following the singleton design pattern used in other classes, and more. So make sure to read the docs first.
 
-To give detailed documentation of the library, it will need a website. I'm trying to rush creating the website, researching new ideas, and adding more features/tests/benchmarks but time is tight with too many spinning plates between work, personal life, and working on Scrapling. But you can help by using the [sponsor button](https://github.com/sponsors/D4Vinci) above :)
+> [!IMPORTANT] 
+> To give detailed documentation of the library, it will need a website. 
+> I'm trying to rush creating the website, researching new ideas, and adding more features/tests/benchmarks but time is tight with too many spinning plates between work, personal life, and working on Scrapling. 
+> If you like `Scrapling` and want it to keep improving then this is a friendly reminder that you can help by supporting me through the [sponsor button](https://github.com/sponsors/D4Vinci).
 
 ## ⚡ Enlightening Questions and FAQs
 This section addresses common questions about Scrapling, please read this section before opening an issue.
