@@ -8,7 +8,7 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 ```python
 >> from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
 # Fetch websites' source under the radar!
->> page = StealthyFetcher().fetch('https://example.com', headless=True, disable_resources=True)
+>> page = StealthyFetcher().fetch('https://example.com', headless=True, network_idle=True)
 >> print(page.status)
 200
 >> products = page.css('.product', auto_save=True)  # Scrape data that survives website design changes!
@@ -258,6 +258,7 @@ True
 |       timeout       | The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000.                                                                                                                                                                                                                                                                                                    |    ✔️    |
 |    wait_selector    | Wait for a specific css selector to be in a specific state.                                                                                                                                                                                                                                                                                                                                                     |    ✔️    |
 |        proxy        | The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.                                                                                                                                                                                                                                                                                 |    ✔️    |
+|    os_randomize     | If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.                                                                                                                                                                                                                                                                          |    ✔️    |
 | wait_selector_state | The state to wait for the selector given with `wait_selector`. _Default state is `attached`._                                                                                                                                                                                                                                                                                                                   |    ✔️    |
 
 </details>
