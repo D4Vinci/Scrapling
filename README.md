@@ -704,8 +704,8 @@ There are a lot of deep details skipped here to make this as short as possible s
 Note that implementing your storage system can be complex as there are some strict rules such as inheriting from the same abstract class, following the singleton design pattern used in other classes, and more. So make sure to read the docs first.
 
 > [!IMPORTANT] 
-> To give detailed documentation of the library, it will need a website. 
-> I'm trying to rush creating the website, researching new ideas, and adding more features/tests/benchmarks but time is tight with too many spinning plates between work, personal life, and working on Scrapling. 
+> A website is needed to provide detailed library documentation.<br/> 
+> I'm trying to rush creating the website, researching new ideas, and adding more features/tests/benchmarks but time is tight with too many spinning plates between work, personal life, and working on Scrapling. I have been working on Scrapling for months for free after all.<br/><br/>
 > If you like `Scrapling` and want it to keep improving then this is a friendly reminder that you can help by supporting me through the [sponsor button](https://github.com/sponsors/D4Vinci).
 
 ## ⚡ Enlightening Questions and FAQs
@@ -720,8 +720,8 @@ This section addresses common questions about Scrapling, please read this sectio
 
      Together both are used to retrieve the element's unique properties from the database later.
   4. Now later when you enable the `auto_match` parameter for both the Adaptor instance and the method call. The element properties are retrieved and Scrapling loops over all elements in the page and compares each one's unique properties to the unique properties we already have for this element and a score is calculated for each one.
-  5. The comparison between elements is not exact but more about finding how similar these values are, so everything is taken into consideration even the values' order like the order in which the element class names were written before and the order in which the same element class names are written now.
-  6. The score for each element is stored in the table, and in the end, the element(s) with the highest combined similarity scores are returned.
+  5. Comparing elements is not exact but more about finding how similar these values are, so everything is taken into consideration, even the values' order, like the order in which the element class names were written before and the order in which the same element class names are written now.
+  6. The score for each element is stored in the table, and the element(s) with the highest combined similarity scores are returned.
 
 ### How does the auto-matching work if I didn't pass a URL while initializing the Adaptor object?
 Not a big problem as it depends on your usage. The word `default` will be used in place of the URL field while saving the element's unique properties. So this will only be an issue if you used the same identifier later for a different website that you didn't pass the URL parameter while initializing it as well. The save process will overwrite the previous data and auto-matching uses the latest saved properties only.
