@@ -4,8 +4,9 @@ from itertools import chain
 # Using cache on top of a class is brilliant way to achieve Singleton design pattern without much code
 from functools import lru_cache as cache  # functools.cache is available on Python 3.9+ only so let's keep lru_cache
 
-from scrapling.core._types import Dict, Iterable, Any
+from scrapling.core._types import Dict, Iterable, Any, Union
 
+import orjson
 from lxml import html
 
 html_forbidden = {html.HtmlComment, }
@@ -16,6 +17,17 @@ logging.basicConfig(
             logging.StreamHandler()
         ]
     )
+
+
+def is_jsonable(content: Union[bytes, str]) -> bool:
+    if type(content) is bytes:
+        content = content.decode()
+
+    try:
+        _ = orjson.loads(content)
+        return True
+    except orjson.JSONDecodeError:
+        return False
 
 
 @cache(None, typed=True)

@@ -3,43 +3,29 @@ Functions related to custom types or type checking
 """
 import inspect
 import logging
-from dataclasses import dataclass, field
 
 from scrapling.core.utils import setup_basic_logging
 from scrapling.parser import Adaptor, SQLiteStorageSystem
 from scrapling.core._types import Any, List, Type, Union, Optional, Dict, Callable
 
 
-@dataclass(frozen=True)
-class Response:
+class Response(Adaptor):
     """This class is returned by all engines as a way to unify response type between different libraries."""
-    url: str
-    text: str
-    content: bytes
-    status: int
-    reason: str
-    encoding: str = 'utf-8'  # default encoding
-    cookies: Dict = field(default_factory=dict)
-    headers: Dict = field(default_factory=dict)
-    request_headers: Dict = field(default_factory=dict)
-    adaptor_arguments: Dict = field(default_factory=dict)
 
-    @property
-    def adaptor(self) -> Union[Adaptor, None]:
-        """Generate Adaptor instance from this response if possible, otherwise return None"""
-        automatch_domain = self.adaptor_arguments.pop('automatch_domain', None)
-        if self.text:
-            # For playwright that will be the response after all JS executed
-            return Adaptor(text=self.text, url=automatch_domain or self.url, encoding=self.encoding, **self.adaptor_arguments)
-        elif self.content:
-            # For playwright, that's after all JS is loaded but not all of them executed, because playwright doesn't offer something like page.content()
-            # To get response Bytes after the load states
-            # Reference: https://playwright.dev/python/docs/api/class-page
-            return Adaptor(body=self.content, url=automatch_domain or self.url, encoding=self.encoding, **self.adaptor_arguments)
-        return None
+    def __init__(self, url: str, text: str, content: bytes, status: int, reason: str, cookies: Dict, headers: Dict, request_headers: Dict, adaptor_arguments: Dict, encoding: str = 'utf-8'):
+        automatch_domain = adaptor_arguments.pop('automatch_domain', None)
+        super().__init__(text=text, body=content, url=automatch_domain or url, encoding=encoding, **adaptor_arguments)
 
-    def __repr__(self):
-        return f'<{self.__class__.__name__} [{self.status} {self.reason}]>'
+        self.status = status
+        self.reason = reason
+        self.cookies = cookies
+        self.headers = headers
+        self.request_headers = request_headers
+        # For back-ward compatibility
+        self.adaptor = self
+
+    # def __repr__(self):
+    #     return f'<{self.__class__.__name__} [{self.status} {self.reason}]>'
 
 
 class BaseFetcher:

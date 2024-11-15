@@ -7,7 +7,7 @@ from scrapling.core.translator import HTMLTranslator
 from scrapling.core.mixins import SelectorsGeneration
 from scrapling.core.custom_types import TextHandler, TextHandlers, AttributesHandler
 from scrapling.core.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
-from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden
+from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden, is_jsonable
 from scrapling.core._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex, Iterable
 from lxml import etree, html
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
@@ -60,6 +60,7 @@ class Adaptor(SelectorsGeneration):
         if root is None and not body and text is None:
             raise ValueError("Adaptor class needs text, body, or root arguments to work")
 
+        self.__text = None
         if root is None:
             if text is None:
                 if not body or not isinstance(body, bytes):
@@ -72,12 +73,14 @@ class Adaptor(SelectorsGeneration):
 
                 body = text.strip().replace("\x00", "").encode(encoding) or b"<html/>"
 
+            # https://lxml.de/api/lxml.etree.HTMLParser-class.html
             parser = html.HTMLParser(
-                # https://lxml.de/api/lxml.etree.HTMLParser-class.html
                 recover=True, remove_blank_text=True, remove_comments=(keep_comments is False), encoding=encoding,
                 compact=True, huge_tree=huge_tree, default_doctype=True
             )
             self._root = etree.fromstring(body, parser=parser, base_url=url)
+            if is_jsonable(text or body.decode()):
+                self.__text = TextHandler(text or body.decode())
 
         else:
             # All html types inherits from HtmlMixin so this to check for all at once
@@ -112,7 +115,6 @@ class Adaptor(SelectorsGeneration):
         self.url = url
         # For selector stuff
         self.__attributes = None
-        self.__text = None
         self.__tag = None
         self.__debug = debug
 
@@ -185,23 +187,9 @@ class Adaptor(SelectorsGeneration):
     def text(self) -> TextHandler:
         """Get text content of the element"""
         if not self.__text:
-            if self.__keep_comments:
-                if not self.children:
-                    # If use chose to keep comments, remove comments from text
-                    # Escape lxml default behaviour and remove comments like this `<span>CONDITION: <!-- -->Excellent</span>`
-                    # This issue is present in parsel/scrapy as well so no need to repeat it here so the user can run regex on the full text.
-                    code = self.html_content
-                    parser = html.HTMLParser(
-                        recover=True, remove_blank_text=True, remove_comments=True, encoding=self.encoding,
-                        compact=True, huge_tree=self.__huge_tree_enabled, default_doctype=True
-                    )
-                    fragment_root = html.fragment_fromstring(code, parser=parser)
-                    self.__text = TextHandler(fragment_root.text)
-                else:
-                    self.__text = TextHandler(self._root.text)
-            else:
-                # If user already chose to not keep comments then all is good
-                self.__text = TextHandler(self._root.text)
+            # If you want to escape lxml default behaviour and remove comments like this `<span>CONDITION: <!-- -->Excellent</span>`
+            # before extracting text then keep `keep_comments` set to False while initializing the first class
+            self.__text = TextHandler(self._root.text)
         return self.__text
 
     def get_all_text(self, separator: str = "\n", strip: bool = False, ignore_tags: Tuple = ('script', 'style',), valid_values: bool = True) -> TextHandler:

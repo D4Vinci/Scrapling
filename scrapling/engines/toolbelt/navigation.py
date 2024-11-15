@@ -25,6 +25,40 @@ def intercept_route(route: Route) -> Union[Route, None]:
     return route.continue_()
 
 
+def construct_proxy_dict(proxy_string: Union[str, Dict[str, str]]) -> Union[Dict, None]:
+    """Validate a proxy and return it in the acceptable format for Playwright
+    Reference: https://playwright.dev/python/docs/network#http-proxy
+
+    :param proxy_string: A string or a dictionary representation of the proxy.
+    :return:
+    """
+    if proxy_string:
+        if isinstance(proxy_string, str):
+            proxy = urlparse(proxy_string)
+            try:
+                return {
+                    'server': f'{proxy.scheme}://{proxy.hostname}:{proxy.port}',
+                    'username': proxy.username or '',
+                    'password': proxy.password or '',
+                }
+            except ValueError:
+                # Urllib will say that one of the parameters above can't be casted to the correct type like `int` for port etc...
+                raise TypeError(f'The proxy argument\'s string is in invalid format!')
+
+        elif isinstance(proxy_string, dict):
+            valid_keys = ('server', 'username', 'password', )
+            if all(key in valid_keys for key in proxy_string.keys()) and not any(key not in valid_keys for key in proxy_string.keys()):
+                return proxy_string
+            else:
+                raise TypeError(f'A proxy dictionary must have only these keys: {valid_keys}')
+
+        else:
+            raise TypeError(f'Invalid type of proxy ({type(proxy_string)}), the proxy argument must be a string or a dictionary!')
+
+    # The default value for proxy in Playwright's source is `None`
+    return None
+
+
 def construct_cdp_url(cdp_url: str, query_params: Optional[Dict] = None) -> str:
     """Takes a CDP URL, reconstruct it to check it's valid, then adds encoded parameters if exists
 

@@ -15,4 +15,5 @@ from .navigation import (
     js_bypass_path,
     intercept_route,
     construct_cdp_url,
+    construct_proxy_dict,
 )

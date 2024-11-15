@@ -7,6 +7,7 @@ from scrapling.engines.toolbelt import (
     get_os_name,
     intercept_route,
     check_type_validity,
+    construct_proxy_dict,
     generate_convincing_referer,
 )
 
@@ -18,7 +19,8 @@ class CamoufoxEngine:
             self, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, humanize: Optional[Union[bool, float]] = True,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
-            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, adaptor_arguments: Dict = None
+            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, adaptor_arguments: Dict = None
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
 
@@ -33,12 +35,14 @@ class CamoufoxEngine:
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
         self.headless = headless
@@ -48,7 +52,9 @@ class CamoufoxEngine:
         self.allow_webgl = bool(allow_webgl)
         self.network_idle = bool(network_idle)
         self.google_search = bool(google_search)
+        self.os_randomize = bool(os_randomize)
         self.extra_headers = extra_headers or {}
+        self.proxy = construct_proxy_dict(proxy)
         self.addons = addons or []
         self.humanize = humanize
         self.timeout = check_type_validity(timeout, [int, float], 30000)
@@ -66,17 +72,18 @@ class CamoufoxEngine:
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: Target url.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         with Camoufox(
-                headless=self.headless,
-                block_images=self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
-                os=get_os_name(),
-                block_webrtc=self.block_webrtc,
-                allow_webgl=self.allow_webgl,
+                proxy=self.proxy,
                 addons=self.addons,
+                headless=self.headless,
                 humanize=self.humanize,
-                i_know_what_im_doing=True,  # To turn warnings off with user configurations
+                i_know_what_im_doing=True,  # To turn warnings off with the user configurations
+                allow_webgl=self.allow_webgl,
+                block_webrtc=self.block_webrtc,
+                block_images=self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
+                os=None if self.os_randomize else get_os_name(),
         ) as browser:
             page = browser.new_page()
             page.set_default_navigation_timeout(self.timeout)
