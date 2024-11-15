@@ -757,7 +757,8 @@ Yes, Scrapling instances are thread-safe. Each Adaptor instance maintains its st
 
 ## More Sponsors!
 [![Capsolver Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/CapSolver.png)](https://www.capsolver.com/?utm_source=github&utm_medium=repo&utm_campaign=scraping&utm_term=Scrapling)
-[![SerpApi Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png)](https://serpapi.com/?utm_source=scrapling)
+<a href="https://serpapi.com/?utm_source=scrapling"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png" height="500" width="500" alt="SerpApi Banner" ></a>
+
 
 ## Contributing
 Everybody is invited and welcome to contribute to Scrapling. There is a lot to do!
