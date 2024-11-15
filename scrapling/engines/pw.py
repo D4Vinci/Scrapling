@@ -116,7 +116,7 @@ class PlaywrightEngine:
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: Target url.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         if not self.stealth:
             from playwright.sync_api import sync_playwright

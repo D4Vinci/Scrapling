@@ -48,7 +48,7 @@ class StaticEngine:
         """Takes httpx response and generates `Response` object from it.
 
         :param response: httpx response object
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         return Response(
             url=str(response.url),
@@ -69,7 +69,7 @@ class StaticEngine:
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
         request = httpx.get(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
@@ -81,7 +81,7 @@ class StaticEngine:
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
         request = httpx.post(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
@@ -93,7 +93,7 @@ class StaticEngine:
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
         request = httpx.delete(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
@@ -105,7 +105,7 @@ class StaticEngine:
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
         request = httpx.put(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)

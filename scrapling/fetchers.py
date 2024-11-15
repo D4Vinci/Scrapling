@@ -17,7 +17,7 @@ class Fetcher(BaseFetcher):
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).get(url, stealthy_headers, **kwargs)
         return response_object
@@ -30,7 +30,7 @@ class Fetcher(BaseFetcher):
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).post(url, stealthy_headers, **kwargs)
         return response_object
@@ -43,7 +43,7 @@ class Fetcher(BaseFetcher):
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
         create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).put(url, stealthy_headers, **kwargs)
         return response_object
@@ -56,7 +56,7 @@ class Fetcher(BaseFetcher):
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).delete(url, stealthy_headers, **kwargs)
         return response_object
@@ -97,7 +97,7 @@ class StealthyFetcher(BaseFetcher):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         engine = CamoufoxEngine(
             proxy=proxy,
@@ -167,7 +167,7 @@ class PlayWrightFetcher(BaseFetcher):
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
         :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
         :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
-        :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         engine = PlaywrightEngine(
             proxy=proxy,
