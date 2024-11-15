@@ -8,10 +8,9 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 ```python
 >> from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
 # Fetch websites' source under the radar!
->> fetcher = StealthyFetcher().fetch('https://example.com', headless=True, disable_resources=True)
->> print(fetcher.status)
+>> page = StealthyFetcher().fetch('https://example.com', headless=True, disable_resources=True)
+>> print(page.status)
 200
->> page = fetcher.adaptor
 >> products = page.css('.product', auto_save=True)  # Scrape data that survives website design changes!
 >> # Later, if the website structure changes, pass `auto_match=True`
 >> products = page.css('.product', auto_match=True)  # and Scrapling still finds them!
@@ -107,7 +106,7 @@ from scrapling import Fetcher
 fetcher = Fetcher(auto_match=False)
 
 # Fetch a web page and create an Adaptor instance
-page = fetcher.get('https://quotes.toscrape.com/', stealthy_headers=True).adaptor
+page = fetcher.get('https://quotes.toscrape.com/', stealthy_headers=True)
 # Get all strings in the full page
 page.get_all_text(ignore_tags=('script', 'style'))
 
@@ -217,6 +216,8 @@ All fetcher-type classes are imported in the same way
 from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
 ```
 And all of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `storage`, `storage_args`, and `debug` which are the same ones you give to the `Adaptor` class.
+
+Also, the `Response` object returned from all fetchers is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`. All `cookies`, `headers`, and `request_headers` are always of type `dictionary`.
 > [!NOTE]
 > The `auto_match` argument is enabled by default which is the one you should care about the most as you will see later.
 ### Fetcher
@@ -236,6 +237,8 @@ This class is built on top of [Camoufox](https://github.com/daijro/camoufox) whi
 >> page.status == 200
 True
 ```
+> Note: all requests done by this fetcher is waiting by default for all JS to be fully loaded and executed so you don't have to :)
+
 <details><summary><strong>For the sake of simplicity, expand this for the complete list of arguments</strong></summary>
 
 |      Argument       | Description                                                                                                                                                                                                                                                                                                                                                                                                     | Optional |
@@ -264,9 +267,11 @@ This list isn't final so expect a lot more additions and flexibility to be added
 This class is built on top of [Playwright](https://playwright.dev/python/) which currently provides 4 main run options but they can be mixed as you want.
 ```python
 >> page = PlayWrightFetcher().fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # Vanilla Playwright option
->> page.adaptor.css_first("#search a::attr(href)")
+>> page.css_first("#search a::attr(href)")
 'https://github.com/D4Vinci/Scrapling'
 ```
+> Note: all requests done by this fetcher is waiting by default for all JS to be fully loaded and executed so you don't have to :)
+
 Using this Fetcher class, you can make requests with:
   1) Vanilla Playwright without any modifications other than the ones you chose.
   2) Stealthy Playwright with the stealth mode I wrote for it. It's still a WIP but it bypasses many online tests like [Sannysoft's](https://bot.sannysoft.com/).</br> Some of the things this fetcher's stealth mode does include:
@@ -358,7 +363,7 @@ You can search for a specific ancestor of an element that satisfies a function, 
 ### Content-based Selection & Finding Similar Elements
 You can select elements by their text content in multiple ways, here's a full example on another website:
 ```python
->>> page = Fetcher().get('https://books.toscrape.com/index.html').adaptor
+>>> page = Fetcher().get('https://books.toscrape.com/index.html')
 
 >>> page.find_by_text('Tipping the Velvet')  # Find the first element whose text fully matches this text
 <data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>
@@ -478,11 +483,11 @@ Now let's test the same selector in both versions
 >> old_url = "https://web.archive.org/web/20100102003420/http://stackoverflow.com/"
 >> new_url = "https://stackoverflow.com/"
 >> 
->> page = Fetcher(automatch_domain='stackoverflow.com').get(old_url, timeout=30).adaptor
+>> page = Fetcher(automatch_domain='stackoverflow.com').get(old_url, timeout=30)
 >> element1 = page.css_first(selector, auto_save=True)
 >> 
 >> # Same selector but used in the updated website
->> page = Fetcher(automatch_domain="stackoverflow.com").get(new_url).adaptor
+>> page = Fetcher(automatch_domain="stackoverflow.com").get(new_url)
 >> element2 = page.css_first(selector, auto_match=True)
 >> 
 >> if element1.text == element2.text:
@@ -494,7 +499,7 @@ Note that I used a new argument called `automatch_domain`, this is because for S
 In a real-world scenario, the code will be the same except it will use the same URL for both requests so you won't need to use the `automatch_domain` argument. This is the closest example I can give to real-world cases so I hope it didn't confuse you :)
 
 **Notes:**
-1. For the two examples above I used one time the `Adaptor` class and the second time the `Fetcher` class just to show you that you can create the `Adaptor` object by yourself if you have the source or fetch the source using any `Fetcher` class then it will create the `Adaptor` object for you on the `.adaptor` property.
+1. For the two examples above I used one time the `Adaptor` class and the second time the `Fetcher` class just to show you that you can create the `Adaptor` object by yourself if you have the source or fetch the source using any `Fetcher` class then it will create the `Adaptor` object for you.
 2. Passing the `auto_save` argument with the `auto_match` argument set to `False` while initializing the Adaptor/Fetcher object will only result in ignoring the `auto_save` argument value and the following warning message
     ```text
     Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.
@@ -535,7 +540,7 @@ Examples to clear any confusion :)
 
 ```python
 >> from scrapling import Fetcher
->> page = Fetcher().get('https://quotes.toscrape.com/').adaptor
+>> page = Fetcher().get('https://quotes.toscrape.com/')
 # Find all elements with tag name `div`.
 >> page.find_all('div')
 [<data='<div class="container"> <div class="row...' parent='<body> <div class="container"> <div clas...'>,
