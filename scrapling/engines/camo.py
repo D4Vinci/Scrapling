@@ -7,6 +7,7 @@ from scrapling.engines.toolbelt import (
     get_os_name,
     intercept_route,
     check_type_validity,
+    construct_proxy_dict,
     generate_convincing_referer,
 )
 
@@ -18,7 +19,8 @@ class CamoufoxEngine:
             self, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, humanize: Optional[Union[bool, float]] = True,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
-            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, adaptor_arguments: Dict = None
+            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, adaptor_arguments: Dict = None
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
 
@@ -39,6 +41,7 @@ class CamoufoxEngine:
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
         self.headless = headless
@@ -49,6 +52,7 @@ class CamoufoxEngine:
         self.network_idle = bool(network_idle)
         self.google_search = bool(google_search)
         self.extra_headers = extra_headers or {}
+        self.proxy = construct_proxy_dict(proxy)
         self.addons = addons or []
         self.humanize = humanize
         self.timeout = check_type_validity(timeout, [int, float], 30000)
@@ -76,6 +80,7 @@ class CamoufoxEngine:
                 allow_webgl=self.allow_webgl,
                 addons=self.addons,
                 humanize=self.humanize,
+                proxy=self.proxy,
                 i_know_what_im_doing=True,  # To turn warnings off with user configurations
         ) as browser:
             page = browser.new_page()

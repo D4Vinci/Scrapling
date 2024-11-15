@@ -72,7 +72,7 @@ class StealthyFetcher(BaseFetcher):
             self, url: str, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
-            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None
+            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, proxy: Optional[Union[str, Dict[str, str]]] = None,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -94,23 +94,25 @@ class StealthyFetcher(BaseFetcher):
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
         engine = CamoufoxEngine(
+            proxy=proxy,
+            addons=addons,
             timeout=timeout,
             headless=headless,
-            page_action=page_action,
-            block_images=block_images,
-            block_webrtc=block_webrtc,
-            addons=addons,
             humanize=humanize,
             allow_webgl=allow_webgl,
-            disable_resources=disable_resources,
+            page_action=page_action,
             network_idle=network_idle,
+            block_images=block_images,
+            block_webrtc=block_webrtc,
             wait_selector=wait_selector,
-            wait_selector_state=wait_selector_state,
             google_search=google_search,
             extra_headers=extra_headers,
+            disable_resources=disable_resources,
+            wait_selector_state=wait_selector_state,
             adaptor_arguments=self.adaptor_arguments,
         )
         return engine.fetch(url)
@@ -136,6 +138,7 @@ class PlayWrightFetcher(BaseFetcher):
             useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
             page_action: Callable = do_nothing, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
             hide_canvas: bool = True, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
+            proxy: Optional[Union[str, Dict[str, str]]] = None,
             stealth: bool = False,
             cdp_url: Optional[str] = None,
             nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
@@ -157,12 +160,14 @@ class PlayWrightFetcher(BaseFetcher):
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
         :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
         :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
         :return: A Response object with `url`, `text`, `content`, `status`, `reason`, `encoding`, `cookies`, `headers`, `request_headers`, and the `adaptor` class for parsing, of course.
         """
         engine = PlaywrightEngine(
+            proxy=proxy,
             timeout=timeout,
             stealth=stealth,
             cdp_url=cdp_url,

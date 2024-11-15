@@ -9,8 +9,9 @@ from scrapling.engines.toolbelt import (
     js_bypass_path,
     intercept_route,
     generate_headers,
-    check_type_validity,
     construct_cdp_url,
+    check_type_validity,
+    construct_proxy_dict,
     generate_convincing_referer,
 )
 
@@ -33,6 +34,7 @@ class PlaywrightEngine:
             nstbrowser_config: Optional[Dict] = None,
             google_search: Optional[bool] = True,
             extra_headers: Optional[Dict[str, str]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None,
             adaptor_arguments: Dict = None
     ):
         """An engine that utilizes PlayWright library, check the `PlayWrightFetcher` class for more documentation.
@@ -54,6 +56,7 @@ class PlaywrightEngine:
         :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
@@ -65,6 +68,7 @@ class PlaywrightEngine:
         self.disable_webgl = bool(disable_webgl)
         self.google_search = bool(google_search)
         self.extra_headers = extra_headers or {}
+        self.proxy = construct_proxy_dict(proxy)
         self.cdp_url = cdp_url
         self.useragent = useragent
         self.timeout = check_type_validity(timeout, [int, float], 30000)
@@ -151,6 +155,7 @@ class PlaywrightEngine:
                     locale='en-US',
                     is_mobile=False,
                     has_touch=False,
+                    proxy=self.proxy,
                     color_scheme='dark',  # Bypasses the 'prefersLightColor' check in creepjs
                     user_agent=useragent,
                     device_scale_factor=2,
