@@ -30,7 +30,7 @@ class Response(Adaptor):
 class BaseFetcher:
     def __init__(
             self, huge_tree: bool = True, keep_comments: Optional[bool] = False, auto_match: Optional[bool] = True,
-            storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None, debug: Optional[bool] = True,
+            storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None, debug: Optional[bool] = False,
             automatch_domain: Optional[str] = None,
     ):
         """Arguments below are the same from the Adaptor class so you can pass them directly, the rest of Adaptor's arguments
