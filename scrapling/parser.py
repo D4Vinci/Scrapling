@@ -32,6 +32,7 @@ class Adaptor(SelectorsGeneration):
             storage: Any = SQLiteStorageSystem,
             storage_args: Optional[Dict] = None,
             debug: Optional[bool] = True,
+            **kwargs
     ):
         """The main class that works as a wrapper for the HTML input data. Using this class, you can search for elements
         with expressions in CSS, XPath, or with simply text. Check the docs for more info.
@@ -117,6 +118,10 @@ class Adaptor(SelectorsGeneration):
         self.__attributes = None
         self.__tag = None
         self.__debug = debug
+        # No need to check if all response attributes exist or not because if `status` exist, then the rest exist (Save some CPU cycles for speed)
+        self.__response_data = {
+            key: getattr(self, key) for key in ('status', 'reason', 'cookies', 'headers', 'request_headers',)
+        } if hasattr(self, 'status') else {}
 
     # Node functionalities, I wanted to move to separate Mixin class but it had slight impact on performance
     @staticmethod
@@ -138,10 +143,14 @@ class Adaptor(SelectorsGeneration):
             return TextHandler(str(element))
         else:
             if issubclass(type(element), html.HtmlMixin):
+
                 return self.__class__(
-                    root=element, url=self.url, encoding=self.encoding, auto_match=self.__auto_match_enabled,
+                    root=element,
+                    text='', body=b'',  # Since root argument is provided, both `text` and `body` will be ignored so this is just a filler
+                    url=self.url, encoding=self.encoding, auto_match=self.__auto_match_enabled,
                     keep_comments=True,  # if the comments are already removed in initialization, no need to try to delete them in sub-elements
-                    huge_tree=self.__huge_tree_enabled, debug=self.__debug
+                    huge_tree=self.__huge_tree_enabled, debug=self.__debug,
+                    **self.__response_data
                 )
             return element
 
