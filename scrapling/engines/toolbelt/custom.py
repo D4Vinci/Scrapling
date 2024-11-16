@@ -12,15 +12,14 @@ from scrapling.core._types import Any, List, Type, Union, Optional, Dict, Callab
 class Response(Adaptor):
     """This class is returned by all engines as a way to unify response type between different libraries."""
 
-    def __init__(self, url: str, text: str, content: bytes, status: int, reason: str, cookies: Dict, headers: Dict, request_headers: Dict, adaptor_arguments: Dict, encoding: str = 'utf-8'):
+    def __init__(self, url: str, text: str, body: bytes, status: int, reason: str, cookies: Dict, headers: Dict, request_headers: Dict, encoding: str = 'utf-8', **adaptor_arguments: Dict):
         automatch_domain = adaptor_arguments.pop('automatch_domain', None)
-        super().__init__(text=text, body=content, url=automatch_domain or url, encoding=encoding, **adaptor_arguments)
-
         self.status = status
         self.reason = reason
         self.cookies = cookies
         self.headers = headers
         self.request_headers = request_headers
+        super().__init__(text=text, body=body, url=automatch_domain or url, encoding=encoding, **adaptor_arguments)
         # For back-ward compatibility
         self.adaptor = self
 
@@ -31,7 +30,7 @@ class Response(Adaptor):
 class BaseFetcher:
     def __init__(
             self, huge_tree: bool = True, keep_comments: Optional[bool] = False, auto_match: Optional[bool] = True,
-            storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None, debug: Optional[bool] = True,
+            storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None, debug: Optional[bool] = False,
             automatch_domain: Optional[str] = None,
     ):
         """Arguments below are the same from the Adaptor class so you can pass them directly, the rest of Adaptor's arguments

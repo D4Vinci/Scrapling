@@ -114,14 +114,14 @@ class CamoufoxEngine:
             response = Response(
                 url=res.url,
                 text=page.content(),
-                content=res.body(),
+                body=res.body(),
                 status=res.status,
                 reason=res.status_text,
                 encoding=encoding,
                 cookies={cookie['name']: cookie['value'] for cookie in page.context.cookies()},
                 headers=res.all_headers(),
                 request_headers=res.request.all_headers(),
-                adaptor_arguments=self.adaptor_arguments
+                **self.adaptor_arguments
             )
             page.close()
 

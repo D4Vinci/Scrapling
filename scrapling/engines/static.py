@@ -53,14 +53,14 @@ class StaticEngine:
         return Response(
             url=str(response.url),
             text=response.text,
-            content=response.content,
+            body=response.content,
             status=response.status_code,
             reason=response.reason_phrase,
             encoding=response.encoding or 'utf-8',
             cookies=dict(response.cookies),
             headers=dict(response.headers),
             request_headers=dict(response.request.headers),
-            adaptor_arguments=self.adaptor_arguments
+            **self.adaptor_arguments
         )
 
     def get(self, url: str, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
