@@ -217,7 +217,7 @@ from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
 ```
 And all of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `storage`, `storage_args`, and `debug` which are the same ones you give to the `Adaptor` class.
 
-If you don't want to pass arguments to the generated `Adaptor` object and want to use the default values, you can use import instead for cleaner code:
+If you don't want to pass arguments to the generated `Adaptor` object and want to use the default values, you can use this import instead for cleaner code:
 ```python
 from scrapling.default import Fetcher, StealthyFetcher, PlayWrightFetcher
 ```
