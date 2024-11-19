@@ -1,6 +1,7 @@
 include LICENSE
 include *.db
 include *.js
+include scrapling/engines/toolbelt/bypasses/*.js
 include scrapling/*.db
 include scrapling/*.db*
 include scrapling/py.typed
