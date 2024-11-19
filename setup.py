@@ -57,7 +57,7 @@ setup(
         'httpx[brotli,zstd]',
         'playwright',
         'rebrowser-playwright',
-        'camoufox>=0.3.9',
+        'camoufox>=0.3.10',
         'browserforge',
     ],
     python_requires=">=3.8",
