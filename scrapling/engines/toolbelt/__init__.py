@@ -6,6 +6,7 @@ from .fingerprints import (
 from .custom import (
     Response,
     do_nothing,
+    StatusText,
     BaseFetcher,
     get_variable_name,
     check_type_validity,
