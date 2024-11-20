@@ -6,6 +6,7 @@ from scrapling.engines.constants import DEFAULT_STEALTH_FLAGS, NSTBROWSER_DEFAUL
 from scrapling.engines.toolbelt import (
     Response,
     do_nothing,
+    StatusText,
     js_bypass_path,
     intercept_route,
     generate_headers,
@@ -221,12 +222,17 @@ class PlaywrightEngine:
             if 'charset=' in content_type.lower():
                 encoding = content_type.lower().split('charset=')[-1].split(';')[0].strip()
 
+            status_text = res.status_text
+            # PlayWright API sometimes give empty status text for some reason!
+            if not status_text:
+                status_text = StatusText.get(res.status)
+
             response = Response(
                 url=res.url,
                 text=page.content(),
                 body=page.content().encode('utf-8'),
                 status=res.status,
-                reason=res.status_text,
+                reason=status_text,
                 encoding=encoding,
                 cookies={cookie['name']: cookie['value'] for cookie in page.context.cookies()},
                 headers=res.all_headers(),
