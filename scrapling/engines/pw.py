@@ -224,7 +224,7 @@ class PlaywrightEngine:
             response = Response(
                 url=res.url,
                 text=page.content(),
-                body=res.body(),
+                body=page.content().encode('utf-8'),
                 status=res.status,
                 reason=res.status_text,
                 encoding=encoding,
