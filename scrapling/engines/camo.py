@@ -109,8 +109,11 @@ class CamoufoxEngine:
             content_type = res.headers.get('content-type', '')
             # Parse charset from content-type
             encoding = 'utf-8'  # default encoding
-            if 'charset=' in content_type.lower():
-                encoding = content_type.lower().split('charset=')[-1].split(';')[0].strip()
+            content_type_lower = content_type.lower()
+            if 'charset=' in content_type_lower:
+                encoding = content_type_lower.split('charset=')[-1].split(';')[0].strip().strip('"').strip("'")
+            if 'utf-8' in encoding:
+                encoding = 'utf-8'
 
             status_text = res.status_text
             # PlayWright API sometimes give empty status text for some reason!
