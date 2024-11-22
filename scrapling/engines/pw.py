@@ -214,7 +214,7 @@ class PlaywrightEngine:
 
             if self.wait_selector and type(self.wait_selector) is str:
                 waiter = page.locator(self.wait_selector)
-                waiter.wait_for(state=self.wait_selector_state)
+                waiter.first.wait_for(state=self.wait_selector_state)
 
             content_type = res.headers.get('content-type', '')
             # Parse charset from content-type
