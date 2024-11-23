@@ -11,6 +11,7 @@ class Fetcher(BaseFetcher):
     """
     def get(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
+
         :param url: Target url.
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
         :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
@@ -24,6 +25,7 @@ class Fetcher(BaseFetcher):
 
     def post(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
+
         :param url: Target url.
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
         :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
@@ -37,12 +39,14 @@ class Fetcher(BaseFetcher):
 
     def put(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
+
         :param url: Target url
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
         :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
-        create a referer header as if this request came from Google's search of this URL's domain.
+            create a referer header as if this request came from Google's search of this URL's domain.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
+
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).put(url, stealthy_headers, **kwargs)
@@ -50,6 +54,7 @@ class Fetcher(BaseFetcher):
 
     def delete(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
+
         :param url: Target url
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
         :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
@@ -77,6 +82,7 @@ class StealthyFetcher(BaseFetcher):
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
+
         :param url: Target url.
         :param headless: Run the browser in headless/hidden (default), 'virtual' screen mode, or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
@@ -127,14 +133,15 @@ class PlayWrightFetcher(BaseFetcher):
      Using this Fetcher class, you can do requests with:
         - Vanilla Playwright without any modifications other than the ones you chose.
         - Stealthy Playwright with the stealth mode I wrote for it. It's still a work in progress but it bypasses many online tests like bot.sannysoft.com
-        Some of the things stealth mode does include:
-            1) Patches the CDP runtime fingerprint.
-            2) Mimics some of the real browsers' properties by injecting several JS files and using custom options.
-            3) Using custom flags on launch to hide Playwright even more and make it faster.
-            4) Generates real browser's headers of the same type and same user OS then append it to the request.
+            Some of the things stealth mode does include:
+                1) Patches the CDP runtime fingerprint.
+                2) Mimics some of the real browsers' properties by injecting several JS files and using custom options.
+                3) Using custom flags on launch to hide Playwright even more and make it faster.
+                4) Generates real browser's headers of the same type and same user OS then append it to the request.
         - Real browsers by passing the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
         - NSTBrowser's docker browserless option by passing the CDP URL and enabling `nstbrowser_mode` option.
-        > Note that these are the main options with PlayWright but it can be mixed together.
+
+    > Note that these are the main options with PlayWright but it can be mixed together.
     """
     def fetch(
             self, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
@@ -147,6 +154,7 @@ class PlayWrightFetcher(BaseFetcher):
             nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
+
         :param url: Target url.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests of unnecessary resources for speed boost. It depends but it made requests ~25% faster in my tests for some websites.

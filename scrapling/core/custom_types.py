@@ -129,9 +129,8 @@ class TextHandlers(List[TextHandler]):
 
 
 class AttributesHandler(Mapping):
-    """A read-only mapping to use instead of the standard dictionary for the speed boost but
-     at the same time I use it to add more functionalities.
-    If standard dictionary is needed, just convert this class to dictionary with `dict` function
+    """A read-only mapping to use instead of the standard dictionary for the speed boost but at the same time I use it to add more functionalities.
+        If standard dictionary is needed, just convert this class to dictionary with `dict` function
     """
     __slots__ = ('_data',)
 

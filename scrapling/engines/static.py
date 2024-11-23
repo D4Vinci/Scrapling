@@ -23,7 +23,7 @@ class StaticEngine:
     @staticmethod
     def _headers_job(headers: Optional[Dict], url: str, stealth: bool) -> Dict:
         """Adds useragent to headers if it doesn't exist, generates real headers and append it to current headers, and
-        finally generates a referer header that looks like if this request came from Google's search of the current URL's domain.
+            finally generates a referer header that looks like if this request came from Google's search of the current URL's domain.
 
         :param headers: Current headers in the request if the user passed any
         :param url: The Target URL.
@@ -65,6 +65,7 @@ class StaticEngine:
 
     def get(self, url: str, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
+
         :param url: Target url.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
@@ -77,6 +78,7 @@ class StaticEngine:
 
     def post(self, url: str, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
+
         :param url: Target url.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
@@ -89,6 +91,7 @@ class StaticEngine:
 
     def delete(self, url: str, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
+
         :param url: Target url.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
@@ -101,6 +104,7 @@ class StaticEngine:
 
     def put(self, url: str, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
+
         :param url: Target url.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
