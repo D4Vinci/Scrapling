@@ -35,6 +35,7 @@ class TestPlayWrightFetcher(unittest.TestCase):
     def test_waiting_selector(self):
         """Test if waiting for a selector make page does not finish loading or not"""
         self.assertEqual(self.fetcher.fetch(self.html_url, wait_selector='h1').status, 200)
+        self.assertEqual(self.fetcher.fetch(self.html_url, wait_selector='h1', wait_selector_state='visible').status, 200)
 
     def test_cookies_loading(self):
         """Test if cookies are set after the request"""
@@ -56,6 +57,7 @@ class TestPlayWrightFetcher(unittest.TestCase):
         self.assertEqual(self.fetcher.fetch(self.html_url, disable_webgl=False, hide_canvas=True).status, 200)
         self.assertEqual(self.fetcher.fetch(self.html_url, stealth=True).status, 200)
         self.assertEqual(self.fetcher.fetch(self.html_url, useragent='Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0').status, 200)
+        self.assertEqual(self.fetcher.fetch(self.html_url, extra_headers={'ayo': ''}).status, 200)
 
     def test_cdp_url(self):
         """Test if it's going to try to connect to cdp url or not"""

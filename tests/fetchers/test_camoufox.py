@@ -36,6 +36,7 @@ class TestStealthyFetcher(unittest.TestCase):
     def test_waiting_selector(self):
         """Test if waiting for a selector make page does not finish loading or not"""
         self.assertEqual(self.fetcher.fetch(self.html_url, wait_selector='h1').status, 200)
+        self.assertEqual(self.fetcher.fetch(self.html_url, wait_selector='h1', wait_selector_state='visible').status, 200)
 
     def test_cookies_loading(self):
         """Test if cookies are set after the request"""
@@ -56,6 +57,7 @@ class TestStealthyFetcher(unittest.TestCase):
         self.assertEqual(self.fetcher.fetch(self.html_url, block_webrtc=True, allow_webgl=True).status, 200)
         self.assertEqual(self.fetcher.fetch(self.html_url, block_webrtc=False, allow_webgl=True).status, 200)
         self.assertEqual(self.fetcher.fetch(self.html_url, block_webrtc=True, allow_webgl=False).status, 200)
+        self.assertEqual(self.fetcher.fetch(self.html_url, extra_headers={'ayo': ''}, os_randomize=True).status, 200)
 
     def test_infinite_timeout(self):
         """Test if infinite timeout breaks the code or not"""

@@ -4,7 +4,7 @@ from scrapling.parser import Adaptor, Adaptors
 from scrapling.core.custom_types import TextHandler, AttributesHandler
 
 __author__ = "Karim Shoair (karim.shoair@pm.me)"
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 __copyright__ = "Copyright (c) 2024 Karim Shoair"
 
 
