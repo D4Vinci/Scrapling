@@ -216,11 +216,8 @@ class PlaywrightEngine:
                 waiter = page.locator(self.wait_selector)
                 waiter.first.wait_for(state=self.wait_selector_state)
 
-            content_type = res.headers.get('content-type', '')
-            # Parse charset from content-type
-            encoding = 'utf-8'  # default encoding
-            if 'charset=' in content_type.lower():
-                encoding = content_type.lower().split('charset=')[-1].split(';')[0].strip()
+            # This will be parsed inside `Response`
+            encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
 
             status_text = res.status_text
             # PlayWright API sometimes give empty status text for some reason!
