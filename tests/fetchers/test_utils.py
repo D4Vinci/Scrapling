@@ -126,4 +126,4 @@ class TestPlayWrightFetcher(unittest.TestCase):
         for status_code, expected_status_text in self.status_map.items():
             self.assertEqual(StatusText.get(status_code), expected_status_text)
 
-        self.assertEqual(1000, "Unknown Status Code")
+        self.assertEqual(StatusText.get(1000), "Unknown Status Code")
