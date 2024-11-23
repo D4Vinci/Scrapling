@@ -12,8 +12,8 @@ from scrapling.core._types import Any, List, Type, Union, Optional, Dict, Callab
 
 
 class ResponseEncoding:
-    DEFAULT_ENCODING = "utf-8"
-    ISO_8859_1_CONTENT_TYPES = {"text/plain", "text/html", "text/css", "text/javascript"}
+    __DEFAULT_ENCODING = "utf-8"
+    __ISO_8859_1_CONTENT_TYPES = {"text/plain", "text/html", "text/css", "text/javascript"}
 
     @classmethod
     @cache(maxsize=None)
@@ -43,17 +43,17 @@ class ResponseEncoding:
         """Determine the appropriate character encoding from a content-type header.
 
         The encoding is determined by these rules in order:
-        1. If no content-type is provided, use UTF-8
-        2. If charset parameter is present, use that encoding
-        3. If content-type is text/*, use ISO-8859-1 per HTTP/1.1 spec
-        4. If content-type is application/json, use UTF-8 per RFC 4627
-        5. Default to UTF-8 if nothing else matches
+            1. If no content-type is provided, use UTF-8
+            2. If charset parameter is present, use that encoding
+            3. If content-type is `text/*`, use ISO-8859-1 per HTTP/1.1 spec
+            4. If content-type is application/json, use UTF-8 per RFC 4627
+            5. Default to UTF-8 if nothing else matches
 
         :param content_type: Content-Type header value or None
         :return: String naming the character encoding
         """
         if not content_type:
-            return cls.DEFAULT_ENCODING
+            return cls.__DEFAULT_ENCODING
 
         try:
             content_type, params = cls.__parse_content_type(content_type)
@@ -65,16 +65,16 @@ class ResponseEncoding:
                 return encoding
 
             # Apply content-type specific rules
-            if content_type in cls.ISO_8859_1_CONTENT_TYPES:
+            if content_type in cls.__ISO_8859_1_CONTENT_TYPES:
                 return "ISO-8859-1"
 
             if content_type == "application/json":
-                return cls.DEFAULT_ENCODING
+                return cls.__DEFAULT_ENCODING
 
-            return cls.DEFAULT_ENCODING
+            return cls.__DEFAULT_ENCODING
 
         except (ValueError, LookupError, UnicodeEncodeError):
-            return cls.DEFAULT_ENCODING
+            return cls.__DEFAULT_ENCODING
 
 
 class Response(Adaptor):
