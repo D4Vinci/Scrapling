@@ -278,7 +278,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(len(elements), 5000)
         # Converting 5000 elements to a class and doing operations on them will take time
         # Based on my tests with 100 runs, 1 loop each Scrapling (given the extra work/features) takes 10.4ms on average
-        self.assertLess(end_time - start_time, 0.2)
+        self.assertLess(end_time - start_time, 0.5)  # Locally I test on 0.1 but on GitHub actions with browsers and threading sometimes closing adds fractions of seconds
 
 
 # Use `coverage run -m unittest --verbose tests/test_parser_functions.py` instead for the coverage report
