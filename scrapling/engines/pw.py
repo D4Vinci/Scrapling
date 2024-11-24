@@ -27,11 +27,12 @@ class PlaywrightEngine:
             page_action: Callable = do_nothing,
             wait_selector: Optional[str] = None,
             wait_selector_state: Optional[str] = 'attached',
-            stealth: bool = False,
-            hide_canvas: bool = True,
-            disable_webgl: bool = False,
+            stealth: Optional[bool] = False,
+            real_chrome: Optional[bool] = False,
+            hide_canvas: Optional[bool] = False,
+            disable_webgl: Optional[bool] = False,
             cdp_url: Optional[str] = None,
-            nstbrowser_mode: bool = False,
+            nstbrowser_mode: Optional[bool] = False,
             nstbrowser_config: Optional[Dict] = None,
             google_search: Optional[bool] = True,
             extra_headers: Optional[Dict[str, str]] = None,
@@ -51,6 +52,7 @@ class PlaywrightEngine:
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
+        :param real_chrome: If you have chrome browser installed on your device, enable this and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
@@ -67,6 +69,7 @@ class PlaywrightEngine:
         self.stealth = bool(stealth)
         self.hide_canvas = bool(hide_canvas)
         self.disable_webgl = bool(disable_webgl)
+        self.real_chrome = bool(real_chrome)
         self.google_search = bool(google_search)
         self.extra_headers = extra_headers or {}
         self.proxy = construct_proxy_dict(proxy)
@@ -119,7 +122,8 @@ class PlaywrightEngine:
         :param url: Target url.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        if not self.stealth:
+        if not self.stealth or self.real_chrome:
+            # Because rebrowser_playwright doesn't play well with real browsers
             from playwright.sync_api import sync_playwright
         else:
             from rebrowser_playwright.sync_api import sync_playwright
@@ -130,8 +134,8 @@ class PlaywrightEngine:
                 extra_headers = {}
                 useragent = self.useragent
             else:
-                extra_headers = generate_headers(browser_mode=True)
-                useragent = extra_headers.get('User-Agent')
+                extra_headers = {}
+                useragent = generate_headers(browser_mode=True).get('User-Agent')
 
             # Prepare the flags before diving
             flags = DEFAULT_STEALTH_FLAGS
@@ -146,9 +150,11 @@ class PlaywrightEngine:
                 browser = p.chromium.connect_over_cdp(endpoint_url=cdp_url)
             else:
                 if self.stealth:
-                    browser = p.chromium.launch(headless=self.headless, args=flags, ignore_default_args=['--enable-automation'], chromium_sandbox=True)
+                    browser = p.chromium.launch(
+                        headless=self.headless, args=flags, ignore_default_args=['--enable-automation'], chromium_sandbox=True, channel='chrome' if self.real_chrome else 'chromium'
+                    )
                 else:
-                    browser = p.chromium.launch(headless=self.headless, ignore_default_args=['--enable-automation'])
+                    browser = p.chromium.launch(headless=self.headless, ignore_default_args=['--enable-automation'], channel='chrome' if self.real_chrome else 'chromium')
 
             # Creating the context
             if self.stealth:

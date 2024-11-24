@@ -138,7 +138,7 @@ class PlayWrightFetcher(BaseFetcher):
                 2) Mimics some of the real browsers' properties by injecting several JS files and using custom options.
                 3) Using custom flags on launch to hide Playwright even more and make it faster.
                 4) Generates real browser's headers of the same type and same user OS then append it to the request.
-        - Real browsers by passing the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
+        - Real browsers by passing the `real_chrome` argument or the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
         - NSTBrowser's docker browserless option by passing the CDP URL and enabling `nstbrowser_mode` option.
 
     > Note that these are the main options with PlayWright but it can be mixed together.
@@ -146,12 +146,12 @@ class PlayWrightFetcher(BaseFetcher):
     def fetch(
             self, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
             useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
-            page_action: Callable = do_nothing, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
-            hide_canvas: bool = True, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
+            page_action: Optional[Callable] = do_nothing, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
+            hide_canvas: Optional[bool] = False, disable_webgl: Optional[bool] = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
             proxy: Optional[Union[str, Dict[str, str]]] = None,
-            stealth: bool = False,
+            stealth: Optional[bool] = False, real_chrome: Optional[bool] = False,
             cdp_url: Optional[str] = None,
-            nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
+            nstbrowser_mode: Optional[bool] = False, nstbrowser_config: Optional[Dict] = None,
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
 
@@ -167,6 +167,7 @@ class PlayWrightFetcher(BaseFetcher):
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
+        :param real_chrome: If you have chrome browser installed on your device, enable this and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
@@ -184,6 +185,7 @@ class PlayWrightFetcher(BaseFetcher):
             cdp_url=cdp_url,
             headless=headless,
             useragent=useragent,
+            real_chrome=real_chrome,
             page_action=page_action,
             hide_canvas=hide_canvas,
             network_idle=network_idle,
