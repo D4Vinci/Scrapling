@@ -138,7 +138,7 @@ class PlayWrightFetcher(BaseFetcher):
                 2) Mimics some of the real browsers' properties by injecting several JS files and using custom options.
                 3) Using custom flags on launch to hide Playwright even more and make it faster.
                 4) Generates real browser's headers of the same type and same user OS then append it to the request.
-        - Real browsers by passing the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
+        - Real browsers by passing the `real_chrome` argument or the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
         - NSTBrowser's docker browserless option by passing the CDP URL and enabling `nstbrowser_mode` option.
 
     > Note that these are the main options with PlayWright but it can be mixed together.
