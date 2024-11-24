@@ -130,8 +130,8 @@ class PlaywrightEngine:
                 extra_headers = {}
                 useragent = self.useragent
             else:
-                extra_headers = generate_headers(browser_mode=True)
-                useragent = extra_headers.get('User-Agent')
+                extra_headers = {}
+                useragent = generate_headers(browser_mode=True).get('User-Agent')
 
             # Prepare the flags before diving
             flags = DEFAULT_STEALTH_FLAGS
