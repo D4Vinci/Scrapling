@@ -28,7 +28,7 @@ class PlaywrightEngine:
             wait_selector: Optional[str] = None,
             wait_selector_state: Optional[str] = 'attached',
             stealth: bool = False,
-            hide_canvas: bool = True,
+            hide_canvas: bool = False,
             disable_webgl: bool = False,
             cdp_url: Optional[str] = None,
             nstbrowser_mode: bool = False,

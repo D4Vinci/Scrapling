@@ -147,7 +147,7 @@ class PlayWrightFetcher(BaseFetcher):
             self, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
             useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
             page_action: Callable = do_nothing, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
-            hide_canvas: bool = True, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
+            hide_canvas: bool = False, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
             proxy: Optional[Union[str, Dict[str, str]]] = None,
             stealth: bool = False,
             cdp_url: Optional[str] = None,
