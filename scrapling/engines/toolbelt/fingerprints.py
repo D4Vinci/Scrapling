@@ -67,7 +67,7 @@ def generate_headers(browser_mode: bool = False) -> Dict:
         # So we don't raise any inconsistency red flags while websites fingerprinting us
         os_name = get_os_name()
         return HeaderGenerator(
-            browser=[Browser(name='chrome', min_version=128)],
+            browser=[Browser(name='chrome', min_version=130)],
             os=os_name,  # None is ignored
             device='desktop'
         ).generate()
