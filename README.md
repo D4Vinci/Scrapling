@@ -768,7 +768,7 @@ Of course, you can find elements by text/regex, find similar elements in a more 
 Yes, Scrapling instances are thread-safe. Each Adaptor instance maintains its state.
 
 ## More Sponsors!
-<a href="https://serpapi.com/?utm_source=scrapling"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png" height="600" alt="SerpApi Banner" ></a>
+<a href="https://serpapi.com/?utm_source=scrapling"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png" height="500" alt="SerpApi Banner" ></a>
 
 
 ## Contributing
