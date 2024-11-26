@@ -63,54 +63,66 @@ class StaticEngine:
             **self.adaptor_arguments
         )
 
-    def get(self, url: str, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+    def get(self, url: str, proxy: Optional[str] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
 
         :param url: Target url.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        request = httpx.get(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        with httpx.Client(proxy=proxy) as client:
+            request = client.get(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+
         return self._prepare_response(request)
 
-    def post(self, url: str, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+    def post(self, url: str, proxy: Optional[str] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
 
         :param url: Target url.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        request = httpx.post(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        with httpx.Client(proxy=proxy) as client:
+            request = client.post(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+
         return self._prepare_response(request)
 
-    def delete(self, url: str, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+    def delete(self, url: str, proxy: Optional[str] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
 
         :param url: Target url.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        request = httpx.delete(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        with httpx.Client(proxy=proxy) as client:
+            request = client.delete(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+
         return self._prepare_response(request)
 
-    def put(self, url: str, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+    def put(self, url: str, proxy: Optional[str] = None, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
 
         :param url: Target url.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        request = httpx.put(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        with httpx.Client(proxy=proxy) as client:
+            request = client.put(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+
         return self._prepare_response(request)

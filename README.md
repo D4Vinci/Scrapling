@@ -233,9 +233,11 @@ Also, the `Response` object returned from all fetchers is the same as `Adaptor` 
 This class is built on top of [httpx](https://www.python-httpx.org/) with additional configuration options, here you can do `GET`, `POST`, `PUT`, and `DELETE` requests.
 
 For all methods, you have `stealth_headers` which makes `Fetcher` create and use real browser's headers then create a referer header as if this request came from Google's search of this URL's domain. It's enabled by default.
+
+You can route all traffic (HTTP and HTTPS) to a proxy for any of these methods in this format `http://username:password@localhost:8030`
 ```python
 >> page = Fetcher().get('https://httpbin.org/get', stealth_headers=True, follow_redirects=True)
->> page = Fetcher().post('https://httpbin.org/post', data={'key': 'value'})
+>> page = Fetcher().post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
 >> page = Fetcher().put('https://httpbin.org/put', data={'key': 'value'})
 >> page = Fetcher().delete('https://httpbin.org/delete')
 ```
