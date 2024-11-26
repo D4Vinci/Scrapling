@@ -78,7 +78,7 @@ class StealthyFetcher(BaseFetcher):
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, proxy: Optional[Union[str, Dict[str, str]]] = None,
-            os_randomize: Optional[bool] = None
+            os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -92,6 +92,7 @@ class StealthyFetcher(BaseFetcher):
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
+        :param disable_ads: Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -111,6 +112,7 @@ class StealthyFetcher(BaseFetcher):
             timeout=timeout,
             headless=headless,
             humanize=humanize,
+            disable_ads=disable_ads,
             allow_webgl=allow_webgl,
             page_action=page_action,
             network_idle=network_idle,
