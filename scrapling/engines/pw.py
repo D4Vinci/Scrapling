@@ -90,6 +90,14 @@ class PlaywrightEngine:
         self.nstbrowser_mode = bool(nstbrowser_mode)
         self.nstbrowser_config = nstbrowser_config
         self.adaptor_arguments = adaptor_arguments if adaptor_arguments else {}
+        self.harmful_default_args = [
+            # This will be ignored to avoid detection more and possibly avoid the popup crashing bug abuse: https://issues.chromium.org/issues/340836884
+            '--enable-automation',
+            '--disable-popup-blocking',
+            # '--disable-component-update',
+            # '--disable-default-apps',
+            # '--disable-extensions',
+        ]
 
     def _cdp_url_logic(self, flags: Optional[List] = None) -> str:
         """Constructs new CDP URL if NSTBrowser is enabled otherwise return CDP URL as it is
@@ -154,10 +162,10 @@ class PlaywrightEngine:
             else:
                 if self.stealth:
                     browser = p.chromium.launch(
-                        headless=self.headless, args=flags, ignore_default_args=['--enable-automation'], chromium_sandbox=True, channel='chrome' if self.real_chrome else 'chromium'
+                        headless=self.headless, args=flags, ignore_default_args=self.harmful_default_args, chromium_sandbox=True, channel='chrome' if self.real_chrome else 'chromium'
                     )
                 else:
-                    browser = p.chromium.launch(headless=self.headless, ignore_default_args=['--enable-automation'], channel='chrome' if self.real_chrome else 'chromium')
+                    browser = p.chromium.launch(headless=self.headless, ignore_default_args=self.harmful_default_args, channel='chrome' if self.real_chrome else 'chromium')
 
             # Creating the context
             if self.stealth:
