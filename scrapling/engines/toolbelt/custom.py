@@ -39,7 +39,7 @@ class ResponseEncoding:
 
     @classmethod
     @cache(maxsize=None)
-    def get_value(cls, content_type: Optional[str]) -> str:
+    def get_value(cls, content_type: Optional[str], text: Optional[str] = 'test') -> str:
         """Determine the appropriate character encoding from a content-type header.
 
         The encoding is determined by these rules in order:
@@ -50,26 +50,30 @@ class ResponseEncoding:
             5. Default to UTF-8 if nothing else matches
 
         :param content_type: Content-Type header value or None
+        :param text: A text to test the encoding on it
         :return: String naming the character encoding
         """
         if not content_type:
             return cls.__DEFAULT_ENCODING
 
         try:
+            encoding = None
             content_type, params = cls.__parse_content_type(content_type)
 
             # First check for explicit charset parameter
             if "charset" in params:
                 encoding = params["charset"].strip("'\"")
-                "test".encode(encoding)  # Validate encoding
-                return encoding
 
             # Apply content-type specific rules
             if content_type in cls.__ISO_8859_1_CONTENT_TYPES:
-                return "ISO-8859-1"
+                encoding = "ISO-8859-1"
 
             if content_type == "application/json":
-                return cls.__DEFAULT_ENCODING
+                encoding = cls.__DEFAULT_ENCODING
+
+            if encoding:
+                _ = text.encode(encoding)  # Validate encoding and validate it can encode the given text
+                return encoding
 
             return cls.__DEFAULT_ENCODING
 
@@ -87,7 +91,7 @@ class Response(Adaptor):
         self.cookies = cookies
         self.headers = headers
         self.request_headers = request_headers
-        encoding = ResponseEncoding.get_value(encoding)
+        encoding = ResponseEncoding.get_value(encoding, text)
         super().__init__(text=text, body=body, url=automatch_domain or url, encoding=encoding, **adaptor_arguments)
         # For back-ward compatibility
         self.adaptor = self
