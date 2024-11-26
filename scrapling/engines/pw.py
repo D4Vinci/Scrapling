@@ -176,6 +176,7 @@ class PlaywrightEngine:
                 )
             else:
                 context = browser.new_context(
+                    proxy=self.proxy,
                     color_scheme='dark',
                     user_agent=useragent,
                     device_scale_factor=2,
