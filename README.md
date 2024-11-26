@@ -44,10 +44,11 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
     * [Text Extraction Speed Test (5000 nested elements).](#text-extraction-speed-test-5000-nested-elements)
     * [Extraction By Text Speed Test](#extraction-by-text-speed-test)
   * [Installation](#installation)
-  * [Fetching Websites Features](#fetching-websites-features)
-    * [Fetcher](#fetcher)
-    * [StealthyFetcher](#stealthyfetcher)
-    * [PlayWrightFetcher](#playwrightfetcher)
+  * [Fetching Websites](#fetching-websites)
+    * [Features](#features)
+    * [Fetcher class](#fetcher)
+    * [StealthyFetcher class](#stealthyfetcher)
+    * [PlayWrightFetcher class](#playwrightfetcher)
   * [Advanced Parsing Features](#advanced-parsing-features)
     * [Smart Navigation](#smart-navigation)
     * [Content-based Selection & Finding Similar Elements](#content-based-selection--finding-similar-elements)
@@ -210,7 +211,10 @@ playwright install chromium
 python -m browserforge update
 ```
 
-## Fetching Websites Features
+## Fetching Websites
+Fetchers are basically interfaces that do requests or fetch pages for you in a single request fashion then return an `Adaptor` object for you. This feature was introduced because the only option we had before was to fetch the page as you want then pass it manually to the `Adaptor` class to create an `Adaptor` instance and start playing around with the page.
+
+### Features
 You might be a little bit confused by now so let me clear things up. All fetcher-type classes are imported in the same way
 ```python
 from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
