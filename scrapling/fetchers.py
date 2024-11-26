@@ -9,7 +9,7 @@ class Fetcher(BaseFetcher):
 
     Any additional keyword arguments passed to the methods below are passed to the respective httpx's method directly.
     """
-    def get(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+    def get(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, proxy: Optional[str] = None, **kwargs: Dict) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
 
         :param url: Target url.
@@ -17,13 +17,14 @@ class Fetcher(BaseFetcher):
         :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request had came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).get(url, stealthy_headers, **kwargs)
+        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).get(url, proxy, stealthy_headers, **kwargs)
         return response_object
 
-    def post(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+    def post(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, proxy: Optional[str] = None, **kwargs: Dict) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
 
         :param url: Target url.
@@ -31,13 +32,14 @@ class Fetcher(BaseFetcher):
         :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).post(url, stealthy_headers, **kwargs)
+        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).post(url, proxy, stealthy_headers, **kwargs)
         return response_object
 
-    def put(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+    def put(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, proxy: Optional[str] = None, **kwargs: Dict) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
 
         :param url: Target url
@@ -45,14 +47,15 @@ class Fetcher(BaseFetcher):
         :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
 
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).put(url, stealthy_headers, **kwargs)
+        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).put(url, proxy, stealthy_headers, **kwargs)
         return response_object
 
-    def delete(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, **kwargs: Dict) -> Response:
+    def delete(self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True, proxy: Optional[str] = None, **kwargs: Dict) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
 
         :param url: Target url
@@ -60,10 +63,11 @@ class Fetcher(BaseFetcher):
         :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
             create a referer header as if this request came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).delete(url, stealthy_headers, **kwargs)
+        response_object = StaticEngine(follow_redirects, timeout, adaptor_arguments=self.adaptor_arguments).delete(url, proxy, stealthy_headers, **kwargs)
         return response_object
 
 
@@ -78,7 +82,7 @@ class StealthyFetcher(BaseFetcher):
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, proxy: Optional[Union[str, Dict[str, str]]] = None,
-            os_randomize: Optional[bool] = None
+            os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -92,6 +96,7 @@ class StealthyFetcher(BaseFetcher):
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
+        :param disable_ads: Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -111,6 +116,7 @@ class StealthyFetcher(BaseFetcher):
             timeout=timeout,
             headless=headless,
             humanize=humanize,
+            disable_ads=disable_ads,
             allow_webgl=allow_webgl,
             page_action=page_action,
             network_idle=network_idle,
@@ -148,7 +154,7 @@ class PlayWrightFetcher(BaseFetcher):
             useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
             page_action: Optional[Callable] = do_nothing, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
             hide_canvas: Optional[bool] = False, disable_webgl: Optional[bool] = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
-            proxy: Optional[Union[str, Dict[str, str]]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
             stealth: Optional[bool] = False, real_chrome: Optional[bool] = False,
             cdp_url: Optional[str] = None,
             nstbrowser_mode: Optional[bool] = False, nstbrowser_config: Optional[Dict] = None,
@@ -163,6 +169,7 @@ class PlayWrightFetcher(BaseFetcher):
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
@@ -180,6 +187,7 @@ class PlayWrightFetcher(BaseFetcher):
         """
         engine = PlaywrightEngine(
             proxy=proxy,
+            locale=locale,
             timeout=timeout,
             stealth=stealth,
             cdp_url=cdp_url,

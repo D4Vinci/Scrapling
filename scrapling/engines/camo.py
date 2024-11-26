@@ -12,6 +12,7 @@ from scrapling.engines.toolbelt import (
     generate_convincing_referer,
 )
 
+from camoufox import DefaultAddons
 from camoufox.sync_api import Camoufox
 
 
@@ -21,7 +22,8 @@ class CamoufoxEngine:
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, humanize: Optional[Union[bool, float]] = True,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
             wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, adaptor_arguments: Dict = None
+            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True,
+            adaptor_arguments: Dict = None,
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
 
@@ -36,6 +38,7 @@ class CamoufoxEngine:
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param disable_ads: Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
@@ -54,6 +57,7 @@ class CamoufoxEngine:
         self.network_idle = bool(network_idle)
         self.google_search = bool(google_search)
         self.os_randomize = bool(os_randomize)
+        self.disable_ads = bool(disable_ads)
         self.extra_headers = extra_headers or {}
         self.proxy = construct_proxy_dict(proxy)
         self.addons = addons or []
@@ -75,9 +79,11 @@ class CamoufoxEngine:
         :param url: Target url.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
+        addons = [] if self.disable_ads else [DefaultAddons.UBO]
         with Camoufox(
                 proxy=self.proxy,
                 addons=self.addons,
+                exclude_addons=addons,
                 headless=self.headless,
                 humanize=self.humanize,
                 i_know_what_im_doing=True,  # To turn warnings off with the user configurations
@@ -105,6 +111,11 @@ class CamoufoxEngine:
             if self.wait_selector and type(self.wait_selector) is str:
                 waiter = page.locator(self.wait_selector)
                 waiter.first.wait_for(state=self.wait_selector_state)
+                # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                page.wait_for_load_state(state="load")
+                page.wait_for_load_state(state="domcontentloaded")
+                if self.network_idle:
+                    page.wait_for_load_state('networkidle')
 
             # This will be parsed inside `Response`
             encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding

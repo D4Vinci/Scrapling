@@ -44,10 +44,11 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
     * [Text Extraction Speed Test (5000 nested elements).](#text-extraction-speed-test-5000-nested-elements)
     * [Extraction By Text Speed Test](#extraction-by-text-speed-test)
   * [Installation](#installation)
-  * [Fetching Websites Features](#fetching-websites-features)
-    * [Fetcher](#fetcher)
-    * [StealthyFetcher](#stealthyfetcher)
-    * [PlayWrightFetcher](#playwrightfetcher)
+  * [Fetching Websites](#fetching-websites)
+    * [Features](#features)
+    * [Fetcher class](#fetcher)
+    * [StealthyFetcher class](#stealthyfetcher)
+    * [PlayWrightFetcher class](#playwrightfetcher)
   * [Advanced Parsing Features](#advanced-parsing-features)
     * [Smart Navigation](#smart-navigation)
     * [Content-based Selection & Finding Similar Elements](#content-based-selection--finding-similar-elements)
@@ -210,7 +211,10 @@ playwright install chromium
 python -m browserforge update
 ```
 
-## Fetching Websites Features
+## Fetching Websites
+Fetchers are basically interfaces that do requests or fetch pages for you in a single request fashion then return an `Adaptor` object for you. This feature was introduced because the only option we had before was to fetch the page as you want then pass it manually to the `Adaptor` class to create an `Adaptor` instance and start playing around with the page.
+
+### Features
 You might be a little bit confused by now so let me clear things up. All fetcher-type classes are imported in the same way
 ```python
 from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
@@ -233,9 +237,11 @@ Also, the `Response` object returned from all fetchers is the same as `Adaptor` 
 This class is built on top of [httpx](https://www.python-httpx.org/) with additional configuration options, here you can do `GET`, `POST`, `PUT`, and `DELETE` requests.
 
 For all methods, you have `stealth_headers` which makes `Fetcher` create and use real browser's headers then create a referer header as if this request came from Google's search of this URL's domain. It's enabled by default.
+
+You can route all traffic (HTTP and HTTPS) to a proxy for any of these methods in this format `http://username:password@localhost:8030`
 ```python
 >> page = Fetcher().get('https://httpbin.org/get', stealth_headers=True, follow_redirects=True)
->> page = Fetcher().post('https://httpbin.org/post', data={'key': 'value'})
+>> page = Fetcher().post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
 >> page = Fetcher().put('https://httpbin.org/put', data={'key': 'value'})
 >> page = Fetcher().delete('https://httpbin.org/delete')
 ```
@@ -263,6 +269,7 @@ True
 |       addons        | List of Firefox addons to use. **Must be paths to extracted addons.**                                                                                                                                                                                                                                                                                                                                           |    ✔️    |
 |      humanize       | Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.                                                                                                                                                                                                                                  |    ✔️    |
 |     allow_webgl     | Whether to allow WebGL. To prevent leaks, only use this for special cases.                                                                                                                                                                                                                                                                                                                                      |    ✔️    |
+|     disable_ads     | Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.                                                                                                                                                                                                                                                                                                                              |    ✔️    |
 |    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                                                                                                                                                                                                   |    ✔️    |
 |       timeout       | The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000.                                                                                                                                                                                                                                                                                                    |    ✔️    |
 |    wait_selector    | Wait for a specific css selector to be in a specific state.                                                                                                                                                                                                                                                                                                                                                     |    ✔️    |
@@ -317,6 +324,7 @@ Add that to a lot of controlling/hiding options as you will see in the arguments
 |    disable_webgl    | Disables WebGL and WebGL 2.0 support entirely.                                                                                                                                                                                                                                                                                                                                                                  |    ✔️    |
 |       stealth       | Enables stealth mode, always check the documentation to see what stealth mode does currently.                                                                                                                                                                                                                                                                                                                   |    ✔️    |
 |     real_chrome     | If you have chrome browser installed on your device, enable this and the Fetcher will launch an instance of your browser and use it.                                                                                                                                                                                                                                                                            |    ✔️    |
+|       locale        | Set the locale for the browser if wanted. The default value is `en-US`.                                                                                                                                                                                                                                                                                                                                         |    ✔️    |
 |       cdp_url       | Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.                                                                                                                                                                                                                                                                                           |    ✔️    |
 |   nstbrowser_mode   | Enables NSTBrowser mode, **it have to be used with `cdp_url` argument or it will get completely ignored.**                                                                                                                                                                                                                                                                                                      |    ✔️    |
 |  nstbrowser_config  | The config you want to send with requests to the NSTBrowser. _If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config._                                                                                                                                                                                                                                                        |    ✔️    |

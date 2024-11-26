@@ -26,6 +26,7 @@ class PlaywrightEngine:
             timeout: Optional[float] = 30000,
             page_action: Callable = do_nothing,
             wait_selector: Optional[str] = None,
+            locale: Optional[str] = 'en-US',
             wait_selector_state: Optional[str] = 'attached',
             stealth: Optional[bool] = False,
             real_chrome: Optional[bool] = False,
@@ -50,6 +51,7 @@ class PlaywrightEngine:
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
+        :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
         :param real_chrome: If you have chrome browser installed on your device, enable this and the Fetcher will launch an instance of your browser and use it.
@@ -64,6 +66,7 @@ class PlaywrightEngine:
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
         self.headless = headless
+        self.locale = check_type_validity(locale, [str], 'en-US', param_name='locale')
         self.disable_resources = disable_resources
         self.network_idle = bool(network_idle)
         self.stealth = bool(stealth)
@@ -87,6 +90,14 @@ class PlaywrightEngine:
         self.nstbrowser_mode = bool(nstbrowser_mode)
         self.nstbrowser_config = nstbrowser_config
         self.adaptor_arguments = adaptor_arguments if adaptor_arguments else {}
+        self.harmful_default_args = [
+            # This will be ignored to avoid detection more and possibly avoid the popup crashing bug abuse: https://issues.chromium.org/issues/340836884
+            '--enable-automation',
+            '--disable-popup-blocking',
+            # '--disable-component-update',
+            # '--disable-default-apps',
+            # '--disable-extensions',
+        ]
 
     def _cdp_url_logic(self, flags: Optional[List] = None) -> str:
         """Constructs new CDP URL if NSTBrowser is enabled otherwise return CDP URL as it is
@@ -151,15 +162,15 @@ class PlaywrightEngine:
             else:
                 if self.stealth:
                     browser = p.chromium.launch(
-                        headless=self.headless, args=flags, ignore_default_args=['--enable-automation'], chromium_sandbox=True, channel='chrome' if self.real_chrome else 'chromium'
+                        headless=self.headless, args=flags, ignore_default_args=self.harmful_default_args, chromium_sandbox=True, channel='chrome' if self.real_chrome else 'chromium'
                     )
                 else:
-                    browser = p.chromium.launch(headless=self.headless, ignore_default_args=['--enable-automation'], channel='chrome' if self.real_chrome else 'chromium')
+                    browser = p.chromium.launch(headless=self.headless, ignore_default_args=self.harmful_default_args, channel='chrome' if self.real_chrome else 'chromium')
 
             # Creating the context
             if self.stealth:
                 context = browser.new_context(
-                    locale='en-US',
+                    locale=self.locale,
                     is_mobile=False,
                     has_touch=False,
                     proxy=self.proxy,
@@ -176,6 +187,8 @@ class PlaywrightEngine:
                 )
             else:
                 context = browser.new_context(
+                    locale=self.locale,
+                    proxy=self.proxy,
                     color_scheme='dark',
                     user_agent=useragent,
                     device_scale_factor=2,
@@ -221,6 +234,11 @@ class PlaywrightEngine:
             if self.wait_selector and type(self.wait_selector) is str:
                 waiter = page.locator(self.wait_selector)
                 waiter.first.wait_for(state=self.wait_selector_state)
+                # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                page.wait_for_load_state(state="load")
+                page.wait_for_load_state(state="domcontentloaded")
+                if self.network_idle:
+                    page.wait_for_load_state('networkidle')
 
             # This will be parsed inside `Response`
             encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding

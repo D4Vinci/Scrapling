@@ -44,7 +44,7 @@ DEFAULT_STEALTH_FLAGS = [
     '--disable-default-apps',
     '--disable-print-preview',
     '--disable-dev-shm-usage',
-    '--disable-popup-blocking',
+    # '--disable-popup-blocking',
     '--metrics-recording-only',
     '--disable-crash-reporter',
     '--disable-partial-raster',
