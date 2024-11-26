@@ -65,10 +65,10 @@ class ResponseEncoding:
                 encoding = params["charset"].strip("'\"")
 
             # Apply content-type specific rules
-            if content_type in cls.__ISO_8859_1_CONTENT_TYPES:
+            elif content_type in cls.__ISO_8859_1_CONTENT_TYPES:
                 encoding = "ISO-8859-1"
 
-            if content_type == "application/json":
+            elif content_type == "application/json":
                 encoding = cls.__DEFAULT_ENCODING
 
             if encoding:
