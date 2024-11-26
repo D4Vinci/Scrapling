@@ -111,6 +111,11 @@ class CamoufoxEngine:
             if self.wait_selector and type(self.wait_selector) is str:
                 waiter = page.locator(self.wait_selector)
                 waiter.first.wait_for(state=self.wait_selector_state)
+                # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                page.wait_for_load_state(state="load")
+                page.wait_for_load_state(state="domcontentloaded")
+                if self.network_idle:
+                    page.wait_for_load_state('networkidle')
 
             # This will be parsed inside `Response`
             encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
