@@ -148,7 +148,7 @@ class PlayWrightFetcher(BaseFetcher):
             useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
             page_action: Optional[Callable] = do_nothing, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
             hide_canvas: Optional[bool] = False, disable_webgl: Optional[bool] = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
-            proxy: Optional[Union[str, Dict[str, str]]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
             stealth: Optional[bool] = False, real_chrome: Optional[bool] = False,
             cdp_url: Optional[str] = None,
             nstbrowser_mode: Optional[bool] = False, nstbrowser_config: Optional[Dict] = None,
@@ -163,6 +163,7 @@ class PlayWrightFetcher(BaseFetcher):
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
@@ -180,6 +181,7 @@ class PlayWrightFetcher(BaseFetcher):
         """
         engine = PlaywrightEngine(
             proxy=proxy,
+            locale=locale,
             timeout=timeout,
             stealth=stealth,
             cdp_url=cdp_url,
