@@ -212,14 +212,14 @@ python -m browserforge update
 ```
 
 ## Fetching Websites
-Fetchers are basically interfaces that do requests or fetch pages for you in a single request fashion then return an `Adaptor` object for you. This feature was introduced because the only option we had before was to fetch the page as you want then pass it manually to the `Adaptor` class to create an `Adaptor` instance and start playing around with the page.
+Fetchers are basically interfaces that do requests or fetch pages for you in a single request fashion and then return an `Adaptor` object for you. This feature was introduced because the only option we had before was to fetch the page as you wanted it, then pass it manually to the `Adaptor` class to create an `Adaptor` instance and start playing around with the page.
 
 ### Features
-You might be a little bit confused by now so let me clear things up. All fetcher-type classes are imported in the same way
+You might be slightly confused by now so let me clear things up. All fetcher-type classes are imported in the same way
 ```python
 from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
 ```
-And all of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `storage`, `storage_args`, and `debug` which are the same ones you give to the `Adaptor` class.
+All of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `storage`, `storage_args`, and `debug`, which are the same ones you give to the `Adaptor` class.
 
 If you don't want to pass arguments to the generated `Adaptor` object and want to use the default values, you can use this import instead for cleaner code:
 ```python
@@ -230,7 +230,7 @@ then use it right away without initializing like:
 page = StealthyFetcher.fetch('https://example.com') 
 ```
 
-Also, the `Response` object returned from all fetchers is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`. All `cookies`, `headers`, and `request_headers` are always of type `dictionary`.
+Also, the `Response` object returned from all fetchers is the same as the `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`. All `cookies`, `headers`, and `request_headers` are always of type `dictionary`.
 > [!NOTE]
 > The `auto_match` argument is enabled by default which is the one you should care about the most as you will see later.
 ### Fetcher
@@ -246,13 +246,13 @@ You can route all traffic (HTTP and HTTPS) to a proxy for any of these methods i
 >> page = Fetcher().delete('https://httpbin.org/delete')
 ```
 ### StealthyFetcher
-This class is built on top of [Camoufox](https://github.com/daijro/camoufox) which by default bypasses most of the anti-bot protections. Scrapling adds extra layers of flavors and configurations to increase performance and undetectability even further.
+This class is built on top of [Camoufox](https://github.com/daijro/camoufox), bypassing most anti-bot protections by default. Scrapling adds extra layers of flavors and configurations to increase performance and undetectability even further.
 ```python
 >> page = StealthyFetcher().fetch('https://www.browserscan.net/bot-detection')  # Running headless by default
 >> page.status == 200
 True
 ```
-> Note: all requests done by this fetcher is waiting by default for all JS to be fully loaded and executed so you don't have to :)
+> Note: all requests done by this fetcher are waiting by default for all JS to be fully loaded and executed so you don't have to :)
 
 <details><summary><strong>For the sake of simplicity, expand this for the complete list of arguments</strong></summary>
 
@@ -288,7 +288,7 @@ This class is built on top of [Playwright](https://playwright.dev/python/) which
 >> page.css_first("#search a::attr(href)")
 'https://github.com/D4Vinci/Scrapling'
 ```
-> Note: all requests done by this fetcher is waiting by default for all JS to be fully loaded and executed so you don't have to :)
+> Note: all requests done by this fetcher are waiting by default for all JS to be fully loaded and executed so you don't have to :)
 
 Using this Fetcher class, you can make requests with:
   1) Vanilla Playwright without any modifications other than the ones you chose.
@@ -300,7 +300,7 @@ Using this Fetcher class, you can make requests with:
   3) Real browsers by passing the `real_chrome` argument or the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
   4) [NSTBrowser](https://app.nstbrowser.io/r/1vO5e5)'s [docker browserless](https://hub.docker.com/r/nstbrowser/browserless) option by passing the CDP URL and enabling `nstbrowser_mode` option.
 
-> Hence using the `real_chrome` argument requires that you have chrome browser installed on your device
+> Hence using the `real_chrome` argument requires that you have Chrome browser installed on your device
 
 Add that to a lot of controlling/hiding options as you will see in the arguments list below.
 
@@ -323,7 +323,7 @@ Add that to a lot of controlling/hiding options as you will see in the arguments
 |     hide_canvas     | Add random noise to canvas operations to prevent fingerprinting.                                                                                                                                                                                                                                                                                                                                                |    ✔️    |
 |    disable_webgl    | Disables WebGL and WebGL 2.0 support entirely.                                                                                                                                                                                                                                                                                                                                                                  |    ✔️    |
 |       stealth       | Enables stealth mode, always check the documentation to see what stealth mode does currently.                                                                                                                                                                                                                                                                                                                   |    ✔️    |
-|     real_chrome     | If you have chrome browser installed on your device, enable this and the Fetcher will launch an instance of your browser and use it.                                                                                                                                                                                                                                                                            |    ✔️    |
+|     real_chrome     | If you have Chrome browser installed on your device, enable this and the Fetcher will launch an instance of your browser and use it.                                                                                                                                                                                                                                                                            |    ✔️    |
 |       locale        | Set the locale for the browser if wanted. The default value is `en-US`.                                                                                                                                                                                                                                                                                                                                         |    ✔️    |
 |       cdp_url       | Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.                                                                                                                                                                                                                                                                                           |    ✔️    |
 |   nstbrowser_mode   | Enables NSTBrowser mode, **it have to be used with `cdp_url` argument or it will get completely ignored.**                                                                                                                                                                                                                                                                                                      |    ✔️    |
