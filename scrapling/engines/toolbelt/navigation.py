@@ -43,7 +43,7 @@ def construct_proxy_dict(proxy_string: Union[str, Dict[str, str]]) -> Union[Dict
                 }
             except ValueError:
                 # Urllib will say that one of the parameters above can't be casted to the correct type like `int` for port etc...
-                raise TypeError(f'The proxy argument\'s string is in invalid format!')
+                raise TypeError('The proxy argument\'s string is in invalid format!')
 
         elif isinstance(proxy_string, dict):
             valid_keys = ('server', 'username', 'password', )

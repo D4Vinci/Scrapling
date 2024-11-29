@@ -11,12 +11,12 @@ from lxml import html
 
 html_forbidden = {html.HtmlComment, }
 logging.basicConfig(
-        level=logging.ERROR,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler()
-        ]
-    )
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
 
 
 def is_jsonable(content: Union[bytes, str]) -> bool:
@@ -94,7 +94,7 @@ class _StorageTools:
         parent = element.getparent()
         return tuple(
             (element.tag,) if parent is None else (
-                    cls._get_element_path(parent) + (element.tag,)
+                cls._get_element_path(parent) + (element.tag,)
             )
         )
 
