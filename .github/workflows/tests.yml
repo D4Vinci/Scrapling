@@ -1,5 +1,9 @@
 name: Tests
-on: [push]
+on:
+  push:
+    branches:
+      - main
+      - dev
 
 concurrency:
   group: ${{github.workflow}}-${{ github.ref }}
