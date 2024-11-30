@@ -1,14 +1,19 @@
 repos:
 - repo: https://github.com/PyCQA/bandit
-  rev: 1.7.8
+  rev: 1.8.0
   hooks:
   - id: bandit
     args: [-r, -c, .bandit.yml]
 - repo: https://github.com/PyCQA/flake8
-  rev: 7.0.0
+  rev: 7.1.1
   hooks:
   - id: flake8
 - repo: https://github.com/pycqa/isort
   rev: 5.13.2
   hooks:
   - id: isort
+- repo: https://github.com/netromdk/vermin
+  rev: v1.6.0
+  hooks:
+  - id: vermin
+    args: ['-t=3.8-', '--violations', '--eval-annotations', '--no-tips']
