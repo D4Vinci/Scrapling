@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -6,10 +6,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="scrapling",
-    version="0.2.7",
-    description="""Scrapling is a powerful, flexible, and high-performance web scraping library for Python. It 
-    simplifies the process of extracting data from websites, even when they undergo structural changes, and offers 
-    impressive speed improvements over many popular scraping tools.""",
+    version="0.2.8",
+    description="""Scrapling is a powerful, flexible, and high-performance web scraping library for Python. It
+     simplifies the process of extracting data from websites, even when they undergo structural changes, and offers
+     impressive speed improvements over many popular scraping tools.""",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Karim Shoair",
@@ -57,7 +57,7 @@ setup(
         'httpx[brotli,zstd]',
         'playwright==1.48',  # Temporary because currently All libraries that provide CDP patches doesn't support playwright 1.49 yet
         'rebrowser-playwright',
-        'camoufox>=0.3.10',
+        'camoufox>=0.4.4',
         'browserforge',
     ],
     python_requires=">=3.8",

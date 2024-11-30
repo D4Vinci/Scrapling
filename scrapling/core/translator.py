@@ -10,15 +10,14 @@ So you don't have to learn a new selectors/api method like what bs4 done with so
 
 import re
 
-from w3lib.html import HTML5_WHITESPACE
-from scrapling.core.utils import cache
-from scrapling.core._types import Any, Optional, Protocol, Self
-
-from cssselect.xpath import ExpressionError
-from cssselect.xpath import XPathExpr as OriginalXPathExpr
 from cssselect import HTMLTranslator as OriginalHTMLTranslator
 from cssselect.parser import Element, FunctionalPseudoElement, PseudoElement
+from cssselect.xpath import ExpressionError
+from cssselect.xpath import XPathExpr as OriginalXPathExpr
+from w3lib.html import HTML5_WHITESPACE
 
+from scrapling.core._types import Any, Optional, Protocol, Self
+from scrapling.core.utils import cache
 
 regex = f"[{HTML5_WHITESPACE}]+"
 replace_html5_whitespaces = re.compile(regex).sub

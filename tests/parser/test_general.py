@@ -1,8 +1,10 @@
 
 import pickle
 import unittest
-from scrapling import Adaptor
+
 from cssselect import SelectorError, SelectorSyntaxError
+
+from scrapling import Adaptor
 
 
 class TestParser(unittest.TestCase):

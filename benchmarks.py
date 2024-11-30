@@ -1,17 +1,18 @@
+import functools
 import time
 import timeit
-import functools
-import requests
 from statistics import mean
 
-from scrapling import Adaptor
-from parsel import Selector
-from lxml import etree, html
-from bs4 import BeautifulSoup
-from pyquery import PyQuery as pq
+import requests
 from autoscraper import AutoScraper
-from selectolax.parser import HTMLParser
+from bs4 import BeautifulSoup
+from lxml import etree, html
 from mechanicalsoup import StatefulBrowser
+from parsel import Selector
+from pyquery import PyQuery as pq
+from selectolax.parser import HTMLParser
+
+from scrapling import Adaptor
 
 large_html = '<html><body>' + '<div class="item">' * 5000 + '</div>' * 5000 + '</body></html>'
 

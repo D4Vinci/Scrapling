@@ -1,16 +1,23 @@
+import inspect
 import os
 import re
-import inspect
 from difflib import SequenceMatcher
 
-from scrapling.core.translator import HTMLTranslator
-from scrapling.core.mixins import SelectorsGeneration
-from scrapling.core.custom_types import TextHandler, TextHandlers, AttributesHandler
-from scrapling.core.storage_adaptors import SQLiteStorageSystem, StorageSystemMixin, _StorageTools
-from scrapling.core.utils import setup_basic_logging, logging, clean_spaces, flatten, html_forbidden, is_jsonable
-from scrapling.core._types import Any, Dict, List, Tuple, Optional, Pattern, Union, Callable, Generator, SupportsIndex, Iterable
+from cssselect import SelectorError, SelectorSyntaxError
+from cssselect import parse as split_selectors
 from lxml import etree, html
-from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
+
+from scrapling.core._types import (Any, Callable, Dict, Generator, Iterable,
+                                   List, Optional, Pattern, SupportsIndex,
+                                   Tuple, Union)
+from scrapling.core.custom_types import (AttributesHandler, TextHandler,
+                                         TextHandlers)
+from scrapling.core.mixins import SelectorsGeneration
+from scrapling.core.storage_adaptors import (SQLiteStorageSystem,
+                                             StorageSystemMixin, _StorageTools)
+from scrapling.core.translator import HTMLTranslator
+from scrapling.core.utils import (clean_spaces, flatten, html_forbidden,
+                                  is_jsonable, logging, setup_basic_logging)
 
 
 class Adaptor(SelectorsGeneration):

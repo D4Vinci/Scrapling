@@ -1,20 +1,15 @@
 import json
 import logging
-from scrapling.core._types import Union, Callable, Optional, List, Dict
 
-from scrapling.engines.constants import DEFAULT_STEALTH_FLAGS, NSTBROWSER_DEFAULT_QUERY
-from scrapling.engines.toolbelt import (
-    Response,
-    do_nothing,
-    StatusText,
-    js_bypass_path,
-    intercept_route,
-    generate_headers,
-    construct_cdp_url,
-    check_type_validity,
-    construct_proxy_dict,
-    generate_convincing_referer,
-)
+from scrapling.core._types import Callable, Dict, List, Optional, Union
+from scrapling.engines.constants import (DEFAULT_STEALTH_FLAGS,
+                                         NSTBROWSER_DEFAULT_QUERY)
+from scrapling.engines.toolbelt import (Response, StatusText,
+                                        check_type_validity, construct_cdp_url,
+                                        construct_proxy_dict, do_nothing,
+                                        generate_convincing_referer,
+                                        generate_headers, intercept_route,
+                                        js_bypass_path)
 
 
 class PlaywrightEngine:

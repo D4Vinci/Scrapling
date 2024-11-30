@@ -1,22 +1,25 @@
-import re
 import logging
+import re
 from itertools import chain
-# Using cache on top of a class is brilliant way to achieve Singleton design pattern without much code
-from functools import lru_cache as cache  # functools.cache is available on Python 3.9+ only so let's keep lru_cache
-
-from scrapling.core._types import Dict, Iterable, Any, Union
 
 import orjson
 from lxml import html
 
+from scrapling.core._types import Any, Dict, Iterable, Union
+
+# Using cache on top of a class is brilliant way to achieve Singleton design pattern without much code
+# functools.cache is available on Python 3.9+ only so let's keep lru_cache
+from functools import lru_cache as cache  # isort:skip
+
+
 html_forbidden = {html.HtmlComment, }
 logging.basicConfig(
-        level=logging.ERROR,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler()
-        ]
-    )
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
 
 
 def is_jsonable(content: Union[bytes, str]) -> bool:
@@ -94,7 +97,7 @@ class _StorageTools:
         parent = element.getparent()
         return tuple(
             (element.tag,) if parent is None else (
-                    cls._get_element_path(parent) + (element.tag,)
+                cls._get_element_path(parent) + (element.tag,)
             )
         )
 

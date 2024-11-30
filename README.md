@@ -6,7 +6,7 @@ Dealing with failing web scrapers due to anti-bot protections or website changes
 Scrapling is a high-performance, intelligent web scraping library for Python that automatically adapts to website changes while significantly outperforming popular alternatives. For both beginners and experts, Scrapling provides powerful features while maintaining simplicity.
 
 ```python
->> from scrapling.default import Fetcher, StealthyFetcher, PlayWrightFetcher
+>> from scrapling.defaults import Fetcher, StealthyFetcher, PlayWrightFetcher
 # Fetch websites' source under the radar!
 >> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
 >> print(page.status)
@@ -223,7 +223,7 @@ All of them can take these initialization arguments: `auto_match`, `huge_tree`, 
 
 If you don't want to pass arguments to the generated `Adaptor` object and want to use the default values, you can use this import instead for cleaner code:
 ```python
-from scrapling.default import Fetcher, StealthyFetcher, PlayWrightFetcher
+from scrapling.defaults import Fetcher, StealthyFetcher, PlayWrightFetcher
 ```
 then use it right away without initializing like:
 ```python

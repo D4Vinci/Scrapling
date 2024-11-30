@@ -4,6 +4,7 @@ I only made this example to show how Scrapling features can be used to scrape a 
 """
 
 import requests
+
 from scrapling import Adaptor
 
 response = requests.get('https://stackoverflow.com/questions/tagged/web-scraping?sort=MostVotes&filters=NoAcceptedAnswer&edited=true&pagesize=50&page=2')
@@ -22,4 +23,3 @@ if first_question_title and first_question_author:
     # We will get all the rest of the titles/authors in the page depending on the first title and the first author we got above as a starting point
     for i, (title, author) in enumerate(zip(first_question_title.find_similar(), first_question_author.find_similar()), start=1):
         print(i, title.text, author.text)
-

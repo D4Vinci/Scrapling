@@ -2,15 +2,15 @@
 Functions related to files and URLs
 """
 
-import os
 import logging
-from urllib.parse import urlparse, urlencode
-
-from scrapling.core.utils import cache
-from scrapling.core._types import Union, Dict, Optional
-from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
+import os
+from urllib.parse import urlencode, urlparse
 
 from playwright.sync_api import Route
+
+from scrapling.core._types import Dict, Optional, Union
+from scrapling.core.utils import cache
+from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
 
 def intercept_route(route: Route) -> Union[Route, None]:
@@ -43,7 +43,7 @@ def construct_proxy_dict(proxy_string: Union[str, Dict[str, str]]) -> Union[Dict
                 }
             except ValueError:
                 # Urllib will say that one of the parameters above can't be casted to the correct type like `int` for port etc...
-                raise TypeError(f'The proxy argument\'s string is in invalid format!')
+                raise TypeError('The proxy argument\'s string is in invalid format!')
 
         elif isinstance(proxy_string, dict):
             valid_keys = ('server', 'username', 'password', )

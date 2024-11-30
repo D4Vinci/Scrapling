@@ -2,9 +2,8 @@
 Type definitions for type checking purposes.
 """
 
-from typing import (
-    Dict, Optional, Union, Callable, Any, List, Tuple, Pattern, Generator, Iterable, Type, TYPE_CHECKING, Literal
-)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
+                    List, Literal, Optional, Pattern, Tuple, Type, Union)
 
 try:
     from typing import Protocol

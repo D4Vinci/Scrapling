@@ -4,12 +4,12 @@ Functions related to generating headers and fingerprints generally
 
 import platform
 
-from scrapling.core.utils import cache
-from scrapling.core._types import Union, Dict
-
+from browserforge.fingerprints import Fingerprint, FingerprintGenerator
+from browserforge.headers import Browser, HeaderGenerator
 from tldextract import extract
-from browserforge.headers import HeaderGenerator, Browser
-from browserforge.fingerprints import FingerprintGenerator, Fingerprint
+
+from scrapling.core._types import Dict, Union
+from scrapling.core.utils import cache
 
 
 @cache(None, typed=True)

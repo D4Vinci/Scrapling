@@ -1,10 +1,11 @@
 import logging
 
-from scrapling.core._types import Union, Optional, Dict
-from .toolbelt import Response, generate_convincing_referer, generate_headers
-
 import httpx
 from httpx._models import Response as httpxResponse
+
+from scrapling.core._types import Dict, Optional, Union
+
+from .toolbelt import Response, generate_convincing_referer, generate_headers
 
 
 class StaticEngine:
