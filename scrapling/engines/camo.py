@@ -1,19 +1,15 @@
 import logging
-from scrapling.core._types import Union, Callable, Optional, Dict, List, Literal
-
-from scrapling.engines.toolbelt import (
-    Response,
-    do_nothing,
-    StatusText,
-    get_os_name,
-    intercept_route,
-    check_type_validity,
-    construct_proxy_dict,
-    generate_convincing_referer,
-)
 
 from camoufox import DefaultAddons
 from camoufox.sync_api import Camoufox
+
+from scrapling.core._types import (Callable, Dict, List, Literal, Optional,
+                                   Union)
+from scrapling.engines.toolbelt import (Response, StatusText,
+                                        check_type_validity,
+                                        construct_proxy_dict, do_nothing,
+                                        generate_convincing_referer,
+                                        get_os_name, intercept_route)
 
 
 class CamoufoxEngine:

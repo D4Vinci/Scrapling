@@ -1,7 +1,8 @@
-from scrapling.core._types import Dict, Optional, Union, Callable, List, Literal
-
-from scrapling.engines.toolbelt import Response, BaseFetcher, do_nothing
-from scrapling.engines import CamoufoxEngine, PlaywrightEngine, StaticEngine, check_if_engine_usable
+from scrapling.core._types import (Callable, Dict, List, Literal, Optional,
+                                   Union)
+from scrapling.engines import (CamoufoxEngine, PlaywrightEngine, StaticEngine,
+                               check_if_engine_usable)
+from scrapling.engines.toolbelt import BaseFetcher, Response, do_nothing
 
 
 class Fetcher(BaseFetcher):

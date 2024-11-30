@@ -2,15 +2,15 @@
 Functions related to files and URLs
 """
 
-import os
 import logging
-from urllib.parse import urlparse, urlencode
-
-from scrapling.core.utils import cache
-from scrapling.core._types import Union, Dict, Optional
-from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
+import os
+from urllib.parse import urlencode, urlparse
 
 from playwright.sync_api import Route
+
+from scrapling.core._types import Dict, Optional, Union
+from scrapling.core.utils import cache
+from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
 
 def intercept_route(route: Route) -> Union[Route, None]:

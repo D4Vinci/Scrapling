@@ -1,4 +1,5 @@
 import unittest
+
 import pytest_httpbin
 
 from scrapling import Fetcher
