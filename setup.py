@@ -57,7 +57,7 @@ setup(
         'httpx[brotli,zstd]',
         'playwright==1.48',  # Temporary because currently All libraries that provide CDP patches doesn't support playwright 1.49 yet
         'rebrowser-playwright',
-        'camoufox>=0.3.10',
+        'camoufox>=0.4.4',
         'browserforge',
     ],
     python_requires=">=3.8",
