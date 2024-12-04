@@ -330,6 +330,16 @@ class Adaptor(SelectorsGeneration):
 
         return self.__convert_results(prev_element)
 
+    # For easy copy-paste from Scrapy/parsel code when needed :)
+    def get(self, default=None):
+        return self
+
+    def get_all(self):
+        return self
+
+    extract = get_all
+    extract_first = get
+
     def __str__(self) -> str:
         return self.html_content
 
@@ -1073,11 +1083,18 @@ class Adaptors(List[Adaptor]):
         ]
         return self.__class__(results) if results else results
 
+    # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):
         """Returns the first item of the current list
         :param default: the default value to return if the current list is empty
         """
         return self[0] if len(self) > 0 else default
+
+    def extract(self):
+        return self
+
+    extract_first = get
+    get_all = extract
 
     @property
     def first(self):
