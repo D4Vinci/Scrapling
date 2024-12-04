@@ -80,7 +80,7 @@ class StealthyFetcher(BaseFetcher):
     """
     def fetch(
             self, url: str, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
-            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = False, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
+            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, proxy: Optional[Union[str, Dict[str, str]]] = None,
             os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True,
@@ -99,7 +99,7 @@ class StealthyFetcher(BaseFetcher):
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
         :param disable_ads: Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
-        :param allow_webgl: Whether to allow WebGL. To prevent leaks, only use this for special cases.
+        :param allow_webgl: Enabled by default. Disabling it WebGL not recommended as many WAFs now checks if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
