@@ -8,7 +8,7 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 ```python
 >> from scrapling.defaults import Fetcher, StealthyFetcher, PlayWrightFetcher
 # Fetch websites' source under the radar!
->> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
+>> page = StealthyFetcher().fetch('https://example.com', headless=True, network_idle=True)
 >> print(page.status)
 200
 >> products = page.css('.product', auto_save=True)  # Scrape data that survives website design changes!
