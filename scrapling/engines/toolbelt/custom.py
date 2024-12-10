@@ -105,7 +105,7 @@ class BaseFetcher:
     def __init__(
             self, huge_tree: bool = True, keep_comments: Optional[bool] = False, auto_match: Optional[bool] = True,
             storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None, debug: Optional[bool] = False,
-            automatch_domain: Optional[str] = None,
+            automatch_domain: Optional[str] = None, keep_cdata: Optional[bool] = False,
     ):
         """Arguments below are the same from the Adaptor class so you can pass them directly, the rest of Adaptor's arguments
         are detected and passed automatically from the Fetcher based on the response for accessibility.
@@ -113,6 +113,7 @@ class BaseFetcher:
         :param huge_tree: Enabled by default, should always be enabled when parsing large HTML documents. This controls
             libxml2 feature that forbids parsing certain large documents to protect from possible memory exhaustion.
         :param keep_comments: While parsing the HTML body, drop comments or not. Disabled by default for obvious reasons
+        :param keep_cdata: While parsing the HTML body, drop cdata or not. Disabled by default for cleaner HTML.
         :param auto_match: Globally turn-off the auto-match feature in all functions, this argument takes higher
             priority over all auto-match related arguments/functions in the class.
         :param storage: The storage class to be passed for auto-matching functionalities, see ``Docs`` for more info.
@@ -127,6 +128,7 @@ class BaseFetcher:
         self.adaptor_arguments = dict(
             huge_tree=huge_tree,
             keep_comments=keep_comments,
+            keep_cdata=keep_cdata,
             auto_match=auto_match,
             storage=storage,
             storage_args=storage_args,

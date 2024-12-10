@@ -25,6 +25,7 @@ class Adaptor(SelectorsGeneration):
     __slots__ = (
         'url', 'encoding', '__auto_match_enabled', '_root', '_storage', '__debug',
         '__keep_comments', '__huge_tree_enabled', '__attributes', '__text', '__tag',
+        '__keep_cdata',
     )
 
     def __init__(
@@ -36,6 +37,7 @@ class Adaptor(SelectorsGeneration):
             huge_tree: bool = True,
             root: Optional[html.HtmlElement] = None,
             keep_comments: Optional[bool] = False,
+            keep_cdata: Optional[bool] = False,
             auto_match: Optional[bool] = True,
             storage: Any = SQLiteStorageSystem,
             storage_args: Optional[Dict] = None,
@@ -59,6 +61,7 @@ class Adaptor(SelectorsGeneration):
         :param root: Used internally to pass etree objects instead of text/body arguments, it takes highest priority.
             Don't use it unless you know what you are doing!
         :param keep_comments: While parsing the HTML body, drop comments or not. Disabled by default for obvious reasons
+        :param keep_cdata: While parsing the HTML body, drop cdata or not. Disabled by default for cleaner HTML.
         :param auto_match: Globally turn-off the auto-match feature in all functions, this argument takes higher
             priority over all auto-match related arguments/functions in the class.
         :param storage: The storage class to be passed for auto-matching functionalities, see ``Docs`` for more info.
@@ -84,8 +87,8 @@ class Adaptor(SelectorsGeneration):
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
             parser = html.HTMLParser(
-                recover=True, remove_blank_text=True, remove_comments=(keep_comments is False), encoding=encoding,
-                compact=True, huge_tree=huge_tree, default_doctype=True
+                recover=True, remove_blank_text=True, remove_comments=(not keep_comments), encoding=encoding,
+                compact=True, huge_tree=huge_tree, default_doctype=True, strip_cdata=(not keep_cdata),
             )
             self._root = etree.fromstring(body, parser=parser, base_url=url)
             if is_jsonable(text or body.decode()):
@@ -119,6 +122,7 @@ class Adaptor(SelectorsGeneration):
             self._storage = storage(**storage_args)
 
         self.__keep_comments = keep_comments
+        self.__keep_cdata = keep_cdata
         self.__huge_tree_enabled = huge_tree
         self.encoding = encoding
         self.url = url
@@ -156,7 +160,7 @@ class Adaptor(SelectorsGeneration):
                     root=element,
                     text='', body=b'',  # Since root argument is provided, both `text` and `body` will be ignored so this is just a filler
                     url=self.url, encoding=self.encoding, auto_match=self.__auto_match_enabled,
-                    keep_comments=True,  # if the comments are already removed in initialization, no need to try to delete them in sub-elements
+                    keep_comments=self.__keep_comments, keep_cdata=self.__keep_cdata,
                     huge_tree=self.__huge_tree_enabled, debug=self.__debug,
                     **self.__response_data
                 )
