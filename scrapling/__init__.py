@@ -5,7 +5,7 @@ from scrapling.fetchers import (CustomFetcher, Fetcher, PlayWrightFetcher,
 from scrapling.parser import Adaptor, Adaptors
 
 __author__ = "Karim Shoair (karim.shoair@pm.me)"
-__version__ = "0.2.8"
+__version__ = "0.2.9"
 __copyright__ = "Copyright (c) 2024 Karim Shoair"
 
 
