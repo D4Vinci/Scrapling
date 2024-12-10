@@ -17,10 +17,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - python-version: "3.8"
-          os: ubuntu-latest
-          env:
-            TOXENV: py
         - python-version: "3.9"
           os: ubuntu-latest
           env:
