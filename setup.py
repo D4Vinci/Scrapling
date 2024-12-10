@@ -55,9 +55,9 @@ setup(
         "orjson>=3",
         "tldextract",
         'httpx[brotli,zstd]',
-        'playwright==1.48',  # Temporary because currently All libraries that provide CDP patches doesn't support playwright 1.49 yet
-        'rebrowser-playwright',
-        'camoufox>=0.4.4',
+        'playwright>=1.49.1',
+        'rebrowser-playwright>=1.49.1',
+        'camoufox>=0.4.7',
         'browserforge',
     ],
     python_requires=">=3.8",
