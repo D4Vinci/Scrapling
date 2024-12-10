@@ -60,7 +60,7 @@ setup(
         'camoufox>=0.4.7',
         'browserforge',
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     url="https://github.com/D4Vinci/Scrapling",
     project_urls={
         "Documentation": "https://github.com/D4Vinci/Scrapling/tree/main/docs",  # For now
