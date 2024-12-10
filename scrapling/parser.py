@@ -2,6 +2,7 @@ import inspect
 import os
 import re
 from difflib import SequenceMatcher
+from urllib.parse import urljoin
 
 from cssselect import SelectorError, SelectorSyntaxError
 from cssselect import parse as split_selectors
@@ -242,6 +243,10 @@ class Adaptor(SelectorsGeneration):
         _traverse(self._root)
 
         return TextHandler(separator.join([s for s in _all_strings]))
+
+    def urljoin(self, relative_url: str) -> str:
+        """Join this Adaptor's url with a relative url to form an absolute full URL."""
+        return urljoin(self.url, relative_url)
 
     @property
     def attrib(self) -> AttributesHandler:
