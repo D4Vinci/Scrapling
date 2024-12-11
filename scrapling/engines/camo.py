@@ -1,10 +1,9 @@
-import logging
-
 from camoufox import DefaultAddons
 from camoufox.sync_api import Camoufox
 
 from scrapling.core._types import (Callable, Dict, List, Literal, Optional,
                                    Union)
+from scrapling.core.utils import log
 from scrapling.engines.toolbelt import (Response, StatusText,
                                         check_type_validity,
                                         construct_proxy_dict, do_nothing,
@@ -63,7 +62,7 @@ class CamoufoxEngine:
             self.page_action = page_action
         else:
             self.page_action = do_nothing
-            logging.error('[Ignored] Argument "page_action" must be callable')
+            log.error('[Ignored] Argument "page_action" must be callable')
 
         self.wait_selector = wait_selector
         self.wait_selector_state = wait_selector_state

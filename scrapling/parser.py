@@ -18,12 +18,12 @@ from scrapling.core.storage_adaptors import (SQLiteStorageSystem,
                                              StorageSystemMixin, _StorageTools)
 from scrapling.core.translator import HTMLTranslator
 from scrapling.core.utils import (clean_spaces, flatten, html_forbidden,
-                                  is_jsonable, logging, setup_basic_logging)
+                                  is_jsonable, log)
 
 
 class Adaptor(SelectorsGeneration):
     __slots__ = (
-        'url', 'encoding', '__auto_match_enabled', '_root', '_storage', '__debug',
+        'url', 'encoding', '__auto_match_enabled', '_root', '_storage',
         '__keep_comments', '__huge_tree_enabled', '__attributes', '__text', '__tag',
         '__keep_cdata', '__raw_body'
     )
@@ -41,7 +41,6 @@ class Adaptor(SelectorsGeneration):
             auto_match: Optional[bool] = True,
             storage: Any = SQLiteStorageSystem,
             storage_args: Optional[Dict] = None,
-            debug: Optional[bool] = True,
             **kwargs
     ):
         """The main class that works as a wrapper for the HTML input data. Using this class, you can search for elements
@@ -67,7 +66,6 @@ class Adaptor(SelectorsGeneration):
         :param storage: The storage class to be passed for auto-matching functionalities, see ``Docs`` for more info.
         :param storage_args: A dictionary of ``argument->value`` pairs to be passed for the storage class.
             If empty, default values will be used.
-        :param debug: Enable debug mode
         """
         if root is None and not body and text is None:
             raise ValueError("Adaptor class needs text, body, or root arguments to work")
@@ -106,7 +104,6 @@ class Adaptor(SelectorsGeneration):
 
             self._root = root
 
-        setup_basic_logging(level='debug' if debug else 'info')
         self.__auto_match_enabled = auto_match
 
         if self.__auto_match_enabled:
@@ -117,7 +114,7 @@ class Adaptor(SelectorsGeneration):
                 }
 
             if not hasattr(storage, '__wrapped__'):
-                raise ValueError("Storage class must be wrapped with cache decorator, see docs for info")
+                raise ValueError("Storage class must be wrapped with lru_cache decorator, see docs for info")
 
             if not issubclass(storage.__wrapped__, StorageSystemMixin):
                 raise ValueError("Storage system must be inherited from class `StorageSystemMixin`")
@@ -132,7 +129,6 @@ class Adaptor(SelectorsGeneration):
         # For selector stuff
         self.__attributes = None
         self.__tag = None
-        self.__debug = debug
         # No need to check if all response attributes exist or not because if `status` exist, then the rest exist (Save some CPU cycles for speed)
         self.__response_data = {
             key: getattr(self, key) for key in ('status', 'reason', 'cookies', 'headers', 'request_headers',)
@@ -164,7 +160,7 @@ class Adaptor(SelectorsGeneration):
                     text='', body=b'',  # Since root argument is provided, both `text` and `body` will be ignored so this is just a filler
                     url=self.url, encoding=self.encoding, auto_match=self.__auto_match_enabled,
                     keep_comments=self.__keep_comments, keep_cdata=self.__keep_cdata,
-                    huge_tree=self.__huge_tree_enabled, debug=self.__debug,
+                    huge_tree=self.__huge_tree_enabled,
                     **self.__response_data
                 )
             return element
@@ -417,10 +413,10 @@ class Adaptor(SelectorsGeneration):
         if score_table:
             highest_probability = max(score_table.keys())
             if score_table[highest_probability] and highest_probability >= percentage:
-                logging.debug(f'Highest probability was {highest_probability}%')
-                logging.debug('Top 5 best matching elements are: ')
+                log.debug(f'Highest probability was {highest_probability}%')
+                log.debug('Top 5 best matching elements are: ')
                 for percent in tuple(sorted(score_table.keys(), reverse=True))[:5]:
-                    logging.debug(f'{percent} -> {self.__convert_results(score_table[percent])}')
+                    log.debug(f'{percent} -> {self.__convert_results(score_table[percent])}')
                 if not adaptor_type:
                     return score_table[highest_probability]
                 return self.__convert_results(score_table[highest_probability])
@@ -546,7 +542,7 @@ class Adaptor(SelectorsGeneration):
 
             if selected_elements:
                 if not self.__auto_match_enabled and auto_save:
-                    logging.warning("Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
+                    log.warning("Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
 
                 elif self.__auto_match_enabled and auto_save:
                     self.save(selected_elements[0], identifier or selector)
@@ -565,7 +561,7 @@ class Adaptor(SelectorsGeneration):
                         return self.__convert_results(selected_elements)
 
                 elif not self.__auto_match_enabled and auto_match:
-                    logging.warning("Argument `auto_match` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
+                    log.warning("Argument `auto_match` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
 
                 return self.__convert_results(selected_elements)
 
@@ -769,7 +765,7 @@ class Adaptor(SelectorsGeneration):
 
             self._storage.save(element, identifier)
         else:
-            logging.critical(
+            log.critical(
                 "Can't use Auto-match features with disabled globally, you have to start a new class instance."
             )
 
@@ -783,7 +779,7 @@ class Adaptor(SelectorsGeneration):
         if self.__auto_match_enabled:
             return self._storage.retrieve(identifier)
 
-        logging.critical(
+        log.critical(
             "Can't use Auto-match features with disabled globally, you have to start a new class instance."
         )
 

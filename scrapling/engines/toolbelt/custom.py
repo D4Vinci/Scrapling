@@ -2,13 +2,12 @@
 Functions related to custom types or type checking
 """
 import inspect
-import logging
 from email.message import Message
 
 from scrapling.core._types import (Any, Callable, Dict, List, Optional, Tuple,
                                    Type, Union)
 from scrapling.core.custom_types import MappingProxyType
-from scrapling.core.utils import cache, setup_basic_logging
+from scrapling.core.utils import log, lru_cache
 from scrapling.parser import Adaptor, SQLiteStorageSystem
 
 
@@ -17,7 +16,7 @@ class ResponseEncoding:
     __ISO_8859_1_CONTENT_TYPES = {"text/plain", "text/html", "text/css", "text/javascript"}
 
     @classmethod
-    @cache(maxsize=None)
+    @lru_cache(maxsize=None)
     def __parse_content_type(cls, header_value: str) -> Tuple[str, Dict[str, str]]:
         """Parse content type and parameters from a content-type header value.
 
@@ -39,7 +38,7 @@ class ResponseEncoding:
         return content_type, params
 
     @classmethod
-    @cache(maxsize=None)
+    @lru_cache(maxsize=None)
     def get_value(cls, content_type: Optional[str], text: Optional[str] = 'test') -> str:
         """Determine the appropriate character encoding from a content-type header.
 
@@ -98,7 +97,7 @@ class Response(Adaptor):
         # For back-ward compatibility
         self.adaptor = self
         # For easier debugging while working from a Python shell
-        logging.info(f'Fetched ({status}) <{method} {url}> (referer: {request_headers.get("referer")})')
+        log.info(f'Fetched ({status}) <{method} {url}> (referer: {request_headers.get("referer")})')
 
     # def __repr__(self):
     #     return f'<{self.__class__.__name__} [{self.status} {self.reason}]>'
@@ -107,7 +106,7 @@ class Response(Adaptor):
 class BaseFetcher:
     def __init__(
             self, huge_tree: bool = True, keep_comments: Optional[bool] = False, auto_match: Optional[bool] = True,
-            storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None, debug: Optional[bool] = False,
+            storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None,
             automatch_domain: Optional[str] = None, keep_cdata: Optional[bool] = False,
     ):
         """Arguments below are the same from the Adaptor class so you can pass them directly, the rest of Adaptor's arguments
@@ -124,7 +123,6 @@ class BaseFetcher:
             If empty, default values will be used.
         :param automatch_domain: For cases where you want to automatch selectors across different websites as if they were on the same website, use this argument to unify them.
             Otherwise, the domain of the request is used by default.
-        :param debug: Enable debug mode
         """
         # Adaptor class parameters
         # I won't validate Adaptor's class parameters here again, I will leave it to be validated later
@@ -134,14 +132,11 @@ class BaseFetcher:
             keep_cdata=keep_cdata,
             auto_match=auto_match,
             storage=storage,
-            storage_args=storage_args,
-            debug=debug,
+            storage_args=storage_args
         )
-        # If the user used fetchers first, then configure the logger from here instead of the `Adaptor` class
-        setup_basic_logging(level='debug' if debug else 'info')
         if automatch_domain:
             if type(automatch_domain) is not str:
-                logging.warning('[Ignored] The argument "automatch_domain" must be of string type')
+                log.warning('[Ignored] The argument "automatch_domain" must be of string type')
             else:
                 self.adaptor_arguments.update({'automatch_domain': automatch_domain})
 
@@ -217,7 +212,7 @@ class StatusText:
     })
 
     @classmethod
-    @cache(maxsize=128)
+    @lru_cache(maxsize=128)
     def get(cls, status_code: int) -> str:
         """Get the phrase for a given HTTP status code."""
         return cls._phrases.get(status_code, "Unknown Status Code")
@@ -284,7 +279,7 @@ def check_type_validity(variable: Any, valid_types: Union[List[Type], None], def
         error_msg = f'Argument "{var_name}" cannot be None'
         if critical:
             raise TypeError(error_msg)
-        logging.error(f'[Ignored] {error_msg}')
+        log.error(f'[Ignored] {error_msg}')
         return default_value
 
     # If no valid_types specified and variable has a value, return it
@@ -297,7 +292,7 @@ def check_type_validity(variable: Any, valid_types: Union[List[Type], None], def
         error_msg = f'Argument "{var_name}" must be of type {" or ".join(type_names)}'
         if critical:
             raise TypeError(error_msg)
-        logging.error(f'[Ignored] {error_msg}')
+        log.error(f'[Ignored] {error_msg}')
         return default_value
 
     return variable

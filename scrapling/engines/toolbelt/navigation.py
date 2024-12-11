@@ -1,15 +1,13 @@
 """
 Functions related to files and URLs
 """
-
-import logging
 import os
 from urllib.parse import urlencode, urlparse
 
 from playwright.sync_api import Route
 
 from scrapling.core._types import Dict, Optional, Union
-from scrapling.core.utils import cache
+from scrapling.core.utils import log, lru_cache
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
 
@@ -20,7 +18,7 @@ def intercept_route(route: Route) -> Union[Route, None]:
     :return: PlayWright `Route` object
     """
     if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
-        logging.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
+        log.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
         return route.abort()
     return route.continue_()
 
@@ -97,7 +95,7 @@ def construct_cdp_url(cdp_url: str, query_params: Optional[Dict] = None) -> str:
         raise ValueError(f"Invalid CDP URL: {str(e)}")
 
 
-@cache(None, typed=True)
+@lru_cache(None, typed=True)
 def js_bypass_path(filename: str) -> str:
     """Takes the base filename of JS file inside the `bypasses` folder then return the full path of it
 

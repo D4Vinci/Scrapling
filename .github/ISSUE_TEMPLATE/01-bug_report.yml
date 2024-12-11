@@ -65,7 +65,7 @@ body:
 
   - type: textarea
     attributes:
-      label: "Actual behavior (Remember to use `debug` parameter)"
+      label: "Actual behavior"
     validations:
       required: true
 

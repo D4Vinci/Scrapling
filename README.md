@@ -219,7 +219,7 @@ You might be slightly confused by now so let me clear things up. All fetcher-typ
 ```python
 from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
 ```
-All of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `keep_cdata`, `storage`, `storage_args`, and `debug`, which are the same ones you give to the `Adaptor` class.
+All of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `keep_cdata`, `storage`, and `storage_args`, which are the same ones you give to the `Adaptor` class.
 
 If you don't want to pass arguments to the generated `Adaptor` object and want to use the default values, you can use this import instead for cleaner code:
 ```python

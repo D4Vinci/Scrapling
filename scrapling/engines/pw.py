@@ -1,7 +1,7 @@
 import json
-import logging
 
 from scrapling.core._types import Callable, Dict, List, Optional, Union
+from scrapling.core.utils import log
 from scrapling.engines.constants import (DEFAULT_STEALTH_FLAGS,
                                          NSTBROWSER_DEFAULT_QUERY)
 from scrapling.engines.toolbelt import (Response, StatusText,
@@ -78,7 +78,7 @@ class PlaywrightEngine:
             self.page_action = page_action
         else:
             self.page_action = do_nothing
-            logging.error('[Ignored] Argument "page_action" must be callable')
+            log.error('[Ignored] Argument "page_action" must be callable')
 
         self.wait_selector = wait_selector
         self.wait_selector_state = wait_selector_state

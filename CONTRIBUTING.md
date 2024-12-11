@@ -19,7 +19,11 @@ tests/test_parser_functions.py ................          [100%]
 
 =============================== 16 passed in 0.22s ================================
 ```
-Also, consider setting `debug` to `True` while initializing the Adaptor object so it's easier to know what's happening in the background.
+Also, consider setting the scrapling logging level to `debug` so it's easier to know what's happening in the background.
+```python
+>>> import logging
+>>> logging.getLogger("scrapling").setLevel(logging.DEBUG)
+```
 
 ### The process is straight-forward.
 

@@ -1,5 +1,3 @@
-import logging
-
 import httpx
 from httpx._models import Response as httpxResponse
 
@@ -36,7 +34,6 @@ class StaticEngine:
         # Validate headers
         if not headers.get('user-agent') and not headers.get('User-Agent'):
             headers['User-Agent'] = generate_headers(browser_mode=False).get('User-Agent')
-            logging.info(f"Can't find useragent in headers so '{headers['User-Agent']}' was used.")
 
         if stealth:
             extra_headers = generate_headers(browser_mode=False)

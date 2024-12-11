@@ -64,9 +64,9 @@ def test_pyquery():
 @benchmark
 def test_scrapling():
     # No need to do `.extract()` like parsel to extract text
-    # Also, this is faster than `[t.text for t in Adaptor(large_html, auto_match=False, debug=False).css('.item')]`
+    # Also, this is faster than `[t.text for t in Adaptor(large_html, auto_match=False).css('.item')]`
     # for obvious reasons, of course.
-    return Adaptor(large_html, auto_match=False, debug=False).css('.item::text')
+    return Adaptor(large_html, auto_match=False).css('.item::text')
 
 
 @benchmark
@@ -103,7 +103,7 @@ def test_scrapling_text(request_html):
     # Will loop over resulted elements to get text too to make comparison even more fair otherwise Scrapling will be even faster
     return [
         element.text for element in Adaptor(
-            request_html, auto_match=False, debug=False
+            request_html, auto_match=False
         ).find_by_text('Tipping the Velvet', first_match=True).find_similar(ignore_attributes=['title'])
     ]
 

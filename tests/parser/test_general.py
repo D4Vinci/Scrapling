@@ -74,7 +74,7 @@ class TestParser(unittest.TestCase):
         </body>
         </html>
         '''
-        self.page = Adaptor(self.html, auto_match=False, debug=False)
+        self.page = Adaptor(self.html, auto_match=False)
 
     def test_css_selector(self):
         """Test Selecting elements with complex CSS selectors"""
@@ -273,7 +273,7 @@ class TestParser(unittest.TestCase):
         large_html = '<html><body>' + '<div class="item">' * 5000 + '</div>' * 5000 + '</body></html>'
 
         start_time = time.time()
-        parsed = Adaptor(large_html, auto_match=False, debug=False)
+        parsed = Adaptor(large_html, auto_match=False)
         elements = parsed.css('.item')
         end_time = time.time()
 

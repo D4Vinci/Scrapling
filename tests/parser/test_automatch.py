@@ -42,8 +42,8 @@ class TestParserAutoMatch(unittest.TestCase):
                 </div>
                 '''
 
-        old_page = Adaptor(original_html, url='example.com', auto_match=True, debug=True)
-        new_page = Adaptor(changed_html, url='example.com', auto_match=True, debug=True)
+        old_page = Adaptor(original_html, url='example.com', auto_match=True)
+        new_page = Adaptor(changed_html, url='example.com', auto_match=True)
 
         # 'p1' was used as ID and now it's not and all the path elements have changes
         # Also at the same time testing auto-match vs combined selectors
