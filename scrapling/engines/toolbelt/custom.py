@@ -85,7 +85,8 @@ class ResponseEncoding:
 class Response(Adaptor):
     """This class is returned by all engines as a way to unify response type between different libraries."""
 
-    def __init__(self, url: str, text: str, body: bytes, status: int, reason: str, cookies: Dict, headers: Dict, request_headers: Dict, encoding: str = 'utf-8', **adaptor_arguments: Dict):
+    def __init__(self, url: str, text: str, body: bytes, status: int, reason: str, cookies: Dict, headers: Dict, request_headers: Dict,
+                 encoding: str = 'utf-8', method: str = 'GET', **adaptor_arguments: Dict):
         automatch_domain = adaptor_arguments.pop('automatch_domain', None)
         self.status = status
         self.reason = reason
@@ -96,6 +97,8 @@ class Response(Adaptor):
         super().__init__(text=text, body=body, url=automatch_domain or url, encoding=encoding, **adaptor_arguments)
         # For back-ward compatibility
         self.adaptor = self
+        # For easier debugging while working from a Python shell
+        logging.info(f'Fetched ({status}) <{method} {url}> (referer: {request_headers.get("referer")})')
 
     # def __repr__(self):
     #     return f'<{self.__class__.__name__} [{self.status} {self.reason}]>'

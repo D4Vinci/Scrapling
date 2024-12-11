@@ -14,8 +14,9 @@ from functools import lru_cache as cache  # isort:skip
 
 html_forbidden = {html.HtmlComment, }
 logging.basicConfig(
-    level=logging.ERROR,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,
+    format="[%(asctime)s] %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
         logging.StreamHandler()
     ]
