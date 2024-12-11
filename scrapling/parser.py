@@ -25,7 +25,7 @@ class Adaptor(SelectorsGeneration):
     __slots__ = (
         'url', 'encoding', '__auto_match_enabled', '_root', '_storage', '__debug',
         '__keep_comments', '__huge_tree_enabled', '__attributes', '__text', '__tag',
-        '__keep_cdata',
+        '__keep_cdata', '__raw_body'
     )
 
     def __init__(
@@ -73,17 +73,20 @@ class Adaptor(SelectorsGeneration):
             raise ValueError("Adaptor class needs text, body, or root arguments to work")
 
         self.__text = None
+        self.__raw_body = ''
         if root is None:
             if text is None:
                 if not body or not isinstance(body, bytes):
                     raise TypeError(f"body argument must be valid and of type bytes, got {body.__class__}")
 
                 body = body.replace(b"\x00", b"").strip()
+                self.__raw_body = body.replace(b"\x00", b"").strip().decode()
             else:
                 if not isinstance(text, str):
                     raise TypeError(f"text argument must be of type str, got {text.__class__}")
 
                 body = text.strip().replace("\x00", "").encode(encoding) or b"<html/>"
+                self.__raw_body = text.strip()
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
             parser = html.HTMLParser(
@@ -264,7 +267,10 @@ class Adaptor(SelectorsGeneration):
         """Return the inner html code of the element"""
         return etree.tostring(self._root, encoding='unicode', method='html', with_tail=False)
 
-    body = html_content
+    @property
+    def body(self) -> str:
+        """Return raw HTML code of the element/page without any processing when possible or return `Adaptor.html_content`"""
+        return self.__raw_body or self.html_content
 
     def prettify(self) -> str:
         """Return a prettified version of the element's inner html-code"""
