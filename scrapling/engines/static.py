@@ -2,6 +2,7 @@ import httpx
 from httpx._models import Response as httpxResponse
 
 from scrapling.core._types import Dict, Optional, Union
+from scrapling.core.utils import log
 
 from .toolbelt import Response, generate_convincing_referer, generate_headers
 
@@ -34,6 +35,7 @@ class StaticEngine:
         # Validate headers
         if not headers.get('user-agent') and not headers.get('User-Agent'):
             headers['User-Agent'] = generate_headers(browser_mode=False).get('User-Agent')
+            log.debug(f"Can't find useragent in headers so '{headers['User-Agent']}' was used.")
 
         if stealth:
             extra_headers = generate_headers(browser_mode=False)
@@ -58,6 +60,7 @@ class StaticEngine:
             cookies=dict(response.cookies),
             headers=dict(response.headers),
             request_headers=dict(response.request.headers),
+            method=response.request.method,
             **self.adaptor_arguments
         )
 
