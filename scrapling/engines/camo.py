@@ -18,6 +18,7 @@ class CamoufoxEngine:
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
             wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True,
+            geoip: Optional[bool] = False,
             adaptor_arguments: Dict = None,
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
@@ -38,6 +39,8 @@ class CamoufoxEngine:
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
+        :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, & spoof the WebRTC IP address.
+            It will also calculate and spoof the browser's language based on the distribution of language speakers in the target region.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
@@ -53,6 +56,7 @@ class CamoufoxEngine:
         self.google_search = bool(google_search)
         self.os_randomize = bool(os_randomize)
         self.disable_ads = bool(disable_ads)
+        self.geoip = bool(geoip)
         self.extra_headers = extra_headers or {}
         self.proxy = construct_proxy_dict(proxy)
         self.addons = addons or []
@@ -76,6 +80,7 @@ class CamoufoxEngine:
         """
         addons = [] if self.disable_ads else [DefaultAddons.UBO]
         with Camoufox(
+                geoip=self.geoip,
                 proxy=self.proxy,
                 addons=self.addons,
                 exclude_addons=addons,

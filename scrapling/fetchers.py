@@ -83,7 +83,7 @@ class StealthyFetcher(BaseFetcher):
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, proxy: Optional[Union[str, Dict[str, str]]] = None,
-            os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True,
+            os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True, geoip: Optional[bool] = False,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -100,6 +100,8 @@ class StealthyFetcher(BaseFetcher):
         :param disable_ads: Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Enabled by default. Disabling it WebGL not recommended as many WAFs now checks if WebGL is enabled.
+        :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, & spoof the WebRTC IP address.
+            It will also calculate and spoof the browser's language based on the distribution of language speakers in the target region.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
@@ -113,6 +115,7 @@ class StealthyFetcher(BaseFetcher):
         """
         engine = CamoufoxEngine(
             proxy=proxy,
+            geoip=geoip,
             addons=addons,
             timeout=timeout,
             headless=headless,
