@@ -57,8 +57,7 @@ setup(
         'httpx[brotli,zstd]',
         'playwright>=1.49.1',
         'rebrowser-playwright>=1.49.1',
-        'camoufox[geoip]>=0.4.7',
-        'browserforge',
+        'camoufox[geoip]>=0.4.8'
     ],
     python_requires=">=3.9",
     url="https://github.com/D4Vinci/Scrapling",
