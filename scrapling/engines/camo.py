@@ -1,10 +1,12 @@
 from camoufox import DefaultAddons
+from camoufox.async_api import AsyncCamoufox
 from camoufox.sync_api import Camoufox
 
 from scrapling.core._types import (Callable, Dict, List, Literal, Optional,
                                    Union)
 from scrapling.core.utils import log
 from scrapling.engines.toolbelt import (Response, StatusText,
+                                        async_intercept_route,
                                         check_type_validity,
                                         construct_proxy_dict,
                                         generate_convincing_referer,
@@ -120,11 +122,8 @@ class CamoufoxEngine:
 
             # This will be parsed inside `Response`
             encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
-
-            status_text = res.status_text
             # PlayWright API sometimes give empty status text for some reason!
-            if not status_text:
-                status_text = StatusText.get(res.status)
+            status_text = res.status_text or StatusText.get(res.status)
 
             response = Response(
                 url=res.url,
@@ -139,5 +138,72 @@ class CamoufoxEngine:
                 **self.adaptor_arguments
             )
             page.close()
+
+        return response
+
+    async def async_fetch(self, url: str) -> Response:
+        """Opens up the browser and do your request based on your chosen options.
+
+        :param url: Target url.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        """
+        addons = [] if self.disable_ads else [DefaultAddons.UBO]
+        async with AsyncCamoufox(
+                geoip=self.geoip,
+                proxy=self.proxy,
+                addons=self.addons,
+                exclude_addons=addons,
+                headless=self.headless,
+                humanize=self.humanize,
+                i_know_what_im_doing=True,  # To turn warnings off with the user configurations
+                allow_webgl=self.allow_webgl,
+                block_webrtc=self.block_webrtc,
+                block_images=self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
+                os=None if self.os_randomize else get_os_name(),
+        ) as browser:
+            page = await browser.new_page()
+            page.set_default_navigation_timeout(self.timeout)
+            page.set_default_timeout(self.timeout)
+            if self.disable_resources:
+                await page.route("**/*", async_intercept_route)
+
+            if self.extra_headers:
+                await page.set_extra_http_headers(self.extra_headers)
+
+            res = await page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
+            await page.wait_for_load_state(state="domcontentloaded")
+            if self.network_idle:
+                await page.wait_for_load_state('networkidle')
+
+            if self.page_action is not None:
+                page = await self.page_action(page)
+
+            if self.wait_selector and type(self.wait_selector) is str:
+                waiter = page.locator(self.wait_selector)
+                await waiter.first.wait_for(state=self.wait_selector_state)
+                # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                await page.wait_for_load_state(state="load")
+                await page.wait_for_load_state(state="domcontentloaded")
+                if self.network_idle:
+                    await page.wait_for_load_state('networkidle')
+
+            # This will be parsed inside `Response`
+            encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
+            # PlayWright API sometimes give empty status text for some reason!
+            status_text = res.status_text or StatusText.get(res.status)
+
+            response = Response(
+                url=res.url,
+                text=await page.content(),
+                body=(await page.content()).encode('utf-8'),
+                status=res.status,
+                reason=status_text,
+                encoding=encoding,
+                cookies={cookie['name']: cookie['value'] for cookie in await page.context.cookies()},
+                headers=await res.all_headers(),
+                request_headers=await res.request.all_headers(),
+                **self.adaptor_arguments
+            )
+            await page.close()
 
         return response
