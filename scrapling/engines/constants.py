@@ -1,5 +1,5 @@
 # Disable loading these resources for speed
-DEFAULT_DISABLED_RESOURCES = [
+DEFAULT_DISABLED_RESOURCES = {
     'font',
     'image',
     'media',
@@ -10,9 +10,9 @@ DEFAULT_DISABLED_RESOURCES = [
     'websocket',
     'csp_report',
     'stylesheet',
-]
+}
 
-DEFAULT_STEALTH_FLAGS = [
+DEFAULT_STEALTH_FLAGS = (
     # Explanation: https://peter.sh/experiments/chromium-command-line-switches/
     # Generally this will make the browser faster and less detectable
     '--no-pings',
@@ -87,7 +87,7 @@ DEFAULT_STEALTH_FLAGS = [
     '--enable-features=NetworkService,NetworkServiceInProcess,TrustTokens,TrustTokensAlwaysAllowIssuance',
     '--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4',
     '--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process,TranslateUI,BlinkGenPropertyTrees',
-]
+)
 
 # Defaulting to the docker mode, token doesn't matter in it as it's passed for the container
 NSTBROWSER_DEFAULT_QUERY = {
