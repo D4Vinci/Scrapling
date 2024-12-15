@@ -26,7 +26,7 @@ class Fetcher(BaseFetcher):
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         adaptor_arguments = tuple(self.adaptor_arguments.items())
-        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).get(url, proxy, stealthy_headers, **kwargs)
+        response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).get(**kwargs)
         return response_object
 
     def post(
@@ -45,7 +45,7 @@ class Fetcher(BaseFetcher):
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         adaptor_arguments = tuple(self.adaptor_arguments.items())
-        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).post(url, proxy, stealthy_headers, **kwargs)
+        response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).post(**kwargs)
         return response_object
 
     def put(
@@ -65,7 +65,7 @@ class Fetcher(BaseFetcher):
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         adaptor_arguments = tuple(self.adaptor_arguments.items())
-        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).put(url, proxy, stealthy_headers, **kwargs)
+        response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).put(**kwargs)
         return response_object
 
     def delete(
@@ -84,7 +84,7 @@ class Fetcher(BaseFetcher):
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         adaptor_arguments = tuple(self.adaptor_arguments.items())
-        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).delete(url, proxy, stealthy_headers, **kwargs)
+        response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).delete(**kwargs)
         return response_object
 
         return response_object
