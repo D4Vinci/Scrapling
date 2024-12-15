@@ -8,7 +8,7 @@ from .toolbelt import Response, generate_convincing_referer, generate_headers
 
 
 class StaticEngine:
-    def __init__(self, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, adaptor_arguments: Dict = None):
+    def __init__(self, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, retries: Optional[int] = 3, adaptor_arguments: Dict = None):
         """An engine that utilizes httpx library, check the `Fetcher` class for more documentation.
 
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
@@ -17,6 +17,7 @@ class StaticEngine:
         """
         self.timeout = timeout
         self.follow_redirects = bool(follow_redirects)
+        self.retries = retries
         self._extra_headers = generate_headers(browser_mode=False)
         self.adaptor_arguments = adaptor_arguments if adaptor_arguments else {}
 
@@ -75,7 +76,7 @@ class StaticEngine:
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        with httpx.Client(proxy=proxy) as client:
+        with httpx.Client(proxy=proxy, transport=httpx.HTTPTransport(retries=self.retries)) as client:
             request = client.get(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
 
         return self._prepare_response(request)
@@ -91,7 +92,7 @@ class StaticEngine:
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        with httpx.Client(proxy=proxy) as client:
+        with httpx.Client(proxy=proxy, transport=httpx.HTTPTransport(retries=self.retries)) as client:
             request = client.post(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
 
         return self._prepare_response(request)
@@ -107,7 +108,7 @@ class StaticEngine:
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        with httpx.Client(proxy=proxy) as client:
+        with httpx.Client(proxy=proxy, transport=httpx.HTTPTransport(retries=self.retries)) as client:
             request = client.delete(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
 
         return self._prepare_response(request)
@@ -123,7 +124,7 @@ class StaticEngine:
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        with httpx.Client(proxy=proxy) as client:
+        with httpx.Client(proxy=proxy, transport=httpx.HTTPTransport(retries=self.retries)) as client:
             request = client.put(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
 
         return self._prepare_response(request)
