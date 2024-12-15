@@ -87,6 +87,82 @@ class Fetcher(BaseFetcher):
         response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).delete(**kwargs)
         return response_object
 
+
+class AsyncFetcher(Fetcher):
+    async def get(
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+        """Make basic HTTP GET request for you but with some added flavors.
+
+        :param url: Target url.
+        :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
+        :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
+        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
+            create a referer header as if this request had came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
+        :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        """
+        adaptor_arguments = tuple(self.adaptor_arguments.items())
+        response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_get(**kwargs)
+        return response_object
+
+    async def post(
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+        """Make basic HTTP POST request for you but with some added flavors.
+
+        :param url: Target url.
+        :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
+        :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
+        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
+            create a referer header as if this request came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
+        :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        """
+        adaptor_arguments = tuple(self.adaptor_arguments.items())
+        response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_post(**kwargs)
+        return response_object
+
+    async def put(
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+        """Make basic HTTP PUT request for you but with some added flavors.
+
+        :param url: Target url
+        :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
+        :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
+        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
+            create a referer header as if this request came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
+        :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        """
+        adaptor_arguments = tuple(self.adaptor_arguments.items())
+        response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_post(**kwargs)
+        return response_object
+
+    async def delete(
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+        """Make basic HTTP DELETE request for you but with some added flavors.
+
+        :param url: Target url
+        :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
+        :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
+        :param stealthy_headers: If enabled (default), Fetcher will create and add real browser's headers and
+            create a referer header as if this request came from Google's search of this URL's domain.
+        :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
+        :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        """
+        adaptor_arguments = tuple(self.adaptor_arguments.items())
+        response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_delete(**kwargs)
         return response_object
 
 

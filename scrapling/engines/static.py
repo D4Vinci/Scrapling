@@ -87,11 +87,15 @@ class StaticEngine:
 
         return self._prepare_response(request)
 
+    async def async_get(self, **kwargs: Dict) -> Response:
+        """Make basic async HTTP GET request for you but with some added flavors.
+
+        :param kwargs: Any keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        with httpx.Client(proxy=proxy, transport=httpx.HTTPTransport(retries=self.retries)) as client:
-            request = client.get(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        headers = self._headers_job(kwargs.pop('headers', {}))
+        async with httpx.AsyncClient(proxy=self.proxy) as client:
+            request = await client.get(url=self.url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
 
         return self._prepare_response(request)
 
@@ -107,11 +111,15 @@ class StaticEngine:
 
         return self._prepare_response(request)
 
+    async def async_post(self, **kwargs: Dict) -> Response:
+        """Make basic async HTTP POST request for you but with some added flavors.
+
+        :param kwargs: Any keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        with httpx.Client(proxy=proxy, transport=httpx.HTTPTransport(retries=self.retries)) as client:
-            request = client.post(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        headers = self._headers_job(kwargs.pop('headers', {}))
+        async with httpx.AsyncClient(proxy=self.proxy) as client:
+            request = await client.post(url=self.url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
 
         return self._prepare_response(request)
 
@@ -127,11 +135,15 @@ class StaticEngine:
 
         return self._prepare_response(request)
 
+    async def async_delete(self, **kwargs: Dict) -> Response:
+        """Make basic async HTTP DELETE request for you but with some added flavors.
+
+        :param kwargs: Any keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        with httpx.Client(proxy=proxy, transport=httpx.HTTPTransport(retries=self.retries)) as client:
-            request = client.delete(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        headers = self._headers_job(kwargs.pop('headers', {}))
+        async with httpx.AsyncClient(proxy=self.proxy) as client:
+            request = await client.delete(url=self.url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
 
         return self._prepare_response(request)
 
@@ -147,10 +159,14 @@ class StaticEngine:
 
         return self._prepare_response(request)
 
+    async def async_put(self, **kwargs: Dict) -> Response:
+        """Make basic async HTTP PUT request for you but with some added flavors.
+
+        :param kwargs: Any keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        headers = self._headers_job(kwargs.pop('headers', {}), url, stealthy_headers)
-        with httpx.Client(proxy=proxy, transport=httpx.HTTPTransport(retries=self.retries)) as client:
-            request = client.put(url=url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        headers = self._headers_job(kwargs.pop('headers', {}))
+        async with httpx.AsyncClient(proxy=self.proxy) as client:
+            request = await client.put(url=self.url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
 
         return self._prepare_response(request)

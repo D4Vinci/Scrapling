@@ -1,4 +1,3 @@
 [flake8]
 ignore = E501, F401
-extend-ignore = E999
 exclude = .git,.venv,__pycache__,docs,.github,build,dist,tests,benchmarks.py
