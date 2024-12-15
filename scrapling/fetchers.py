@@ -25,7 +25,8 @@ class Fetcher(BaseFetcher):
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=self.adaptor_arguments).get(url, proxy, stealthy_headers, **kwargs)
+        adaptor_arguments = tuple(self.adaptor_arguments.items())
+        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).get(url, proxy, stealthy_headers, **kwargs)
         return response_object
 
     def post(
@@ -43,7 +44,8 @@ class Fetcher(BaseFetcher):
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=self.adaptor_arguments).post(url, proxy, stealthy_headers, **kwargs)
+        adaptor_arguments = tuple(self.adaptor_arguments.items())
+        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).post(url, proxy, stealthy_headers, **kwargs)
         return response_object
 
     def put(
@@ -62,7 +64,8 @@ class Fetcher(BaseFetcher):
 
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=self.adaptor_arguments).put(url, proxy, stealthy_headers, **kwargs)
+        adaptor_arguments = tuple(self.adaptor_arguments.items())
+        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).put(url, proxy, stealthy_headers, **kwargs)
         return response_object
 
     def delete(
@@ -80,7 +83,8 @@ class Fetcher(BaseFetcher):
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=self.adaptor_arguments).delete(url, proxy, stealthy_headers, **kwargs)
+        adaptor_arguments = tuple(self.adaptor_arguments.items())
+        response_object = StaticEngine(follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).delete(url, proxy, stealthy_headers, **kwargs)
         return response_object
 
         return response_object

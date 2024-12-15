@@ -1,14 +1,15 @@
 import httpx
 from httpx._models import Response as httpxResponse
 
-from scrapling.core._types import Dict, Optional, Union
-from scrapling.core.utils import log
+from scrapling.core._types import Dict, Optional, Tuple, Union
+from scrapling.core.utils import log, lru_cache
 
 from .toolbelt import Response, generate_convincing_referer, generate_headers
 
 
+@lru_cache(typed=True)
 class StaticEngine:
-    def __init__(self, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, retries: Optional[int] = 3, adaptor_arguments: Dict = None):
+    def __init__(self, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = None, retries: Optional[int] = 3, adaptor_arguments: Tuple = None):
         """An engine that utilizes httpx library, check the `Fetcher` class for more documentation.
 
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
@@ -19,7 +20,9 @@ class StaticEngine:
         self.follow_redirects = bool(follow_redirects)
         self.retries = retries
         self._extra_headers = generate_headers(browser_mode=False)
-        self.adaptor_arguments = adaptor_arguments if adaptor_arguments else {}
+        # Because we are using `lru_cache` for a slight optimization but both dict/dict_items are not hashable so they can't be cached
+        # So my solution here was to convert it to tuple then convert it back to dictionary again here as tuples are hashable, ofc `tuple().__hash__()`
+        self.adaptor_arguments = dict(adaptor_arguments) if adaptor_arguments else {}
 
     @staticmethod
     def _headers_job(headers: Optional[Dict], url: str, stealth: bool) -> Dict:
