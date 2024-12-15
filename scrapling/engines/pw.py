@@ -5,9 +5,9 @@ from scrapling.core.utils import log, lru_cache
 from scrapling.engines.constants import (DEFAULT_STEALTH_FLAGS,
                                          NSTBROWSER_DEFAULT_QUERY)
 from scrapling.engines.toolbelt import (Response, StatusText,
+                                        async_intercept_route,
                                         check_type_validity, construct_cdp_url,
-                                        construct_proxy_dict, do_nothing,
-                                        do_nothing_async,
+                                        construct_proxy_dict,
                                         generate_convincing_referer,
                                         generate_headers, intercept_route,
                                         js_bypass_path)
@@ -20,7 +20,7 @@ class PlaywrightEngine:
             useragent: Optional[str] = None,
             network_idle: Optional[bool] = False,
             timeout: Optional[float] = 30000,
-            page_action: Callable = do_nothing,
+            page_action: Callable = None,
             wait_selector: Optional[str] = None,
             locale: Optional[str] = 'en-US',
             wait_selector_state: Optional[str] = 'attached',
@@ -75,10 +75,10 @@ class PlaywrightEngine:
         self.cdp_url = cdp_url
         self.useragent = useragent
         self.timeout = check_type_validity(timeout, [int, float], 30000)
-        if callable(page_action):
+        if page_action is not None and callable(page_action):
             self.page_action = page_action
         else:
-            self.page_action = do_nothing
+            self.page_action = None
             log.error('[Ignored] Argument "page_action" must be callable')
 
         self.wait_selector = wait_selector
@@ -225,7 +225,8 @@ class PlaywrightEngine:
             if self.network_idle:
                 page.wait_for_load_state('networkidle')
 
-            page = self.page_action(page)
+            if self.page_action is not None:
+                page = self.page_action(page)
 
             if self.wait_selector and type(self.wait_selector) is str:
                 waiter = page.locator(self.wait_selector)
@@ -238,11 +239,8 @@ class PlaywrightEngine:
 
             # This will be parsed inside `Response`
             encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
-
-            status_text = res.status_text
             # PlayWright API sometimes give empty status text for some reason!
-            if not status_text:
-                status_text = StatusText.get(res.status)
+            status_text = res.status_text or StatusText.get(res.status)
 
             response = Response(
                 url=res.url,
@@ -257,4 +255,77 @@ class PlaywrightEngine:
                 **self.adaptor_arguments
             )
             page.close()
+        return response
+
+    async def async_fetch(self, url: str) -> Response:
+        """Async version of `fetch`
+
+        :param url: Target url.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        """
+        if not self.stealth or self.real_chrome:
+            # Because rebrowser_playwright doesn't play well with real browsers
+            from playwright.async_api import async_playwright
+        else:
+            from rebrowser_playwright.async_api import async_playwright
+
+        async with async_playwright() as p:
+            # Creating the browser
+            if self.cdp_url:
+                cdp_url = self._cdp_url_logic()
+                browser = await p.chromium.connect_over_cdp(endpoint_url=cdp_url)
+            else:
+                browser = await p.chromium.launch(**self.__launch_kwargs())
+
+            context = await browser.new_context(**self.__context_kwargs())
+            # Finally we are in business
+            page = await context.new_page()
+            page.set_default_navigation_timeout(self.timeout)
+            page.set_default_timeout(self.timeout)
+
+            if self.extra_headers:
+                await page.set_extra_http_headers(self.extra_headers)
+
+            if self.disable_resources:
+                await page.route("**/*", async_intercept_route)
+
+            if self.stealth:
+                for script in self.__stealth_scripts():
+                    await page.add_init_script(path=script)
+
+            res = await page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
+            await page.wait_for_load_state(state="domcontentloaded")
+            if self.network_idle:
+                await page.wait_for_load_state('networkidle')
+
+            if self.page_action is not None:
+                page = await self.page_action(page)
+
+            if self.wait_selector and type(self.wait_selector) is str:
+                waiter = page.locator(self.wait_selector)
+                await waiter.first.wait_for(state=self.wait_selector_state)
+                # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                await page.wait_for_load_state(state="load")
+                await page.wait_for_load_state(state="domcontentloaded")
+                if self.network_idle:
+                    await page.wait_for_load_state('networkidle')
+
+            # This will be parsed inside `Response`
+            encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
+            # PlayWright API sometimes give empty status text for some reason!
+            status_text = res.status_text or StatusText.get(res.status)
+
+            response = Response(
+                url=res.url,
+                text=await page.content(),
+                body=(await page.content()).encode('utf-8'),
+                status=res.status,
+                reason=status_text,
+                encoding=encoding,
+                cookies={cookie['name']: cookie['value'] for cookie in await page.context.cookies()},
+                headers=await res.all_headers(),
+                request_headers=await res.request.all_headers(),
+                **self.adaptor_arguments
+            )
+            await page.close()
         return response

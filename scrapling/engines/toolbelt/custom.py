@@ -296,14 +296,3 @@ def check_type_validity(variable: Any, valid_types: Union[List[Type], None], def
         return default_value
 
     return variable
-
-
-# Pew Pew
-def do_nothing(page):
-    # Just works as a filler for `page_action` argument in browser engines
-    return page
-
-
-async def do_nothing_async(page):
-    # Just works as a filler for `page_action` argument in browser engines
-    return page

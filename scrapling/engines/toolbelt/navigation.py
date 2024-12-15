@@ -4,6 +4,7 @@ Functions related to files and URLs
 import os
 from urllib.parse import urlencode, urlparse
 
+from playwright.async_api import Route as async_Route
 from playwright.sync_api import Route
 
 from scrapling.core._types import Dict, Optional, Union
@@ -11,7 +12,7 @@ from scrapling.core.utils import log, lru_cache
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
 
-def intercept_route(route: Route) -> Union[Route, None]:
+def intercept_route(route: Route):
     """This is just a route handler but it drops requests that its type falls in `DEFAULT_DISABLED_RESOURCES`
 
     :param route: PlayWright `Route` object of the current page
@@ -19,8 +20,20 @@ def intercept_route(route: Route) -> Union[Route, None]:
     """
     if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
         log.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
-        return route.abort()
-    return route.continue_()
+        route.abort()
+    route.continue_()
+
+
+async def async_intercept_route(route: async_Route):
+    """This is just a route handler but it drops requests that its type falls in `DEFAULT_DISABLED_RESOURCES`
+
+    :param route: PlayWright `Route` object of the current page
+    :return: PlayWright `Route` object
+    """
+    if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
+        log.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
+        await route.abort()
+    await route.continue_()
 
 
 def construct_proxy_dict(proxy_string: Union[str, Dict[str, str]]) -> Union[Dict, None]:

@@ -6,7 +6,7 @@ from scrapling.core._types import (Callable, Dict, List, Literal, Optional,
 from scrapling.core.utils import log
 from scrapling.engines.toolbelt import (Response, StatusText,
                                         check_type_validity,
-                                        construct_proxy_dict, do_nothing,
+                                        construct_proxy_dict,
                                         generate_convincing_referer,
                                         get_os_name, intercept_route)
 
@@ -15,7 +15,7 @@ class CamoufoxEngine:
     def __init__(
             self, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, humanize: Optional[Union[bool, float]] = True,
-            timeout: Optional[float] = 30000, page_action: Callable = do_nothing, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
+            timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
             wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True,
             geoip: Optional[bool] = False,
@@ -65,7 +65,7 @@ class CamoufoxEngine:
         if callable(page_action):
             self.page_action = page_action
         else:
-            self.page_action = do_nothing
+            self.page_action = None
             log.error('[Ignored] Argument "page_action" must be callable')
 
         self.wait_selector = wait_selector
@@ -106,7 +106,8 @@ class CamoufoxEngine:
             if self.network_idle:
                 page.wait_for_load_state('networkidle')
 
-            page = self.page_action(page)
+            if self.page_action is not None:
+                page = self.page_action(page)
 
             if self.wait_selector and type(self.wait_selector) is str:
                 waiter = page.locator(self.wait_selector)
