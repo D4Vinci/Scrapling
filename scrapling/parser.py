@@ -766,7 +766,7 @@ class Adaptor(SelectorsGeneration):
             self._storage.save(element, identifier)
         else:
             log.critical(
-                "Can't use Auto-match features with disabled globally, you have to start a new class instance."
+                "Can't use Auto-match features while disabled globally, you have to start a new class instance."
             )
 
     def retrieve(self, identifier: str) -> Optional[Dict]:
@@ -780,7 +780,7 @@ class Adaptor(SelectorsGeneration):
             return self._storage.retrieve(identifier)
 
         log.critical(
-            "Can't use Auto-match features with disabled globally, you have to start a new class instance."
+            "Can't use Auto-match features while disabled globally, you have to start a new class instance."
         )
 
     # Operations on text functions
