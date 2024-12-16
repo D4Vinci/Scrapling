@@ -21,7 +21,8 @@ def intercept_route(route: Route):
     if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
         log.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
         route.abort()
-    route.continue_()
+    else:
+        route.continue_()
 
 
 async def async_intercept_route(route: async_Route):
@@ -33,7 +34,8 @@ async def async_intercept_route(route: async_Route):
     if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
         log.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
         await route.abort()
-    await route.continue_()
+    else:
+        await route.continue_()
 
 
 def construct_proxy_dict(proxy_string: Union[str, Dict[str, str]]) -> Union[Dict, None]:
