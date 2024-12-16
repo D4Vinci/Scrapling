@@ -35,7 +35,7 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 ## Table of content
   * [Key Features](#key-features)
-    * [Fetch websites as you prefer](#fetch-websites-as-you-prefer)
+    * [Fetch websites as you prefer](#fetch-websites-as-you-prefer-with-async-support)
     * [Adaptive Scraping](#adaptive-scraping)
     * [Performance](#performance)
     * [Developing Experience](#developing-experience)
