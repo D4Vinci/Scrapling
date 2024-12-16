@@ -6,7 +6,7 @@ Dealing with failing web scrapers due to anti-bot protections or website changes
 Scrapling is a high-performance, intelligent web scraping library for Python that automatically adapts to website changes while significantly outperforming popular alternatives. For both beginners and experts, Scrapling provides powerful features while maintaining simplicity.
 
 ```python
->> from scrapling.defaults import Fetcher, StealthyFetcher, PlayWrightFetcher
+>> from scrapling.defaults import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
 # Fetch websites' source under the radar!
 >> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
 >> print(page.status)
@@ -35,7 +35,7 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 ## Table of content
   * [Key Features](#key-features)
-    * [Fetch websites as you prefer](#fetch-websites-as-you-prefer)
+    * [Fetch websites as you prefer](#fetch-websites-as-you-prefer-with-async-support)
     * [Adaptive Scraping](#adaptive-scraping)
     * [Performance](#performance)
     * [Developing Experience](#developing-experience)
@@ -76,7 +76,7 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 ## Key Features
 
-### Fetch websites as you prefer
+### Fetch websites as you prefer with async support
 - **HTTP requests**: Stealthy and fast HTTP requests with `Fetcher`
 - **Stealthy fetcher**: Annoying anti-bot protection? No problem! Scrapling can bypass almost all of them with `StealthyFetcher` with default configuration!
 - **Your preferred browser**: Use your real browser with CDP, [NSTbrowser](https://app.nstbrowser.io/r/1vO5e5)'s browserless, PlayWright with stealth mode, or even vanilla PlayWright -  All is possible with `PlayWrightFetcher`!
@@ -167,7 +167,7 @@ Scrapling can find elements with more methods and it returns full element `Adapt
 > All benchmarks' results are an average of 100 runs. See our [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology and to run your comparisons.
 
 ## Installation
-Scrapling is a breeze to get started with - Starting from version 0.2, we require at least Python 3.8 to work.
+Scrapling is a breeze to get started with - Starting from version 0.2.9, we require at least Python 3.9 to work.
 ```bash
 pip3 install scrapling
 ```
@@ -219,11 +219,11 @@ You might be slightly confused by now so let me clear things up. All fetcher-typ
 ```python
 from scrapling import Fetcher, StealthyFetcher, PlayWrightFetcher
 ```
-All of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `storage`, `storage_args`, and `debug`, which are the same ones you give to the `Adaptor` class.
+All of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `keep_cdata`, `storage`, and `storage_args`, which are the same ones you give to the `Adaptor` class.
 
 If you don't want to pass arguments to the generated `Adaptor` object and want to use the default values, you can use this import instead for cleaner code:
 ```python
-from scrapling.defaults import Fetcher, StealthyFetcher, PlayWrightFetcher
+from scrapling.defaults import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
 ```
 then use it right away without initializing like:
 ```python
@@ -236,19 +236,30 @@ Also, the `Response` object returned from all fetchers is the same as the `Adapt
 ### Fetcher
 This class is built on top of [httpx](https://www.python-httpx.org/) with additional configuration options, here you can do `GET`, `POST`, `PUT`, and `DELETE` requests.
 
-For all methods, you have `stealth_headers` which makes `Fetcher` create and use real browser's headers then create a referer header as if this request came from Google's search of this URL's domain. It's enabled by default.
+For all methods, you have `stealthy_headers` which makes `Fetcher` create and use real browser's headers then create a referer header as if this request came from Google's search of this URL's domain. It's enabled by default. You can also set the number of retries with the argument `retries` for all methods and this will make httpx retry requests if it failed for any reason. The default number of retries for all `Fetcher` methods is 3.
 
 You can route all traffic (HTTP and HTTPS) to a proxy for any of these methods in this format `http://username:password@localhost:8030`
 ```python
->> page = Fetcher().get('https://httpbin.org/get', stealth_headers=True, follow_redirects=True)
+>> page = Fetcher().get('https://httpbin.org/get', stealthy_headers=True, follow_redirects=True)
 >> page = Fetcher().post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
 >> page = Fetcher().put('https://httpbin.org/put', data={'key': 'value'})
 >> page = Fetcher().delete('https://httpbin.org/delete')
+```
+For Async requests, you will just replace the import like below:
+```python
+>> from scrapling import AsyncFetcher
+>> page = await AsyncFetcher().get('https://httpbin.org/get', stealthy_headers=True, follow_redirects=True)
+>> page = await AsyncFetcher().post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
+>> page = await AsyncFetcher().put('https://httpbin.org/put', data={'key': 'value'})
+>> page = await AsyncFetcher().delete('https://httpbin.org/delete')
 ```
 ### StealthyFetcher
 This class is built on top of [Camoufox](https://github.com/daijro/camoufox), bypassing most anti-bot protections by default. Scrapling adds extra layers of flavors and configurations to increase performance and undetectability even further.
 ```python
 >> page = StealthyFetcher().fetch('https://www.browserscan.net/bot-detection')  # Running headless by default
+>> page.status == 200
+True
+>> page = await StealthyFetcher().async_fetch('https://www.browserscan.net/bot-detection')  # the async version of fetch
 >> page.status == 200
 True
 ```
@@ -268,7 +279,8 @@ True
 |     page_action     | Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.                                                                                                                                                                                                                                                                                         |    ✔️    |
 |       addons        | List of Firefox addons to use. **Must be paths to extracted addons.**                                                                                                                                                                                                                                                                                                                                           |    ✔️    |
 |      humanize       | Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.                                                                                                                                                                                                                                  |    ✔️    |
-|     allow_webgl     | Whether to allow WebGL. To prevent leaks, only use this for special cases.                                                                                                                                                                                                                                                                                                                                      |    ✔️    |
+|     allow_webgl     | Enabled by default. Disabling it WebGL not recommended as many WAFs now checks if WebGL is enabled.                                                                                                                                                                                                                                                                                                             |    ✔️    |
+|        geoip        | Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, & spoof the WebRTC IP address. It will also calculate and spoof the browser's language based on the distribution of language speakers in the target region.                                                                                                                                             |    ✔️    |
 |     disable_ads     | Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.                                                                                                                                                                                                                                                                                                                              |    ✔️    |
 |    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                                                                                                                                                                                                   |    ✔️    |
 |       timeout       | The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000.                                                                                                                                                                                                                                                                                                    |    ✔️    |
@@ -285,6 +297,9 @@ This list isn't final so expect a lot more additions and flexibility to be added
 This class is built on top of [Playwright](https://playwright.dev/python/) which currently provides 4 main run options but they can be mixed as you want.
 ```python
 >> page = PlayWrightFetcher().fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # Vanilla Playwright option
+>> page.css_first("#search a::attr(href)")
+'https://github.com/D4Vinci/Scrapling'
+>> page = await PlayWrightFetcher().async_fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # the async version of fetch
 >> page.css_first("#search a::attr(href)")
 'https://github.com/D4Vinci/Scrapling'
 ```
@@ -390,6 +405,9 @@ You can select elements by their text content in multiple ways, here's a full ex
 
 >>> page.find_by_text('Tipping the Velvet')  # Find the first element whose text fully matches this text
 <data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>
+
+>>> page.urljoin(page.find_by_text('Tipping the Velvet').attrib['href'])  # We use `page.urljoin` to return the full URL from the relative `href`
+'https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html'
 
 >>> page.find_by_text('Tipping the Velvet', first_match=False)  # Get all matches if there are more
 [<data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>]
@@ -804,7 +822,6 @@ This project includes code adapted from:
 
 ## Known Issues
 - In the auto-matching save process, the unique properties of the first element from the selection results are the only ones that get saved. So if the selector you are using selects different elements on the page that are in different locations, auto-matching will probably return to you the first element only when you relocate it later. This doesn't include combined CSS selectors (Using commas to combine more than one selector for example) as these selectors get separated and each selector gets executed alone.
-- Currently, Scrapling is not compatible with async/await.
 
 ---
 <div align="center"><small>Designed & crafted with ❤️ by Karim Shoair.</small></div><br>

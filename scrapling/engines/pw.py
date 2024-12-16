@@ -1,12 +1,13 @@
 import json
-import logging
 
-from scrapling.core._types import Callable, Dict, List, Optional, Union
+from scrapling.core._types import Callable, Dict, Optional, Union
+from scrapling.core.utils import log, lru_cache
 from scrapling.engines.constants import (DEFAULT_STEALTH_FLAGS,
                                          NSTBROWSER_DEFAULT_QUERY)
 from scrapling.engines.toolbelt import (Response, StatusText,
+                                        async_intercept_route,
                                         check_type_validity, construct_cdp_url,
-                                        construct_proxy_dict, do_nothing,
+                                        construct_proxy_dict,
                                         generate_convincing_referer,
                                         generate_headers, intercept_route,
                                         js_bypass_path)
@@ -19,7 +20,7 @@ class PlaywrightEngine:
             useragent: Optional[str] = None,
             network_idle: Optional[bool] = False,
             timeout: Optional[float] = 30000,
-            page_action: Callable = do_nothing,
+            page_action: Callable = None,
             wait_selector: Optional[str] = None,
             locale: Optional[str] = 'en-US',
             wait_selector_state: Optional[str] = 'attached',
@@ -74,11 +75,14 @@ class PlaywrightEngine:
         self.cdp_url = cdp_url
         self.useragent = useragent
         self.timeout = check_type_validity(timeout, [int, float], 30000)
-        if callable(page_action):
-            self.page_action = page_action
+        if page_action is not None:
+            if callable(page_action):
+                self.page_action = page_action
+            else:
+                self.page_action = None
+                log.error('[Ignored] Argument "page_action" must be callable')
         else:
-            self.page_action = do_nothing
-            logging.error('[Ignored] Argument "page_action" must be callable')
+            self.page_action = None
 
         self.wait_selector = wait_selector
         self.wait_selector_state = wait_selector_state
@@ -94,10 +98,8 @@ class PlaywrightEngine:
             # '--disable-extensions',
         ]
 
-    def _cdp_url_logic(self, flags: Optional[List] = None) -> str:
+    def _cdp_url_logic(self) -> str:
         """Constructs new CDP URL if NSTBrowser is enabled otherwise return CDP URL as it is
-
-        :param flags: Chrome flags to be added to NSTBrowser query
         :return: CDP URL
         """
         cdp_url = self.cdp_url
@@ -106,7 +108,8 @@ class PlaywrightEngine:
                 config = self.nstbrowser_config
             else:
                 query = NSTBROWSER_DEFAULT_QUERY.copy()
-                if flags:
+                if self.stealth:
+                    flags = self.__set_flags()
                     query.update({
                         "args": dict(zip(flags, [''] * len(flags))),  # browser args should be a dictionary
                     })
@@ -122,6 +125,68 @@ class PlaywrightEngine:
 
         return cdp_url
 
+    @lru_cache(typed=True)
+    def __set_flags(self):
+        """Returns the flags that will be used while launching the browser if stealth mode is enabled"""
+        flags = DEFAULT_STEALTH_FLAGS
+        if self.hide_canvas:
+            flags += ('--fingerprinting-canvas-image-data-noise',)
+        if self.disable_webgl:
+            flags += ('--disable-webgl', '--disable-webgl-image-chromium', '--disable-webgl2',)
+
+        return flags
+
+    def __launch_kwargs(self):
+        """Creates the arguments we will use while launching playwright's browser"""
+        launch_kwargs = {'headless': self.headless, 'ignore_default_args': self.harmful_default_args, 'channel': 'chrome' if self.real_chrome else 'chromium'}
+        if self.stealth:
+            launch_kwargs.update({'args': self.__set_flags(), 'chromium_sandbox': True})
+
+        return launch_kwargs
+
+    def __context_kwargs(self):
+        """Creates the arguments for the browser context"""
+        context_kwargs = {
+            "proxy": self.proxy,
+            "locale": self.locale,
+            "color_scheme": 'dark',  # Bypasses the 'prefersLightColor' check in creepjs
+            "device_scale_factor": 2,
+            "extra_http_headers": self.extra_headers if self.extra_headers else {},
+            "user_agent": self.useragent if self.useragent else generate_headers(browser_mode=True).get('User-Agent'),
+        }
+        if self.stealth:
+            context_kwargs.update({
+                'is_mobile': False,
+                'has_touch': False,
+                # I'm thinking about disabling it to rest from all Service Workers headache but let's keep it as it is for now
+                'service_workers': 'allow',
+                'ignore_https_errors': True,
+                'screen': {'width': 1920, 'height': 1080},
+                'viewport': {'width': 1920, 'height': 1080},
+                'permissions': ['geolocation', 'notifications']
+            })
+
+        return context_kwargs
+
+    @lru_cache()
+    def __stealth_scripts(self):
+        # Basic bypasses nothing fancy as I'm still working on it
+        # But with adding these bypasses to the above config, it bypasses many online tests like
+        # https://bot.sannysoft.com/
+        # https://kaliiiiiiiiii.github.io/brotector/
+        # https://pixelscan.net/
+        # https://iphey.com/
+        # https://www.browserscan.net/bot-detection <== this one also checks for the CDP runtime fingerprint
+        # https://arh.antoinevastel.com/bots/areyouheadless/
+        # https://prescience-data.github.io/execution-monitor.html
+        return tuple(
+            js_bypass_path(script) for script in (
+                # Order is important
+                'webdriver_fully.js', 'window_chrome.js', 'navigator_plugins.js', 'pdf_viewer.js',
+                'notification_permission.js', 'screen_props.js', 'playwright_fingerprint.js'
+            )
+        )
+
     def fetch(self, url: str) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
@@ -135,61 +200,14 @@ class PlaywrightEngine:
             from rebrowser_playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
-            # Handle the UserAgent early
-            if self.useragent:
-                extra_headers = {}
-                useragent = self.useragent
-            else:
-                extra_headers = {}
-                useragent = generate_headers(browser_mode=True).get('User-Agent')
-
-            # Prepare the flags before diving
-            flags = DEFAULT_STEALTH_FLAGS
-            if self.hide_canvas:
-                flags += ['--fingerprinting-canvas-image-data-noise']
-            if self.disable_webgl:
-                flags += ['--disable-webgl', '--disable-webgl-image-chromium', '--disable-webgl2']
-
             # Creating the browser
             if self.cdp_url:
-                cdp_url = self._cdp_url_logic(flags if self.stealth else None)
+                cdp_url = self._cdp_url_logic()
                 browser = p.chromium.connect_over_cdp(endpoint_url=cdp_url)
             else:
-                if self.stealth:
-                    browser = p.chromium.launch(
-                        headless=self.headless, args=flags, ignore_default_args=self.harmful_default_args, chromium_sandbox=True, channel='chrome' if self.real_chrome else 'chromium'
-                    )
-                else:
-                    browser = p.chromium.launch(headless=self.headless, ignore_default_args=self.harmful_default_args, channel='chrome' if self.real_chrome else 'chromium')
+                browser = p.chromium.launch(**self.__launch_kwargs())
 
-            # Creating the context
-            if self.stealth:
-                context = browser.new_context(
-                    locale=self.locale,
-                    is_mobile=False,
-                    has_touch=False,
-                    proxy=self.proxy,
-                    color_scheme='dark',  # Bypasses the 'prefersLightColor' check in creepjs
-                    user_agent=useragent,
-                    device_scale_factor=2,
-                    # I'm thinking about disabling it to rest from all Service Workers headache but let's keep it as it is for now
-                    service_workers="allow",
-                    ignore_https_errors=True,
-                    extra_http_headers=extra_headers,
-                    screen={"width": 1920, "height": 1080},
-                    viewport={"width": 1920, "height": 1080},
-                    permissions=["geolocation", 'notifications'],
-                )
-            else:
-                context = browser.new_context(
-                    locale=self.locale,
-                    proxy=self.proxy,
-                    color_scheme='dark',
-                    user_agent=useragent,
-                    device_scale_factor=2,
-                    extra_http_headers=extra_headers
-                )
-
+            context = browser.new_context(**self.__context_kwargs())
             # Finally we are in business
             page = context.new_page()
             page.set_default_navigation_timeout(self.timeout)
@@ -202,29 +220,16 @@ class PlaywrightEngine:
                 page.route("**/*", intercept_route)
 
             if self.stealth:
-                # Basic bypasses nothing fancy as I'm still working on it
-                # But with adding these bypasses to the above config, it bypasses many online tests like
-                # https://bot.sannysoft.com/
-                # https://kaliiiiiiiiii.github.io/brotector/
-                # https://pixelscan.net/
-                # https://iphey.com/
-                # https://www.browserscan.net/bot-detection <== this one also checks for the CDP runtime fingerprint
-                # https://arh.antoinevastel.com/bots/areyouheadless/
-                # https://prescience-data.github.io/execution-monitor.html
-                page.add_init_script(path=js_bypass_path('webdriver_fully.js'))
-                page.add_init_script(path=js_bypass_path('window_chrome.js'))
-                page.add_init_script(path=js_bypass_path('navigator_plugins.js'))
-                page.add_init_script(path=js_bypass_path('pdf_viewer.js'))
-                page.add_init_script(path=js_bypass_path('notification_permission.js'))
-                page.add_init_script(path=js_bypass_path('screen_props.js'))
-                page.add_init_script(path=js_bypass_path('playwright_fingerprint.js'))
+                for script in self.__stealth_scripts():
+                    page.add_init_script(path=script)
 
             res = page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
             page.wait_for_load_state(state="domcontentloaded")
             if self.network_idle:
                 page.wait_for_load_state('networkidle')
 
-            page = self.page_action(page)
+            if self.page_action is not None:
+                page = self.page_action(page)
 
             if self.wait_selector and type(self.wait_selector) is str:
                 waiter = page.locator(self.wait_selector)
@@ -237,11 +242,8 @@ class PlaywrightEngine:
 
             # This will be parsed inside `Response`
             encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
-
-            status_text = res.status_text
             # PlayWright API sometimes give empty status text for some reason!
-            if not status_text:
-                status_text = StatusText.get(res.status)
+            status_text = res.status_text or StatusText.get(res.status)
 
             response = Response(
                 url=res.url,
@@ -256,4 +258,77 @@ class PlaywrightEngine:
                 **self.adaptor_arguments
             )
             page.close()
+        return response
+
+    async def async_fetch(self, url: str) -> Response:
+        """Async version of `fetch`
+
+        :param url: Target url.
+        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        """
+        if not self.stealth or self.real_chrome:
+            # Because rebrowser_playwright doesn't play well with real browsers
+            from playwright.async_api import async_playwright
+        else:
+            from rebrowser_playwright.async_api import async_playwright
+
+        async with async_playwright() as p:
+            # Creating the browser
+            if self.cdp_url:
+                cdp_url = self._cdp_url_logic()
+                browser = await p.chromium.connect_over_cdp(endpoint_url=cdp_url)
+            else:
+                browser = await p.chromium.launch(**self.__launch_kwargs())
+
+            context = await browser.new_context(**self.__context_kwargs())
+            # Finally we are in business
+            page = await context.new_page()
+            page.set_default_navigation_timeout(self.timeout)
+            page.set_default_timeout(self.timeout)
+
+            if self.extra_headers:
+                await page.set_extra_http_headers(self.extra_headers)
+
+            if self.disable_resources:
+                await page.route("**/*", async_intercept_route)
+
+            if self.stealth:
+                for script in self.__stealth_scripts():
+                    await page.add_init_script(path=script)
+
+            res = await page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
+            await page.wait_for_load_state(state="domcontentloaded")
+            if self.network_idle:
+                await page.wait_for_load_state('networkidle')
+
+            if self.page_action is not None:
+                page = await self.page_action(page)
+
+            if self.wait_selector and type(self.wait_selector) is str:
+                waiter = page.locator(self.wait_selector)
+                await waiter.first.wait_for(state=self.wait_selector_state)
+                # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                await page.wait_for_load_state(state="load")
+                await page.wait_for_load_state(state="domcontentloaded")
+                if self.network_idle:
+                    await page.wait_for_load_state('networkidle')
+
+            # This will be parsed inside `Response`
+            encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
+            # PlayWright API sometimes give empty status text for some reason!
+            status_text = res.status_text or StatusText.get(res.status)
+
+            response = Response(
+                url=res.url,
+                text=await page.content(),
+                body=(await page.content()).encode('utf-8'),
+                status=res.status,
+                reason=status_text,
+                encoding=encoding,
+                cookies={cookie['name']: cookie['value'] for cookie in await page.context.cookies()},
+                headers=await res.all_headers(),
+                request_headers=await res.request.all_headers(),
+                **self.adaptor_arguments
+            )
+            await page.close()
         return response

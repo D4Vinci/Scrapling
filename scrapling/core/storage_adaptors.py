@@ -1,4 +1,3 @@
-import logging
 import sqlite3
 import threading
 from abc import ABC, abstractmethod
@@ -9,7 +8,7 @@ from lxml import html
 from tldextract import extract as tld
 
 from scrapling.core._types import Dict, Optional, Union
-from scrapling.core.utils import _StorageTools, cache
+from scrapling.core.utils import _StorageTools, log, lru_cache
 
 
 class StorageSystemMixin(ABC):
@@ -20,7 +19,7 @@ class StorageSystemMixin(ABC):
         """
         self.url = url
 
-    @cache(None, typed=True)
+    @lru_cache(None, typed=True)
     def _get_base_url(self, default_value: str = 'default') -> str:
         if not self.url or type(self.url) is not str:
             return default_value
@@ -52,7 +51,7 @@ class StorageSystemMixin(ABC):
         raise NotImplementedError('Storage system must implement `save` method')
 
     @staticmethod
-    @cache(None, typed=True)
+    @lru_cache(None, typed=True)
     def _get_hash(identifier: str) -> str:
         """If you want to hash identifier in your storage system, use this safer"""
         identifier = identifier.lower().strip()
@@ -64,7 +63,7 @@ class StorageSystemMixin(ABC):
         return f"{hash_value}_{len(identifier)}"  # Length to reduce collision chance
 
 
-@cache(None, typed=True)
+@lru_cache(None, typed=True)
 class SQLiteStorageSystem(StorageSystemMixin):
     """The recommended system to use, it's race condition safe and thread safe.
     Mainly built so the library can run in threaded frameworks like scrapy or threaded tools
@@ -86,7 +85,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.cursor = self.connection.cursor()
         self._setup_database()
-        logging.debug(
+        log.debug(
             f'Storage system loaded with arguments (storage_file="{storage_file}", url="{url}")'
         )
 

@@ -14,11 +14,70 @@ class TextHandler(str):
     __slots__ = ()
 
     def __new__(cls, string):
-        # Because str is immutable and we can't override __init__
-        if type(string) is str:
+        if isinstance(string, str):
             return super().__new__(cls, string)
-        else:
-            return super().__new__(cls, '')
+        return super().__new__(cls, '')
+
+    # Make methods from original `str` class return `TextHandler` instead of returning `str` again
+    # Of course, this stupid workaround is only so we can keep the auto-completion working without issues in your IDE
+    # and I made sonnet write it for me :)
+    def strip(self, chars=None):
+        return TextHandler(super().strip(chars))
+
+    def lstrip(self, chars=None):
+        return TextHandler(super().lstrip(chars))
+
+    def rstrip(self, chars=None):
+        return TextHandler(super().rstrip(chars))
+
+    def capitalize(self):
+        return TextHandler(super().capitalize())
+
+    def casefold(self):
+        return TextHandler(super().casefold())
+
+    def center(self, width, fillchar=' '):
+        return TextHandler(super().center(width, fillchar))
+
+    def expandtabs(self, tabsize=8):
+        return TextHandler(super().expandtabs(tabsize))
+
+    def format(self, *args, **kwargs):
+        return TextHandler(super().format(*args, **kwargs))
+
+    def format_map(self, mapping):
+        return TextHandler(super().format_map(mapping))
+
+    def join(self, iterable):
+        return TextHandler(super().join(iterable))
+
+    def ljust(self, width, fillchar=' '):
+        return TextHandler(super().ljust(width, fillchar))
+
+    def rjust(self, width, fillchar=' '):
+        return TextHandler(super().rjust(width, fillchar))
+
+    def swapcase(self):
+        return TextHandler(super().swapcase())
+
+    def title(self):
+        return TextHandler(super().title())
+
+    def translate(self, table):
+        return TextHandler(super().translate(table))
+
+    def zfill(self, width):
+        return TextHandler(super().zfill(width))
+
+    def replace(self, old, new, count=-1):
+        return TextHandler(super().replace(old, new, count))
+
+    def upper(self):
+        return TextHandler(super().upper())
+
+    def lower(self):
+        return TextHandler(super().lower())
+    ##############
 
     def sort(self, reverse: bool = False) -> str:
         """Return a sorted version of the string"""
@@ -30,11 +89,21 @@ class TextHandler(str):
         data = re.sub(' +', ' ', data)
         return self.__class__(data.strip())
 
+    # For easy copy-paste from Scrapy/parsel code when needed :)
+    def get(self, default=None):
+        return self
+
+    def get_all(self):
+        return self
+
+    extract = get_all
+    extract_first = get
+
     def json(self) -> Dict:
         """Return json response if the response is jsonable otherwise throw error"""
-        # Using __str__ function as a workaround for orjson issue with subclasses of str
+        # Using str function as a workaround for orjson issue with subclasses of str
         # Check this out: https://github.com/ijl/orjson/issues/445
-        return loads(self.__str__())
+        return loads(str(self))
 
     def re(
             self, regex: Union[str, Pattern[str]], replace_entities: bool = True, clean_match: bool = False,
@@ -126,6 +195,19 @@ class TextHandlers(List[TextHandler]):
             for result in n.re(regex, replace_entities, clean_match, case_sensitive):
                 return result
         return default
+
+    # For easy copy-paste from Scrapy/parsel code when needed :)
+    def get(self, default=None):
+        """Returns the first item of the current list
+        :param default: the default value to return if the current list is empty
+        """
+        return self[0] if len(self) > 0 else default
+
+    def extract(self):
+        return self
+
+    extract_first = get
+    get_all = extract
 
 
 class AttributesHandler(Mapping):

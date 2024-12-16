@@ -17,7 +17,7 @@ from cssselect.xpath import XPathExpr as OriginalXPathExpr
 from w3lib.html import HTML5_WHITESPACE
 
 from scrapling.core._types import Any, Optional, Protocol, Self
-from scrapling.core.utils import cache
+from scrapling.core.utils import lru_cache
 
 regex = f"[{HTML5_WHITESPACE}]+"
 replace_html5_whitespaces = re.compile(regex).sub
@@ -139,6 +139,6 @@ class TranslatorMixin:
 
 
 class HTMLTranslator(TranslatorMixin, OriginalHTMLTranslator):
-    @cache(maxsize=256)
+    @lru_cache(maxsize=256)
     def css_to_xpath(self, css: str, prefix: str = "descendant-or-self::") -> str:
         return super().css_to_xpath(css, prefix)

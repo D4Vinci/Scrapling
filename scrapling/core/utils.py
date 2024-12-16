@@ -9,17 +9,36 @@ from scrapling.core._types import Any, Dict, Iterable, Union
 
 # Using cache on top of a class is brilliant way to achieve Singleton design pattern without much code
 # functools.cache is available on Python 3.9+ only so let's keep lru_cache
-from functools import lru_cache as cache  # isort:skip
-
+from functools import lru_cache  # isort:skip
 
 html_forbidden = {html.HtmlComment, }
-logging.basicConfig(
-    level=logging.ERROR,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
+
+
+@lru_cache(1, typed=True)
+def setup_logger():
+    """Create and configure a logger with a standard format.
+
+    :returns: logging.Logger: Configured logger instance
+    """
+    logger = logging.getLogger('scrapling')
+    logger.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(
+        fmt="[%(asctime)s] %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    # Add handler to logger (if not already added)
+    if not logger.handlers:
+        logger.addHandler(console_handler)
+
+    return logger
+
+
+log = setup_logger()
 
 
 def is_jsonable(content: Union[bytes, str]) -> bool:
@@ -31,23 +50,6 @@ def is_jsonable(content: Union[bytes, str]) -> bool:
         return True
     except orjson.JSONDecodeError:
         return False
-
-
-@cache(None, typed=True)
-def setup_basic_logging(level: str = 'debug'):
-    levels = {
-        'debug': logging.DEBUG,
-        'info': logging.INFO,
-        'warning': logging.WARNING,
-        'error': logging.ERROR,
-        'critical': logging.CRITICAL
-    }
-    formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", "%Y-%m-%d %H:%M:%S")
-    lvl = levels[level.lower()]
-    handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-    # Configure the root logger
-    logging.basicConfig(level=lvl, handlers=[handler])
 
 
 def flatten(lst: Iterable):
@@ -113,7 +115,7 @@ class _StorageTools:
 #     return _impl
 
 
-@cache(None, typed=True)
+@lru_cache(None, typed=True)
 def clean_spaces(string):
     string = string.replace('\t', ' ')
     string = re.sub('[\n|\r]', '', string)

@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="scrapling",
-    version="0.2.8",
+    version="0.2.9",
     description="""Scrapling is a powerful, flexible, and high-performance web scraping library for Python. It
      simplifies the process of extracting data from websites, even when they undergo structural changes, and offers
      impressive speed improvements over many popular scraping tools.""",
@@ -55,12 +55,11 @@ setup(
         "orjson>=3",
         "tldextract",
         'httpx[brotli,zstd]',
-        'playwright==1.48',  # Temporary because currently All libraries that provide CDP patches doesn't support playwright 1.49 yet
-        'rebrowser-playwright',
-        'camoufox>=0.4.4',
-        'browserforge',
+        'playwright>=1.49.1',
+        'rebrowser-playwright>=1.49.1',
+        'camoufox[geoip]>=0.4.9'
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     url="https://github.com/D4Vinci/Scrapling",
     project_urls={
         "Documentation": "https://github.com/D4Vinci/Scrapling/tree/main/docs",  # For now

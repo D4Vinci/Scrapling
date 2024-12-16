@@ -2,6 +2,7 @@ import inspect
 import os
 import re
 from difflib import SequenceMatcher
+from urllib.parse import urljoin
 
 from cssselect import SelectorError, SelectorSyntaxError
 from cssselect import parse as split_selectors
@@ -17,13 +18,14 @@ from scrapling.core.storage_adaptors import (SQLiteStorageSystem,
                                              StorageSystemMixin, _StorageTools)
 from scrapling.core.translator import HTMLTranslator
 from scrapling.core.utils import (clean_spaces, flatten, html_forbidden,
-                                  is_jsonable, logging, setup_basic_logging)
+                                  is_jsonable, log)
 
 
 class Adaptor(SelectorsGeneration):
     __slots__ = (
-        'url', 'encoding', '__auto_match_enabled', '_root', '_storage', '__debug',
+        'url', 'encoding', '__auto_match_enabled', '_root', '_storage',
         '__keep_comments', '__huge_tree_enabled', '__attributes', '__text', '__tag',
+        '__keep_cdata', '__raw_body'
     )
 
     def __init__(
@@ -35,10 +37,10 @@ class Adaptor(SelectorsGeneration):
             huge_tree: bool = True,
             root: Optional[html.HtmlElement] = None,
             keep_comments: Optional[bool] = False,
+            keep_cdata: Optional[bool] = False,
             auto_match: Optional[bool] = True,
             storage: Any = SQLiteStorageSystem,
             storage_args: Optional[Dict] = None,
-            debug: Optional[bool] = True,
             **kwargs
     ):
         """The main class that works as a wrapper for the HTML input data. Using this class, you can search for elements
@@ -58,33 +60,36 @@ class Adaptor(SelectorsGeneration):
         :param root: Used internally to pass etree objects instead of text/body arguments, it takes highest priority.
             Don't use it unless you know what you are doing!
         :param keep_comments: While parsing the HTML body, drop comments or not. Disabled by default for obvious reasons
+        :param keep_cdata: While parsing the HTML body, drop cdata or not. Disabled by default for cleaner HTML.
         :param auto_match: Globally turn-off the auto-match feature in all functions, this argument takes higher
             priority over all auto-match related arguments/functions in the class.
         :param storage: The storage class to be passed for auto-matching functionalities, see ``Docs`` for more info.
         :param storage_args: A dictionary of ``argument->value`` pairs to be passed for the storage class.
             If empty, default values will be used.
-        :param debug: Enable debug mode
         """
         if root is None and not body and text is None:
             raise ValueError("Adaptor class needs text, body, or root arguments to work")
 
         self.__text = None
+        self.__raw_body = ''
         if root is None:
             if text is None:
                 if not body or not isinstance(body, bytes):
                     raise TypeError(f"body argument must be valid and of type bytes, got {body.__class__}")
 
                 body = body.replace(b"\x00", b"").strip()
+                self.__raw_body = body.replace(b"\x00", b"").strip().decode()
             else:
                 if not isinstance(text, str):
                     raise TypeError(f"text argument must be of type str, got {text.__class__}")
 
                 body = text.strip().replace("\x00", "").encode(encoding) or b"<html/>"
+                self.__raw_body = text.strip()
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
             parser = html.HTMLParser(
-                recover=True, remove_blank_text=True, remove_comments=(keep_comments is False), encoding=encoding,
-                compact=True, huge_tree=huge_tree, default_doctype=True
+                recover=True, remove_blank_text=True, remove_comments=(not keep_comments), encoding=encoding,
+                compact=True, huge_tree=huge_tree, default_doctype=True, strip_cdata=(not keep_cdata),
             )
             self._root = etree.fromstring(body, parser=parser, base_url=url)
             if is_jsonable(text or body.decode()):
@@ -99,7 +104,6 @@ class Adaptor(SelectorsGeneration):
 
             self._root = root
 
-        setup_basic_logging(level='debug' if debug else 'info')
         self.__auto_match_enabled = auto_match
 
         if self.__auto_match_enabled:
@@ -110,7 +114,7 @@ class Adaptor(SelectorsGeneration):
                 }
 
             if not hasattr(storage, '__wrapped__'):
-                raise ValueError("Storage class must be wrapped with cache decorator, see docs for info")
+                raise ValueError("Storage class must be wrapped with lru_cache decorator, see docs for info")
 
             if not issubclass(storage.__wrapped__, StorageSystemMixin):
                 raise ValueError("Storage system must be inherited from class `StorageSystemMixin`")
@@ -118,13 +122,13 @@ class Adaptor(SelectorsGeneration):
             self._storage = storage(**storage_args)
 
         self.__keep_comments = keep_comments
+        self.__keep_cdata = keep_cdata
         self.__huge_tree_enabled = huge_tree
         self.encoding = encoding
         self.url = url
         # For selector stuff
         self.__attributes = None
         self.__tag = None
-        self.__debug = debug
         # No need to check if all response attributes exist or not because if `status` exist, then the rest exist (Save some CPU cycles for speed)
         self.__response_data = {
             key: getattr(self, key) for key in ('status', 'reason', 'cookies', 'headers', 'request_headers',)
@@ -155,8 +159,8 @@ class Adaptor(SelectorsGeneration):
                     root=element,
                     text='', body=b'',  # Since root argument is provided, both `text` and `body` will be ignored so this is just a filler
                     url=self.url, encoding=self.encoding, auto_match=self.__auto_match_enabled,
-                    keep_comments=True,  # if the comments are already removed in initialization, no need to try to delete them in sub-elements
-                    huge_tree=self.__huge_tree_enabled, debug=self.__debug,
+                    keep_comments=self.__keep_comments, keep_cdata=self.__keep_cdata,
+                    huge_tree=self.__huge_tree_enabled,
                     **self.__response_data
                 )
             return element
@@ -243,6 +247,10 @@ class Adaptor(SelectorsGeneration):
 
         return TextHandler(separator.join([s for s in _all_strings]))
 
+    def urljoin(self, relative_url: str) -> str:
+        """Join this Adaptor's url with a relative url to form an absolute full URL."""
+        return urljoin(self.url, relative_url)
+
     @property
     def attrib(self) -> AttributesHandler:
         """Get attributes of the element"""
@@ -255,7 +263,10 @@ class Adaptor(SelectorsGeneration):
         """Return the inner html code of the element"""
         return etree.tostring(self._root, encoding='unicode', method='html', with_tail=False)
 
-    body = html_content
+    @property
+    def body(self) -> str:
+        """Return raw HTML code of the element/page without any processing when possible or return `Adaptor.html_content`"""
+        return self.__raw_body or self.html_content
 
     def prettify(self) -> str:
         """Return a prettified version of the element's inner html-code"""
@@ -330,6 +341,16 @@ class Adaptor(SelectorsGeneration):
 
         return self.__convert_results(prev_element)
 
+    # For easy copy-paste from Scrapy/parsel code when needed :)
+    def get(self, default=None):
+        return self
+
+    def get_all(self):
+        return self
+
+    extract = get_all
+    extract_first = get
+
     def __str__(self) -> str:
         return self.html_content
 
@@ -392,10 +413,10 @@ class Adaptor(SelectorsGeneration):
         if score_table:
             highest_probability = max(score_table.keys())
             if score_table[highest_probability] and highest_probability >= percentage:
-                logging.debug(f'Highest probability was {highest_probability}%')
-                logging.debug('Top 5 best matching elements are: ')
+                log.debug(f'Highest probability was {highest_probability}%')
+                log.debug('Top 5 best matching elements are: ')
                 for percent in tuple(sorted(score_table.keys(), reverse=True))[:5]:
-                    logging.debug(f'{percent} -> {self.__convert_results(score_table[percent])}')
+                    log.debug(f'{percent} -> {self.__convert_results(score_table[percent])}')
                 if not adaptor_type:
                     return score_table[highest_probability]
                 return self.__convert_results(score_table[highest_probability])
@@ -521,7 +542,7 @@ class Adaptor(SelectorsGeneration):
 
             if selected_elements:
                 if not self.__auto_match_enabled and auto_save:
-                    logging.warning("Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
+                    log.warning("Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
 
                 elif self.__auto_match_enabled and auto_save:
                     self.save(selected_elements[0], identifier or selector)
@@ -540,7 +561,7 @@ class Adaptor(SelectorsGeneration):
                         return self.__convert_results(selected_elements)
 
                 elif not self.__auto_match_enabled and auto_match:
-                    logging.warning("Argument `auto_match` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
+                    log.warning("Argument `auto_match` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
 
                 return self.__convert_results(selected_elements)
 
@@ -744,8 +765,8 @@ class Adaptor(SelectorsGeneration):
 
             self._storage.save(element, identifier)
         else:
-            logging.critical(
-                "Can't use Auto-match features with disabled globally, you have to start a new class instance."
+            log.critical(
+                "Can't use Auto-match features while disabled globally, you have to start a new class instance."
             )
 
     def retrieve(self, identifier: str) -> Optional[Dict]:
@@ -758,8 +779,8 @@ class Adaptor(SelectorsGeneration):
         if self.__auto_match_enabled:
             return self._storage.retrieve(identifier)
 
-        logging.critical(
-            "Can't use Auto-match features with disabled globally, you have to start a new class instance."
+        log.critical(
+            "Can't use Auto-match features while disabled globally, you have to start a new class instance."
         )
 
     # Operations on text functions
@@ -1073,11 +1094,18 @@ class Adaptors(List[Adaptor]):
         ]
         return self.__class__(results) if results else results
 
+    # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):
         """Returns the first item of the current list
         :param default: the default value to return if the current list is empty
         """
         return self[0] if len(self) > 0 else default
+
+    def extract(self):
+        return self
+
+    extract_first = get
+    get_all = extract
 
     @property
     def first(self):
