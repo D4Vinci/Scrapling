@@ -406,6 +406,9 @@ You can select elements by their text content in multiple ways, here's a full ex
 >>> page.find_by_text('Tipping the Velvet')  # Find the first element whose text fully matches this text
 <data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>
 
+>>> page.urljoin(page.find_by_text('Tipping the Velvet').attrib['href'])  # We use `page.urljoin` to return the full URL from the relative `href`
+'https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html'
+
 >>> page.find_by_text('Tipping the Velvet', first_match=False)  # Get all matches if there are more
 [<data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>]
 
