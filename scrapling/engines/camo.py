@@ -64,11 +64,14 @@ class CamoufoxEngine:
         self.addons = addons or []
         self.humanize = humanize
         self.timeout = check_type_validity(timeout, [int, float], 30000)
-        if callable(page_action):
-            self.page_action = page_action
+        if page_action is not None:
+            if callable(page_action):
+                self.page_action = page_action
+            else:
+                self.page_action = None
+                log.error('[Ignored] Argument "page_action" must be callable')
         else:
             self.page_action = None
-            log.error('[Ignored] Argument "page_action" must be callable')
 
         self.wait_selector = wait_selector
         self.wait_selector_state = wait_selector_state
