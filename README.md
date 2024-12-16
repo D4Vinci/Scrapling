@@ -6,7 +6,7 @@ Dealing with failing web scrapers due to anti-bot protections or website changes
 Scrapling is a high-performance, intelligent web scraping library for Python that automatically adapts to website changes while significantly outperforming popular alternatives. For both beginners and experts, Scrapling provides powerful features while maintaining simplicity.
 
 ```python
->> from scrapling.defaults import Fetcher, StealthyFetcher, PlayWrightFetcher
+>> from scrapling.defaults import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
 # Fetch websites' source under the radar!
 >> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
 >> print(page.status)
@@ -76,7 +76,7 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 ## Key Features
 
-### Fetch websites as you prefer
+### Fetch websites as you prefer with async support
 - **HTTP requests**: Stealthy and fast HTTP requests with `Fetcher`
 - **Stealthy fetcher**: Annoying anti-bot protection? No problem! Scrapling can bypass almost all of them with `StealthyFetcher` with default configuration!
 - **Your preferred browser**: Use your real browser with CDP, [NSTbrowser](https://app.nstbrowser.io/r/1vO5e5)'s browserless, PlayWright with stealth mode, or even vanilla PlayWright -  All is possible with `PlayWrightFetcher`!
@@ -167,7 +167,7 @@ Scrapling can find elements with more methods and it returns full element `Adapt
 > All benchmarks' results are an average of 100 runs. See our [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology and to run your comparisons.
 
 ## Installation
-Scrapling is a breeze to get started with - Starting from version 0.2, we require at least Python 3.8 to work.
+Scrapling is a breeze to get started with - Starting from version 0.2.9, we require at least Python 3.9 to work.
 ```bash
 pip3 install scrapling
 ```
@@ -223,7 +223,7 @@ All of them can take these initialization arguments: `auto_match`, `huge_tree`, 
 
 If you don't want to pass arguments to the generated `Adaptor` object and want to use the default values, you can use this import instead for cleaner code:
 ```python
-from scrapling.defaults import Fetcher, StealthyFetcher, PlayWrightFetcher
+from scrapling.defaults import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
 ```
 then use it right away without initializing like:
 ```python
@@ -236,19 +236,30 @@ Also, the `Response` object returned from all fetchers is the same as the `Adapt
 ### Fetcher
 This class is built on top of [httpx](https://www.python-httpx.org/) with additional configuration options, here you can do `GET`, `POST`, `PUT`, and `DELETE` requests.
 
-For all methods, you have `stealth_headers` which makes `Fetcher` create and use real browser's headers then create a referer header as if this request came from Google's search of this URL's domain. It's enabled by default. You can also set the number of retries with the argument `retries` for all methods and this will make httpx retry requests if it failed for any reason. The default number of retries for all `Fetcher` methods is 3.
+For all methods, you have `stealthy_headers` which makes `Fetcher` create and use real browser's headers then create a referer header as if this request came from Google's search of this URL's domain. It's enabled by default. You can also set the number of retries with the argument `retries` for all methods and this will make httpx retry requests if it failed for any reason. The default number of retries for all `Fetcher` methods is 3.
 
 You can route all traffic (HTTP and HTTPS) to a proxy for any of these methods in this format `http://username:password@localhost:8030`
 ```python
->> page = Fetcher().get('https://httpbin.org/get', stealth_headers=True, follow_redirects=True)
+>> page = Fetcher().get('https://httpbin.org/get', stealthy_headers=True, follow_redirects=True)
 >> page = Fetcher().post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
 >> page = Fetcher().put('https://httpbin.org/put', data={'key': 'value'})
 >> page = Fetcher().delete('https://httpbin.org/delete')
+```
+For Async requests, you will just replace the import like below:
+```python
+>> from scrapling import AsyncFetcher
+>> page = await AsyncFetcher().get('https://httpbin.org/get', stealthy_headers=True, follow_redirects=True)
+>> page = await AsyncFetcher().post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
+>> page = await AsyncFetcher().put('https://httpbin.org/put', data={'key': 'value'})
+>> page = await AsyncFetcher().delete('https://httpbin.org/delete')
 ```
 ### StealthyFetcher
 This class is built on top of [Camoufox](https://github.com/daijro/camoufox), bypassing most anti-bot protections by default. Scrapling adds extra layers of flavors and configurations to increase performance and undetectability even further.
 ```python
 >> page = StealthyFetcher().fetch('https://www.browserscan.net/bot-detection')  # Running headless by default
+>> page.status == 200
+True
+>> page = await StealthyFetcher().async_fetch('https://www.browserscan.net/bot-detection')  # the async version of fetch
 >> page.status == 200
 True
 ```
@@ -286,6 +297,9 @@ This list isn't final so expect a lot more additions and flexibility to be added
 This class is built on top of [Playwright](https://playwright.dev/python/) which currently provides 4 main run options but they can be mixed as you want.
 ```python
 >> page = PlayWrightFetcher().fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # Vanilla Playwright option
+>> page.css_first("#search a::attr(href)")
+'https://github.com/D4Vinci/Scrapling'
+>> page = await PlayWrightFetcher().async_fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # the async version of fetch
 >> page.css_first("#search a::attr(href)")
 'https://github.com/D4Vinci/Scrapling'
 ```
@@ -805,7 +819,6 @@ This project includes code adapted from:
 
 ## Known Issues
 - In the auto-matching save process, the unique properties of the first element from the selection results are the only ones that get saved. So if the selector you are using selects different elements on the page that are in different locations, auto-matching will probably return to you the first element only when you relocate it later. This doesn't include combined CSS selectors (Using commas to combine more than one selector for example) as these selectors get separated and each selector gets executed alone.
-- Currently, Scrapling is not compatible with async/await.
 
 ---
 <div align="center"><small>Designed & crafted with ❤️ by Karim Shoair.</small></div><br>
