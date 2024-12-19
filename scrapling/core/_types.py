@@ -5,6 +5,8 @@ Type definitions for type checking purposes.
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
                     List, Literal, Optional, Pattern, Tuple, Type, Union)
 
+SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
+
 try:
     from typing import Protocol
 except ImportError:

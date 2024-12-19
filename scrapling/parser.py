@@ -155,7 +155,7 @@ class Adaptor(SelectorsGeneration):
         else:
             if issubclass(type(element), html.HtmlMixin):
 
-                return self.__class__(
+                return Adaptor(
                     root=element,
                     text='', body=b'',  # Since root argument is provided, both `text` and `body` will be ignored so this is just a filler
                     url=self.url, encoding=self.encoding, auto_match=self.__auto_match_enabled,

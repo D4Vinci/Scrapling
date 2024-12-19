@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="scrapling",
-    version="0.2.9",
+    version="0.2.91",
     description="""Scrapling is a powerful, flexible, and high-performance web scraping library for Python. It
      simplifies the process of extracting data from websites, even when they undergo structural changes, and offers
      impressive speed improvements over many popular scraping tools.""",
@@ -37,7 +37,6 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -54,7 +53,7 @@ setup(
         "w3lib",
         "orjson>=3",
         "tldextract",
-        'httpx[brotli,zstd]',
+        'httpx[brotli,zstd, socks]',
         'playwright>=1.49.1',
         'rebrowser-playwright>=1.49.1',
         'camoufox[geoip]>=0.4.9'
