@@ -3,7 +3,7 @@ from camoufox.async_api import AsyncCamoufox
 from camoufox.sync_api import Camoufox
 
 from scrapling.core._types import (Callable, Dict, List, Literal, Optional,
-                                   Union)
+                                   SelectorWaitStates, Union)
 from scrapling.core.utils import log
 from scrapling.engines.toolbelt import (Response, StatusText,
                                         async_intercept_route,
@@ -18,7 +18,7 @@ class CamoufoxEngine:
             self, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, humanize: Optional[Union[bool, float]] = True,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
-            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
+            wait_selector_state: Optional[SelectorWaitStates] = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True,
             geoip: Optional[bool] = False,
             adaptor_arguments: Dict = None,

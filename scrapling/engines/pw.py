@@ -1,6 +1,7 @@
 import json
 
-from scrapling.core._types import Callable, Dict, Optional, Union
+from scrapling.core._types import (Callable, Dict, Optional,
+                                   SelectorWaitStates, Union)
 from scrapling.core.utils import log, lru_cache
 from scrapling.engines.constants import (DEFAULT_STEALTH_FLAGS,
                                          NSTBROWSER_DEFAULT_QUERY)
@@ -23,7 +24,7 @@ class PlaywrightEngine:
             page_action: Callable = None,
             wait_selector: Optional[str] = None,
             locale: Optional[str] = 'en-US',
-            wait_selector_state: Optional[str] = 'attached',
+            wait_selector_state: SelectorWaitStates = 'attached',
             stealth: Optional[bool] = False,
             real_chrome: Optional[bool] = False,
             hide_canvas: Optional[bool] = False,

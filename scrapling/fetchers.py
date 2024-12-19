@@ -1,5 +1,5 @@
 from scrapling.core._types import (Callable, Dict, List, Literal, Optional,
-                                   Union)
+                                   SelectorWaitStates, Union)
 from scrapling.engines import (CamoufoxEngine, PlaywrightEngine, StaticEngine,
                                check_if_engine_usable)
 from scrapling.engines.toolbelt import BaseFetcher, Response
@@ -176,8 +176,8 @@ class StealthyFetcher(BaseFetcher):
             self, url: str, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
-            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, proxy: Optional[Union[str, Dict[str, str]]] = None,
-            os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True, geoip: Optional[bool] = False,
+            wait_selector_state: SelectorWaitStates = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True, geoip: Optional[bool] = False,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -234,8 +234,8 @@ class StealthyFetcher(BaseFetcher):
             self, url: str, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
-            wait_selector_state: str = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None, proxy: Optional[Union[str, Dict[str, str]]] = None,
-            os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True, geoip: Optional[bool] = False,
+            wait_selector_state: SelectorWaitStates = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True, geoip: Optional[bool] = False,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -308,7 +308,7 @@ class PlayWrightFetcher(BaseFetcher):
     def fetch(
             self, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
             useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
-            page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
+            page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: SelectorWaitStates = 'attached',
             hide_canvas: Optional[bool] = False, disable_webgl: Optional[bool] = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
             proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
             stealth: Optional[bool] = False, real_chrome: Optional[bool] = False,
@@ -368,7 +368,7 @@ class PlayWrightFetcher(BaseFetcher):
     async def async_fetch(
             self, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
             useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
-            page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: Optional[str] = 'attached',
+            page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: SelectorWaitStates = 'attached',
             hide_canvas: Optional[bool] = False, disable_webgl: Optional[bool] = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
             proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
             stealth: Optional[bool] = False, real_chrome: Optional[bool] = False,
