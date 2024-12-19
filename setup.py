@@ -53,7 +53,7 @@ setup(
         "w3lib",
         "orjson>=3",
         "tldextract",
-        'httpx[brotli,zstd]',
+        'httpx[brotli,zstd, socks]',
         'playwright>=1.49.1',
         'rebrowser-playwright>=1.49.1',
         'camoufox[geoip]>=0.4.9'
