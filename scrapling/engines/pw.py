@@ -193,11 +193,20 @@ class PlaywrightEngine:
         :param url: Target url.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
+        from playwright.sync_api import Response as PlaywrightResponse
         if not self.stealth or self.real_chrome:
             # Because rebrowser_playwright doesn't play well with real browsers
             from playwright.sync_api import sync_playwright
         else:
             from rebrowser_playwright.sync_api import sync_playwright
+
+        # Store the final response
+        final_response = None
+
+        def handle_response(finished_response: PlaywrightResponse):
+            nonlocal final_response
+            if finished_response.request.resource_type == "document":
+                final_response = finished_response
 
         with sync_playwright() as p:
             # Creating the browser
@@ -212,6 +221,8 @@ class PlaywrightEngine:
             page = context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
+            # Listen for all responses
+            page.on("response", handle_response)
 
             if self.extra_headers:
                 page.set_extra_http_headers(self.extra_headers)
@@ -223,7 +234,7 @@ class PlaywrightEngine:
                 for script in self.__stealth_scripts():
                     page.add_init_script(path=script)
 
-            res = page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
+            first_response = page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
             page.wait_for_load_state(state="domcontentloaded")
             if self.network_idle:
                 page.wait_for_load_state('networkidle')
@@ -240,21 +251,24 @@ class PlaywrightEngine:
                 if self.network_idle:
                     page.wait_for_load_state('networkidle')
 
+            response_bytes = final_response.body() if final_response else page.content().encode('utf-8')
+            # In case we didn't catch a document type somehow
+            final_response = final_response if final_response else first_response
             # This will be parsed inside `Response`
-            encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
+            encoding = final_response.headers.get('content-type', '') or 'utf-8'  # default encoding
             # PlayWright API sometimes give empty status text for some reason!
-            status_text = res.status_text or StatusText.get(res.status)
+            status_text = final_response.status_text or StatusText.get(final_response.status)
 
             response = Response(
-                url=res.url,
+                url=final_response.url,
                 text=page.content(),
-                body=page.content().encode('utf-8'),
-                status=res.status,
+                body=response_bytes,
+                status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
                 cookies={cookie['name']: cookie['value'] for cookie in page.context.cookies()},
-                headers=res.all_headers(),
-                request_headers=res.request.all_headers(),
+                headers=final_response.all_headers(),
+                request_headers=final_response.request.all_headers(),
                 **self.adaptor_arguments
             )
             page.close()
@@ -266,11 +280,20 @@ class PlaywrightEngine:
         :param url: Target url.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
+        from playwright.async_api import Response as PlaywrightResponse
         if not self.stealth or self.real_chrome:
             # Because rebrowser_playwright doesn't play well with real browsers
             from playwright.async_api import async_playwright
         else:
             from rebrowser_playwright.async_api import async_playwright
+
+        # Store the final response
+        final_response = None
+
+        async def handle_response(finished_response: PlaywrightResponse):
+            nonlocal final_response
+            if finished_response.request.resource_type == "document":
+                final_response = finished_response
 
         async with async_playwright() as p:
             # Creating the browser
@@ -285,6 +308,8 @@ class PlaywrightEngine:
             page = await context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
+            # Listen for all responses
+            page.on("response", handle_response)
 
             if self.extra_headers:
                 await page.set_extra_http_headers(self.extra_headers)
@@ -296,7 +321,7 @@ class PlaywrightEngine:
                 for script in self.__stealth_scripts():
                     await page.add_init_script(path=script)
 
-            res = await page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
+            first_response = await page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
             await page.wait_for_load_state(state="domcontentloaded")
             if self.network_idle:
                 await page.wait_for_load_state('networkidle')
@@ -313,21 +338,24 @@ class PlaywrightEngine:
                 if self.network_idle:
                     await page.wait_for_load_state('networkidle')
 
+            response_bytes = await final_response.body() if final_response else (await page.content()).encode('utf-8')
+            # In case we didn't catch a document type somehow
+            final_response = final_response if final_response else first_response
             # This will be parsed inside `Response`
-            encoding = res.headers.get('content-type', '') or 'utf-8'  # default encoding
+            encoding = final_response.headers.get('content-type', '') or 'utf-8'  # default encoding
             # PlayWright API sometimes give empty status text for some reason!
-            status_text = res.status_text or StatusText.get(res.status)
+            status_text = final_response.status_text or StatusText.get(final_response.status)
 
             response = Response(
-                url=res.url,
+                url=final_response.url,
                 text=await page.content(),
-                body=(await page.content()).encode('utf-8'),
-                status=res.status,
+                body=response_bytes,
+                status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
                 cookies={cookie['name']: cookie['value'] for cookie in await page.context.cookies()},
-                headers=await res.all_headers(),
-                request_headers=await res.request.all_headers(),
+                headers=await final_response.all_headers(),
+                request_headers=await final_response.request.all_headers(),
                 **self.adaptor_arguments
             )
             await page.close()
