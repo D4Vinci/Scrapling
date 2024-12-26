@@ -167,52 +167,18 @@ Scrapling can find elements with more methods and it returns full element `Adapt
 > All benchmarks' results are an average of 100 runs. See our [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology and to run your comparisons.
 
 ## Installation
-Scrapling is a breeze to get started with - Starting from version 0.2.9, we require at least Python 3.9 to work.
+Scrapling is a breeze to get started with; Starting from version 0.2.9, we require at least Python 3.9 to work.
 ```bash
 pip3 install scrapling
 ```
-- For using the `StealthyFetcher`, go to the command line and download the browser with
-<details><summary>Windows OS</summary>
-
+Then run this command to install browsers' dependencies needed to use Fetcher classes
 ```bash
-camoufox fetch --browserforge
+scrapling install
 ```
-</details>
-<details><summary>MacOS</summary>
-
-```bash
-python3 -m camoufox fetch --browserforge
-```
-</details>
-<details><summary>Linux</summary>
-
-```bash
-python -m camoufox fetch --browserforge
-```
-On a fresh installation of Linux, you may also need the following Firefox dependencies:
-- Debian-based distros
-    ```bash
-    sudo apt install -y libgtk-3-0 libx11-xcb1 libasound2
-    ```
-- Arch-based distros
-    ```bash
-    sudo pacman -S gtk3 libx11 libxcb cairo libasound alsa-lib
-    ```
-</details>
-
-<small> See the official <a href="https://camoufox.com/python/installation/#download-the-browser">Camoufox documentation</a> for more info on installation</small>
-
-- If you are going to use the `PlayWrightFetcher` options, then install Playwright's Chromium browser with:
-```commandline
-playwright install chromium
-```
-- If you are going to use normal requests only with the `Fetcher` class then update the fingerprints files with:
-```commandline
-python -m browserforge update
-```
+If you have any installation issues, please open an issue.
 
 ## Fetching Websites
-Fetchers are basically interfaces that do requests or fetch pages for you in a single request fashion and then return an `Adaptor` object for you. This feature was introduced because the only option we had before was to fetch the page as you wanted it, then pass it manually to the `Adaptor` class to create an `Adaptor` instance and start playing around with the page.
+Fetchers are interfaces built on top of other libraries with added features that do requests or fetch pages for you in a single request fashion and then return an `Adaptor` object. This feature was introduced because the only option we had before was to fetch the page as you wanted it, then pass it manually to the `Adaptor` class to create an `Adaptor` instance and start playing around with the page.
 
 ### Features
 You might be slightly confused by now so let me clear things up. All fetcher-type classes are imported in the same way
