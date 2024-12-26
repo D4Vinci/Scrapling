@@ -20,6 +20,11 @@ setup(
     package_dir={
         "scrapling": "scrapling",
     },
+    entry_points={
+        'console_scripts': [
+            'scrapling=scrapling.cli:main'
+        ],
+    },
     include_package_data=True,
     classifiers=[
         "Operating System :: OS Independent",
@@ -50,6 +55,7 @@ setup(
         "requests>=2.3",
         "lxml>=4.5",
         "cssselect>=1.2",
+        'click',
         "w3lib",
         "orjson>=3",
         "tldextract",
