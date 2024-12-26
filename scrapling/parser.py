@@ -474,7 +474,7 @@ class Adaptor(SelectorsGeneration):
 
     def css(self, selector: str, identifier: str = '',
             auto_match: bool = False, auto_save: bool = False, percentage: int = 0
-            ) -> Union['Adaptors[Adaptor]', List]:
+            ) -> Union['Adaptors[Adaptor]', List, 'TextHandlers[TextHandler]']:
         """Search current tree with CSS3 selectors
 
         **Important:
@@ -517,7 +517,7 @@ class Adaptor(SelectorsGeneration):
 
     def xpath(self, selector: str, identifier: str = '',
               auto_match: bool = False, auto_save: bool = False, percentage: int = 0, **kwargs: Any
-              ) -> Union['Adaptors[Adaptor]', List]:
+              ) -> Union['Adaptors[Adaptor]', List, 'TextHandlers[TextHandler]']:
         """Search current tree with XPath selectors
 
         **Important:

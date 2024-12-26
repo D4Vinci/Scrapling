@@ -206,7 +206,7 @@ class PlaywrightEngine:
 
         def handle_response(finished_response: PlaywrightResponse):
             nonlocal final_response
-            if finished_response.request.resource_type == "document":
+            if finished_response.request.resource_type == "document" and finished_response.request.is_navigation_request():
                 final_response = finished_response
 
         with sync_playwright() as p:
@@ -252,7 +252,6 @@ class PlaywrightEngine:
                 if self.network_idle:
                     page.wait_for_load_state('networkidle')
 
-            response_bytes = final_response.body() if final_response else page.content().encode('utf-8')
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             # This will be parsed inside `Response`
@@ -261,15 +260,15 @@ class PlaywrightEngine:
             status_text = final_response.status_text or StatusText.get(final_response.status)
 
             response = Response(
-                url=final_response.url,
+                url=page.url,
                 text=page.content(),
-                body=response_bytes,
+                body=page.content().encode('utf-8'),
                 status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
                 cookies={cookie['name']: cookie['value'] for cookie in page.context.cookies()},
-                headers=final_response.all_headers(),
-                request_headers=final_response.request.all_headers(),
+                headers=first_response.all_headers(),
+                request_headers=first_response.request.all_headers(),
                 **self.adaptor_arguments
             )
             page.close()
@@ -293,7 +292,7 @@ class PlaywrightEngine:
 
         async def handle_response(finished_response: PlaywrightResponse):
             nonlocal final_response
-            if finished_response.request.resource_type == "document":
+            if finished_response.request.resource_type == "document" and finished_response.request.is_navigation_request():
                 final_response = finished_response
 
         async with async_playwright() as p:
@@ -339,7 +338,6 @@ class PlaywrightEngine:
                 if self.network_idle:
                     await page.wait_for_load_state('networkidle')
 
-            response_bytes = await final_response.body() if final_response else (await page.content()).encode('utf-8')
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             # This will be parsed inside `Response`
@@ -348,15 +346,15 @@ class PlaywrightEngine:
             status_text = final_response.status_text or StatusText.get(final_response.status)
 
             response = Response(
-                url=final_response.url,
+                url=page.url,
                 text=await page.content(),
-                body=response_bytes,
+                body=(await page.content()).encode('utf-8'),
                 status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
                 cookies={cookie['name']: cookie['value'] for cookie in await page.context.cookies()},
-                headers=await final_response.all_headers(),
-                request_headers=await final_response.request.all_headers(),
+                headers=await first_response.all_headers(),
+                request_headers=await first_response.request.all_headers(),
                 **self.adaptor_arguments
             )
             await page.close()

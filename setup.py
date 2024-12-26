@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="scrapling",
-    version="0.2.91",
+    version="0.2.92",
     description="""Scrapling is a powerful, flexible, and high-performance web scraping library for Python. It
      simplifies the process of extracting data from websites, even when they undergo structural changes, and offers
      impressive speed improvements over many popular scraping tools.""",
@@ -19,6 +19,11 @@ setup(
     zip_safe=False,
     package_dir={
         "scrapling": "scrapling",
+    },
+    entry_points={
+        'console_scripts': [
+            'scrapling=scrapling.cli:main'
+        ],
     },
     include_package_data=True,
     classifiers=[
@@ -50,6 +55,7 @@ setup(
         "requests>=2.3",
         "lxml>=4.5",
         "cssselect>=1.2",
+        'click',
         "w3lib",
         "orjson>=3",
         "tldextract",

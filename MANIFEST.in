@@ -4,7 +4,10 @@ include *.js
 include scrapling/engines/toolbelt/bypasses/*.js
 include scrapling/*.db
 include scrapling/*.db*
+include scrapling/*.db-*
 include scrapling/py.typed
+include scrapling/.scrapling_dependencies_installed
+include .scrapling_dependencies_installed
 
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
