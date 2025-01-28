@@ -175,6 +175,7 @@ class CamoufoxEngine:
         async with AsyncCamoufox(
                 geoip=self.geoip,
                 proxy=self.proxy,
+                disable_coop=True,
                 addons=self.addons,
                 exclude_addons=addons,
                 headless=self.headless,
