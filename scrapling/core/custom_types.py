@@ -5,8 +5,12 @@ from types import MappingProxyType
 from orjson import dumps, loads
 from w3lib.html import replace_entities as _replace_entities
 
-from scrapling.core._types import Dict, List, Pattern, SupportsIndex, Union
+from scrapling.core._types import (Dict, Iterable, List, Optional, Pattern,
+                                   SupportsIndex, TypeVar, Union)
 from scrapling.core.utils import _is_iterable, flatten
+
+# Define type variable for AttributeHandler value type
+VT = TypeVar('VT', bound='TextHandler')
 
 
 class TextHandler(str):
@@ -19,71 +23,70 @@ class TextHandler(str):
         return super().__new__(cls, '')
 
     # Make methods from original `str` class return `TextHandler` instead of returning `str` again
-    # Of course, this stupid workaround is only so we can keep the auto-completion working without issues in your IDE
-    # and I made sonnet write it for me :)
-    def strip(self, chars=None):
+    # Of course, I made sonnet write it for me :)
+    def strip(self, chars: str = None) -> Union[str, 'TextHandler']:
         return TextHandler(super().strip(chars))
 
-    def lstrip(self, chars=None):
+    def lstrip(self, chars: str = None) -> Union[str, 'TextHandler']:
         return TextHandler(super().lstrip(chars))
 
-    def rstrip(self, chars=None):
+    def rstrip(self, chars: str = None) -> Union[str, 'TextHandler']:
         return TextHandler(super().rstrip(chars))
 
-    def capitalize(self):
+    def capitalize(self) -> Union[str, 'TextHandler']:
         return TextHandler(super().capitalize())
 
-    def casefold(self):
+    def casefold(self) -> Union[str, 'TextHandler']:
         return TextHandler(super().casefold())
 
-    def center(self, width, fillchar=' '):
+    def center(self, width: SupportsIndex, fillchar: str = ' ') -> Union[str, 'TextHandler']:
         return TextHandler(super().center(width, fillchar))
 
-    def expandtabs(self, tabsize=8):
+    def expandtabs(self, tabsize: SupportsIndex = 8) -> Union[str, 'TextHandler']:
         return TextHandler(super().expandtabs(tabsize))
 
-    def format(self, *args, **kwargs):
+    def format(self, *args: str, **kwargs: str) -> Union[str, 'TextHandler']:
         return TextHandler(super().format(*args, **kwargs))
 
-    def format_map(self, mapping):
+    def format_map(self, mapping) -> Union[str, 'TextHandler']:
         return TextHandler(super().format_map(mapping))
 
-    def join(self, iterable):
+    def join(self, iterable: Iterable[str]) -> Union[str, 'TextHandler']:
         return TextHandler(super().join(iterable))
 
-    def ljust(self, width, fillchar=' '):
+    def ljust(self, width: SupportsIndex, fillchar: str = ' ') -> Union[str, 'TextHandler']:
         return TextHandler(super().ljust(width, fillchar))
 
-    def rjust(self, width, fillchar=' '):
+    def rjust(self, width: SupportsIndex, fillchar: str = ' ') -> Union[str, 'TextHandler']:
         return TextHandler(super().rjust(width, fillchar))
 
-    def swapcase(self):
+    def swapcase(self) -> Union[str, 'TextHandler']:
         return TextHandler(super().swapcase())
 
-    def title(self):
+    def title(self) -> Union[str, 'TextHandler']:
         return TextHandler(super().title())
 
-    def translate(self, table):
+    def translate(self, table) -> Union[str, 'TextHandler']:
         return TextHandler(super().translate(table))
 
-    def zfill(self, width):
+    def zfill(self, width: SupportsIndex) -> Union[str, 'TextHandler']:
         return TextHandler(super().zfill(width))
 
-    def replace(self, old, new, count=-1):
+    def replace(self, old: str, new: str, count: SupportsIndex = -1) -> Union[str, 'TextHandler']:
         return TextHandler(super().replace(old, new, count))
 
-    def upper(self):
+    def upper(self) -> Union[str, 'TextHandler']:
         return TextHandler(super().upper())
 
-    def lower(self):
+    def lower(self) -> Union[str, 'TextHandler']:
         return TextHandler(super().lower())
     ##############
 
-    def sort(self, reverse: bool = False) -> str:
+    def sort(self, reverse: bool = False) -> Union[str, 'TextHandler']:
         """Return a sorted version of the string"""
         return self.__class__("".join(sorted(self, reverse=reverse)))
 
-    def clean(self) -> str:
+    def clean(self) -> Union[str, 'TextHandler']:
         """Return a new version of the string after removing all white spaces and consecutive spaces"""
         data = re.sub(r'[\t|\r|\n]', '', self)
         data = re.sub(' +', ' ', data)
@@ -210,7 +213,7 @@ class TextHandlers(List[TextHandler]):
     get_all = extract
 
 
-class AttributesHandler(Mapping):
+class AttributesHandler(Mapping[str, VT]):
     """A read-only mapping to use instead of the standard dictionary for the speed boost but at the same time I use it to add more functionalities.
         If standard dictionary is needed, just convert this class to dictionary with `dict` function
     """
@@ -231,7 +234,7 @@ class AttributesHandler(Mapping):
         # Fastest read-only mapping type
         self._data = MappingProxyType(mapping)
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[str] = None) -> Union[VT, None]:
         """Acts like standard dictionary `.get()` method"""
         return self._data.get(key, default)
 
@@ -253,7 +256,7 @@ class AttributesHandler(Mapping):
         """Convert current attributes to JSON string if the attributes are JSON serializable otherwise throws error"""
         return dumps(dict(self._data))
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> VT:
         return self._data[key]
 
     def __iter__(self):
