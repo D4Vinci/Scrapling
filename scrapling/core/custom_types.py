@@ -1,4 +1,5 @@
 import re
+import typing
 from collections.abc import Mapping
 from types import MappingProxyType
 
@@ -10,7 +11,7 @@ from scrapling.core._types import (Dict, Iterable, List, Optional, Pattern,
 from scrapling.core.utils import _is_iterable, flatten
 
 # Define type variable for AttributeHandler value type
-VT = TypeVar('VT', bound='TextHandler')
+_TextHandlerType = TypeVar('_TextHandlerType', bound='TextHandler')
 
 
 class TextHandler(str):
@@ -24,6 +25,11 @@ class TextHandler(str):
 
     # Make methods from original `str` class return `TextHandler` instead of returning `str` again
     # Of course, I made sonnet write it for me :)
+    def split(self, sep: str = None, maxsplit: SupportsIndex = -1) -> 'TextHandlers[_TextHandlerType]':
+        return TextHandlers([
+            typing.cast("_TextHandlerType", s) for s in super().split(sep, maxsplit)
+        ])
+
     def strip(self, chars: str = None) -> Union[str, 'TextHandler']:
         return TextHandler(super().strip(chars))
 
@@ -155,7 +161,7 @@ class TextHandler(str):
         return result[0] if result else default
 
 
-class TextHandlers(List[TextHandler]):
+class TextHandlers(List[_TextHandlerType]):
     """
     The :class:`TextHandlers` class is a subclass of the builtin ``List`` class, which provides a few additional methods.
     """
@@ -213,7 +219,7 @@ class TextHandlers(List[TextHandler]):
     get_all = extract
 
 
-class AttributesHandler(Mapping[str, VT]):
+class AttributesHandler(Mapping[str, _TextHandlerType]):
     """A read-only mapping to use instead of the standard dictionary for the speed boost but at the same time I use it to add more functionalities.
         If standard dictionary is needed, just convert this class to dictionary with `dict` function
     """
@@ -234,7 +240,7 @@ class AttributesHandler(Mapping[str, VT]):
         # Fastest read-only mapping type
         self._data = MappingProxyType(mapping)
 
-    def get(self, key: str, default: Optional[str] = None) -> Union[VT, None]:
+    def get(self, key: str, default: Optional[str] = None) -> Union[_TextHandlerType, None]:
         """Acts like standard dictionary `.get()` method"""
         return self._data.get(key, default)
 
@@ -256,7 +262,7 @@ class AttributesHandler(Mapping[str, VT]):
         """Convert current attributes to JSON string if the attributes are JSON serializable otherwise throws error"""
         return dumps(dict(self._data))
 
-    def __getitem__(self, key: str) -> VT:
+    def __getitem__(self, key: str) -> _TextHandlerType:
         return self._data[key]
 
     def __iter__(self):
