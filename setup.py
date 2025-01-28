@@ -52,8 +52,7 @@ setup(
     ],
     # Instead of using requirements file to dodge possible errors from tox?
     install_requires=[
-        "requests>=2.3",
-        "lxml>=4.5",
+        "lxml>=5.0",
         "cssselect>=1.2",
         'click',
         "w3lib",
@@ -62,7 +61,7 @@ setup(
         'httpx[brotli,zstd, socks]',
         'playwright>=1.49.1',
         'rebrowser-playwright>=1.49.1',
-        'camoufox[geoip]>=0.4.9'
+        'camoufox[geoip]>=0.4.10'
     ],
     python_requires=">=3.9",
     url="https://github.com/D4Vinci/Scrapling",
