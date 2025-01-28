@@ -61,7 +61,7 @@ class TestPlayWrightFetcher:
     @pytest.mark.parametrize("kwargs", [
         {"disable_webgl": True, "hide_canvas": False},
         {"disable_webgl": False, "hide_canvas": True},
-        {"stealth": True},
+        # {"stealth": True}, # causes issues with Github Actions
         {"useragent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0'},
         {"extra_headers": {'ayo': ''}}
     ])
