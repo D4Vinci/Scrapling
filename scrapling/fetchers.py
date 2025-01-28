@@ -177,7 +177,7 @@ class StealthyFetcher(BaseFetcher):
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True, geoip: Optional[bool] = False,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = False, geoip: Optional[bool] = False,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -191,7 +191,7 @@ class StealthyFetcher(BaseFetcher):
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
-        :param disable_ads: Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.
+        :param disable_ads: Disabled by default, this installs `uBlock Origin` addon on the browser if enabled.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Enabled by default. Disabling it WebGL not recommended as many WAFs now checks if WebGL is enabled.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, & spoof the WebRTC IP address.
@@ -235,7 +235,7 @@ class StealthyFetcher(BaseFetcher):
             block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = True, geoip: Optional[bool] = False,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = False, geoip: Optional[bool] = False,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -249,7 +249,7 @@ class StealthyFetcher(BaseFetcher):
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
-        :param disable_ads: Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.
+        :param disable_ads: Disabled by default, this installs `uBlock Origin` addon on the browser if enabled.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param allow_webgl: Enabled by default. Disabling it WebGL not recommended as many WAFs now checks if WebGL is enabled.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, & spoof the WebRTC IP address.
