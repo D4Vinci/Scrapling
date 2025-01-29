@@ -23,12 +23,25 @@ class TextHandler(str):
             return super().__new__(cls, string)
         return super().__new__(cls, '')
 
-    # Make methods from original `str` class return `TextHandler` instead of returning `str` again
-    # Of course, I made sonnet write it for me :)
-    def split(self, sep: str = None, maxsplit: SupportsIndex = -1) -> 'TextHandlers[_TextHandlerType]':
-        return TextHandlers([
-            typing.cast("_TextHandlerType", s) for s in super().split(sep, maxsplit)
-        ])
+    @typing.overload
+    def __getitem__(self, key: SupportsIndex) -> 'TextHandler':
+        pass
+
+    @typing.overload
+    def __getitem__(self, key: slice) -> "TextHandlers":
+        pass
+
+    def __getitem__(self, key: Union[SupportsIndex, slice]) -> Union["TextHandler", "TextHandlers"]:
+        lst = super().__getitem__(key)
+        if isinstance(key, slice):
+            lst = [TextHandler(s) for s in lst]
+            return TextHandlers(typing.cast(List[_TextHandlerType], lst))
+        return typing.cast(_TextHandlerType, TextHandler(lst))
+
+    def split(self, sep: str = None, maxsplit: SupportsIndex = -1) -> 'TextHandlers':
+        return TextHandlers(
+            typing.cast(List[_TextHandlerType], [TextHandler(s) for s in super().split(sep, maxsplit)])
+        )
 
     def strip(self, chars: str = None) -> Union[str, 'TextHandler']:
         return TextHandler(super().strip(chars))
@@ -161,18 +174,26 @@ class TextHandler(str):
         return result[0] if result else default
 
 
-class TextHandlers(List[_TextHandlerType]):
+class TextHandlers(List[TextHandler]):
     """
     The :class:`TextHandlers` class is a subclass of the builtin ``List`` class, which provides a few additional methods.
     """
     __slots__ = ()
 
-    def __getitem__(self, pos: Union[SupportsIndex, slice]) -> Union[TextHandler, "TextHandlers[TextHandler]"]:
+    @typing.overload
+    def __getitem__(self, pos: SupportsIndex) -> TextHandler:
+        pass
+
+    @typing.overload
+    def __getitem__(self, pos: slice) -> "TextHandlers":
+        pass
+
+    def __getitem__(self, pos: Union[SupportsIndex, slice]) -> Union[TextHandler, "TextHandlers"]:
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
-            return self.__class__(lst)
-        else:
-            return lst
+            lst = [TextHandler(s) for s in lst]
+            return TextHandlers(typing.cast(List[_TextHandlerType], lst))
+        return typing.cast(_TextHandlerType, TextHandler(lst))
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True, clean_match: bool = False,
             case_sensitive: bool = False) -> 'List[str]':
