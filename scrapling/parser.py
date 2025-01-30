@@ -19,7 +19,7 @@ from scrapling.core.storage_adaptors import (SQLiteStorageSystem,
                                              StorageSystemMixin, _StorageTools)
 from scrapling.core.translator import HTMLTranslator
 from scrapling.core.utils import (clean_spaces, flatten, html_forbidden,
-                                  is_jsonable, log)
+                                  is_jsonable, log, lru_cache)
 
 
 class Adaptor(SelectorsGeneration):
@@ -283,6 +283,13 @@ class Adaptor(SelectorsGeneration):
     def parent(self) -> Union['Adaptor', None]:
         """Return the direct parent of the element or ``None`` otherwise"""
         return self.__handle_element(self._root.getparent())
+
+    @property
+    @lru_cache(None, True)
+    def below_elements(self) -> 'Adaptors[Adaptor]':
+        """Return all elements under the current element in the DOM tree"""
+        below = self._root.xpath('.//*')
+        return self.__handle_elements(below)
 
     @property
     def children(self) -> 'Adaptors[Adaptor]':
