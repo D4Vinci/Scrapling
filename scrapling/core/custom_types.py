@@ -6,8 +6,8 @@ from types import MappingProxyType
 from orjson import dumps, loads
 from w3lib.html import replace_entities as _replace_entities
 
-from scrapling.core._types import (Dict, Iterable, List, Optional, Pattern,
-                                   SupportsIndex, TypeVar, Union)
+from scrapling.core._types import (Dict, Iterable, List, Literal, Optional,
+                                   Pattern, SupportsIndex, TypeVar, Union)
 from scrapling.core.utils import _is_iterable, flatten
 
 # Define type variable for AttributeHandler value type
@@ -126,6 +126,28 @@ class TextHandler(str):
         # Using str function as a workaround for orjson issue with subclasses of str
         # Check this out: https://github.com/ijl/orjson/issues/445
         return loads(str(self))
+
+    @typing.overload
+    def re(
+        self,
+        regex: Union[str, Pattern[str]],
+        replace_entities: bool = True,
+        clean_match: bool = False,
+        case_sensitive: bool = False,
+        check_match: Literal[True] = True,
+    ) -> bool:
+        ...
+
+    @typing.overload
+    def re(
+        self,
+        regex: Union[str, Pattern[str]],
+        replace_entities: bool = True,
+        clean_match: bool = False,
+        case_sensitive: bool = False,
+        check_match: Literal[False] = False,
+    ) -> "TextHandlers[TextHandler]":
+        ...
 
     def re(
             self, regex: Union[str, Pattern[str]], replace_entities: bool = True, clean_match: bool = False,
