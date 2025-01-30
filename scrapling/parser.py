@@ -897,7 +897,7 @@ class Adaptor(SelectorsGeneration):
             text = text.lower()
 
         # This selector gets all elements with text content
-        for node in self.__handle_elements(self._root.xpath('//*[normalize-space(text())]')):
+        for node in self.__handle_elements(self._root.xpath('.//*[normalize-space(text())]')):
             """Check if element matches given text otherwise, traverse the children tree and iterate"""
             node_text = node.text
             if clean_match:
@@ -933,7 +933,7 @@ class Adaptor(SelectorsGeneration):
         results = Adaptors([])
 
         # This selector gets all elements with text content
-        for node in self.__handle_elements(self._root.xpath('//*[normalize-space(text())]')):
+        for node in self.__handle_elements(self._root.xpath('.//*[normalize-space(text())]')):
             """Check if element matches given regex otherwise, traverse the children tree and iterate"""
             node_text = node.text
             if node_text.re(query, check_match=True, clean_match=clean_match, case_sensitive=case_sensitive):
