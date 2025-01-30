@@ -19,7 +19,7 @@ from scrapling.core.storage_adaptors import (SQLiteStorageSystem,
                                              StorageSystemMixin, _StorageTools)
 from scrapling.core.translator import HTMLTranslator
 from scrapling.core.utils import (clean_spaces, flatten, html_forbidden,
-                                  is_jsonable, log, lru_cache)
+                                  is_jsonable, log)
 
 
 class Adaptor(SelectorsGeneration):
@@ -285,7 +285,6 @@ class Adaptor(SelectorsGeneration):
         return self.__handle_element(self._root.getparent())
 
     @property
-    @lru_cache(None, True)
     def below_elements(self) -> 'Adaptors[Adaptor]':
         """Return all elements under the current element in the DOM tree"""
         below = self._root.xpath('.//*')
@@ -603,12 +602,12 @@ class Adaptor(SelectorsGeneration):
                     raise TypeError('Nested Iterables are not accepted, only iterables of tag names are accepted')
                 tags.update(set(arg))
 
-            elif type(arg) is dict:
+            elif isinstance(arg, dict):
                 if not all([(type(k) is str and type(v) is str) for k, v in arg.items()]):
                     raise TypeError('Nested dictionaries are not accepted, only string keys and string values are accepted')
                 attributes.update(arg)
 
-            elif type(arg) is re.Pattern:
+            elif isinstance(arg, re.Pattern):
                 patterns.add(arg)
 
             elif callable(arg):
@@ -629,14 +628,14 @@ class Adaptor(SelectorsGeneration):
             attributes[attribute_name] = value
 
         # It's easier and faster to build a selector than traversing the tree
-        tags = tags or ['']
+        tags = tags or ['*']
         for tag in tags:
             selector = tag
             for key, value in attributes.items():
                 value = value.replace('"', r'\"')  # Escape double quotes in user input
                 # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
                 selector += '[{}="{}"]'.format(key, value)
-            if selector:
+            if selector != '*':
                 selectors.append(selector)
 
         if selectors:
@@ -650,12 +649,13 @@ class Adaptor(SelectorsGeneration):
                 for function in functions:
                     results = results.filter(function)
         else:
+            results = results or self.below_elements
             for pattern in patterns:
-                results.extend(self.find_by_regex(pattern, first_match=False))
+                results = results.filter(lambda e: e.text.re(pattern, check_match=True))
 
             # Collect element if it fulfills passed function otherwise
             for function in functions:
-                results.extend((results or self.below_elements).filter(function))
+                results = results.filter(function)
 
         return results
 
