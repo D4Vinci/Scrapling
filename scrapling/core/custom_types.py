@@ -131,10 +131,10 @@ class TextHandler(str):
     def re(
         self,
         regex: Union[str, Pattern[str]],
+        check_match: Literal[True],
         replace_entities: bool = True,
         clean_match: bool = False,
         case_sensitive: bool = False,
-        check_match: Literal[True] = True,
     ) -> bool:
         ...
 
