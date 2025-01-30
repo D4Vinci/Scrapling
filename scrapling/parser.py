@@ -285,18 +285,18 @@ class Adaptor(SelectorsGeneration):
         return self.__handle_element(self._root.getparent())
 
     @property
-    def children(self) -> Union['Adaptors[Adaptor]', List]:
+    def children(self) -> 'Adaptors[Adaptor]':
         """Return the children elements of the current element or empty list otherwise"""
         return Adaptors([
             self.__element_convertor(child) for child in self._root.iterchildren() if type(child) not in html_forbidden
         ])
 
     @property
-    def siblings(self) -> Union['Adaptors[Adaptor]', List]:
+    def siblings(self) -> 'Adaptors[Adaptor]':
         """Return other children of the current element's parent or empty list otherwise"""
         if self.parent:
             return Adaptors([child for child in self.parent.children if child._root != self._root])
-        return []
+        return Adaptors([])
 
     def iterancestors(self) -> Generator['Adaptor', None, None]:
         """Return a generator that loops over all ancestors of the element, starting with element's parent."""
@@ -442,8 +442,6 @@ class Adaptor(SelectorsGeneration):
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure so don't play with this
          number unless you must know what you are doing!
-
-        :return: List as :class:`Adaptors`
         """
         for element in self.css(selector, identifier, auto_match, auto_save, percentage):
             return element
@@ -468,8 +466,6 @@ class Adaptor(SelectorsGeneration):
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure so don't play with this
          number unless you must know what you are doing!
-
-        :return: List as :class:`Adaptors`
         """
         for element in self.xpath(selector, identifier, auto_match, auto_save, percentage, **kwargs):
             return element
@@ -899,7 +895,7 @@ class Adaptor(SelectorsGeneration):
     def find_by_text(
             self, text: str, first_match: bool = True, partial: bool = False,
             case_sensitive: bool = False, clean_match: bool = True
-    ) -> Union['Adaptors[Adaptor]', 'Adaptor', List]:
+    ) -> Union['Adaptors[Adaptor]', 'Adaptor']:
         """Find elements that its text content fully/partially matches input.
         :param text: Text query to match
         :param first_match: Return first element that matches conditions, enabled by default
@@ -946,7 +942,7 @@ class Adaptor(SelectorsGeneration):
 
     def find_by_regex(
             self, query: Union[str, Pattern[str]], first_match: bool = True, case_sensitive: bool = False, clean_match: bool = True
-    ) -> Union['Adaptors[Adaptor]', 'Adaptor', List]:
+    ) -> Union['Adaptors[Adaptor]', 'Adaptor']:
         """Find elements that its text content matches the input regex pattern.
         :param query: Regex query/pattern to match
         :param first_match: Return first element that matches conditions, enabled by default
@@ -1001,7 +997,7 @@ class Adaptors(List[Adaptor]):
 
     def xpath(
             self, selector: str, identifier: str = '', auto_save: bool = False, percentage: int = 0, **kwargs: Any
-    ) -> Union["Adaptors[Adaptor]", List]:
+    ) -> "Adaptors[Adaptor]":
         """
         Call the ``.xpath()`` method for each element in this list and return
         their results as another :class:`Adaptors`.
@@ -1027,7 +1023,7 @@ class Adaptors(List[Adaptor]):
         ]
         return self.__class__(flatten(results))
 
-    def css(self, selector: str, identifier: str = '', auto_save: bool = False, percentage: int = 0) -> Union["Adaptors[Adaptor]", List]:
+    def css(self, selector: str, identifier: str = '', auto_save: bool = False, percentage: int = 0) -> "Adaptors[Adaptor]":
         """
         Call the ``.css()`` method for each element in this list and return
         their results flattened as another :class:`Adaptors`.
@@ -1092,15 +1088,14 @@ class Adaptors(List[Adaptor]):
                 return element
         return None
 
-    def filter(self, func: Callable[['Adaptor'], bool]) -> Union['Adaptors', List]:
+    def filter(self, func: Callable[['Adaptor'], bool]) -> 'Adaptors[Adaptor]':
         """Filter current elements based on the passed function
         :param func: A function that takes each element as an argument and returns True/False
         :return: The new `Adaptors` object or empty list otherwise.
         """
-        results = [
+        return self.__class__([
             element for element in self if func(element)
-        ]
-        return self.__class__(results) if results else results
+        ])
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):
