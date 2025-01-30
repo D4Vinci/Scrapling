@@ -259,18 +259,18 @@ class Adaptor(SelectorsGeneration):
         return self.__attributes
 
     @property
-    def html_content(self) -> str:
+    def html_content(self) -> TextHandler:
         """Return the inner html code of the element"""
-        return etree.tostring(self._root, encoding='unicode', method='html', with_tail=False)
+        return TextHandler(etree.tostring(self._root, encoding='unicode', method='html', with_tail=False))
 
     @property
-    def body(self) -> str:
+    def body(self) -> TextHandler:
         """Return raw HTML code of the element/page without any processing when possible or return `Adaptor.html_content`"""
-        return self.__raw_body or self.html_content
+        return TextHandler(self.__raw_body) or self.html_content
 
-    def prettify(self) -> str:
+    def prettify(self) -> TextHandler:
         """Return a prettified version of the element's inner html-code"""
-        return etree.tostring(self._root, encoding='unicode', pretty_print=True, method='html', with_tail=False)
+        return TextHandler(etree.tostring(self._root, encoding='unicode', pretty_print=True, method='html', with_tail=False))
 
     def has_class(self, class_name: str) -> bool:
         """Check if element has a specific class
