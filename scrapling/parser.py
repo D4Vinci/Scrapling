@@ -593,14 +593,6 @@ class Adaptor(SelectorsGeneration):
         tags, patterns = set(), set()
         results, functions, selectors = Adaptors([]), [], []
 
-        def _search_tree(element: Adaptor, filter_function: Callable) -> None:
-            """Collect element if it fulfills passed function otherwise, traverse the children tree and iterate"""
-            if filter_function(element):
-                results.append(element)
-
-            for branch in element.children:
-                _search_tree(branch, filter_function)
-
         # Brace yourself for a wonderful journey!
         for arg in args:
             if type(arg) is str:
@@ -661,9 +653,9 @@ class Adaptor(SelectorsGeneration):
             for pattern in patterns:
                 results.extend(self.find_by_regex(pattern, first_match=False))
 
-            for result in (results or [self]):
-                for function in functions:
-                    _search_tree(result, function)
+            # Collect element if it fulfills passed function otherwise
+            for function in functions:
+                results.extend((results or self.below_elements).filter(function))
 
         return results
 
