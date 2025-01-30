@@ -398,23 +398,12 @@ class Adaptor(SelectorsGeneration):
         if issubclass(type(element), html.HtmlElement):
             element = _StorageTools.element_to_dict(element)
 
-        # TODO: Optimize the traverse logic a bit, maybe later
-        def _traverse(node: html.HtmlElement, ele: Dict) -> None:
-            """Get the matching score of the given element against the node then traverse the children
-
-            :param node: Current node in the tree structure
-            :param ele: The element we are searching for as dictionary
-            :return:
-            """
+        for node in self._root.xpath('.//*'):
+            # Collect all elements in the page then for each element get the matching score of it against the node.
             # Hence: the code doesn't stop even if the score was 100%
             # because there might be another element(s) left in page with the same score
-            score = self.__calculate_similarity_score(ele, node)
+            score = self.__calculate_similarity_score(element, node)
             score_table.setdefault(score, []).append(node)
-            for branch in node.iterchildren():
-                _traverse(branch, ele)
-
-        # This will block until we traverse all children/branches
-        _traverse(self._root, element)
 
         if score_table:
             highest_probability = max(score_table.keys())
