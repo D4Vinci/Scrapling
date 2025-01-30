@@ -130,7 +130,7 @@ class TextHandler(str):
     def re(
             self, regex: Union[str, Pattern[str]], replace_entities: bool = True, clean_match: bool = False,
             case_sensitive: bool = False, check_match: bool = False
-    ) -> Union[List[str], bool]:
+    ) -> Union["TextHandlers[TextHandler]", bool]:
         """Apply the given regex to the current text and return a list of strings with the matches.
 
         :param regex: Can be either a compiled regular expression or a string.
@@ -155,12 +155,12 @@ class TextHandler(str):
             results = flatten(results)
 
         if not replace_entities:
-            return [TextHandler(string) for string in results]
+            return TextHandlers(typing.cast(List[_TextHandlerType], [TextHandler(string) for string in results]))
 
-        return [TextHandler(_replace_entities(s)) for s in results]
+        return TextHandlers(typing.cast(List[_TextHandlerType], [TextHandler(_replace_entities(s)) for s in results]))
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
-                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
+                 clean_match: bool = False, case_sensitive: bool = False) -> "TextHandler":
         """Apply the given regex to text and return the first match if found, otherwise return the default value.
 
         :param regex: Can be either a compiled regular expression or a string.
@@ -196,7 +196,7 @@ class TextHandlers(List[TextHandler]):
         return typing.cast(_TextHandlerType, TextHandler(lst))
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True, clean_match: bool = False,
-            case_sensitive: bool = False) -> 'List[str]':
+            case_sensitive: bool = False) -> 'TextHandlers[TextHandler]':
         """Call the ``.re()`` method for each element in this list and return
         their results flattened as TextHandlers.
 
@@ -208,10 +208,10 @@ class TextHandlers(List[TextHandler]):
         results = [
             n.re(regex, replace_entities, clean_match, case_sensitive) for n in self
         ]
-        return flatten(results)
+        return TextHandlers(flatten(results))
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
-                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
+                 clean_match: bool = False, case_sensitive: bool = False) -> TextHandler:
         """Call the ``.re_first()`` method for each element in this list and return
         the first result or the default value otherwise.
 
