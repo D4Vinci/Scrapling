@@ -545,7 +545,7 @@ Inspired by BeautifulSoup's `find_all` function you can find elements by using `
   * Any string passed is considered a tag name 
   * Any iterable passed like List/Tuple/Set is considered an iterable of tag names.
   * Any dictionary is considered a mapping of HTML element(s) attribute names and attribute values.
-  * Any regex patterns passed are used as filters
+  * Any regex patterns passed are used as filters to elements by their text content
   * Any functions passed are used as filters
   * Any keyword argument passed is considered as an HTML element attribute with its value.
 
@@ -554,7 +554,7 @@ So the way it works is after collecting all passed arguments and keywords, each 
 
 1. All elements with the passed tag name(s).
 2. All elements that match all passed attribute(s).
-3. All elements that match all passed regex patterns.
+3. All elements that its text content match all passed regex patterns.
 4. All elements that fulfill all passed function(s).
 
 Note: The filtering process always starts from the first filter it finds in the filtering order above so if no tag name(s) are passed but attributes are passed, the process starts from that layer and so on. **But the order in which you pass the arguments doesn't matter.**
