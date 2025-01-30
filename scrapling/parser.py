@@ -943,23 +943,16 @@ class Adaptor(SelectorsGeneration):
         """
         results = Adaptors([])
 
-        def _traverse(node: Adaptor) -> None:
+        # This selector gets all elements with text content
+        for node in self.__handle_elements(self._root.xpath('//*[normalize-space(text())]')):
             """Check if element matches given regex otherwise, traverse the children tree and iterate"""
             node_text = node.text
-            # if there's already no text in this node, dodge it to save CPU cycles and time
-            if node_text:
-                if node_text.re(query, check_match=True, clean_match=clean_match, case_sensitive=case_sensitive):
-                    results.append(node)
+            if node_text.re(query, check_match=True, clean_match=clean_match, case_sensitive=case_sensitive):
+                results.append(node)
 
-            if results and first_match:
+            if first_match and results:
                 # we got an element so we should stop
-                return
-
-            for branch in node.children:
-                _traverse(branch)
-
-        # This will block until we traverse all children/branches
-        _traverse(self)
+                break
 
         if results and first_match:
             return results[0]
