@@ -907,32 +907,25 @@ class Adaptor(SelectorsGeneration):
         if not case_sensitive:
             text = text.lower()
 
-        def _traverse(node: Adaptor) -> None:
+        # This selector gets all elements with text content
+        for node in self.__handle_elements(self._root.xpath('//*[normalize-space(text())]')):
             """Check if element matches given text otherwise, traverse the children tree and iterate"""
             node_text = node.text
-            # if there's already no text in this node, dodge it to save CPU cycles and time
-            if node_text:
-                if clean_match:
-                    node_text = node_text.clean()
+            if clean_match:
+                node_text = node_text.clean()
 
-                if not case_sensitive:
-                    node_text = node_text.lower()
+            if not case_sensitive:
+                node_text = node_text.lower()
 
-                if partial:
-                    if text in node_text:
-                        results.append(node)
-                elif text == node_text:
+            if partial:
+                if text in node_text:
                     results.append(node)
+            elif text == node_text:
+                results.append(node)
 
-            if results and first_match:
+            if first_match and results:
                 # we got an element so we should stop
-                return
-
-            for branch in node.children:
-                _traverse(branch)
-
-        # This will block until we traverse all children/branches
-        _traverse(self)
+                break
 
         if first_match:
             if results:
