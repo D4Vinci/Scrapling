@@ -788,7 +788,7 @@ class Adaptor(SelectorsGeneration):
             return self.get_all_text(strip=True).json()
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True,
-           clean_match: bool = False, case_sensitive: bool = False) -> 'List[str]':
+           clean_match: bool = False, case_sensitive: bool = False) -> TextHandlers:
         """Apply the given regex to the current text and return a list of strings with the matches.
 
         :param regex: Can be either a compiled regular expression or a string.
@@ -799,7 +799,7 @@ class Adaptor(SelectorsGeneration):
         return self.text.re(regex, replace_entities, clean_match, case_sensitive)
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
-                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
+                 clean_match: bool = False, case_sensitive: bool = False) -> TextHandler:
         """Apply the given regex to text and return the first match if found, otherwise return the default value.
 
         :param regex: Can be either a compiled regular expression or a string.
@@ -1048,7 +1048,7 @@ class Adaptors(List[Adaptor]):
         return self.__class__(flatten(results))
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True,
-           clean_match: bool = False, case_sensitive: bool = False) -> 'List[str]':
+           clean_match: bool = False, case_sensitive: bool = False) -> TextHandlers[TextHandler]:
         """Call the ``.re()`` method for each element in this list and return
         their results flattened as List of TextHandler.
 
@@ -1060,10 +1060,10 @@ class Adaptors(List[Adaptor]):
         results = [
             n.text.re(regex, replace_entities, clean_match, case_sensitive) for n in self
         ]
-        return flatten(results)
+        return TextHandlers(flatten(results))
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
-                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
+                 clean_match: bool = False, case_sensitive: bool = False) -> TextHandler:
         """Call the ``.re_first()`` method for each element in this list and return
         the first result or the default value otherwise.
 
