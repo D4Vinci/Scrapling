@@ -1,6 +1,7 @@
 import inspect
 import os
 import re
+import typing
 from difflib import SequenceMatcher
 from urllib.parse import urljoin
 
@@ -145,47 +146,46 @@ class Adaptor(SelectorsGeneration):
         # Faster than checking `element.is_attribute or element.is_text or element.is_tail`
         return issubclass(type(element), etree._ElementUnicodeResult)
 
-    def __get_correct_result(
-            self, element: Union[html.HtmlElement, etree._ElementUnicodeResult]
-    ) -> Union[TextHandler, html.HtmlElement, 'Adaptor', str]:
-        """Used internally in all functions to convert results to type (Adaptor|Adaptors) when possible"""
-        if self._is_text_node(element):
-            # etree._ElementUnicodeResult basically inherit from `str` so it's fine
-            return TextHandler(str(element))
-        else:
-            if issubclass(type(element), html.HtmlMixin):
+    @staticmethod
+    def __content_convertor(element: Union[html.HtmlElement, etree._ElementUnicodeResult]) -> TextHandler:
+        """Used internally to convert a single element's text content to TextHandler directly without checks
 
-                return Adaptor(
-                    root=element,
-                    text='', body=b'',  # Since root argument is provided, both `text` and `body` will be ignored so this is just a filler
-                    url=self.url, encoding=self.encoding, auto_match=self.__auto_match_enabled,
-                    keep_comments=self.__keep_comments, keep_cdata=self.__keep_cdata,
-                    huge_tree=self.__huge_tree_enabled,
-                    **self.__response_data
-                )
-            return element
+        This single line has been isolated like this so when it's used with map we get that slight performance boost vs list comprehension
+        """
+        return TextHandler(str(element))
 
-    def __convert_results(
-            self, result: Union[List[html.HtmlElement], html.HtmlElement]
-    ) -> Union['Adaptors[Adaptor]', 'Adaptor', List, None]:
-        """Used internally in all functions to convert results to type (Adaptor|Adaptors) in bulk when possible"""
-        if result is None:
+    def __element_convertor(self, element: html.HtmlElement) -> 'Adaptor':
+        """Used internally to convert a single HtmlElement to Adaptor directly without checks"""
+        return Adaptor(
+            root=element,
+            text='', body=b'',  # Since root argument is provided, both `text` and `body` will be ignored so this is just a filler
+            url=self.url, encoding=self.encoding, auto_match=self.__auto_match_enabled,
+            keep_comments=self.__keep_comments, keep_cdata=self.__keep_cdata,
+            huge_tree=self.__huge_tree_enabled,
+            **self.__response_data
+        )
+
+    def __handle_element(self, element: Union[html.HtmlElement, etree._ElementUnicodeResult]) -> Union[TextHandler, 'Adaptor', None]:
+        """Used internally in all functions to convert a single element to type (Adaptor|TextHandler) when possible"""
+        if element is None:
             return None
-        elif result == []:  # Lxml will give a warning if I used something like `not result`
-            return []
+        elif self._is_text_node(element):
+            # etree._ElementUnicodeResult basically inherit from `str` so it's fine
+            return self.__content_convertor(element)
+        else:
+            return self.__element_convertor(element)
 
-        if isinstance(result, Adaptors):
-            return result
+    def __handle_elements(self, result: List[Union[html.HtmlElement, etree._ElementUnicodeResult]]) -> Union['Adaptors', 'TextHandlers', List]:
+        """Used internally in all functions to convert results to type (Adaptors|TextHandlers) in bulk when possible"""
+        if not len(result):  # Lxml will give a warning if I used something like `not result`
+            return Adaptors([])
 
-        if type(result) is list:
-            results = [self.__get_correct_result(n) for n in result]
-            if all(isinstance(res, self.__class__) for res in results):
-                return Adaptors(results)
-            elif all(isinstance(res, TextHandler) for res in results):
-                return TextHandlers(results)
-            return results
+        # From within the code, this method will always get a list of the same type
+        # so we will continue without checks for slight performance boost
+        if self._is_text_node(result[0]):
+            return TextHandlers(list(map(self.__content_convertor, result)))
 
-        return self.__get_correct_result(result)
+        return Adaptors(list(map(self.__element_convertor, result)))
 
     def __getstate__(self) -> Any:
         # lxml don't like it :)
@@ -223,29 +223,16 @@ class Adaptor(SelectorsGeneration):
         :return: A TextHandler
         """
         _all_strings = []
-
-        def _traverse(node: html.HtmlElement) -> None:
-            """Traverse element children and get text content of each
-
-            :param node: Current node in the tree structure
-            :return:
-            """
+        for node in self._root.xpath('.//*'):
             if node.tag not in ignore_tags:
                 text = node.text
                 if text and type(text) is str:
-                    if valid_values:
-                        if text.strip():
-                            _all_strings.append(text if not strip else text.strip())
+                    if valid_values and text.strip():
+                        _all_strings.append(text if not strip else text.strip())
                     else:
                         _all_strings.append(text if not strip else text.strip())
 
-            for branch in node.iterchildren():
-                _traverse(branch)
-
-        # We will start using Lxml directly for the speed boost
-        _traverse(self._root)
-
-        return TextHandler(separator.join([s for s in _all_strings]))
+        return TextHandler(separator.join(_all_strings))
 
     def urljoin(self, relative_url: str) -> str:
         """Join this Adaptor's url with a relative url to form an absolute full URL."""
@@ -259,18 +246,18 @@ class Adaptor(SelectorsGeneration):
         return self.__attributes
 
     @property
-    def html_content(self) -> str:
+    def html_content(self) -> TextHandler:
         """Return the inner html code of the element"""
-        return etree.tostring(self._root, encoding='unicode', method='html', with_tail=False)
+        return TextHandler(etree.tostring(self._root, encoding='unicode', method='html', with_tail=False))
 
     @property
-    def body(self) -> str:
+    def body(self) -> TextHandler:
         """Return raw HTML code of the element/page without any processing when possible or return `Adaptor.html_content`"""
-        return self.__raw_body or self.html_content
+        return TextHandler(self.__raw_body) or self.html_content
 
-    def prettify(self) -> str:
+    def prettify(self) -> TextHandler:
         """Return a prettified version of the element's inner html-code"""
-        return etree.tostring(self._root, encoding='unicode', pretty_print=True, method='html', with_tail=False)
+        return TextHandler(etree.tostring(self._root, encoding='unicode', pretty_print=True, method='html', with_tail=False))
 
     def has_class(self, class_name: str) -> bool:
         """Check if element has a specific class
@@ -282,26 +269,32 @@ class Adaptor(SelectorsGeneration):
     @property
     def parent(self) -> Union['Adaptor', None]:
         """Return the direct parent of the element or ``None`` otherwise"""
-        return self.__convert_results(self._root.getparent())
+        return self.__handle_element(self._root.getparent())
 
     @property
-    def children(self) -> Union['Adaptors[Adaptor]', List]:
+    def below_elements(self) -> 'Adaptors[Adaptor]':
+        """Return all elements under the current element in the DOM tree"""
+        below = self._root.xpath('.//*')
+        return self.__handle_elements(below)
+
+    @property
+    def children(self) -> 'Adaptors[Adaptor]':
         """Return the children elements of the current element or empty list otherwise"""
-        return self.__convert_results(list(
-            child for child in self._root.iterchildren() if type(child) not in html_forbidden
-        ))
+        return Adaptors([
+            self.__element_convertor(child) for child in self._root.iterchildren() if type(child) not in html_forbidden
+        ])
 
     @property
-    def siblings(self) -> Union['Adaptors[Adaptor]', List]:
+    def siblings(self) -> 'Adaptors[Adaptor]':
         """Return other children of the current element's parent or empty list otherwise"""
         if self.parent:
             return Adaptors([child for child in self.parent.children if child._root != self._root])
-        return []
+        return Adaptors([])
 
     def iterancestors(self) -> Generator['Adaptor', None, None]:
         """Return a generator that loops over all ancestors of the element, starting with element's parent."""
         for ancestor in self._root.iterancestors():
-            yield self.__convert_results(ancestor)
+            yield self.__element_convertor(ancestor)
 
     def find_ancestor(self, func: Callable[['Adaptor'], bool]) -> Union['Adaptor', None]:
         """Loop over all ancestors of the element till one match the passed function
@@ -328,7 +321,7 @@ class Adaptor(SelectorsGeneration):
                 # Ignore html comments and unwanted types
                 next_element = next_element.getnext()
 
-        return self.__convert_results(next_element)
+        return self.__handle_element(next_element)
 
     @property
     def previous(self) -> Union['Adaptor', None]:
@@ -339,7 +332,7 @@ class Adaptor(SelectorsGeneration):
                 # Ignore html comments and unwanted types
                 prev_element = prev_element.getprevious()
 
-        return self.__convert_results(prev_element)
+        return self.__handle_element(prev_element)
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):
@@ -392,34 +385,26 @@ class Adaptor(SelectorsGeneration):
         if issubclass(type(element), html.HtmlElement):
             element = _StorageTools.element_to_dict(element)
 
-        # TODO: Optimize the traverse logic a bit, maybe later
-        def _traverse(node: html.HtmlElement, ele: Dict) -> None:
-            """Get the matching score of the given element against the node then traverse the children
-
-            :param node: Current node in the tree structure
-            :param ele: The element we are searching for as dictionary
-            :return:
-            """
+        for node in self._root.xpath('.//*'):
+            # Collect all elements in the page then for each element get the matching score of it against the node.
             # Hence: the code doesn't stop even if the score was 100%
             # because there might be another element(s) left in page with the same score
-            score = self.__calculate_similarity_score(ele, node)
+            score = self.__calculate_similarity_score(element, node)
             score_table.setdefault(score, []).append(node)
-            for branch in node.iterchildren():
-                _traverse(branch, ele)
-
-        # This will block until we traverse all children/branches
-        _traverse(self._root, element)
 
         if score_table:
             highest_probability = max(score_table.keys())
             if score_table[highest_probability] and highest_probability >= percentage:
-                log.debug(f'Highest probability was {highest_probability}%')
-                log.debug('Top 5 best matching elements are: ')
-                for percent in tuple(sorted(score_table.keys(), reverse=True))[:5]:
-                    log.debug(f'{percent} -> {self.__convert_results(score_table[percent])}')
+                if log.getEffectiveLevel() < 20:
+                    # No need to execute this part if logging level is not debugging
+                    log.debug(f'Highest probability was {highest_probability}%')
+                    log.debug('Top 5 best matching elements are: ')
+                    for percent in tuple(sorted(score_table.keys(), reverse=True))[:5]:
+                        log.debug(f'{percent} -> {self.__handle_elements(score_table[percent])}')
+
                 if not adaptor_type:
                     return score_table[highest_probability]
-                return self.__convert_results(score_table[highest_probability])
+                return self.__handle_elements(score_table[highest_probability])
         return []
 
     def css_first(self, selector: str, identifier: str = '',
@@ -439,8 +424,6 @@ class Adaptor(SelectorsGeneration):
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure so don't play with this
          number unless you must know what you are doing!
-
-        :return: List as :class:`Adaptors`
         """
         for element in self.css(selector, identifier, auto_match, auto_save, percentage):
             return element
@@ -465,8 +448,6 @@ class Adaptor(SelectorsGeneration):
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure so don't play with this
          number unless you must know what you are doing!
-
-        :return: List as :class:`Adaptors`
         """
         for element in self.xpath(selector, identifier, auto_match, auto_save, percentage, **kwargs):
             return element
@@ -493,7 +474,7 @@ class Adaptor(SelectorsGeneration):
         :return: List as :class:`Adaptors`
         """
         try:
-            if not self.__auto_match_enabled:
+            if not self.__auto_match_enabled or ',' not in selector:
                 # No need to split selectors in this case, let's save some CPU cycles :)
                 xpath_selector = HTMLTranslator().css_to_xpath(selector)
                 return self.xpath(xpath_selector, identifier or selector, auto_match, auto_save, percentage)
@@ -507,11 +488,8 @@ class Adaptor(SelectorsGeneration):
                     results += self.xpath(
                         xpath_selector, identifier or single_selector.canonical(), auto_match, auto_save, percentage
                     )
-            else:
-                xpath_selector = HTMLTranslator().css_to_xpath(selector)
-                return self.xpath(xpath_selector, identifier or selector, auto_match, auto_save, percentage)
 
-            return self.__convert_results(results)
+            return results
         except (SelectorError, SelectorSyntaxError,):
             raise SelectorSyntaxError(f"Invalid CSS selector: {selector}")
 
@@ -538,37 +516,37 @@ class Adaptor(SelectorsGeneration):
         :return: List as :class:`Adaptors`
         """
         try:
-            selected_elements = self._root.xpath(selector, **kwargs)
+            elements = self._root.xpath(selector, **kwargs)
 
-            if selected_elements:
-                if not self.__auto_match_enabled and auto_save:
-                    log.warning("Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
+            if elements:
+                if auto_save:
+                    if not self.__auto_match_enabled:
+                        log.warning("Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
+                    else:
+                        self.save(elements[0], identifier or selector)
 
-                elif self.__auto_match_enabled and auto_save:
-                    self.save(selected_elements[0], identifier or selector)
-
-                return self.__convert_results(selected_elements)
-            else:
-                if self.__auto_match_enabled and auto_match:
+                return self.__handle_elements(elements)
+            elif self.__auto_match_enabled:
+                if auto_match:
                     element_data = self.retrieve(identifier or selector)
                     if element_data:
-                        relocated = self.relocate(element_data, percentage)
-                        if relocated is not None and auto_save:
-                            self.save(relocated[0], identifier or selector)
+                        elements = self.relocate(element_data, percentage)
+                        if elements is not None and auto_save:
+                            self.save(elements[0], identifier or selector)
 
-                        return self.__convert_results(relocated)
-                    else:
-                        return self.__convert_results(selected_elements)
-
-                elif not self.__auto_match_enabled and auto_match:
+                return self.__handle_elements(elements)
+            else:
+                if auto_match:
                     log.warning("Argument `auto_match` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
+                elif auto_save:
+                    log.warning("Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info.")
 
-                return self.__convert_results(selected_elements)
+                return self.__handle_elements(elements)
 
         except (SelectorError, SelectorSyntaxError, etree.XPathError, etree.XPathEvalError):
             raise SelectorSyntaxError(f"Invalid XPath selector: {selector}")
 
-    def find_all(self, *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]], **kwargs: str) -> Union['Adaptors[Adaptor]', List]:
+    def find_all(self, *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]], **kwargs: str) -> 'Adaptors':
         """Find elements by filters of your creations for ease..
 
         :param args: Tag name(s), an iterable of tag names, regex patterns, function, or a dictionary of elements' attributes. Leave empty for selecting all.
@@ -588,15 +566,7 @@ class Adaptor(SelectorsGeneration):
 
         attributes = dict()
         tags, patterns = set(), set()
-        results, functions, selectors = [], [], []
-
-        def _search_tree(element: Adaptor, filter_function: Callable) -> None:
-            """Collect element if it fulfills passed function otherwise, traverse the children tree and iterate"""
-            if filter_function(element):
-                results.append(element)
-
-            for branch in element.children:
-                _search_tree(branch, filter_function)
+        results, functions, selectors = Adaptors([]), [], []
 
         # Brace yourself for a wonderful journey!
         for arg in args:
@@ -608,12 +578,12 @@ class Adaptor(SelectorsGeneration):
                     raise TypeError('Nested Iterables are not accepted, only iterables of tag names are accepted')
                 tags.update(set(arg))
 
-            elif type(arg) is dict:
+            elif isinstance(arg, dict):
                 if not all([(type(k) is str and type(v) is str) for k, v in arg.items()]):
                     raise TypeError('Nested dictionaries are not accepted, only string keys and string values are accepted')
                 attributes.update(arg)
 
-            elif type(arg) is re.Pattern:
+            elif isinstance(arg, re.Pattern):
                 patterns.add(arg)
 
             elif callable(arg):
@@ -634,14 +604,14 @@ class Adaptor(SelectorsGeneration):
             attributes[attribute_name] = value
 
         # It's easier and faster to build a selector than traversing the tree
-        tags = tags or ['']
+        tags = tags or ['*']
         for tag in tags:
             selector = tag
             for key, value in attributes.items():
                 value = value.replace('"', r'\"')  # Escape double quotes in user input
                 # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
                 selector += '[{}="{}"]'.format(key, value)
-            if selector:
+            if selector != '*':
                 selectors.append(selector)
 
         if selectors:
@@ -655,14 +625,15 @@ class Adaptor(SelectorsGeneration):
                 for function in functions:
                     results = results.filter(function)
         else:
+            results = results or self.below_elements
             for pattern in patterns:
-                results.extend(self.find_by_regex(pattern, first_match=False))
+                results = results.filter(lambda e: e.text.re(pattern, check_match=True))
 
-            for result in (results or [self]):
-                for function in functions:
-                    _search_tree(result, function)
+            # Collect element if it fulfills passed function otherwise
+            for function in functions:
+                results = results.filter(function)
 
-        return self.__convert_results(results)
+        return results
 
     def find(self, *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]], **kwargs: str) -> Union['Adaptor', None]:
         """Find elements by filters of your creations for ease then return the first result. Otherwise return `None`.
@@ -792,7 +763,7 @@ class Adaptor(SelectorsGeneration):
             return self.get_all_text(strip=True).json()
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True,
-           clean_match: bool = False, case_sensitive: bool = False) -> 'List[str]':
+           clean_match: bool = False, case_sensitive: bool = False) -> TextHandlers:
         """Apply the given regex to the current text and return a list of strings with the matches.
 
         :param regex: Can be either a compiled regular expression or a string.
@@ -803,7 +774,7 @@ class Adaptor(SelectorsGeneration):
         return self.text.re(regex, replace_entities, clean_match, case_sensitive)
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
-                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
+                 clean_match: bool = False, case_sensitive: bool = False) -> TextHandler:
         """Apply the given regex to text and return the first match if found, otherwise return the default value.
 
         :param regex: Can be either a compiled regular expression or a string.
@@ -894,12 +865,12 @@ class Adaptor(SelectorsGeneration):
             if potential_match != root and are_alike(root, target_attrs, potential_match):
                 similar_elements.append(potential_match)
 
-        return self.__convert_results(similar_elements)
+        return self.__handle_elements(similar_elements)
 
     def find_by_text(
             self, text: str, first_match: bool = True, partial: bool = False,
             case_sensitive: bool = False, clean_match: bool = True
-    ) -> Union['Adaptors[Adaptor]', 'Adaptor', List]:
+    ) -> Union['Adaptors[Adaptor]', 'Adaptor']:
         """Find elements that its text content fully/partially matches input.
         :param text: Text query to match
         :param first_match: Return first element that matches conditions, enabled by default
@@ -908,74 +879,60 @@ class Adaptor(SelectorsGeneration):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         """
 
-        results = []
+        results = Adaptors([])
         if not case_sensitive:
             text = text.lower()
 
-        def _traverse(node: Adaptor) -> None:
+        # This selector gets all elements with text content
+        for node in self.__handle_elements(self._root.xpath('.//*[normalize-space(text())]')):
             """Check if element matches given text otherwise, traverse the children tree and iterate"""
             node_text = node.text
-            # if there's already no text in this node, dodge it to save CPU cycles and time
-            if node_text:
-                if clean_match:
-                    node_text = node_text.clean()
+            if clean_match:
+                node_text = node_text.clean()
 
-                if not case_sensitive:
-                    node_text = node_text.lower()
+            if not case_sensitive:
+                node_text = node_text.lower()
 
-                if partial:
-                    if text in node_text:
-                        results.append(node)
-                elif text == node_text:
+            if partial:
+                if text in node_text:
                     results.append(node)
+            elif text == node_text:
+                results.append(node)
 
-            if results and first_match:
+            if first_match and results:
                 # we got an element so we should stop
-                return
-
-            for branch in node.children:
-                _traverse(branch)
-
-        # This will block until we traverse all children/branches
-        _traverse(self)
+                break
 
         if first_match:
             if results:
                 return results[0]
-        return self.__convert_results(results)
+        return results
 
     def find_by_regex(
             self, query: Union[str, Pattern[str]], first_match: bool = True, case_sensitive: bool = False, clean_match: bool = True
-    ) -> Union['Adaptors[Adaptor]', 'Adaptor', List]:
+    ) -> Union['Adaptors[Adaptor]', 'Adaptor']:
         """Find elements that its text content matches the input regex pattern.
         :param query: Regex query/pattern to match
         :param first_match: Return first element that matches conditions, enabled by default
         :param case_sensitive: if enabled, letters case will be taken into consideration in the regex
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         """
-        results = []
+        results = Adaptors([])
 
-        def _traverse(node: Adaptor) -> None:
+        # This selector gets all elements with text content
+        for node in self.__handle_elements(self._root.xpath('.//*[normalize-space(text())]')):
             """Check if element matches given regex otherwise, traverse the children tree and iterate"""
             node_text = node.text
-            # if there's already no text in this node, dodge it to save CPU cycles and time
-            if node_text:
-                if node_text.re(query, check_match=True, clean_match=clean_match, case_sensitive=case_sensitive):
-                    results.append(node)
+            if node_text.re(query, check_match=True, clean_match=clean_match, case_sensitive=case_sensitive):
+                results.append(node)
 
-            if results and first_match:
+            if first_match and results:
                 # we got an element so we should stop
-                return
-
-            for branch in node.children:
-                _traverse(branch)
-
-        # This will block until we traverse all children/branches
-        _traverse(self)
+                break
 
         if results and first_match:
             return results[0]
-        return self.__convert_results(results)
+        return results
 
 
 class Adaptors(List[Adaptor]):
@@ -984,7 +941,15 @@ class Adaptors(List[Adaptor]):
     """
     __slots__ = ()
 
-    def __getitem__(self, pos: Union[SupportsIndex, slice]) -> Union[Adaptor, "Adaptors[Adaptor]"]:
+    @typing.overload
+    def __getitem__(self, pos: SupportsIndex) -> Adaptor:
+        pass
+
+    @typing.overload
+    def __getitem__(self, pos: slice) -> "Adaptors":
+        pass
+
+    def __getitem__(self, pos: Union[SupportsIndex, slice]) -> Union[Adaptor, "Adaptors"]:
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
             return self.__class__(lst)
@@ -993,7 +958,7 @@ class Adaptors(List[Adaptor]):
 
     def xpath(
             self, selector: str, identifier: str = '', auto_save: bool = False, percentage: int = 0, **kwargs: Any
-    ) -> Union["Adaptors[Adaptor]", List]:
+    ) -> "Adaptors[Adaptor]":
         """
         Call the ``.xpath()`` method for each element in this list and return
         their results as another :class:`Adaptors`.
@@ -1019,7 +984,7 @@ class Adaptors(List[Adaptor]):
         ]
         return self.__class__(flatten(results))
 
-    def css(self, selector: str, identifier: str = '', auto_save: bool = False, percentage: int = 0) -> Union["Adaptors[Adaptor]", List]:
+    def css(self, selector: str, identifier: str = '', auto_save: bool = False, percentage: int = 0) -> "Adaptors[Adaptor]":
         """
         Call the ``.css()`` method for each element in this list and return
         their results flattened as another :class:`Adaptors`.
@@ -1044,7 +1009,7 @@ class Adaptors(List[Adaptor]):
         return self.__class__(flatten(results))
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True,
-           clean_match: bool = False, case_sensitive: bool = False) -> 'List[str]':
+           clean_match: bool = False, case_sensitive: bool = False) -> TextHandlers[TextHandler]:
         """Call the ``.re()`` method for each element in this list and return
         their results flattened as List of TextHandler.
 
@@ -1056,10 +1021,10 @@ class Adaptors(List[Adaptor]):
         results = [
             n.text.re(regex, replace_entities, clean_match, case_sensitive) for n in self
         ]
-        return flatten(results)
+        return TextHandlers(flatten(results))
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
-                 clean_match: bool = False, case_sensitive: bool = False) -> Union[str, None]:
+                 clean_match: bool = False, case_sensitive: bool = False) -> TextHandler:
         """Call the ``.re_first()`` method for each element in this list and return
         the first result or the default value otherwise.
 
@@ -1084,15 +1049,14 @@ class Adaptors(List[Adaptor]):
                 return element
         return None
 
-    def filter(self, func: Callable[['Adaptor'], bool]) -> Union['Adaptors', List]:
+    def filter(self, func: Callable[['Adaptor'], bool]) -> 'Adaptors[Adaptor]':
         """Filter current elements based on the passed function
         :param func: A function that takes each element as an argument and returns True/False
         :return: The new `Adaptors` object or empty list otherwise.
         """
-        results = [
+        return self.__class__([
             element for element in self if func(element)
-        ]
-        return self.__class__(results) if results else results
+        ])
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):

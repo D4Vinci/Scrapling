@@ -105,7 +105,7 @@ class PlaywrightEngine:
         """
         cdp_url = self.cdp_url
         if self.nstbrowser_mode:
-            if self.nstbrowser_config and type(self.nstbrowser_config) is Dict:
+            if self.nstbrowser_config and isinstance(self.nstbrowser_config, dict):
                 config = self.nstbrowser_config
             else:
                 query = NSTBROWSER_DEFAULT_QUERY.copy()

@@ -92,27 +92,27 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 ## Key Features
 
 ### Fetch websites as you prefer with async support
-- **HTTP requests**: Stealthy and fast HTTP requests with `Fetcher`
-- **Stealthy fetcher**: Annoying anti-bot protection? No problem! Scrapling can bypass almost all of them with `StealthyFetcher` with default configuration!
-- **Your preferred browser**: Use your real browser with CDP, [NSTbrowser](https://app.nstbrowser.io/r/1vO5e5)'s browserless, PlayWright with stealth mode, or even vanilla PlayWright -  All is possible with `PlayWrightFetcher`!
+- **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class.
+- **Dynamic Loading & Automation**: Fetch dynamic websites with the `PlayWrightFetcher` class through your real browser, Scrapling's stealth mode, Playwright's Chrome browser, or [NSTbrowser](https://app.nstbrowser.io/r/1vO5e5)'s browserless!
+- **Anti-bot Protections Bypass**: Easily bypass protections with `StealthyFetcher` and `PlayWrightFetcher` classes.
 
 ### Adaptive Scraping
-- 🔄 **Smart Element Tracking**: Locate previously identified elements after website structure changes, using an intelligent similarity system and integrated storage.
-- 🎯 **Flexible Querying**: Use CSS selectors, XPath, Elements filters, text search, or regex - chain them however you want!
-- 🔍 **Find Similar Elements**: Automatically locate elements similar to the element you want on the page (Ex: other products like the product you found on the page).
+- 🔄 **Smart Element Tracking**: Relocate elements after website changes, using an intelligent similarity system and integrated storage.
+- 🎯 **Flexible Selection**: CSS selectors, XPath selectors, filters-based search, text search, regex search and more.
+- 🔍 **Find Similar Elements**: Automatically locate elements similar to the element you found!
 - 🧠 **Smart Content Scraping**: Extract data from multiple websites without specific selectors using Scrapling powerful features.
 
-### Performance
-- 🚀 **Lightning Fast**: Built from the ground up with performance in mind, outperforming most popular Python scraping libraries (outperforming BeautifulSoup in parsing by up to 620x in our tests).
+### High Performance
+- 🚀 **Lightning Fast**: Built from the ground up with performance in mind, outperforming most popular Python scraping libraries.
 - 🔋 **Memory Efficient**: Optimized data structures for minimal memory footprint.
-- ⚡ **Fast JSON serialization**: 10x faster JSON serialization than the standard json library with more options.
+- ⚡ **Fast JSON serialization**: 10x faster than standard library.
 
-### Developing Experience
-- 🛠️ **Powerful Navigation API**: Traverse the DOM tree easily in all directions and get the info you want (parent, ancestors, sibling, children, next/previous element, and more).
-- 🧬 **Rich Text Processing**: All strings have built-in methods for regex matching, cleaning, and more. All elements' attributes are read-only dictionaries that are faster than standard dictionaries with added methods.
-- 📝 **Automatic Selector Generation**: Create robust CSS/XPath selectors for any element.
-- 🔌 **API Similar to Scrapy/BeautifulSoup**: Familiar methods and similar pseudo-elements for Scrapy and BeautifulSoup users.
-- 📘 **Type hints and test coverage**: Complete type coverage and almost full test coverage for better IDE support and fewer bugs, respectively.
+### Developer Friendly
+- 🛠️ **Powerful Navigation API**: Easy DOM traversal in all directions.
+- 🧬 **Rich Text Processing**: All strings have built-in regex, cleaning methods, and more. All elements' attributes are optimized dictionaries that takes less memory than standard dictionaries with added methods.
+- 📝 **Auto Selectors Generation**: Generate robust short and full CSS/XPath selectors for any element.
+- 🔌 **Familiar API**: Similar to Scrapy/BeautifulSoup and the same pseudo-elements used in Scrapy.
+- 📘 **Type hints**: Complete type/doc-strings coverage for future-proofing and best autocompletion support.
 
 ## Getting Started
 
@@ -121,21 +121,22 @@ from scrapling import Fetcher
 
 fetcher = Fetcher(auto_match=False)
 
-# Fetch a web page and create an Adaptor instance
+# Do http GET request to a web page and create an Adaptor instance
 page = fetcher.get('https://quotes.toscrape.com/', stealthy_headers=True)
-# Get all strings in the full page
+# Get all text content from all HTML tags in the page except `script` and `style` tags
 page.get_all_text(ignore_tags=('script', 'style'))
 
-# Get all quotes, any of these methods will return a list of strings (TextHandlers)
+# Get all quotes elements, any of these methods will return a list of strings directly (TextHandlers)
 quotes = page.css('.quote .text::text')  # CSS selector
 quotes = page.xpath('//span[@class="text"]/text()')  # XPath
 quotes = page.css('.quote').css('.text::text')  # Chained selectors
 quotes = [element.text for element in page.css('.quote .text')]  # Slower than bulk query above
 
 # Get the first quote element
-quote = page.css_first('.quote')  # / page.css('.quote').first / page.css('.quote')[0]
+quote = page.css_first('.quote')  # same as page.css('.quote').first or page.css('.quote')[0]
 
 # Tired of selectors? Use find_all/find
+# Get all 'div' HTML tags that one of its 'class' values is 'quote'
 quotes = page.find_all('div', {'class': 'quote'})
 # Same as
 quotes = page.find_all('div', class_='quote')
@@ -143,10 +144,10 @@ quotes = page.find_all(['div'], class_='quote')
 quotes = page.find_all(class_='quote')  # and so on...
 
 # Working with elements
-quote.html_content  # Inner HTML
-quote.prettify()  # Prettified version of Inner HTML
-quote.attrib  # Element attributes
-quote.path  # DOM path to element (List)
+quote.html_content  # Get Inner HTML of this element
+quote.prettify()  # Prettified version of Inner HTML above
+quote.attrib  # Get that element's attributes
+quote.path  # DOM path to element (List of all ancestors from <html> tag till the element itself)
 ```
 To keep it simple, all methods can be chained on top of each other!
 
@@ -262,7 +263,7 @@ True
 |      humanize       | Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.                                                                                                                                                                                                                                  |    ✔️    |
 |     allow_webgl     | Enabled by default. Disabling it WebGL not recommended as many WAFs now checks if WebGL is enabled.                                                                                                                                                                                                                                                                                                             |    ✔️    |
 |        geoip        | Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, & spoof the WebRTC IP address. It will also calculate and spoof the browser's language based on the distribution of language speakers in the target region.                                                                                                                                             |    ✔️    |
-|     disable_ads     | Enabled by default, this installs `uBlock Origin` addon on the browser if enabled.                                                                                                                                                                                                                                                                                                                              |    ✔️    |
+|     disable_ads     | Disabled by default, this installs `uBlock Origin` addon on the browser if enabled.                                                                                                                                                                                                                                                                                                                             |    ✔️    |
 |    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                                                                                                                                                                                                   |    ✔️    |
 |       timeout       | The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000.                                                                                                                                                                                                                                                                                                    |    ✔️    |
 |    wait_selector    | Wait for a specific css selector to be in a specific state.                                                                                                                                                                                                                                                                                                                                                     |    ✔️    |
@@ -544,7 +545,7 @@ Inspired by BeautifulSoup's `find_all` function you can find elements by using `
   * Any string passed is considered a tag name 
   * Any iterable passed like List/Tuple/Set is considered an iterable of tag names.
   * Any dictionary is considered a mapping of HTML element(s) attribute names and attribute values.
-  * Any regex patterns passed are used as filters
+  * Any regex patterns passed are used as filters to elements by their text content
   * Any functions passed are used as filters
   * Any keyword argument passed is considered as an HTML element attribute with its value.
 
@@ -553,7 +554,7 @@ So the way it works is after collecting all passed arguments and keywords, each 
 
 1. All elements with the passed tag name(s).
 2. All elements that match all passed attribute(s).
-3. All elements that match all passed regex patterns.
+3. All elements that its text content match all passed regex patterns.
 4. All elements that fulfill all passed function(s).
 
 Note: The filtering process always starts from the first filter it finds in the filtering order above so if no tag name(s) are passed but attributes are passed, the process starts from that layer and so on. **But the order in which you pass the arguments doesn't matter.**
