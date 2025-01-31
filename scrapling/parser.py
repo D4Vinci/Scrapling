@@ -223,29 +223,16 @@ class Adaptor(SelectorsGeneration):
         :return: A TextHandler
         """
         _all_strings = []
-
-        def _traverse(node: html.HtmlElement) -> None:
-            """Traverse element children and get text content of each
-
-            :param node: Current node in the tree structure
-            :return:
-            """
+        for node in self._root.xpath('.//*'):
             if node.tag not in ignore_tags:
                 text = node.text
                 if text and type(text) is str:
-                    if valid_values:
-                        if text.strip():
-                            _all_strings.append(text if not strip else text.strip())
+                    if valid_values and text.strip():
+                        _all_strings.append(text if not strip else text.strip())
                     else:
                         _all_strings.append(text if not strip else text.strip())
 
-            for branch in node.iterchildren():
-                _traverse(branch)
-
-        # We will start using Lxml directly for the speed boost
-        _traverse(self._root)
-
-        return TextHandler(separator.join([s for s in _all_strings]))
+        return TextHandler(separator.join(_all_strings))
 
     def urljoin(self, relative_url: str) -> str:
         """Join this Adaptor's url with a relative url to form an absolute full URL."""
