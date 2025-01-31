@@ -28,7 +28,7 @@ setup(
     include_package_data=True,
     classifiers=[
         "Operating System :: OS Independent",
-        "Development Status :: 4 - Beta ",
+        "Development Status :: 4 - Beta",
         # "Development Status :: 5 - Production/Stable",
         # "Development Status :: 6 - Mature",
         # "Development Status :: 7 - Inactive",
