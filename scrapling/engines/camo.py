@@ -95,7 +95,6 @@ class CamoufoxEngine:
         with Camoufox(
                 geoip=self.geoip,
                 proxy=self.proxy,
-                disable_coop=True,
                 enable_cache=True,
                 addons=self.addons,
                 exclude_addons=addons,
@@ -197,7 +196,6 @@ class CamoufoxEngine:
         async with AsyncCamoufox(
                 geoip=self.geoip,
                 proxy=self.proxy,
-                disable_coop=True,
                 enable_cache=True,
                 addons=self.addons,
                 exclude_addons=addons,
