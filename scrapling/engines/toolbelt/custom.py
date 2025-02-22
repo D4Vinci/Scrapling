@@ -85,13 +85,14 @@ class Response(Adaptor):
     """This class is returned by all engines as a way to unify response type between different libraries."""
 
     def __init__(self, url: str, text: str, body: bytes, status: int, reason: str, cookies: Dict, headers: Dict, request_headers: Dict,
-                 encoding: str = 'utf-8', method: str = 'GET', **adaptor_arguments: Dict):
+                 encoding: str = 'utf-8', method: str = 'GET', history: List = None, **adaptor_arguments: Dict):
         automatch_domain = adaptor_arguments.pop('automatch_domain', None)
         self.status = status
         self.reason = reason
         self.cookies = cookies
         self.headers = headers
         self.request_headers = request_headers
+        self.history = history or []
         encoding = ResponseEncoding.get_value(encoding, text)
         super().__init__(text=text, body=body, url=automatch_domain or url, encoding=encoding, **adaptor_arguments)
         # For back-ward compatibility

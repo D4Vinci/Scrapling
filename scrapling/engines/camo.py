@@ -95,7 +95,6 @@ class CamoufoxEngine:
         with Camoufox(
                 geoip=self.geoip,
                 proxy=self.proxy,
-                disable_coop=True,
                 enable_cache=True,
                 addons=self.addons,
                 exclude_addons=addons,
@@ -142,6 +141,26 @@ class CamoufoxEngine:
             # PlayWright API sometimes give empty status text for some reason!
             status_text = final_response.status_text or StatusText.get(final_response.status)
 
+            history = []
+            current_request = first_response.request.redirected_from
+            while current_request:
+                current_response = current_request.response()
+
+                history.insert(0, Response(
+                    url=current_request.url,
+                    # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                    text='',
+                    body=b'',
+                    status=current_response.status if current_response else 301,
+                    reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
+                    encoding=current_response.headers.get('content-type', '') or 'utf-8',
+                    cookies={},
+                    headers=current_response.all_headers() if current_response else {},
+                    request_headers=current_request.all_headers(),
+                    **self.adaptor_arguments
+                ))
+                current_request = current_request.redirected_from
+
             response = Response(
                 url=page.url,
                 text=page.content(),
@@ -152,6 +171,7 @@ class CamoufoxEngine:
                 cookies={cookie['name']: cookie['value'] for cookie in page.context.cookies()},
                 headers=first_response.all_headers(),
                 request_headers=first_response.request.all_headers(),
+                history=history,
                 **self.adaptor_arguments
             )
             page.close()
@@ -176,7 +196,6 @@ class CamoufoxEngine:
         async with AsyncCamoufox(
                 geoip=self.geoip,
                 proxy=self.proxy,
-                disable_coop=True,
                 enable_cache=True,
                 addons=self.addons,
                 exclude_addons=addons,
@@ -223,6 +242,26 @@ class CamoufoxEngine:
             # PlayWright API sometimes give empty status text for some reason!
             status_text = final_response.status_text or StatusText.get(final_response.status)
 
+            history = []
+            current_request = first_response.request.redirected_from
+            while current_request:
+                current_response = await current_request.response()
+
+                history.insert(0, Response(
+                    url=current_request.url,
+                    # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                    text='',
+                    body=b'',
+                    status=current_response.status if current_response else 301,
+                    reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
+                    encoding=current_response.headers.get('content-type', '') or 'utf-8',
+                    cookies={},
+                    headers=await current_response.all_headers() if current_response else {},
+                    request_headers=await current_request.all_headers(),
+                    **self.adaptor_arguments
+                ))
+                current_request = current_request.redirected_from
+
             response = Response(
                 url=page.url,
                 text=await page.content(),
@@ -233,6 +272,7 @@ class CamoufoxEngine:
                 cookies={cookie['name']: cookie['value'] for cookie in await page.context.cookies()},
                 headers=await first_response.all_headers(),
                 request_headers=await first_response.request.all_headers(),
+                history=history,
                 **self.adaptor_arguments
             )
             await page.close()

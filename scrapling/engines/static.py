@@ -72,6 +72,7 @@ class StaticEngine:
             headers=dict(response.headers),
             request_headers=dict(response.request.headers),
             method=response.request.method,
+            history=[self._prepare_response(redirection) for redirection in response.history],
             **self.adaptor_arguments
         )
 

@@ -134,7 +134,7 @@ class TextHandler(str):
         check_match: Literal[True],
         replace_entities: bool = True,
         clean_match: bool = False,
-        case_sensitive: bool = False,
+        case_sensitive: bool = True,
     ) -> bool:
         ...
 
@@ -144,26 +144,26 @@ class TextHandler(str):
         regex: Union[str, Pattern[str]],
         replace_entities: bool = True,
         clean_match: bool = False,
-        case_sensitive: bool = False,
+        case_sensitive: bool = True,
         check_match: Literal[False] = False,
     ) -> "TextHandlers[TextHandler]":
         ...
 
     def re(
             self, regex: Union[str, Pattern[str]], replace_entities: bool = True, clean_match: bool = False,
-            case_sensitive: bool = False, check_match: bool = False
+            case_sensitive: bool = True, check_match: bool = False
     ) -> Union["TextHandlers[TextHandler]", bool]:
         """Apply the given regex to the current text and return a list of strings with the matches.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
-        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
+        :param case_sensitive: if disabled, function will set the regex to ignore letters case while compiling it
         :param check_match: used to quickly check if this regex matches or not without any operations on the results
 
         """
         if isinstance(regex, str):
-            if not case_sensitive:
+            if case_sensitive:
                 regex = re.compile(regex, re.UNICODE)
             else:
                 regex = re.compile(regex, flags=re.UNICODE | re.IGNORECASE)
@@ -182,14 +182,14 @@ class TextHandler(str):
         return TextHandlers(typing.cast(List[_TextHandlerType], [TextHandler(_replace_entities(s)) for s in results]))
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
-                 clean_match: bool = False, case_sensitive: bool = False) -> "TextHandler":
+                 clean_match: bool = False, case_sensitive: bool = True) -> "TextHandler":
         """Apply the given regex to text and return the first match if found, otherwise return the default value.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param default: The default value to be returned if there is no match
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
-        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
+        :param case_sensitive: if disabled, function will set the regex to ignore letters case while compiling it
 
         """
         result = self.re(regex, replace_entities, clean_match=clean_match, case_sensitive=case_sensitive)
@@ -218,14 +218,14 @@ class TextHandlers(List[TextHandler]):
         return typing.cast(_TextHandlerType, TextHandler(lst))
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True, clean_match: bool = False,
-            case_sensitive: bool = False) -> 'TextHandlers[TextHandler]':
+            case_sensitive: bool = True) -> 'TextHandlers[TextHandler]':
         """Call the ``.re()`` method for each element in this list and return
         their results flattened as TextHandlers.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
-        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
+        :param case_sensitive: if disabled, function will set the regex to ignore letters case while compiling it
         """
         results = [
             n.re(regex, replace_entities, clean_match, case_sensitive) for n in self
@@ -233,7 +233,7 @@ class TextHandlers(List[TextHandler]):
         return TextHandlers(flatten(results))
 
     def re_first(self, regex: Union[str, Pattern[str]], default=None, replace_entities: bool = True,
-                 clean_match: bool = False, case_sensitive: bool = False) -> TextHandler:
+                 clean_match: bool = False, case_sensitive: bool = True) -> TextHandler:
         """Call the ``.re_first()`` method for each element in this list and return
         the first result or the default value otherwise.
 
@@ -241,7 +241,7 @@ class TextHandlers(List[TextHandler]):
         :param default: The default value to be returned if there is no match
         :param replace_entities: if enabled character entity references are replaced by their corresponding character
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
-        :param case_sensitive: if enabled, function will set the regex to ignore letters case while compiling it
+        :param case_sensitive: if disabled, function will set the regex to ignore letters case while compiling it
         """
         for n in self:
             for result in n.re(regex, replace_entities, clean_match, case_sensitive):
