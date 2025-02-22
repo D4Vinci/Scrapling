@@ -212,7 +212,7 @@ then use it right away without initializing like:
 page = StealthyFetcher.fetch('https://example.com') 
 ```
 
-Also, the `Response` object returned from all fetchers is the same as the `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`. All `cookies`, `headers`, and `request_headers` are always of type `dictionary`.
+Also, the `Response` object returned from all fetchers is the same as the `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, `history`, and `request_headers`. All `cookies`, `headers`, and `request_headers` are always of type `dictionary`.
 > [!NOTE]
 > The `auto_match` argument is enabled by default which is the one you should care about the most as you will see later.
 ### Fetcher
