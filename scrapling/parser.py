@@ -132,7 +132,7 @@ class Adaptor(SelectorsGeneration):
         self.__tag = None
         # No need to check if all response attributes exist or not because if `status` exist, then the rest exist (Save some CPU cycles for speed)
         self.__response_data = {
-            key: getattr(self, key) for key in ('status', 'reason', 'cookies', 'headers', 'request_headers',)
+            key: getattr(self, key) for key in ('status', 'reason', 'cookies', 'history', 'headers', 'request_headers',)
         } if hasattr(self, 'status') else {}
 
     # Node functionalities, I wanted to move to separate Mixin class but it had slight impact on performance
