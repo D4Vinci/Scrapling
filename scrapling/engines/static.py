@@ -42,16 +42,19 @@ class StaticEngine:
         :return: A dictionary of the new headers.
         """
         headers = headers or {}
-
-        # Validate headers
-        if not headers.get('user-agent') and not headers.get('User-Agent'):
-            headers['User-Agent'] = generate_headers(browser_mode=False).get('User-Agent')
-            log.debug(f"Can't find useragent in headers so '{headers['User-Agent']}' was used.")
+        headers_keys = set(map(str.lower, headers.keys()))
 
         if self.stealth:
             extra_headers = generate_headers(browser_mode=False)
+            # Don't overwrite user supplied headers
+            extra_headers = {key: value for key, value in extra_headers.items() if key.lower() not in headers_keys}
             headers.update(extra_headers)
-            headers.update({'referer': generate_convincing_referer(self.url)})
+            if 'referer' not in headers_keys:
+                headers.update({'referer': generate_convincing_referer(self.url)})
+
+        elif 'user-agent' not in headers_keys:
+            headers['User-Agent'] = generate_headers(browser_mode=False).get('User-Agent')
+            log.debug(f"Can't find useragent in headers so '{headers['User-Agent']}' was used.")
 
         return headers
 
