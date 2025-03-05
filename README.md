@@ -1,4 +1,4 @@
-# 🕷️ Scrapling: Undetectable, Lightning-Fast, and Adaptive Web Scraping for Python
+# 🕷️ Scrapling: Undetectable, Lightning-Fast, and Easy Web Scraping with Python
 [![Tests](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg)](https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml) [![PyPI version](https://badge.fury.io/py/Scrapling.svg)](https://badge.fury.io/py/Scrapling) [![Supported Python versions](https://img.shields.io/pypi/pyversions/scrapling.svg)](https://pypi.org/project/scrapling/) [![PyPI Downloads](https://static.pepy.tech/badge/scrapling)](https://pepy.tech/project/scrapling)
 
 Dealing with failing web scrapers due to anti-bot protections or website changes? Meet Scrapling.

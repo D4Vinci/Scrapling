@@ -12,13 +12,14 @@ def get_package_dir():
 
 def run_command(command, line):
     print(f"Installing {line}...")
-    _ = subprocess.check_call(command, shell=True)
+    _ = subprocess.check_call(' '.join(command), shell=True)
     # I meant to not use try except here
 
 
 @click.command(help="Install all Scrapling's Fetchers dependencies")
-def install():
-    if not get_package_dir().joinpath(".scrapling_dependencies_installed").exists():
+@click.option('-f', '--force', 'force', is_flag=True, default=False, type=bool, help="Force Scrapling to reinstall all Fetchers dependencies")
+def install(force):
+    if force or not get_package_dir().joinpath(".scrapling_dependencies_installed").exists():
         run_command([sys.executable, "-m", "playwright", "install", 'chromium'], 'Playwright browsers')
         run_command([sys.executable, "-m", "playwright", "install-deps", 'chromium', 'firefox'], 'Playwright dependencies')
         run_command([sys.executable, "-m", "camoufox", "fetch", '--browserforge'], 'Camoufox browser and databases')
