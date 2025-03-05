@@ -23,19 +23,8 @@ class TextHandler(str):
             return super().__new__(cls, string)
         return super().__new__(cls, '')
 
-    @typing.overload
-    def __getitem__(self, key: SupportsIndex) -> 'TextHandler':
-        pass
-
-    @typing.overload
-    def __getitem__(self, key: slice) -> "TextHandlers":
-        pass
-
-    def __getitem__(self, key: Union[SupportsIndex, slice]) -> Union["TextHandler", "TextHandlers"]:
+    def __getitem__(self, key: Union[SupportsIndex, slice]) -> "TextHandler":
         lst = super().__getitem__(key)
-        if isinstance(key, slice):
-            lst = [TextHandler(s) for s in lst]
-            return TextHandlers(typing.cast(List[_TextHandlerType], lst))
         return typing.cast(_TextHandlerType, TextHandler(lst))
 
     def split(self, sep: str = None, maxsplit: SupportsIndex = -1) -> 'TextHandlers':
