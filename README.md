@@ -18,6 +18,22 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 # Sponsors 
 
+[Scrapeless Deep SerpApi](https://www.scrapeless.com/en/product/deep-serp-api?utm_source=website&utm_medium=ads&utm_campaign=scraping&utm_term=d4vinci) From $0.10 per 1,000 queries with a 1-2 second response time! 
+
+Deep SerpApi is a dedicated search engine designed for large language models (LLMs) and AI agents, aiming to provide real-time, accurate and unbiased information to help AI applications retrieve and process data efficiently.
+- covering 20+ Google SERP scenarios and mainstream search engines.
+- support real-time data updates to ensure real-time and accurate information.
+- It can integrate information from all available online channels and search engines.
+- Deep SerpApi will simplify the process of integrating dynamic web information into AI solutions, and ultimately achieve an ALL-in-One API for one-click search and extraction of web data.
+- **Developer Support Program**: Integrate Scrapeless Deep SerpApi into your AI tools, applications or projects. [We already support Dify, and will soon support frameworks such as Langchain, Langflow, FlowiseAI]. Then share your results on GitHub or social media, and you will get a 1-12 month free developer support opportunity, up to 500 free usage per month.
+- 🚀 **Scraping API**: Effortless and highly customizable data extraction with a single API call, providing structured data from any website.
+- ⚡ **Scraping Browser**: AI-powered and LLM-driven, it simulates human-like behavior with genuine fingerprints and headless browser support, ensuring seamless, block-free scraping.
+- 🌐 **Proxies**: Use high-quality, rotating proxies to scrape top platforms like Amazon, Shopee, and more, with global coverage in 195+ countries.
+
+
+[![Scrapeless Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg)](https://www.scrapeless.com/en/product/deep-serp-api?utm_source=website&utm_medium=ads&utm_campaign=scraping&utm_term=d4vinci)
+---
+
 [Evomi](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling) is your Swiss Quality Proxy Provider, starting at **$0.49/GB**
 
 - 👩‍💻 **$0.49 per GB Residential Proxies**: Our price is unbeatable
@@ -31,21 +47,6 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 - 🔧 **Easy Integration**: Compatible with most software and programming languages
 
 [![Evomi Banner](https://my.evomi.com/images/brand/cta.png)](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling)
----
-
-[Scrapeless](https://www.scrapeless.com/?utm_source=github&utm_medium=ads&utm_campaign=scraping&utm_term=D4Vinci) is your all-in-one web scraping toolkit, starting at just $0.60 per 1k URLs!
-
-- 🚀 Scraping API: Effortless and highly customizable data extraction with a single API call, providing structured data from any website.
-- ⚡ Scraping Browser: AI-powered and LLM-driven, it simulates human-like behavior with genuine fingerprints and headless browser support, ensuring seamless, block-free scraping.
-- 🔒 Web Unlocker: Bypass CAPTCHAs, IP blocks, and dynamic content in real time, ensuring uninterrupted access.
-- 🌐 Proxies: Use high-quality, rotating proxies to scrape top platforms like Amazon, Shopee, and more, with global coverage in 195+ countries.
-- 💼 Enterprise-Grade: Custom solutions for large-scale and complex data needs.
-- 🎁 Free Trial: Try before you buy—experience our service firsthand.
-- 💬 Pay-Per-Use: Flexible, cost-effective pricing with no long-term commitments.
-- 🔧 Easy Integration: Seamlessly integrate with your existing tools and workflows for hassle-free automation.
-
-
-[![Scrapeless Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg)](https://www.scrapeless.com/?utm_source=github&utm_medium=ads&utm_campaign=scraping&utm_term=D4Vinci)
 ---
 
 ## Table of content
