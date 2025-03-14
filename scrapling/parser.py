@@ -71,7 +71,7 @@ class Adaptor(SelectorsGeneration):
         if root is None and not body and text is None:
             raise ValueError("Adaptor class needs text, body, or root arguments to work")
 
-        self.__text = None
+        self.__text = ''
         self.__raw_body = ''
         if root is None:
             if text is None:
