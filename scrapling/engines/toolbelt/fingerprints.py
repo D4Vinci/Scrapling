@@ -12,7 +12,7 @@ from scrapling.core._types import Dict, Union
 from scrapling.core.utils import lru_cache
 
 
-@lru_cache(None, typed=True)
+@lru_cache(128, typed=True)
 def generate_convincing_referer(url: str) -> str:
     """Takes the domain from the URL without the subdomain/suffix and make it look like you were searching google for this website
 
@@ -26,7 +26,7 @@ def generate_convincing_referer(url: str) -> str:
     return f'https://www.google.com/search?q={website_name}'
 
 
-@lru_cache(None, typed=True)
+@lru_cache(128, typed=True)
 def get_os_name() -> Union[str, None]:
     """Get the current OS name in the same format needed for browserforge
 

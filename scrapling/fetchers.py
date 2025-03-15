@@ -11,7 +11,7 @@ class Fetcher(BaseFetcher):
     Any additional keyword arguments passed to the methods below are passed to the respective httpx's method directly.
     """
     def get(
-            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
             proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
 
@@ -30,7 +30,7 @@ class Fetcher(BaseFetcher):
         return response_object
 
     def post(
-            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
             proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
 
@@ -49,7 +49,7 @@ class Fetcher(BaseFetcher):
         return response_object
 
     def put(
-            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
             proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
 
@@ -69,7 +69,7 @@ class Fetcher(BaseFetcher):
         return response_object
 
     def delete(
-            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
             proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
 
@@ -90,7 +90,7 @@ class Fetcher(BaseFetcher):
 
 class AsyncFetcher(Fetcher):
     async def get(
-            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
             proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
 
@@ -109,7 +109,7 @@ class AsyncFetcher(Fetcher):
         return response_object
 
     async def post(
-            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
             proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
 
@@ -128,7 +128,7 @@ class AsyncFetcher(Fetcher):
         return response_object
 
     async def put(
-            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
             proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
 
@@ -147,7 +147,7 @@ class AsyncFetcher(Fetcher):
         return response_object
 
     async def delete(
-            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: Optional[bool] = True,
+            self, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
             proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
 
@@ -173,11 +173,11 @@ class StealthyFetcher(BaseFetcher):
      Other added flavors include setting the faked OS fingerprints to match the user's OS and the referer of every request is set as if this request came from Google's search of this URL's domain.
     """
     def fetch(
-            self, url: str, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
-            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
+            self, url: str, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
+            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
-            wait_selector_state: SelectorWaitStates = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = False, geoip: Optional[bool] = False,
+            wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -231,11 +231,11 @@ class StealthyFetcher(BaseFetcher):
         return engine.fetch(url)
 
     async def async_fetch(
-            self, url: str, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
-            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, addons: Optional[List[str]] = None,
+            self, url: str, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
+            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, addons: Optional[List[str]] = None,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
-            wait_selector_state: SelectorWaitStates = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = False, geoip: Optional[bool] = False,
+            wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -307,13 +307,13 @@ class PlayWrightFetcher(BaseFetcher):
     """
     def fetch(
             self, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
-            useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
+            useragent: Optional[str] = None, network_idle: bool = False, timeout: Optional[float] = 30000,
             page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: SelectorWaitStates = 'attached',
-            hide_canvas: Optional[bool] = False, disable_webgl: Optional[bool] = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
+            hide_canvas: bool = False, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: bool = True,
             proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
-            stealth: Optional[bool] = False, real_chrome: Optional[bool] = False,
+            stealth: bool = False, real_chrome: bool = False,
             cdp_url: Optional[str] = None,
-            nstbrowser_mode: Optional[bool] = False, nstbrowser_config: Optional[Dict] = None,
+            nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
 
@@ -367,13 +367,13 @@ class PlayWrightFetcher(BaseFetcher):
 
     async def async_fetch(
             self, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
-            useragent: Optional[str] = None, network_idle: Optional[bool] = False, timeout: Optional[float] = 30000,
+            useragent: Optional[str] = None, network_idle: bool = False, timeout: Optional[float] = 30000,
             page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: SelectorWaitStates = 'attached',
-            hide_canvas: Optional[bool] = False, disable_webgl: Optional[bool] = False, extra_headers: Optional[Dict[str, str]] = None, google_search: Optional[bool] = True,
+            hide_canvas: bool = False, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: bool = True,
             proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
-            stealth: Optional[bool] = False, real_chrome: Optional[bool] = False,
+            stealth: bool = False, real_chrome: bool = False,
             cdp_url: Optional[str] = None,
-            nstbrowser_mode: Optional[bool] = False, nstbrowser_config: Optional[Dict] = None,
+            nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
 

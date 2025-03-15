@@ -19,9 +19,7 @@ class TextHandler(str):
     __slots__ = ()
 
     def __new__(cls, string):
-        if isinstance(string, str):
-            return super().__new__(cls, string)
-        return super().__new__(cls, '')
+        return super().__new__(cls, str(string))
 
     def __getitem__(self, key: Union[SupportsIndex, slice]) -> "TextHandler":
         lst = super().__getitem__(key)

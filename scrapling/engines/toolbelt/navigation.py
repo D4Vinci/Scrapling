@@ -110,7 +110,7 @@ def construct_cdp_url(cdp_url: str, query_params: Optional[Dict] = None) -> str:
         raise ValueError(f"Invalid CDP URL: {str(e)}")
 
 
-@lru_cache(None, typed=True)
+@lru_cache(126, typed=True)
 def js_bypass_path(filename: str) -> str:
     """Takes the base filename of JS file inside the `bypasses` folder then return the full path of it
 

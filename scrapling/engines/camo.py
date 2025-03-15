@@ -15,12 +15,12 @@ from scrapling.engines.toolbelt import (Response, StatusText,
 
 class CamoufoxEngine:
     def __init__(
-            self, headless: Optional[Union[bool, Literal['virtual']]] = True, block_images: Optional[bool] = False, disable_resources: Optional[bool] = False,
-            block_webrtc: Optional[bool] = False, allow_webgl: Optional[bool] = True, network_idle: Optional[bool] = False, humanize: Optional[Union[bool, float]] = True,
+            self, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
+            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, humanize: Union[bool, float] = True,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
-            wait_selector_state: Optional[SelectorWaitStates] = 'attached', google_search: Optional[bool] = True, extra_headers: Optional[Dict[str, str]] = None,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: Optional[bool] = None, disable_ads: Optional[bool] = False,
-            geoip: Optional[bool] = False,
+            wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
+            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False,
+            geoip: bool = False,
             adaptor_arguments: Dict = None,
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
@@ -64,18 +64,67 @@ class CamoufoxEngine:
         self.addons = addons or []
         self.humanize = humanize
         self.timeout = check_type_validity(timeout, [int, float], 30000)
+
+        # Page action callable validation
+        self.page_action = None
         if page_action is not None:
             if callable(page_action):
                 self.page_action = page_action
             else:
-                self.page_action = None
                 log.error('[Ignored] Argument "page_action" must be callable')
-        else:
-            self.page_action = None
 
         self.wait_selector = wait_selector
         self.wait_selector_state = wait_selector_state
         self.adaptor_arguments = adaptor_arguments if adaptor_arguments else {}
+
+    def _get_camoufox_options(self):
+        """Return consistent browser options dictionary for both sync and async methods"""
+        return {
+            "geoip": self.geoip,
+            "proxy": self.proxy,
+            "enable_cache": True,
+            "addons": self.addons,
+            "exclude_addons": [] if self.disable_ads else [DefaultAddons.UBO],
+            "headless": self.headless,
+            "humanize": self.humanize,
+            "i_know_what_im_doing": True,  # To turn warnings off with the user configurations
+            "allow_webgl": self.allow_webgl,
+            "block_webrtc": self.block_webrtc,
+            "block_images": self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
+            "os": None if self.os_randomize else get_os_name(),
+        }
+
+    def _process_response_history(self, first_response):
+        """Process response history to build a list of Response objects"""
+        history = []
+        current_request = first_response.request.redirected_from
+
+        try:
+            while current_request:
+                try:
+                    current_response = current_request.response()
+                    history.insert(0, Response(
+                        url=current_request.url,
+                        # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                        text='',
+                        body=b'',
+                        status=current_response.status if current_response else 301,
+                        reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
+                        encoding=current_response.headers.get('content-type', '') or 'utf-8',
+                        cookies={},
+                        headers=current_response.all_headers() if current_response else {},
+                        request_headers=current_request.all_headers(),
+                        **self.adaptor_arguments
+                    ))
+                except Exception as e:
+                    log.error(f"Error processing redirect: {e}")
+                    break
+
+                current_request = current_request.redirected_from
+        except Exception as e:
+            log.error(f"Error processing response history: {e}")
+
+        return history
 
     def fetch(self, url: str) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -83,88 +132,72 @@ class CamoufoxEngine:
         :param url: Target url.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        addons = [] if self.disable_ads else [DefaultAddons.UBO]
-        # Store the final response
         final_response = None
+        referer = generate_convincing_referer(url) if self.google_search else None
 
         def handle_response(finished_response):
             nonlocal final_response
             if finished_response.request.resource_type == "document" and finished_response.request.is_navigation_request():
                 final_response = finished_response
 
-        with Camoufox(
-                geoip=self.geoip,
-                proxy=self.proxy,
-                enable_cache=True,
-                addons=self.addons,
-                exclude_addons=addons,
-                headless=self.headless,
-                humanize=self.humanize,
-                i_know_what_im_doing=True,  # To turn warnings off with the user configurations
-                allow_webgl=self.allow_webgl,
-                block_webrtc=self.block_webrtc,
-                block_images=self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
-                os=None if self.os_randomize else get_os_name(),
-        ) as browser:
-            page = browser.new_page()
+        with Camoufox(**self._get_camoufox_options()) as browser:
+            context = browser.new_context()
+            page = context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
-            # Listen for all responses
             page.on("response", handle_response)
+
             if self.disable_resources:
                 page.route("**/*", intercept_route)
 
             if self.extra_headers:
                 page.set_extra_http_headers(self.extra_headers)
 
-            first_response = page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
+            first_response = page.goto(url, referer=referer)
             page.wait_for_load_state(state="domcontentloaded")
+
             if self.network_idle:
                 page.wait_for_load_state('networkidle')
 
             if self.page_action is not None:
-                page = self.page_action(page)
+                try:
+                    page = self.page_action(page)
+                except Exception as e:
+                    log.error(f"Error executing page_action: {e}")
 
             if self.wait_selector and type(self.wait_selector) is str:
-                waiter = page.locator(self.wait_selector)
-                waiter.first.wait_for(state=self.wait_selector_state)
-                # Wait again after waiting for the selector, helpful with protections like Cloudflare
-                page.wait_for_load_state(state="load")
-                page.wait_for_load_state(state="domcontentloaded")
-                if self.network_idle:
-                    page.wait_for_load_state('networkidle')
+                try:
+                    waiter = page.locator(self.wait_selector)
+                    waiter.first.wait_for(state=self.wait_selector_state)
+                    # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                    page.wait_for_load_state(state="load")
+                    page.wait_for_load_state(state="domcontentloaded")
+                    if self.network_idle:
+                        page.wait_for_load_state('networkidle')
+                except Exception as e:
+                    log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
+            if not final_response:
+                raise ValueError("Failed to get a response from the page")
+
             # This will be parsed inside `Response`
             encoding = final_response.headers.get('content-type', '') or 'utf-8'  # default encoding
             # PlayWright API sometimes give empty status text for some reason!
             status_text = final_response.status_text or StatusText.get(final_response.status)
 
-            history = []
-            current_request = first_response.request.redirected_from
-            while current_request:
-                current_response = current_request.response()
-
-                history.insert(0, Response(
-                    url=current_request.url,
-                    # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                    text='',
-                    body=b'',
-                    status=current_response.status if current_response else 301,
-                    reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
-                    encoding=current_response.headers.get('content-type', '') or 'utf-8',
-                    cookies={},
-                    headers=current_response.all_headers() if current_response else {},
-                    request_headers=current_request.all_headers(),
-                    **self.adaptor_arguments
-                ))
-                current_request = current_request.redirected_from
+            history = self._process_response_history(first_response)
+            try:
+                page_content = page.content()
+            except Exception as e:
+                log.error(f"Error getting page content: {e}")
+                page_content = ""
 
             response = Response(
                 url=page.url,
-                text=page.content(),
-                body=page.content().encode('utf-8'),
+                text=page_content,
+                body=page_content.encode('utf-8'),
                 status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
@@ -175,6 +208,7 @@ class CamoufoxEngine:
                 **self.adaptor_arguments
             )
             page.close()
+            context.close()
 
         return response
 
@@ -184,88 +218,72 @@ class CamoufoxEngine:
         :param url: Target url.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        addons = [] if self.disable_ads else [DefaultAddons.UBO]
-        # Store the final response
         final_response = None
+        referer = generate_convincing_referer(url) if self.google_search else None
 
         async def handle_response(finished_response):
             nonlocal final_response
             if finished_response.request.resource_type == "document" and finished_response.request.is_navigation_request():
                 final_response = finished_response
 
-        async with AsyncCamoufox(
-                geoip=self.geoip,
-                proxy=self.proxy,
-                enable_cache=True,
-                addons=self.addons,
-                exclude_addons=addons,
-                headless=self.headless,
-                humanize=self.humanize,
-                i_know_what_im_doing=True,  # To turn warnings off with the user configurations
-                allow_webgl=self.allow_webgl,
-                block_webrtc=self.block_webrtc,
-                block_images=self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
-                os=None if self.os_randomize else get_os_name(),
-        ) as browser:
-            page = await browser.new_page()
+        async with AsyncCamoufox(**self._get_camoufox_options()) as browser:
+            context = await browser.new_context()
+            page = await context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
-            # Listen for all responses
             page.on("response", handle_response)
+
             if self.disable_resources:
                 await page.route("**/*", async_intercept_route)
 
             if self.extra_headers:
                 await page.set_extra_http_headers(self.extra_headers)
 
-            first_response = await page.goto(url, referer=generate_convincing_referer(url) if self.google_search else None)
+            first_response = await page.goto(url, referer=referer)
             await page.wait_for_load_state(state="domcontentloaded")
+
             if self.network_idle:
                 await page.wait_for_load_state('networkidle')
 
             if self.page_action is not None:
-                page = await self.page_action(page)
+                try:
+                    page = await self.page_action(page)
+                except Exception as e:
+                    log.error(f"Error executing async page_action: {e}")
 
             if self.wait_selector and type(self.wait_selector) is str:
-                waiter = page.locator(self.wait_selector)
-                await waiter.first.wait_for(state=self.wait_selector_state)
-                # Wait again after waiting for the selector, helpful with protections like Cloudflare
-                await page.wait_for_load_state(state="load")
-                await page.wait_for_load_state(state="domcontentloaded")
-                if self.network_idle:
-                    await page.wait_for_load_state('networkidle')
+                try:
+                    waiter = page.locator(self.wait_selector)
+                    await waiter.first.wait_for(state=self.wait_selector_state)
+                    # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                    await page.wait_for_load_state(state="load")
+                    await page.wait_for_load_state(state="domcontentloaded")
+                    if self.network_idle:
+                        await page.wait_for_load_state('networkidle')
+                except Exception as e:
+                    log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
+            if not final_response:
+                raise ValueError("Failed to get a response from the page")
+
             # This will be parsed inside `Response`
             encoding = final_response.headers.get('content-type', '') or 'utf-8'  # default encoding
             # PlayWright API sometimes give empty status text for some reason!
             status_text = final_response.status_text or StatusText.get(final_response.status)
 
-            history = []
-            current_request = first_response.request.redirected_from
-            while current_request:
-                current_response = await current_request.response()
-
-                history.insert(0, Response(
-                    url=current_request.url,
-                    # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                    text='',
-                    body=b'',
-                    status=current_response.status if current_response else 301,
-                    reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
-                    encoding=current_response.headers.get('content-type', '') or 'utf-8',
-                    cookies={},
-                    headers=await current_response.all_headers() if current_response else {},
-                    request_headers=await current_request.all_headers(),
-                    **self.adaptor_arguments
-                ))
-                current_request = current_request.redirected_from
+            history = self._process_response_history(first_response)
+            try:
+                page_content = await page.content()
+            except Exception as e:
+                log.error(f"Error getting page content in async: {e}")
+                page_content = ""
 
             response = Response(
                 url=page.url,
-                text=await page.content(),
-                body=(await page.content()).encode('utf-8'),
+                text=page_content,
+                body=page_content.encode('utf-8'),
                 status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
@@ -276,5 +294,6 @@ class CamoufoxEngine:
                 **self.adaptor_arguments
             )
             await page.close()
+            await context.close()
 
         return response
