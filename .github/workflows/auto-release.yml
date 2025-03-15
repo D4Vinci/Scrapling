@@ -1,4 +1,5 @@
 name: Create Release
+# Creates a GitHub release when a PR is merged to main, using the PR title as the version (must start with 'v') and PR body as release notes.
 
 on:
   pull_request:
@@ -17,23 +18,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get PR information
-        id: pr_data
+      - name: Get PR title
+        id: pr_title
+        run: echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+
+      - name: Save PR body to file
         run: |
-          echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
-          echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "${{ github.event.pull_request.body }}" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo '${{ github.event.pull_request.body }}' > pr_body.txt
 
       - name: Extract version
         id: extract_version
         run: |
-          PR_TITLE="${{ steps.pr_data.outputs.title }}"
+          PR_TITLE="${{ steps.pr_title.outputs.title }}"
           if [[ $PR_TITLE =~ ^v ]]; then
             echo "version=$PR_TITLE" >> $GITHUB_OUTPUT
             echo "Valid version format found in PR title: $PR_TITLE"
           else
-            echo "Error: PR title must start with 'v' to make a new release"
+            echo "Error: PR title '$PR_TITLE' must start with 'v' (e.g., 'v1.0.0') to create a release."
             exit 1
           fi
 
@@ -42,7 +43,7 @@ jobs:
         with:
           tag_name: ${{ steps.extract_version.outputs.version }}
           name: Release ${{ steps.extract_version.outputs.version }}
-          body: ${{ steps.pr_data.outputs.body }}
+          body_path: pr_body.txt
           draft: false
           prerelease: false
         env:
