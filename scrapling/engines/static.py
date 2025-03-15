@@ -7,7 +7,7 @@ from scrapling.core.utils import log, lru_cache
 from .toolbelt import Response, generate_convincing_referer, generate_headers
 
 
-@lru_cache(typed=True)
+@lru_cache(5, typed=True)  # Singleton easily
 class StaticEngine:
     def __init__(
             self, url: str, proxy: Optional[str] = None, stealthy_headers: bool = True, follow_redirects: bool = True,
