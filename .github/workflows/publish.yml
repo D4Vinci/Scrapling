@@ -9,7 +9,7 @@ jobs:
     name: Build and publish Python 🐍 distributions 📦 to PyPI
     runs-on: ubuntu-latest
     environment:
-      name: release
+      name: PyPI
       url: https://pypi.org/p/scrapling
     permissions:
       id-token: write
