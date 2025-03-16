@@ -17,7 +17,7 @@ from scrapling.core.custom_types import (AttributesHandler, TextHandler,
 from scrapling.core.mixins import SelectorsGeneration
 from scrapling.core.storage_adaptors import (SQLiteStorageSystem,
                                              StorageSystemMixin, _StorageTools)
-from scrapling.core.translator import HTMLTranslator
+from scrapling.core.translator import translator_instance
 from scrapling.core.utils import (clean_spaces, flatten, html_forbidden,
                                   is_jsonable, log)
 
@@ -476,7 +476,7 @@ class Adaptor(SelectorsGeneration):
         try:
             if not self.__auto_match_enabled or ',' not in selector:
                 # No need to split selectors in this case, let's save some CPU cycles :)
-                xpath_selector = HTMLTranslator().css_to_xpath(selector)
+                xpath_selector = translator_instance.css_to_xpath(selector)
                 return self.xpath(xpath_selector, identifier or selector, auto_match, auto_save, percentage)
 
             results = []
@@ -484,7 +484,7 @@ class Adaptor(SelectorsGeneration):
                 for single_selector in split_selectors(selector):
                     # I'm doing this only so the `save` function save data correctly for combined selectors
                     # Like using the ',' to combine two different selectors that point to different elements.
-                    xpath_selector = HTMLTranslator().css_to_xpath(single_selector.canonical())
+                    xpath_selector = translator_instance.css_to_xpath(single_selector.canonical())
                     results += self.xpath(
                         xpath_selector, identifier or single_selector.canonical(), auto_match, auto_save, percentage
                     )
