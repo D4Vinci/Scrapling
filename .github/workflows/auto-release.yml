@@ -23,8 +23,11 @@ jobs:
         run: echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
 
       - name: Save PR body to file
-        run: |
-          echo '${{ github.event.pull_request.body }}' > pr_body.txt
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            fs.writeFileSync('pr_body.md', context.payload.pull_request.body || '');
 
       - name: Extract version
         id: extract_version
@@ -43,7 +46,7 @@ jobs:
         with:
           tag_name: ${{ steps.extract_version.outputs.version }}
           name: Release ${{ steps.extract_version.outputs.version }}
-          body_path: pr_body.txt
+          body_path: pr_body.md
           draft: false
           prerelease: false
         env:
