@@ -2,7 +2,7 @@
 
 ### All current types can be imported alone like below
 ```python
->>> from scrapling import TextHandler, AttributesHandler
+>>> from scrapling.core.custom_types import TextHandler, AttributesHandler
 
 >>> somestring = TextHandler('{}')
 >>> somestring.json()

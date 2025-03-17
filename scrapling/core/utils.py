@@ -115,7 +115,7 @@ class _StorageTools:
 #     return _impl
 
 
-@lru_cache(256, typed=True)
+@lru_cache(128, typed=True)
 def clean_spaces(string):
     string = string.replace('\t', ' ')
     string = re.sub('[\n|\r]', '', string)

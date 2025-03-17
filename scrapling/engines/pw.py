@@ -126,7 +126,7 @@ class PlaywrightEngine:
 
         return cdp_url
 
-    @lru_cache(126, typed=True)
+    @lru_cache(32, typed=True)
     def __set_flags(self):
         """Returns the flags that will be used while launching the browser if stealth mode is enabled"""
         flags = DEFAULT_STEALTH_FLAGS
@@ -169,7 +169,7 @@ class PlaywrightEngine:
 
         return context_kwargs
 
-    @lru_cache(10)
+    @lru_cache(1)
     def __stealth_scripts(self):
         # Basic bypasses nothing fancy as I'm still working on it
         # But with adding these bypasses to the above config, it bypasses many online tests like
