@@ -16,7 +16,7 @@ class ResponseEncoding:
     __ISO_8859_1_CONTENT_TYPES = {"text/plain", "text/html", "text/css", "text/javascript"}
 
     @classmethod
-    @lru_cache(maxsize=256)
+    @lru_cache(maxsize=128)
     def __parse_content_type(cls, header_value: str) -> Tuple[str, Dict[str, str]]:
         """Parse content type and parameters from a content-type header value.
 
@@ -38,7 +38,7 @@ class ResponseEncoding:
         return content_type, params
 
     @classmethod
-    @lru_cache(maxsize=256)
+    @lru_cache(maxsize=128)
     def get_value(cls, content_type: Optional[str], text: Optional[str] = 'test') -> str:
         """Determine the appropriate character encoding from a content-type header.
 
