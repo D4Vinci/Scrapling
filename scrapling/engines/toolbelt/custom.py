@@ -107,7 +107,7 @@ class Response(Adaptor):
 class BaseFetcher:
     __slots__ = ()
     huge_tree: bool = True
-    auto_match: Optional[bool] = True
+    auto_match: Optional[bool] = False
     storage: Any = SQLiteStorageSystem
     keep_cdata: Optional[bool] = False
     storage_args: Optional[Dict] = None
