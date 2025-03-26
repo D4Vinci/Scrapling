@@ -122,7 +122,7 @@ class BaseFetcher:
         if args_str:
             args_str += ', '
 
-        log.warning(f'This logic is deprecated now and it will be removed with v0.3. Use `{self.__class__.__name__}.configure({args_str}{kwargs_str})` instead before fetching')
+        log.warning(f'This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `{self.__class__.__name__}.configure({args_str}{kwargs_str})` instead before fetching')
         pass
 
     @classmethod
@@ -139,7 +139,7 @@ class BaseFetcher:
 
     @classmethod
     def configure(cls, **kwargs):
-        """Setup multiple arguments for the parser at once
+        """Set multiple arguments for the parser at once globally
 
         :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, keep_cdata, auto_match, storage, storage_args, automatch_domain
         """
