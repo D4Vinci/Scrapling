@@ -3,13 +3,15 @@ import pytest_httpbin
 
 from scrapling.fetchers import AsyncFetcher
 
+AsyncFetcher.auto_match = True
+
 
 @pytest_httpbin.use_class_based_httpbin
 @pytest.mark.asyncio
 class TestAsyncFetcher:
     @pytest.fixture(scope="class")
     def fetcher(self):
-        return AsyncFetcher(auto_match=True)
+        return AsyncFetcher
 
     @pytest.fixture(scope="class")
     def urls(self, httpbin):

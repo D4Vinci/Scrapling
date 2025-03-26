@@ -3,12 +3,14 @@ import pytest_httpbin
 
 from scrapling import PlayWrightFetcher
 
+PlayWrightFetcher.auto_match = True
+
 
 @pytest_httpbin.use_class_based_httpbin
 class TestPlayWrightFetcherAsync:
     @pytest.fixture
     def fetcher(self):
-        return PlayWrightFetcher(auto_match=False)
+        return PlayWrightFetcher
 
     @pytest.fixture
     def urls(self, httpbin):
