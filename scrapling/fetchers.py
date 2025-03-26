@@ -13,7 +13,7 @@ class Fetcher(BaseFetcher):
     @classmethod
     def get(
             cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
 
         :param url: Target url.
@@ -23,17 +23,23 @@ class Fetcher(BaseFetcher):
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        adaptor_arguments = tuple(cls._generate_parser_arguments().items())
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
+        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
         response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).get(**kwargs)
         return response_object
 
     @classmethod
     def post(
             cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
 
         :param url: Target url.
@@ -43,17 +49,23 @@ class Fetcher(BaseFetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        adaptor_arguments = tuple(cls._generate_parser_arguments().items())
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
+        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
         response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).post(**kwargs)
         return response_object
 
     @classmethod
     def put(
             cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
 
         :param url: Target url
@@ -63,18 +75,24 @@ class Fetcher(BaseFetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
 
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        adaptor_arguments = tuple(cls._generate_parser_arguments().items())
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
+        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
         response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).put(**kwargs)
         return response_object
 
     @classmethod
     def delete(
             cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
 
         :param url: Target url
@@ -84,10 +102,16 @@ class Fetcher(BaseFetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        adaptor_arguments = tuple(cls._generate_parser_arguments().items())
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
+        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
         response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).delete(**kwargs)
         return response_object
 
@@ -96,7 +120,7 @@ class AsyncFetcher(Fetcher):
     @classmethod
     async def get(
             cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
 
         :param url: Target url.
@@ -106,17 +130,23 @@ class AsyncFetcher(Fetcher):
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        adaptor_arguments = tuple(cls._generate_parser_arguments().items())
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
+        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
         response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_get(**kwargs)
         return response_object
 
     @classmethod
     async def post(
             cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
 
         :param url: Target url.
@@ -126,17 +156,23 @@ class AsyncFetcher(Fetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        adaptor_arguments = tuple(cls._generate_parser_arguments().items())
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
+        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
         response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_post(**kwargs)
         return response_object
 
     @classmethod
     async def put(
             cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
 
         :param url: Target url
@@ -146,17 +182,23 @@ class AsyncFetcher(Fetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        adaptor_arguments = tuple(cls._generate_parser_arguments().items())
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
+        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
         response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_put(**kwargs)
         return response_object
 
     @classmethod
     async def delete(
             cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, **kwargs: Dict) -> Response:
+            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
 
         :param url: Target url
@@ -166,10 +208,16 @@ class AsyncFetcher(Fetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        adaptor_arguments = tuple(cls._generate_parser_arguments().items())
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
+        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
         response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_delete(**kwargs)
         return response_object
 
@@ -187,6 +235,7 @@ class StealthyFetcher(BaseFetcher):
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
+            custom_config: Dict = None
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -214,8 +263,14 @@ class StealthyFetcher(BaseFetcher):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
         engine = CamoufoxEngine(
             proxy=proxy,
             geoip=geoip,
@@ -235,7 +290,7 @@ class StealthyFetcher(BaseFetcher):
             extra_headers=extra_headers,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            adaptor_arguments=cls._generate_parser_arguments(),
+            adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
         )
         return engine.fetch(url)
 
@@ -246,6 +301,7 @@ class StealthyFetcher(BaseFetcher):
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
+            custom_config: Dict = None
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -273,8 +329,14 @@ class StealthyFetcher(BaseFetcher):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
         engine = CamoufoxEngine(
             proxy=proxy,
             geoip=geoip,
@@ -294,7 +356,7 @@ class StealthyFetcher(BaseFetcher):
             extra_headers=extra_headers,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            adaptor_arguments=cls._generate_parser_arguments(),
+            adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
         )
         return await engine.async_fetch(url)
 
@@ -325,6 +387,7 @@ class PlayWrightFetcher(BaseFetcher):
             stealth: bool = False, real_chrome: bool = False,
             cdp_url: Optional[str] = None,
             nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
+            custom_config: Dict = None
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
 
@@ -350,8 +413,14 @@ class PlayWrightFetcher(BaseFetcher):
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
         :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
         :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
         engine = PlaywrightEngine(
             proxy=proxy,
             locale=locale,
@@ -372,7 +441,7 @@ class PlayWrightFetcher(BaseFetcher):
             nstbrowser_config=nstbrowser_config,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            adaptor_arguments=cls._generate_parser_arguments(),
+            adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
         )
         return engine.fetch(url)
 
@@ -386,6 +455,7 @@ class PlayWrightFetcher(BaseFetcher):
             stealth: bool = False, real_chrome: bool = False,
             cdp_url: Optional[str] = None,
             nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
+            custom_config: Dict = None
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
 
@@ -411,8 +481,14 @@ class PlayWrightFetcher(BaseFetcher):
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
         :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
         :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
+        :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
+        if not custom_config:
+            custom_config = {}
+        elif not isinstance(custom_config, dict):
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+
         engine = PlaywrightEngine(
             proxy=proxy,
             locale=locale,
@@ -433,7 +509,7 @@ class PlayWrightFetcher(BaseFetcher):
             nstbrowser_config=nstbrowser_config,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            adaptor_arguments=cls._generate_parser_arguments(),
+            adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
         )
         return await engine.async_fetch(url)
 
