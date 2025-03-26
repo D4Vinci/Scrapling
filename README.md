@@ -6,7 +6,7 @@ Dealing with failing web scrapers due to anti-bot protections or website changes
 Scrapling is a high-performance, intelligent web scraping library for Python that automatically adapts to website changes while significantly outperforming popular alternatives. For both beginners and experts, Scrapling provides powerful features while maintaining simplicity.
 
 ```python
->> from scrapling.defaults import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
+>> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
 # Fetch websites' source under the radar!
 >> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
 >> print(page.status)
@@ -200,18 +200,24 @@ Fetchers are interfaces built on top of other libraries with added features that
 ### Features
 You might be slightly confused by now so let me clear things up. All fetcher-type classes are imported in the same way
 ```python
-from scrapling.fetchers import Fetcher, StealthyFetcher, PlayWrightFetcher
+>>> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
 ```
-All of them can take these initialization arguments: `auto_match`, `huge_tree`, `keep_comments`, `keep_cdata`, `storage`, and `storage_args`, which are the same ones you give to the `Adaptor` class.
+then use it right away without initializing like this and it will use the default parser settings:
+```python
+>>> page = StealthyFetcher.fetch('https://example.com') 
+```
+If you want to configure the parser (Adaptor class) that will be used on the response before returning it for you then do this first:
+```python
+>>> StealthyFetcher.configure(auto_match=True, keep_comments=False)
+```
+or
+```python
+>>> StealthyFetcher.auto_match = True
+>>> StealthyFetcher.keep_comments = False
+```
+Then continue your code as normal.
 
-If you don't want to pass arguments to the generated `Adaptor` object and want to use the default values, you can use this import instead for cleaner code:
-```python
-from scrapling.defaults import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
-```
-then use it right away without initializing like:
-```python
-page = StealthyFetcher.fetch('https://example.com') 
-```
+The available configuration arguments are: `auto_match`, `huge_tree`, `keep_comments`, `keep_cdata`, `storage`, and `storage_args`, which are the same ones you give to the `Adaptor` class.
 
 Also, the `Response` object returned from all fetchers is the same as the `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, `history`, and `request_headers`. All `cookies`, `headers`, and `request_headers` are always of type `dictionary`.
 > [!NOTE]
@@ -225,26 +231,26 @@ For all methods, you have `stealthy_headers` which makes `Fetcher` create and us
 
 You can route all traffic (HTTP and HTTPS) to a proxy for any of these methods in this format `http://username:password@localhost:8030`
 ```python
->> page = Fetcher().get('https://httpbin.org/get', stealthy_headers=True, follow_redirects=True)
->> page = Fetcher().post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
->> page = Fetcher().put('https://httpbin.org/put', data={'key': 'value'})
->> page = Fetcher().delete('https://httpbin.org/delete')
+>> page = Fetcher.get('https://httpbin.org/get', stealthy_headers=True, follow_redirects=True)
+>> page = Fetcher.post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
+>> page = Fetcher.put('https://httpbin.org/put', data={'key': 'value'})
+>> page = Fetcher.delete('https://httpbin.org/delete')
 ```
 For Async requests, you will just replace the import like below:
 ```python
 >> from scrapling.fetchers import AsyncFetcher
->> page = await AsyncFetcher().get('https://httpbin.org/get', stealthy_headers=True, follow_redirects=True)
->> page = await AsyncFetcher().post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
->> page = await AsyncFetcher().put('https://httpbin.org/put', data={'key': 'value'})
->> page = await AsyncFetcher().delete('https://httpbin.org/delete')
+>> page = await AsyncFetcher.get('https://httpbin.org/get', stealthy_headers=True, follow_redirects=True)
+>> page = await AsyncFetcher.post('https://httpbin.org/post', data={'key': 'value'}, proxy='http://username:password@localhost:8030')
+>> page = await AsyncFetcher.put('https://httpbin.org/put', data={'key': 'value'})
+>> page = await AsyncFetcher.delete('https://httpbin.org/delete')
 ```
 ### StealthyFetcher
 This class is built on top of [Camoufox](https://github.com/daijro/camoufox), bypassing most anti-bot protections by default. Scrapling adds extra layers of flavors and configurations to increase performance and undetectability even further.
 ```python
->> page = StealthyFetcher().fetch('https://www.browserscan.net/bot-detection')  # Running headless by default
+>> page = StealthyFetcher.fetch('https://www.browserscan.net/bot-detection')  # Running headless by default
 >> page.status == 200
 True
->> page = await StealthyFetcher().async_fetch('https://www.browserscan.net/bot-detection')  # the async version of fetch
+>> page = await StealthyFetcher.async_fetch('https://www.browserscan.net/bot-detection')  # the async version of fetch
 >> page.status == 200
 True
 ```
@@ -281,10 +287,10 @@ This list isn't final so expect a lot more additions and flexibility to be added
 ### PlayWrightFetcher
 This class is built on top of [Playwright](https://playwright.dev/python/) which currently provides 4 main run options but they can be mixed as you want.
 ```python
->> page = PlayWrightFetcher().fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # Vanilla Playwright option
+>> page = PlayWrightFetcher.fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # Vanilla Playwright option
 >> page.css_first("#search a::attr(href)")
 'https://github.com/D4Vinci/Scrapling'
->> page = await PlayWrightFetcher().async_fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # the async version of fetch
+>> page = await PlayWrightFetcher.async_fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # the async version of fetch
 >> page.css_first("#search a::attr(href)")
 'https://github.com/D4Vinci/Scrapling'
 ```
@@ -386,7 +392,7 @@ You can search for a specific ancestor of an element that satisfies a function, 
 ### Content-based Selection & Finding Similar Elements
 You can select elements by their text content in multiple ways, here's a full example on another website:
 ```python
->>> page = Fetcher().get('https://books.toscrape.com/index.html')
+>>> page = Fetcher.get('https://books.toscrape.com/index.html')
 
 >>> page.find_by_text('Tipping the Velvet')  # Find the first element whose text fully matches this text
 <data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>
@@ -566,7 +572,7 @@ Examples to clear any confusion :)
 
 ```python
 >> from scrapling.fetchers import Fetcher
->> page = Fetcher().get('https://quotes.toscrape.com/')
+>> page = Fetcher.get('https://quotes.toscrape.com/')
 # Find all elements with tag name `div`.
 >> page.find_all('div')
 [<data='<div class="container"> <div class="row...' parent='<body> <div class="container"> <div clas...'>,
