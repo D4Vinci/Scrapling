@@ -7,6 +7,7 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 ```python
 >> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
+>> StealthyFetcher.auto_match = True
 # Fetch websites' source under the radar!
 >> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
 >> print(page.status)
@@ -50,45 +51,48 @@ Deep SerpApi is a dedicated search engine designed for large language models (LL
 ---
 
 ## Table of content
-  * [Key Features](#key-features)
-    * [Fetch websites as you prefer](#fetch-websites-as-you-prefer-with-async-support)
-    * [Adaptive Scraping](#adaptive-scraping)
-    * [Performance](#performance)
-    * [Developing Experience](#developing-experience)
-  * [Getting Started](#getting-started)
-  * [Parsing Performance](#parsing-performance)
-    * [Text Extraction Speed Test (5000 nested elements).](#text-extraction-speed-test-5000-nested-elements)
-    * [Extraction By Text Speed Test](#extraction-by-text-speed-test)
-  * [Installation](#installation)
-  * [Fetching Websites](#fetching-websites)
-    * [Features](#features)
-    * [Fetcher class](#fetcher)
-    * [StealthyFetcher class](#stealthyfetcher)
-    * [PlayWrightFetcher class](#playwrightfetcher)
-  * [Advanced Parsing Features](#advanced-parsing-features)
-    * [Smart Navigation](#smart-navigation)
-    * [Content-based Selection & Finding Similar Elements](#content-based-selection--finding-similar-elements)
-    * [Handling Structural Changes](#handling-structural-changes)
-      * [Real World Scenario](#real-world-scenario)
-    * [Find elements by filters](#find-elements-by-filters)
-    * [Is That All?](#is-that-all)
-  * [More Advanced Usage](#more-advanced-usage)
-  * [⚡ Enlightening Questions and FAQs](#-enlightening-questions-and-faqs)
-    * [How does auto-matching work?](#how-does-auto-matching-work)
-    * [How does the auto-matching work if I didn't pass a URL while initializing the Adaptor object?](#how-does-the-auto-matching-work-if-i-didnt-pass-a-url-while-initializing-the-adaptor-object)
-    * [If all things about an element can change or get removed, what are the unique properties to be saved?](#if-all-things-about-an-element-can-change-or-get-removed-what-are-the-unique-properties-to-be-saved)
-    * [I have enabled the `auto_save`/`auto_match` parameter while selecting and it got completely ignored with a warning message](#i-have-enabled-the-auto_saveauto_match-parameter-while-selecting-and-it-got-completely-ignored-with-a-warning-message)
-    * [I have done everything as the docs but the auto-matching didn't return anything, what's wrong?](#i-have-done-everything-as-the-docs-but-the-auto-matching-didnt-return-anything-whats-wrong)
-    * [Can Scrapling replace code built on top of BeautifulSoup4?](#can-scrapling-replace-code-built-on-top-of-beautifulsoup4)
-    * [Can Scrapling replace code built on top of AutoScraper?](#can-scrapling-replace-code-built-on-top-of-autoscraper)
-    * [Is Scrapling thread-safe?](#is-scrapling-thread-safe)
-  * [More Sponsors!](#more-sponsors)
-  * [Contributing](#contributing)
-  * [Disclaimer for Scrapling Project](#disclaimer-for-scrapling-project)
-  * [License](#license)
-  * [Acknowledgments](#acknowledgments)
-  * [Thanks and References](#thanks-and-references)
-  * [Known Issues](#known-issues)
+* [Key Features](#key-features)
+  * [Fetch websites as you prefer with async support](#fetch-websites-as-you-prefer-with-async-support)
+  * [Adaptive Scraping](#adaptive-scraping)
+  * [High Performance](#high-performance)
+  * [Developer Friendly](#developer-friendly)
+* [Getting Started](#getting-started)
+* [Parsing Performance](#parsing-performance)
+  * [Text Extraction Speed Test (5000 nested elements).](#text-extraction-speed-test-5000-nested-elements)
+  * [Extraction By Text Speed Test](#extraction-by-text-speed-test)
+* [Installation](#installation)
+* [Fetching Websites](#fetching-websites)
+  * [Features](#features)
+    * [Set parser config per request](#set-parser-config-per-request)
+  * [Fetcher](#fetcher)
+  * [StealthyFetcher](#stealthyfetcher)
+    * [The complete list of arguments](#the-complete-list-of-arguments)
+  * [PlayWrightFetcher](#playwrightfetcher)
+    * [The complete list of arguments](#the-complete-list-of-arguments-1)
+* [Advanced Parsing Features](#advanced-parsing-features)
+  * [Smart Navigation](#smart-navigation)
+  * [Content-based Selection & Finding Similar Elements](#content-based-selection--finding-similar-elements)
+  * [Handling Structural Changes](#handling-structural-changes)
+    * [Real-World Scenario](#real-world-scenario)
+  * [Find elements by filters](#find-elements-by-filters)
+  * [Is That All?](#is-that-all)
+* [More Advanced Usage](#more-advanced-usage)
+* [⚡ Enlightening Questions and FAQs](#-enlightening-questions-and-faqs)
+  * [How does auto-matching work?](#how-does-auto-matching-work)
+  * [How does the auto-matching work if I didn't pass a URL while initializing the Adaptor object?](#how-does-the-auto-matching-work-if-i-didnt-pass-a-url-while-initializing-the-adaptor-object)
+  * [If all things about an element can change or get removed, what are the unique properties to be saved?](#if-all-things-about-an-element-can-change-or-get-removed-what-are-the-unique-properties-to-be-saved)
+  * [I have enabled the `auto_save`/`auto_match` parameter while selecting and it got completely ignored with a warning message](#i-have-enabled-the-auto_saveauto_match-parameter-while-selecting-and-it-got-completely-ignored-with-a-warning-message)
+  * [I have done everything as the docs but the auto-matching didn't return anything, what's wrong?](#i-have-done-everything-as-the-docs-but-the-auto-matching-didnt-return-anything-whats-wrong)
+  * [Can Scrapling replace code built on top of BeautifulSoup4?](#can-scrapling-replace-code-built-on-top-of-beautifulsoup4)
+  * [Can Scrapling replace code built on top of AutoScraper?](#can-scrapling-replace-code-built-on-top-of-autoscraper)
+  * [Is Scrapling thread-safe?](#is-scrapling-thread-safe)
+* [More Sponsors!](#more-sponsors)
+* [Contributing](#contributing)
+* [Disclaimer for Scrapling Project](#disclaimer-for-scrapling-project)
+* [License](#license)
+* [Acknowledgments](#acknowledgments)
+* [Thanks and References](#thanks-and-references)
+* [Known Issues](#known-issues)
 
 ## Key Features
 
@@ -120,10 +124,8 @@ Deep SerpApi is a dedicated search engine designed for large language models (LL
 ```python
 from scrapling.fetchers import Fetcher
 
-fetcher = Fetcher(auto_match=False)
-
 # Do http GET request to a web page and create an Adaptor instance
-page = fetcher.get('https://quotes.toscrape.com/', stealthy_headers=True)
+page = Fetcher.get('https://quotes.toscrape.com/', stealthy_headers=True)
 # Get all text content from all HTML tags in the page except `script` and `style` tags
 page.get_all_text(ignore_tags=('script', 'style'))
 
@@ -221,7 +223,7 @@ The available configuration arguments are: `auto_match`, `huge_tree`, `keep_comm
 
 Also, the `Response` object returned from all fetchers is the same as the `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, `history`, and `request_headers`. All `cookies`, `headers`, and `request_headers` are always of type `dictionary`.
 > [!NOTE]
-> The `auto_match` argument is enabled by default which is the one you should care about the most as you will see later.
+> The `auto_match` argument is disabled by default, you need to enable it to use that feature.
 
 #### Set parser config per request
 As you probably understood, the logic above for setting the parser config will work globally for all requests/fetches done through that class and it's intended.
@@ -262,7 +264,7 @@ True
 ```
 > Note: all requests done by this fetcher are waiting by default for all JS to be fully loaded and executed so you don't have to :)
 
-<details><summary><strong>For the sake of simplicity, expand this for the complete list of arguments</strong></summary>
+#### The complete list of arguments
 
 |      Argument       | Description                                                                                                                                                                                                                                                                                                                                                                                                     | Optional |
 |:-------------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
@@ -286,7 +288,6 @@ True
 |    os_randomize     | If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.                                                                                                                                                                                                                                                                          |    ✔️    |
 | wait_selector_state | The state to wait for the selector given with `wait_selector`. _Default state is `attached`._                                                                                                                                                                                                                                                                                                                   |    ✔️    |
 
-</details>
 
 This list isn't final so expect a lot more additions and flexibility to be added in the next versions!
 
@@ -316,7 +317,7 @@ Using this Fetcher class, you can make requests with:
 
 Add that to a lot of controlling/hiding options as you will see in the arguments list below.
 
-<details><summary><strong>Expand this for the complete list of arguments</strong></summary>
+#### The complete list of arguments
 
 |      Argument       | Description                                                                                                                                                                                                                                                                                                                                                                                                     | Optional |
 |:-------------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
@@ -341,7 +342,6 @@ Add that to a lot of controlling/hiding options as you will see in the arguments
 |   nstbrowser_mode   | Enables NSTBrowser mode, **it have to be used with `cdp_url` argument or it will get completely ignored.**                                                                                                                                                                                                                                                                                                      |    ✔️    |
 |  nstbrowser_config  | The config you want to send with requests to the NSTBrowser. _If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config._                                                                                                                                                                                                                                                        |    ✔️    |
 
-</details>
 
 This list isn't final so expect a lot more additions and flexibility to be added in the next versions!
 
@@ -500,7 +500,7 @@ The selector will no longer function and your code needs maintenance. That's whe
 ```python
 from scrapling.parser import Adaptor
 # Before the change
-page = Adaptor(page_source, url='example.com')
+page = Adaptor(page_source, auto_match=True, url='example.com')
 element = page.css('#p1' auto_save=True)
 if not element:  # One day website changes?
     element = page.css('#p1', auto_match=True)  # Scrapling still finds it!
@@ -520,12 +520,13 @@ Now let's test the same selector in both versions
 >> selector = '#hmenus > div:nth-child(1) > ul > li:nth-child(1) > a'
 >> old_url = "https://web.archive.org/web/20100102003420/http://stackoverflow.com/"
 >> new_url = "https://stackoverflow.com/"
+>> Fetcher.configure(auto_match=True, automatch_domain='stackoverflow.com')
 >> 
->> page = Fetcher(automatch_domain='stackoverflow.com').get(old_url, timeout=30)
+>> page = Fetcher.get(old_url, timeout=30)
 >> element1 = page.css_first(selector, auto_save=True)
 >> 
 >> # Same selector but used in the updated website
->> page = Fetcher(automatch_domain="stackoverflow.com").get(new_url)
+>> page = Fetcher.get(new_url)
 >> element2 = page.css_first(selector, auto_match=True)
 >> 
 >> if element1.text == element2.text:
