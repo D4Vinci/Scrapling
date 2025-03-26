@@ -217,11 +217,17 @@ or
 ```
 Then continue your code as normal.
 
-The available configuration arguments are: `auto_match`, `huge_tree`, `keep_comments`, `keep_cdata`, `storage`, and `storage_args`, which are the same ones you give to the `Adaptor` class.
+The available configuration arguments are: `auto_match`, `huge_tree`, `keep_comments`, `keep_cdata`, `storage`, and `storage_args`, which are the same ones you give to the `Adaptor` class. You can display the current configuration anytime by running `<fetcher_class>.display_config()`
 
 Also, the `Response` object returned from all fetchers is the same as the `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, `history`, and `request_headers`. All `cookies`, `headers`, and `request_headers` are always of type `dictionary`.
 > [!NOTE]
 > The `auto_match` argument is enabled by default which is the one you should care about the most as you will see later.
+
+#### Set parser config per request
+As you probably understood, the logic above for setting the parser config will work globally for all requests/fetches done through that class and it's intended.
+
+If your use case requires you to use different config for each request/fetch, then you can pass a dictionary to the request method (`fetch`/`get`/`post`/...) to an argument named `custom_config`.
+
 ### Fetcher
 This class is built on top of [httpx](https://www.python-httpx.org/) with additional configuration options, here you can do `GET`, `POST`, `PUT`, and `DELETE` requests.
 
