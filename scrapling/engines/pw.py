@@ -223,6 +223,38 @@ class PlaywrightEngine:
 
         return history
 
+    async def _async_process_response_history(self, first_response):
+        """Process response history to build a list of Response objects"""
+        history = []
+        current_request = first_response.request.redirected_from
+
+        try:
+            while current_request:
+                try:
+                    current_response = await current_request.response()
+                    history.insert(0, Response(
+                        url=current_request.url,
+                        # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                        text='',
+                        body=b'',
+                        status=current_response.status if current_response else 301,
+                        reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
+                        encoding=current_response.headers.get('content-type', '') or 'utf-8',
+                        cookies={},
+                        headers=await current_response.all_headers() if current_response else {},
+                        request_headers=await current_request.all_headers(),
+                        **self.adaptor_arguments
+                    ))
+                except Exception as e:
+                    log.error(f"Error processing redirect: {e}")
+                    break
+
+                current_request = current_request.redirected_from
+        except Exception as e:
+            log.error(f"Error processing response history: {e}")
+
+        return history
+
     def fetch(self, url: str) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
@@ -407,7 +439,7 @@ class PlaywrightEngine:
             # PlayWright API sometimes give empty status text for some reason!
             status_text = final_response.status_text or StatusText.get(final_response.status)
 
-            history = self._process_response_history(first_response)
+            history = await self._async_process_response_history(first_response)
             try:
                 page_content = await page.content()
             except Exception as e:
