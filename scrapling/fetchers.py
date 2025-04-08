@@ -231,7 +231,7 @@ class StealthyFetcher(BaseFetcher):
     @classmethod
     def fetch(
             cls, url: str, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
-            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, addons: Optional[List[str]] = None,
+            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, addons: Optional[List[str]] = None, wait: Optional[int] = 0,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
@@ -256,7 +256,8 @@ class StealthyFetcher(BaseFetcher):
             It will also calculate and spoof the browser's language based on the distribution of language speakers in the target region.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000.
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning `Response` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
@@ -273,6 +274,7 @@ class StealthyFetcher(BaseFetcher):
             ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         engine = CamoufoxEngine(
+            wait=wait,
             proxy=proxy,
             geoip=geoip,
             addons=addons,
@@ -299,7 +301,7 @@ class StealthyFetcher(BaseFetcher):
     @classmethod
     async def async_fetch(
             cls, url: str, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
-            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, addons: Optional[List[str]] = None,
+            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, addons: Optional[List[str]] = None, wait: Optional[int] = 0,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
@@ -325,6 +327,7 @@ class StealthyFetcher(BaseFetcher):
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning `Response` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
@@ -341,6 +344,7 @@ class StealthyFetcher(BaseFetcher):
             ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         engine = CamoufoxEngine(
+            wait=wait,
             proxy=proxy,
             geoip=geoip,
             addons=addons,

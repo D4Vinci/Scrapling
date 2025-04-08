@@ -16,7 +16,7 @@ from scrapling.engines.toolbelt import (Response, StatusText,
 class CamoufoxEngine:
     def __init__(
             self, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
-            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, humanize: Union[bool, float] = True,
+            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, humanize: Union[bool, float] = True, wait: Optional[int] = 0,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False,
@@ -39,6 +39,7 @@ class CamoufoxEngine:
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param disable_ads: Disabled by default, this installs `uBlock Origin` addon on the browser if enabled.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning `Response` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
@@ -67,6 +68,7 @@ class CamoufoxEngine:
         self.addons = addons or []
         self.humanize = humanize
         self.timeout = check_type_validity(timeout, [int, float], 30000)
+        self.wait = check_type_validity(wait, [int, float], 0)
 
         # Page action callable validation
         self.page_action = None
@@ -213,6 +215,7 @@ class CamoufoxEngine:
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
+            page.wait_for_timeout(self.wait)
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             if not final_response:
@@ -299,6 +302,7 @@ class CamoufoxEngine:
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
+            await page.wait_for_timeout(self.wait)
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             if not final_response:
