@@ -1,11 +1,5 @@
 # Migrating from BeautifulSoup to Scrapling
 
-<style>
-.md-grid {
-  max-width: 85%;
-}
-</style>
-
 If you're already familiar with BeautifulSoup, you're in for a treat. Scrapling is faster, provides similar parsing capabilities, and adds powerful new features for fetching and handling modern web pages. This guide will help you quickly adapt your existing BeautifulSoup code to take advantage of Scrapling's capabilities.
 
 Below is a table that covers the most common operations you'll perform when scraping web pages. Each row shows how to accomplish a specific task in BeautifulSoup and the corresponding way to do it in Scrapling.
