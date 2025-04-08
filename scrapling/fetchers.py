@@ -235,7 +235,7 @@ class StealthyFetcher(BaseFetcher):
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
-            custom_config: Dict = None, **additional_arguments: Dict
+            custom_config: Dict = None, additional_arguments: Dict = None
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -264,7 +264,7 @@ class StealthyFetcher(BaseFetcher):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
-        :param additional_arguments: Any Additional arguments will be passed to Camoufox as additional settings and takes higher priority than Scrapling's settings.
+        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings and it takes higher priority than Scrapling's settings.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         if not custom_config:
@@ -292,7 +292,7 @@ class StealthyFetcher(BaseFetcher):
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
-            **additional_arguments
+            additional_arguments=additional_arguments or {}
         )
         return engine.fetch(url)
 
@@ -303,7 +303,7 @@ class StealthyFetcher(BaseFetcher):
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
-            custom_config: Dict = None, **additional_arguments: Dict
+            custom_config: Dict = None, additional_arguments: Dict = None
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -332,7 +332,7 @@ class StealthyFetcher(BaseFetcher):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
-        :param additional_arguments: Any Additional arguments will be passed to Camoufox as additional settings and takes higher priority than Scrapling's settings.
+        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings and it takes higher priority than Scrapling's settings.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         if not custom_config:
@@ -360,7 +360,7 @@ class StealthyFetcher(BaseFetcher):
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
-            **additional_arguments
+            additional_arguments=additional_arguments or {}
         )
         return await engine.async_fetch(url)
 

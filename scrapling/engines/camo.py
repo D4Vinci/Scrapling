@@ -22,7 +22,7 @@ class CamoufoxEngine:
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False,
             geoip: bool = False,
             adaptor_arguments: Dict = None,
-            **additional_arguments: Dict
+            additional_arguments: Dict = None
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
 
@@ -49,7 +49,7 @@ class CamoufoxEngine:
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
-        :param additional_arguments: Any Additional arguments will be passed to Camoufox as additional settings and takes higher priority than Scrapling's settings.
+        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings and it takes higher priority than Scrapling's settings.
         """
         self.headless = headless
         self.block_images = bool(block_images)
@@ -62,7 +62,7 @@ class CamoufoxEngine:
         self.disable_ads = bool(disable_ads)
         self.geoip = bool(geoip)
         self.extra_headers = extra_headers or {}
-        self.additional_arguments = additional_arguments
+        self.additional_arguments = additional_arguments or {}
         self.proxy = construct_proxy_dict(proxy)
         self.addons = addons or []
         self.humanize = humanize
