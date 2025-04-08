@@ -139,7 +139,7 @@ extra:
       link: https://x.com/D4Vinci1
   analytics:
     provider: google
-    property: GTM-KZDXMLV7
+    property: G-CS3DKLY73Z
     feedback:
       title: Was this page helpful?
       ratings:
