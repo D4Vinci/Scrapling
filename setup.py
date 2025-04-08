@@ -65,7 +65,7 @@ setup(
     python_requires=">=3.9",
     url="https://github.com/D4Vinci/Scrapling",
     project_urls={
-        "Documentation": "https://github.com/D4Vinci/Scrapling/tree/main/docs",  # For now
+        "Documentation": "https://scrapling.readthedocs.io/en/latest/",
         "Source": "https://github.com/D4Vinci/Scrapling",
         "Tracker": "https://github.com/D4Vinci/Scrapling/issues",
     }
