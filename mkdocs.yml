@@ -137,6 +137,9 @@ extra:
       link: https://pypi.org/project/scrapling/
     - icon: fontawesome/brands/x-twitter
       link: https://x.com/D4Vinci1
+  analytics:
+    provider: google
+    property: GTM-KZDXMLV7
 
 extra_css:
   - stylesheets/extra.css
