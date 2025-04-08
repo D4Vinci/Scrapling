@@ -39,7 +39,7 @@ class Adaptor(SelectorsGeneration):
             root: Optional[html.HtmlElement] = None,
             keep_comments: Optional[bool] = False,
             keep_cdata: Optional[bool] = False,
-            auto_match: Optional[bool] = True,
+            auto_match: Optional[bool] = False,
             storage: Any = SQLiteStorageSystem,
             storage_args: Optional[Dict] = None,
             **kwargs

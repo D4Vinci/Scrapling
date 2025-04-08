@@ -21,6 +21,7 @@ class PlaywrightEngine:
             useragent: Optional[str] = None,
             network_idle: bool = False,
             timeout: Optional[float] = 30000,
+            wait: Optional[int] = 0,
             page_action: Callable = None,
             wait_selector: Optional[str] = None,
             locale: Optional[str] = 'en-US',
@@ -46,6 +47,7 @@ class PlaywrightEngine:
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning `Response` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
@@ -76,6 +78,7 @@ class PlaywrightEngine:
         self.cdp_url = cdp_url
         self.useragent = useragent
         self.timeout = check_type_validity(timeout, [int, float], 30000)
+        self.wait = check_type_validity(wait, [int, float], 0)
         if page_action is not None:
             if callable(page_action):
                 self.page_action = page_action
@@ -220,6 +223,38 @@ class PlaywrightEngine:
 
         return history
 
+    async def _async_process_response_history(self, first_response):
+        """Process response history to build a list of Response objects"""
+        history = []
+        current_request = first_response.request.redirected_from
+
+        try:
+            while current_request:
+                try:
+                    current_response = await current_request.response()
+                    history.insert(0, Response(
+                        url=current_request.url,
+                        # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                        text='',
+                        body=b'',
+                        status=current_response.status if current_response else 301,
+                        reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
+                        encoding=current_response.headers.get('content-type', '') or 'utf-8',
+                        cookies={},
+                        headers=await current_response.all_headers() if current_response else {},
+                        request_headers=await current_request.all_headers(),
+                        **self.adaptor_arguments
+                    ))
+                except Exception as e:
+                    log.error(f"Error processing redirect: {e}")
+                    break
+
+                current_request = current_request.redirected_from
+        except Exception as e:
+            log.error(f"Error processing response history: {e}")
+
+        return history
+
     def fetch(self, url: str) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
@@ -289,6 +324,7 @@ class PlaywrightEngine:
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
+            page.wait_for_timeout(self.wait)
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             if not final_response:
@@ -392,6 +428,7 @@ class PlaywrightEngine:
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
+            await page.wait_for_timeout(self.wait)
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             if not final_response:
@@ -402,7 +439,7 @@ class PlaywrightEngine:
             # PlayWright API sometimes give empty status text for some reason!
             status_text = final_response.status_text or StatusText.get(final_response.status)
 
-            history = self._process_response_history(first_response)
+            history = await self._async_process_response_history(first_response)
             try:
                 page_content = await page.content()
             except Exception as e:

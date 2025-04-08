@@ -3,13 +3,15 @@ import pytest_httpbin
 
 from scrapling import StealthyFetcher
 
+StealthyFetcher.auto_match = True
+
 
 @pytest_httpbin.use_class_based_httpbin
 class TestStealthyFetcher:
     @pytest.fixture(scope="class")
     def fetcher(self):
         """Fixture to create a StealthyFetcher instance for the entire test class"""
-        return StealthyFetcher(auto_match=False)
+        return StealthyFetcher
 
     @pytest.fixture(autouse=True)
     def setup_urls(self, httpbin):

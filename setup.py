@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="scrapling",
-    version="0.2.98",
+    version="0.2.99",
     description="""Scrapling is an undetectable, powerful, flexible, high-performance Python library that makes Web Scraping easy again! In an internet filled with complications,
     it simplifies web scraping, even when websites' design changes, while providing impressive speed that surpasses almost all alternatives.""",
     long_description=long_description,
@@ -65,7 +65,7 @@ setup(
     python_requires=">=3.9",
     url="https://github.com/D4Vinci/Scrapling",
     project_urls={
-        "Documentation": "https://github.com/D4Vinci/Scrapling/tree/main/docs",  # For now
+        "Documentation": "https://scrapling.readthedocs.io/en/latest/",
         "Source": "https://github.com/D4Vinci/Scrapling",
         "Tracker": "https://github.com/D4Vinci/Scrapling/issues",
     }

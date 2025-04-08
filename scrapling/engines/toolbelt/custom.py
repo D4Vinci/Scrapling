@@ -105,41 +105,77 @@ class Response(Adaptor):
 
 
 class BaseFetcher:
-    def __init__(
-            self, huge_tree: bool = True, keep_comments: Optional[bool] = False, auto_match: Optional[bool] = True,
-            storage: Any = SQLiteStorageSystem, storage_args: Optional[Dict] = None,
-            automatch_domain: Optional[str] = None, keep_cdata: Optional[bool] = False,
-    ):
-        """Arguments below are the same from the Adaptor class so you can pass them directly, the rest of Adaptor's arguments
-        are detected and passed automatically from the Fetcher based on the response for accessibility.
+    __slots__ = ()
+    huge_tree: bool = True
+    auto_match: Optional[bool] = False
+    storage: Any = SQLiteStorageSystem
+    keep_cdata: Optional[bool] = False
+    storage_args: Optional[Dict] = None
+    keep_comments: Optional[bool] = False
+    automatch_domain: Optional[str] = None
+    parser_keywords: Tuple = ('huge_tree', 'auto_match', 'storage', 'keep_cdata', 'storage_args', 'keep_comments', 'automatch_domain',)  # Left open for the user
 
-        :param huge_tree: Enabled by default, should always be enabled when parsing large HTML documents. This controls
-            libxml2 feature that forbids parsing certain large documents to protect from possible memory exhaustion.
-        :param keep_comments: While parsing the HTML body, drop comments or not. Disabled by default for obvious reasons
-        :param keep_cdata: While parsing the HTML body, drop cdata or not. Disabled by default for cleaner HTML.
-        :param auto_match: Globally turn-off the auto-match feature in all functions, this argument takes higher
-            priority over all auto-match related arguments/functions in the class.
-        :param storage: The storage class to be passed for auto-matching functionalities, see ``Docs`` for more info.
-        :param storage_args: A dictionary of ``argument->value`` pairs to be passed for the storage class.
-            If empty, default values will be used.
-        :param automatch_domain: For cases where you want to automatch selectors across different websites as if they were on the same website, use this argument to unify them.
-            Otherwise, the domain of the request is used by default.
+    def __init__(self, *args, **kwargs):
+        # For backward-compatibility before 0.2.99
+        args_str = ", ".join(args) or ''
+        kwargs_str = ", ".join(f'{k}={v}' for k, v in kwargs.items()) or ''
+        if args_str:
+            args_str += ', '
+
+        log.warning(f'This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `{self.__class__.__name__}.configure({args_str}{kwargs_str})` instead before fetching')
+        pass
+
+    @classmethod
+    def display_config(cls):
+        return dict(
+            huge_tree=cls.huge_tree,
+            keep_comments=cls.keep_comments,
+            keep_cdata=cls.keep_cdata,
+            auto_match=cls.auto_match,
+            storage=cls.storage,
+            storage_args=cls.storage_args,
+            automatch_domain=cls.automatch_domain,
+        )
+
+    @classmethod
+    def configure(cls, **kwargs):
+        """Set multiple arguments for the parser at once globally
+
+        :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, keep_cdata, auto_match, storage, storage_args, automatch_domain
         """
+        for key, value in kwargs.items():
+            key = key.strip().lower()
+            if hasattr(cls, key):
+                if key in cls.parser_keywords:
+                    setattr(cls, key, value)
+                else:
+                    # Yup, no fun allowed LOL
+                    raise AttributeError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
+            else:
+                raise ValueError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
+
+        if not kwargs:
+            raise AttributeError(f'You must pass a keyword to configure, current keywords: {cls.parser_keywords}?')
+
+    @classmethod
+    def _generate_parser_arguments(cls) -> Dict:
         # Adaptor class parameters
         # I won't validate Adaptor's class parameters here again, I will leave it to be validated later
-        self.adaptor_arguments = dict(
-            huge_tree=huge_tree,
-            keep_comments=keep_comments,
-            keep_cdata=keep_cdata,
-            auto_match=auto_match,
-            storage=storage,
-            storage_args=storage_args
+        parser_arguments = dict(
+            huge_tree=cls.huge_tree,
+            keep_comments=cls.keep_comments,
+            keep_cdata=cls.keep_cdata,
+            auto_match=cls.auto_match,
+            storage=cls.storage,
+            storage_args=cls.storage_args
         )
-        if automatch_domain:
-            if type(automatch_domain) is not str:
+        if cls.automatch_domain:
+            if type(cls.automatch_domain) is not str:
                 log.warning('[Ignored] The argument "automatch_domain" must be of string type')
             else:
-                self.adaptor_arguments.update({'automatch_domain': automatch_domain})
+                parser_arguments.update({'automatch_domain': cls.automatch_domain})
+
+        return parser_arguments
 
 
 class StatusText:
