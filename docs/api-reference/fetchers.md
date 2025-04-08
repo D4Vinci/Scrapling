@@ -1,3 +1,8 @@
+---
+search:
+  exclude: true
+---
+
 # Fetchers Classes
 
 Here's the reference information for all fetcher-type classes' parameters, attributes, and methods.

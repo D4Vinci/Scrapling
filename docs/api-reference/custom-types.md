@@ -1,3 +1,8 @@
+---
+search:
+  exclude: true
+---
+
 # Custom Types API Reference
 
 Here's the reference information for all custom types of classes Scrapling implemented, with all their parameters, attributes, and methods.

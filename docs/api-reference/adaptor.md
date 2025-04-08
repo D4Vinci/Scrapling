@@ -1,3 +1,8 @@
+---
+search:
+  exclude: true
+---
+
 # Adaptor Class
 
 The `Adaptor` class is the core parsing engine in Scrapling that provides HTML parsing and element selection capabilities.
