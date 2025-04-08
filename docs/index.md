@@ -48,7 +48,7 @@ Scrapling’s GitHub stars have grown steadily since its release (see chart belo
 
 <div id="chartContainer">
   <a href="https://github.com/D4Vinci/Scrapling">
-    <img id="chartImage" alt="Star History Chart" src="https://api.star-history.com/svg?repos=D4Vinci/Scrapling&type=Date" height="400"/>
+    <img id="chartImage" alt="Star History Chart" loading="lazy" src="https://api.star-history.com/svg?repos=D4Vinci/Scrapling&type=Date" height="400"/>
   </a>
 </div>
 
