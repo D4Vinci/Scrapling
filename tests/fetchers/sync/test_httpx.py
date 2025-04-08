@@ -3,13 +3,15 @@ import pytest_httpbin
 
 from scrapling import Fetcher
 
+Fetcher.auto_match = True
+
 
 @pytest_httpbin.use_class_based_httpbin
 class TestFetcher:
     @pytest.fixture(scope="class")
     def fetcher(self):
         """Fixture to create a Fetcher instance for the entire test class"""
-        return Fetcher(auto_match=False)
+        return Fetcher
 
     @pytest.fixture(autouse=True)
     def setup_urls(self, httpbin):

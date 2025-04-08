@@ -16,12 +16,13 @@ from scrapling.engines.toolbelt import (Response, StatusText,
 class CamoufoxEngine:
     def __init__(
             self, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
-            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, humanize: Union[bool, float] = True,
+            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, humanize: Union[bool, float] = True, wait: Optional[int] = 0,
             timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
             wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
             proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False,
             geoip: bool = False,
             adaptor_arguments: Dict = None,
+            additional_arguments: Dict = None
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
 
@@ -38,6 +39,7 @@ class CamoufoxEngine:
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param disable_ads: Disabled by default, this installs `uBlock Origin` addon on the browser if enabled.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning `Response` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
@@ -48,6 +50,7 @@ class CamoufoxEngine:
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
+        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings and it takes higher priority than Scrapling's settings.
         """
         self.headless = headless
         self.block_images = bool(block_images)
@@ -60,10 +63,12 @@ class CamoufoxEngine:
         self.disable_ads = bool(disable_ads)
         self.geoip = bool(geoip)
         self.extra_headers = extra_headers or {}
+        self.additional_arguments = additional_arguments or {}
         self.proxy = construct_proxy_dict(proxy)
         self.addons = addons or []
         self.humanize = humanize
         self.timeout = check_type_validity(timeout, [int, float], 30000)
+        self.wait = check_type_validity(wait, [int, float], 0)
 
         # Page action callable validation
         self.page_action = None
@@ -92,6 +97,7 @@ class CamoufoxEngine:
             "block_webrtc": self.block_webrtc,
             "block_images": self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
             "os": None if self.os_randomize else get_os_name(),
+            **self.additional_arguments
         }
 
     def _process_response_history(self, first_response):
@@ -114,6 +120,38 @@ class CamoufoxEngine:
                         cookies={},
                         headers=current_response.all_headers() if current_response else {},
                         request_headers=current_request.all_headers(),
+                        **self.adaptor_arguments
+                    ))
+                except Exception as e:
+                    log.error(f"Error processing redirect: {e}")
+                    break
+
+                current_request = current_request.redirected_from
+        except Exception as e:
+            log.error(f"Error processing response history: {e}")
+
+        return history
+
+    async def _async_process_response_history(self, first_response):
+        """Process response history to build a list of Response objects"""
+        history = []
+        current_request = first_response.request.redirected_from
+
+        try:
+            while current_request:
+                try:
+                    current_response = await current_request.response()
+                    history.insert(0, Response(
+                        url=current_request.url,
+                        # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                        text='',
+                        body=b'',
+                        status=current_response.status if current_response else 301,
+                        reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
+                        encoding=current_response.headers.get('content-type', '') or 'utf-8',
+                        cookies={},
+                        headers=await current_response.all_headers() if current_response else {},
+                        request_headers=await current_request.all_headers(),
                         **self.adaptor_arguments
                     ))
                 except Exception as e:
@@ -177,6 +215,7 @@ class CamoufoxEngine:
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
+            page.wait_for_timeout(self.wait)
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             if not final_response:
@@ -263,6 +302,7 @@ class CamoufoxEngine:
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
+            await page.wait_for_timeout(self.wait)
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             if not final_response:
@@ -273,7 +313,7 @@ class CamoufoxEngine:
             # PlayWright API sometimes give empty status text for some reason!
             status_text = final_response.status_text or StatusText.get(final_response.status)
 
-            history = self._process_response_history(first_response)
+            history = await self._async_process_response_history(first_response)
             try:
                 page_content = await page.content()
             except Exception as e:

@@ -2,7 +2,7 @@ name: Publish Python 🐍 distributions 📦 to PyPI
 
 on:
   release:
-    types: [created]
+    types: [created,published]
 
 jobs:
   build-n-publish:
