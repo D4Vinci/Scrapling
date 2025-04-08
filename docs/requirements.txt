@@ -2,3 +2,4 @@ mkdocs-material
 mkdocstrings
 mkdocstrings-python
 mkdocs-material[imaging]
+black

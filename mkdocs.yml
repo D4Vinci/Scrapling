@@ -109,7 +109,10 @@ markdown_extensions:
 
 plugins:
   - search
-  - social
+  - social:
+      cards_layout_options:
+        background_color: "#1f1f1f"
+        font_family: Roboto
   - mkdocstrings:
       handlers:
         python:
