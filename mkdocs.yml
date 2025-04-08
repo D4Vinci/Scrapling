@@ -3,7 +3,7 @@ site_description: Scrapling - a Python library to make Web Scraping easy again!
 site_author: Karim Shoair
 repo_url: https://github.com/D4Vinci/Scrapling
 repo_name: D4Vinci/Scrapling
-copyright: Copyright &copy; 2025 Karim Shoair
+copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">Change cookie settings</a>
 
 theme:
   name: material
