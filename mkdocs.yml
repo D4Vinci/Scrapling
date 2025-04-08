@@ -108,6 +108,7 @@ markdown_extensions:
 
 plugins:
   - search
+  - social
   - mkdocstrings:
       handlers:
         python:
