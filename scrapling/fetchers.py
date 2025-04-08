@@ -384,7 +384,7 @@ class PlayWrightFetcher(BaseFetcher):
     @classmethod
     def fetch(
             cls, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
-            useragent: Optional[str] = None, network_idle: bool = False, timeout: Optional[float] = 30000,
+            useragent: Optional[str] = None, network_idle: bool = False, timeout: Optional[float] = 30000, wait: Optional[int] = 0,
             page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: SelectorWaitStates = 'attached',
             hide_canvas: bool = False, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: bool = True,
             proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
@@ -402,7 +402,8 @@ class PlayWrightFetcher(BaseFetcher):
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000.
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning `Response` object.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
@@ -426,6 +427,7 @@ class PlayWrightFetcher(BaseFetcher):
             ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         engine = PlaywrightEngine(
+            wait=wait,
             proxy=proxy,
             locale=locale,
             timeout=timeout,
@@ -452,7 +454,7 @@ class PlayWrightFetcher(BaseFetcher):
     @classmethod
     async def async_fetch(
             cls, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
-            useragent: Optional[str] = None, network_idle: bool = False, timeout: Optional[float] = 30000,
+            useragent: Optional[str] = None, network_idle: bool = False, timeout: Optional[float] = 30000, wait: Optional[int] = 0,
             page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: SelectorWaitStates = 'attached',
             hide_canvas: bool = False, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: bool = True,
             proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
@@ -470,7 +472,8 @@ class PlayWrightFetcher(BaseFetcher):
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000.
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning `Response` object.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
@@ -494,6 +497,7 @@ class PlayWrightFetcher(BaseFetcher):
             ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         engine = PlaywrightEngine(
+            wait=wait,
             proxy=proxy,
             locale=locale,
             timeout=timeout,

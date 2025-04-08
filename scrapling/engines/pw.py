@@ -21,6 +21,7 @@ class PlaywrightEngine:
             useragent: Optional[str] = None,
             network_idle: bool = False,
             timeout: Optional[float] = 30000,
+            wait: Optional[int] = 0,
             page_action: Callable = None,
             wait_selector: Optional[str] = None,
             locale: Optional[str] = 'en-US',
@@ -46,6 +47,7 @@ class PlaywrightEngine:
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning `Response` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific css selector to be in a specific state.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
@@ -76,6 +78,7 @@ class PlaywrightEngine:
         self.cdp_url = cdp_url
         self.useragent = useragent
         self.timeout = check_type_validity(timeout, [int, float], 30000)
+        self.wait = check_type_validity(wait, [int, float], 0)
         if page_action is not None:
             if callable(page_action):
                 self.page_action = page_action
@@ -289,6 +292,7 @@ class PlaywrightEngine:
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
+            page.wait_for_timeout(self.wait)
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             if not final_response:
@@ -392,6 +396,7 @@ class PlaywrightEngine:
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
+            await page.wait_for_timeout(self.wait)
             # In case we didn't catch a document type somehow
             final_response = final_response if final_response else first_response
             if not final_response:
