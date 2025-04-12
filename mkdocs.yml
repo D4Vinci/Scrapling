@@ -74,7 +74,7 @@ nav:
       - Dynamically loaded websites: fetching/dynamic.md
       - Fully bypass protections while fetching: fetching/stealthy.md
   - Tutorials:
-    - Using Scrapling instead of AI: tutorials/replacing_ai.md
+    - Cost-Effective Alternative for AI Web Scraping: tutorials/replacing_ai.md
     - Migrating from BeautifulSoup: tutorials/migrating_from_beautifulsoup.md
 #    - Migrating from AutoScraper: tutorials/migrating_from_autoscraper.md
   - Development:
