@@ -9,6 +9,8 @@ copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">Change cook
 theme:
   name: material
   language: en
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
   palette:
     - media: "(prefers-color-scheme)"
       toggle:
@@ -56,8 +58,6 @@ theme:
     - content.code.copy
     - content.code.annotate
     - content.code.annotation
-#  logo: assets/logo.png
-#  favicon: assets/favicon.png
 
 nav:
   - Introduction: index.md
@@ -135,6 +135,7 @@ plugins:
             show_symbol_type_toc: true
 
 extra:
+  homepage: https://scrapling.readthedocs.io/en/latest/
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/D4Vinci/Scrapling

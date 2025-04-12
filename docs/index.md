@@ -1,4 +1,13 @@
-# Scrapling
+<style>
+.md-typeset h1 {
+  display: none;
+}
+</style>
+
+<p align="center">
+    <a href="https://scrapling.readthedocs.io/en/latest/" alt="poster">
+        <img alt="poster" src="assets/poster.png" style="width: 50%; height: 100%;"></a>
+</p>
 
 Scrapling is an Undetectable, high-performance, intelligent Web scraping library for Python 3 to make Web Scraping easy!
 
