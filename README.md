@@ -1,4 +1,10 @@
-# 🕷️ Scrapling: Undetectable, Lightning-Fast, and Easy Web Scraping with Python
+<p align=center>
+  <br>
+  <a href="https://scrapling.readthedocs.io/en/latest/" target="_blank"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png" style="width: 50%; height: 100%;"/></a>
+  <br>
+  <i>Easy, effortless Web Scraping as it should be!</i>
+  <br>
+</p>
 <p align="center">
     <a href="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml" alt="Tests">
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>
@@ -10,6 +16,7 @@
     <a href="https://pypi.org/project/scrapling/" alt="Supported Python versions">
         <img alt="Supported Python versions" src="https://img.shields.io/pypi/pyversions/scrapling.svg"></a>
 </p>
+
 <p align="center">
     <a href="https://scrapling.readthedocs.io/en/latest/#installation">
         Installation
