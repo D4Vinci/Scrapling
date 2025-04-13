@@ -13,6 +13,10 @@
     <a href="https://pepy.tech/project/scrapling" alt="PyPI Downloads">
         <img alt="PyPI Downloads" src="https://static.pepy.tech/badge/scrapling"></a>
     <br/>
+    <a href="https://discord.gg/https://discord.gg/f7N2JFY2" target="_blank" title="Join our community!">
+      <img src="https://dcbadge.limes.pink/api/server/https://discord.gg/f7N2JFY2"/>
+    </a>
+    <br/>
     <a href="https://pypi.org/project/scrapling/" alt="Supported Python versions">
         <img alt="Supported Python versions" src="https://img.shields.io/pypi/pyversions/scrapling.svg"></a>
 </p>
