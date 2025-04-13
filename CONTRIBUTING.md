@@ -2,7 +2,7 @@
 Everybody is invited and welcome to contribute to Scrapling. Smaller changes have a better chance to get included in a timely manner. Adding unit tests for new features or test cases for bugs you've fixed help us to ensure that the Pull Request (PR) is fine.
 
 There is a lot to do...
-- If you are not a developer perhaps you would like to help with the [documentation](https://github.com/D4Vinci/Scrapling/tree/main/docs)?
+- If you are not a developer perhaps you would like to help with the [documentation](https://github.com/D4Vinci/Scrapling/tree/docs)?
 - If you are a developer, most of the features I'm planning to add in the future are moved to [roadmap file](https://github.com/D4Vinci/Scrapling/blob/main/ROADMAP.md) so consider reading it.
 
 Scrapling includes a comprehensive test suite which can be executed with pytest:
