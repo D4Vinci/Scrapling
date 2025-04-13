@@ -143,8 +143,8 @@ extra:
       link: https://pypi.org/project/scrapling/
     - icon: fontawesome/brands/x-twitter
       link: https://x.com/Scrapling_dev
-    - icon: fontawesome/brands/slack
-      link: https://discord.gg/f7N2JFY2 
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/f7N2JFY2
   analytics:
     provider: google
     property: G-CS3DKLY73Z
