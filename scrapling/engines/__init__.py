@@ -4,4 +4,4 @@ from .pw import PlaywrightEngine
 from .static import StaticEngine
 from .toolbelt import check_if_engine_usable
 
-__all__ = ['CamoufoxEngine', 'PlaywrightEngine']
+__all__ = ["CamoufoxEngine", "PlaywrightEngine"]

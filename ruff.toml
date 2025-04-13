@@ -1,0 +1,22 @@
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "docs",
+    ".github",
+    "build",
+    "dist",
+    "tests",
+    "benchmarks.py",
+]
+
+# Assume Python 3.9
+target-version = "py39"
+
+[lint]
+select = ["E", "F", "W"]
+ignore = ["E501", "F401"]
+
+[format]
+# Like Black, use double quotes for strings.
+quote-style = "double"

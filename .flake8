@@ -1,3 +1,0 @@
-[flake8]
-ignore = E501, F401
-exclude = .git,.venv,__pycache__,docs,.github,build,dist,tests,benchmarks.py

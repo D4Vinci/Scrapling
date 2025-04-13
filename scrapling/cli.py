@@ -12,21 +12,41 @@ def get_package_dir():
 
 def run_command(command, line):
     print(f"Installing {line}...")
-    _ = subprocess.check_call(' '.join(command), shell=True)
+    _ = subprocess.check_call(" ".join(command), shell=True)
     # I meant to not use try except here
 
 
 @click.command(help="Install all Scrapling's Fetchers dependencies")
-@click.option('-f', '--force', 'force', is_flag=True, default=False, type=bool, help="Force Scrapling to reinstall all Fetchers dependencies")
+@click.option(
+    "-f",
+    "--force",
+    "force",
+    is_flag=True,
+    default=False,
+    type=bool,
+    help="Force Scrapling to reinstall all Fetchers dependencies",
+)
 def install(force):
-    if force or not get_package_dir().joinpath(".scrapling_dependencies_installed").exists():
-        run_command([sys.executable, "-m", "playwright", "install", 'chromium'], 'Playwright browsers')
-        run_command([sys.executable, "-m", "playwright", "install-deps", 'chromium', 'firefox'], 'Playwright dependencies')
-        run_command([sys.executable, "-m", "camoufox", "fetch", '--browserforge'], 'Camoufox browser and databases')
+    if (
+        force
+        or not get_package_dir().joinpath(".scrapling_dependencies_installed").exists()
+    ):
+        run_command(
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            "Playwright browsers",
+        )
+        run_command(
+            [sys.executable, "-m", "playwright", "install-deps", "chromium", "firefox"],
+            "Playwright dependencies",
+        )
+        run_command(
+            [sys.executable, "-m", "camoufox", "fetch", "--browserforge"],
+            "Camoufox browser and databases",
+        )
         # if no errors raised by above commands, then we add below file
         get_package_dir().joinpath(".scrapling_dependencies_installed").touch()
     else:
-        print('The dependencies are already installed')
+        print("The dependencies are already installed")
 
 
 @click.group()

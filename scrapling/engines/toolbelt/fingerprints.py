@@ -23,7 +23,7 @@ def generate_convincing_referer(url: str) -> str:
     :return: Google's search URL of the domain name
     """
     website_name = extract(url).domain
-    return f'https://www.google.com/search?q={website_name}'
+    return f"https://www.google.com/search?q={website_name}"
 
 
 @lru_cache(1, typed=True)
@@ -35,11 +35,11 @@ def get_os_name() -> Union[str, None]:
     #
     os_name = platform.system()
     return {
-        'Linux': 'linux',
-        'Darwin': 'macos',
-        'Windows': 'windows',
+        "Linux": "linux",
+        "Darwin": "macos",
+        "Windows": "windows",
         # For the future? because why not
-        'iOS': 'ios',
+        "iOS": "ios",
     }.get(os_name)
 
 
@@ -50,9 +50,9 @@ def generate_suitable_fingerprint() -> Fingerprint:
     :return: `Fingerprint` object
     """
     return FingerprintGenerator(
-        browser=[Browser(name='chrome', min_version=128)],
+        browser=[Browser(name="chrome", min_version=128)],
         os=get_os_name(),  # None is ignored
-        device='desktop'
+        device="desktop",
     ).generate()
 
 
@@ -67,15 +67,15 @@ def generate_headers(browser_mode: bool = False) -> Dict:
         # So we don't raise any inconsistency red flags while websites fingerprinting us
         os_name = get_os_name()
         return HeaderGenerator(
-            browser=[Browser(name='chrome', min_version=130)],
+            browser=[Browser(name="chrome", min_version=130)],
             os=os_name,  # None is ignored
-            device='desktop'
+            device="desktop",
         ).generate()
     else:
         # Here it's used for normal requests that aren't done through browsers so we can take it lightly
         browsers = [
-            Browser(name='chrome', min_version=120),
-            Browser(name='firefox', min_version=120),
-            Browser(name='edge', min_version=120),
+            Browser(name="chrome", min_version=120),
+            Browser(name="firefox", min_version=120),
+            Browser(name="edge", min_version=120),
         ]
-        return HeaderGenerator(browser=browsers, device='desktop').generate()
+        return HeaderGenerator(browser=browsers, device="desktop").generate()

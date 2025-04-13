@@ -20,7 +20,7 @@ class StorageSystemMixin(ABC):
         self.url = url
 
     @lru_cache(64, typed=True)
-    def _get_base_url(self, default_value: str = 'default') -> str:
+    def _get_base_url(self, default_value: str = "default") -> str:
         if not self.url or type(self.url) is not str:
             return default_value
 
@@ -38,7 +38,7 @@ class StorageSystemMixin(ABC):
         :param identifier: This is the identifier that will be used to retrieve the element later from the storage. See
             the docs for more info.
         """
-        raise NotImplementedError('Storage system must implement `save` method')
+        raise NotImplementedError("Storage system must implement `save` method")
 
     @abstractmethod
     def retrieve(self, identifier: str) -> Optional[Dict]:
@@ -48,7 +48,7 @@ class StorageSystemMixin(ABC):
             the docs for more info.
         :return: A dictionary of the unique properties
         """
-        raise NotImplementedError('Storage system must implement `save` method')
+        raise NotImplementedError("Storage system must implement `save` method")
 
     @staticmethod
     @lru_cache(128, typed=True)
@@ -57,7 +57,7 @@ class StorageSystemMixin(ABC):
         identifier = identifier.lower().strip()
         if isinstance(identifier, str):
             # Hash functions have to take bytes
-            identifier = identifier.encode('utf-8')
+            identifier = identifier.encode("utf-8")
 
         hash_value = sha256(identifier).hexdigest()
         return f"{hash_value}_{len(identifier)}"  # Length to reduce collision chance
@@ -68,6 +68,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
     """The recommended system to use, it's race condition safe and thread safe.
     Mainly built so the library can run in threaded frameworks like scrapy or threaded tools
     > It's optimized for threaded applications but running it without threads shouldn't make it slow."""
+
     def __init__(self, storage_file: str, url: Union[str, None] = None):
         """
         :param storage_file: File to be used to store elements
@@ -111,10 +112,13 @@ class SQLiteStorageSystem(StorageSystemMixin):
         url = self._get_base_url()
         element_data = _StorageTools.element_to_dict(element)
         with self.lock:
-            self.cursor.execute("""
+            self.cursor.execute(
+                """
                 INSERT OR REPLACE INTO storage (url, identifier, element_data)
                 VALUES (?, ?, ?)
-            """, (url, identifier, orjson.dumps(element_data)))
+            """,
+                (url, identifier, orjson.dumps(element_data)),
+            )
             self.cursor.fetchall()
             self.connection.commit()
 
@@ -129,7 +133,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         with self.lock:
             self.cursor.execute(
                 "SELECT element_data FROM storage WHERE url = ? AND identifier = ?",
-                (url, identifier)
+                (url, identifier),
             )
             result = self.cursor.fetchone()
             if result:

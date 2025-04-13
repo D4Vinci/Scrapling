@@ -10,8 +10,14 @@ from .toolbelt import Response, generate_convincing_referer, generate_headers
 @lru_cache(2, typed=True)  # Singleton easily
 class StaticEngine:
     def __init__(
-            self, url: str, proxy: Optional[str] = None, stealthy_headers: bool = True, follow_redirects: bool = True,
-            timeout: Optional[Union[int, float]] = None, retries: Optional[int] = 3, adaptor_arguments: Tuple = None
+        self,
+        url: str,
+        proxy: Optional[str] = None,
+        stealthy_headers: bool = True,
+        follow_redirects: bool = True,
+        timeout: Optional[Union[int, float]] = None,
+        retries: Optional[int] = 3,
+        adaptor_arguments: Tuple = None,
     ):
         """An engine that utilizes httpx library, check the `Fetcher` class for more documentation.
 
@@ -47,14 +53,22 @@ class StaticEngine:
         if self.stealth:
             extra_headers = generate_headers(browser_mode=False)
             # Don't overwrite user supplied headers
-            extra_headers = {key: value for key, value in extra_headers.items() if key.lower() not in headers_keys}
+            extra_headers = {
+                key: value
+                for key, value in extra_headers.items()
+                if key.lower() not in headers_keys
+            }
             headers.update(extra_headers)
-            if 'referer' not in headers_keys:
-                headers.update({'referer': generate_convincing_referer(self.url)})
+            if "referer" not in headers_keys:
+                headers.update({"referer": generate_convincing_referer(self.url)})
 
-        elif 'user-agent' not in headers_keys:
-            headers['User-Agent'] = generate_headers(browser_mode=False).get('User-Agent')
-            log.debug(f"Can't find useragent in headers so '{headers['User-Agent']}' was used.")
+        elif "user-agent" not in headers_keys:
+            headers["User-Agent"] = generate_headers(browser_mode=False).get(
+                "User-Agent"
+            )
+            log.debug(
+                f"Can't find useragent in headers so '{headers['User-Agent']}' was used."
+            )
 
         return headers
 
@@ -70,25 +84,43 @@ class StaticEngine:
             body=response.content,
             status=response.status_code,
             reason=response.reason_phrase,
-            encoding=response.encoding or 'utf-8',
+            encoding=response.encoding or "utf-8",
             cookies=dict(response.cookies),
             headers=dict(response.headers),
             request_headers=dict(response.request.headers),
             method=response.request.method,
-            history=[self._prepare_response(redirection) for redirection in response.history],
-            **self.adaptor_arguments
+            history=[
+                self._prepare_response(redirection) for redirection in response.history
+            ],
+            **self.adaptor_arguments,
         )
 
     def _make_request(self, method: str, **kwargs) -> Response:
-        headers = self._headers_job(kwargs.pop('headers', {}))
-        with httpx.Client(proxy=self.proxy, transport=httpx.HTTPTransport(retries=self.retries)) as client:
-            request = getattr(client, method)(url=self.url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        headers = self._headers_job(kwargs.pop("headers", {}))
+        with httpx.Client(
+            proxy=self.proxy, transport=httpx.HTTPTransport(retries=self.retries)
+        ) as client:
+            request = getattr(client, method)(
+                url=self.url,
+                headers=headers,
+                follow_redirects=self.follow_redirects,
+                timeout=self.timeout,
+                **kwargs,
+            )
         return self._prepare_response(request)
 
     async def _async_make_request(self, method: str, **kwargs) -> Response:
-        headers = self._headers_job(kwargs.pop('headers', {}))
-        async with httpx.AsyncClient(proxy=self.proxy, transport=httpx.AsyncHTTPTransport(retries=self.retries)) as client:
-            request = await getattr(client, method)(url=self.url, headers=headers, follow_redirects=self.follow_redirects, timeout=self.timeout, **kwargs)
+        headers = self._headers_job(kwargs.pop("headers", {}))
+        async with httpx.AsyncClient(
+            proxy=self.proxy, transport=httpx.AsyncHTTPTransport(retries=self.retries)
+        ) as client:
+            request = await getattr(client, method)(
+                url=self.url,
+                headers=headers,
+                follow_redirects=self.follow_redirects,
+                timeout=self.timeout,
+                **kwargs,
+            )
         return self._prepare_response(request)
 
     def get(self, **kwargs: Dict) -> Response:
@@ -97,7 +129,7 @@ class StaticEngine:
         :param kwargs: Any keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        return self._make_request('get', **kwargs)
+        return self._make_request("get", **kwargs)
 
     async def async_get(self, **kwargs: Dict) -> Response:
         """Make basic async HTTP GET request for you but with some added flavors.
@@ -105,7 +137,7 @@ class StaticEngine:
         :param kwargs: Any keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        return await self._async_make_request('get', **kwargs)
+        return await self._async_make_request("get", **kwargs)
 
     def post(self, **kwargs: Dict) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
@@ -113,7 +145,7 @@ class StaticEngine:
         :param kwargs: Any keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        return self._make_request('post', **kwargs)
+        return self._make_request("post", **kwargs)
 
     async def async_post(self, **kwargs: Dict) -> Response:
         """Make basic async HTTP POST request for you but with some added flavors.
@@ -121,7 +153,7 @@ class StaticEngine:
         :param kwargs: Any keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        return await self._async_make_request('post', **kwargs)
+        return await self._async_make_request("post", **kwargs)
 
     def delete(self, **kwargs: Dict) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
@@ -129,7 +161,7 @@ class StaticEngine:
         :param kwargs: Any keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        return self._make_request('delete', **kwargs)
+        return self._make_request("delete", **kwargs)
 
     async def async_delete(self, **kwargs: Dict) -> Response:
         """Make basic async HTTP DELETE request for you but with some added flavors.
@@ -137,7 +169,7 @@ class StaticEngine:
         :param kwargs: Any keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        return await self._async_make_request('delete', **kwargs)
+        return await self._async_make_request("delete", **kwargs)
 
     def put(self, **kwargs: Dict) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
@@ -145,7 +177,7 @@ class StaticEngine:
         :param kwargs: Any keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        return self._make_request('put', **kwargs)
+        return self._make_request("put", **kwargs)
 
     async def async_put(self, **kwargs: Dict) -> Response:
         """Make basic async HTTP PUT request for you but with some added flavors.
@@ -153,4 +185,4 @@ class StaticEngine:
         :param kwargs: Any keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
-        return await self._async_make_request('put', **kwargs)
+        return await self._async_make_request("put", **kwargs)

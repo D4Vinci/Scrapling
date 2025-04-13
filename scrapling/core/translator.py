@@ -24,7 +24,6 @@ replace_html5_whitespaces = re.compile(regex).sub
 
 
 class XPathExpr(OriginalXPathExpr):
-
     textnode: bool = False
     attribute: Optional[str] = None
 
@@ -123,7 +122,7 @@ class TranslatorMixin:
 
     @staticmethod
     def xpath_attr_functional_pseudo_element(
-            xpath: OriginalXPathExpr, function: FunctionalPseudoElement
+        xpath: OriginalXPathExpr, function: FunctionalPseudoElement
     ) -> XPathExpr:
         """Support selecting attribute values using ::attr() pseudo-element"""
         if function.argument_types() not in (["STRING"], ["IDENT"]):

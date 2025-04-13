@@ -1,7 +1,18 @@
-from scrapling.core._types import (Callable, Dict, List, Literal, Optional,
-                                   SelectorWaitStates, Union)
-from scrapling.engines import (CamoufoxEngine, PlaywrightEngine, StaticEngine,
-                               check_if_engine_usable)
+from scrapling.core._types import (
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    SelectorWaitStates,
+    Union,
+)
+from scrapling.engines import (
+    CamoufoxEngine,
+    PlaywrightEngine,
+    StaticEngine,
+    check_if_engine_usable,
+)
 from scrapling.engines.toolbelt import BaseFetcher, Response
 
 
@@ -10,10 +21,19 @@ class Fetcher(BaseFetcher):
 
     Any additional keyword arguments passed to the methods below are passed to the respective httpx's method directly.
     """
+
     @classmethod
     def get(
-            cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
+        cls,
+        url: str,
+        follow_redirects: bool = True,
+        timeout: Optional[Union[int, float]] = 10,
+        stealthy_headers: bool = True,
+        proxy: Optional[str] = None,
+        retries: Optional[int] = 3,
+        custom_config: Dict = None,
+        **kwargs: Dict,
+    ) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
 
         :param url: Target url.
@@ -30,16 +50,36 @@ class Fetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
-        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
-        response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).get(**kwargs)
+        adaptor_arguments = tuple(
+            {**cls._generate_parser_arguments(), **custom_config}.items()
+        )
+        response_object = StaticEngine(
+            url,
+            proxy,
+            stealthy_headers,
+            follow_redirects,
+            timeout,
+            retries,
+            adaptor_arguments=adaptor_arguments,
+        ).get(**kwargs)
         return response_object
 
     @classmethod
     def post(
-            cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
+        cls,
+        url: str,
+        follow_redirects: bool = True,
+        timeout: Optional[Union[int, float]] = 10,
+        stealthy_headers: bool = True,
+        proxy: Optional[str] = None,
+        retries: Optional[int] = 3,
+        custom_config: Dict = None,
+        **kwargs: Dict,
+    ) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
 
         :param url: Target url.
@@ -56,16 +96,36 @@ class Fetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
-        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
-        response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).post(**kwargs)
+        adaptor_arguments = tuple(
+            {**cls._generate_parser_arguments(), **custom_config}.items()
+        )
+        response_object = StaticEngine(
+            url,
+            proxy,
+            stealthy_headers,
+            follow_redirects,
+            timeout,
+            retries,
+            adaptor_arguments=adaptor_arguments,
+        ).post(**kwargs)
         return response_object
 
     @classmethod
     def put(
-            cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
+        cls,
+        url: str,
+        follow_redirects: bool = True,
+        timeout: Optional[Union[int, float]] = 10,
+        stealthy_headers: bool = True,
+        proxy: Optional[str] = None,
+        retries: Optional[int] = 3,
+        custom_config: Dict = None,
+        **kwargs: Dict,
+    ) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
 
         :param url: Target url
@@ -83,16 +143,36 @@ class Fetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
-        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
-        response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).put(**kwargs)
+        adaptor_arguments = tuple(
+            {**cls._generate_parser_arguments(), **custom_config}.items()
+        )
+        response_object = StaticEngine(
+            url,
+            proxy,
+            stealthy_headers,
+            follow_redirects,
+            timeout,
+            retries,
+            adaptor_arguments=adaptor_arguments,
+        ).put(**kwargs)
         return response_object
 
     @classmethod
     def delete(
-            cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
+        cls,
+        url: str,
+        follow_redirects: bool = True,
+        timeout: Optional[Union[int, float]] = 10,
+        stealthy_headers: bool = True,
+        proxy: Optional[str] = None,
+        retries: Optional[int] = 3,
+        custom_config: Dict = None,
+        **kwargs: Dict,
+    ) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
 
         :param url: Target url
@@ -109,18 +189,38 @@ class Fetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
-        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
-        response_object = StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries, adaptor_arguments=adaptor_arguments).delete(**kwargs)
+        adaptor_arguments = tuple(
+            {**cls._generate_parser_arguments(), **custom_config}.items()
+        )
+        response_object = StaticEngine(
+            url,
+            proxy,
+            stealthy_headers,
+            follow_redirects,
+            timeout,
+            retries,
+            adaptor_arguments=adaptor_arguments,
+        ).delete(**kwargs)
         return response_object
 
 
 class AsyncFetcher(Fetcher):
     @classmethod
     async def get(
-            cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
+        cls,
+        url: str,
+        follow_redirects: bool = True,
+        timeout: Optional[Union[int, float]] = 10,
+        stealthy_headers: bool = True,
+        proxy: Optional[str] = None,
+        retries: Optional[int] = 3,
+        custom_config: Dict = None,
+        **kwargs: Dict,
+    ) -> Response:
         """Make basic HTTP GET request for you but with some added flavors.
 
         :param url: Target url.
@@ -137,16 +237,36 @@ class AsyncFetcher(Fetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
-        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
-        response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_get(**kwargs)
+        adaptor_arguments = tuple(
+            {**cls._generate_parser_arguments(), **custom_config}.items()
+        )
+        response_object = await StaticEngine(
+            url,
+            proxy,
+            stealthy_headers,
+            follow_redirects,
+            timeout,
+            retries=retries,
+            adaptor_arguments=adaptor_arguments,
+        ).async_get(**kwargs)
         return response_object
 
     @classmethod
     async def post(
-            cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
+        cls,
+        url: str,
+        follow_redirects: bool = True,
+        timeout: Optional[Union[int, float]] = 10,
+        stealthy_headers: bool = True,
+        proxy: Optional[str] = None,
+        retries: Optional[int] = 3,
+        custom_config: Dict = None,
+        **kwargs: Dict,
+    ) -> Response:
         """Make basic HTTP POST request for you but with some added flavors.
 
         :param url: Target url.
@@ -163,16 +283,36 @@ class AsyncFetcher(Fetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
-        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
-        response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_post(**kwargs)
+        adaptor_arguments = tuple(
+            {**cls._generate_parser_arguments(), **custom_config}.items()
+        )
+        response_object = await StaticEngine(
+            url,
+            proxy,
+            stealthy_headers,
+            follow_redirects,
+            timeout,
+            retries=retries,
+            adaptor_arguments=adaptor_arguments,
+        ).async_post(**kwargs)
         return response_object
 
     @classmethod
     async def put(
-            cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
+        cls,
+        url: str,
+        follow_redirects: bool = True,
+        timeout: Optional[Union[int, float]] = 10,
+        stealthy_headers: bool = True,
+        proxy: Optional[str] = None,
+        retries: Optional[int] = 3,
+        custom_config: Dict = None,
+        **kwargs: Dict,
+    ) -> Response:
         """Make basic HTTP PUT request for you but with some added flavors.
 
         :param url: Target url
@@ -189,16 +329,36 @@ class AsyncFetcher(Fetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
-        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
-        response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_put(**kwargs)
+        adaptor_arguments = tuple(
+            {**cls._generate_parser_arguments(), **custom_config}.items()
+        )
+        response_object = await StaticEngine(
+            url,
+            proxy,
+            stealthy_headers,
+            follow_redirects,
+            timeout,
+            retries=retries,
+            adaptor_arguments=adaptor_arguments,
+        ).async_put(**kwargs)
         return response_object
 
     @classmethod
     async def delete(
-            cls, url: str, follow_redirects: bool = True, timeout: Optional[Union[int, float]] = 10, stealthy_headers: bool = True,
-            proxy: Optional[str] = None, retries: Optional[int] = 3, custom_config: Dict = None, **kwargs: Dict) -> Response:
+        cls,
+        url: str,
+        follow_redirects: bool = True,
+        timeout: Optional[Union[int, float]] = 10,
+        stealthy_headers: bool = True,
+        proxy: Optional[str] = None,
+        retries: Optional[int] = 3,
+        custom_config: Dict = None,
+        **kwargs: Dict,
+    ) -> Response:
         """Make basic HTTP DELETE request for you but with some added flavors.
 
         :param url: Target url
@@ -215,27 +375,57 @@ class AsyncFetcher(Fetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
-        adaptor_arguments = tuple({**cls._generate_parser_arguments(), **custom_config}.items())
-        response_object = await StaticEngine(url, proxy, stealthy_headers, follow_redirects, timeout, retries=retries, adaptor_arguments=adaptor_arguments).async_delete(**kwargs)
+        adaptor_arguments = tuple(
+            {**cls._generate_parser_arguments(), **custom_config}.items()
+        )
+        response_object = await StaticEngine(
+            url,
+            proxy,
+            stealthy_headers,
+            follow_redirects,
+            timeout,
+            retries=retries,
+            adaptor_arguments=adaptor_arguments,
+        ).async_delete(**kwargs)
         return response_object
 
 
 class StealthyFetcher(BaseFetcher):
     """A `Fetcher` class type that is completely stealthy fetcher that uses a modified version of Firefox.
 
-     It works as real browsers passing almost all online tests/protections based on Camoufox.
-     Other added flavors include setting the faked OS fingerprints to match the user's OS and the referer of every request is set as if this request came from Google's search of this URL's domain.
+    It works as real browsers passing almost all online tests/protections based on Camoufox.
+    Other added flavors include setting the faked OS fingerprints to match the user's OS and the referer of every request is set as if this request came from Google's search of this URL's domain.
     """
+
     @classmethod
     def fetch(
-            cls, url: str, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
-            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, addons: Optional[List[str]] = None, wait: Optional[int] = 0,
-            timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
-            wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
-            custom_config: Dict = None, additional_arguments: Dict = None
+        cls,
+        url: str,
+        headless: Union[bool, Literal["virtual"]] = True,  # noqa: F821
+        block_images: bool = False,
+        disable_resources: bool = False,
+        block_webrtc: bool = False,
+        allow_webgl: bool = True,
+        network_idle: bool = False,
+        addons: Optional[List[str]] = None,
+        wait: Optional[int] = 0,
+        timeout: Optional[float] = 30000,
+        page_action: Callable = None,
+        wait_selector: Optional[str] = None,
+        humanize: Optional[Union[bool, float]] = True,
+        wait_selector_state: SelectorWaitStates = "attached",
+        google_search: bool = True,
+        extra_headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[Union[str, Dict[str, str]]] = None,
+        os_randomize: bool = False,
+        disable_ads: bool = False,
+        geoip: bool = False,
+        custom_config: Dict = None,
+        additional_arguments: Dict = None,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -271,7 +461,9 @@ class StealthyFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
         engine = CamoufoxEngine(
             wait=wait,
@@ -294,18 +486,35 @@ class StealthyFetcher(BaseFetcher):
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
-            additional_arguments=additional_arguments or {}
+            additional_arguments=additional_arguments or {},
         )
         return engine.fetch(url)
 
     @classmethod
     async def async_fetch(
-            cls, url: str, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
-            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, addons: Optional[List[str]] = None, wait: Optional[int] = 0,
-            timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, humanize: Optional[Union[bool, float]] = True,
-            wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False, geoip: bool = False,
-            custom_config: Dict = None, additional_arguments: Dict = None
+        cls,
+        url: str,
+        headless: Union[bool, Literal["virtual"]] = True,  # noqa: F821
+        block_images: bool = False,
+        disable_resources: bool = False,
+        block_webrtc: bool = False,
+        allow_webgl: bool = True,
+        network_idle: bool = False,
+        addons: Optional[List[str]] = None,
+        wait: Optional[int] = 0,
+        timeout: Optional[float] = 30000,
+        page_action: Callable = None,
+        wait_selector: Optional[str] = None,
+        humanize: Optional[Union[bool, float]] = True,
+        wait_selector_state: SelectorWaitStates = "attached",
+        google_search: bool = True,
+        extra_headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[Union[str, Dict[str, str]]] = None,
+        os_randomize: bool = False,
+        disable_ads: bool = False,
+        geoip: bool = False,
+        custom_config: Dict = None,
+        additional_arguments: Dict = None,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -341,7 +550,9 @@ class StealthyFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
         engine = CamoufoxEngine(
             wait=wait,
@@ -364,7 +575,7 @@ class StealthyFetcher(BaseFetcher):
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
-            additional_arguments=additional_arguments or {}
+            additional_arguments=additional_arguments or {},
         )
         return await engine.async_fetch(url)
 
@@ -385,17 +596,32 @@ class PlayWrightFetcher(BaseFetcher):
 
     > Note that these are the main options with PlayWright but it can be mixed together.
     """
+
     @classmethod
     def fetch(
-            cls, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
-            useragent: Optional[str] = None, network_idle: bool = False, timeout: Optional[float] = 30000, wait: Optional[int] = 0,
-            page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: SelectorWaitStates = 'attached',
-            hide_canvas: bool = False, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: bool = True,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
-            stealth: bool = False, real_chrome: bool = False,
-            cdp_url: Optional[str] = None,
-            nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
-            custom_config: Dict = None
+        cls,
+        url: str,
+        headless: Union[bool, str] = True,
+        disable_resources: bool = None,
+        useragent: Optional[str] = None,
+        network_idle: bool = False,
+        timeout: Optional[float] = 30000,
+        wait: Optional[int] = 0,
+        page_action: Optional[Callable] = None,
+        wait_selector: Optional[str] = None,
+        wait_selector_state: SelectorWaitStates = "attached",
+        hide_canvas: bool = False,
+        disable_webgl: bool = False,
+        extra_headers: Optional[Dict[str, str]] = None,
+        google_search: bool = True,
+        proxy: Optional[Union[str, Dict[str, str]]] = None,
+        locale: Optional[str] = "en-US",
+        stealth: bool = False,
+        real_chrome: bool = False,
+        cdp_url: Optional[str] = None,
+        nstbrowser_mode: bool = False,
+        nstbrowser_config: Optional[Dict] = None,
+        custom_config: Dict = None,
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
 
@@ -428,7 +654,9 @@ class PlayWrightFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
         engine = PlaywrightEngine(
             wait=wait,
@@ -457,15 +685,29 @@ class PlayWrightFetcher(BaseFetcher):
 
     @classmethod
     async def async_fetch(
-            cls, url: str, headless: Union[bool, str] = True, disable_resources: bool = None,
-            useragent: Optional[str] = None, network_idle: bool = False, timeout: Optional[float] = 30000, wait: Optional[int] = 0,
-            page_action: Optional[Callable] = None, wait_selector: Optional[str] = None, wait_selector_state: SelectorWaitStates = 'attached',
-            hide_canvas: bool = False, disable_webgl: bool = False, extra_headers: Optional[Dict[str, str]] = None, google_search: bool = True,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, locale: Optional[str] = 'en-US',
-            stealth: bool = False, real_chrome: bool = False,
-            cdp_url: Optional[str] = None,
-            nstbrowser_mode: bool = False, nstbrowser_config: Optional[Dict] = None,
-            custom_config: Dict = None
+        cls,
+        url: str,
+        headless: Union[bool, str] = True,
+        disable_resources: bool = None,
+        useragent: Optional[str] = None,
+        network_idle: bool = False,
+        timeout: Optional[float] = 30000,
+        wait: Optional[int] = 0,
+        page_action: Optional[Callable] = None,
+        wait_selector: Optional[str] = None,
+        wait_selector_state: SelectorWaitStates = "attached",
+        hide_canvas: bool = False,
+        disable_webgl: bool = False,
+        extra_headers: Optional[Dict[str, str]] = None,
+        google_search: bool = True,
+        proxy: Optional[Union[str, Dict[str, str]]] = None,
+        locale: Optional[str] = "en-US",
+        stealth: bool = False,
+        real_chrome: bool = False,
+        cdp_url: Optional[str] = None,
+        nstbrowser_mode: bool = False,
+        nstbrowser_config: Optional[Dict] = None,
+        custom_config: Dict = None,
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
 
@@ -498,7 +740,9 @@ class PlayWrightFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
+            ValueError(
+                f"The custom parser config must be of type dictionary, got {cls.__class__}"
+            )
 
         engine = PlaywrightEngine(
             wait=wait,
@@ -529,5 +773,7 @@ class PlayWrightFetcher(BaseFetcher):
 class CustomFetcher(BaseFetcher):
     @classmethod
     def fetch(cls, url: str, browser_engine, **kwargs) -> Response:
-        engine = check_if_engine_usable(browser_engine)(adaptor_arguments=cls._generate_parser_arguments(), **kwargs)
+        engine = check_if_engine_usable(browser_engine)(
+            adaptor_arguments=cls._generate_parser_arguments(), **kwargs
+        )
         return engine.fetch(url)

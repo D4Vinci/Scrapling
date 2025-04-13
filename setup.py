@@ -1,7 +1,8 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+long_description = Path("README.md").read_text(encoding="utf-8")
 
 
 setup(
@@ -20,9 +21,7 @@ setup(
         "scrapling": "scrapling",
     },
     entry_points={
-        'console_scripts': [
-            'scrapling=scrapling.cli:main'
-        ],
+        "console_scripts": ["scrapling=scrapling.cli:main"],
     },
     include_package_data=True,
     classifiers=[
@@ -53,14 +52,14 @@ setup(
     install_requires=[
         "lxml>=5.0",
         "cssselect>=1.2",
-        'click',
+        "click",
         "w3lib",
         "orjson>=3",
         "tldextract",
-        'httpx[brotli,zstd, socks]',
-        'playwright>=1.49.1',
-        'rebrowser-playwright>=1.49.1',
-        'camoufox[geoip]>=0.4.11'
+        "httpx[brotli,zstd, socks]",
+        "playwright>=1.49.1",
+        "rebrowser-playwright>=1.49.1",
+        "camoufox[geoip]>=0.4.11",
     ],
     python_requires=">=3.9",
     url="https://github.com/D4Vinci/Scrapling",
@@ -68,5 +67,5 @@ setup(
         "Documentation": "https://scrapling.readthedocs.io/en/latest/",
         "Source": "https://github.com/D4Vinci/Scrapling",
         "Tracker": "https://github.com/D4Vinci/Scrapling/issues",
-    }
+    },
 )

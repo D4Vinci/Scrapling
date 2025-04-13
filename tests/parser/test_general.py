@@ -9,7 +9,7 @@ from scrapling import Adaptor
 
 @pytest.fixture
 def html_content():
-    return '''
+    return """
     <html>
     <head>
         <title>Complex Web Page</title>
@@ -73,7 +73,7 @@ def html_content():
         </script>
     </body>
     </html>
-    '''
+    """
 
 
 @pytest.fixture
@@ -85,13 +85,14 @@ def page(html_content):
 class TestCSSSelectors:
     def test_basic_product_selection(self, page):
         """Test selecting all product elements"""
-        elements = page.css('main #products .product-list article.product')
+        elements = page.css("main #products .product-list article.product")
         assert len(elements) == 3
 
     def test_in_stock_product_selection(self, page):
         """Test selecting in-stock products"""
         in_stock_products = page.css(
-            'main #products .product-list article.product:not(:contains("Out of stock"))')
+            'main #products .product-list article.product:not(:contains("Out of stock"))'
+        )
         assert len(in_stock_products) == 2
 
 
@@ -117,22 +118,26 @@ class TestXPathSelectors:
 class TestTextMatching:
     def test_regex_multiple_matches(self, page):
         """Test finding multiple matches with regex"""
-        stock_info = page.find_by_regex(r'In stock: \d+', first_match=False)
+        stock_info = page.find_by_regex(r"In stock: \d+", first_match=False)
         assert len(stock_info) == 2
 
     def test_regex_first_match(self, page):
         """Test finding the first match with regex"""
-        stock_info = page.find_by_regex(r'In stock: \d+', first_match=True, case_sensitive=True)
-        assert stock_info.text == 'In stock: 5'
+        stock_info = page.find_by_regex(
+            r"In stock: \d+", first_match=True, case_sensitive=True
+        )
+        assert stock_info.text == "In stock: 5"
 
     def test_partial_text_match(self, page):
         """Test finding elements with partial text match"""
-        stock_info = page.find_by_text(r'In stock:', partial=True, first_match=False)
+        stock_info = page.find_by_text(r"In stock:", partial=True, first_match=False)
         assert len(stock_info) == 2
 
     def test_exact_text_match(self, page):
         """Test finding elements with exact text match"""
-        out_of_stock = page.find_by_text('Out of stock', partial=False, first_match=False)
+        out_of_stock = page.find_by_text(
+            "Out of stock", partial=False, first_match=False
+        )
         assert len(out_of_stock) == 1
 
 
@@ -140,17 +145,17 @@ class TestTextMatching:
 class TestSimilarElements:
     def test_finding_similar_products(self, page):
         """Test finding similar product elements"""
-        first_product = page.css_first('.product')
+        first_product = page.css_first(".product")
         similar_products = first_product.find_similar()
         assert len(similar_products) == 2
 
     def test_finding_similar_reviews(self, page):
         """Test finding similar review elements with additional filtering"""
-        first_review = page.find('div', class_='review')
+        first_review = page.find("div", class_="review")
         similar_high_rated_reviews = [
             review
             for review in first_review.find_similar()
-            if int(review.attrib.get('data-rating', 0)) >= 4
+            if int(review.attrib.get("data-rating", 0)) >= 4
         ]
         assert len(similar_high_rated_reviews) == 1
 
@@ -181,17 +186,17 @@ class TestErrorHandling:
     def test_bad_selectors(self, page):
         """Test handling of invalid selectors"""
         with pytest.raises((SelectorError, SelectorSyntaxError)):
-            page.css('4 ayo')
+            page.css("4 ayo")
 
         with pytest.raises((SelectorError, SelectorSyntaxError)):
-            page.xpath('4 ayo')
+            page.xpath("4 ayo")
 
 
 # Pickling and Object Representation Tests
 class TestPicklingAndRepresentation:
     def test_unpickleable_objects(self, page):
         """Test that Adaptor objects cannot be pickled"""
-        table = page.css('.product-list')[0]
+        table = page.css(".product-list")[0]
         with pytest.raises(TypeError):
             pickle.dumps(table)
 
@@ -200,7 +205,7 @@ class TestPicklingAndRepresentation:
 
     def test_string_representations(self, page):
         """Test custom string representations of objects"""
-        table = page.css('.product-list')[0]
+        table = page.css(".product-list")[0]
         assert issubclass(type(table.__str__()), str)
         assert issubclass(type(table.__repr__()), str)
         assert issubclass(type(table.attrib.__str__()), str)
@@ -211,40 +216,40 @@ class TestPicklingAndRepresentation:
 class TestElementNavigation:
     def test_basic_navigation_properties(self, page):
         """Test basic navigation properties of elements"""
-        table = page.css('.product-list')[0]
+        table = page.css(".product-list")[0]
         assert table.path is not None
-        assert table.html_content != ''
-        assert table.prettify() != ''
+        assert table.html_content != ""
+        assert table.prettify() != ""
 
     def test_parent_and_sibling_navigation(self, page):
         """Test parent and sibling navigation"""
-        table = page.css('.product-list')[0]
+        table = page.css(".product-list")[0]
         parent = table.parent
-        assert parent.attrib['id'] == 'products'
+        assert parent.attrib["id"] == "products"
 
         parent_siblings = parent.siblings
         assert len(parent_siblings) == 1
 
     def test_child_navigation(self, page):
         """Test child navigation"""
-        table = page.css('.product-list')[0]
+        table = page.css(".product-list")[0]
         children = table.children
         assert len(children) == 3
 
     def test_next_and_previous_navigation(self, page):
         """Test next and previous element navigation"""
-        child = page.css('.product-list')[0].find({'data-id': "1"})
+        child = page.css(".product-list")[0].find({"data-id": "1"})
         next_element = child.next
-        assert next_element.attrib['data-id'] == '2'
+        assert next_element.attrib["data-id"] == "2"
 
         prev_element = next_element.previous
         assert prev_element.tag == child.tag
 
     def test_ancestor_finding(self, page):
         """Test finding ancestors of elements"""
-        all_prices = page.css('.price')
+        all_prices = page.css(".price")
         products_with_prices = [
-            price.find_ancestor(lambda p: p.has_class('product'))
+            price.find_ancestor(lambda p: p.has_class("product"))
             for price in all_prices
         ]
         assert len(products_with_prices) == 3
@@ -254,52 +259,59 @@ class TestElementNavigation:
 class TestJSONAndAttributes:
     def test_json_conversion(self, page):
         """Test converting content to JSON"""
-        script_content = page.css('#page-data::text')[0]
+        script_content = page.css("#page-data::text")[0]
         assert issubclass(type(script_content.sort()), str)
         page_data = script_content.json()
-        assert page_data['totalProducts'] == 3
-        assert 'lastUpdated' in page_data
+        assert page_data["totalProducts"] == 3
+        assert "lastUpdated" in page_data
 
     def test_attribute_operations(self, page):
         """Test various attribute-related operations"""
         # Product ID extraction
-        products = page.css('.product')
-        product_ids = [product.attrib['data-id'] for product in products]
-        assert product_ids == ['1', '2', '3']
-        assert 'data-id' in products[0].attrib
+        products = page.css(".product")
+        product_ids = [product.attrib["data-id"] for product in products]
+        assert product_ids == ["1", "2", "3"]
+        assert "data-id" in products[0].attrib
 
         # Review rating calculations
-        reviews = page.css('.review')
-        review_ratings = [int(review.attrib['data-rating']) for review in reviews]
+        reviews = page.css(".review")
+        review_ratings = [int(review.attrib["data-rating"]) for review in reviews]
         assert sum(review_ratings) / len(review_ratings) == 4.5
 
         # Attribute searching
-        key_value = list(products[0].attrib.search_values('1', partial=False))
-        assert list(key_value[0].keys()) == ['data-id']
+        key_value = list(products[0].attrib.search_values("1", partial=False))
+        assert list(key_value[0].keys()) == ["data-id"]
 
-        key_value = list(products[0].attrib.search_values('1', partial=True))
-        assert list(key_value[0].keys()) == ['data-id']
+        key_value = list(products[0].attrib.search_values("1", partial=True))
+        assert list(key_value[0].keys()) == ["data-id"]
 
         # JSON attribute conversion
-        attr_json = page.css_first('#products').attrib['schema'].json()
-        assert attr_json == {'jsonable': 'data'}
-        assert isinstance(page.css('#products')[0].attrib.json_string, bytes)
+        attr_json = page.css_first("#products").attrib["schema"].json()
+        assert attr_json == {"jsonable": "data"}
+        assert isinstance(page.css("#products")[0].attrib.json_string, bytes)
 
 
 # Performance Test
 def test_large_html_parsing_performance():
     """Test parsing and selecting performance on large HTML"""
-    large_html = '<html><body>' + '<div class="item">' * 5000 + '</div>' * 5000 + '</body></html>'
+    large_html = (
+        "<html><body>"
+        + '<div class="item">' * 5000
+        + "</div>" * 5000
+        + "</body></html>"
+    )
 
     start_time = time.time()
     parsed = Adaptor(large_html, auto_match=False)
-    elements = parsed.css('.item')
+    elements = parsed.css(".item")
     end_time = time.time()
 
     assert len(elements) == 5000
     # Converting 5000 elements to a class and doing operations on them will take time
     # Based on my tests with 100 runs, 1 loop each Scrapling (given the extra work/features) takes 10.4ms on average
-    assert end_time - start_time < 0.5  # Locally I test on 0.1 but on GitHub actions with browsers and threading sometimes closing adds fractions of seconds
+    assert (
+        end_time - start_time < 0.5
+    )  # Locally I test on 0.1 but on GitHub actions with browsers and threading sometimes closing adds fractions of seconds
 
 
 # Selector Generation Test
@@ -318,13 +330,13 @@ def test_selectors_generation(page):
 # Miscellaneous Tests
 def test_getting_all_text(page):
     """Test getting all text from the page"""
-    assert page.get_all_text() != ''
+    assert page.get_all_text() != ""
 
 
 def test_regex_on_text(page):
     """Test regex operations on text"""
     element = page.css('[data-id="1"] .price')[0]
-    match = element.re_first(r'[\.\d]+')
-    assert match == '10.99'
-    match = element.text.re(r'(\d+)', replace_entities=False)
+    match = element.re_first(r"[\.\d]+")
+    assert match == "10.99"
+    match = element.text.re(r"(\d+)", replace_entities=False)
     assert len(match) == 2

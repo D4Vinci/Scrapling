@@ -9,12 +9,12 @@ def clean():
 
     # Directories and patterns to clean
     cleanup_patterns = [
-        'build',
-        'dist',
-        '*.egg-info',
-        '__pycache__',
-        '.eggs',
-        '.pytest_cache'
+        "build",
+        "dist",
+        "*.egg-info",
+        "__pycache__",
+        ".eggs",
+        ".pytest_cache",
     ]
 
     # Clean directories
@@ -30,7 +30,7 @@ def clean():
                 print(f"Could not remove {path}: {e}")
 
     # Remove compiled Python files
-    for path in base_dir.rglob('*.py[co]'):
+    for path in base_dir.rglob("*.py[co]"):
         try:
             path.unlink()
             print(f"Removed compiled file: {path}")
@@ -38,5 +38,5 @@ def clean():
             print(f"Could not remove {path}: {e}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     clean()

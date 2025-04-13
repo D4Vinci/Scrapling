@@ -2,9 +2,22 @@
 Type definitions for type checking purposes.
 """
 
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
-                    List, Literal, Optional, Pattern, Tuple, Type, TypeVar,
-                    Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Pattern,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
 

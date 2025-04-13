@@ -2,27 +2,52 @@ from camoufox import DefaultAddons
 from camoufox.async_api import AsyncCamoufox
 from camoufox.sync_api import Camoufox
 
-from scrapling.core._types import (Callable, Dict, List, Literal, Optional,
-                                   SelectorWaitStates, Union)
+from scrapling.core._types import (
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    SelectorWaitStates,
+    Union,
+)
 from scrapling.core.utils import log
-from scrapling.engines.toolbelt import (Response, StatusText,
-                                        async_intercept_route,
-                                        check_type_validity,
-                                        construct_proxy_dict,
-                                        generate_convincing_referer,
-                                        get_os_name, intercept_route)
+from scrapling.engines.toolbelt import (
+    Response,
+    StatusText,
+    async_intercept_route,
+    check_type_validity,
+    construct_proxy_dict,
+    generate_convincing_referer,
+    get_os_name,
+    intercept_route,
+)
 
 
 class CamoufoxEngine:
     def __init__(
-            self, headless: Union[bool, Literal['virtual']] = True, block_images: bool = False, disable_resources: bool = False,
-            block_webrtc: bool = False, allow_webgl: bool = True, network_idle: bool = False, humanize: Union[bool, float] = True, wait: Optional[int] = 0,
-            timeout: Optional[float] = 30000, page_action: Callable = None, wait_selector: Optional[str] = None, addons: Optional[List[str]] = None,
-            wait_selector_state: SelectorWaitStates = 'attached', google_search: bool = True, extra_headers: Optional[Dict[str, str]] = None,
-            proxy: Optional[Union[str, Dict[str, str]]] = None, os_randomize: bool = False, disable_ads: bool = False,
-            geoip: bool = False,
-            adaptor_arguments: Dict = None,
-            additional_arguments: Dict = None
+        self,
+        headless: Union[bool, Literal["virtual"]] = True,  # noqa: F821
+        block_images: bool = False,
+        disable_resources: bool = False,
+        block_webrtc: bool = False,
+        allow_webgl: bool = True,
+        network_idle: bool = False,
+        humanize: Union[bool, float] = True,
+        wait: Optional[int] = 0,
+        timeout: Optional[float] = 30000,
+        page_action: Callable = None,
+        wait_selector: Optional[str] = None,
+        addons: Optional[List[str]] = None,
+        wait_selector_state: SelectorWaitStates = "attached",
+        google_search: bool = True,
+        extra_headers: Optional[Dict[str, str]] = None,
+        proxy: Optional[Union[str, Dict[str, str]]] = None,
+        os_randomize: bool = False,
+        disable_ads: bool = False,
+        geoip: bool = False,
+        adaptor_arguments: Dict = None,
+        additional_arguments: Dict = None,
     ):
         """An engine that utilizes Camoufox library, check the `StealthyFetcher` class for more documentation.
 
@@ -97,7 +122,7 @@ class CamoufoxEngine:
             "block_webrtc": self.block_webrtc,
             "block_images": self.block_images,  # Careful! it makes some websites doesn't finish loading at all like stackoverflow even in headful
             "os": None if self.os_randomize else get_os_name(),
-            **self.additional_arguments
+            **self.additional_arguments,
         }
 
     def _process_response_history(self, first_response):
@@ -109,19 +134,30 @@ class CamoufoxEngine:
             while current_request:
                 try:
                     current_response = current_request.response()
-                    history.insert(0, Response(
-                        url=current_request.url,
-                        # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                        text='',
-                        body=b'',
-                        status=current_response.status if current_response else 301,
-                        reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
-                        encoding=current_response.headers.get('content-type', '') or 'utf-8',
-                        cookies={},
-                        headers=current_response.all_headers() if current_response else {},
-                        request_headers=current_request.all_headers(),
-                        **self.adaptor_arguments
-                    ))
+                    history.insert(
+                        0,
+                        Response(
+                            url=current_request.url,
+                            # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                            text="",
+                            body=b"",
+                            status=current_response.status if current_response else 301,
+                            reason=(
+                                current_response.status_text
+                                or StatusText.get(current_response.status)
+                            )
+                            if current_response
+                            else StatusText.get(301),
+                            encoding=current_response.headers.get("content-type", "")
+                            or "utf-8",
+                            cookies={},
+                            headers=current_response.all_headers()
+                            if current_response
+                            else {},
+                            request_headers=current_request.all_headers(),
+                            **self.adaptor_arguments,
+                        ),
+                    )
                 except Exception as e:
                     log.error(f"Error processing redirect: {e}")
                     break
@@ -141,19 +177,30 @@ class CamoufoxEngine:
             while current_request:
                 try:
                     current_response = await current_request.response()
-                    history.insert(0, Response(
-                        url=current_request.url,
-                        # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                        text='',
-                        body=b'',
-                        status=current_response.status if current_response else 301,
-                        reason=(current_response.status_text or StatusText.get(current_response.status)) if current_response else StatusText.get(301),
-                        encoding=current_response.headers.get('content-type', '') or 'utf-8',
-                        cookies={},
-                        headers=await current_response.all_headers() if current_response else {},
-                        request_headers=await current_request.all_headers(),
-                        **self.adaptor_arguments
-                    ))
+                    history.insert(
+                        0,
+                        Response(
+                            url=current_request.url,
+                            # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                            text="",
+                            body=b"",
+                            status=current_response.status if current_response else 301,
+                            reason=(
+                                current_response.status_text
+                                or StatusText.get(current_response.status)
+                            )
+                            if current_response
+                            else StatusText.get(301),
+                            encoding=current_response.headers.get("content-type", "")
+                            or "utf-8",
+                            cookies={},
+                            headers=await current_response.all_headers()
+                            if current_response
+                            else {},
+                            request_headers=await current_request.all_headers(),
+                            **self.adaptor_arguments,
+                        ),
+                    )
                 except Exception as e:
                     log.error(f"Error processing redirect: {e}")
                     break
@@ -175,7 +222,10 @@ class CamoufoxEngine:
 
         def handle_response(finished_response):
             nonlocal final_response
-            if finished_response.request.resource_type == "document" and finished_response.request.is_navigation_request():
+            if (
+                finished_response.request.resource_type == "document"
+                and finished_response.request.is_navigation_request()
+            ):
                 final_response = finished_response
 
         with Camoufox(**self._get_camoufox_options()) as browser:
@@ -195,7 +245,7 @@ class CamoufoxEngine:
             page.wait_for_load_state(state="domcontentloaded")
 
             if self.network_idle:
-                page.wait_for_load_state('networkidle')
+                page.wait_for_load_state("networkidle")
 
             if self.page_action is not None:
                 try:
@@ -211,7 +261,7 @@ class CamoufoxEngine:
                     page.wait_for_load_state(state="load")
                     page.wait_for_load_state(state="domcontentloaded")
                     if self.network_idle:
-                        page.wait_for_load_state('networkidle')
+                        page.wait_for_load_state("networkidle")
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
@@ -222,9 +272,13 @@ class CamoufoxEngine:
                 raise ValueError("Failed to get a response from the page")
 
             # This will be parsed inside `Response`
-            encoding = final_response.headers.get('content-type', '') or 'utf-8'  # default encoding
+            encoding = (
+                final_response.headers.get("content-type", "") or "utf-8"
+            )  # default encoding
             # PlayWright API sometimes give empty status text for some reason!
-            status_text = final_response.status_text or StatusText.get(final_response.status)
+            status_text = final_response.status_text or StatusText.get(
+                final_response.status
+            )
 
             history = self._process_response_history(first_response)
             try:
@@ -236,15 +290,17 @@ class CamoufoxEngine:
             response = Response(
                 url=page.url,
                 text=page_content,
-                body=page_content.encode('utf-8'),
+                body=page_content.encode("utf-8"),
                 status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
-                cookies={cookie['name']: cookie['value'] for cookie in page.context.cookies()},
+                cookies={
+                    cookie["name"]: cookie["value"] for cookie in page.context.cookies()
+                },
                 headers=first_response.all_headers(),
                 request_headers=first_response.request.all_headers(),
                 history=history,
-                **self.adaptor_arguments
+                **self.adaptor_arguments,
             )
             page.close()
             context.close()
@@ -262,7 +318,10 @@ class CamoufoxEngine:
 
         async def handle_response(finished_response):
             nonlocal final_response
-            if finished_response.request.resource_type == "document" and finished_response.request.is_navigation_request():
+            if (
+                finished_response.request.resource_type == "document"
+                and finished_response.request.is_navigation_request()
+            ):
                 final_response = finished_response
 
         async with AsyncCamoufox(**self._get_camoufox_options()) as browser:
@@ -282,7 +341,7 @@ class CamoufoxEngine:
             await page.wait_for_load_state(state="domcontentloaded")
 
             if self.network_idle:
-                await page.wait_for_load_state('networkidle')
+                await page.wait_for_load_state("networkidle")
 
             if self.page_action is not None:
                 try:
@@ -298,7 +357,7 @@ class CamoufoxEngine:
                     await page.wait_for_load_state(state="load")
                     await page.wait_for_load_state(state="domcontentloaded")
                     if self.network_idle:
-                        await page.wait_for_load_state('networkidle')
+                        await page.wait_for_load_state("networkidle")
                 except Exception as e:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
@@ -309,9 +368,13 @@ class CamoufoxEngine:
                 raise ValueError("Failed to get a response from the page")
 
             # This will be parsed inside `Response`
-            encoding = final_response.headers.get('content-type', '') or 'utf-8'  # default encoding
+            encoding = (
+                final_response.headers.get("content-type", "") or "utf-8"
+            )  # default encoding
             # PlayWright API sometimes give empty status text for some reason!
-            status_text = final_response.status_text or StatusText.get(final_response.status)
+            status_text = final_response.status_text or StatusText.get(
+                final_response.status
+            )
 
             history = await self._async_process_response_history(first_response)
             try:
@@ -323,15 +386,18 @@ class CamoufoxEngine:
             response = Response(
                 url=page.url,
                 text=page_content,
-                body=page_content.encode('utf-8'),
+                body=page_content.encode("utf-8"),
                 status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
-                cookies={cookie['name']: cookie['value'] for cookie in await page.context.cookies()},
+                cookies={
+                    cookie["name"]: cookie["value"]
+                    for cookie in await page.context.cookies()
+                },
                 headers=await first_response.all_headers(),
                 request_headers=await first_response.request.all_headers(),
                 history=history,
-                **self.adaptor_arguments
+                **self.adaptor_arguments,
             )
             await page.close()
             await context.close()
