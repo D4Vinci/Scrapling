@@ -142,7 +142,7 @@ extra:
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/scrapling/
     - icon: fontawesome/brands/x-twitter
-      link: https://x.com/D4Vinci1
+      link: https://x.com/Scrapling_dev
   analytics:
     provider: google
     property: G-CS3DKLY73Z
