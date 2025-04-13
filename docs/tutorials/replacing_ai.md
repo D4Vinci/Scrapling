@@ -1,4 +1,4 @@
-# Scrapling: A Cost-Effective Alternative to AI for Robust Web Scraping
+# Scrapling: A Free Alternative to AI for Robust Web Scraping
 
 Web scraping has long been a vital tool for data extraction, but experienced users often encounter persistent issues that can hinder effectiveness. Recently, there's been a noticeable shift toward AI-based web scraping, driven by its potential to address these challenges.
 
