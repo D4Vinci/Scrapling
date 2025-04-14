@@ -11,6 +11,21 @@ Thank you, stay curious, and hack the planet! ❤️
 ## Top Sponsors
 ### Scrapeless
 
+[Evomi](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling) is your Swiss Quality Proxy Provider, starting at **$0.49/GB**
+
+- 👩‍💻 **$0.49 per GB Residential Proxies**: Our price is unbeatable
+- 👩‍💻 **24/7 Expert Support**: We will join your Slack Channel
+- 🌍 **Global Presence**: Available in 150+ Countries
+- ⚡ **Low Latency**
+- 🔒 **Swiss Quality and Privacy**
+- 🎁 **Free Trial**
+- 🛡️ **99.9% Uptime**
+- 🤝 **Special IP Pool selection**: Optimize for fast, quality or quantity of ips
+- 🔧 **Easy Integration**: Compatible with most software and programming languages
+
+[![Evomi Banner](https://my.evomi.com/images/brand/cta.png)](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling)
+---
+
 [Scrapeless](http://scrapeless.com/?utm_source=D4Vinci) – Easy web scraping toolkit for businesses and developers
 
 [![Scrapeless Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg)](http://scrapeless.com/?utm_source=D4Vinci)
