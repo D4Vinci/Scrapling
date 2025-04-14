@@ -61,20 +61,34 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 # Sponsors 
 
-[Scrapeless Deep SerpApi](https://www.scrapeless.com/en/product/deep-serp-api?utm_source=website&utm_medium=ads&utm_campaign=scraping&utm_term=d4vinci) From $0.10 per 1,000 queries with a 1-2 second response time! 
+[Scrapeless](http://scrapeless.com/?utm_source=D4Vinci) – Easy web scraping toolkit for businesses and developers
 
-Deep SerpApi is a dedicated search engine designed for large language models (LLMs) and AI agents. It aims to provide real-time, accurate, and unbiased information to help AI applications retrieve and process data efficiently.
-- covering 20+ Google SERP scenarios and mainstream search engines.
-- support real-time data updates to ensure real-time and accurate information.
-- It can integrate information from all available online channels and search engines.
-- Deep SerpApi will simplify the process of integrating dynamic web information into AI solutions, and ultimately achieve an ALL-in-One API for one-click search and extraction of web data.
-- **Developer Support Program**: Integrate Scrapeless Deep SerpApi into your AI tools, applications or projects. [We already support Dify, and will soon support frameworks such as Langchain, Langflow, FlowiseAI]. Then share your results on GitHub or social media, and you will get a 1-12 month free developer support opportunity, up to 500 free usage per month.
-- 🚀 **Scraping API**: Effortless and highly customizable data extraction with a single API call, providing structured data from any website.
-- ⚡ **Scraping Browser**: AI-powered and LLM-driven, it simulates human-like behavior with genuine fingerprints and headless browser support, ensuring seamless, block-free scraping.
-- 🌐 **Proxies**: Use high-quality, rotating proxies to scrape top platforms like Amazon, Shopee, and more, with global coverage in 195+ countries.
+⚡ [Scraping Browser](https://www.scrapeless.com/en/product/scraping-browser?utm_source=D4Vinci):
+1. Web browsing capabilities for AI agents and applications
+    - Collect data at scale for agents without being blocked
+    - Simulate user behavior using advanced browser tools
+    - Build agent applications with real-time and historical web data
+2. Unlock any scale with unlimited parallel jobs
+3. High-performance web unlocking built directly into the browser
+4. Compatible with Puppeteer and Playwright
+
+⚡ [Deep SerpApi](https://www.scrapeless.com/en/product/deep-serp-api?utm_source=D4Vinci): One-click Google search data monitoring, supporting 15+ SERP scenarios such as academic/Google Store/Maps, $0.1/thousand queries, 0.2s response.
+Scrapeless has launched MCP Server!
+
+[How to set up Scrapeless MCP Server on Cline?](https://www.scrapeless.com/en/faq/how-to-set-up-scrapeless-mcp-server-on-cline?utm_source=D4Vinci)<br/>
+[How to Set Up Scrapeless MCP Server on Cursor?](https://www.scrapeless.com/en/faq/how-to-set-up-scrapeless-mcp-server-on-cursor?utm_source=D4Vinci)<br/>
+[How to Set Up Scrapeless MCP Server on Claude?](https://www.scrapeless.com/en/faq/how-to-set-up-scrapeless-mcp-server-on-claude?utm_source=D4Vinci)
+
+⚡ [Scraping API](https://www.scrapeless.com/en/product/scraping-api?utm_source=D4Vinci): Easily obtain public content such as TikTok, Shopee, Amazon, Walmart, etc. Covering structured data of 8+ vertical industries such as e-commerce/social media, ready to use. Only billed by the number of successful calls.
+
+⚡ [Universal Scraping API](https://www.scrapeless.com/en/product/universal-scraping-api?utm_source=D4Vinci): Intelligent IP rotation + real user fingerprint, success rate up to 99%. No more worrying about network blockades and crawling obstacles.
+
+⚠️ Exclusive for open source projects: Submit the Repo link to apply for 100,000 free Deep SerpApi queries!
+
+📌 [Try it now](https://app.scrapeless.com/passport/login?utm_source=D4Vinci) | [Documentation](https://docs.scrapeless.com/en/scraping-browser/quickstart/introduction/?utm_source=D4Vinci)
 
 
-[![Scrapeless Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg)](https://www.scrapeless.com/en/product/deep-serp-api?utm_source=website&utm_medium=ads&utm_campaign=scraping&utm_term=d4vinci)
+[![Scrapeless Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg)](http://scrapeless.com/?utm_source=D4Vinci)
 ---
 
 [Evomi](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling) is your Swiss Quality Proxy Provider, starting at **$0.49/GB**
