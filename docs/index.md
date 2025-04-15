@@ -108,7 +108,7 @@ Scrapling has a lot of documentation, so we try to follow a guideline called the
 If you like Scrapling and want to support its development:
 
 - ⭐ Star the [GitHub repository](https://github.com/D4Vinci/Scrapling)
-- 🚀 Follow us on [Twitter](https://x.com/Scrapling_dev) and join the [discord server](https://discord.gg/f7N2JFY2)
+- 🚀 Follow us on [Twitter](https://x.com/Scrapling_dev) and join the [discord server](https://discord.gg/EMgGbDceNQ)
 - 💝 Consider [sponsoring the project or buying me a coffe](donate.md) :wink:
 - 🐛 Report bugs and suggest features through [GitHub Issues](https://github.com/D4Vinci/Scrapling/issues)
 
