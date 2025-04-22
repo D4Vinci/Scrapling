@@ -7,7 +7,7 @@ long_description = Path("README.md").read_text(encoding="utf-8")
 
 setup(
     name="scrapling",
-    version="0.2.99",
+    version="0.3-beta",
     description="""Scrapling is an undetectable, powerful, flexible, high-performance Python library that makes Web Scraping easy again! In an internet filled with complications,
     it simplifies web scraping, even when websites' design changes, while providing impressive speed that surpasses almost all alternatives.""",
     long_description=long_description,
