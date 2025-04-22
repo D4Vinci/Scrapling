@@ -52,6 +52,7 @@ setup(
     install_requires=[
         "lxml>=5.0",
         "cssselect>=1.2",
+        "IPython",
         "click",
         "w3lib",
         "orjson>=3",

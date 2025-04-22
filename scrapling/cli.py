@@ -5,6 +5,8 @@ from pathlib import Path
 
 import click
 
+from scrapling.core.shell import CustomShell
+
 
 def get_package_dir():
     return Path(os.path.dirname(__file__))
@@ -49,6 +51,32 @@ def install(force):
         print("The dependencies are already installed")
 
 
+@click.command(help="Interactive scraping console")
+@click.option(
+    "-c",
+    "--code",
+    "code",
+    is_flag=False,
+    default="",
+    type=str,
+    help="Evaluate the code in the shell, print the result and exit",
+)
+@click.option(
+    "-L",
+    "--loglevel",
+    "level",
+    is_flag=False,
+    default="debug",
+    type=click.Choice(
+        ["debug", "info", "warning", "error", "critical", "fatal"], case_sensitive=False
+    ),
+    help="Log level (default: DEBUG)",
+)
+def shell(code, level):
+    console = CustomShell(code=code, log_level=level)
+    console.start()
+
+
 @click.group()
 def main():
     pass
@@ -56,3 +84,4 @@ def main():
 
 # Adding commands
 main.add_command(install)
+main.add_command(shell)
