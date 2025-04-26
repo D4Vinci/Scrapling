@@ -14,7 +14,7 @@ def get_package_dir():
 
 def run_command(command, line):
     print(f"Installing {line}...")
-    _ = subprocess.check_call(" ".join(command), shell=True)
+    _ = subprocess.check_call(command, shell=False)  # nosec B603
     # I meant to not use try except here
 
 
