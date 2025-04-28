@@ -1,25 +1,349 @@
+# -*- coding: utf-8 -*-
 import os
-import logging
-import tempfile
-import webbrowser
+import json
+from sys import stderr
 from functools import wraps
+from http import cookies as Cookie
+from collections import namedtuple
+from shlex import split as shlex_split
+from tempfile import mkstemp as make_temp_file
+from urllib.parse import urlparse, urlunparse, parse_qsl
+from argparse import ArgumentParser, SUPPRESS
+from webbrowser import open as open_in_browser
+from logging import (
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR,
+    CRITICAL,
+    FATAL,
+    getLogger,
+    getLevelName,
+)
 
 from IPython.terminal.embed import InteractiveShellEmbed
 
 from scrapling import __version__
 from scrapling.core.utils import log
 from scrapling.parser import Adaptor, Adaptors
-from scrapling.fetchers import Fetcher, AsyncFetcher, PlayWrightFetcher, StealthyFetcher
-
+from scrapling.core._types import List, Optional, Dict, Tuple, Any, Union
+from scrapling.fetchers import (
+    Fetcher,
+    AsyncFetcher,
+    PlayWrightFetcher,
+    StealthyFetcher,
+    Response,
+)
 
 _known_logging_levels = {
-    "debug": logging.DEBUG,
-    "info": logging.INFO,
-    "warning": logging.WARNING,
-    "error": logging.ERROR,
-    "critical": logging.CRITICAL,
-    "fatal": logging.FATAL,
+    "debug": DEBUG,
+    "info": INFO,
+    "warning": WARNING,
+    "error": ERROR,
+    "critical": CRITICAL,
+    "fatal": FATAL,
 }
+
+
+# Define the structure for parsed context - Simplified for Fetcher args
+Request = namedtuple(
+    "Request",
+    [
+        "method",
+        "url",
+        "params",
+        "data",  # Can be str, bytes, or dict (for urlencoded)
+        "json_data",  # Python object (dict/list) for JSON payload
+        "headers",
+        "cookies",
+        "proxy",
+        "follow_redirects",  # Added for -L flag
+    ],
+)
+
+
+# Suppress exit on error to handle parsing errors gracefully
+class NoExitArgumentParser(ArgumentParser):
+    def error(self, message):
+        log.error(f"Curl arguments parsing error: {message}")
+        raise ValueError(f"Curl arguments parsing error: {message}")
+
+    def exit(self, status=0, message=None):
+        if message:
+            log.error(f"Scrapling shell exited with status {status}: {message}")
+            self._print_message(message, stderr)
+        raise ValueError(
+            f"Scrapling shell exited with status {status}: {message or 'Unknown reason'}"
+        )
+
+
+class CurlParser:
+    """Builds the argument parser for relevant curl flags from DevTools."""
+
+    def __init__(self):
+        # We will use argparse parser to parse the curl command directly instead of regex
+        # We will focus more on flags that will show up on curl commands copied from DevTools's network tab
+        _parser = NoExitArgumentParser(add_help=False)  # Disable default help
+        # Basic curl arguments
+        _parser.add_argument("curl_command_placeholder", nargs="?", help=SUPPRESS)
+        _parser.add_argument("url")
+        _parser.add_argument("-X", "--request", dest="method", default=None)
+        _parser.add_argument("-H", "--header", action="append", default=[])
+        _parser.add_argument(
+            "-A", "--user-agent", help="Will be parsed from -H if present"
+        )  # Note: DevTools usually includes this in -H
+
+        # Data arguments (prioritizing types common from DevTools)
+        _parser.add_argument("-d", "--data", default=None)
+        _parser.add_argument(
+            "--data-raw", default=None
+        )  # Often used by browsers for JSON body
+        _parser.add_argument("--data-binary", default=None)
+        # Keep urlencode for completeness, though less common from browser copy/paste
+        _parser.add_argument("--data-urlencode", action="append", default=[])
+        _parser.add_argument(
+            "-G", "--get", action="store_true"
+        )  # Use GET and put data in URL
+
+        # Proxy
+        _parser.add_argument("-x", "--proxy", default=None)
+        _parser.add_argument("-U", "--proxy-user", default=None)  # Basic proxy auth
+
+        # Connection/Security
+        _parser.add_argument("-k", "--insecure", action="store_true")
+        _parser.add_argument(
+            "--compressed", action="store_true"
+        )  # Very common from browsers
+
+        # Other flags often included but may not map directly to request args
+        _parser.add_argument("-i", "--include", action="store_true")
+        _parser.add_argument("-s", "--silent", action="store_true")
+        _parser.add_argument("-v", "--verbose", action="store_true")
+
+        self.parser: NoExitArgumentParser = _parser
+        self._supported_methods = ("get", "post", "put", "delete")
+
+    # --- Helper Functions ---
+    @staticmethod
+    def parse_headers(header_lines: List[str]) -> Tuple[Dict[str, str], Dict[str, str]]:
+        """Parses -H headers into separate header and cookie dictionaries."""
+        header_dict = dict()
+        cookie_dict = dict()
+
+        for header_line in header_lines:
+            if ":" not in header_line:
+                if header_line.endswith(";"):
+                    header_key = header_line[:-1].strip()
+                    header_value = ""
+                    header_dict[header_key] = header_value
+                else:
+                    log.warning(
+                        f"Could not parse header without colon: '{header_line}', skipping."
+                    )
+                    continue
+            else:
+                header_key, header_value = header_line.split(":", 1)
+                header_key = header_key.strip()
+                header_value = header_value.strip()
+
+                if header_key.lower() == "cookie":
+                    try:
+                        cookie_parser = Cookie.SimpleCookie()
+                        cookie_parser.load(header_value)
+                        for key, morsel in cookie_parser.items():
+                            cookie_dict[key] = morsel.value
+                    except Exception as e:
+                        log.error(
+                            f"Could not parse cookie string '{header_value}': {e}"
+                        )
+                else:
+                    header_dict[header_key] = header_value
+
+        return header_dict, cookie_dict
+
+    # --- Main Parsing Logic ---
+    def parse(self, curl_command: str) -> Optional[Request]:
+        """Parses the curl command string into a structured context for Fetcher."""
+
+        clean_command = curl_command.strip().lstrip("curl").strip().replace("\\\n", " ")
+
+        try:
+            tokens = shlex_split(
+                clean_command
+            )  # Split the string using shell-like syntax
+        except ValueError as e:
+            log.error(f"Could not split command line: {e}")
+            return None
+
+        try:
+            parsed_args, unknown = self.parser.parse_known_args(tokens)
+            if unknown:
+                log.warning(f"Ignored unknown curl arguments: {unknown}")
+
+        except ValueError:
+            return None
+
+        except Exception as e:
+            log.error(
+                f"An unexpected error occurred during curl arguments parsing: {e}"
+            )
+            return None
+
+        # --- Determine Method ---
+        method = "get"  # Default
+        if parsed_args.get:  # -G forces GET
+            method = "get"
+
+        elif parsed_args.method:
+            method = parsed_args.method.strip().lower()
+
+        # Infer POST if data is present (unless overridden by -X or -G)
+        elif any(
+            [
+                parsed_args.data,
+                parsed_args.data_raw,
+                parsed_args.data_binary,
+                parsed_args.data_urlencode,
+            ]
+        ):
+            method = "post"
+
+        headers, cookies = self.parse_headers(parsed_args.header)
+
+        # --- Process Data Payload ---
+        params = dict()
+        data_payload: Union[str, bytes, Dict, None] = None
+        json_payload: Optional[Any] = None
+
+        # DevTools often uses --data-raw for JSON bodies
+        # Precedence: --data-binary > --data-raw / -d > --data-urlencode
+        if parsed_args.data_binary is not None:
+            try:
+                data_payload = parsed_args.data_binary.encode("utf-8")
+                log.debug("Using data from --data-binary as bytes.")
+            except Exception as e:
+                log.warning(
+                    f"Could not encode binary data '{parsed_args.data_binary}' as bytes: {e}. Using raw string."
+                )
+                data_payload = parsed_args.data_binary  # Fallback to string
+
+        elif parsed_args.data_raw is not None:
+            data_payload = parsed_args.data_raw
+
+        elif parsed_args.data is not None:
+            data_payload = parsed_args.data
+
+        elif parsed_args.data_urlencode:
+            # Combine and parse urlencoded data
+            combined_data = "&".join(parsed_args.data_urlencode)
+            try:
+                data_payload = dict(parse_qsl(combined_data, keep_blank_values=True))
+            except Exception as e:
+                log.warning(
+                    f"Could not parse urlencoded data '{combined_data}': {e}. Treating as raw string."
+                )
+                data_payload = combined_data
+
+        # Check if raw data looks like JSON, prefer 'json' param if so
+        if isinstance(data_payload, str):
+            try:
+                maybe_json = json.loads(data_payload)
+                if isinstance(maybe_json, (dict, list)):
+                    json_payload = maybe_json
+                    data_payload = None
+            except json.JSONDecodeError:
+                pass  # Not JSON, keep it in data_payload
+
+        # Handle -G: Move data to params if method is GET
+        if method == "get" and data_payload:
+            if isinstance(data_payload, dict):  # From --data-urlencode likely
+                params.update(data_payload)
+            elif isinstance(data_payload, str):
+                try:
+                    params.update(dict(parse_qsl(data_payload, keep_blank_values=True)))
+                except ValueError:
+                    log.warning(
+                        f"Could not parse data '{data_payload}' into GET parameters for -G."
+                    )
+
+            if params:
+                data_payload = None  # Clear data as it's moved to params
+                json_payload = None  # Should not have JSON body with -G
+
+        # --- Process Proxy ---
+        proxies: Optional[Dict[str, str]] = None
+        if parsed_args.proxy:
+            proxy_url = (
+                f"http://{parsed_args.proxy}"
+                if "://" not in parsed_args.proxy
+                else parsed_args.proxy
+            )
+
+            if parsed_args.proxy_user:
+                user_pass = parsed_args.proxy_user
+                parts = urlparse(proxy_url)
+                netloc_parts = parts.netloc.split("@")
+                netloc = (
+                    f"{user_pass}@{netloc_parts[-1]}"
+                    if len(netloc_parts) > 1
+                    else f"{user_pass}@{parts.netloc}"
+                )
+                proxy_url = urlunparse(
+                    (
+                        parts.scheme,
+                        netloc,
+                        parts.path,
+                        parts.params,
+                        parts.query,
+                        parts.fragment,
+                    )
+                )
+
+            # Standard proxy dict format
+            proxies = {"http": proxy_url, "https": proxy_url}
+            log.debug(f"Using proxy configuration: {proxies}")
+
+        # --- Final Context ---
+        return Request(
+            method=method,
+            url=parsed_args.url,
+            params=params,
+            data=data_payload,
+            json_data=json_payload,
+            headers=headers,
+            cookies=cookies,
+            proxy=proxies,
+            follow_redirects=True,  # Scrapling default is True
+        )
+
+    def convert2fetcher(self, curl_command: [Request, str]) -> Optional[Response]:
+        request = None
+        if isinstance(curl_command, (Request, str)):
+            request = (
+                self.parse(curl_command)
+                if isinstance(curl_command, str)
+                else curl_command
+            )
+            request_args = request._asdict()
+            method = request_args.pop("method").strip().lower()
+            if method in self._supported_methods:
+                request_args["json"] = request_args.pop("json_data")
+                if method not in ("post", "put"):
+                    _ = request_args.pop("data")
+                    _ = request_args.pop("json")
+
+                return getattr(Fetcher, method)(**request_args)
+            else:
+                log.error(
+                    f'Request method "{method}" isn\'t supported by Scrapling yet'
+                )
+
+        if request is None:
+            log.error(
+                "This class accepts `Request` objects only generated by the `uncurl` command or a curl command passed as string."
+            )
+
+        return None
 
 
 def show_page_in_browser(page):
@@ -27,10 +351,10 @@ def show_page_in_browser(page):
         log.error("Input must be of type `Adaptor`")
         return
 
-    fd, fname = tempfile.mkstemp(".html")
+    fd, fname = make_temp_file(".html")
     os.write(fd, page.body.encode("utf-8"))
     os.close(fd)
-    webbrowser.open(f"file://{fname}")
+    open_in_browser(f"file://{fname}")
 
 
 class CustomShell:
@@ -40,13 +364,14 @@ class CustomShell:
         self.code = code
         self.page = None
         self.pages = Adaptors([])
+        self._curl_parser = CurlParser()
         log_level = log_level.strip().lower()
 
         if _known_logging_levels.get(log_level):
             self.log_level = _known_logging_levels[log_level]
         else:
             log.error(f'Unknown log level "{log_level}", defaulting to "DEBUG"')
-            self.log_level = logging.DEBUG
+            self.log_level = DEBUG
 
         self.shell = None
 
@@ -57,13 +382,13 @@ class CustomShell:
         """Initialize application components"""
         # This is where you'd set up your application-specific objects
         if self.log_level:
-            logging.getLogger("scrapling").setLevel(self.log_level)
+            getLogger("scrapling").setLevel(self.log_level)
 
         settings = Fetcher.display_config()
         _ = settings.pop("storage")
         _ = settings.pop("storage_args")
         log.info(f"Scrapling {__version__} shell started")
-        log.info(f"Logging level is set to '{logging.getLevelName(self.log_level)}'")
+        log.info(f"Logging level is set to '{getLevelName(self.log_level)}'")
         log.info(f"Fetchers' parsing settings: {settings}")
 
     @staticmethod
@@ -87,6 +412,8 @@ class CustomShell:
 -> Useful commands
    - {"page / response":<30} The response object of the last page you fetched
    - {"pages":<30} Adaptors object of the last 5 response objects you fetched
+   - {"uncurl('curl_command')":<30} Convert a curl command to a Fetcher's request and return the Request object for you. (Optimized to handle curl commands copied from DevTools network tab.)
+   - {"curl2fetcher('curl_command')":<30} Convert a curl command to a Fetcher's request and execute it. (Optimized to handle curl commands copied from DevTools network tab.)
    - {"view(page)":<30} View page in a browser
    - {"help()":<30} Show this help message (Shell help)
 
@@ -146,6 +473,8 @@ Type 'exit' or press Ctrl+D to exit.
             "response": self.page,
             "pages": self.pages,
             "view": show_page_in_browser,
+            "uncurl": self._curl_parser.parse,
+            "curl2fetcher": self._curl_parser.convert2fetcher,
             "help": self.show_help,
         }
 

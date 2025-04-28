@@ -1,11 +1,9 @@
 import os
-import subprocess
 import sys
+import subprocess
 from pathlib import Path
 
 import click
-
-from scrapling.core.shell import CustomShell
 
 
 def get_package_dir():
@@ -73,6 +71,8 @@ def install(force):
     help="Log level (default: DEBUG)",
 )
 def shell(code, level):
+    from scrapling.core.shell import CustomShell
+
     console = CustomShell(code=code, log_level=level)
     console.start()
 
