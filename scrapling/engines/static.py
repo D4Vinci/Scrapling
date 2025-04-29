@@ -17,6 +17,7 @@ class StaticEngine:
         follow_redirects: bool = True,
         timeout: Optional[Union[int, float]] = None,
         retries: Optional[int] = 3,
+        cookies: Optional[Dict] = None,
         adaptor_arguments: Tuple = None,
     ):
         """An engine that utilizes httpx library, check the `Fetcher` class for more documentation.
@@ -26,6 +27,7 @@ class StaticEngine:
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param follow_redirects: As the name says -- if enabled (default), redirects will be followed.
+        :param cookies: Set cookies for the next request.
         :param timeout: The time to wait for the request to finish in seconds. The default is 10 seconds.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
@@ -35,6 +37,7 @@ class StaticEngine:
         self.timeout = timeout
         self.follow_redirects = bool(follow_redirects)
         self.retries = retries
+        self.cookies = dict(cookies) if cookies else {}
         self._extra_headers = generate_headers(browser_mode=False)
         # Because we are using `lru_cache` for a slight optimization but both dict/dict_items are not hashable so they can't be cached
         # So my solution here was to convert it to tuple then convert it back to dictionary again here as tuples are hashable, ofc `tuple().__hash__()`
@@ -98,7 +101,9 @@ class StaticEngine:
     def _make_request(self, method: str, **kwargs) -> Response:
         headers = self._headers_job(kwargs.pop("headers", {}))
         with httpx.Client(
-            proxy=self.proxy, transport=httpx.HTTPTransport(retries=self.retries)
+            proxy=self.proxy,
+            transport=httpx.HTTPTransport(retries=self.retries),
+            cookies=self.cookies,
         ) as client:
             request = getattr(client, method)(
                 url=self.url,
@@ -112,7 +117,9 @@ class StaticEngine:
     async def _async_make_request(self, method: str, **kwargs) -> Response:
         headers = self._headers_job(kwargs.pop("headers", {}))
         async with httpx.AsyncClient(
-            proxy=self.proxy, transport=httpx.AsyncHTTPTransport(retries=self.retries)
+            proxy=self.proxy,
+            transport=httpx.AsyncHTTPTransport(retries=self.retries),
+            cookies=self.cookies,
         ) as client:
             request = await getattr(client, method)(
                 url=self.url,

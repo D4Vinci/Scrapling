@@ -31,6 +31,7 @@ class Fetcher(BaseFetcher):
         stealthy_headers: bool = True,
         proxy: Optional[str] = None,
         retries: Optional[int] = 3,
+        cookies: Optional[Dict] = None,
         custom_config: Dict = None,
         **kwargs: Dict,
     ) -> Response:
@@ -43,6 +44,7 @@ class Fetcher(BaseFetcher):
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param cookies: Set cookies for the next request.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
@@ -57,6 +59,12 @@ class Fetcher(BaseFetcher):
         adaptor_arguments = tuple(
             {**cls._generate_parser_arguments(), **custom_config}.items()
         )
+
+        if not cookies:
+            cookies = {}
+        elif not isinstance(cookies, dict):
+            ValueError(f"The cookies must be of type dictionary, got {cls.__class__}")
+
         response_object = StaticEngine(
             url,
             proxy,
@@ -64,6 +72,7 @@ class Fetcher(BaseFetcher):
             follow_redirects,
             timeout,
             retries,
+            tuple(cookies.items()),
             adaptor_arguments=adaptor_arguments,
         ).get(**kwargs)
         return response_object
@@ -77,6 +86,7 @@ class Fetcher(BaseFetcher):
         stealthy_headers: bool = True,
         proxy: Optional[str] = None,
         retries: Optional[int] = 3,
+        cookies: Optional[Dict] = None,
         custom_config: Dict = None,
         **kwargs: Dict,
     ) -> Response:
@@ -89,6 +99,7 @@ class Fetcher(BaseFetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param cookies: Set cookies for the next request.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
@@ -103,6 +114,12 @@ class Fetcher(BaseFetcher):
         adaptor_arguments = tuple(
             {**cls._generate_parser_arguments(), **custom_config}.items()
         )
+
+        if not cookies:
+            cookies = {}
+        elif not isinstance(cookies, dict):
+            ValueError(f"The cookies must be of type dictionary, got {cls.__class__}")
+
         response_object = StaticEngine(
             url,
             proxy,
@@ -110,6 +127,7 @@ class Fetcher(BaseFetcher):
             follow_redirects,
             timeout,
             retries,
+            tuple(cookies.items()),
             adaptor_arguments=adaptor_arguments,
         ).post(**kwargs)
         return response_object
@@ -123,6 +141,7 @@ class Fetcher(BaseFetcher):
         stealthy_headers: bool = True,
         proxy: Optional[str] = None,
         retries: Optional[int] = 3,
+        cookies: Optional[Dict] = None,
         custom_config: Dict = None,
         **kwargs: Dict,
     ) -> Response:
@@ -135,6 +154,7 @@ class Fetcher(BaseFetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param cookies: Set cookies for the next request.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
 
@@ -150,6 +170,12 @@ class Fetcher(BaseFetcher):
         adaptor_arguments = tuple(
             {**cls._generate_parser_arguments(), **custom_config}.items()
         )
+
+        if not cookies:
+            cookies = {}
+        elif not isinstance(cookies, dict):
+            ValueError(f"The cookies must be of type dictionary, got {cls.__class__}")
+
         response_object = StaticEngine(
             url,
             proxy,
@@ -157,6 +183,7 @@ class Fetcher(BaseFetcher):
             follow_redirects,
             timeout,
             retries,
+            tuple(cookies.items()),
             adaptor_arguments=adaptor_arguments,
         ).put(**kwargs)
         return response_object
@@ -170,6 +197,7 @@ class Fetcher(BaseFetcher):
         stealthy_headers: bool = True,
         proxy: Optional[str] = None,
         retries: Optional[int] = 3,
+        cookies: Optional[Dict] = None,
         custom_config: Dict = None,
         **kwargs: Dict,
     ) -> Response:
@@ -182,6 +210,7 @@ class Fetcher(BaseFetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param cookies: Set cookies for the next request.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
@@ -196,6 +225,12 @@ class Fetcher(BaseFetcher):
         adaptor_arguments = tuple(
             {**cls._generate_parser_arguments(), **custom_config}.items()
         )
+
+        if not cookies:
+            cookies = {}
+        elif not isinstance(cookies, dict):
+            ValueError(f"The cookies must be of type dictionary, got {cls.__class__}")
+
         response_object = StaticEngine(
             url,
             proxy,
@@ -203,6 +238,7 @@ class Fetcher(BaseFetcher):
             follow_redirects,
             timeout,
             retries,
+            tuple(cookies.items()),
             adaptor_arguments=adaptor_arguments,
         ).delete(**kwargs)
         return response_object
@@ -218,6 +254,7 @@ class AsyncFetcher(Fetcher):
         stealthy_headers: bool = True,
         proxy: Optional[str] = None,
         retries: Optional[int] = 3,
+        cookies: Optional[Dict] = None,
         custom_config: Dict = None,
         **kwargs: Dict,
     ) -> Response:
@@ -230,6 +267,7 @@ class AsyncFetcher(Fetcher):
             create a referer header as if this request had came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param cookies: Set cookies for the next request.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.get()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
@@ -244,6 +282,12 @@ class AsyncFetcher(Fetcher):
         adaptor_arguments = tuple(
             {**cls._generate_parser_arguments(), **custom_config}.items()
         )
+
+        if not cookies:
+            cookies = {}
+        elif not isinstance(cookies, dict):
+            ValueError(f"The cookies must be of type dictionary, got {cls.__class__}")
+
         response_object = await StaticEngine(
             url,
             proxy,
@@ -251,6 +295,7 @@ class AsyncFetcher(Fetcher):
             follow_redirects,
             timeout,
             retries=retries,
+            cookies=tuple(cookies.items()),
             adaptor_arguments=adaptor_arguments,
         ).async_get(**kwargs)
         return response_object
@@ -264,6 +309,7 @@ class AsyncFetcher(Fetcher):
         stealthy_headers: bool = True,
         proxy: Optional[str] = None,
         retries: Optional[int] = 3,
+        cookies: Optional[Dict] = None,
         custom_config: Dict = None,
         **kwargs: Dict,
     ) -> Response:
@@ -276,6 +322,7 @@ class AsyncFetcher(Fetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param cookies: Set cookies for the next request.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.post()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
@@ -290,6 +337,12 @@ class AsyncFetcher(Fetcher):
         adaptor_arguments = tuple(
             {**cls._generate_parser_arguments(), **custom_config}.items()
         )
+
+        if not cookies:
+            cookies = {}
+        elif not isinstance(cookies, dict):
+            ValueError(f"The cookies must be of type dictionary, got {cls.__class__}")
+
         response_object = await StaticEngine(
             url,
             proxy,
@@ -297,6 +350,7 @@ class AsyncFetcher(Fetcher):
             follow_redirects,
             timeout,
             retries=retries,
+            cookies=tuple(cookies.items()),
             adaptor_arguments=adaptor_arguments,
         ).async_post(**kwargs)
         return response_object
@@ -310,6 +364,7 @@ class AsyncFetcher(Fetcher):
         stealthy_headers: bool = True,
         proxy: Optional[str] = None,
         retries: Optional[int] = 3,
+        cookies: Optional[Dict] = None,
         custom_config: Dict = None,
         **kwargs: Dict,
     ) -> Response:
@@ -322,6 +377,7 @@ class AsyncFetcher(Fetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param cookies: Set cookies for the next request.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.put()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
@@ -336,6 +392,12 @@ class AsyncFetcher(Fetcher):
         adaptor_arguments = tuple(
             {**cls._generate_parser_arguments(), **custom_config}.items()
         )
+
+        if not cookies:
+            cookies = {}
+        elif not isinstance(cookies, dict):
+            ValueError(f"The cookies must be of type dictionary, got {cls.__class__}")
+
         response_object = await StaticEngine(
             url,
             proxy,
@@ -343,6 +405,7 @@ class AsyncFetcher(Fetcher):
             follow_redirects,
             timeout,
             retries=retries,
+            cookies=tuple(cookies.items()),
             adaptor_arguments=adaptor_arguments,
         ).async_put(**kwargs)
         return response_object
@@ -356,6 +419,7 @@ class AsyncFetcher(Fetcher):
         stealthy_headers: bool = True,
         proxy: Optional[str] = None,
         retries: Optional[int] = 3,
+        cookies: Optional[Dict] = None,
         custom_config: Dict = None,
         **kwargs: Dict,
     ) -> Response:
@@ -368,6 +432,7 @@ class AsyncFetcher(Fetcher):
             create a referer header as if this request came from Google's search of this URL's domain.
         :param proxy: A string of a proxy to use for http and https requests, the format accepted is `http://username:password@localhost:8030`
         :param retries: The number of retries to do through httpx if the request failed for any reason. The default is 3 retries.
+        :param cookies: Set cookies for the next request.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param kwargs: Any additional keyword arguments are passed directly to `httpx.delete()` function so check httpx documentation for details.
         :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
@@ -382,6 +447,12 @@ class AsyncFetcher(Fetcher):
         adaptor_arguments = tuple(
             {**cls._generate_parser_arguments(), **custom_config}.items()
         )
+
+        if not cookies:
+            cookies = {}
+        elif not isinstance(cookies, dict):
+            ValueError(f"The cookies must be of type dictionary, got {cls.__class__}")
+
         response_object = await StaticEngine(
             url,
             proxy,
@@ -389,6 +460,7 @@ class AsyncFetcher(Fetcher):
             follow_redirects,
             timeout,
             retries=retries,
+            cookies=tuple(cookies.items()),
             adaptor_arguments=adaptor_arguments,
         ).async_delete(**kwargs)
         return response_object
