@@ -455,6 +455,7 @@ Type 'exit' or press Ctrl+D to exit.
         delete = self.create_wrapper(Fetcher.delete)
         dynamic_fetch = self.create_wrapper(PlayWrightFetcher.fetch)
         stealthy_fetch = self.create_wrapper(StealthyFetcher.fetch)
+        curl2fetcher = self.create_wrapper(self._curl_parser.convert2fetcher)
 
         # Create the namespace dictionary
         return {
@@ -474,7 +475,7 @@ Type 'exit' or press Ctrl+D to exit.
             "pages": self.pages,
             "view": show_page_in_browser,
             "uncurl": self._curl_parser.parse,
-            "curl2fetcher": self._curl_parser.convert2fetcher,
+            "curl2fetcher": curl2fetcher,
             "help": self.show_help,
         }
 
