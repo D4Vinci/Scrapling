@@ -42,26 +42,26 @@ class PlaywrightEngine:
         proxy: Optional[Union[str, Dict[str, str]]] = None,
         adaptor_arguments: Dict = None,
     ):
-        """An engine that utilizes PlayWright library, check the `PlayWrightFetcher` class for more documentation.
+        """An engine that uses the PlayWright library checks the `PlayWrightFetcher` class for more documentation.
 
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30000
-        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning `Response` object.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
-        :param wait_selector: Wait for a specific css selector to be in a specific state.
+        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
-        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. Default state is `attached`.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
-        :param real_chrome: If you have chrome browser installed on your device, enable this and the Fetcher will launch an instance of your browser and use it.
+        :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
-        :param nstbrowser_mode: Enables NSTBrowser mode, it have to be used with `cdp_url` argument or it will get completely ignored.
+        :param nstbrowser_mode: Enables NSTBrowser mode, it has to be used with the ` cdp_url ` argument, or it will get completely ignored.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -107,7 +107,7 @@ class PlaywrightEngine:
         ]
 
     def _cdp_url_logic(self) -> str:
-        """Constructs new CDP URL if NSTBrowser is enabled otherwise return CDP URL as it is
+        """Constructs a new CDP URL if NSTBrowser is enabled otherwise return CDP URL as it is
         :return: CDP URL
         """
         cdp_url = self.cdp_url
@@ -181,7 +181,7 @@ class PlaywrightEngine:
                 {
                     "is_mobile": False,
                     "has_touch": False,
-                    # I'm thinking about disabling it to rest from all Service Workers headache but let's keep it as it is for now
+                    # I'm thinking about disabling it to rest from all Service Workers headache, but let's keep it as it is for now
                     "service_workers": "allow",
                     "ignore_https_errors": True,
                     "screen": {"width": 1920, "height": 1080},
