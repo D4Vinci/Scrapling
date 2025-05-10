@@ -227,6 +227,23 @@ class CamoufoxEngine:
 
     @staticmethod
     def __detect_cloudflare(page_content):
+        """
+        Detect the type of Cloudflare challenge present in the provided page content.
+
+        This function analyzes the given page content to identify whether a specific
+        type of Cloudflare challenge is present. It checks for three predefined
+        challenge types: non-interactive, managed, and interactive. If a challenge
+        type is detected, it returns the corresponding type as a string. If no
+        challenge type is detected, it returns None.
+
+        Args:
+            page_content (str): The content of the page to analyze for Cloudflare
+                challenge types.
+
+        Returns:
+            str: A string representing the detected Cloudflare challenge type, if
+                found. Returns None if no challenge matches.
+        """
         challenge_types = (
             "non-interactive",
             "managed",
@@ -262,7 +279,7 @@ class CamoufoxEngine:
             else:
                 while "Verifying you are human." in page.content():
                     # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(500)
 
                 iframe = page.frame(
                     url=re.compile(
@@ -270,12 +287,12 @@ class CamoufoxEngine:
                     )
                 )
                 if iframe is None:
-                    print("No iframe bro")
+                    log.info("Didn't find Cloudflare iframe!")
                     return
 
                 while not iframe.frame_element().is_visible():
                     # Double-checking that the iframe is loaded
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(500)
 
                 # Calculate the Captcha coordinates for any viewport
                 outer_box = page.locator(".main-content p+div>div>div").bounding_box()
@@ -313,7 +330,7 @@ class CamoufoxEngine:
             else:
                 while "Verifying you are human." in (await page.content()):
                     # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
-                    await page.wait_for_timeout(1000)
+                    await page.wait_for_timeout(500)
 
                 iframe = page.frame(
                     url=re.compile(
@@ -321,12 +338,12 @@ class CamoufoxEngine:
                     )
                 )
                 if iframe is None:
-                    print("No iframe bro")
+                    log.info("Didn't find Cloudflare iframe!")
                     return
 
                 while not await (await iframe.frame_element()).is_visible():
                     # Double-checking that the iframe is loaded
-                    await page.wait_for_timeout(1000)
+                    await page.wait_for_timeout(500)
 
                 # Calculate the Captcha coordinates for any viewport
                 outer_box = await page.locator(
