@@ -51,7 +51,9 @@ class TestPlayWrightFetcher:
 
     def test_cookies_loading(self, fetcher):
         """Test if cookies are set after the request"""
-        assert fetcher.fetch(self.cookies_url).cookies == {"test": "value"}
+        response = fetcher.fetch(self.cookies_url)
+        cookies = {response.cookies[0]['name']: response.cookies[0]['value']}
+        assert cookies == {"test": "value"}
 
     def test_automation(self, fetcher):
         """Test if automation break the code or not"""

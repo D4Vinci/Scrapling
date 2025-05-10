@@ -61,7 +61,8 @@ class TestStealthyFetcher:
     async def test_cookies_loading(self, fetcher, urls):
         """Test if cookies are set after the request"""
         response = await fetcher.async_fetch(urls["cookies_url"])
-        assert response.cookies == {"test": "value"}
+        cookies = {response.cookies[0]['name']: response.cookies[0]['value']}
+        assert cookies == {"test": "value"}
 
     async def test_automation(self, fetcher, urls):
         """Test if automation break the code or not"""
