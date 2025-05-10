@@ -14,6 +14,7 @@ from scrapling.core._types import (
     Optional,
     SelectorWaitStates,
     Union,
+    Iterable,
 )
 from scrapling.core.utils import log
 from scrapling.engines.toolbelt import (
@@ -45,6 +46,7 @@ class CamoufoxEngine:
         wait_selector: Optional[str] = None,
         addons: Optional[List[str]] = None,
         wait_selector_state: SelectorWaitStates = "attached",
+        cookies: Optional[Iterable[Dict]] = None,
         google_search: bool = True,
         extra_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[Union[str, Dict[str, str]]] = None,
@@ -63,6 +65,7 @@ class CamoufoxEngine:
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
+        :param cookies: Set cookies for the next request.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
@@ -97,6 +100,7 @@ class CamoufoxEngine:
         self.additional_arguments = additional_arguments or {}
         self.proxy = construct_proxy_dict(proxy)
         self.addons = addons or []
+        self.cookies = cookies or []
         self.humanize = humanize
         self.solve_cloudflare = solve_cloudflare
         self.timeout = check_type_validity(timeout, [int, float], 30_000)
@@ -378,6 +382,9 @@ class CamoufoxEngine:
 
         with Camoufox(**self._get_camoufox_options()) as browser:
             context = browser.new_context()
+            if self.cookies:
+                context.add_cookies(self.cookies)
+
             page = context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
@@ -480,6 +487,9 @@ class CamoufoxEngine:
 
         async with AsyncCamoufox(**self._get_camoufox_options()) as browser:
             context = await browser.new_context()
+            if self.cookies:
+                await context.add_cookies(self.cookies)
+
             page = await context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)

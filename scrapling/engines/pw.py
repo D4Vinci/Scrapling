@@ -1,6 +1,13 @@
 import json
 
-from scrapling.core._types import Callable, Dict, Optional, SelectorWaitStates, Union
+from scrapling.core._types import (
+    Callable,
+    Dict,
+    Optional,
+    SelectorWaitStates,
+    Union,
+    Iterable,
+)
 from scrapling.core.utils import log, lru_cache
 from scrapling.engines.constants import DEFAULT_STEALTH_FLAGS, NSTBROWSER_DEFAULT_QUERY
 from scrapling.engines.toolbelt import (
@@ -30,6 +37,7 @@ class PlaywrightEngine:
         wait_selector: Optional[str] = None,
         locale: Optional[str] = "en-US",
         wait_selector_state: SelectorWaitStates = "attached",
+        cookies: Optional[Iterable[Dict]] = None,
         stealth: bool = False,
         real_chrome: bool = False,
         hide_canvas: bool = False,
@@ -49,6 +57,7 @@ class PlaywrightEngine:
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
+        :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
@@ -81,6 +90,7 @@ class PlaywrightEngine:
         self.proxy = construct_proxy_dict(proxy)
         self.cdp_url = cdp_url
         self.useragent = useragent
+        self.cookies = cookies or []
         self.timeout = check_type_validity(timeout, [int, float], 30000)
         self.wait = check_type_validity(wait, [int, float], 0)
         if page_action is not None:
@@ -337,6 +347,9 @@ class PlaywrightEngine:
                 browser = p.chromium.launch(**self.__launch_kwargs())
 
             context = browser.new_context(**self.__context_kwargs())
+            if self.cookies:
+                context.add_cookies(self.cookies)
+
             page = context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
@@ -449,6 +462,9 @@ class PlaywrightEngine:
                 browser = await p.chromium.launch(**self.__launch_kwargs())
 
             context = await browser.new_context(**self.__context_kwargs())
+            if self.cookies:
+                await context.add_cookies(self.cookies)
+
             page = await context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)

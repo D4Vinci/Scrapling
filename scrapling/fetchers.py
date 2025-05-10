@@ -6,6 +6,7 @@ from scrapling.core._types import (
     Optional,
     SelectorWaitStates,
     Union,
+    Iterable,
 )
 from scrapling.engines import (
     CamoufoxEngine,
@@ -484,6 +485,7 @@ class StealthyFetcher(BaseFetcher):
         allow_webgl: bool = True,
         network_idle: bool = False,
         addons: Optional[List[str]] = None,
+        cookies: Optional[Iterable[Dict]] = None,
         wait: Optional[int] = 0,
         timeout: Optional[float] = 30000,
         page_action: Callable = None,
@@ -511,6 +513,7 @@ class StealthyFetcher(BaseFetcher):
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
+        :param cookies: Set cookies for the next request.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
@@ -545,6 +548,7 @@ class StealthyFetcher(BaseFetcher):
             geoip=geoip,
             addons=addons,
             timeout=timeout,
+            cookies=cookies,
             headless=headless,
             humanize=humanize,
             disable_ads=disable_ads,
@@ -573,6 +577,7 @@ class StealthyFetcher(BaseFetcher):
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
+        cookies: Optional[Iterable[Dict]] = None,
         allow_webgl: bool = True,
         network_idle: bool = False,
         addons: Optional[List[str]] = None,
@@ -603,6 +608,7 @@ class StealthyFetcher(BaseFetcher):
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
+        :param cookies: Set cookies for the next request.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
         :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
@@ -637,6 +643,7 @@ class StealthyFetcher(BaseFetcher):
             geoip=geoip,
             addons=addons,
             timeout=timeout,
+            cookies=cookies,
             headless=headless,
             humanize=humanize,
             disable_ads=disable_ads,
@@ -685,6 +692,7 @@ class PlayWrightFetcher(BaseFetcher):
         network_idle: bool = False,
         timeout: Optional[float] = 30000,
         wait: Optional[int] = 0,
+        cookies: Optional[Iterable[Dict]] = None,
         page_action: Optional[Callable] = None,
         wait_selector: Optional[str] = None,
         wait_selector_state: SelectorWaitStates = "attached",
@@ -712,6 +720,7 @@ class PlayWrightFetcher(BaseFetcher):
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
+        :param cookies: Set cookies for the next request.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
@@ -743,6 +752,7 @@ class PlayWrightFetcher(BaseFetcher):
             timeout=timeout,
             stealth=stealth,
             cdp_url=cdp_url,
+            cookies=cookies,
             headless=headless,
             useragent=useragent,
             real_chrome=real_chrome,
@@ -771,6 +781,7 @@ class PlayWrightFetcher(BaseFetcher):
         network_idle: bool = False,
         timeout: Optional[float] = 30000,
         wait: Optional[int] = 0,
+        cookies: Optional[Iterable[Dict]] = None,
         page_action: Optional[Callable] = None,
         wait_selector: Optional[str] = None,
         wait_selector_state: SelectorWaitStates = "attached",
@@ -796,6 +807,7 @@ class PlayWrightFetcher(BaseFetcher):
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param cookies: Set cookies for the next request.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
@@ -829,6 +841,7 @@ class PlayWrightFetcher(BaseFetcher):
             timeout=timeout,
             stealth=stealth,
             cdp_url=cdp_url,
+            cookies=cookies,
             headless=headless,
             useragent=useragent,
             real_chrome=real_chrome,
