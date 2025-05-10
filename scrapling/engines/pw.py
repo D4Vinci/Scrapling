@@ -242,7 +242,7 @@ class PlaywrightEngine:
                             else StatusText.get(301),
                             encoding=current_response.headers.get("content-type", "")
                             or "utf-8",
-                            cookies={},
+                            cookies=tuple(),
                             headers=current_response.all_headers()
                             if current_response
                             else {},
@@ -285,7 +285,7 @@ class PlaywrightEngine:
                             else StatusText.get(301),
                             encoding=current_response.headers.get("content-type", "")
                             or "utf-8",
-                            cookies={},
+                            cookies=tuple(),
                             headers=await current_response.all_headers()
                             if current_response
                             else {},
@@ -405,9 +405,7 @@ class PlaywrightEngine:
                 status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
-                cookies={
-                    cookie["name"]: cookie["value"] for cookie in page.context.cookies()
-                },
+                cookies=tuple(dict(cookie) for cookie in page.context.cookies()),
                 headers=first_response.all_headers(),
                 request_headers=first_response.request.all_headers(),
                 history=history,
@@ -519,10 +517,7 @@ class PlaywrightEngine:
                 status=final_response.status,
                 reason=status_text,
                 encoding=encoding,
-                cookies={
-                    cookie["name"]: cookie["value"]
-                    for cookie in await page.context.cookies()
-                },
+                cookies=tuple(dict(cookie) for cookie in await page.context.cookies()),
                 headers=await first_response.all_headers(),
                 request_headers=await first_response.request.all_headers(),
                 history=history,

@@ -109,7 +109,7 @@ class Response(Adaptor):
         body: bytes,
         status: int,
         reason: str,
-        cookies: Dict,
+        cookies: Union[Tuple[Dict[str, str], ...], Dict[str, str]],
         headers: Dict,
         request_headers: Dict,
         encoding: str = "utf-8",
@@ -132,7 +132,7 @@ class Response(Adaptor):
             encoding=encoding,
             **adaptor_arguments,
         )
-        # For back-ward compatibility
+        # For backward compatibility
         self.adaptor = self
         # For easier debugging while working from a Python shell
         log.info(

@@ -17,7 +17,7 @@ class StaticEngine:
         follow_redirects: bool = True,
         timeout: Optional[Union[int, float]] = None,
         retries: Optional[int] = 3,
-        cookies: Optional[Dict] = None,
+        cookies: Optional[Tuple] = None,
         adaptor_arguments: Tuple = None,
     ):
         """An engine that utilizes httpx library, check the `Fetcher` class for more documentation.
