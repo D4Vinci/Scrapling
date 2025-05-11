@@ -14,11 +14,11 @@ from cssselect import HTMLTranslator as OriginalHTMLTranslator
 from cssselect.parser import Element, FunctionalPseudoElement, PseudoElement
 from cssselect.xpath import ExpressionError
 from cssselect.xpath import XPathExpr as OriginalXPathExpr
-from w3lib.html import HTML5_WHITESPACE
 
 from scrapling.core._types import Any, Optional, Protocol, Self
 from scrapling.core.utils import lru_cache
 
+HTML5_WHITESPACE = " \t\n\r\x0c"  # From w3lib.html.HTML5_WHITESPACE
 regex = f"[{HTML5_WHITESPACE}]+"
 replace_html5_whitespaces = re.compile(regex).sub
 

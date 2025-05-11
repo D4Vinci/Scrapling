@@ -17,9 +17,11 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    Match,
 )
 
 SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
+StrOrBytes = Union[str, bytes]
 
 try:
     from typing import Protocol

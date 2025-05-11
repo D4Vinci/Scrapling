@@ -54,7 +54,6 @@ setup(
         "cssselect>=1.2",
         "IPython",
         "click",
-        "w3lib",
         "orjson>=3",
         "tldextract",
         "httpx[brotli,zstd, socks]",
