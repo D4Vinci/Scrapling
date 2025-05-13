@@ -89,7 +89,7 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 📌 [Try now](https://app.scrapeless.com/passport/login?utm_source=D4Vinci) | [Docs](https://docs.scrapeless.com/en/scraping-browser/quickstart/introduction/?utm_source=D4Vinci)
 
 
-<a href="http://scrapeless.com/?utm_source=D4Vinci"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg" style="width:80%" alt="Scrapeless Banner" ></a>
+<a href="http://scrapeless.com/?utm_source=D4Vinci"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg" style="width:85%" alt="Scrapeless Banner" ></a>
 ---
 
 ## Key Features
