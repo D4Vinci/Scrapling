@@ -86,12 +86,6 @@ page = StealthyFetcher.fetch(
    google_search=True
 )
 
-# Custom user agent
-page = StealthyFetcher.fetch(
-    'https://example.com',
-    useragent='Mozilla/5.0...'
-)
-
 # Custom humanization duration
 page = StealthyFetcher.fetch(
     'https://example.com',
