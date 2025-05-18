@@ -73,40 +73,23 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 - 🔒 **Swiss Quality and Privacy**
 - 🎁 **Free Trial**
 - 🛡️ **99.9% Uptime**
-- 🤝 **Special IP Pool selection**: Optimize for fast, quality or quantity of ips
+- 🤝 **Special IP Pool selection**: Optimize for fast, quality, or quantity of ips
 - 🔧 **Easy Integration**: Compatible with most software and programming languages
 
 [![Evomi Banner](https://my.evomi.com/images/brand/cta.png)](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling)
 ---
 
-[Scrapeless](http://scrapeless.com/?utm_source=D4Vinci) – Easy web scraping toolkit for businesses and developers
+[Scrapeless](http://scrapeless.com/?utm_source=D4Vinci) – An all-in-one expandable and highly scalable tool for businesses & developers
+- ⚡ [Scraping Browser](https://www.scrapeless.com/en/product/scraping-browser?utm_source=D4Vinci): Cloud-based browser with stealth mode, built to unlock websites at scale. Supports high concurrency, automation, and large-volume scraping. Puppeteer/Playwright compatible.
+- ⚡ [Deep SerpApi](https://www.scrapeless.com/en/product/deep-serp-api?utm_source=D4Vinci): 13+ SERP types, $0.1/1K queries, 0.2s response.
+- ⚡ [Scraping API](https://www.scrapeless.com/en/product/scraping-api?utm_source=D4Vinci): Access TikTok, Shopee, Amazon, and more.
+- ⚡ [Universal Scraping API](https://www.scrapeless.com/en/product/universal-scraping-api?utm_source=D4Vinci): Web unlocker with IP rotation, fingerprinting, and CAPTCHA bypass.
+- ⚡ [Proxies](https://www.scrapeless.com/en/product/proxies?utm_source=D4Vinci): 70M+ IPs in 195 countries, stable & low-cost at $1.8/GB.
 
-⚡ [Scraping Browser](https://www.scrapeless.com/en/product/scraping-browser?utm_source=D4Vinci):
-1. Web browsing capabilities for AI agents and applications
-    - Collect data at scale for agents without being blocked
-    - Simulate user behavior using advanced browser tools
-    - Build agent applications with real-time and historical web data
-2. Unlock any scale with unlimited parallel jobs
-3. High-performance web unlocking built directly into the browser
-4. Compatible with Puppeteer and Playwright
-
-⚡ [Deep SerpApi](https://www.scrapeless.com/en/product/deep-serp-api?utm_source=D4Vinci): One-click Google search data monitoring, supporting 15+ SERP scenarios such as academic/Google Store/Maps, $0.1/thousand queries, 0.2s response.
-Scrapeless has launched MCP Server!
-
-[How to set up Scrapeless MCP Server on Cline?](https://www.scrapeless.com/en/faq/how-to-set-up-scrapeless-mcp-server-on-cline?utm_source=D4Vinci)<br/>
-[How to Set Up Scrapeless MCP Server on Cursor?](https://www.scrapeless.com/en/faq/how-to-set-up-scrapeless-mcp-server-on-cursor?utm_source=D4Vinci)<br/>
-[How to Set Up Scrapeless MCP Server on Claude?](https://www.scrapeless.com/en/faq/how-to-set-up-scrapeless-mcp-server-on-claude?utm_source=D4Vinci)
-
-⚡ [Scraping API](https://www.scrapeless.com/en/product/scraping-api?utm_source=D4Vinci): Easily obtain public content such as TikTok, Shopee, Amazon, Walmart, etc. Covering structured data of 8+ vertical industries such as e-commerce/social media, ready to use. Only billed by the number of successful calls.
-
-⚡ [Universal Scraping API](https://www.scrapeless.com/en/product/universal-scraping-api?utm_source=D4Vinci): Intelligent IP rotation + real user fingerprint, success rate up to 99%. No more worrying about network blockades and crawling obstacles.
-
-⚠️ Exclusive for open source projects: Submit the Repo link to apply for 100,000 free Deep SerpApi queries!
-
-📌 [Try it now](https://app.scrapeless.com/passport/login?utm_source=D4Vinci) | [Documentation](https://docs.scrapeless.com/en/scraping-browser/quickstart/introduction/?utm_source=D4Vinci)
+📌 [Try now](https://app.scrapeless.com/passport/login?utm_source=D4Vinci) | [Docs](https://docs.scrapeless.com/en/scraping-browser/quickstart/introduction/?utm_source=D4Vinci)
 
 
-[![Scrapeless Banner](https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg)](http://scrapeless.com/?utm_source=D4Vinci)
+<a href="http://scrapeless.com/?utm_source=D4Vinci"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg" style="width:85%" alt="Scrapeless Banner" ></a>
 ---
 
 ## Key Features
