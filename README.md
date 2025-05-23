@@ -91,6 +91,16 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 <a href="http://scrapeless.com/?utm_source=D4Vinci"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg" style="width:85%" alt="Scrapeless Banner" ></a>
 ---
+**Unlock Reliable Proxy Services with [Swiftproxy](https://www.swiftproxy.net/)**
+
+With [Swiftproxy](https://www.swiftproxy.net/), you can access high-performance, secure proxies to enhance your web automation, privacy, and data collection efforts.
+Developers and businesses trust our services to scale scraping tasks and ensure a safe online experience. Get started today at [Swiftproxy.net](https://www.swiftproxy.net/).
+
+Anyone who signs up can use the discount code GHB5 to get 10% off their purchase at checkout
+
+<img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/swiftproxy.jpeg" style="width:85%" alt="SwiftProxy Banner" >
+
+---
 
 ## Key Features
 
