@@ -19,7 +19,7 @@ from scrapling.core._types import (
 from scrapling.core.utils import log
 from scrapling.engines.toolbelt import (
     Response,
-    StatusText,
+    ResponseFactory,
     async_intercept_route,
     check_type_validity,
     construct_proxy_dict,
@@ -142,92 +142,6 @@ class CamoufoxEngine:
             "os": None if self.os_randomize else get_os_name(),
             **self.additional_arguments,
         }
-
-    def _process_response_history(self, first_response):
-        """Process response history to build a list of Response objects"""
-        history = []
-        current_request = first_response.request.redirected_from
-
-        try:
-            while current_request:
-                try:
-                    current_response = current_request.response()
-                    history.insert(
-                        0,
-                        Response(
-                            url=current_request.url,
-                            # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                            text="",
-                            body=b"",
-                            status=current_response.status if current_response else 301,
-                            reason=(
-                                current_response.status_text
-                                or StatusText.get(current_response.status)
-                            )
-                            if current_response
-                            else StatusText.get(301),
-                            encoding=current_response.headers.get("content-type", "")
-                            or "utf-8",
-                            cookies=tuple(),
-                            headers=current_response.all_headers()
-                            if current_response
-                            else {},
-                            request_headers=current_request.all_headers(),
-                            **self.adaptor_arguments,
-                        ),
-                    )
-                except Exception as e:
-                    log.error(f"Error processing redirect: {e}")
-                    break
-
-                current_request = current_request.redirected_from
-        except Exception as e:
-            log.error(f"Error processing response history: {e}")
-
-        return history
-
-    async def _async_process_response_history(self, first_response):
-        """Process response history to build a list of Response objects"""
-        history = []
-        current_request = first_response.request.redirected_from
-
-        try:
-            while current_request:
-                try:
-                    current_response = await current_request.response()
-                    history.insert(
-                        0,
-                        Response(
-                            url=current_request.url,
-                            # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                            text="",
-                            body=b"",
-                            status=current_response.status if current_response else 301,
-                            reason=(
-                                current_response.status_text
-                                or StatusText.get(current_response.status)
-                            )
-                            if current_response
-                            else StatusText.get(301),
-                            encoding=current_response.headers.get("content-type", "")
-                            or "utf-8",
-                            cookies=tuple(),
-                            headers=await current_response.all_headers()
-                            if current_response
-                            else {},
-                            request_headers=await current_request.all_headers(),
-                            **self.adaptor_arguments,
-                        ),
-                    )
-                except Exception as e:
-                    log.error(f"Error processing redirect: {e}")
-                    break
-
-                current_request = current_request.redirected_from
-        except Exception as e:
-            log.error(f"Error processing response history: {e}")
-
-        return history
 
     @staticmethod
     def __detect_cloudflare(page_content):
@@ -429,39 +343,8 @@ class CamoufoxEngine:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
             page.wait_for_timeout(self.wait)
-            # In case we didn't catch a document type somehow
-            final_response = final_response if final_response else first_response
-            if not final_response:
-                raise ValueError("Failed to get a response from the page")
-
-            # This will be parsed inside `Response`
-            encoding = (
-                final_response.headers.get("content-type", "") or "utf-8"
-            )  # default encoding
-            # PlayWright API sometimes give empty status text for some reason!
-            status_text = final_response.status_text or StatusText.get(
-                final_response.status
-            )
-
-            history = self._process_response_history(first_response)
-            try:
-                page_content = page.content()
-            except Exception as e:
-                log.error(f"Error getting page content: {e}")
-                page_content = ""
-
-            response = Response(
-                url=page.url,
-                text=page_content,
-                body=page_content.encode("utf-8"),
-                status=final_response.status,
-                reason=status_text,
-                encoding=encoding,
-                cookies=tuple(dict(cookie) for cookie in page.context.cookies()),
-                headers=first_response.all_headers(),
-                request_headers=first_response.request.all_headers(),
-                history=history,
-                **self.adaptor_arguments,
+            response = ResponseFactory.from_playwright_response(
+                page, first_response, final_response, self.adaptor_arguments
             )
             page.close()
             context.close()
@@ -534,39 +417,8 @@ class CamoufoxEngine:
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
             await page.wait_for_timeout(self.wait)
-            # In case we didn't catch a document type somehow
-            final_response = final_response if final_response else first_response
-            if not final_response:
-                raise ValueError("Failed to get a response from the page")
-
-            # This will be parsed inside `Response`
-            encoding = (
-                final_response.headers.get("content-type", "") or "utf-8"
-            )  # default encoding
-            # PlayWright API sometimes give empty status text for some reason!
-            status_text = final_response.status_text or StatusText.get(
-                final_response.status
-            )
-
-            history = await self._async_process_response_history(first_response)
-            try:
-                page_content = await page.content()
-            except Exception as e:
-                log.error(f"Error getting page content in async: {e}")
-                page_content = ""
-
-            response = Response(
-                url=page.url,
-                text=page_content,
-                body=page_content.encode("utf-8"),
-                status=final_response.status,
-                reason=status_text,
-                encoding=encoding,
-                cookies=tuple(dict(cookie) for cookie in await page.context.cookies()),
-                headers=await first_response.all_headers(),
-                request_headers=await first_response.request.all_headers(),
-                history=history,
-                **self.adaptor_arguments,
+            response = await ResponseFactory.from_async_playwright_response(
+                page, first_response, final_response, self.adaptor_arguments
             )
             await page.close()
             await context.close()

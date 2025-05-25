@@ -40,10 +40,10 @@ class AsyncFetcher(BaseFetcher):
 
 
 class StealthyFetcher(BaseFetcher):
-    """A `Fetcher` class type that is completely stealthy fetcher that uses a modified version of Firefox.
+    """A `Fetcher` class type that is a completely stealthy fetcher that uses a modified version of Firefox.
 
     It works as real browsers passing almost all online tests/protections based on Camoufox.
-    Other added flavors include setting the faked OS fingerprints to match the user's OS and the referer of every request is set as if this request came from Google's search of this URL's domain.
+    Other added flavors include setting the faked OS fingerprints to match the user's OS, and the referer of every request is set as if this request came from Google's search of this URL's domain.
     """
 
     @classmethod
@@ -81,7 +81,7 @@ class StealthyFetcher(BaseFetcher):
         :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
@@ -96,7 +96,7 @@ class StealthyFetcher(BaseFetcher):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
-        :param wait_selector: Wait for a specific css selector to be in a specific state.
+        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
             It will also calculate and spoof the browser's language based on the distribution of language speakers in the target region.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
@@ -176,7 +176,7 @@ class StealthyFetcher(BaseFetcher):
         :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param block_webrtc: Blocks WebRTC entirely.
@@ -191,7 +191,7 @@ class StealthyFetcher(BaseFetcher):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
-        :param wait_selector: Wait for a specific css selector to be in a specific state.
+        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
             It will also calculate and spoof the browser's language based on the distribution of language speakers in the target region.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
@@ -242,16 +242,16 @@ class PlayWrightFetcher(BaseFetcher):
 
      Using this Fetcher class, you can do requests with:
         - Vanilla Playwright without any modifications other than the ones you chose.
-        - Stealthy Playwright with the stealth mode I wrote for it. It's still a work in progress but it bypasses many online tests like bot.sannysoft.com
+        - Stealthy Playwright with the stealth mode I wrote for it. It's still a work in progress, but it bypasses many online tests like bot.sannysoft.com
             Some of the things stealth mode does include:
                 1) Patches the CDP runtime fingerprint.
                 2) Mimics some of the real browsers' properties by injecting several JS files and using custom options.
                 3) Using custom flags on launch to hide Playwright even more and make it faster.
-                4) Generates real browser's headers of the same type and same user OS then append it to the request.
-        - Real browsers by passing the `real_chrome` argument or the CDP URL of your browser to be controlled by the Fetcher and most of the options can be enabled on it.
+                4) Generates real browser's headers of the same type and same user OS, then append it to the request.
+        - Real browsers by passing the `real_chrome` argument or the CDP URL of your browser to be controlled by the Fetcher, and most of the options can be enabled on it.
         - NSTBrowser's docker browserless option by passing the CDP URL and enabling `nstbrowser_mode` option.
 
-    > Note that these are the main options with PlayWright but it can be mixed together.
+    > Note that these are the main options with PlayWright, but it can be mixed.
     """
 
     @classmethod
