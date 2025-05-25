@@ -48,7 +48,6 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Typing :: Typed",
     ],
-    # Instead of using requirements file to dodge possible errors from tox?
     install_requires=[
         "lxml>=5.0",
         "cssselect>=1.2",
@@ -56,7 +55,7 @@ setup(
         "click",
         "orjson>=3",
         "tldextract",
-        "httpx[brotli,zstd, socks]",
+        "curl_cffi>=0.11.1",
         "playwright>=1.49.1",
         "rebrowser-playwright>=1.49.1",
         "camoufox[geoip]>=0.4.11",

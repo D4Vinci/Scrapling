@@ -18,8 +18,11 @@ from typing import (
     TypeVar,
     Union,
     Match,
+    Mapping,
+    Awaitable,
 )
 
+SUPPORTED_HTTP_METHODS = Literal["GET", "POST", "PUT", "DELETE"]
 SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
 StrOrBytes = Union[str, bytes]
 
