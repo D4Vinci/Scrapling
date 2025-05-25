@@ -84,7 +84,7 @@ nav:
       - Custom Types: api-reference/custom-types.md
     - Writing your retrieval system: development/automatch_storage_system.md
     - Using Scrapling's custom types: development/scrapling_custom_types.md
-  - Support and Sponsors: donate.md
+  - Support and Advertisement: donate.md
   - Contributing: contributing.md
   - Changelog: 'https://github.com/D4Vinci/Scrapling/releases'
 
