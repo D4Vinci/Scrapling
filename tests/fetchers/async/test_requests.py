@@ -33,7 +33,7 @@ class TestAsyncFetcher:
         assert (await fetcher.get(urls["status_501"])).status == 501
 
     async def test_get_properties(self, fetcher, urls):
-        """Test if different arguments with GET request breaks the code or not"""
+        """Test if different arguments with the GET request break the code or not"""
         assert (
             await fetcher.get(urls["status_200"], stealthy_headers=True)
         ).status == 200
@@ -51,7 +51,7 @@ class TestAsyncFetcher:
         ).status == 200
 
     async def test_post_properties(self, fetcher, urls):
-        """Test if different arguments with POST request breaks the code or not"""
+        """Test if different arguments with the POST request break the code or not"""
         assert (
             await fetcher.post(urls["post_url"], data={"key": "value"})
         ).status == 200
@@ -79,7 +79,7 @@ class TestAsyncFetcher:
         ).status == 200
 
     async def test_put_properties(self, fetcher, urls):
-        """Test if different arguments with PUT request breaks the code or not"""
+        """Test if different arguments with a PUT request break the code or not"""
         assert (await fetcher.put(urls["put_url"], data={"key": "value"})).status in [
             200,
             405,
@@ -108,7 +108,7 @@ class TestAsyncFetcher:
         ).status in [200, 405]
 
     async def test_delete_properties(self, fetcher, urls):
-        """Test if different arguments with DELETE request breaks the code or not"""
+        """Test if different arguments with the DELETE request break the code or not"""
         assert (
             await fetcher.delete(urls["delete_url"], stealthy_headers=True)
         ).status == 200

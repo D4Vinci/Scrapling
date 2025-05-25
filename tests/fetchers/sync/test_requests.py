@@ -32,7 +32,7 @@ class TestFetcher:
         assert fetcher.get(self.status_501).status == 501
 
     def test_get_properties(self, fetcher):
-        """Test if different arguments with GET request breaks the code or not"""
+        """Test if different arguments with the GET request break the code or not"""
         assert fetcher.get(self.status_200, stealthy_headers=True).status == 200
         assert fetcher.get(self.status_200, follow_redirects=True).status == 200
         assert fetcher.get(self.status_200, timeout=None).status == 200
@@ -47,7 +47,7 @@ class TestFetcher:
         )
 
     def test_post_properties(self, fetcher):
-        """Test if different arguments with POST request breaks the code or not"""
+        """Test if different arguments with the POST request break the code or not"""
         assert fetcher.post(self.post_url, data={"key": "value"}).status == 200
         assert (
             fetcher.post(
@@ -77,7 +77,7 @@ class TestFetcher:
         )
 
     def test_put_properties(self, fetcher):
-        """Test if different arguments with PUT request breaks the code or not"""
+        """Test if different arguments with a PUT request break the code or not"""
         assert fetcher.put(self.put_url, data={"key": "value"}).status == 200
         assert (
             fetcher.put(
@@ -106,7 +106,7 @@ class TestFetcher:
         )
 
     def test_delete_properties(self, fetcher):
-        """Test if different arguments with DELETE request breaks the code or not"""
+        """Test if different arguments with the DELETE request break the code or not"""
         assert fetcher.delete(self.delete_url, stealthy_headers=True).status == 200
         assert fetcher.delete(self.delete_url, follow_redirects=True).status == 200
         assert fetcher.delete(self.delete_url, timeout=None).status == 200
