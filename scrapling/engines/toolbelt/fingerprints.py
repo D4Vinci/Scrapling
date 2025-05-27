@@ -3,6 +3,7 @@ Functions related to generating headers and fingerprints generally
 """
 
 import platform
+import random
 
 from browserforge.fingerprints import Fingerprint, FingerprintGenerator
 from browserforge.headers import Browser, HeaderGenerator
@@ -23,7 +24,17 @@ def generate_convincing_referer(url: str) -> str:
     :return: Google's search URL of the domain name
     """
     website_name = extract(url).domain
-    return f'https://www.google.com/search?q={website_name}'
+    search_engine = random.choice([
+        'https://www.baidu.com/s?wd=%s',
+        'https://www.bing.com/search?q=%s',
+        'https://search.brave.com/search?q=%s',
+        'https://duckduckgo.com/?q=%s',
+        'https://www.google.com/search?q=%s',
+        'https://search.naver.com/search.naver?query=%s',
+        'https://search.yahoo.com/search?p=%s',
+        'https://yandex.com/search?text=%s',
+    ])
+    return search_engine % website_name
 
 
 @lru_cache(1, typed=True)
