@@ -61,8 +61,8 @@ dependencies = [
     "orjson>=3",
     "tldextract",
     "curl_cffi>=0.11.1",
-    "playwright>=1.49.1",
-    "rebrowser-playwright>=1.49.1",
+    "playwright>=1.52.0",
+    "rebrowser-playwright>=1.52.0",
     "camoufox[geoip]>=0.4.11",
 ]
 
