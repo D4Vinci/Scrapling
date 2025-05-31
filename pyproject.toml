@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scrapling"
+dynamic = ["version"]
+description = "Scrapling is an undetectable, powerful, flexible, high-performance Python library that makes Web Scraping easy again! In an internet filled with complications, it simplifies web scraping, even when websites' design changes, while providing impressive speed that surpasses almost all alternatives."
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+authors = [
+    {name = "Karim Shoair", email = "karim.shoair@pm.me"}
+]
+maintainers = [
+    {name = "Karim Shoair", email = "karim.shoair@pm.me"}
+]
+keywords = [
+    "web-scraping",
+    "scraping",
+    "automation",
+    "browser-automation",
+    "data-extraction",
+    "html-parsing",
+    "undetectable",
+    "playwright",
+    "selenium-alternative",
+    "web-crawler",
+    "browser",
+    "crawling",
+]
+requires-python = ">=3.9"
+classifiers = [
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    # "Development Status :: 5 - Production/Stable",
+    # "Development Status :: 6 - Mature",
+    # "Development Status :: 7 - Inactive",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Typing :: Typed",
+]
+dependencies = [
+    "lxml>=5.0",
+    "cssselect>=1.2",
+    "IPython",
+    "click",
+    "orjson>=3",
+    "tldextract",
+    "curl_cffi>=0.11.1",
+    "playwright>=1.49.1",
+    "rebrowser-playwright>=1.49.1",
+    "camoufox[geoip]>=0.4.11",
+]
+
+[project.urls]
+Homepage = "https://github.com/D4Vinci/Scrapling"
+Documentation = "https://scrapling.readthedocs.io/en/latest/"
+Repository = "https://github.com/D4Vinci/Scrapling"
+"Bug Tracker" = "https://github.com/D4Vinci/Scrapling/issues"
+
+[project.scripts]
+scrapling = "scrapling.cli:main"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "scrapling.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scrapling*"]
