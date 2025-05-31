@@ -2,6 +2,8 @@ from time import sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
 from curl_cffi.requests.session import CurlError
+from curl_cffi import CurlHttpVersion
+from curl_cffi.requests.impersonate import DEFAULT_CHROME
 from curl_cffi.requests import (
     ProxySpec,
     CookieTypes,
@@ -46,7 +48,8 @@ class FetcherSession:
 
     def __init__(
         self,
-        impersonate: Optional[str] = "chrome136",
+        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
+        http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
         proxies: Optional[Dict[str, str]] = None,
         proxy: Optional[str] = None,
@@ -62,8 +65,9 @@ class FetcherSession:
         adaptor_arguments: Optional[Dict] = None,
     ):
         """
-        :param impersonate: Browser version to impersonate. Defaults to "chrome136".
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also referer header as if it is from a Google search of URL's domain.
+        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param proxies: Dict of proxies to use. Format: {"http": proxy_url, "https": proxy_url}.
         :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
                      Cannot be used together with the `proxies` parameter.
@@ -91,6 +95,7 @@ class FetcherSession:
         self.default_max_redirects = max_redirects
         self.default_verify = verify
         self.default_cert = cert
+        self.default_http3 = http3
         self.adaptor_arguments = adaptor_arguments or {}
 
         self._curl_session: Optional[CurlSession] = None
@@ -98,23 +103,37 @@ class FetcherSession:
 
     def _merge_request_args(self, **kwargs) -> Dict[str, Any]:
         """Merge request-specific arguments with default session arguments."""
-        request_args = {
-            "headers": self._headers_job(
-                kwargs["url"], kwargs.get("headers"), kwargs.pop("stealth")
-            ),
-            "proxies": kwargs.get("proxies", self.default_proxies),
-            "proxy": kwargs.get("proxy", self.default_proxy),
-            "proxy_auth": kwargs.get("proxy_auth", self.default_proxy_auth),
-            "timeout": kwargs.get("timeout", self.default_timeout),
-            "allow_redirects": kwargs.get(
-                "follow_redirects", self.default_follow_redirects
-            ),
-            "max_redirects": kwargs.get("max_redirects", self.default_max_redirects),
-            "verify": kwargs.get("verify", self.default_verify),
-            "cert": kwargs.get("cert", self.default_cert),
-            "impersonate": kwargs.get("impersonate", self.default_impersonate),
-            **kwargs,
-        }
+        url = kwargs.pop("url")
+        request_args = {}
+        if kwargs.pop("http3", False) or self.default_http3:
+            request_args["http_version"] = CurlHttpVersion.V3ONLY
+            if kwargs.get("impersonate"):
+                log.warning(
+                    "The argument `http3` might cause errors if used with `impersonate` argument, try switching it off if you encounter any curl errors."
+                )
+
+        request_args.update(
+            {
+                "url": url,
+                "headers": self._headers_job(
+                    url, kwargs.pop("headers"), kwargs.pop("stealth")
+                ),
+                "proxies": kwargs.pop("proxies", self.default_proxies),
+                "proxy": kwargs.pop("proxy", self.default_proxy),
+                "proxy_auth": kwargs.pop("proxy_auth", self.default_proxy_auth),
+                "timeout": kwargs.pop("timeout", self.default_timeout),
+                "allow_redirects": kwargs.pop(
+                    "follow_redirects", self.default_follow_redirects
+                ),
+                "max_redirects": kwargs.pop(
+                    "max_redirects", self.default_max_redirects
+                ),
+                "verify": kwargs.pop("verify", self.default_verify),
+                "cert": kwargs.pop("cert", self.default_cert),
+                "impersonate": kwargs.pop("impersonate", self.default_impersonate),
+                **kwargs,
+            }
+        )
         return request_args
 
     def _headers_job(
@@ -316,21 +335,22 @@ class FetcherSession:
     def get(
         self,
         url: str,
-        params: Optional[Union[Dict, List, Tuple]] = None,  # <--
+        params: Optional[Union[Dict, List, Tuple]] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
-        cookies: Optional[CookieTypes] = None,  # <--
-        timeout: Optional[Union[int, float]] = 30,  # <--
-        follow_redirects: Optional[bool] = True,  # <--
-        max_redirects: Optional[int] = 30,  # <--
+        cookies: Optional[CookieTypes] = None,
+        timeout: Optional[Union[int, float]] = 30,
+        follow_redirects: Optional[bool] = True,
+        max_redirects: Optional[int] = 30,
         retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,  # <--
-        proxies: Optional[ProxySpec] = None,  # <--
-        proxy: Optional[str] = None,  # <--
+        retry_delay: Optional[int] = 1,
+        proxies: Optional[ProxySpec] = None,
+        proxy: Optional[str] = None,
         proxy_auth: Optional[Tuple[str, str]] = None,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,  # <--
+        verify: Optional[bool] = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome136",  # <--
+        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
+        http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
         **kwargs,
     ) -> Union[Response, Awaitable[Response]]:
@@ -353,8 +373,9 @@ class FetcherSession:
         :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
         :param verify: Whether to verify HTTPS certificates.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Defaults to "chrome136".
-        :param stealthy_headers: If enabled for this request (default), it creates and adds real browser headers. It also referer header as if it is from a Google search of URL's domain.
+        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
         :return: A `Response` object or an awaitable for async.
         """
@@ -375,6 +396,7 @@ class FetcherSession:
             "verify": verify,
             "cert": cert,
             "impersonate": impersonate,
+            "http3": http3,
             **kwargs,
         }
         return self.__prepare_and_dispatch(
@@ -387,20 +409,21 @@ class FetcherSession:
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
-        params: Optional[Union[Dict, List, Tuple]] = None,  # <--
-        cookies: Optional[CookieTypes] = None,  # <--
-        timeout: Optional[Union[int, float]] = 30,  # <--
-        follow_redirects: Optional[bool] = True,  # <--
-        max_redirects: Optional[int] = 30,  # <--
+        params: Optional[Union[Dict, List, Tuple]] = None,
+        cookies: Optional[CookieTypes] = None,
+        timeout: Optional[Union[int, float]] = 30,
+        follow_redirects: Optional[bool] = True,
+        max_redirects: Optional[int] = 30,
         retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,  # <--
-        proxies: Optional[ProxySpec] = None,  # <--
-        proxy: Optional[str] = None,  # <--
+        retry_delay: Optional[int] = 1,
+        proxies: Optional[ProxySpec] = None,
+        proxy: Optional[str] = None,
         proxy_auth: Optional[Tuple[str, str]] = None,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,  # <--
+        verify: Optional[bool] = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome136",  # <--
+        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
+        http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
         **kwargs,
     ) -> Union[Response, Awaitable[Response]]:
@@ -425,8 +448,9 @@ class FetcherSession:
         :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
         :param verify: Whether to verify HTTPS certificates. Defaults to True.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Defaults to "chrome136".
-        :param stealthy_headers: If enabled for this request (default), it creates and adds real browser headers. It also referer header as if it is from a Google search of URL's domain.
+        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
         :return: A `Response` object or an awaitable for async.
         """
@@ -449,6 +473,7 @@ class FetcherSession:
             "auth": auth,
             "verify": verify,
             "cert": cert,
+            "http3": http3,
             **kwargs,
         }
         return self.__prepare_and_dispatch(
@@ -461,20 +486,21 @@ class FetcherSession:
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
-        params: Optional[Union[Dict, List, Tuple]] = None,  # <--
-        cookies: Optional[CookieTypes] = None,  # <--
-        timeout: Optional[Union[int, float]] = 30,  # <--
-        follow_redirects: Optional[bool] = True,  # <--
-        max_redirects: Optional[int] = 30,  # <--
+        params: Optional[Union[Dict, List, Tuple]] = None,
+        cookies: Optional[CookieTypes] = None,
+        timeout: Optional[Union[int, float]] = 30,
+        follow_redirects: Optional[bool] = True,
+        max_redirects: Optional[int] = 30,
         retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,  # <--
-        proxies: Optional[ProxySpec] = None,  # <--
-        proxy: Optional[str] = None,  # <--
+        retry_delay: Optional[int] = 1,
+        proxies: Optional[ProxySpec] = None,
+        proxy: Optional[str] = None,
         proxy_auth: Optional[Tuple[str, str]] = None,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,  # <--
+        verify: Optional[bool] = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome136",  # <--
+        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
+        http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
         **kwargs,
     ) -> Union[Response, Awaitable[Response]]:
@@ -499,8 +525,9 @@ class FetcherSession:
         :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
         :param verify: Whether to verify HTTPS certificates. Defaults to True.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Defaults to "chrome136".
-        :param stealthy_headers: If enabled for this request (default), it creates and adds real browser headers. It also referer header as if it is from a Google search of URL's domain.
+        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
         :return: A `Response` object or an awaitable for async.
         """
@@ -523,6 +550,7 @@ class FetcherSession:
             "auth": auth,
             "verify": verify,
             "cert": cert,
+            "http3": http3,
             **kwargs,
         }
         return self.__prepare_and_dispatch(
@@ -535,20 +563,21 @@ class FetcherSession:
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
-        params: Optional[Union[Dict, List, Tuple]] = None,  # <--
-        cookies: Optional[CookieTypes] = None,  # <--
-        timeout: Optional[Union[int, float]] = 30,  # <--
-        follow_redirects: Optional[bool] = True,  # <--
-        max_redirects: Optional[int] = 30,  # <--
+        params: Optional[Union[Dict, List, Tuple]] = None,
+        cookies: Optional[CookieTypes] = None,
+        timeout: Optional[Union[int, float]] = 30,
+        follow_redirects: Optional[bool] = True,
+        max_redirects: Optional[int] = 30,
         retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,  # <--
-        proxies: Optional[ProxySpec] = None,  # <--
-        proxy: Optional[str] = None,  # <--
+        retry_delay: Optional[int] = 1,
+        proxies: Optional[ProxySpec] = None,
+        proxy: Optional[str] = None,
         proxy_auth: Optional[Tuple[str, str]] = None,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,  # <--
+        verify: Optional[bool] = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome136",  # <--
+        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
+        http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
         **kwargs,
     ) -> Union[Response, Awaitable[Response]]:
@@ -573,8 +602,9 @@ class FetcherSession:
         :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
         :param verify: Whether to verify HTTPS certificates. Defaults to True.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Defaults to "chrome136".
-        :param stealthy_headers: If enabled for this request (default), it creates and adds real browser headers. It also referer header as if it is from a Google search of URL's domain.
+        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
         :return: A `Response` object or an awaitable for async.
         """
@@ -599,6 +629,7 @@ class FetcherSession:
             "auth": auth,
             "verify": verify,
             "cert": cert,
+            "http3": http3,
             **kwargs,
         }
         return self.__prepare_and_dispatch(
@@ -625,22 +656,23 @@ class AsyncFetcherClient:
     @staticmethod
     async def get(
         url: str,
-        params: Optional[Union[Dict, List, Tuple]] = None,  # <--
+        params: Optional[Union[Dict, List, Tuple]] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
-        cookies: Optional[CookieTypes] = None,  # <--
-        timeout: Optional[Union[int, float]] = 30,  # <--
-        follow_redirects: Optional[bool] = True,  # <--
-        max_redirects: Optional[int] = 30,  # <--
+        cookies: Optional[CookieTypes] = None,
+        timeout: Optional[Union[int, float]] = 30,
+        follow_redirects: Optional[bool] = True,
+        max_redirects: Optional[int] = 30,
         retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,  # <--
-        proxies: Optional[ProxySpec] = None,  # <--
-        proxy: Optional[str] = None,  # <--
+        retry_delay: Optional[int] = 1,
+        proxies: Optional[ProxySpec] = None,
+        proxy: Optional[str] = None,
         proxy_auth: Optional[Tuple[str, str]] = None,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,  # <--
+        verify: Optional[bool] = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome136",  # <--
+        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
         stealthy_headers: Optional[bool] = True,
+        http3: Optional[bool] = False,
         **kwargs,
     ) -> Response:
         """
@@ -662,8 +694,9 @@ class AsyncFetcherClient:
         :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
         :param verify: Whether to verify HTTPS certificates.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Defaults to "chrome136".
-        :param stealthy_headers: If enabled for this request (default), it creates and adds real browser headers. It also referer header as if it is from a Google search of URL's domain.
+        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param kwargs: Additional keyword arguments to pass to the `curl_cffi.requests.AsyncSession().request()` method.
         :return: An awaitable `Response` object.
         """
@@ -684,6 +717,7 @@ class AsyncFetcherClient:
             "verify": verify,
             "cert": cert,
             "impersonate": impersonate,
+            "http3": http3,
             **kwargs,
         }
         async with FetcherSession(stealthy_headers=stealthy_headers) as client:
@@ -695,21 +729,22 @@ class AsyncFetcherClient:
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
-        params: Optional[Union[Dict, List, Tuple]] = None,  # <--
-        cookies: Optional[CookieTypes] = None,  # <--
-        timeout: Optional[Union[int, float]] = 30,  # <--
-        follow_redirects: Optional[bool] = True,  # <--
-        max_redirects: Optional[int] = 30,  # <--
+        params: Optional[Union[Dict, List, Tuple]] = None,
+        cookies: Optional[CookieTypes] = None,
+        timeout: Optional[Union[int, float]] = 30,
+        follow_redirects: Optional[bool] = True,
+        max_redirects: Optional[int] = 30,
         retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,  # <--
-        proxies: Optional[ProxySpec] = None,  # <--
-        proxy: Optional[str] = None,  # <--
+        retry_delay: Optional[int] = 1,
+        proxies: Optional[ProxySpec] = None,
+        proxy: Optional[str] = None,
         proxy_auth: Optional[Tuple[str, str]] = None,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,  # <--
+        verify: Optional[bool] = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome136",  # <--
+        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
         stealthy_headers: Optional[bool] = True,
+        http3: Optional[bool] = False,
         **kwargs,
     ) -> Response:
         """
@@ -733,8 +768,9 @@ class AsyncFetcherClient:
         :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
         :param verify: Whether to verify HTTPS certificates. Defaults to True.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Defaults to "chrome136".
-        :param stealthy_headers: If enabled for this request (default), it creates and adds real browser headers. It also referer header as if it is from a Google search of URL's domain.
+        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param kwargs: Additional keyword arguments to pass to the `curl_cffi.requests.AsyncSession().request()` method.
         :return: An awaitable `Response` object.
         """
@@ -757,6 +793,7 @@ class AsyncFetcherClient:
             "auth": auth,
             "verify": verify,
             "cert": cert,
+            "http3": http3,
             **kwargs,
         }
         async with FetcherSession(stealthy_headers=stealthy_headers) as client:
@@ -768,21 +805,22 @@ class AsyncFetcherClient:
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
-        params: Optional[Union[Dict, List, Tuple]] = None,  # <--
-        cookies: Optional[CookieTypes] = None,  # <--
-        timeout: Optional[Union[int, float]] = 30,  # <--
-        follow_redirects: Optional[bool] = True,  # <--
-        max_redirects: Optional[int] = 30,  # <--
+        params: Optional[Union[Dict, List, Tuple]] = None,
+        cookies: Optional[CookieTypes] = None,
+        timeout: Optional[Union[int, float]] = 30,
+        follow_redirects: Optional[bool] = True,
+        max_redirects: Optional[int] = 30,
         retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,  # <--
-        proxies: Optional[ProxySpec] = None,  # <--
-        proxy: Optional[str] = None,  # <--
+        retry_delay: Optional[int] = 1,
+        proxies: Optional[ProxySpec] = None,
+        proxy: Optional[str] = None,
         proxy_auth: Optional[Tuple[str, str]] = None,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,  # <--
+        verify: Optional[bool] = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome136",  # <--
+        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
         stealthy_headers: Optional[bool] = True,
+        http3: Optional[bool] = False,
         **kwargs,
     ) -> Response:
         """
@@ -806,8 +844,9 @@ class AsyncFetcherClient:
         :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
         :param verify: Whether to verify HTTPS certificates. Defaults to True.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Defaults to "chrome136".
-        :param stealthy_headers: If enabled for this request (default), it creates and adds real browser headers. It also referer header as if it is from a Google search of URL's domain.
+        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param kwargs: Additional keyword arguments to pass to the `curl_cffi.requests.AsyncSession().request()` method.
         :return: An awaitable `Response` object.
         """
@@ -830,6 +869,7 @@ class AsyncFetcherClient:
             "auth": auth,
             "verify": verify,
             "cert": cert,
+            "http3": http3,
             **kwargs,
         }
         async with FetcherSession(stealthy_headers=stealthy_headers) as client:
@@ -841,21 +881,22 @@ class AsyncFetcherClient:
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
-        params: Optional[Union[Dict, List, Tuple]] = None,  # <--
-        cookies: Optional[CookieTypes] = None,  # <--
-        timeout: Optional[Union[int, float]] = 30,  # <--
-        follow_redirects: Optional[bool] = True,  # <--
-        max_redirects: Optional[int] = 30,  # <--
+        params: Optional[Union[Dict, List, Tuple]] = None,
+        cookies: Optional[CookieTypes] = None,
+        timeout: Optional[Union[int, float]] = 30,
+        follow_redirects: Optional[bool] = True,
+        max_redirects: Optional[int] = 30,
         retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,  # <--
-        proxies: Optional[ProxySpec] = None,  # <--
-        proxy: Optional[str] = None,  # <--
+        retry_delay: Optional[int] = 1,
+        proxies: Optional[ProxySpec] = None,
+        proxy: Optional[str] = None,
         proxy_auth: Optional[Tuple[str, str]] = None,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,  # <--
+        verify: Optional[bool] = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome136",  # <--
+        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
         stealthy_headers: Optional[bool] = True,
+        http3: Optional[bool] = False,
         **kwargs,
     ) -> Response:
         """
@@ -879,8 +920,9 @@ class AsyncFetcherClient:
         :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
         :param verify: Whether to verify HTTPS certificates. Defaults to True.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Defaults to "chrome136".
-        :param stealthy_headers: If enabled for this request (default), it creates and adds real browser headers. It also referer header as if it is from a Google search of URL's domain.
+        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param kwargs: Additional keyword arguments to pass to the `curl_cffi.requests.AsyncSession().request()` method.
         :return: An awaitable `Response` object.
         """
@@ -905,6 +947,7 @@ class AsyncFetcherClient:
             "auth": auth,
             "verify": verify,
             "cert": cert,
+            "http3": http3,
             **kwargs,
         }
         async with FetcherSession(stealthy_headers=stealthy_headers) as client:

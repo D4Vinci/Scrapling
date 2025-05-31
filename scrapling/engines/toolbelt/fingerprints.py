@@ -14,7 +14,7 @@ from scrapling.core.utils import lru_cache
 
 @lru_cache(10, typed=True)
 def generate_convincing_referer(url: str) -> str:
-    """Takes the domain from the URL without the subdomain/suffix and make it look like you were searching google for this website
+    """Takes the domain from the URL without the subdomain/suffix and make it look like you were searching Google for this website
 
     >>> generate_convincing_referer('https://www.somewebsite.com/blah')
     'https://www.google.com/search?q=somewebsite'
@@ -38,13 +38,13 @@ def get_os_name() -> Union[str, None]:
         "Linux": "linux",
         "Darwin": "macos",
         "Windows": "windows",
-        # For the future? because why not
+        # For the future? because why not?
         "iOS": "ios",
     }.get(os_name)
 
 
 def generate_suitable_fingerprint() -> Fingerprint:
-    """Generates a browserforge's fingerprint that matches current OS, desktop device, and Chrome with version 128 at least.
+    """Generates a browserforge's fingerprint that matches the current OS, desktop device, and Chrome with version 128 at least.
 
     This function was originally created to test Browserforge's injector.
     :return: `Fingerprint` object
@@ -59,11 +59,11 @@ def generate_suitable_fingerprint() -> Fingerprint:
 def generate_headers(browser_mode: bool = False) -> Dict:
     """Generate real browser-like headers using browserforge's generator
 
-    :param browser_mode: If enabled, the headers created are used for playwright so it have to match everything
+    :param browser_mode: If enabled, the headers created are used for playwright, so it has to match everything
     :return: A dictionary of the generated headers
     """
     if browser_mode:
-        # In this mode we don't care about anything other than matching the OS and the browser type with the browser we are using
+        # In this mode we don't care about anything other than matching the OS and the browser type with the browser we are using,
         # So we don't raise any inconsistency red flags while websites fingerprinting us
         os_name = get_os_name()
         return HeaderGenerator(
@@ -72,10 +72,10 @@ def generate_headers(browser_mode: bool = False) -> Dict:
             device="desktop",
         ).generate()
     else:
-        # Here it's used for normal requests that aren't done through browsers so we can take it lightly
+        # Here it's used for normal requests that aren't done through browsers
         browsers = [
-            Browser(name="chrome", min_version=120),
-            Browser(name="firefox", min_version=120),
-            Browser(name="edge", min_version=120),
+            Browser(name="chrome", min_version=130),
+            Browser(name="firefox", min_version=130),
+            Browser(name="edge", min_version=130),
         ]
         return HeaderGenerator(browser=browsers, device="desktop").generate()
