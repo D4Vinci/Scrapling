@@ -179,7 +179,11 @@ class CamoufoxEngine:
                 final_response = finished_response
 
         with Camoufox(**self._get_camoufox_options()) as browser:
-            context = browser.new_context()
+            if hasattr(browser, 'new_context'):
+                context = browser.new_context()
+            else:
+                context = browser
+
             page = context.new_page()
             page.set_default_navigation_timeout(self.timeout)
             page.set_default_timeout(self.timeout)
