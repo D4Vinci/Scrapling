@@ -26,7 +26,11 @@ class StorageSystemMixin(ABC):
 
         try:
             extracted = tld(self.url)
-            return extracted.registered_domain or extracted.domain or default_value
+            return (
+                extracted.top_domain_under_public_suffix
+                or extracted.domain
+                or default_value
+            )
         except AttributeError:
             return default_value
 
