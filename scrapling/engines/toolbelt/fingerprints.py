@@ -2,7 +2,7 @@
 Functions related to generating headers and fingerprints generally
 """
 
-import platform
+from platform import system as platform_system
 
 from browserforge.fingerprints import Fingerprint, FingerprintGenerator
 from browserforge.headers import Browser, HeaderGenerator
@@ -10,6 +10,8 @@ from tldextract import extract
 
 from scrapling.core._types import Dict, Union
 from scrapling.core.utils import lru_cache
+
+__OS_NAME__ = platform_system()
 
 
 @lru_cache(10, typed=True)
@@ -32,15 +34,13 @@ def get_os_name() -> Union[str, None]:
 
     :return: Current OS name or `None` otherwise
     """
-    #
-    os_name = platform.system()
     return {
         "Linux": "linux",
         "Darwin": "macos",
         "Windows": "windows",
         # For the future? because why not?
         "iOS": "ios",
-    }.get(os_name)
+    }.get(__OS_NAME__)
 
 
 def generate_suitable_fingerprint() -> Fingerprint:
