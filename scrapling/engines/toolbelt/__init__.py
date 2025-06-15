@@ -6,7 +6,12 @@ from .custom import (
     check_type_validity,
     get_variable_name,
 )
-from .fingerprints import generate_convincing_referer, generate_headers, get_os_name
+from .fingerprints import (
+    generate_convincing_referer,
+    generate_headers,
+    get_os_name,
+    __default_useragent__,
+)
 from .navigation import (
     async_intercept_route,
     construct_cdp_url,

@@ -4,9 +4,8 @@ Functions related to generating headers and fingerprints generally
 
 from platform import system as platform_system
 
-from browserforge.fingerprints import Fingerprint, FingerprintGenerator
-from browserforge.headers import Browser, HeaderGenerator
 from tldextract import extract
+from browserforge.headers import Browser, HeaderGenerator
 
 from scrapling.core._types import Dict, Union
 from scrapling.core.utils import lru_cache
@@ -43,39 +42,26 @@ def get_os_name() -> Union[str, None]:
     }.get(__OS_NAME__)
 
 
-def generate_suitable_fingerprint() -> Fingerprint:
-    """Generates a browserforge's fingerprint that matches the current OS, desktop device, and Chrome with version 128 at least.
-
-    This function was originally created to test Browserforge's injector.
-    :return: `Fingerprint` object
-    """
-    return FingerprintGenerator(
-        browser=[Browser(name="chrome", min_version=128)],
-        os=get_os_name(),  # None is ignored
-        device="desktop",
-    ).generate()
-
-
 def generate_headers(browser_mode: bool = False) -> Dict:
     """Generate real browser-like headers using browserforge's generator
 
     :param browser_mode: If enabled, the headers created are used for playwright, so it has to match everything
     :return: A dictionary of the generated headers
     """
-    if browser_mode:
-        # In this mode we don't care about anything other than matching the OS and the browser type with the browser we are using,
-        # So we don't raise any inconsistency red flags while websites fingerprinting us
-        os_name = get_os_name()
-        return HeaderGenerator(
-            browser=[Browser(name="chrome", min_version=130)],
-            os=os_name,  # None is ignored
-            device="desktop",
-        ).generate()
-    else:
-        # Here it's used for normal requests that aren't done through browsers
-        browsers = [
-            Browser(name="chrome", min_version=130),
-            Browser(name="firefox", min_version=130),
-            Browser(name="edge", min_version=130),
-        ]
-        return HeaderGenerator(browser=browsers, device="desktop").generate()
+    # In the browser mode, we don't care about anything other than matching the OS and the browser type with the browser we are using,
+    # So we don't raise any inconsistency red flags while websites fingerprinting us
+    os_name = get_os_name()
+    browsers = [Browser(name="chrome", min_version=130)]
+    if not browser_mode:
+        os_name = None
+        browsers.extend(
+            [
+                Browser(name="firefox", min_version=130),
+                Browser(name="edge", min_version=130),
+            ]
+        )
+
+    return HeaderGenerator(browser=browsers, os=os_name, device="desktop").generate()
+
+
+__default_useragent__ = generate_headers(browser_mode=False).get("User-Agent")
