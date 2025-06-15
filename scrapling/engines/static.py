@@ -30,9 +30,8 @@ from .toolbelt import (
     generate_convincing_referer,
     generate_headers,
     ResponseFactory,
+    __default_useragent__,
 )
-
-__default_useragent__ = generate_headers(browser_mode=False).get("User-Agent")
 
 
 class FetcherSession:
