@@ -53,7 +53,7 @@ def generate_headers(browser_mode: bool = False) -> Dict:
     os_name = get_os_name()
     browsers = [Browser(name="chrome", min_version=130)]
     if not browser_mode:
-        os_name = None
+        os_name = ("windows", "macos", "linux")
         browsers.extend(
             [
                 Browser(name="firefox", min_version=130),
