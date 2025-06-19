@@ -525,16 +525,17 @@ Type 'exit' or press Ctrl+D to exit.
 
     def start(self):
         """Start the interactive shell"""
-        # Create the shell
-        ipython_shell = InteractiveShellEmbed(banner1=self.banner(), exit_msg="Bye Bye")
-
-        # Store reference to the shell
-        self.shell = ipython_shell
-
         # Get our namespace with application objects
         namespace = self.get_namespace()
+        ipython_shell = InteractiveShellEmbed(
+            banner1=self.banner(),
+            banner2="",
+            enable_tip=False,
+            exit_msg="Bye Bye",
+            user_ns=namespace,
+        )
+        self.shell = ipython_shell
 
-        ipython_shell.user_ns.update(namespace)
         # If a command was provided, execute it and exit
         if self.code:
             log.info(f"Executing provided code: {self.code}")
@@ -544,4 +545,4 @@ Type 'exit' or press Ctrl+D to exit.
                 log.error(f"Error executing initial code: {e}")
             return
 
-        ipython_shell(local_ns=namespace)
+        ipython_shell()
