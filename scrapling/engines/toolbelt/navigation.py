@@ -3,14 +3,21 @@ Functions related to files and URLs
 """
 
 import os
+import msgspec
 from urllib.parse import urlencode, urlparse
 
 from playwright.async_api import Route as async_Route
 from playwright.sync_api import Route
 
-from scrapling.core._types import Dict, Optional, Union
+from scrapling.core._types import Dict, Optional, Union, Tuple
 from scrapling.core.utils import log, lru_cache
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
+
+
+class ProxyDict(msgspec.Struct):
+    server: str
+    username: str = ""
+    password: str = ""
 
 
 def intercept_route(route: Route):
@@ -43,47 +50,36 @@ async def async_intercept_route(route: async_Route):
         await route.continue_()
 
 
-def construct_proxy_dict(proxy_string: Union[str, Dict[str, str]]) -> Union[Dict, None]:
+def construct_proxy_dict(
+    proxy_string: Union[str, Dict[str, str]], as_tuple=False
+) -> Union[Dict, Tuple, None]:
     """Validate a proxy and return it in the acceptable format for Playwright
     Reference: https://playwright.dev/python/docs/network#http-proxy
 
     :param proxy_string: A string or a dictionary representation of the proxy.
+    :param as_tuple: Return the proxy dictionary as tuple to be cachable
     :return:
     """
-    if proxy_string:
-        if isinstance(proxy_string, str):
-            proxy = urlparse(proxy_string)
-            try:
-                return {
-                    "server": f"{proxy.scheme}://{proxy.hostname}:{proxy.port}",
-                    "username": proxy.username or "",
-                    "password": proxy.password or "",
-                }
-            except ValueError:
-                # Urllib will say that one of the parameters above can't be casted to the correct type like `int` for port etc...
-                raise TypeError("The proxy argument's string is in invalid format!")
+    if isinstance(proxy_string, str):
+        proxy = urlparse(proxy_string)
+        try:
+            result = {
+                "server": f"{proxy.scheme}://{proxy.hostname}:{proxy.port}",
+                "username": proxy.username or "",
+                "password": proxy.password or "",
+            }
+            return tuple(result.items()) if as_tuple else result
+        except ValueError:
+            # Urllib will say that one of the parameters above can't be casted to the correct type like `int` for port etc...
+            raise TypeError("The proxy argument's string is in invalid format!")
 
-        elif isinstance(proxy_string, dict):
-            valid_keys = (
-                "server",
-                "username",
-                "password",
-            )
-            if all(key in valid_keys for key in proxy_string.keys()) and not any(
-                key not in valid_keys for key in proxy_string.keys()
-            ):
-                return proxy_string
-            else:
-                raise TypeError(
-                    f"A proxy dictionary must have only these keys: {valid_keys}"
-                )
+    elif isinstance(proxy_string, dict):
+        try:
+            validated = msgspec.convert(proxy_string, ProxyDict)
+            return tuple(validated.__dict__.items()) if as_tuple else validated.__dict__
+        except msgspec.ValidationError as e:
+            raise TypeError(f"Invalid proxy dictionary: {e}")
 
-        else:
-            raise TypeError(
-                f"Invalid type of proxy ({type(proxy_string)}), the proxy argument must be a string or a dictionary!"
-            )
-
-    # The default value for proxy in Playwright's source is `None`
     return None
 
 
