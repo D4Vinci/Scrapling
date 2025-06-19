@@ -12,6 +12,15 @@ DEFAULT_DISABLED_RESOURCES = {
     "stylesheet",
 }
 
+HARMFUL_DEFAULT_ARGS = (
+    # This will be ignored to avoid detection more and possibly avoid the popup crashing bug abuse: https://issues.chromium.org/issues/340836884
+    "--enable-automation",
+    "--disable-popup-blocking",
+    # '--disable-component-update',
+    # '--disable-default-apps',
+    # '--disable-extensions',
+)
+
 DEFAULT_STEALTH_FLAGS = (
     # Explanation: https://peter.sh/experiments/chromium-command-line-switches/
     # Generally this will make the browser faster and less detectable

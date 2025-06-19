@@ -24,6 +24,7 @@ from typing import (
 
 SUPPORTED_HTTP_METHODS = Literal["GET", "POST", "PUT", "DELETE"]
 SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
+PageLoadStates = Literal["commit", "domcontentloaded", "load", "networkidle"]
 StrOrBytes = Union[str, bytes]
 
 try:
