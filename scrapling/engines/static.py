@@ -111,11 +111,13 @@ class FetcherSession:
                     "The argument `http3` might cause errors if used with `impersonate` argument, try switching it off if you encounter any curl errors."
                 )
 
+        impersonate = kwargs.pop("impersonate", self.default_impersonate)
         request_args.update(
             {
                 "url": url,
+                # Curl automatically generates the suitable browser headers when you use `impersonate`
                 "headers": self._headers_job(
-                    url, kwargs.pop("headers"), kwargs.pop("stealth")
+                    url, kwargs.pop("headers"), kwargs.pop("stealth"), bool(impersonate)
                 ),
                 "proxies": kwargs.pop("proxies", self.default_proxies),
                 "proxy": kwargs.pop("proxy", self.default_proxy),
@@ -129,26 +131,37 @@ class FetcherSession:
                 ),
                 "verify": kwargs.pop("verify", self.default_verify),
                 "cert": kwargs.pop("cert", self.default_cert),
-                "impersonate": kwargs.pop("impersonate", self.default_impersonate),
+                "impersonate": impersonate,
                 **kwargs,
             }
         )
         return request_args
 
     def _headers_job(
-        self, url, headers: Optional[Dict], stealth: Optional[bool]
+        self,
+        url,
+        headers: Optional[Dict],
+        stealth: Optional[bool],
+        impersonate_enabled: bool,
     ) -> Dict:
         """Adds useragent to headers if it doesn't exist, generates real headers and append it to current headers, and
             finally generates a referer header that looks like if this request came from Google's search of the current URL's domain.
 
         :param headers: Current headers in the request if the user passed any
         :param stealth: Whether to enable the `stealthy_headers` argument to this request or not. If `None`, it defaults to the session default value.
+        :param impersonate_enabled: Whether the browser impersonation is enabled or not.
         :return: A dictionary of the new headers.
         """
         headers = {**self.default_headers, **(headers or {})}
         headers_keys = set(map(str.lower, headers.keys()))
 
         if stealth:
+            if "referer" not in headers_keys:
+                headers.update({"referer": generate_convincing_referer(url)})
+
+            if impersonate_enabled:  # Curl will generate the suitable headers
+                return headers
+
             extra_headers = generate_headers(browser_mode=False)
             # Don't overwrite user-supplied headers
             extra_headers = {
@@ -157,10 +170,8 @@ class FetcherSession:
                 if key.lower() not in headers_keys
             }
             headers.update(extra_headers)
-            if "referer" not in headers_keys:
-                headers.update({"referer": generate_convincing_referer(url)})
 
-        elif "user-agent" not in headers_keys:
+        elif "user-agent" not in headers_keys and not impersonate_enabled:
             headers["User-Agent"] = __default_useragent__
             log.debug(
                 f"Can't find useragent in headers so '{headers['User-Agent']}' was used."
