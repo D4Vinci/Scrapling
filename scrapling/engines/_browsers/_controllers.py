@@ -127,7 +127,7 @@ class DynamicSession:
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param max_pages: The maximum number of pages to be opened at the same time. It will be used in rotation through a PagePool.
+        :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
 
@@ -263,7 +263,7 @@ class DynamicSession:
         if page_info:
             return page_info
 
-        # Create new page if under limit
+        # Create a new page if under limit
         if self.page_pool.pages_count < self.max_pages:
             page = self.context.new_page()
             page.set_default_navigation_timeout(self.timeout)
@@ -352,7 +352,7 @@ class DynamicSession:
                 page_info.page, first_response, final_response, self.adaptor_arguments
             )
 
-            # Mark page as ready for next use
+            # Mark the page as ready for next use
             page_info.mark_ready()
 
             return response
@@ -421,7 +421,7 @@ class AsyncDynamicSession(DynamicSession):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param max_pages: The maximum number of pages to be opened at the same time. It will be used in rotation through a PagePool.
+        :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
 
@@ -516,7 +516,7 @@ class AsyncDynamicSession(DynamicSession):
             if page_info:
                 return page_info
 
-            # Create new page if under limit
+            # Create a new page if under limit
             if self.page_pool.pages_count < self.max_pages:
                 page = await self.context.new_page()
                 page.set_default_navigation_timeout(self.timeout)
@@ -605,7 +605,7 @@ class AsyncDynamicSession(DynamicSession):
                 page_info.page, first_response, final_response, self.adaptor_arguments
             )
 
-            # Mark page as ready for next use
+            # Mark the page as ready for next use
             page_info.mark_ready()
 
             return response
