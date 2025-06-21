@@ -34,8 +34,8 @@ def __getattr__(name):
         from scrapling.fetchers import StealthyFetcher as cls
 
         return cls
-    elif name == "PlayWrightFetcher":
-        from scrapling.fetchers import PlayWrightFetcher as cls
+    elif name == "DynamicFetcher":
+        from scrapling.fetchers import DynamicFetcher as cls
 
         return cls
     elif name == "CustomFetcher":
@@ -46,4 +46,4 @@ def __getattr__(name):
         raise AttributeError(f"module 'scrapling' has no attribute '{name}'")
 
 
-__all__ = ["Adaptor", "Fetcher", "AsyncFetcher", "StealthyFetcher", "PlayWrightFetcher"]
+__all__ = ["Adaptor", "Fetcher", "AsyncFetcher", "StealthyFetcher", "DynamicFetcher"]
