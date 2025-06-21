@@ -51,7 +51,7 @@ Dealing with failing web scrapers due to anti-bot protections or website changes
 Scrapling is a high-performance, intelligent web scraping library for Python that automatically adapts to website changes while significantly outperforming popular alternatives. For both beginners and experts, Scrapling provides powerful features while maintaining simplicity.
 
 ```python
->> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
+>> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
 >> StealthyFetcher.auto_match = True
 # Fetch websites' source under the radar!
 >> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
@@ -106,8 +106,8 @@ Anyone who signs up can use the discount code GHB5 to get 10% off their purchase
 
 ### Fetch websites as you prefer with async support
 - **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class.
-- **Dynamic Loading & Automation**: Fetch dynamic websites with the `PlayWrightFetcher` class through your real browser, Scrapling's stealth mode, Playwright's Chrome browser, or [NSTbrowser](https://app.nstbrowser.io/r/1vO5e5)'s browserless!
-- **Anti-bot Protections Bypass**: Easily bypass protections with the `StealthyFetcher` and `PlayWrightFetcher` classes.
+- **Dynamic Loading & Automation**: Fetch dynamic websites with the `DynamicFetcher` class through your real browser, Scrapling's stealth mode, Playwright's Chrome browser, or [NSTbrowser](https://app.nstbrowser.io/r/1vO5e5)'s browserless!
+- **Anti-bot Protections Bypass**: Easily bypass protections with the `StealthyFetcher` and `DynamicFetcher` classes.
 
 ### Adaptive Scraping
 - 🔄 **Smart Element Tracking**: Relocate elements after website changes using an intelligent similarity system and integrated storage.
