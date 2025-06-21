@@ -1,16 +1,16 @@
 import pytest
 import pytest_httpbin
 
-from scrapling import PlayWrightFetcher
+from scrapling import DynamicFetcher
 
-PlayWrightFetcher.auto_match = True
+DynamicFetcher.auto_match = True
 
 
 @pytest_httpbin.use_class_based_httpbin
-class TestPlayWrightFetcherAsync:
+class TestDynamicFetcherAsync:
     @pytest.fixture
     def fetcher(self):
-        return PlayWrightFetcher
+        return DynamicFetcher
 
     @pytest.fixture
     def urls(self, httpbin):
@@ -94,10 +94,10 @@ class TestPlayWrightFetcherAsync:
     @pytest.mark.asyncio
     async def test_cdp_url_invalid(self, fetcher, urls):
         """Test if invalid CDP URLs raise appropriate exceptions"""
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             await fetcher.async_fetch(urls["html_url"], cdp_url="blahblah")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             await fetcher.async_fetch(
                 urls["html_url"], cdp_url="blahblah", nstbrowser_mode=True
             )
@@ -108,5 +108,5 @@ class TestPlayWrightFetcherAsync:
     @pytest.mark.asyncio
     async def test_infinite_timeout(self, fetcher, urls):
         """Test if infinite timeout breaks the code or not"""
-        response = await fetcher.async_fetch(urls["delayed_url"], timeout=None)
+        response = await fetcher.async_fetch(urls["delayed_url"], timeout=0)
         assert response.status == 200

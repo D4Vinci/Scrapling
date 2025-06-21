@@ -1,17 +1,17 @@
 import pytest
 import pytest_httpbin
 
-from scrapling import PlayWrightFetcher
+from scrapling import DynamicFetcher
 
-PlayWrightFetcher.auto_match = True
+DynamicFetcher.auto_match = True
 
 
 @pytest_httpbin.use_class_based_httpbin
-class TestPlayWrightFetcher:
+class TestDynamicFetcher:
     @pytest.fixture(scope="class")
     def fetcher(self):
         """Fixture to create a StealthyFetcher instance for the entire test class"""
-        return PlayWrightFetcher
+        return DynamicFetcher
 
     @pytest.fixture(autouse=True)
     def setup_urls(self, httpbin):
@@ -85,10 +85,10 @@ class TestPlayWrightFetcher:
 
     def test_cdp_url_invalid(self, fetcher):
         """Test if invalid CDP URLs raise appropriate exceptions"""
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             fetcher.fetch(self.html_url, cdp_url="blahblah")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             fetcher.fetch(self.html_url, cdp_url="blahblah", nstbrowser_mode=True)
 
         with pytest.raises(Exception):
@@ -99,5 +99,5 @@ class TestPlayWrightFetcher:
         fetcher,
     ):
         """Test if infinite timeout breaks the code or not"""
-        response = fetcher.fetch(self.delayed_url, timeout=None)
+        response = fetcher.fetch(self.delayed_url, timeout=0)
         assert response.status == 200
