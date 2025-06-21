@@ -11,7 +11,8 @@ from scrapling.core._types import (
 from scrapling.engines import (
     FetcherSession,
     CamoufoxEngine,
-    PlaywrightEngine,
+    DynamicSession,
+    AsyncDynamicSession,
     check_if_engine_usable,
     FetcherClient as _FetcherClient,
     AsyncFetcherClient as _AsyncFetcherClient,
@@ -237,7 +238,7 @@ class StealthyFetcher(BaseFetcher):
         return await engine.async_fetch(url)
 
 
-class PlayWrightFetcher(BaseFetcher):
+class DynamicFetcher(BaseFetcher):
     """A `Fetcher` class type that provide many options, all of them are based on PlayWright.
 
      Using this Fetcher class, you can do requests with:
@@ -258,28 +259,27 @@ class PlayWrightFetcher(BaseFetcher):
     def fetch(
         cls,
         url: str,
-        headless: Union[bool, str] = True,
-        disable_resources: bool = None,
-        useragent: Optional[str] = None,
-        network_idle: bool = False,
-        timeout: Optional[float] = 30000,
-        wait: Optional[int] = 0,
-        cookies: Optional[Iterable[Dict]] = None,
-        page_action: Optional[Callable] = None,
-        wait_selector: Optional[str] = None,
-        wait_selector_state: SelectorWaitStates = "attached",
+        max_pages: int = 1,
+        headless: bool = True,
+        google_search: bool = True,
         hide_canvas: bool = False,
         disable_webgl: bool = False,
-        extra_headers: Optional[Dict[str, str]] = None,
-        google_search: bool = True,
-        proxy: Optional[Union[str, Dict[str, str]]] = None,
-        locale: Optional[str] = "en-US",
-        stealth: bool = False,
         real_chrome: bool = False,
+        stealth: bool = False,
+        wait: Union[int, float] = 0,
+        page_action: Optional[Callable] = None,
+        proxy: Optional[Union[str, Dict[str, str]]] = None,
+        locale: str = "en-US",
+        extra_headers: Optional[Dict[str, str]] = None,
+        useragent: Optional[str] = None,
         cdp_url: Optional[str] = None,
-        nstbrowser_mode: bool = False,
-        nstbrowser_config: Optional[Dict] = None,
-        custom_config: Dict = None,
+        timeout: Union[int, float] = 30000,
+        disable_resources: bool = False,
+        wait_selector: Optional[str] = None,
+        cookies: Optional[Iterable[Dict]] = None,
+        network_idle: bool = False,
+        wait_selector_state: SelectorWaitStates = "attached",
+        custom_config: Optional[Dict] = None,
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
 
@@ -289,10 +289,10 @@ class PlayWrightFetcher(BaseFetcher):
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
+        :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param cookies: Set cookies for the next request.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
@@ -302,22 +302,21 @@ class PlayWrightFetcher(BaseFetcher):
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
-        :param nstbrowser_mode: Enables NSTBrowser mode, it has to be used with the ` cdp_url ` argument, or it will get completely ignored.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
+        :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
-        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        :return: A `Response` object.
         """
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(
+            raise ValueError(
                 f"The custom parser config must be of type dictionary, got {cls.__class__}"
             )
 
-        engine = PlaywrightEngine(
+        with DynamicSession(
             wait=wait,
             proxy=proxy,
             locale=locale,
@@ -327,6 +326,7 @@ class PlayWrightFetcher(BaseFetcher):
             cookies=cookies,
             headless=headless,
             useragent=useragent,
+            max_pages=max_pages,
             real_chrome=real_chrome,
             page_action=page_action,
             hide_canvas=hide_canvas,
@@ -335,40 +335,39 @@ class PlayWrightFetcher(BaseFetcher):
             extra_headers=extra_headers,
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
-            nstbrowser_mode=nstbrowser_mode,
-            nstbrowser_config=nstbrowser_config,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
-        )
-        return engine.fetch(url)
+        ) as session:
+            response = session.fetch(url)
+
+        return response
 
     @classmethod
     async def async_fetch(
         cls,
         url: str,
-        headless: Union[bool, str] = True,
-        disable_resources: bool = None,
-        useragent: Optional[str] = None,
-        network_idle: bool = False,
-        timeout: Optional[float] = 30000,
-        wait: Optional[int] = 0,
-        cookies: Optional[Iterable[Dict]] = None,
-        page_action: Optional[Callable] = None,
-        wait_selector: Optional[str] = None,
-        wait_selector_state: SelectorWaitStates = "attached",
+        max_pages: int = 1,
+        headless: bool = True,
+        google_search: bool = True,
         hide_canvas: bool = False,
         disable_webgl: bool = False,
-        extra_headers: Optional[Dict[str, str]] = None,
-        google_search: bool = True,
-        proxy: Optional[Union[str, Dict[str, str]]] = None,
-        locale: Optional[str] = "en-US",
-        stealth: bool = False,
         real_chrome: bool = False,
+        stealth: bool = False,
+        wait: Union[int, float] = 0,
+        page_action: Optional[Callable] = None,
+        proxy: Optional[Union[str, Dict[str, str]]] = None,
+        locale: str = "en-US",
+        extra_headers: Optional[Dict[str, str]] = None,
+        useragent: Optional[str] = None,
         cdp_url: Optional[str] = None,
-        nstbrowser_mode: bool = False,
-        nstbrowser_config: Optional[Dict] = None,
-        custom_config: Dict = None,
+        timeout: Union[int, float] = 30000,
+        disable_resources: bool = False,
+        wait_selector: Optional[str] = None,
+        cookies: Optional[Iterable[Dict]] = None,
+        network_idle: bool = False,
+        wait_selector_state: SelectorWaitStates = "attached",
+        custom_config: Optional[Dict] = None,
     ) -> Response:
         """Opens up a browser and do your request based on your chosen options below.
 
@@ -378,8 +377,8 @@ class PlayWrightFetcher(BaseFetcher):
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param cookies: Set cookies for the next request.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
@@ -391,22 +390,21 @@ class PlayWrightFetcher(BaseFetcher):
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
-        :param nstbrowser_mode: Enables NSTBrowser mode, it has to be used with the ` cdp_url ` argument, or it will get completely ignored.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search for this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param nstbrowser_config: The config you want to send with requests to the NSTBrowser. If left empty, Scrapling defaults to an optimized NSTBrowser's docker browserless config.
+        :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
-        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        :return: A `Response` object.
         """
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(
+            raise ValueError(
                 f"The custom parser config must be of type dictionary, got {cls.__class__}"
             )
 
-        engine = PlaywrightEngine(
+        async with AsyncDynamicSession(
             wait=wait,
             proxy=proxy,
             locale=locale,
@@ -416,6 +414,7 @@ class PlayWrightFetcher(BaseFetcher):
             cookies=cookies,
             headless=headless,
             useragent=useragent,
+            max_pages=max_pages,
             real_chrome=real_chrome,
             page_action=page_action,
             hide_canvas=hide_canvas,
@@ -424,13 +423,16 @@ class PlayWrightFetcher(BaseFetcher):
             extra_headers=extra_headers,
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
-            nstbrowser_mode=nstbrowser_mode,
-            nstbrowser_config=nstbrowser_config,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
-        )
-        return await engine.async_fetch(url)
+        ) as session:
+            response = await session.fetch(url)
+
+        return response
+
+
+PlayWrightFetcher = DynamicFetcher  # For backward-compatibility
 
 
 class CustomFetcher(BaseFetcher):

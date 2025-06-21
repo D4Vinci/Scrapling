@@ -30,7 +30,7 @@ from scrapling.core._types import List, Optional, Dict, Tuple, Any, Union
 from scrapling.fetchers import (
     Fetcher,
     AsyncFetcher,
-    PlayWrightFetcher,
+    DynamicFetcher,
     StealthyFetcher,
     Response,
 )
@@ -436,7 +436,7 @@ class CustomShell:
         return f"""
 -> Available Scrapling objects:
    - Fetcher/AsyncFetcher
-   - PlayWrightFetcher
+   - DynamicFetcher
    - StealthyFetcher
    - Adaptor
 
@@ -445,7 +445,7 @@ class CustomShell:
    - {"post":<30} Shortcut for `Fetcher.post`
    - {"put":<30} Shortcut for `Fetcher.put`
    - {"delete":<30} Shortcut for `Fetcher.delete`
-   - {"fetch":<30} Shortcut for `PlayWrightFetcher.fetch`
+   - {"fetch":<30} Shortcut for `DynamicFetcher.fetch`
    - {"stealthy_fetch":<30} Shortcut for `StealthyFetcher.fetch`
 
 -> Useful commands
@@ -493,7 +493,7 @@ Type 'exit' or press Ctrl+D to exit.
         post = self.create_wrapper(Fetcher.post)
         put = self.create_wrapper(Fetcher.put)
         delete = self.create_wrapper(Fetcher.delete)
-        dynamic_fetch = self.create_wrapper(PlayWrightFetcher.fetch)
+        dynamic_fetch = self.create_wrapper(DynamicFetcher.fetch)
         stealthy_fetch = self.create_wrapper(StealthyFetcher.fetch)
         curl2fetcher = self.create_wrapper(self._curl_parser.convert2fetcher)
 
@@ -506,7 +506,7 @@ Type 'exit' or press Ctrl+D to exit.
             "Fetcher": Fetcher,
             "AsyncFetcher": AsyncFetcher,
             "fetch": dynamic_fetch,
-            "PlayWrightFetcher": PlayWrightFetcher,
+            "DynamicFetcher": DynamicFetcher,
             "stealthy_fetch": stealthy_fetch,
             "StealthyFetcher": StealthyFetcher,
             "Adaptor": Adaptor,
