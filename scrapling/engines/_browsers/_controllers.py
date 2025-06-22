@@ -1,8 +1,8 @@
-import time
-import asyncio
+from time import time, sleep
+from asyncio import sleep as asyncio_sleep, Lock
 
-# from camoufox import AsyncNewBrowser, NewBrowser
 from playwright.sync_api import (
+    Response as SyncPlaywrightResponse,
     sync_playwright,
     BrowserType,
     Browser,
@@ -12,14 +12,13 @@ from playwright.sync_api import (
 )
 from playwright.async_api import (
     async_playwright,
+    Response as AsyncPlaywrightResponse,
     BrowserType as AsyncBrowserType,
     Browser as AsyncBrowser,
     BrowserContext as AsyncBrowserContext,
     Playwright as AsyncPlaywright,
     Locator as AsyncLocator,
 )
-from playwright.sync_api import Response as SyncPlaywrightResponse
-from playwright.async_api import Response as AsyncPlaywrightResponse
 from rebrowser_playwright.sync_api import sync_playwright as sync_rebrowser_playwright
 from rebrowser_playwright.async_api import (
     async_playwright as async_rebrowser_playwright,
@@ -282,13 +281,13 @@ class DynamicSession:
 
         # Wait for a page to become available
         max_wait = 30
-        start_time = time.time()
+        start_time = time()
 
-        while time.time() - start_time < max_wait:
+        while time() - start_time < max_wait:
             page_info = self.page_pool.get_ready_page()
             if page_info:
                 return page_info
-            time.sleep(0.05)
+            sleep(0.05)
 
         raise TimeoutError("No pages available within timeout period")
 
@@ -452,7 +451,7 @@ class AsyncDynamicSession(DynamicSession):
         self.playwright: Optional[AsyncPlaywright] = None
         self.browser: Optional[Union[AsyncBrowserType, AsyncBrowser]] = None
         self.context: Optional[AsyncBrowserContext] = None
-        self._lock = asyncio.Lock()
+        self._lock = Lock()
         self.__enter__ = None
         self.__exit__ = None
 
@@ -535,13 +534,13 @@ class AsyncDynamicSession(DynamicSession):
 
         # Wait for a page to become available
         max_wait = 30  # seconds
-        start_time = time.time()
+        start_time = time()
 
-        while time.time() - start_time < max_wait:
+        while time() - start_time < max_wait:
             page_info = self.page_pool.get_ready_page()
             if page_info:
                 return page_info
-            await asyncio.sleep(0.05)
+            await asyncio_sleep(0.05)
 
         raise TimeoutError("No pages available within timeout period")
 
