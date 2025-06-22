@@ -1,4 +1,4 @@
-import msgspec
+from msgspec import Struct, convert, ValidationError
 from urllib.parse import urlparse
 
 from scrapling.core._types import (
@@ -12,7 +12,7 @@ from scrapling.core._types import (
 from scrapling.engines.toolbelt import construct_proxy_dict
 
 
-class PlaywrightConfig(msgspec.Struct, kw_only=True, frozen=False):
+class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     """Configuration struct for validation"""
 
     max_pages: int = 1
@@ -81,8 +81,8 @@ class PlaywrightConfig(msgspec.Struct, kw_only=True, frozen=False):
 
 def validate(params, model):
     try:
-        config = msgspec.convert(params, model)
-    except msgspec.ValidationError as e:
+        config = convert(params, model)
+    except ValidationError as e:
         raise TypeError(f"Invalid argument type: {e}")
 
     return config
