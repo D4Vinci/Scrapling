@@ -337,9 +337,7 @@ class DynamicFetcher(BaseFetcher):
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
         ) as session:
-            response = session.fetch(url)
-
-        return response
+            return session.fetch(url)
 
     @classmethod
     async def async_fetch(
@@ -423,9 +421,7 @@ class DynamicFetcher(BaseFetcher):
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
         ) as session:
-            response = await session.fetch(url)
-
-        return response
+            return await session.fetch(url)
 
 
 PlayWrightFetcher = DynamicFetcher  # For backward-compatibility
