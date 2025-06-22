@@ -728,9 +728,10 @@ class AsyncFetcherClient:
             "cert": cert,
             "impersonate": impersonate,
             "http3": http3,
+            "stealthy_headers": stealthy_headers,
             **kwargs,
         }
-        async with FetcherSession(stealthy_headers=stealthy_headers) as client:
+        async with FetcherSession() as client:
             return await client.get(**request_args)
 
     @staticmethod
@@ -804,9 +805,10 @@ class AsyncFetcherClient:
             "verify": verify,
             "cert": cert,
             "http3": http3,
+            "stealthy_headers": stealthy_headers,
             **kwargs,
         }
-        async with FetcherSession(stealthy_headers=stealthy_headers) as client:
+        async with FetcherSession() as client:
             return await client.post(**request_args)
 
     @staticmethod
@@ -880,9 +882,10 @@ class AsyncFetcherClient:
             "verify": verify,
             "cert": cert,
             "http3": http3,
+            "stealthy_headers": stealthy_headers,
             **kwargs,
         }
-        async with FetcherSession(stealthy_headers=stealthy_headers) as client:
+        async with FetcherSession() as client:
             return await client.put(**request_args)
 
     @staticmethod
@@ -958,7 +961,8 @@ class AsyncFetcherClient:
             "verify": verify,
             "cert": cert,
             "http3": http3,
+            "stealthy_headers": stealthy_headers,
             **kwargs,
         }
-        async with FetcherSession(stealthy_headers=stealthy_headers) as client:
+        async with FetcherSession() as client:
             return await client.delete(**request_args)
