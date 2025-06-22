@@ -32,7 +32,7 @@ from scrapling.core._types import (
     Dict,
     Optional,
     Union,
-    Iterable,
+    List,
     Callable,
     SelectorWaitStates,
 )
@@ -98,7 +98,7 @@ class DynamicSession:
         timeout: Union[int, float] = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
-        cookies: Optional[Iterable[Dict]] = None,
+        cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
         adaptor_arguments: Optional[Dict] = None,
@@ -168,7 +168,7 @@ class DynamicSession:
         self.extra_headers = config.extra_headers
         self.useragent = config.useragent
         self.timeout = config.timeout
-        self.cookies = list(config.cookies) if config.cookies else []
+        self.cookies = config.cookies
         self.disable_resources = config.disable_resources
         self.cdp_url = config.cdp_url
         self.network_idle = config.network_idle
@@ -180,7 +180,7 @@ class DynamicSession:
         self.context: Optional[BrowserContext] = None
         self.page_pool = PagePool(self.max_pages)
         self._closed = False
-        self.adaptor_arguments = config.adaptor_arguments or {}
+        self.adaptor_arguments = config.adaptor_arguments
         self.page_action = config.page_action
         self.__initiate_browser_options__()
 
@@ -392,7 +392,7 @@ class AsyncDynamicSession(DynamicSession):
         timeout: Union[int, float] = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
-        cookies: Optional[Iterable[Dict]] = None,
+        cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
         adaptor_arguments: Optional[Dict] = None,

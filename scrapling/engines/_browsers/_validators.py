@@ -6,6 +6,8 @@ from scrapling.core._types import (
     Union,
     Dict,
     Callable,
+    Literal,
+    List,
     Iterable,
     SelectorWaitStates,
 )
@@ -34,7 +36,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     timeout: Union[int, float] = 30000
     disable_resources: bool = False
     wait_selector: Optional[str] = None
-    cookies: Optional[Iterable[Dict]] = None
+    cookies: Optional[List[Dict]] = None
     network_idle: bool = False
     wait_selector_state: SelectorWaitStates = "attached"
     adaptor_arguments: Optional[Dict] = None
@@ -43,13 +45,6 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
         """Custom validation after msgspec validation"""
         if self.max_pages < 1 or self.max_pages > 50:
             raise ValueError("max_pages must be between 1 and 50")
-        if self.wait_selector_state not in (
-            "attached",
-            "detached",
-            "hidden",
-            "visible",
-        ):
-            raise ValueError(f"Invalid wait_selector_state: {self.wait_selector_state}")
         if self.timeout < 0:
             raise ValueError("timeout must be >= 0")
         if self.page_action is not None and not callable(self.page_action):
@@ -60,6 +55,10 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
             self.proxy = construct_proxy_dict(self.proxy, as_tuple=True)
         if self.cdp_url:
             self.__validate_cdp(self.cdp_url)
+        if not self.cookies:
+            self.cookies = []
+        if not self.adaptor_arguments:
+            self.adaptor_arguments = {}
 
     @staticmethod
     def __validate_cdp(cdp_url):
