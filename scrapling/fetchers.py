@@ -10,10 +10,10 @@ from scrapling.core._types import (
 )
 from scrapling.engines import (
     FetcherSession,
-    CamoufoxEngine,
+    StealthySession,
+    AsyncStealthySession,
     DynamicSession,
     AsyncDynamicSession,
-    check_if_engine_usable,
     FetcherClient as _FetcherClient,
     AsyncFetcherClient as _AsyncFetcherClient,
 )
@@ -57,23 +57,23 @@ class StealthyFetcher(BaseFetcher):
         block_webrtc: bool = False,
         allow_webgl: bool = True,
         network_idle: bool = False,
-        addons: Optional[List[str]] = None,
-        cookies: Optional[Iterable[Dict]] = None,
-        wait: Optional[int] = 0,
-        timeout: Optional[float] = 30000,
-        page_action: Callable = None,
+        humanize: Union[bool, float] = True,
+        solve_cloudflare: bool = False,
+        wait: Union[int, float] = 0,
+        timeout: Union[int, float] = 30000,
+        page_action: Optional[Callable] = None,
         wait_selector: Optional[str] = None,
-        humanize: Optional[Union[bool, float]] = True,
-        solve_cloudflare: Optional[bool] = False,
+        addons: Optional[List[str]] = None,
         wait_selector_state: SelectorWaitStates = "attached",
+        cookies: Optional[List[Dict]] = None,
         google_search: bool = True,
         extra_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[Union[str, Dict[str, str]]] = None,
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,
-        custom_config: Dict = None,
-        additional_arguments: Dict = None,
+        custom_config: Optional[Dict] = None,
+        additional_arguments: Optional[Dict] = None,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -106,7 +106,7 @@ class StealthyFetcher(BaseFetcher):
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
-        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        :return: A `Response` object.
         """
         if not custom_config:
             custom_config = {}
@@ -115,8 +115,9 @@ class StealthyFetcher(BaseFetcher):
                 f"The custom parser config must be of type dictionary, got {cls.__class__}"
             )
 
-        engine = CamoufoxEngine(
+        with StealthySession(
             wait=wait,
+            max_pages=1,
             proxy=proxy,
             geoip=geoip,
             addons=addons,
@@ -139,8 +140,8 @@ class StealthyFetcher(BaseFetcher):
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
             additional_arguments=additional_arguments or {},
-        )
-        return engine.fetch(url)
+        ) as engine:
+            return engine.fetch(url)
 
     @classmethod
     async def async_fetch(
@@ -150,25 +151,25 @@ class StealthyFetcher(BaseFetcher):
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
-        cookies: Optional[Iterable[Dict]] = None,
         allow_webgl: bool = True,
         network_idle: bool = False,
-        addons: Optional[List[str]] = None,
-        wait: Optional[int] = 0,
-        timeout: Optional[float] = 30000,
-        page_action: Callable = None,
+        humanize: Union[bool, float] = True,
+        solve_cloudflare: bool = False,
+        wait: Union[int, float] = 0,
+        timeout: Union[int, float] = 30000,
+        page_action: Optional[Callable] = None,
         wait_selector: Optional[str] = None,
-        humanize: Optional[Union[bool, float]] = True,
-        solve_cloudflare: Optional[bool] = False,
+        addons: Optional[List[str]] = None,
         wait_selector_state: SelectorWaitStates = "attached",
+        cookies: Optional[List[Dict]] = None,
         google_search: bool = True,
         extra_headers: Optional[Dict[str, str]] = None,
         proxy: Optional[Union[str, Dict[str, str]]] = None,
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,
-        custom_config: Dict = None,
-        additional_arguments: Dict = None,
+        custom_config: Optional[Dict] = None,
+        additional_arguments: Optional[Dict] = None,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -201,7 +202,7 @@ class StealthyFetcher(BaseFetcher):
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
-        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        :return: A `Response` object.
         """
         if not custom_config:
             custom_config = {}
@@ -210,8 +211,9 @@ class StealthyFetcher(BaseFetcher):
                 f"The custom parser config must be of type dictionary, got {cls.__class__}"
             )
 
-        engine = CamoufoxEngine(
+        async with AsyncStealthySession(
             wait=wait,
+            max_pages=1,
             proxy=proxy,
             geoip=geoip,
             addons=addons,
@@ -234,8 +236,8 @@ class StealthyFetcher(BaseFetcher):
             wait_selector_state=wait_selector_state,
             adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
             additional_arguments=additional_arguments or {},
-        )
-        return await engine.async_fetch(url)
+        ) as engine:
+            return await engine.fetch(url)
 
 
 class DynamicFetcher(BaseFetcher):
@@ -425,12 +427,3 @@ class DynamicFetcher(BaseFetcher):
 
 
 PlayWrightFetcher = DynamicFetcher  # For backward-compatibility
-
-
-class CustomFetcher(BaseFetcher):
-    @classmethod
-    def fetch(cls, url: str, browser_engine, **kwargs) -> Response:
-        engine = check_if_engine_usable(browser_engine)(
-            adaptor_arguments=cls._generate_parser_arguments(), **kwargs
-        )
-        return engine.fetch(url)
