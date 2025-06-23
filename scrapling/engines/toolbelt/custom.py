@@ -2,12 +2,10 @@
 Functions related to custom types or type checking
 """
 
-import inspect
 from email.message import Message
 
 from scrapling.core._types import (
     Any,
-    Callable,
     Dict,
     List,
     Optional,
@@ -313,38 +311,6 @@ class StatusText:
     def get(cls, status_code: int) -> str:
         """Get the phrase for a given HTTP status code."""
         return cls._phrases.get(status_code, "Unknown Status Code")
-
-
-def check_if_engine_usable(engine: Callable) -> Union[Callable, None]:
-    """This function check if the passed engine can be used by a Fetcher-type class or not.
-
-    :param engine: The engine class itself
-    :return: The engine class again if all checks out, otherwise raises error
-    :raise TypeError: If engine class don't have fetch method, If engine class have fetch attribute not method, or If engine class have fetch function but it doesn't take arguments
-    """
-    # if isinstance(engine, type):
-    #     raise TypeError("Expected an engine instance, not a class definition of the engine")
-
-    if hasattr(engine, "fetch"):
-        fetch_function = getattr(engine, "fetch")
-        if callable(fetch_function):
-            if len(inspect.signature(fetch_function).parameters) > 0:
-                return engine
-            else:
-                # raise TypeError("Engine class instance must have a callable method 'fetch' with the first argument used for the url.")
-                raise TypeError(
-                    "Engine class must have a callable method 'fetch' with the first argument used for the url."
-                )
-        else:
-            # raise TypeError("Invalid engine instance! Engine class must have a callable method 'fetch'")
-            raise TypeError(
-                "Invalid engine class! Engine class must have a callable method 'fetch'"
-            )
-    else:
-        # raise TypeError("Invalid engine instance! Engine class must have the method 'fetch'")
-        raise TypeError(
-            "Invalid engine class! Engine class must have the method 'fetch'"
-        )
 
 
 def get_variable_name(var: Any) -> Optional[str]:

@@ -2,7 +2,6 @@ from .custom import (
     BaseFetcher,
     Response,
     StatusText,
-    check_if_engine_usable,
     check_type_validity,
     get_variable_name,
 )
