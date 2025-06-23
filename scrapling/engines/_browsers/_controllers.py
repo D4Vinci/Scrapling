@@ -77,6 +77,7 @@ class DynamicSession:
         "launch_options",
         "context_options",
         "cdp_url",
+        "_headers_keys",
     )
 
     def __init__(
@@ -182,6 +183,11 @@ class DynamicSession:
         self._closed = False
         self.adaptor_arguments = config.adaptor_arguments
         self.page_action = config.page_action
+        self._headers_keys = (
+            set(map(str.lower, self.extra_headers.keys()))
+            if self.extra_headers
+            else set()
+        )
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
@@ -301,7 +307,11 @@ class DynamicSession:
             raise RuntimeError("Context manager has been closed")
 
         final_response = None
-        referer = generate_convincing_referer(url) if self.google_search else None
+        referer = (
+            generate_convincing_referer(url)
+            if (self.google_search and "referer" not in self._headers_keys)
+            else None
+        )
 
         def handle_response(finished_response: SyncPlaywrightResponse):
             nonlocal final_response
@@ -554,7 +564,11 @@ class AsyncDynamicSession(DynamicSession):
             raise RuntimeError("Context manager has been closed")
 
         final_response = None
-        referer = generate_convincing_referer(url) if self.google_search else None
+        referer = (
+            generate_convincing_referer(url)
+            if (self.google_search and "referer" not in self._headers_keys)
+            else None
+        )
 
         async def handle_response(finished_response: AsyncPlaywrightResponse):
             nonlocal final_response
