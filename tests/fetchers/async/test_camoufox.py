@@ -106,5 +106,5 @@ class TestStealthyFetcher:
     async def test_infinite_timeout(self, fetcher, urls):
         """Test if infinite timeout breaks the code or not"""
         assert (
-            await fetcher.async_fetch(urls["delayed_url"], timeout=None)
+            await fetcher.async_fetch(urls["delayed_url"], timeout=0)
         ).status == 200
