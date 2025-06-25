@@ -131,8 +131,8 @@ class TextHandler(str):
     extract_first = get
 
     def json(self) -> Dict:
-        """Return json response if the response is jsonable otherwise throw error"""
-        # Using str function as a workaround for orjson issue with subclasses of str
+        """Return JSON response if the response is jsonable otherwise throw error"""
+        # Using str function as a workaround for orjson issue with subclasses of str.
         # Check this out: https://github.com/ijl/orjson/issues/445
         return loads(str(self))
 
@@ -167,10 +167,10 @@ class TextHandler(str):
         """Apply the given regex to the current text and return a list of strings with the matches.
 
         :param regex: Can be either a compiled regular expression or a string.
-        :param replace_entities: if enabled character entity references are replaced by their corresponding character
-        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
-        :param case_sensitive: if disabled, function will set the regex to ignore letters case while compiling it
-        :param check_match: used to quickly check if this regex matches or not without any operations on the results
+        :param replace_entities: If enabled character entity references are replaced by their corresponding character
+        :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: If disabled, function will set the regex to ignore the letters-case while compiling it
+        :param check_match: Used to quickly check if this regex matches or not without any operations on the results
 
         """
         if isinstance(regex, str):
@@ -213,9 +213,9 @@ class TextHandler(str):
 
         :param regex: Can be either a compiled regular expression or a string.
         :param default: The default value to be returned if there is no match
-        :param replace_entities: if enabled character entity references are replaced by their corresponding character
-        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
-        :param case_sensitive: if disabled, function will set the regex to ignore letters case while compiling it
+        :param replace_entities: If enabled character entity references are replaced by their corresponding character
+        :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: If disabled, function will set the regex to ignore the letters-case while compiling it
 
         """
         result = self.re(
@@ -262,9 +262,9 @@ class TextHandlers(List[TextHandler]):
         their results flattened as TextHandlers.
 
         :param regex: Can be either a compiled regular expression or a string.
-        :param replace_entities: if enabled character entity references are replaced by their corresponding character
+        :param replace_entities: If enabled character entity references are replaced by their corresponding character
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
-        :param case_sensitive: if disabled, function will set the regex to ignore letters case while compiling it
+        :param case_sensitive: if disabled, the function will set the regex to ignore the letters-case while compiling it
         """
         results = [
             n.re(regex, replace_entities, clean_match, case_sensitive) for n in self
@@ -284,9 +284,9 @@ class TextHandlers(List[TextHandler]):
 
         :param regex: Can be either a compiled regular expression or a string.
         :param default: The default value to be returned if there is no match
-        :param replace_entities: if enabled character entity references are replaced by their corresponding character
-        :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
-        :param case_sensitive: if disabled, function will set the regex to ignore letters case while compiling it
+        :param replace_entities: If enabled character entity references are replaced by their corresponding character
+        :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching
+        :param case_sensitive: If disabled, function will set the regex to ignore the letters-case while compiling it
         """
         for n in self:
             for result in n.re(regex, replace_entities, clean_match, case_sensitive):
@@ -308,8 +308,8 @@ class TextHandlers(List[TextHandler]):
 
 
 class AttributesHandler(Mapping[str, _TextHandlerType]):
-    """A read-only mapping to use instead of the standard dictionary for the speed boost but at the same time I use it to add more functionalities.
-    If standard dictionary is needed, just convert this class to dictionary with `dict` function
+    """A read-only mapping to use instead of the standard dictionary for the speed boost, but at the same time I use it to add more functionalities.
+    If the standard dictionary is needed, convert this class to a dictionary with the `dict` function
     """
 
     __slots__ = ("_data",)
@@ -338,12 +338,12 @@ class AttributesHandler(Mapping[str, _TextHandlerType]):
     def get(
         self, key: str, default: Optional[str] = None
     ) -> Union[_TextHandlerType, None]:
-        """Acts like standard dictionary `.get()` method"""
+        """Acts like the standard dictionary `.get()` method"""
         return self._data.get(key, default)
 
     def search_values(self, keyword, partial=False):
-        """Search current attributes by values and return dictionary of each matching item
-        :param keyword: The keyword to search for in the attributes values
+        """Search current attributes by values and return a dictionary of each matching item
+        :param keyword: The keyword to search for in the attribute values
         :param partial: If True, the function will search if keyword in each value instead of perfect match
         """
         for key, value in self._data.items():

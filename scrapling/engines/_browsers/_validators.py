@@ -9,7 +9,6 @@ from scrapling.core._types import (
     Callable,
     Literal,
     List,
-    Iterable,
     SelectorWaitStates,
 )
 from scrapling.engines.toolbelt import construct_proxy_dict
