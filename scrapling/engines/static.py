@@ -33,6 +33,8 @@ from .toolbelt import (
     __default_useragent__,
 )
 
+_UNSET = object()
+
 
 class FetcherSession:
     """
@@ -104,35 +106,47 @@ class FetcherSession:
         """Merge request-specific arguments with default session arguments."""
         url = kwargs.pop("url")
         request_args = {}
-        if kwargs.pop("http3", False) or self.default_http3:
+
+        headers = self.get_with_precedence(kwargs, "headers", self.default_headers)
+        stealth = self.get_with_precedence(kwargs, "stealth", self.stealth)
+        impersonate = self.get_with_precedence(
+            kwargs, "impersonate", self.default_impersonate
+        )
+
+        if self.get_with_precedence(kwargs, "http3", self.default_http3):
             request_args["http_version"] = CurlHttpVersion.V3ONLY
-            if kwargs.get("impersonate"):
+            if impersonate:
                 log.warning(
                     "The argument `http3` might cause errors if used with `impersonate` argument, try switching it off if you encounter any curl errors."
                 )
 
-        impersonate = kwargs.pop("impersonate", self.default_impersonate)
         request_args.update(
             {
                 "url": url,
                 # Curl automatically generates the suitable browser headers when you use `impersonate`
-                "headers": self._headers_job(
-                    url, kwargs.pop("headers"), kwargs.pop("stealth"), bool(impersonate)
+                "headers": self._headers_job(url, headers, stealth, bool(impersonate)),
+                "proxies": self.get_with_precedence(
+                    kwargs, "proxies", self.default_proxies
                 ),
-                "proxies": kwargs.pop("proxies", self.default_proxies),
-                "proxy": kwargs.pop("proxy", self.default_proxy),
-                "proxy_auth": kwargs.pop("proxy_auth", self.default_proxy_auth),
-                "timeout": kwargs.pop("timeout", self.default_timeout),
-                "allow_redirects": kwargs.pop(
-                    "follow_redirects", self.default_follow_redirects
+                "proxy": self.get_with_precedence(kwargs, "proxy", self.default_proxy),
+                "proxy_auth": self.get_with_precedence(
+                    kwargs, "proxy_auth", self.default_proxy_auth
                 ),
-                "max_redirects": kwargs.pop(
-                    "max_redirects", self.default_max_redirects
+                "timeout": self.get_with_precedence(
+                    kwargs, "timeout", self.default_timeout
                 ),
-                "verify": kwargs.pop("verify", self.default_verify),
-                "cert": kwargs.pop("cert", self.default_cert),
+                "allow_redirects": self.get_with_precedence(
+                    kwargs, "allow_redirects", self.default_follow_redirects
+                ),
+                "max_redirects": self.get_with_precedence(
+                    kwargs, "max_redirects", self.default_max_redirects
+                ),
+                "verify": self.get_with_precedence(
+                    kwargs, "verify", self.default_verify
+                ),
+                "cert": self.get_with_precedence(kwargs, "cert", self.default_cert),
                 "impersonate": impersonate,
-                **kwargs,
+                **kwargs,  # Add any remaining parameters (after all known ones are popped)
             }
         )
         return request_args
@@ -152,9 +166,14 @@ class FetcherSession:
         :param impersonate_enabled: Whether the browser impersonation is enabled or not.
         :return: A dictionary of the new headers.
         """
-        headers = {**self.default_headers, **(headers or {})}
-        headers_keys = set(map(str.lower, headers.keys()))
+        # Handle headers - if it was _UNSET, use default_headers
+        if headers is _UNSET:
+            headers = self.default_headers.copy()
+        else:
+            # Merge session headers with request headers, request takes precedence
+            headers = {**self.default_headers, **(headers or {})}
 
+        headers_keys = set(map(str.lower, headers.keys()))
         if stealth:
             if "referer" not in headers_keys:
                 headers.update({"referer": generate_convincing_referer(url)})
@@ -307,6 +326,12 @@ class FetcherSession:
 
         raise RuntimeError("No active session available.")
 
+    @staticmethod
+    def get_with_precedence(kwargs, key, default_value):
+        """Get value with request-level priority over session-level"""
+        request_value = kwargs.pop(key, _UNSET)
+        return request_value if request_value is not _UNSET else default_value
+
     def __prepare_and_dispatch(
         self,
         method: SUPPORTED_HTTP_METHODS,
@@ -327,8 +352,10 @@ class FetcherSession:
         adaptor_arguments = (
             kwargs.pop("adaptor_arguments", {}) or self.adaptor_arguments
         )
-        max_retries = kwargs.pop("retries", self.default_retries)
-        retry_delay = kwargs.pop("retry_delay", self.default_retry_delay)
+        max_retries = self.get_with_precedence(kwargs, "retries", self.default_retries)
+        retry_delay = self.get_with_precedence(
+            kwargs, "retry_delay", self.default_retry_delay
+        )
         request_args = self._merge_request_args(stealth=stealth, **kwargs)
         if self._curl_session:
             return self.__make_request(
@@ -346,22 +373,22 @@ class FetcherSession:
         self,
         url: str,
         params: Optional[Union[Dict, List, Tuple]] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
+        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = 30,
-        follow_redirects: Optional[bool] = True,
-        max_redirects: Optional[int] = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxies: Optional[ProxySpec] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[Union[int, float]] = _UNSET,
+        follow_redirects: Optional[bool] = _UNSET,
+        max_redirects: Optional[int] = _UNSET,
+        retries: Optional[int] = _UNSET,
+        retry_delay: Optional[int] = _UNSET,
+        proxies: Optional[ProxySpec] = _UNSET,
+        proxy: Optional[str] = _UNSET,
+        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,
-        cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
+        verify: Optional[bool] = _UNSET,
+        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        http3: Optional[bool] = _UNSET,
+        stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Union[Response, Awaitable[Response]]:
         """
@@ -418,23 +445,23 @@ class FetcherSession:
         url: str,
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
+        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
         params: Optional[Union[Dict, List, Tuple]] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = 30,
-        follow_redirects: Optional[bool] = True,
-        max_redirects: Optional[int] = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxies: Optional[ProxySpec] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[Union[int, float]] = _UNSET,
+        follow_redirects: Optional[bool] = _UNSET,
+        max_redirects: Optional[int] = _UNSET,
+        retries: Optional[int] = _UNSET,
+        retry_delay: Optional[int] = _UNSET,
+        proxies: Optional[ProxySpec] = _UNSET,
+        proxy: Optional[str] = _UNSET,
+        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,
-        cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
+        verify: Optional[bool] = _UNSET,
+        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        http3: Optional[bool] = _UNSET,
+        stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Union[Response, Awaitable[Response]]:
         """
@@ -495,23 +522,23 @@ class FetcherSession:
         url: str,
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
+        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
         params: Optional[Union[Dict, List, Tuple]] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = 30,
-        follow_redirects: Optional[bool] = True,
-        max_redirects: Optional[int] = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxies: Optional[ProxySpec] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[Union[int, float]] = _UNSET,
+        follow_redirects: Optional[bool] = _UNSET,
+        max_redirects: Optional[int] = _UNSET,
+        retries: Optional[int] = _UNSET,
+        retry_delay: Optional[int] = _UNSET,
+        proxies: Optional[ProxySpec] = _UNSET,
+        proxy: Optional[str] = _UNSET,
+        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,
-        cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
+        verify: Optional[bool] = _UNSET,
+        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        http3: Optional[bool] = _UNSET,
+        stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Union[Response, Awaitable[Response]]:
         """
@@ -572,23 +599,23 @@ class FetcherSession:
         url: str,
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
+        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
         params: Optional[Union[Dict, List, Tuple]] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = 30,
-        follow_redirects: Optional[bool] = True,
-        max_redirects: Optional[int] = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxies: Optional[ProxySpec] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[Union[int, float]] = _UNSET,
+        follow_redirects: Optional[bool] = _UNSET,
+        max_redirects: Optional[int] = _UNSET,
+        retries: Optional[int] = _UNSET,
+        retry_delay: Optional[int] = _UNSET,
+        proxies: Optional[ProxySpec] = _UNSET,
+        proxy: Optional[str] = _UNSET,
+        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,
-        cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
+        verify: Optional[bool] = _UNSET,
+        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        http3: Optional[bool] = _UNSET,
+        stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Union[Response, Awaitable[Response]]:
         """
@@ -667,22 +694,22 @@ class AsyncFetcherClient:
     async def get(
         url: str,
         params: Optional[Union[Dict, List, Tuple]] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
+        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = 30,
-        follow_redirects: Optional[bool] = True,
-        max_redirects: Optional[int] = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxies: Optional[ProxySpec] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[Union[int, float]] = _UNSET,
+        follow_redirects: Optional[bool] = _UNSET,
+        max_redirects: Optional[int] = _UNSET,
+        retries: Optional[int] = _UNSET,
+        retry_delay: Optional[int] = _UNSET,
+        proxies: Optional[ProxySpec] = _UNSET,
+        proxy: Optional[str] = _UNSET,
+        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,
-        cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
-        stealthy_headers: Optional[bool] = True,
-        http3: Optional[bool] = False,
+        verify: Optional[bool] = _UNSET,
+        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        http3: Optional[bool] = _UNSET,
+        stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Response:
         """
@@ -739,23 +766,23 @@ class AsyncFetcherClient:
         url: str,
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
+        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
         params: Optional[Union[Dict, List, Tuple]] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = 30,
-        follow_redirects: Optional[bool] = True,
-        max_redirects: Optional[int] = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxies: Optional[ProxySpec] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[Union[int, float]] = _UNSET,
+        follow_redirects: Optional[bool] = _UNSET,
+        max_redirects: Optional[int] = _UNSET,
+        retries: Optional[int] = _UNSET,
+        retry_delay: Optional[int] = _UNSET,
+        proxies: Optional[ProxySpec] = _UNSET,
+        proxy: Optional[str] = _UNSET,
+        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,
-        cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
-        stealthy_headers: Optional[bool] = True,
-        http3: Optional[bool] = False,
+        verify: Optional[bool] = _UNSET,
+        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        http3: Optional[bool] = _UNSET,
+        stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Response:
         """
@@ -816,23 +843,23 @@ class AsyncFetcherClient:
         url: str,
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
+        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
         params: Optional[Union[Dict, List, Tuple]] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = 30,
-        follow_redirects: Optional[bool] = True,
-        max_redirects: Optional[int] = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxies: Optional[ProxySpec] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[Union[int, float]] = _UNSET,
+        follow_redirects: Optional[bool] = _UNSET,
+        max_redirects: Optional[int] = _UNSET,
+        retries: Optional[int] = _UNSET,
+        retry_delay: Optional[int] = _UNSET,
+        proxies: Optional[ProxySpec] = _UNSET,
+        proxy: Optional[str] = _UNSET,
+        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,
-        cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
-        stealthy_headers: Optional[bool] = True,
-        http3: Optional[bool] = False,
+        verify: Optional[bool] = _UNSET,
+        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        http3: Optional[bool] = _UNSET,
+        stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Response:
         """
@@ -893,23 +920,23 @@ class AsyncFetcherClient:
         url: str,
         data: Optional[Union[Dict, str]] = None,
         json: Optional[Union[Dict, List]] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
+        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
         params: Optional[Union[Dict, List, Tuple]] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = 30,
-        follow_redirects: Optional[bool] = True,
-        max_redirects: Optional[int] = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxies: Optional[ProxySpec] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
+        timeout: Optional[Union[int, float]] = _UNSET,
+        follow_redirects: Optional[bool] = _UNSET,
+        max_redirects: Optional[int] = _UNSET,
+        retries: Optional[int] = _UNSET,
+        retry_delay: Optional[int] = _UNSET,
+        proxies: Optional[ProxySpec] = _UNSET,
+        proxy: Optional[str] = _UNSET,
+        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = True,
-        cert: Optional[Union[str, Tuple[str, str]]] = None,
-        impersonate: Optional[BrowserTypeLiteral] = DEFAULT_CHROME,
-        stealthy_headers: Optional[bool] = True,
-        http3: Optional[bool] = False,
+        verify: Optional[bool] = _UNSET,
+        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        http3: Optional[bool] = _UNSET,
+        stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Response:
         """
