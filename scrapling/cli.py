@@ -3,21 +3,21 @@ import sys
 import subprocess
 from pathlib import Path
 
-import click
+from click import command, option, Choice, group
 
 
 def get_package_dir():
     return Path(os.path.dirname(__file__))
 
 
-def run_command(command, line):
+def run_command(cmd, line):
     print(f"Installing {line}...")
-    _ = subprocess.check_call(command, shell=False)  # nosec B603
+    _ = subprocess.check_call(cmd, shell=False)  # nosec B603
     # I meant to not use try except here
 
 
-@click.command(help="Install all Scrapling's Fetchers dependencies")
-@click.option(
+@command(help="Install all Scrapling's Fetchers dependencies")
+@option(
     "-f",
     "--force",
     "force",
@@ -43,14 +43,14 @@ def install(force):
             [sys.executable, "-m", "camoufox", "fetch", "--browserforge"],
             "Camoufox browser and databases",
         )
-        # if no errors raised by above commands, then we add below file
+        # if no errors raised by the above commands, then we add the below file
         get_package_dir().joinpath(".scrapling_dependencies_installed").touch()
     else:
         print("The dependencies are already installed")
 
 
-@click.command(help="Interactive scraping console")
-@click.option(
+@command(help="Interactive scraping console")
+@option(
     "-c",
     "--code",
     "code",
@@ -59,13 +59,13 @@ def install(force):
     type=str,
     help="Evaluate the code in the shell, print the result and exit",
 )
-@click.option(
+@option(
     "-L",
     "--loglevel",
     "level",
     is_flag=False,
     default="debug",
-    type=click.Choice(
+    type=Choice(
         ["debug", "info", "warning", "error", "critical", "fatal"], case_sensitive=False
     ),
     help="Log level (default: DEBUG)",
@@ -77,7 +77,7 @@ def shell(code, level):
     console.start()
 
 
-@click.group()
+@group()
 def main():
     pass
 
