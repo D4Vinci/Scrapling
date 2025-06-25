@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-import os
-import json
 from sys import stderr
 from functools import wraps
 from http import cookies as Cookie
 from collections import namedtuple
 from shlex import split as shlex_split
 from tempfile import mkstemp as make_temp_file
+from os import write as os_write, close as os_close
 from urllib.parse import urlparse, urlunparse, parse_qsl
 from argparse import ArgumentParser, SUPPRESS
 from webbrowser import open as open_in_browser
@@ -22,6 +21,7 @@ from logging import (
 )
 
 from IPython.terminal.embed import InteractiveShellEmbed
+from orjson import loads as json_loads, JSONDecodeError
 
 from scrapling import __version__
 from scrapling.core.utils import log
@@ -199,7 +199,7 @@ class CurlParser:
 
         # --- Determine Method ---
         method = "get"  # Default
-        if parsed_args.get:  # -G forces GET
+        if parsed_args.get:  # `-G` forces GET
             method = "get"
 
         elif parsed_args.method:
@@ -224,7 +224,7 @@ class CurlParser:
                 cookie_parser = Cookie.SimpleCookie()
                 cookie_parser.load(parsed_args.cookie)
                 for key, morsel in cookie_parser.items():
-                    # Update the cookies dict, potentially overwriting
+                    # Update the cookie dict, potentially overwriting
                     # cookies with the same name from -H 'Cookie:'
                     cookies[key] = morsel.value
                 log.debug(f"Parsed cookies from -b argument: {list(cookies.keys())}")
@@ -270,14 +270,14 @@ class CurlParser:
         # Check if raw data looks like JSON, prefer 'json' param if so
         if isinstance(data_payload, str):
             try:
-                maybe_json = json.loads(data_payload)
+                maybe_json = json_loads(data_payload)
                 if isinstance(maybe_json, (dict, list)):
                     json_payload = maybe_json
                     data_payload = None
-            except json.JSONDecodeError:
+            except JSONDecodeError:
                 pass  # Not JSON, keep it in data_payload
 
-        # Handle -G: Move data to params if method is GET
+        # Handle `-G`: Move data to params if the method is GET
         if method == "get" and data_payload:
             if isinstance(data_payload, dict):  # From --data-urlencode likely
                 params.update(data_payload)
@@ -340,7 +340,6 @@ class CurlParser:
         )
 
     def convert2fetcher(self, curl_command: Union[Request, str]) -> Optional[Response]:
-        request = None
         if isinstance(curl_command, (Request, str)):
             request = (
                 self.parse(curl_command)
@@ -387,8 +386,8 @@ def show_page_in_browser(page: Adaptor):
 
     try:
         fd, fname = make_temp_file(".html")
-        os.write(fd, page.body.encode("utf-8"))
-        os.close(fd)
+        os_write(fd, page.body.encode("utf-8"))
+        os_close(fd)
         open_in_browser(f"file://{fname}")
     except IOError as e:
         log.error(f"Failed to write temporary file for viewing: {e}")
@@ -460,7 +459,7 @@ Type 'exit' or press Ctrl+D to exit.
         """
 
     def update_page(self, result):
-        """Update current page and add to pages history"""
+        """Update the current page and add to pages history"""
         self.page = result
         if isinstance(result, (Response, Adaptor)):
             self.pages.append(result)
