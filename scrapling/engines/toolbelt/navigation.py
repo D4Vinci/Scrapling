@@ -3,10 +3,10 @@ Functions related to files and URLs
 """
 
 import os
-import msgspec
 from urllib.parse import urlencode, urlparse
 
 from playwright.async_api import Route as async_Route
+from msgspec import Struct, structs, convert, ValidationError
 from playwright.sync_api import Route
 
 from scrapling.core._types import Dict, Optional, Union, Tuple
@@ -14,14 +14,14 @@ from scrapling.core.utils import log, lru_cache
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
 
-class ProxyDict(msgspec.Struct):
+class ProxyDict(Struct):
     server: str
     username: str = ""
     password: str = ""
 
 
 def intercept_route(route: Route):
-    """This is just a route handler but it drops requests that its type falls in `DEFAULT_DISABLED_RESOURCES`
+    """This is just a route handler, but it drops requests that its type falls in `DEFAULT_DISABLED_RESOURCES`
 
     :param route: PlayWright `Route` object of the current page
     :return: PlayWright `Route` object
@@ -36,7 +36,7 @@ def intercept_route(route: Route):
 
 
 async def async_intercept_route(route: async_Route):
-    """This is just a route handler but it drops requests that its type falls in `DEFAULT_DISABLED_RESOURCES`
+    """This is just a route handler, but it drops requests that its type falls in `DEFAULT_DISABLED_RESOURCES`
 
     :param route: PlayWright `Route` object of the current page
     :return: PlayWright `Route` object
@@ -57,7 +57,7 @@ def construct_proxy_dict(
     Reference: https://playwright.dev/python/docs/network#http-proxy
 
     :param proxy_string: A string or a dictionary representation of the proxy.
-    :param as_tuple: Return the proxy dictionary as tuple to be cachable
+    :param as_tuple: Return the proxy dictionary as a tuple to be cachable
     :return:
     """
     if isinstance(proxy_string, str):
@@ -75,9 +75,10 @@ def construct_proxy_dict(
 
     elif isinstance(proxy_string, dict):
         try:
-            validated = msgspec.convert(proxy_string, ProxyDict)
-            return tuple(validated.__dict__.items()) if as_tuple else validated.__dict__
-        except msgspec.ValidationError as e:
+            validated = convert(proxy_string, ProxyDict)
+            result_dict = structs.asdict(validated)
+            return tuple(result_dict.items()) if as_tuple else result_dict
+        except ValidationError as e:
             raise TypeError(f"Invalid proxy dictionary: {e}")
 
     return None
@@ -102,7 +103,7 @@ def construct_cdp_url(cdp_url: str, query_params: Optional[Dict] = None) -> str:
         if not parsed.netloc:
             raise ValueError("Invalid hostname for the CDP URL")
 
-        # Ensure path starts with /
+        # Ensure the path starts with /
         path = parsed.path
         if not path.startswith("/"):
             path = "/" + path
@@ -123,7 +124,7 @@ def construct_cdp_url(cdp_url: str, query_params: Optional[Dict] = None) -> str:
 
 @lru_cache(10, typed=True)
 def js_bypass_path(filename: str) -> str:
-    """Takes the base filename of JS file inside the `bypasses` folder then return the full path of it
+    """Takes the base filename of a JS file inside the `bypasses` folder, then return the full path of it
 
     :param filename: The base filename of the JS file.
     :return: The full path of the JS file.
