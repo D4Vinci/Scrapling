@@ -538,7 +538,7 @@ class AsyncDynamicSession(DynamicSession):
 
                 if self.stealth:
                     for script in _compiled_stealth_scripts():
-                        await page.add_init_script(path=script)
+                        await page.add_init_script(script=script)
 
                 return self.page_pool.add_page(page)
 
