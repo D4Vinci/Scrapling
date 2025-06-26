@@ -25,7 +25,7 @@ class TestDynamicFetcher:
         self.cookies_url = f"{httpbin.url}/cookies/set/test/value"
 
     def test_basic_fetch(self, fetcher):
-        """Test doing basic fetch request with multiple statuses"""
+        """Test doing a basic fetch request with multiple statuses"""
         assert fetcher.fetch(self.status_200).status == 200
         # There's a bug with playwright makes it crashes if a URL returns status code 4xx/5xx without body, let's disable this till they reply to my issue report
         # assert fetcher.fetch(self.status_404).status == 404
@@ -36,7 +36,7 @@ class TestDynamicFetcher:
         assert fetcher.fetch(self.basic_url, network_idle=True).status == 200
 
     def test_blocking_resources(self, fetcher):
-        """Test if blocking resources make page does not finish loading or not"""
+        """Test if blocking resources make the page does not finish loading or not"""
         assert fetcher.fetch(self.basic_url, disable_resources=True).status == 200
 
     def test_waiting_selector(self, fetcher):
@@ -56,7 +56,7 @@ class TestDynamicFetcher:
         assert cookies == {"test": "value"}
 
     def test_automation(self, fetcher):
-        """Test if automation break the code or not"""
+        """Test if automation breaks the code or not"""
 
         def scroll_page(page):
             page.mouse.wheel(10, 0)
@@ -71,7 +71,7 @@ class TestDynamicFetcher:
         [
             {"disable_webgl": True, "hide_canvas": False},
             {"disable_webgl": False, "hide_canvas": True},
-            # {"stealth": True}, # causes issues with Github Actions
+            {"stealth": True},  # causes issues with GitHub Actions
             {
                 "useragent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0"
             },
@@ -79,7 +79,7 @@ class TestDynamicFetcher:
         ],
     )
     def test_properties(self, fetcher, kwargs):
-        """Test if different arguments breaks the code or not"""
+        """Test if different arguments break the code or not"""
         response = fetcher.fetch(self.html_url, **kwargs)
         assert response.status == 200
 

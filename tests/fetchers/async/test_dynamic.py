@@ -26,7 +26,7 @@ class TestDynamicFetcherAsync:
 
     @pytest.mark.asyncio
     async def test_basic_fetch(self, fetcher, urls):
-        """Test doing basic fetch request with multiple statuses"""
+        """Test doing a basic fetch request with multiple statuses"""
         response = await fetcher.async_fetch(urls["status_200"])
         assert response.status == 200
 
@@ -38,7 +38,7 @@ class TestDynamicFetcherAsync:
 
     @pytest.mark.asyncio
     async def test_blocking_resources(self, fetcher, urls):
-        """Test if blocking resources make page does not finish loading or not"""
+        """Test if blocking resources make the page does not finish loading or not"""
         response = await fetcher.async_fetch(urls["basic_url"], disable_resources=True)
         assert response.status == 200
 
@@ -62,7 +62,7 @@ class TestDynamicFetcherAsync:
 
     @pytest.mark.asyncio
     async def test_automation(self, fetcher, urls):
-        """Test if automation break the code or not"""
+        """Test if automation breaks the code or not"""
 
         async def scroll_page(page):
             await page.mouse.wheel(10, 0)
@@ -78,7 +78,7 @@ class TestDynamicFetcherAsync:
         [
             {"disable_webgl": True, "hide_canvas": False},
             {"disable_webgl": False, "hide_canvas": True},
-            # {"stealth": True}, # causes issues with Github Actions
+            {"stealth": True},  # causes issues with GitHub Actions
             {
                 "useragent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0"
             },
@@ -87,7 +87,7 @@ class TestDynamicFetcherAsync:
     )
     @pytest.mark.asyncio
     async def test_properties(self, fetcher, urls, kwargs):
-        """Test if different arguments breaks the code or not"""
+        """Test if different arguments break the code or not"""
         response = await fetcher.async_fetch(urls["html_url"], **kwargs)
         assert response.status == 200
 
