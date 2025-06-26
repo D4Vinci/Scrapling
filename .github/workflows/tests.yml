@@ -18,23 +18,23 @@ jobs:
       matrix:
         include:
         - python-version: "3.9"
-          os: ubuntu-latest
+          os: ubuntu-20.04  # Better sandbox support?
           env:
             TOXENV: py
         - python-version: "3.10"
-          os: ubuntu-latest
+          os: ubuntu-20.04  # Better sandbox support?
           env:
             TOXENV: py
         - python-version: "3.11"
-          os: ubuntu-latest
+          os: ubuntu-20.04  # Better sandbox support?
           env:
             TOXENV: py
         - python-version: "3.12"
-          os: ubuntu-latest
+          os: ubuntu-20.04  # Better sandbox support?
           env:
             TOXENV: py
         - python-version: "3.13"
-          os: ubuntu-latest
+          os: ubuntu-20.04  # Better sandbox support?
           env:
             TOXENV: py
 
