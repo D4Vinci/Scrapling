@@ -18,28 +18,33 @@ jobs:
       matrix:
         include:
         - python-version: "3.9"
-          os: ubuntu-20.04  # Better sandbox support?
+          os: ubuntu-latest
           env:
             TOXENV: py
         - python-version: "3.10"
-          os: ubuntu-20.04  # Better sandbox support?
+          os: ubuntu-latest
           env:
             TOXENV: py
         - python-version: "3.11"
-          os: ubuntu-20.04  # Better sandbox support?
+          os: ubuntu-latest
           env:
             TOXENV: py
         - python-version: "3.12"
-          os: ubuntu-20.04  # Better sandbox support?
+          os: ubuntu-latest
           env:
             TOXENV: py
         - python-version: "3.13"
-          os: ubuntu-20.04  # Better sandbox support?
+          os: ubuntu-latest
           env:
             TOXENV: py
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Enable user namespaces
+      run: |
+        echo 'kernel.unprivileged_userns_clone=1' | sudo tee -a /etc/sysctl.conf
+        sudo sysctl -p
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -47,7 +52,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
         cache-dependency-path: |
-          setup.py
+          pyproject.toml
           requirements*.txt
           tox.ini
 
