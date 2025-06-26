@@ -216,7 +216,7 @@ class StealthySession:
         """Initiate browser options."""
         self.launch_options = {
             "geoip": self.geoip,
-            "proxy": self.proxy,
+            "proxy": dict(self.proxy) if self.proxy else self.proxy,
             "enable_cache": True,
             "addons": self.addons,
             "exclude_addons": [] if self.disable_ads else [DefaultAddons.UBO],
