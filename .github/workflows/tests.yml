@@ -41,11 +41,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Enable user namespaces
-      run: |
-        echo 'kernel.unprivileged_userns_clone=1' | sudo tee -a /etc/sysctl.conf
-        sudo sysctl -p
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
