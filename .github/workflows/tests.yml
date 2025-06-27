@@ -31,8 +31,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          ~/.cache/ms-playwright
-          ~/.camoufox
+          ~/Library/Caches/camoufox
           ~/Library/Caches/ms-playwright
         key: browsers-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}-playwright-1.52.0-camoufox-latest
         restore-keys: |
@@ -80,8 +79,8 @@ jobs:
     # Verify browsers are installed
     - name: Verify browser installation
       run: |
-        ls -la ~/.cache/ms-playwright/ || true
-        ls -la ~/.camoufox/ || true
+        ls -la ~/Library/Caches/ms-playwright/ || true
+        ls -la ~/Library/Caches/camoufox/ || true
         echo "Browser setup completed successfully!"
 
   # Step 2: Run tests using cached browsers
@@ -112,8 +111,7 @@ jobs:
       uses: actions/cache/restore@v4
       with:
         path: |
-          ~/.cache/ms-playwright
-          ~/.camoufox
+          ~/Library/Caches/camoufox
           ~/Library/Caches/ms-playwright
         key: browsers-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}-playwright-1.52.0-camoufox-latest
         restore-keys: |
@@ -138,8 +136,8 @@ jobs:
 
     - name: Verify browsers are available
       run: |
-        ls -la ~/.cache/ms-playwright/ || echo "Playwright cache not found"
-        ls -la ~/.camoufox/ || echo "Camoufox cache not found"
+        ls -la ~/Library/Caches/ms-playwright/ || echo "Playwright cache not found"
+        ls -la ~/Library/Caches/camoufox/ || echo "Camoufox cache not found"
 
     - name: Run tests
       env:
