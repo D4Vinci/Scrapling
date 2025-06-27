@@ -18,23 +18,23 @@ jobs:
       matrix:
         include:
         - python-version: "3.9"
-          os: windows-latest
+          os: macos-latest
           env:
             TOXENV: py
         - python-version: "3.10"
-          os: windows-latest
+          os: macos-latest
           env:
             TOXENV: py
         - python-version: "3.11"
-          os: windows-latest
+          os: macos-latest
           env:
             TOXENV: py
         - python-version: "3.12"
-          os: windows-latest
+          os: macos-latest
           env:
             TOXENV: py
         - python-version: "3.13"
-          os: windows-latest
+          os: macos-latest
           env:
             TOXENV: py
 
