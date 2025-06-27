@@ -5,7 +5,6 @@ from playwright.sync_api import (
     Response as SyncPlaywrightResponse,
     sync_playwright,
     BrowserType,
-    Browser,
     BrowserContext,
     Playwright,
     Locator,
@@ -14,7 +13,6 @@ from playwright.async_api import (
     async_playwright,
     Response as AsyncPlaywrightResponse,
     BrowserType as AsyncBrowserType,
-    Browser as AsyncBrowser,
     BrowserContext as AsyncBrowserContext,
     Playwright as AsyncPlaywright,
     Locator as AsyncLocator,
@@ -177,7 +175,6 @@ class DynamicSession:
         self.wait_selector_state = config.wait_selector_state
 
         self.playwright: Optional[Playwright] = None
-        self.browser: Optional[Union[BrowserType, Browser]] = None
         self.context: Optional[BrowserContext] = None
         self.page_pool = PagePool(self.max_pages)
         self._closed = False
@@ -191,15 +188,25 @@ class DynamicSession:
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
+        # `launch_options` is used with persistent context
         self.launch_options = dict(
             _launch_kwargs(
                 self.headless,
+                self.proxy,
+                self.locale,
+                tuple(self.extra_headers.items()) if self.extra_headers else tuple(),
+                self.useragent,
                 self.real_chrome,
                 self.stealth,
                 self.hide_canvas,
                 self.disable_webgl,
             )
         )
+        self.launch_options["extra_http_headers"] = dict(
+            self.launch_options["extra_http_headers"]
+        )
+        self.launch_options["proxy"] = dict(self.launch_options["proxy"]) or None
+        # while `context_options` is left to be used when cdp mode is enabled
         self.context_options = dict(
             _context_kwargs(
                 self.proxy,
@@ -223,15 +230,17 @@ class DynamicSession:
 
         self.playwright = sync_context().start()
 
-        browser_launcher = getattr(
+        browser_launcher: BrowserType = getattr(
             self.playwright, "chrome" if self.real_chrome else "chromium"
         )
         if self.cdp_url:
-            self.browser = browser_launcher.connect_over_cdp(endpoint_url=self.cdp_url)
+            browser = browser_launcher.connect_over_cdp(endpoint_url=self.cdp_url)
+            self.context = browser.new_context(**self.context_options)
         else:
-            self.browser = browser_launcher.launch(**self.launch_options)
+            self.context = browser_launcher.launch_persistent_context(
+                user_data_dir="", **self.launch_options
+            )
 
-        self.context = self.browser.new_context(**self.context_options)
         if self.cookies:
             self.context.add_cookies(self.cookies)
 
@@ -250,10 +259,6 @@ class DynamicSession:
         if self.context:
             self.context.close()
             self.context = None
-
-        if self.browser:
-            self.browser.close()
-            self.browser = None
 
         if self.playwright:
             self.playwright.stop()
@@ -459,7 +464,6 @@ class AsyncDynamicSession(DynamicSession):
         )
 
         self.playwright: Optional[AsyncPlaywright] = None
-        self.browser: Optional[Union[AsyncBrowserType, AsyncBrowser]] = None
         self.context: Optional[AsyncBrowserContext] = None
         self._lock = Lock()
         self.__enter__ = None
@@ -478,15 +482,16 @@ class AsyncDynamicSession(DynamicSession):
             self.playwright, "chrome" if self.real_chrome else "chromium"
         )
         if self.cdp_url:
-            self.browser = await browser_launcher.connect_over_cdp(
-                endpoint_url=self.cdp_url
+            browser = await browser_launcher.connect_over_cdp(endpoint_url=self.cdp_url)
+            self.context: AsyncBrowserContext = await browser.new_context(
+                **self.context_options
             )
         else:
-            self.browser = await browser_launcher.launch(**self.launch_options)
-
-        self.context: AsyncBrowserContext = await self.browser.new_context(
-            **self.context_options
-        )
+            self.context: AsyncBrowserContext = (
+                await browser_launcher.launch_persistent_context(
+                    user_data_dir="", **self.launch_options
+                )
+            )
 
         if self.cookies:
             await self.context.add_cookies(self.cookies)
@@ -506,10 +511,6 @@ class AsyncDynamicSession(DynamicSession):
         if self.context:
             await self.context.close()
             self.context = None
-
-        if self.browser:
-            await self.browser.close()
-            self.browser = None
 
         if self.playwright:
             await self.playwright.stop()

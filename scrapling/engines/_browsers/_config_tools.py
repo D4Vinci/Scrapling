@@ -56,16 +56,43 @@ def _set_flags(hide_canvas, disable_webgl):
 
 
 @lru_cache(2, typed=True)
-def _launch_kwargs(headless, real_chrome, stealth, hide_canvas, disable_webgl) -> Tuple:
+def _launch_kwargs(
+    headless,
+    proxy,
+    locale,
+    extra_headers,
+    useragent,
+    real_chrome,
+    stealth,
+    hide_canvas,
+    disable_webgl,
+) -> Tuple:
     """Creates the arguments we will use while launching playwright's browser"""
     launch_kwargs = {
         "headless": headless,
         "ignore_default_args": HARMFUL_DEFAULT_ARGS,
         "channel": "chrome" if real_chrome else "chromium",
+        "proxy": proxy or tuple(),
+        "locale": locale,
+        "color_scheme": "dark",  # Bypasses the 'prefersLightColor' check in creepjs
+        "device_scale_factor": 2,
+        "extra_http_headers": extra_headers or tuple(),
+        "user_agent": useragent or __default_useragent__,
     }
     if stealth:
         launch_kwargs.update(
-            {"args": _set_flags(hide_canvas, disable_webgl), "chromium_sandbox": True}
+            {
+                "args": _set_flags(hide_canvas, disable_webgl),
+                "chromium_sandbox": True,
+                "is_mobile": False,
+                "has_touch": False,
+                # I'm thinking about disabling it to rest from all Service Workers' headache, but let's keep it as it is for now
+                "service_workers": "allow",
+                "ignore_https_errors": True,
+                "screen": {"width": 1920, "height": 1080},
+                "viewport": {"width": 1920, "height": 1080},
+                "permissions": ["geolocation", "notifications"],
+            }
         )
 
     return tuple(launch_kwargs.items())
