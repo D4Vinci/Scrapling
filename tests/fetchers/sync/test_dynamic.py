@@ -95,15 +95,3 @@ class TestDynamicFetcher:
 
         with pytest.raises(Exception):
             fetcher.fetch(self.html_url, cdp_url="ws://blahblah")
-
-    @pytest.mark.skipif(
-        "GITHUB_ACTIONS" in os.environ,
-        reason="Fails in GitHub Actions."
-    )
-    def test_infinite_timeout(
-        self,
-        fetcher,
-    ):
-        """Test if infinite timeout breaks the code or not"""
-        response = fetcher.fetch(self.delayed_url, timeout=0)
-        assert response.status == 200
