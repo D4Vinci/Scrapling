@@ -10,88 +10,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Step 1: Install and cache browsers separately
-  setup-browsers:
-    runs-on: macos-latest
-    outputs:
-      cache-key: ${{ steps.browser-cache.outputs.cache-primary-key }}
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"  # Use one version for browser setup
-        cache: 'pip'
-
-    # Cache browsers based on versions in dependencies
-    - name: Cache browsers
-      id: browser-cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/Library/Caches/camoufox
-          ~/Library/Caches/ms-playwright
-        key: browsers-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}-playwright-1.52.0-camoufox-latest
-        restore-keys: |
-          browsers-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}-
-          browsers-${{ runner.os }}-
-
-    # Only install if the cache misses
-    - name: Install browser dependencies
-      if: steps.browser-cache.outputs.cache-hit != 'true'
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install playwright==1.52.0 rebrowser-playwright==1.52.0 camoufox
-
-    - name: Install browsers (with retry logic)
-      if: steps.browser-cache.outputs.cache-hit != 'true'
-      run: |
-        # Retry logic for rate limiting
-        for i in {1..3}; do
-          echo "Attempt $i: Installing Chromium"
-          if python3 -m playwright install chromium; then
-            break
-          fi
-          echo "Attempt $i failed, waiting 30 seconds..."
-          sleep 30
-        done
-        
-        for i in {1..3}; do
-          echo "Attempt $i: Installing dependencies"
-          if python3 -m playwright install-deps chromium firefox; then
-            break
-          fi
-          echo "Attempt $i failed, waiting 30 seconds..."
-          sleep 30
-        done
-        
-        for i in {1..3}; do
-          echo "Attempt $i: Fetching Camoufox"
-          if python3 -m camoufox fetch --browserforge; then
-            break
-          fi
-          echo "Attempt $i failed, waiting 60 seconds..."
-          sleep 60
-        done
-
-    # Verify browsers are installed
-    - name: Verify browser installation
-      run: |
-        ls -la ~/Library/Caches/ms-playwright/ || true
-        ls -la ~/Library/Caches/camoufox/ || true
-        echo "Browser setup completed successfully!"
-
-  # Step 2: Run tests using cached browsers
   tests:
-    needs: setup-browsers
     timeout-minutes: 60
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        include:
+        - python-version: "3.9"
+          os: macos-latest
+          env:
+            TOXENV: py39
+        - python-version: "3.10"
+          os: macos-latest
+          env:
+            TOXENV: py310
+        - python-version: "3.11"
+          os: macos-latest
+          env:
+            TOXENV: py311
+        - python-version: "3.12"
+          os: macos-latest
+          env:
+            TOXENV: py312
+        - python-version: "3.13"
+          os: macos-latest
+          env:
+            TOXENV: py313
 
     steps:
     - uses: actions/checkout@v4
@@ -106,42 +51,32 @@ jobs:
           requirements*.txt
           tox.ini
 
-    # Restore browsers from the cache (should always hit)
-    - name: Restore browser cache
-      uses: actions/cache/restore@v4
-      with:
-        path: |
-          ~/Library/Caches/camoufox
-          ~/Library/Caches/ms-playwright
-        key: browsers-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}-playwright-1.52.0-camoufox-latest
-        restore-keys: |
-          browsers-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', '**/pyproject.toml') }}-
-          browsers-${{ runner.os }}-
-
-    - name: Install Python dependencies only
+    # Install browsers ONCE at the workflow level
+    - name: Install browser dependencies
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install playwright==1.52.0 rebrowser-playwright==1.52.0 camoufox
-        # No browser installation here - using cached browsers!
+
+    - name: Install browsers
+      run: |
+        python3 -m playwright install chromium
+        python3 -m playwright install-deps chromium firefox
+        python3 -m camoufox fetch --browserforge
 
     # Cache tox environments
     - name: Cache tox environments
       uses: actions/cache@v4
       with:
         path: .tox
+        # Include python version and os in cache key
         key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('tox.ini', 'pyproject.toml', 'requirements*.txt') }}
         restore-keys: |
           tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-
           tox-v1-${{ runner.os }}-
 
-    - name: Verify browsers are available
-      run: |
-        ls -la ~/Library/Caches/ms-playwright/ || echo "Playwright cache not found"
-        ls -la ~/Library/Caches/camoufox/ || echo "Camoufox cache not found"
+    - name: Install tox
+      run: pip install -U tox
 
     - name: Run tests
-      env:
-        TOXENV: py
-      run: |
-        pip install -U tox
-        tox
+      env: ${{ matrix.env }}
+      run: tox
