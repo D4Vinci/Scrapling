@@ -3,7 +3,7 @@ from subprocess import check_output
 from sys import executable as python_executable
 
 from scrapling.core.utils import log
-from scrapling.core.shell import Convertor, _CookieParser
+from scrapling.core.shell import Convertor, _CookieParser, _ParseHeaders
 from scrapling.fetchers import Fetcher, DynamicFetcher, StealthyFetcher
 
 from orjson import loads as json_loads, JSONDecodeError
@@ -20,31 +20,6 @@ def run_command(cmd, line):
     print(f"Installing {line}...")
     _ = check_output(cmd, shell=False)  # nosec B603
     # I meant to not use try except here
-
-
-def parse_headers(header_strings):
-    """Parse header strings into a dictionary"""
-    headers = {}
-    for header in header_strings:
-        if ":" in header:
-            key, value = header.split(":", 1)
-            headers[key.strip()] = value.strip()
-        else:
-            log.warning(f"Invalid header format '{header}', should be 'Key: Value'")
-    return headers
-
-
-def parse_cookies(cookie_string):
-    """Parse cookie string into a dictionary"""
-    if not cookie_string:
-        return {}
-
-    try:
-        cookies = {key: value for key, value in _CookieParser(cookie_string)}
-    except Exception as e:
-        raise ValueError(f"Could not parse cookies '{cookie_string}': {e}")
-
-    return cookies
 
 
 def parse_json_data(json_string):
@@ -140,8 +115,13 @@ def shell(code, level):
 
 def parse_extract_arguments(headers, cookies, params, json=None):
     """Parse arguments for extract command"""
-    parsed_headers = parse_headers(headers)
-    parsed_cookies = parse_cookies(cookies)
+    parsed_headers, parsed_cookies = _ParseHeaders(headers)
+    for key, value in _CookieParser(cookies):
+        try:
+            parsed_cookies[key] = value
+        except Exception as e:
+            raise ValueError(f"Could not parse cookies '{cookies}': {e}")
+
     parsed_json = parse_json_data(json)
     parsed_params = {}
     for param in params:
@@ -673,7 +653,7 @@ def fetch(
     """
 
     # Parse parameters
-    parsed_headers = parse_headers(extra_headers)
+    parsed_headers, _ = _ParseHeaders(extra_headers, False)
 
     # Build request arguments
     kwargs = {
@@ -821,7 +801,7 @@ def stealthy_fetch(
     """
 
     # Parse parameters
-    parsed_headers = parse_headers(extra_headers)
+    parsed_headers, _ = _ParseHeaders(extra_headers, False)
 
     # Build request arguments
     kwargs = {
