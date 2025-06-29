@@ -3,26 +3,24 @@ from subprocess import check_output
 from sys import executable as python_executable
 
 from scrapling.core.utils import log
-from scrapling.core.shell import Convertor, _CookieParser, _ParseHeaders
+from scrapling.core._types import List, Optional, Dict, Tuple, Any, Callable
 from scrapling.fetchers import Fetcher, DynamicFetcher, StealthyFetcher
+from scrapling.core.shell import Convertor, _CookieParser, _ParseHeaders
 
 from orjson import loads as json_loads, JSONDecodeError
 from click import command, option, Choice, group, argument
 
 __OUTPUT_FILE_HELP__ = "Output file path can be HTML content, Markdown of the HTML content, or the text content. Use file extensions (`.html`/`.md`/`.txt`) respectively."
+__PACKAGE_DIR__ = Path(__file__).parent
 
 
-def get_package_dir():
-    return Path(__file__).parent
-
-
-def run_command(cmd, line):
-    print(f"Installing {line}...")
+def __Execute(cmd: List[str], help_line: str) -> None:
+    print(f"Installing {help_line}...")
     _ = check_output(cmd, shell=False)  # nosec B603
     # I meant to not use try except here
 
 
-def parse_json_data(json_string):
+def __ParseJSONData(json_string: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """Parse JSON string into a Python object"""
     if not json_string:
         return None
@@ -33,7 +31,13 @@ def parse_json_data(json_string):
         raise ValueError(f"Invalid JSON data '{json_string}': {e}")
 
 
-def make_request_and_save(fetcher_func, url, output_file, css_selector=None, **kwargs):
+def __Request_and_Save(
+    fetcher_func: Callable,
+    url: str,
+    output_file: str,
+    css_selector: Optional[str] = None,
+    **kwargs,
+):
     """Make a request using the specified fetcher function and save the result"""
     # Handle relative paths - convert to an absolute path based on the current working directory
     output_path = Path(output_file)
@@ -43,6 +47,50 @@ def make_request_and_save(fetcher_func, url, output_file, css_selector=None, **k
     response = fetcher_func(url, **kwargs)
     Convertor.write_content_to_file(response, str(output_path), css_selector)
     log.info(f"Content successfully saved to '{output_path}'")
+
+
+def __ParseExtractArguments(
+    headers: List[str], cookies: str, params: str, json: Optional[str] = None
+) -> Tuple[Dict[str, str], Dict[str, str], Dict[str, str], Optional[Dict[str, str]]]:
+    """Parse arguments for extract command"""
+    parsed_headers, parsed_cookies = _ParseHeaders(headers)
+    for key, value in _CookieParser(cookies):
+        try:
+            parsed_cookies[key] = value
+        except Exception as e:
+            raise ValueError(f"Could not parse cookies '{cookies}': {e}")
+
+    parsed_json = __ParseJSONData(json)
+    parsed_params = {}
+    for param in params:
+        if "=" in param:
+            key, value = param.split("=", 1)
+            parsed_params[key] = value
+
+    return parsed_headers, parsed_cookies, parsed_params, parsed_json
+
+
+def __BuildRequest(
+    headers: List[str], cookies: str, params: str, json: Optional[str] = None, **kwargs
+) -> Dict:
+    """Build a request object using the specified arguments"""
+    # Parse parameters
+    parsed_headers, parsed_cookies, parsed_params, parsed_json = (
+        __ParseExtractArguments(headers, cookies, params, json)
+    )
+    # Build request arguments
+    request_kwargs = {
+        "headers": parsed_headers if parsed_headers else None,
+        "cookies": parsed_cookies if parsed_cookies else None,
+    }
+    if parsed_json:
+        request_kwargs["json"] = parsed_json
+    if parsed_params:
+        request_kwargs["params"] = parsed_params
+    if "proxy" in kwargs:
+        request_kwargs["proxy"] = kwargs.pop("proxy")
+
+    return {**request_kwargs, **kwargs}
 
 
 @command(help="Install all Scrapling's Fetchers dependencies")
@@ -58,13 +106,13 @@ def make_request_and_save(fetcher_func, url, output_file, css_selector=None, **k
 def install(force):
     if (
         force
-        or not get_package_dir().joinpath(".scrapling_dependencies_installed").exists()
+        or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists()
     ):
-        run_command(
+        __Execute(
             [python_executable, "-m", "playwright", "install", "chromium"],
             "Playwright browsers",
         )
-        run_command(
+        __Execute(
             [
                 python_executable,
                 "-m",
@@ -75,12 +123,12 @@ def install(force):
             ],
             "Playwright dependencies",
         )
-        run_command(
+        __Execute(
             [python_executable, "-m", "camoufox", "fetch", "--browserforge"],
             "Camoufox browser and databases",
         )
         # if no errors raised by the above commands, then we add the below file
-        get_package_dir().joinpath(".scrapling_dependencies_installed").touch()
+        __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").touch()
     else:
         print("The dependencies are already installed")
 
@@ -111,25 +159,6 @@ def shell(code, level):
 
     console = CustomShell(code=code, log_level=level)
     console.start()
-
-
-def parse_extract_arguments(headers, cookies, params, json=None):
-    """Parse arguments for extract command"""
-    parsed_headers, parsed_cookies = _ParseHeaders(headers)
-    for key, value in _CookieParser(cookies):
-        try:
-            parsed_cookies[key] = value
-        except Exception as e:
-            raise ValueError(f"Could not parse cookies '{cookies}': {e}")
-
-    parsed_json = parse_json_data(json)
-    parsed_params = {}
-    for param in params:
-        if "=" in param:
-            key, value = param.split("=", 1)
-            parsed_params[key] = value
-
-    return parsed_headers, parsed_cookies, parsed_params, parsed_json
 
 
 @group(
@@ -214,28 +243,19 @@ def get(
     :param stealthy_headers: If enabled, creates and adds real browser headers.
     """
 
-    # Parse parameters
-    parsed_headers, parsed_cookies, parsed_params, _ = parse_extract_arguments(
-        headers, cookies, params
+    kwargs = __BuildRequest(
+        headers,
+        cookies,
+        params,
+        None,
+        timeout=timeout,
+        follow_redirects=follow_redirects,
+        verify=verify,
+        stealthy_headers=stealthy_headers,
+        impersonate=impersonate,
+        proxy=proxy,
     )
-
-    # Build request arguments
-    kwargs = {
-        "headers": parsed_headers if parsed_headers else None,
-        "cookies": parsed_cookies if parsed_cookies else None,
-        "timeout": timeout,
-        "follow_redirects": follow_redirects,
-        "verify": verify,
-        "stealthy_headers": stealthy_headers,
-        "impersonate": impersonate,
-    }
-
-    if parsed_params:
-        kwargs["params"] = parsed_params
-    if proxy:
-        kwargs["proxy"] = proxy
-
-    make_request_and_save(Fetcher.get, url, output_file, css_selector, **kwargs)
+    __Request_and_Save(Fetcher.get, url, output_file, css_selector, **kwargs)
 
 
 @extract.command(
@@ -322,32 +342,20 @@ def post(
     :param stealthy_headers: If enabled, creates and adds real browser headers.
     """
 
-    # Parse parameters
-    parsed_headers, parsed_cookies, parsed_params, parsed_json = (
-        parse_extract_arguments(headers, cookies, params, json)
+    kwargs = __BuildRequest(
+        headers,
+        cookies,
+        params,
+        json,
+        timeout=timeout,
+        follow_redirects=follow_redirects,
+        verify=verify,
+        stealthy_headers=stealthy_headers,
+        impersonate=impersonate,
+        proxy=proxy,
+        data=data,
     )
-
-    # Build request arguments
-    kwargs = {
-        "headers": parsed_headers if parsed_headers else None,
-        "cookies": parsed_cookies if parsed_cookies else None,
-        "timeout": timeout,
-        "follow_redirects": follow_redirects,
-        "verify": verify,
-        "stealthy_headers": stealthy_headers,
-        "impersonate": impersonate,
-    }
-
-    if data:
-        kwargs["data"] = data
-    if parsed_json:
-        kwargs["json"] = parsed_json
-    if parsed_params:
-        kwargs["params"] = parsed_params
-    if proxy:
-        kwargs["proxy"] = proxy
-
-    make_request_and_save(Fetcher.post, url, output_file, css_selector, **kwargs)
+    __Request_and_Save(Fetcher.post, url, output_file, css_selector, **kwargs)
 
 
 @extract.command(
@@ -430,32 +438,20 @@ def put(
     :param stealthy_headers: If enabled, creates and adds real browser headers.
     """
 
-    # Parse parameters
-    parsed_headers, parsed_cookies, parsed_params, parsed_json = (
-        parse_extract_arguments(headers, cookies, params, json)
+    kwargs = __BuildRequest(
+        headers,
+        cookies,
+        params,
+        json,
+        timeout=timeout,
+        follow_redirects=follow_redirects,
+        verify=verify,
+        stealthy_headers=stealthy_headers,
+        impersonate=impersonate,
+        proxy=proxy,
+        data=data,
     )
-
-    # Build request arguments
-    kwargs = {
-        "headers": parsed_headers if parsed_headers else None,
-        "cookies": parsed_cookies if parsed_cookies else None,
-        "timeout": timeout,
-        "follow_redirects": follow_redirects,
-        "verify": verify,
-        "stealthy_headers": stealthy_headers,
-        "impersonate": impersonate,
-    }
-
-    if data:
-        kwargs["data"] = data
-    if parsed_json:
-        kwargs["json"] = parsed_json
-    if parsed_params:
-        kwargs["params"] = parsed_params
-    if proxy:
-        kwargs["proxy"] = proxy
-
-    make_request_and_save(Fetcher.put, url, output_file, css_selector, **kwargs)
+    __Request_and_Save(Fetcher.put, url, output_file, css_selector, **kwargs)
 
 
 @extract.command(
@@ -532,28 +528,19 @@ def delete(
     :param stealthy_headers: If enabled, creates and adds real browser headers.
     """
 
-    # Parse parameters
-    parsed_headers, parsed_cookies, parsed_params, _ = parse_extract_arguments(
-        headers, cookies, params
+    kwargs = __BuildRequest(
+        headers,
+        cookies,
+        params,
+        None,
+        timeout=timeout,
+        follow_redirects=follow_redirects,
+        verify=verify,
+        stealthy_headers=stealthy_headers,
+        impersonate=impersonate,
+        proxy=proxy,
     )
-
-    # Build request arguments
-    kwargs = {
-        "headers": parsed_headers if parsed_headers else None,
-        "cookies": parsed_cookies if parsed_cookies else None,
-        "timeout": timeout,
-        "follow_redirects": follow_redirects,
-        "verify": verify,
-        "stealthy_headers": stealthy_headers,
-        "impersonate": impersonate,
-    }
-
-    if parsed_params:
-        kwargs["params"] = parsed_params
-    if proxy:
-        kwargs["proxy"] = proxy
-
-    make_request_and_save(Fetcher.delete, url, output_file, css_selector, **kwargs)
+    __Request_and_Save(Fetcher.delete, url, output_file, css_selector, **kwargs)
 
 
 @extract.command(
@@ -676,9 +663,7 @@ def fetch(
     if parsed_headers:
         kwargs["extra_headers"] = parsed_headers
 
-    make_request_and_save(
-        DynamicFetcher.fetch, url, output_file, css_selector, **kwargs
-    )
+    __Request_and_Save(DynamicFetcher.fetch, url, output_file, css_selector, **kwargs)
 
 
 @extract.command(
@@ -827,9 +812,7 @@ def stealthy_fetch(
     if parsed_headers:
         kwargs["extra_headers"] = parsed_headers
 
-    make_request_and_save(
-        StealthyFetcher.fetch, url, output_file, css_selector, **kwargs
-    )
+    __Request_and_Save(StealthyFetcher.fetch, url, output_file, css_selector, **kwargs)
 
 
 @group()
