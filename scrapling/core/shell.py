@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from re import sub as re_sub
 from sys import stderr
 from functools import wraps
 from http import cookies as Cookie
@@ -24,6 +25,7 @@ from IPython.terminal.embed import InteractiveShellEmbed
 from orjson import loads as json_loads, JSONDecodeError
 
 from scrapling import __version__
+from scrapling.core.custom_types import TextHandler
 from scrapling.core.utils import log
 from scrapling.parser import Adaptor, Adaptors
 from scrapling.core._types import List, Optional, Dict, Tuple, Any, Union
@@ -61,6 +63,14 @@ Request = namedtuple(
         "follow_redirects",  # Added for -L flag
     ],
 )
+
+
+def _CookieParser(cookie_string):
+    # Errors will be handled on call so the log can be specified
+    cookie_parser = Cookie.SimpleCookie()
+    cookie_parser.load(cookie_string)
+    for key, morsel in cookie_parser.items():
+        yield key, morsel.value
 
 
 # Suppress exit on error to handle parsing errors gracefully
@@ -156,12 +166,11 @@ class CurlParser:
 
                 if header_key.lower() == "cookie":
                     try:
-                        cookie_parser = Cookie.SimpleCookie()
-                        cookie_parser.load(header_value)
-                        for key, morsel in cookie_parser.items():
-                            cookie_dict[key] = morsel.value
+                        cookie_dict = {
+                            key: value for key, value in _CookieParser(header_value)
+                        }
                     except Exception as e:
-                        log.error(
+                        raise ValueError(
                             f"Could not parse cookie string from -H '{header_value}': {e}"
                         )
                 else:
@@ -221,12 +230,9 @@ class CurlParser:
         if parsed_args.cookie:
             # We are focusing on the string format from DevTools.
             try:
-                cookie_parser = Cookie.SimpleCookie()
-                cookie_parser.load(parsed_args.cookie)
-                for key, morsel in cookie_parser.items():
-                    # Update the cookie dict, potentially overwriting
-                    # cookies with the same name from -H 'Cookie:'
-                    cookies[key] = morsel.value
+                for key, value in _CookieParser(parsed_args.cookie):
+                    # Update the cookie dict, potentially overwriting cookies with the same name from -H 'cookie:'
+                    cookies[key] = value
                 log.debug(f"Parsed cookies from -b argument: {list(cookies.keys())}")
             except Exception as e:
                 log.error(
@@ -545,3 +551,47 @@ Type 'exit' or press Ctrl+D to exit.
             return
 
         ipython_shell()
+
+
+class Convertor:
+    """Utils for the extract shell command"""
+
+    @classmethod
+    def __convert_to_markdown(cls, body: TextHandler) -> str:
+        """Convert HTML content to Markdown"""
+        from markdownify import markdownify
+
+        return markdownify(body)
+
+    @classmethod
+    def write_content_to_file(
+        cls, page: Adaptor, filename: str, css_selector: Optional[str] = None
+    ) -> None:
+        """Write an Adaptor's content to a file"""
+        if not page or not isinstance(page, Adaptor):
+            raise TypeError("Input must be of type `Adaptor`")
+        elif not filename or not isinstance(filename, str) or not filename.strip():
+            raise ValueError("Filename must be provided")
+        elif not filename.endswith((".md", ".html", ".txt")):
+            raise ValueError(
+                "Unknown file type: filename must end with '.md', '.html', or '.txt'"
+            )
+        else:
+            body = page if not css_selector else page.css_first(css_selector)
+            with open(filename, "w", encoding="utf-8") as f:
+                if filename.endswith(".md"):
+                    f.write(cls.__convert_to_markdown(body.body))
+                elif filename.endswith(".html"):
+                    f.write(body.body)
+                elif filename.endswith(".txt"):
+                    txt_content = body.get_all_text(strip=True)
+                    for s in (
+                        "\n",
+                        "\r",
+                        "\t",
+                        " ",
+                    ):
+                        # Remove consecutive white-spaces
+                        txt_content = re_sub(f"[{s}]+", s, txt_content)
+
+                    f.write(txt_content)
