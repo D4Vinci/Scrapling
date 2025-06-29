@@ -65,6 +65,7 @@ dependencies = [
     "rebrowser-playwright>=1.52.0",
     "camoufox[geoip]>=0.4.11",
     "msgspec>=0.19.0",
+    "markdownify>=1.1.0"
 ]
 
 [project.urls]
