@@ -20,6 +20,7 @@ from scrapling.engines import (
 from scrapling.engines.toolbelt import BaseFetcher, Response
 
 __FetcherClientInstance__ = _FetcherClient()
+__AsyncFetcherClientInstance__ = _AsyncFetcherClient()
 
 
 class Fetcher(BaseFetcher):
@@ -34,10 +35,10 @@ class Fetcher(BaseFetcher):
 class AsyncFetcher(BaseFetcher):
     """A basic `Fetcher` class type that can only do basic GET, POST, PUT, and DELETE HTTP requests based on `curl_cffi`."""
 
-    get = _AsyncFetcherClient.get
-    post = _AsyncFetcherClient.post
-    put = _AsyncFetcherClient.put
-    delete = _AsyncFetcherClient.delete
+    get = __AsyncFetcherClientInstance__.get
+    post = __AsyncFetcherClientInstance__.post
+    put = __AsyncFetcherClientInstance__.put
+    delete = __AsyncFetcherClientInstance__.delete
 
 
 class StealthyFetcher(BaseFetcher):
