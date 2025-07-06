@@ -327,7 +327,6 @@ class DynamicFetcher(BaseFetcher):
             cookies=cookies,
             headless=headless,
             useragent=useragent,
-            max_pages=1,
             real_chrome=real_chrome,
             page_action=page_action,
             hide_canvas=hide_canvas,
