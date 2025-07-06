@@ -80,7 +80,7 @@ class DynamicSession:
 
     def __init__(
         self,
-        max_pages: int = 1,
+        __max_pages: int = 1,
         headless: bool = True,
         google_search: bool = True,
         hide_canvas: bool = False,
@@ -102,7 +102,7 @@ class DynamicSession:
         wait_selector_state: SelectorWaitStates = "attached",
         adaptor_arguments: Optional[Dict] = None,
     ):
-        """A Browser session manager with page pooling
+        """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
@@ -125,12 +125,11 @@ class DynamicSession:
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
         """
 
         params = {
-            "max_pages": max_pages,
+            "max_pages": __max_pages,
             "headless": headless,
             "google_search": google_search,
             "hide_canvas": hide_canvas,
@@ -188,38 +187,46 @@ class DynamicSession:
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
-        # `launch_options` is used with persistent context
-        self.launch_options = dict(
-            _launch_kwargs(
-                self.headless,
-                self.proxy,
-                self.locale,
-                tuple(self.extra_headers.items()) if self.extra_headers else tuple(),
-                self.useragent,
-                self.real_chrome,
-                self.stealth,
-                self.hide_canvas,
-                self.disable_webgl,
+        if self.cdp_url:
+            # `launch_options` is used with persistent context
+            self.launch_options = dict(
+                _launch_kwargs(
+                    self.headless,
+                    self.proxy,
+                    self.locale,
+                    tuple(self.extra_headers.items())
+                    if self.extra_headers
+                    else tuple(),
+                    self.useragent,
+                    self.real_chrome,
+                    self.stealth,
+                    self.hide_canvas,
+                    self.disable_webgl,
+                )
             )
-        )
-        self.launch_options["extra_http_headers"] = dict(
-            self.launch_options["extra_http_headers"]
-        )
-        self.launch_options["proxy"] = dict(self.launch_options["proxy"]) or None
-        # while `context_options` is left to be used when cdp mode is enabled
-        self.context_options = dict(
-            _context_kwargs(
-                self.proxy,
-                self.locale,
-                tuple(self.extra_headers.items()) if self.extra_headers else tuple(),
-                self.useragent,
-                self.stealth,
+            self.launch_options["extra_http_headers"] = dict(
+                self.launch_options["extra_http_headers"]
             )
-        )
-        self.context_options["extra_http_headers"] = dict(
-            self.context_options["extra_http_headers"]
-        )
-        self.context_options["proxy"] = dict(self.context_options["proxy"]) or None
+            self.launch_options["proxy"] = dict(self.launch_options["proxy"]) or None
+            self.context_options = dict()
+        else:
+            # while `context_options` is left to be used when cdp mode is enabled
+            self.launch_options = dict()
+            self.context_options = dict(
+                _context_kwargs(
+                    self.proxy,
+                    self.locale,
+                    tuple(self.extra_headers.items())
+                    if self.extra_headers
+                    else tuple(),
+                    self.useragent,
+                    self.stealth,
+                )
+            )
+            self.context_options["extra_http_headers"] = dict(
+                self.context_options["extra_http_headers"]
+            )
+            self.context_options["proxy"] = dict(self.context_options["proxy"]) or None
 
     def __create__(self):
         """Create a browser for this instance and context."""
@@ -386,7 +393,7 @@ class DynamicSession:
 
 
 class AsyncDynamicSession(DynamicSession):
-    """A Browser session manager with page pooling"""
+    """An async Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory."""
 
     def __init__(
         self,
