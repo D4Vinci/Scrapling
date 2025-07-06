@@ -7,8 +7,7 @@ from lxml import html
 
 from scrapling.core._types import Any, Dict, Iterable, Union
 
-# Using cache on top of a class is brilliant way to achieve Singleton design pattern without much code
-# functools.cache is available on Python 3.9+ only so let's keep lru_cache
+# Using cache on top of a class is a brilliant way to achieve a Singleton design pattern without much code
 from functools import lru_cache  # isort:skip
 
 html_forbidden = {
