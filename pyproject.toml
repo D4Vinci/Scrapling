@@ -56,7 +56,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "lxml>=5.4.0",
+    "lxml>=6.0.0",
     "cssselect>=1.3.0",
     "IPython>=8.37",  # The last version that supports Python 3.10
     "click>=8.2.1",
