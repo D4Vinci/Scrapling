@@ -101,6 +101,18 @@ Anyone who signs up can use the discount code GHB5 to get 10% off their purchase
 <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/swiftproxy.jpeg" style="width:85%" alt="SwiftProxy Banner" >
 
 ---
+Tired of your PC slowing you down? Can’t keep your machine on 24/7 for scraping?
+
+**[PetroSky](https://petrosky.io/d4vinci)** delivers cutting-edge VPS hosting powered by:
+- AMD EPYC 7003/9004 Series CPUs
+- Up to 48GB RAM / 20 vCores
+- Blazing-fast 10Gbps network
+- Premium backbone with <0.7ms latency to Cloudflare, Google, AWS
+- NVMe SSD
+
+<img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png" style="width:40%;height:40%" alt="PetroSky Banner" >
+
+---
 
 ## Key Features
 
