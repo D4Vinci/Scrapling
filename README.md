@@ -110,7 +110,7 @@ Tired of your PC slowing you down? Can’t keep your machine on 24/7 for scrapin
 - Premium backbone with <0.7ms latency to Cloudflare, Google, AWS
 - NVMe SSD
 
-<img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png" style="width:40%;height:40%" alt="PetroSky Banner" >
+<img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png" style="width:80%;height:60%" alt="PetroSky Banner" >
 
 ---
 
