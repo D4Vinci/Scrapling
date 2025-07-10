@@ -114,6 +114,12 @@ Tired of your PC slowing you down? Can’t keep your machine on 24/7 for scrapin
 
 ---
 
+<p align="center">
+   <strong>Please consider <a href="https://github.com/sponsors/D4Vinci">joining them</a> to make <em>Scrapling</em>’s maintainance more sustainable!</strong>
+</p>
+
+---
+
 ## Key Features
 
 ### Fetch websites as you prefer with async support
