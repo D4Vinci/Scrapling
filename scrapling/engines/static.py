@@ -146,7 +146,15 @@ class FetcherSession:
                 ),
                 "cert": self.get_with_precedence(kwargs, "cert", self.default_cert),
                 "impersonate": impersonate,
-                **kwargs,  # Add any remaining parameters (after all known ones are popped)
+                **{
+                    k: v
+                    for k, v in kwargs.items()
+                    if v
+                    not in (
+                        _UNSET,
+                        None,
+                    )
+                },  # Add any remaining parameters (after all known ones are popped)
             }
         )
         return request_args
