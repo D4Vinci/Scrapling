@@ -28,7 +28,15 @@ from scrapling import __version__
 from scrapling.core.custom_types import TextHandler
 from scrapling.core.utils import log
 from scrapling.parser import Adaptor, Adaptors
-from scrapling.core._types import List, Optional, Dict, Tuple, Any, Union
+from scrapling.core._types import (
+    List,
+    Optional,
+    Dict,
+    Tuple,
+    Any,
+    Union,
+    extraction_types,
+)
 from scrapling.fetchers import (
     Fetcher,
     AsyncFetcher,
@@ -561,12 +569,54 @@ Type 'exit' or press Ctrl+D to exit.
 class Convertor:
     """Utils for the extract shell command"""
 
+    _extension_map: dict[str, extraction_types] = {
+        "md": "markdown",
+        "html": "html",
+        "txt": "text",
+    }
+
     @classmethod
-    def __convert_to_markdown(cls, body: TextHandler) -> str:
+    def _convert_to_markdown(cls, body: TextHandler) -> str:
         """Convert HTML content to Markdown"""
         from markdownify import markdownify
 
         return markdownify(body)
+
+    @classmethod
+    def _extract_content(
+        cls,
+        page: Adaptor,
+        extraction_type: extraction_types = "markdown",
+        css_selector: Optional[str] = None,
+        main_content_only: bool = False,
+    ) -> str:
+        """Extract the content of an Adaptor"""
+        if not page or not isinstance(page, Adaptor):
+            raise TypeError("Input must be of type `Adaptor`")
+        elif not extraction_type or extraction_type not in cls._extension_map.values():
+            raise ValueError(f"Unknown extraction type: {extraction_type}")
+        else:
+            if main_content_only:
+                page = page.css_first("body") or page
+
+            page = page if not css_selector else page.css_first(css_selector)
+            match extraction_type:
+                case "markdown":
+                    return cls._convert_to_markdown(page.body)
+                case "html":
+                    return page.body
+                case "text":
+                    txt_content = page.get_all_text(strip=True)
+                    for s in (
+                        "\n",
+                        "\r",
+                        "\t",
+                        " ",
+                    ):
+                        # Remove consecutive white-spaces
+                        txt_content = re_sub(f"[{s}]+", s, txt_content)
+                    return txt_content
+            return ""
 
     @classmethod
     def write_content_to_file(
@@ -582,21 +632,10 @@ class Convertor:
                 "Unknown file type: filename must end with '.md', '.html', or '.txt'"
             )
         else:
-            body = page if not css_selector else page.css_first(css_selector)
             with open(filename, "w", encoding="utf-8") as f:
-                if filename.endswith(".md"):
-                    f.write(cls.__convert_to_markdown(body.body))
-                elif filename.endswith(".html"):
-                    f.write(body.body)
-                elif filename.endswith(".txt"):
-                    txt_content = body.get_all_text(strip=True)
-                    for s in (
-                        "\n",
-                        "\r",
-                        "\t",
-                        " ",
-                    ):
-                        # Remove consecutive white-spaces
-                        txt_content = re_sub(f"[{s}]+", s, txt_content)
-
-                    f.write(txt_content)
+                extension = filename.split(".")[-1]
+                f.write(
+                    cls._extract_content(
+                        page, cls._extension_map[extension], css_selector=css_selector
+                    )
+                )

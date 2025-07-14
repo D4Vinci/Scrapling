@@ -20,24 +20,16 @@ from typing import (
     Match,
     Mapping,
     Awaitable,
+    Protocol,
+    SupportsIndex,
 )
 
 SUPPORTED_HTTP_METHODS = Literal["GET", "POST", "PUT", "DELETE"]
 SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
 PageLoadStates = Literal["commit", "domcontentloaded", "load", "networkidle"]
+extraction_types = Literal["text", "html", "markdown"]
 StrOrBytes = Union[str, bytes]
 
-try:
-    from typing import Protocol
-except ImportError:
-    # Added in Python 3.8
-    Protocol = object
-
-try:
-    from typing import SupportsIndex
-except ImportError:
-    # 'SupportsIndex' got added in Python 3.8
-    SupportsIndex = None
 
 if TYPE_CHECKING:
     # typing.Self requires Python 3.11
