@@ -36,6 +36,7 @@ from scrapling.core._types import (
     Any,
     Union,
     extraction_types,
+    Generator,
 )
 from scrapling.fetchers import (
     Fetcher,
@@ -589,7 +590,7 @@ class Convertor:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = False,
-    ) -> str:
+    ) -> Generator[str, None, None]:
         """Extract the content of an Adaptor"""
         if not page or not isinstance(page, Adaptor):
             raise TypeError("Input must be of type `Adaptor`")
@@ -599,24 +600,25 @@ class Convertor:
             if main_content_only:
                 page = page.css_first("body") or page
 
-            page = page if not css_selector else page.css_first(css_selector)
-            match extraction_type:
-                case "markdown":
-                    return cls._convert_to_markdown(page.body)
-                case "html":
-                    return page.body
-                case "text":
-                    txt_content = page.get_all_text(strip=True)
-                    for s in (
-                        "\n",
-                        "\r",
-                        "\t",
-                        " ",
-                    ):
-                        # Remove consecutive white-spaces
-                        txt_content = re_sub(f"[{s}]+", s, txt_content)
-                    return txt_content
-            return ""
+            pages = [page] if not css_selector else page.css(css_selector)
+            for page in pages:
+                match extraction_type:
+                    case "markdown":
+                        yield cls._convert_to_markdown(page.body)
+                    case "html":
+                        yield page.body
+                    case "text":
+                        txt_content = page.get_all_text(strip=True)
+                        for s in (
+                            "\n",
+                            "\r",
+                            "\t",
+                            " ",
+                        ):
+                            # Remove consecutive white-spaces
+                            txt_content = re_sub(f"[{s}]+", s, txt_content)
+                        yield txt_content
+            yield ""
 
     @classmethod
     def write_content_to_file(
@@ -635,7 +637,11 @@ class Convertor:
             with open(filename, "w", encoding="utf-8") as f:
                 extension = filename.split(".")[-1]
                 f.write(
-                    cls._extract_content(
-                        page, cls._extension_map[extension], css_selector=css_selector
+                    "".join(
+                        cls._extract_content(
+                            page,
+                            cls._extension_map[extension],
+                            css_selector=css_selector,
+                        )
                     )
                 )

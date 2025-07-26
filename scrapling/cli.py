@@ -133,6 +133,13 @@ def install(force):
         print("The dependencies are already installed")
 
 
+@command(help="Run Scrapling's MCP server (Check the docs for more info).")
+def mcp():
+    from scrapling.core.ai import ScraplingMCPServer
+
+    ScraplingMCPServer().serve()
+
+
 @command(help="Interactive scraping console")
 @option(
     "-c",
@@ -824,3 +831,4 @@ def main():
 main.add_command(install)
 main.add_command(shell)
 main.add_command(extract)
+main.add_command(mcp)
