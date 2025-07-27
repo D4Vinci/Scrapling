@@ -774,7 +774,7 @@ def stealthy_fetch(
 
     :param url: Target url.
     :param output_file: Output file path (.md for Markdown, .html for HTML).
-    :param headless: Run the browser in headless/hidden, virtual screen mode, or headful/visible mode.
+    :param headless: Run the browser in headless/hidden, or headful/visible mode.
     :param block_images: Prevent the loading of images through Firefox preferences.
     :param disable_resources: Drop requests of unnecessary resources for a speed boost.
     :param block_webrtc: Blocks WebRTC entirely.

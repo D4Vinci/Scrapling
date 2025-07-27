@@ -52,7 +52,7 @@ class StealthyFetcher(BaseFetcher):
     def fetch(
         cls,
         url: str,
-        headless: Union[bool, Literal["virtual"]] = True,  # noqa: F821
+        headless: Union[bool] = True,  # noqa: F821
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
@@ -80,7 +80,7 @@ class StealthyFetcher(BaseFetcher):
         Opens up a browser and do your request based on your chosen options below.
 
         :param url: Target url.
-        :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
+        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
@@ -148,7 +148,7 @@ class StealthyFetcher(BaseFetcher):
     async def async_fetch(
         cls,
         url: str,
-        headless: Union[bool, Literal["virtual"]] = True,  # noqa: F821
+        headless: Union[bool] = True,  # noqa: F821
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
@@ -176,7 +176,7 @@ class StealthyFetcher(BaseFetcher):
         Opens up a browser and do your request based on your chosen options below.
 
         :param url: Target url.
-        :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
+        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.

@@ -2,12 +2,11 @@ from time import time, sleep
 from re import compile as re_compile
 from asyncio import sleep as asyncio_sleep, Lock
 
-from camoufox import AsyncNewBrowser, NewBrowser, DefaultAddons
+from camoufox import DefaultAddons
+from camoufox.utils import launch_options as generate_launch_options
 from playwright.sync_api import (
     Response as SyncPlaywrightResponse,
     sync_playwright,
-    BrowserType,
-    Browser,
     BrowserContext,
     Playwright,
     Locator,
@@ -16,8 +15,6 @@ from playwright.sync_api import (
 from playwright.async_api import (
     async_playwright,
     Response as AsyncPlaywrightResponse,
-    BrowserType as AsyncBrowserType,
-    Browser as AsyncBrowser,
     BrowserContext as AsyncBrowserContext,
     Playwright as AsyncPlaywright,
     Locator as AsyncLocator,
@@ -32,7 +29,6 @@ from scrapling.core._types import (
     Optional,
     Union,
     Callable,
-    Literal,
     List,
     SelectorWaitStates,
 )
@@ -82,14 +78,13 @@ class StealthySession:
         "page_pool",
         "_closed",
         "launch_options",
-        "context_options",
         "_headers_keys",
     )
 
     def __init__(
         self,
         max_pages: int = 1,
-        headless: Union[bool, Literal["virtual"]] = True,  # noqa: F821
+        headless: Union[bool] = True,  # noqa: F821
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
@@ -115,7 +110,7 @@ class StealthySession:
     ):
         """A Browser session manager with page pooling
 
-        :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
+        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
@@ -199,7 +194,6 @@ class StealthySession:
         self.additional_arguments = config.additional_arguments
 
         self.playwright: Optional[Playwright] = None
-        self.browser: Optional[Union[BrowserType, Browser]] = None
         self.context: Optional[BrowserContext] = None
         self.page_pool = PagePool(self.max_pages)
         self._closed = False
@@ -214,28 +208,31 @@ class StealthySession:
 
     def __initiate_browser_options__(self):
         """Initiate browser options."""
-        self.launch_options = {
-            "geoip": self.geoip,
-            "proxy": dict(self.proxy) if self.proxy else self.proxy,
-            "enable_cache": True,
-            "addons": self.addons,
-            "exclude_addons": [] if self.disable_ads else [DefaultAddons.UBO],
-            "headless": self.headless,
-            "humanize": True if self.solve_cloudflare else self.humanize,
-            "i_know_what_im_doing": True,  # To turn warnings off with the user configurations
-            "allow_webgl": self.allow_webgl,
-            "block_webrtc": self.block_webrtc,
-            "block_images": self.block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
-            "os": None if self.os_randomize else get_os_name(),
-            **self.additional_arguments,
-        }
-        self.context_options = {}
+        self.launch_options = generate_launch_options(
+            **{
+                "geoip": self.geoip,
+                "proxy": dict(self.proxy) if self.proxy else self.proxy,
+                "enable_cache": True,
+                "addons": self.addons,
+                "exclude_addons": [] if self.disable_ads else [DefaultAddons.UBO],
+                "headless": self.headless,
+                "humanize": True if self.solve_cloudflare else self.humanize,
+                "i_know_what_im_doing": True,  # To turn warnings off with the user configurations
+                "allow_webgl": self.allow_webgl,
+                "block_webrtc": self.block_webrtc,
+                "block_images": self.block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
+                "os": None if self.os_randomize else get_os_name(),
+                "user_data_dir": "",
+                **self.additional_arguments,
+            }
+        )
 
     def __create__(self):
         """Create a browser for this instance and context."""
         self.playwright = sync_playwright().start()
-        self.browser = NewBrowser(self.playwright, **self.launch_options)
-        self.context = self.browser.new_context(**self.context_options)
+        self.context = self.playwright.firefox.launch_persistent_context(
+            **self.launch_options
+        )
         if self.cookies:
             self.context.add_cookies(self.cookies)
 
@@ -254,10 +251,6 @@ class StealthySession:
         if self.context:
             self.context.close()
             self.context = None
-
-        if self.browser:
-            self.browser.close()
-            self.browser = None
 
         if self.playwright:
             self.playwright.stop()
@@ -468,7 +461,7 @@ class AsyncStealthySession(StealthySession):
     def __init__(
         self,
         max_pages: int = 1,
-        headless: Union[bool, Literal["virtual"]] = True,  # noqa: F821
+        headless: Union[bool] = True,  # noqa: F821
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
@@ -494,7 +487,7 @@ class AsyncStealthySession(StealthySession):
     ):
         """A Browser session manager with page pooling
 
-        :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
+        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
@@ -550,7 +543,6 @@ class AsyncStealthySession(StealthySession):
             additional_arguments,
         )
         self.playwright: Optional[AsyncPlaywright] = None
-        self.browser: Optional[Union[AsyncBrowserType, AsyncBrowser]] = None
         self.context: Optional[AsyncBrowserContext] = None
         self._lock = Lock()
         self.__enter__ = None
@@ -559,9 +551,10 @@ class AsyncStealthySession(StealthySession):
     async def __create__(self):
         """Create a browser for this instance and context."""
         self.playwright: AsyncPlaywright = await async_playwright().start()
-        self.browser = await AsyncNewBrowser(self.playwright, **self.launch_options)
-        self.context: AsyncBrowserContext = await self.browser.new_context(
-            **self.context_options
+        self.context: AsyncBrowserContext = (
+            await self.playwright.firefox.launch_persistent_context(
+                **self.launch_options
+            )
         )
         if self.cookies:
             await self.context.add_cookies(self.cookies)
@@ -581,10 +574,6 @@ class AsyncStealthySession(StealthySession):
         if self.context:
             await self.context.close()
             self.context = None
-
-        if self.browser:
-            await self.browser.close()
-            self.browser = None
 
         if self.playwright:
             await self.playwright.stop()

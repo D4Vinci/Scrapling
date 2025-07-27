@@ -410,7 +410,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        headless: Union[bool, Literal["virtual"]] = True,  # noqa: F821
+        headless: Union[bool] = True,  # noqa: F821
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
@@ -443,7 +443,7 @@ class ScraplingMCPServer:
             - Text will return the text content of the page.
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
-        :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
+        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
@@ -510,7 +510,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        headless: Union[bool, Literal["virtual"]] = True,  # noqa: F821
+        headless: Union[bool] = True,  # noqa: F821
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
@@ -543,7 +543,7 @@ class ScraplingMCPServer:
             - Text will return the text content of the page.
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
-        :param headless: Run the browser in headless/hidden (default), virtual screen mode, or headful/visible mode.
+        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param block_images: Prevent the loading of images through Firefox preferences.
             This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
