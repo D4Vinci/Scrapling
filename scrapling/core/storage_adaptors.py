@@ -1,14 +1,15 @@
-import sqlite3
-import threading
+from sqlite3 import connect as db_connect
+from threading import RLock
 from abc import ABC, abstractmethod
 from hashlib import sha256
+from functools import lru_cache
 
-import orjson
-from lxml import html
+from lxml.html import HtmlElement
+from orjson import dumps, loads
 from tldextract import extract as tld
 
+from scrapling.core.utils import _StorageTools, log
 from scrapling.core._types import Dict, Optional, Union
-from scrapling.core.utils import _StorageTools, log, lru_cache
 
 
 class StorageSystemMixin(ABC):
@@ -35,7 +36,7 @@ class StorageSystemMixin(ABC):
             return default_value
 
     @abstractmethod
-    def save(self, element: html.HtmlElement, identifier: str) -> None:
+    def save(self, element: HtmlElement, identifier: str) -> None:
         """Saves the element's unique properties to the storage for retrieval and relocation later
 
         :param element: The element itself which we want to save to storage.
@@ -81,11 +82,10 @@ class SQLiteStorageSystem(StorageSystemMixin):
         """
         super().__init__(url)
         self.storage_file = storage_file
-        # We use a threading.Lock to ensure thread-safety instead of relying on thread-local storage.
-        self.lock = threading.Lock()
+        self.lock = RLock()  # Better than Lock for reentrancy
         # >SQLite default mode in the earlier version is 1 not 2 (1=thread-safe 2=serialized)
         # `check_same_thread=False` to allow it to be used across different threads.
-        self.connection = sqlite3.connect(self.storage_file, check_same_thread=False)
+        self.connection = db_connect(self.storage_file, check_same_thread=False)
         # WAL (Write-Ahead Logging) allows for better concurrency.
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.cursor = self.connection.cursor()
@@ -106,7 +106,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         """)
         self.connection.commit()
 
-    def save(self, element: html.HtmlElement, identifier: str):
+    def save(self, element: HtmlElement, identifier: str):
         """Saves the elements unique properties to the storage for retrieval and relocation later
 
         :param element: The element itself which we want to save to storage.
@@ -121,7 +121,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
                 INSERT OR REPLACE INTO storage (url, identifier, element_data)
                 VALUES (?, ?, ?)
             """,
-                (url, identifier, orjson.dumps(element_data)),
+                (url, identifier, dumps(element_data)),
             )
             self.cursor.fetchall()
             self.connection.commit()
@@ -141,7 +141,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
             )
             result = self.cursor.fetchone()
             if result:
-                return orjson.loads(result[0])
+                return loads(result[0])
             return None
 
     def close(self):
