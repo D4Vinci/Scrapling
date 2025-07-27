@@ -291,15 +291,21 @@ class Adaptor(SelectorsGeneration):
 
         :return: A TextHandler
         """
+        ignored_elements = set()
+        if ignore_tags:
+            for tag in ignore_tags:
+                for element in self._root.xpath(f".//{tag}"):
+                    ignored_elements.add(element)
+                    ignored_elements.update(element.xpath(".//*"))
+
         _all_strings = []
         for node in self._root.xpath(".//*"):
-            if node.tag not in ignore_tags:
+            if node not in ignored_elements:
                 text = node.text
-                if text and type(text) is str:
-                    if valid_values and text.strip():
-                        _all_strings.append(text if not strip else text.strip())
-                    else:
-                        _all_strings.append(text if not strip else text.strip())
+                if text and isinstance(text, str):
+                    processed_text = text.strip() if strip else text
+                    if not valid_values or processed_text.strip():
+                        _all_strings.append(processed_text)
 
         return TextHandler(separator.join(_all_strings))
 
