@@ -1002,6 +1002,55 @@ class Adaptor(SelectorsGeneration):
             regex, default, replace_entities, clean_match, case_sensitive
         )
 
+    @staticmethod
+    def __get_attributes(
+        element: html.HtmlElement, ignore_attributes: Union[List, Tuple]
+    ) -> Dict:
+        """Return attributes dictionary without the ignored list"""
+        return {k: v for k, v in element.attrib.items() if k not in ignore_attributes}
+
+    def __are_alike(
+        self,
+        original: html.HtmlElement,
+        original_attributes: Dict,
+        candidate: html.HtmlElement,
+        ignore_attributes: Union[List, Tuple],
+        similarity_threshold: float,
+        match_text: bool = False,
+    ) -> bool:
+        """Calculate a score of how much these elements are alike and return True
+        if the score is higher or equals the threshold"""
+        candidate_attributes = (
+            self.__get_attributes(candidate, ignore_attributes)
+            if ignore_attributes
+            else candidate.attrib
+        )
+        score, checks = 0, 0
+
+        if original_attributes:
+            score += sum(
+                SequenceMatcher(None, v, candidate_attributes.get(k, "")).ratio()
+                for k, v in original_attributes.items()
+            )
+            checks += len(candidate_attributes)
+        else:
+            if not candidate_attributes:
+                # Both don't have attributes, this must mean something
+                score += 1
+                checks += 1
+
+        if match_text:
+            score += SequenceMatcher(
+                None,
+                clean_spaces(original.text or ""),
+                clean_spaces(candidate.text or ""),
+            ).ratio()
+            checks += 1
+
+        if checks:
+            return round(score / checks, 2) >= similarity_threshold
+        return False
+
     def find_similar(
         self,
         similarity_threshold: float = 0.2,
@@ -1031,74 +1080,36 @@ class Adaptor(SelectorsGeneration):
 
         :return: A ``Adaptors`` container of ``Adaptor`` objects or empty list
         """
-
-        def get_attributes(element: html.HtmlElement) -> Dict:
-            """Return attributes dictionary without the ignored list"""
-            return {
-                k: v for k, v in element.attrib.items() if k not in ignore_attributes
-            }
-
-        def are_alike(
-            original: html.HtmlElement,
-            original_attributes: Dict,
-            candidate: html.HtmlElement,
-        ) -> bool:
-            """Calculate a score of how much these elements are alike and return True
-            if the score is higher or equals the threshold"""
-            candidate_attributes = (
-                get_attributes(candidate) if ignore_attributes else candidate.attrib
-            )
-            score, checks = 0, 0
-
-            if original_attributes:
-                score += sum(
-                    SequenceMatcher(None, v, candidate_attributes.get(k, "")).ratio()
-                    for k, v in original_attributes.items()
-                )
-                checks += len(candidate_attributes)
-            else:
-                if not candidate_attributes:
-                    # Both don't have attributes, this must mean something
-                    score += 1
-                    checks += 1
-
-            if match_text:
-                score += SequenceMatcher(
-                    None,
-                    clean_spaces(original.text or ""),
-                    clean_spaces(candidate.text or ""),
-                ).ratio()
-                checks += 1
-
-            if checks:
-                return round(score / checks, 2) >= similarity_threshold
-            return False
-
         # We will use the elements' root from now on to get the speed boost of using Lxml directly
         root = self._root
-        current_depth = len(list(root.iterancestors()))
-        target_attrs = get_attributes(root) if ignore_attributes else root.attrib
         similar_elements = list()
-        # + root.xpath(f"//{self.tag}[count(ancestor::*) = {current_depth-1}]")
-        parent = root.getparent()
-        if parent is not None:
-            grandparent = parent.getparent()  # lol
-            if grandparent is not None:
-                potential_matches = root.xpath(
-                    f"//{grandparent.tag}/{parent.tag}/{self.tag}[count(ancestor::*) = {current_depth}]"
-                )
-            else:
-                potential_matches = root.xpath(
-                    f"//{parent.tag}/{self.tag}[count(ancestor::*) = {current_depth}]"
-                )
-        else:
-            potential_matches = root.xpath(
-                f"//{self.tag}[count(ancestor::*) = {current_depth}]"
-            )
+
+        current_depth = len(list(root.iterancestors()))
+        target_attrs = (
+            self.__get_attributes(root, ignore_attributes)
+            if ignore_attributes
+            else root.attrib
+        )
+
+        path_parts = [self.tag]
+        if (parent := root.getparent()) is not None:
+            path_parts.insert(0, parent.tag)
+            if (grandparent := parent.getparent()) is not None:
+                path_parts.insert(0, grandparent.tag)
+
+        xpath_path = "//{}".format("/".join(path_parts))
+        potential_matches = root.xpath(
+            f"{xpath_path}[count(ancestor::*) = {current_depth}]"
+        )
 
         for potential_match in potential_matches:
-            if potential_match != root and are_alike(
-                root, target_attrs, potential_match
+            if potential_match != root and self.__are_alike(
+                root,
+                target_attrs,
+                potential_match,
+                ignore_attributes,
+                similarity_threshold,
+                match_text,
             ):
                 similar_elements.append(potential_match)
 
