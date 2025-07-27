@@ -181,6 +181,14 @@ class Adaptor(SelectorsGeneration):
             else {}
         )
 
+    def __del__(self):
+        """Ensure cleanup happens"""
+        if hasattr(self, "_storage") and self._storage:
+            try:
+                self._storage.close()
+            finally:
+                self._storage = None
+
     # Node functionalities, I wanted to move to a separate Mixin class, but it had a slight impact on performance
     @staticmethod
     def _is_text_node(
