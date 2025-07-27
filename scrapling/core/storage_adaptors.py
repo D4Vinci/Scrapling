@@ -38,7 +38,7 @@ class StorageSystemMixin(ABC):
     def save(self, element: html.HtmlElement, identifier: str) -> None:
         """Saves the element's unique properties to the storage for retrieval and relocation later
 
-        :param element: The element itself that we want to save to storage.
+        :param element: The element itself which we want to save to storage.
         :param identifier: This is the identifier that will be used to retrieve the element later from the storage. See
             the docs for more info.
         """
@@ -70,12 +70,12 @@ class StorageSystemMixin(ABC):
 @lru_cache(1, typed=True)
 class SQLiteStorageSystem(StorageSystemMixin):
     """The recommended system to use, it's race condition safe and thread safe.
-    Mainly built so the library can run in threaded frameworks like scrapy or threaded tools
-    > It's optimized for threaded applications but running it without threads shouldn't make it slow."""
+    Mainly built, so the library can run in threaded frameworks like scrapy or threaded tools
+    > It's optimized for threaded applications, but running it without threads shouldn't make it slow."""
 
     def __init__(self, storage_file: str, url: Union[str, None] = None):
         """
-        :param storage_file: File to be used to store elements
+        :param storage_file: File to be used to store elements' data.
         :param url: URL of the website we are working on to separate it from other websites data
 
         """
@@ -83,7 +83,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         self.storage_file = storage_file
         # We use a threading.Lock to ensure thread-safety instead of relying on thread-local storage.
         self.lock = threading.Lock()
-        # >SQLite default mode in earlier version is 1 not 2 (1=thread-safe 2=serialized)
+        # >SQLite default mode in the earlier version is 1 not 2 (1=thread-safe 2=serialized)
         # `check_same_thread=False` to allow it to be used across different threads.
         self.connection = sqlite3.connect(self.storage_file, check_same_thread=False)
         # WAL (Write-Ahead Logging) allows for better concurrency.
@@ -109,7 +109,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
     def save(self, element: html.HtmlElement, identifier: str):
         """Saves the elements unique properties to the storage for retrieval and relocation later
 
-        :param element: The element itself that we want to save to storage.
+        :param element: The element itself which we want to save to storage.
         :param identifier: This is the identifier that will be used to retrieve the element later from the storage. See
             the docs for more info.
         """
@@ -145,7 +145,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
             return None
 
     def close(self):
-        """Close all connections, will be useful when with some things like scrapy Spider.closed() function/signal"""
+        """Close all connections. It will be useful when with some things like scrapy Spider.closed() function/signal"""
         with self.lock:
             self.connection.commit()
             self.cursor.close()
