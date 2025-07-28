@@ -59,6 +59,7 @@ class Adaptor(SelectorsGeneration):
         keep_comments: Optional[bool] = False,
         keep_cdata: Optional[bool] = False,
         auto_match: Optional[bool] = False,
+        _storage: object = None,
         storage: Any = SQLiteStorageSystem,
         storage_args: Optional[Dict] = None,
         **kwargs,
@@ -136,25 +137,28 @@ class Adaptor(SelectorsGeneration):
         self.__auto_match_enabled = auto_match
 
         if self.__auto_match_enabled:
-            if not storage_args:
-                storage_args = {
-                    "storage_file": os.path.join(
-                        os.path.dirname(__file__), "elements_storage.db"
-                    ),
-                    "url": url,
-                }
+            if _storage is not None:
+                self._storage = _storage
+            else:
+                if not storage_args:
+                    storage_args = {
+                        "storage_file": os.path.join(
+                            os.path.dirname(__file__), "elements_storage.db"
+                        ),
+                        "url": url,
+                    }
 
-            if not hasattr(storage, "__wrapped__"):
-                raise ValueError(
-                    "Storage class must be wrapped with lru_cache decorator, see docs for info"
-                )
+                if not hasattr(storage, "__wrapped__"):
+                    raise ValueError(
+                        "Storage class must be wrapped with lru_cache decorator, see docs for info"
+                    )
 
-            if not issubclass(storage.__wrapped__, StorageSystemMixin):
-                raise ValueError(
-                    "Storage system must be inherited from class `StorageSystemMixin`"
-                )
+                if not issubclass(storage.__wrapped__, StorageSystemMixin):
+                    raise ValueError(
+                        "Storage system must be inherited from class `StorageSystemMixin`"
+                    )
 
-            self._storage = storage(**storage_args)
+                self._storage = storage(**storage_args)
 
         self.__keep_comments = keep_comments
         self.__keep_cdata = keep_cdata
@@ -186,6 +190,8 @@ class Adaptor(SelectorsGeneration):
         if hasattr(self, "_storage") and self._storage:
             try:
                 self._storage.close()
+            except Exception:
+                pass
             finally:
                 self._storage = None
 
@@ -214,13 +220,15 @@ class Adaptor(SelectorsGeneration):
 
     def __element_convertor(self, element: html.HtmlElement) -> "Adaptor":
         """Used internally to convert a single HtmlElement to Adaptor directly without checks"""
+        db_instance = (
+            self._storage if (hasattr(self, "_storage") and self._storage) else None
+        )
         return Adaptor(
             root=element,
-            text="",
-            body=b"",  # Since the root argument is provided, both `text` and `body` will be ignored, so this is just a filler
             url=self.url,
             encoding=self.encoding,
             auto_match=self.__auto_match_enabled,
+            _storage=db_instance,  # Reuse existing storage if it exists otherwise it won't be checked if `auto_match` is turned off
             keep_comments=self.__keep_comments,
             keep_cdata=self.__keep_cdata,
             huge_tree=self.__huge_tree_enabled,
@@ -630,8 +638,10 @@ class Adaptor(SelectorsGeneration):
         except (
             SelectorError,
             SelectorSyntaxError,
-        ):
-            raise SelectorSyntaxError(f"Invalid CSS selector: {selector}")
+        ) as e:
+            raise SelectorSyntaxError(
+                f"Invalid CSS selector '{selector}': {str(e)}"
+            ) from e
 
     def xpath(
         self,
@@ -700,8 +710,8 @@ class Adaptor(SelectorsGeneration):
             SelectorSyntaxError,
             etree.XPathError,
             etree.XPathEvalError,
-        ):
-            raise SelectorSyntaxError(f"Invalid XPath selector: {selector}")
+        ) as e:
+            raise SelectorSyntaxError(f"Invalid XPath selector: {selector}") from e
 
     def find_all(
         self,
