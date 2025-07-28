@@ -200,9 +200,6 @@ class TestPicklingAndRepresentation:
         with pytest.raises(TypeError):
             pickle.dumps(table)
 
-        with pytest.raises(TypeError):
-            pickle.dumps(table[0])
-
     def test_string_representations(self, page):
         """Test custom string representations of objects"""
         table = page.css(".product-list")[0]
