@@ -304,7 +304,7 @@ class Adaptor(SelectorsGeneration):
             for tag in ignore_tags:
                 for element in self._root.xpath(f".//{tag}"):
                     ignored_elements.add(element)
-                    ignored_elements.update(element.xpath(".//*"))
+                    ignored_elements.update(set(element.iterchildren()))
 
         _all_strings = []
         for node in self._root.xpath(".//*"):
@@ -315,7 +315,7 @@ class Adaptor(SelectorsGeneration):
                     if not valid_values or processed_text.strip():
                         _all_strings.append(processed_text)
 
-        return TextHandler(separator.join(_all_strings))
+        return TextHandler(separator).join(_all_strings)
 
     def urljoin(self, relative_url: str) -> str:
         """Join this Adaptor's url with a relative url to form an absolute full URL."""
