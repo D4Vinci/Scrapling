@@ -1,9 +1,8 @@
 skips:
 - B101
 - B311
-- B320
-- B410
 - B113  # `Requests call without timeout` these requests are done in the benchmark and examples scripts only
 - B403  # We are using pickle for tests only
 - B404  # Using subprocess library
 - B602  # subprocess call with shell=True identified
+- B110  # Try, Except, Pass detected.
