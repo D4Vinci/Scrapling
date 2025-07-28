@@ -185,15 +185,11 @@ class Adaptor(SelectorsGeneration):
             else {}
         )
 
-    def __del__(self):
-        """Ensure cleanup happens"""
-        if hasattr(self, "_storage") and self._storage:
-            try:
-                self._storage.close()
-            except Exception:
-                pass
-            finally:
-                self._storage = None
+    def __getitem__(self, key: str) -> TextHandler:
+        return self.attrib[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.attrib
 
     # Node functionalities, I wanted to move to a separate Mixin class, but it had a slight impact on performance
     @staticmethod
