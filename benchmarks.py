@@ -49,7 +49,7 @@ def test_lxml():
         e.text
         for e in etree.fromstring(
             large_html,
-            # Scrapling and Parsel use the same parser inside so this is just to make it fair
+            # Scrapling and Parsel use the same parser inside, so this is just to make it fair
             parser=html.HTMLParser(recover=True, huge_tree=True),
         ).cssselect(".item")
     ]
@@ -80,7 +80,7 @@ def test_scrapling():
 
 @benchmark
 def test_parsel():
-    return Selector(content=large_html).css(".item::text").extract()
+    return Selector(text=large_html).css(".item::text").extract()
 
 
 @benchmark
@@ -109,13 +109,7 @@ def display(results):
 
 @benchmark
 def test_scrapling_text(request_html):
-    # Will loop over resulted elements to get text too to make comparison even more fair otherwise Scrapling will be even faster
-    return [
-        element.text
-        for element in ScraplingSelector(request_html, adaptive=False)
-        .find_by_text("Tipping the Velvet", first_match=True)
-        .find_similar(ignore_attributes=["title"])
-    ]
+    return ScraplingSelector(request_html, adaptive=False).find_by_text("Tipping the Velvet", first_match=True, clean_match=False).find_similar(ignore_attributes=["title"])
 
 
 @benchmark
