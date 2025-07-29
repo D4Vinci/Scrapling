@@ -1,14 +1,15 @@
-import re
-import typing
 from collections.abc import Mapping
 from types import MappingProxyType
+from re import compile as re_compile, sub, UNICODE, IGNORECASE
 
 from orjson import dumps, loads
 
 from scrapling.core._types import (
+    cast,
     Dict,
     List,
     Union,
+    overload,
     TypeVar,
     Literal,
     Pattern,
@@ -34,11 +35,11 @@ class TextHandler(str):
 
     def __getitem__(self, key: Union[SupportsIndex, slice]) -> "TextHandler":
         lst = super().__getitem__(key)
-        return typing.cast(_TextHandlerType, TextHandler(lst))
+        return cast(_TextHandlerType, TextHandler(lst))
 
     def split(self, sep: str = None, maxsplit: SupportsIndex = -1) -> "TextHandlers":
         return TextHandlers(
-            typing.cast(
+            cast(
                 List[_TextHandlerType],
                 [TextHandler(s) for s in super().split(sep, maxsplit)],
             )
@@ -119,7 +120,7 @@ class TextHandler(str):
         """Return a new version of the string after removing all white spaces and consecutive spaces"""
         trans_table = str.maketrans("\t\r\n", "   ")
         data = self.translate(trans_table)
-        return self.__class__(re.sub(" +", " ", data).strip())
+        return self.__class__(sub(" +", " ", data).strip())
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):
@@ -137,7 +138,7 @@ class TextHandler(str):
         # Check this out: https://github.com/ijl/orjson/issues/445
         return loads(str(self))
 
-    @typing.overload
+    @overload
     def re(
         self,
         regex: Union[str, Pattern[str]],
@@ -147,7 +148,7 @@ class TextHandler(str):
         case_sensitive: bool = True,
     ) -> bool: ...
 
-    @typing.overload
+    @overload
     def re(
         self,
         regex: Union[str, Pattern[str]],
@@ -176,9 +177,9 @@ class TextHandler(str):
         """
         if isinstance(regex, str):
             if case_sensitive:
-                regex = re.compile(regex, re.UNICODE)
+                regex = re_compile(regex, UNICODE)
             else:
-                regex = re.compile(regex, flags=re.UNICODE | re.IGNORECASE)
+                regex = re_compile(regex, flags=UNICODE | IGNORECASE)
 
         input_text = self.clean() if clean_match else self
         results = regex.findall(input_text)
@@ -190,13 +191,13 @@ class TextHandler(str):
 
         if not replace_entities:
             return TextHandlers(
-                typing.cast(
+                cast(
                     List[_TextHandlerType], [TextHandler(string) for string in results]
                 )
             )
 
         return TextHandlers(
-            typing.cast(
+            cast(
                 List[_TextHandlerType],
                 [TextHandler(_replace_entities(s)) for s in results],
             )
@@ -235,11 +236,11 @@ class TextHandlers(List[TextHandler]):
 
     __slots__ = ()
 
-    @typing.overload
+    @overload
     def __getitem__(self, pos: SupportsIndex) -> TextHandler:
         pass
 
-    @typing.overload
+    @overload
     def __getitem__(self, pos: slice) -> "TextHandlers":
         pass
 
@@ -249,8 +250,8 @@ class TextHandlers(List[TextHandler]):
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
             lst = [TextHandler(s) for s in lst]
-            return TextHandlers(typing.cast(List[_TextHandlerType], lst))
-        return typing.cast(_TextHandlerType, TextHandler(lst))
+            return TextHandlers(cast(List[_TextHandlerType], lst))
+        return cast(_TextHandlerType, TextHandler(lst))
 
     def re(
         self,

@@ -15,7 +15,6 @@ from scrapling.fetchers import (
 )
 from scrapling.core._types import (
     Optional,
-    Literal,
     Tuple,
     extraction_types,
     Union,

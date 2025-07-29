@@ -2,7 +2,6 @@ from scrapling.core._types import (
     Callable,
     Dict,
     List,
-    Literal,
     Optional,
     SelectorWaitStates,
     Union,
