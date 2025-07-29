@@ -4,6 +4,7 @@ Type definitions for type checking purposes.
 
 from typing import (
     TYPE_CHECKING,
+    overload,
     Any,
     Callable,
     Dict,

@@ -82,7 +82,7 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     """Configuration struct for validation"""
 
     max_pages: int = 1
-    headless: Union[bool] = True  # noqa: F821
+    headless: bool = True  # noqa: F821
     block_images: bool = False
     disable_resources: bool = False
     block_webrtc: bool = False

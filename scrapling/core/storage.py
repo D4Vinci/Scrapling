@@ -9,7 +9,7 @@ from orjson import dumps, loads
 from tldextract import extract as tld
 
 from scrapling.core.utils import _StorageTools, log
-from scrapling.core._types import Dict, Optional, Union
+from scrapling.core._types import Dict, Optional, Union, Any
 
 
 class StorageSystemMixin(ABC):
@@ -106,7 +106,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         """)
         self.connection.commit()
 
-    def save(self, element: HtmlElement, identifier: str):
+    def save(self, element: HtmlElement, identifier: str) -> None:
         """Saves the elements unique properties to the storage for retrieval and relocation later
 
         :param element: The element itself which we want to save to storage.
@@ -126,7 +126,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
             self.cursor.fetchall()
             self.connection.commit()
 
-    def retrieve(self, identifier: str) -> Optional[Dict]:
+    def retrieve(self, identifier: str) -> Optional[Dict[str, Any]]:
         """Using the identifier, we search the storage and return the unique properties of the element
 
         :param identifier: This is the identifier that will be used to retrieve the element from the storage. See

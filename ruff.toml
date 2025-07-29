@@ -15,7 +15,7 @@ target-version = "py39"
 
 [lint]
 select = ["E", "F", "W"]
-ignore = ["E501", "F401"]
+ignore = ["E501", "F401", "F811"]
 
 [format]
 # Like Black, use double quotes for strings.

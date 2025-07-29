@@ -5,7 +5,7 @@ from itertools import chain
 import orjson
 from lxml import html
 
-from scrapling.core._types import Any, Dict, Iterable, Union
+from scrapling.core._types import Any, Dict, Iterable, Union, List
 
 # Using cache on top of a class is a brilliant way to achieve a Singleton design pattern without much code
 from functools import lru_cache  # isort:skip
@@ -41,8 +41,8 @@ def setup_logger():
 log = setup_logger()
 
 
-def is_jsonable(content: Union[bytes, str]) -> bool:
-    if type(content) is bytes:
+def is_jsonable(content: bytes | str) -> bool:
+    if isinstance(content, bytes):
         content = content.decode()
 
     try:
@@ -52,14 +52,14 @@ def is_jsonable(content: Union[bytes, str]) -> bool:
         return False
 
 
-def flatten(lst: Iterable):
+def flatten(lst: Iterable[Any]) -> List[Any]:
     return list(chain.from_iterable(lst))
 
 
-def _is_iterable(s: Any):
+def _is_iterable(obj: Any) -> bool:
     # This will be used only in regex functions to make sure it's iterable but not string/bytes
     return isinstance(
-        s,
+        obj,
         (
             list,
             tuple,

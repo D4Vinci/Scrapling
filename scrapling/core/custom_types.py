@@ -7,14 +7,15 @@ from orjson import dumps, loads
 
 from scrapling.core._types import (
     Dict,
-    Iterable,
     List,
-    Literal,
-    Optional,
-    Pattern,
-    SupportsIndex,
-    TypeVar,
     Union,
+    TypeVar,
+    Literal,
+    Pattern,
+    Iterable,
+    Optional,
+    Generator,
+    SupportsIndex,
 )
 from scrapling.core.utils import _is_iterable, flatten
 from scrapling.core._html_utils import _replace_entities
@@ -341,7 +342,9 @@ class AttributesHandler(Mapping[str, _TextHandlerType]):
         """Acts like the standard dictionary `.get()` method"""
         return self._data.get(key, default)
 
-    def search_values(self, keyword, partial=False):
+    def search_values(
+        self, keyword: str, partial: bool = False
+    ) -> Generator["AttributesHandler", None, None]:
         """Search current attributes by values and return a dictionary of each matching item
         :param keyword: The keyword to search for in the attribute values
         :param partial: If True, the function will search if keyword in each value instead of perfect match

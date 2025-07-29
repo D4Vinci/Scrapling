@@ -1,7 +1,6 @@
-import inspect
 import os
 import re
-import typing
+from inspect import signature
 from difflib import SequenceMatcher
 from urllib.parse import urljoin
 
@@ -18,16 +17,17 @@ from lxml.etree import (
 
 from scrapling.core._types import (
     Any,
-    Callable,
     Dict,
-    Generator,
-    Iterable,
     List,
-    Optional,
-    Pattern,
-    SupportsIndex,
     Tuple,
     Union,
+    Pattern,
+    Callable,
+    Optional,
+    Iterable,
+    overload,
+    Generator,
+    SupportsIndex,
 )
 from scrapling.core.custom_types import AttributesHandler, TextHandler, TextHandlers
 from scrapling.core.mixins import SelectorsGeneration
@@ -248,7 +248,7 @@ class Selector(SelectorsGeneration):
 
     def __handle_elements(
         self, result: List[Union[HtmlElement, _ElementUnicodeResult]]
-    ) -> Union["Selectors", "TextHandlers", List]:
+    ) -> Union["Selectors", "TextHandlers"]:
         """Used internally in all functions to convert results to type (Selectors|TextHandlers) in bulk when possible"""
         if not len(
             result
@@ -761,7 +761,7 @@ class Selector(SelectorsGeneration):
                 patterns.add(arg)
 
             elif callable(arg):
-                if len(inspect.signature(arg).parameters) > 0:
+                if len(signature(arg).parameters) > 0:
                     functions.append(arg)
                 else:
                     raise TypeError(
@@ -914,7 +914,7 @@ class Selector(SelectorsGeneration):
         return round((score / checks) * 100, 2)
 
     @staticmethod
-    def __calculate_dict_diff(dict1: dict, dict2: dict) -> float:
+    def __calculate_dict_diff(dict1: Dict, dict2: Dict) -> float:
         """Used internally to calculate similarity between two dictionaries as SequenceMatcher doesn't accept dictionaries"""
         score = (
             SequenceMatcher(None, tuple(dict1.keys()), tuple(dict2.keys())).ratio()
@@ -1210,11 +1210,11 @@ class Selectors(List[Selector]):
 
     __slots__ = ()
 
-    @typing.overload
+    @overload
     def __getitem__(self, pos: SupportsIndex) -> Selector:
         pass
 
-    @typing.overload
+    @overload
     def __getitem__(self, pos: slice) -> "Selectors":
         pass
 
