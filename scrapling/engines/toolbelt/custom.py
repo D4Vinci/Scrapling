@@ -135,9 +135,6 @@ class Response(Selector):
             f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})"
         )
 
-    # def __repr__(self):
-    #     return f'<{self.__class__.__name__} [{self.status} {self.reason}]>'
-
 
 class BaseFetcher:
     __slots__ = ()
