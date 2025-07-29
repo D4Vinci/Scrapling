@@ -74,7 +74,7 @@ class StealthyFetcher(BaseFetcher):
         disable_ads: bool = False,
         geoip: bool = False,
         custom_config: Optional[Dict] = None,
-        additional_arguments: Optional[Dict] = None,
+        additional_args: Optional[Dict] = None,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -106,7 +106,7 @@ class StealthyFetcher(BaseFetcher):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
-        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
+        :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         :return: A `Response` object.
         """
         if not custom_config:
@@ -139,8 +139,8 @@ class StealthyFetcher(BaseFetcher):
             solve_cloudflare=solve_cloudflare,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
-            additional_arguments=additional_arguments or {},
+            selector_config={**cls._generate_parser_arguments(), **custom_config},
+            additional_args=additional_args or {},
         ) as engine:
             return engine.fetch(url)
 
@@ -170,7 +170,7 @@ class StealthyFetcher(BaseFetcher):
         disable_ads: bool = False,
         geoip: bool = False,
         custom_config: Optional[Dict] = None,
-        additional_arguments: Optional[Dict] = None,
+        additional_args: Optional[Dict] = None,
     ) -> Response:
         """
         Opens up a browser and do your request based on your chosen options below.
@@ -202,7 +202,7 @@ class StealthyFetcher(BaseFetcher):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
-        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
+        :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         :return: A `Response` object.
         """
         if not custom_config:
@@ -235,8 +235,8 @@ class StealthyFetcher(BaseFetcher):
             solve_cloudflare=solve_cloudflare,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
-            additional_arguments=additional_arguments or {},
+            selector_config={**cls._generate_parser_arguments(), **custom_config},
+            additional_args=additional_args or {},
         ) as engine:
             return await engine.fetch(url)
 
@@ -337,7 +337,7 @@ class DynamicFetcher(BaseFetcher):
             disable_webgl=disable_webgl,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
+            selector_config={**cls._generate_parser_arguments(), **custom_config},
         ) as session:
             return session.fetch(url)
 
@@ -421,7 +421,7 @@ class DynamicFetcher(BaseFetcher):
             disable_webgl=disable_webgl,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            adaptor_arguments={**cls._generate_parser_arguments(), **custom_config},
+            selector_config={**cls._generate_parser_arguments(), **custom_config},
         ) as session:
             return await session.fetch(url)
 

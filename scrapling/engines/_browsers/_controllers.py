@@ -70,7 +70,7 @@ class DynamicSession:
         "context",
         "page_pool",
         "_closed",
-        "adaptor_arguments",
+        "selector_config",
         "page_action",
         "launch_options",
         "context_options",
@@ -100,7 +100,7 @@ class DynamicSession:
         cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
-        adaptor_arguments: Optional[Dict] = None,
+        selector_config: Optional[Dict] = None,
     ):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
@@ -125,7 +125,7 @@ class DynamicSession:
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         """
 
         params = {
@@ -143,7 +143,7 @@ class DynamicSession:
             "extra_headers": extra_headers,
             "useragent": useragent,
             "timeout": timeout,
-            "adaptor_arguments": adaptor_arguments,
+            "selector_config": selector_config,
             "disable_resources": disable_resources,
             "wait_selector": wait_selector,
             "cookies": cookies,
@@ -177,7 +177,7 @@ class DynamicSession:
         self.context: Optional[BrowserContext] = None
         self.page_pool = PagePool(self.max_pages)
         self._closed = False
-        self.adaptor_arguments = config.adaptor_arguments
+        self.selector_config = config.selector_config
         self.page_action = config.page_action
         self._headers_keys = (
             set(map(str.lower, self.extra_headers.keys()))
@@ -370,7 +370,7 @@ class DynamicSession:
 
             # Create response object
             response = ResponseFactory.from_playwright_response(
-                page_info.page, first_response, final_response, self.adaptor_arguments
+                page_info.page, first_response, final_response, self.selector_config
             )
 
             # Mark the page as ready for next use
@@ -417,7 +417,7 @@ class AsyncDynamicSession(DynamicSession):
         cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
-        adaptor_arguments: Optional[Dict] = None,
+        selector_config: Optional[Dict] = None,
     ):
         """A Browser session manager with page pooling
 
@@ -443,7 +443,7 @@ class AsyncDynamicSession(DynamicSession):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
-        :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         """
 
         super().__init__(
@@ -467,7 +467,7 @@ class AsyncDynamicSession(DynamicSession):
             cookies,
             network_idle,
             wait_selector_state,
-            adaptor_arguments,
+            selector_config,
         )
 
         self.playwright: Optional[AsyncPlaywright] = None
@@ -623,7 +623,7 @@ class AsyncDynamicSession(DynamicSession):
 
             # Create response object
             response = await ResponseFactory.from_async_playwright_response(
-                page_info.page, first_response, final_response, self.adaptor_arguments
+                page_info.page, first_response, final_response, self.selector_config
             )
 
             # Mark the page as ready for next use

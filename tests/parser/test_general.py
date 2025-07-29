@@ -4,7 +4,7 @@ import time
 import pytest
 from cssselect import SelectorError, SelectorSyntaxError
 
-from scrapling import Adaptor
+from scrapling import Selector
 
 
 @pytest.fixture
@@ -78,7 +78,7 @@ def html_content():
 
 @pytest.fixture
 def page(html_content):
-    return Adaptor(html_content, auto_match=False)
+    return Selector(html_content, adaptive=False)
 
 
 # CSS Selector Tests
@@ -162,26 +162,26 @@ class TestSimilarElements:
 
 # Error Handling Tests
 class TestErrorHandling:
-    def test_invalid_adaptor_initialization(self):
-        """Test various invalid Adaptor initializations"""
+    def test_invalid_selector_initialization(self):
+        """Test various invalid Selector initializations"""
         # No arguments
         with pytest.raises(ValueError):
-            _ = Adaptor(auto_match=False)
+            _ = Selector(adaptive=False)
 
         # Invalid argument types
         with pytest.raises(TypeError):
-            _ = Adaptor(root="ayo", auto_match=False)
+            _ = Selector(root="ayo", adaptive=False)
 
         with pytest.raises(TypeError):
-            _ = Adaptor(text=1, auto_match=False)
+            _ = Selector(text=1, adaptive=False)
 
         with pytest.raises(TypeError):
-            _ = Adaptor(body=1, auto_match=False)
+            _ = Selector(body=1, adaptive=False)
 
     def test_invalid_storage(self, page, html_content):
         """Test invalid storage parameter"""
         with pytest.raises(ValueError):
-            _ = Adaptor(html_content, storage=object, auto_match=True)
+            _ = Selector(html_content, storage=object, adaptive=True)
 
     def test_bad_selectors(self, page):
         """Test handling of invalid selectors"""
@@ -195,7 +195,7 @@ class TestErrorHandling:
 # Pickling and Object Representation Tests
 class TestPicklingAndRepresentation:
     def test_unpickleable_objects(self, page):
-        """Test that Adaptor objects cannot be pickled"""
+        """Test that Selector objects cannot be pickled"""
         table = page.css(".product-list")[0]
         with pytest.raises(TypeError):
             pickle.dumps(table)
@@ -299,7 +299,7 @@ def test_large_html_parsing_performance():
     )
 
     start_time = time.time()
-    parsed = Adaptor(large_html, auto_match=False)
+    parsed = Selector(large_html, adaptive=False)
     elements = parsed.css(".item")
     end_time = time.time()
 
@@ -315,7 +315,7 @@ def test_large_html_parsing_performance():
 def test_selectors_generation(page):
     """Try to create selectors for all elements in the page"""
 
-    def _traverse(element: Adaptor):
+    def _traverse(element: Selector):
         assert isinstance(element.generate_css_selector, str)
         assert isinstance(element.generate_xpath_selector, str)
         for branch in element.children:

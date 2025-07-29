@@ -27,7 +27,7 @@ from orjson import loads as json_loads, JSONDecodeError
 from scrapling import __version__
 from scrapling.core.custom_types import TextHandler
 from scrapling.core.utils import log
-from scrapling.parser import Adaptor, Adaptors
+from scrapling.parser import Selector, Selectors
 from scrapling.core._types import (
     List,
     Optional,
@@ -399,9 +399,9 @@ class CurlParser:
         return None
 
 
-def show_page_in_browser(page: Adaptor):
-    if not page or not isinstance(page, Adaptor):
-        log.error("Input must be of type `Adaptor`")
+def show_page_in_browser(page: Selector):
+    if not page or not isinstance(page, Selector):
+        log.error("Input must be of type `Selector`")
         return
 
     try:
@@ -421,7 +421,7 @@ class CustomShell:
     def __init__(self, code, log_level="debug"):
         self.code = code
         self.page = None
-        self.pages = Adaptors([])
+        self.pages = Selectors([])
         self._curl_parser = CurlParser()
         log_level = log_level.strip().lower()
 
@@ -457,7 +457,7 @@ class CustomShell:
    - Fetcher/AsyncFetcher
    - DynamicFetcher
    - StealthyFetcher
-   - Adaptor
+   - Selector
 
 -> Useful shortcuts:
    - {"get":<30} Shortcut for `Fetcher.get`
@@ -469,7 +469,7 @@ class CustomShell:
 
 -> Useful commands
    - {"page / response":<30} The response object of the last page you fetched
-   - {"pages":<30} Adaptors object of the last 5 response objects you fetched
+   - {"pages":<30} Selectors object of the last 5 response objects you fetched
    - {"uncurl('curl_command')":<30} Convert curl command to a Request object. (Optimized to handle curl commands copied from DevTools network tab.)
    - {"curl2fetcher('curl_command')":<30} Convert curl command and make the request with Fetcher. (Optimized to handle curl commands copied from DevTools network tab.)
    - {"view(page)":<30} View page in a browser
@@ -481,7 +481,7 @@ Type 'exit' or press Ctrl+D to exit.
     def update_page(self, result):
         """Update the current page and add to pages history"""
         self.page = result
-        if isinstance(result, (Response, Adaptor)):
+        if isinstance(result, (Response, Selector)):
             self.pages.append(result)
             if len(self.pages) > 5:
                 self.pages.pop(0)  # Remove oldest item
@@ -528,7 +528,7 @@ Type 'exit' or press Ctrl+D to exit.
             "DynamicFetcher": DynamicFetcher,
             "stealthy_fetch": stealthy_fetch,
             "StealthyFetcher": StealthyFetcher,
-            "Adaptor": Adaptor,
+            "Selector": Selector,
             "page": self.page,
             "response": self.page,
             "pages": self.pages,
@@ -586,14 +586,14 @@ class Convertor:
     @classmethod
     def _extract_content(
         cls,
-        page: Adaptor,
+        page: Selector,
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = False,
     ) -> Generator[str, None, None]:
-        """Extract the content of an Adaptor"""
-        if not page or not isinstance(page, Adaptor):
-            raise TypeError("Input must be of type `Adaptor`")
+        """Extract the content of an Selector"""
+        if not page or not isinstance(page, Selector):
+            raise TypeError("Input must be of type `Selector`")
         elif not extraction_type or extraction_type not in cls._extension_map.values():
             raise ValueError(f"Unknown extraction type: {extraction_type}")
         else:
@@ -622,11 +622,11 @@ class Convertor:
 
     @classmethod
     def write_content_to_file(
-        cls, page: Adaptor, filename: str, css_selector: Optional[str] = None
+        cls, page: Selector, filename: str, css_selector: Optional[str] = None
     ) -> None:
-        """Write an Adaptor's content to a file"""
-        if not page or not isinstance(page, Adaptor):
-            raise TypeError("Input must be of type `Adaptor`")
+        """Write an Selector's content to a file"""
+        if not page or not isinstance(page, Selector):
+            raise TypeError("Input must be of type `Selector`")
         elif not filename or not isinstance(filename, str) or not filename.strip():
             raise ValueError("Filename must be provided")
         elif not filename.endswith((".md", ".html", ".txt")):

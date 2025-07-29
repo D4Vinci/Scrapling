@@ -3,7 +3,7 @@ import pytest_httpbin
 
 from scrapling import DynamicFetcher
 
-DynamicFetcher.auto_match = True
+DynamicFetcher.adaptive = True
 
 
 @pytest_httpbin.use_class_based_httpbin

@@ -15,7 +15,7 @@ from scrapling.core._types import (
 )
 from scrapling.core.custom_types import MappingProxyType
 from scrapling.core.utils import log, lru_cache
-from scrapling.parser import Adaptor, SQLiteStorageSystem
+from scrapling.parser import Selector, SQLiteStorageSystem
 
 
 class ResponseEncoding:
@@ -97,7 +97,7 @@ class ResponseEncoding:
             return cls.__DEFAULT_ENCODING
 
 
-class Response(Adaptor):
+class Response(Selector):
     """This class is returned by all engines as a way to unify response type between different libraries."""
 
     def __init__(
@@ -113,9 +113,9 @@ class Response(Adaptor):
         encoding: str = "utf-8",
         method: str = "GET",
         history: List = None,
-        **adaptor_arguments: Dict,
+        **selector_config: Dict,
     ):
-        automatch_domain = adaptor_arguments.pop("automatch_domain", None)
+        adaptive_domain = selector_config.pop("adaptive_domain", None)
         self.status = status
         self.reason = reason
         self.cookies = cookies
@@ -126,12 +126,10 @@ class Response(Adaptor):
         super().__init__(
             text=text,
             body=body,
-            url=automatch_domain or url,
+            url=adaptive_domain or url,
             encoding=encoding,
-            **adaptor_arguments,
+            **selector_config,
         )
-        # For backward compatibility
-        self.adaptor = self
         # For easier debugging while working from a Python shell
         log.info(
             f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})"
@@ -144,20 +142,20 @@ class Response(Adaptor):
 class BaseFetcher:
     __slots__ = ()
     huge_tree: bool = True
-    auto_match: Optional[bool] = False
+    adaptive: Optional[bool] = False
     storage: Any = SQLiteStorageSystem
     keep_cdata: Optional[bool] = False
     storage_args: Optional[Dict] = None
     keep_comments: Optional[bool] = False
-    automatch_domain: Optional[str] = None
+    adaptive_domain: Optional[str] = None
     parser_keywords: Tuple = (
         "huge_tree",
-        "auto_match",
+        "adaptive",
         "storage",
         "keep_cdata",
         "storage_args",
         "keep_comments",
-        "automatch_domain",
+        "adaptive_domain",
     )  # Left open for the user
 
     def __init__(self, *args, **kwargs):
@@ -178,17 +176,17 @@ class BaseFetcher:
             huge_tree=cls.huge_tree,
             keep_comments=cls.keep_comments,
             keep_cdata=cls.keep_cdata,
-            auto_match=cls.auto_match,
+            adaptive=cls.adaptive,
             storage=cls.storage,
             storage_args=cls.storage_args,
-            automatch_domain=cls.automatch_domain,
+            adaptive_domain=cls.adaptive_domain,
         )
 
     @classmethod
     def configure(cls, **kwargs):
         """Set multiple arguments for the parser at once globally
 
-        :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, keep_cdata, auto_match, storage, storage_args, automatch_domain
+        :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, keep_cdata, adaptive, storage, storage_args, adaptive_domain
         """
         for key, value in kwargs.items():
             key = key.strip().lower()
@@ -212,23 +210,23 @@ class BaseFetcher:
 
     @classmethod
     def _generate_parser_arguments(cls) -> Dict:
-        # Adaptor class parameters
-        # I won't validate Adaptor's class parameters here again, I will leave it to be validated later
+        # Selector class parameters
+        # I won't validate Selector's class parameters here again, I will leave it to be validated later
         parser_arguments = dict(
             huge_tree=cls.huge_tree,
             keep_comments=cls.keep_comments,
             keep_cdata=cls.keep_cdata,
-            auto_match=cls.auto_match,
+            adaptive=cls.adaptive,
             storage=cls.storage,
             storage_args=cls.storage_args,
         )
-        if cls.automatch_domain:
-            if type(cls.automatch_domain) is not str:
+        if cls.adaptive_domain:
+            if type(cls.adaptive_domain) is not str:
                 log.warning(
-                    '[Ignored] The argument "automatch_domain" must be of string type'
+                    '[Ignored] The argument "adaptive_domain" must be of string type'
                 )
             else:
-                parser_arguments.update({"automatch_domain": cls.automatch_domain})
+                parser_arguments.update({"adaptive_domain": cls.adaptive_domain})
 
         return parser_arguments
 

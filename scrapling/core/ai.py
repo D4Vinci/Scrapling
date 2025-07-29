@@ -430,7 +430,7 @@ class ScraplingMCPServer:
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,
-        additional_arguments: Optional[Dict] = None,
+        additional_args: Optional[Dict] = None,
     ) -> ResponseModel:
         """Use Scrapling's version of the Camoufox browser to fetch a URL and return a structured output of the result.
         Note: This is best suitable for high protection levels. It's slower than the other tools.
@@ -467,7 +467,7 @@ class ScraplingMCPServer:
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
+        :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
         page = await StealthyFetcher.async_fetch(
             url,
@@ -491,7 +491,7 @@ class ScraplingMCPServer:
             solve_cloudflare=solve_cloudflare,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            additional_arguments=additional_arguments,
+            additional_args=additional_args,
         )
         return _ContentTranslator(
             Convertor._extract_content(
@@ -530,7 +530,7 @@ class ScraplingMCPServer:
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,
-        additional_arguments: Optional[Dict] = None,
+        additional_args: Optional[Dict] = None,
     ) -> List[ResponseModel]:
         """Use Scrapling's version of the Camoufox browser to fetch a group of URLs at the same time, and for each page return a structured output of the result.
         Note: This is best suitable for high protection levels. It's slower than the other tools.
@@ -567,7 +567,7 @@ class ScraplingMCPServer:
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
+        :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
         async with AsyncStealthySession(
             wait=wait,
@@ -591,7 +591,7 @@ class ScraplingMCPServer:
             solve_cloudflare=solve_cloudflare,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
-            additional_arguments=additional_arguments,
+            additional_args=additional_args,
         ) as session:
             tasks = [session.fetch(url) for url in urls]
             responses = await gather(*tasks)

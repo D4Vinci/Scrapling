@@ -63,7 +63,7 @@ class FetcherSession:
         max_redirects: int = 30,
         verify: bool = True,
         cert: Optional[Union[str, Tuple[str, str]]] = None,
-        adaptor_arguments: Optional[Dict] = None,
+        selector_config: Optional[Dict] = None,
     ):
         """
         :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
@@ -81,7 +81,7 @@ class FetcherSession:
         :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
         :param verify: Whether to verify HTTPS certificates. Defaults to True.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param adaptor_arguments: Arguments passed when creating the final Adaptor class.
+        :param selector_config: Arguments passed when creating the final Selector class.
         """
         self.default_impersonate = impersonate
         self.stealth = stealthy_headers
@@ -97,7 +97,7 @@ class FetcherSession:
         self.default_verify = verify
         self.default_cert = cert
         self.default_http3 = http3
-        self.adaptor_arguments = adaptor_arguments or {}
+        self.selector_config = selector_config or {}
 
         self._curl_session: Optional[CurlSession] = None
         self._async_curl_session: Optional[AsyncCurlSession] = None
@@ -260,7 +260,7 @@ class FetcherSession:
         request_args: Dict[str, Any],
         max_retries: int,
         retry_delay: int,
-        adaptor_arguments: Optional[Dict] = None,
+        selector_config: Optional[Dict] = None,
     ) -> Response:
         """
         Perform an HTTP request using the configured session.
@@ -270,7 +270,7 @@ class FetcherSession:
         :param request_args: Arguments to be passed to the session's `request()` method.
         :param max_retries: Maximum number of retries for the request.
         :param retry_delay: Number of seconds to wait between retries.
-        :param adaptor_arguments: Arguments passed when creating the final Adaptor class.
+        :param selector_config: Arguments passed when creating the final Selector class.
         :return: A `Response` object for synchronous requests or an awaitable for asynchronous.
         """
         session = self._curl_session
@@ -286,9 +286,7 @@ class FetcherSession:
                 try:
                     response = session.request(method, **request_args)
                     # response.raise_for_status()  # Retry responses with a status code between 200-400
-                    return ResponseFactory.from_http_request(
-                        response, adaptor_arguments
-                    )
+                    return ResponseFactory.from_http_request(response, selector_config)
                 except CurlError as e:
                     if attempt < max_retries - 1:
                         log.error(
@@ -307,7 +305,7 @@ class FetcherSession:
         request_args: Dict[str, Any],
         max_retries: int,
         retry_delay: int,
-        adaptor_arguments: Optional[Dict] = None,
+        selector_config: Optional[Dict] = None,
     ) -> Response:
         """
         Perform an HTTP request using the configured session.
@@ -317,7 +315,7 @@ class FetcherSession:
         :param request_args: Arguments to be passed to the session's `request()` method.
         :param max_retries: Maximum number of retries for the request.
         :param retry_delay: Number of seconds to wait between retries.
-        :param adaptor_arguments: Arguments passed when creating the final Adaptor class.
+        :param selector_config: Arguments passed when creating the final Selector class.
         :return: A `Response` object for synchronous requests or an awaitable for asynchronous.
         """
         session = self._async_curl_session
@@ -335,9 +333,7 @@ class FetcherSession:
                 try:
                     response = await session.request(method, **request_args)
                     # response.raise_for_status()  # Retry responses with a status code between 200-400
-                    return ResponseFactory.from_http_request(
-                        response, adaptor_arguments
-                    )
+                    return ResponseFactory.from_http_request(response, selector_config)
                 except CurlError as e:
                     if attempt < max_retries - 1:
                         log.error(
@@ -373,9 +369,7 @@ class FetcherSession:
         """
         stealth = self.stealth if stealth is None else stealth
 
-        adaptor_arguments = (
-            kwargs.pop("adaptor_arguments", {}) or self.adaptor_arguments
-        )
+        selector_config = kwargs.pop("selector_config", {}) or self.selector_config
         max_retries = self.get_with_precedence(kwargs, "retries", self.default_retries)
         retry_delay = self.get_with_precedence(
             kwargs, "retry_delay", self.default_retry_delay
@@ -383,12 +377,12 @@ class FetcherSession:
         request_args = self._merge_request_args(stealth=stealth, **kwargs)
         if self._curl_session:
             return self.__make_request(
-                method, request_args, max_retries, retry_delay, adaptor_arguments
+                method, request_args, max_retries, retry_delay, selector_config
             )
         elif self._async_curl_session:
             # The returned value is a Coroutine
             return self.__make_async_request(
-                method, request_args, max_retries, retry_delay, adaptor_arguments
+                method, request_args, max_retries, retry_delay, selector_config
             )
 
         raise RuntimeError("No active session available.")

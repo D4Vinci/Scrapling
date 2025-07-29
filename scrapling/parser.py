@@ -24,7 +24,7 @@ from scrapling.core._types import (
 )
 from scrapling.core.custom_types import AttributesHandler, TextHandler, TextHandlers
 from scrapling.core.mixins import SelectorsGeneration
-from scrapling.core.storage_adaptors import (
+from scrapling.core.storage import (
     SQLiteStorageSystem,
     StorageSystemMixin,
     _StorageTools,
@@ -33,11 +33,11 @@ from scrapling.core.translator import translator_instance
 from scrapling.core.utils import clean_spaces, flatten, html_forbidden, is_jsonable, log
 
 
-class Adaptor(SelectorsGeneration):
+class Selector(SelectorsGeneration):
     __slots__ = (
         "url",
         "encoding",
-        "__auto_match_enabled",
+        "__adaptive_enabled",
         "_root",
         "_storage",
         "__keep_comments",
@@ -58,7 +58,7 @@ class Adaptor(SelectorsGeneration):
         root: Optional[html.HtmlElement] = None,
         keep_comments: Optional[bool] = False,
         keep_cdata: Optional[bool] = False,
-        auto_match: Optional[bool] = False,
+        adaptive: Optional[bool] = False,
         _storage: object = None,
         storage: Any = SQLiteStorageSystem,
         storage_args: Optional[Dict] = None,
@@ -82,7 +82,7 @@ class Adaptor(SelectorsGeneration):
             Don't use it unless you know what you are doing!
         :param keep_comments: While parsing the HTML body, drop comments or not. Disabled by default for obvious reasons
         :param keep_cdata: While parsing the HTML body, drop cdata or not. Disabled by default for cleaner HTML.
-        :param auto_match: Globally turn off the auto-match feature in all functions, this argument takes higher
+        :param adaptive: Globally turn off the auto-match feature in all functions, this argument takes higher
             priority over all auto-match related arguments/functions in the class.
         :param storage: The storage class to be passed for auto-matching functionalities, see ``Docs`` for more info.
         :param storage_args: A dictionary of ``argument->value`` pairs to be passed for the storage class.
@@ -90,7 +90,7 @@ class Adaptor(SelectorsGeneration):
         """
         if root is None and not body and text is None:
             raise ValueError(
-                "Adaptor class needs text, body, or root arguments to work"
+                "Selector class needs text, body, or root arguments to work"
             )
 
         self.__text = ""
@@ -134,9 +134,9 @@ class Adaptor(SelectorsGeneration):
 
             self._root = root
 
-        self.__auto_match_enabled = auto_match
+        self.__adaptive_enabled = adaptive
 
-        if self.__auto_match_enabled:
+        if self.__adaptive_enabled:
             if _storage is not None:
                 self._storage = _storage
             else:
@@ -214,17 +214,17 @@ class Adaptor(SelectorsGeneration):
         """
         return TextHandler(str(element))
 
-    def __element_convertor(self, element: html.HtmlElement) -> "Adaptor":
-        """Used internally to convert a single HtmlElement to Adaptor directly without checks"""
+    def __element_convertor(self, element: html.HtmlElement) -> "Selector":
+        """Used internally to convert a single HtmlElement to Selector directly without checks"""
         db_instance = (
             self._storage if (hasattr(self, "_storage") and self._storage) else None
         )
-        return Adaptor(
+        return Selector(
             root=element,
             url=self.url,
             encoding=self.encoding,
-            auto_match=self.__auto_match_enabled,
-            _storage=db_instance,  # Reuse existing storage if it exists otherwise it won't be checked if `auto_match` is turned off
+            adaptive=self.__adaptive_enabled,
+            _storage=db_instance,  # Reuse existing storage if it exists otherwise it won't be checked if `adaptive` is turned off
             keep_comments=self.__keep_comments,
             keep_cdata=self.__keep_cdata,
             huge_tree=self.__huge_tree_enabled,
@@ -233,8 +233,8 @@ class Adaptor(SelectorsGeneration):
 
     def __handle_element(
         self, element: Union[html.HtmlElement, etree._ElementUnicodeResult]
-    ) -> Union[TextHandler, "Adaptor", None]:
-        """Used internally in all functions to convert a single element to type (Adaptor|TextHandler) when possible"""
+    ) -> Union[TextHandler, "Selector", None]:
+        """Used internally in all functions to convert a single element to type (Selector|TextHandler) when possible"""
         if element is None:
             return None
         elif self._is_text_node(element):
@@ -245,23 +245,23 @@ class Adaptor(SelectorsGeneration):
 
     def __handle_elements(
         self, result: List[Union[html.HtmlElement, etree._ElementUnicodeResult]]
-    ) -> Union["Adaptors", "TextHandlers", List]:
-        """Used internally in all functions to convert results to type (Adaptors|TextHandlers) in bulk when possible"""
+    ) -> Union["Selectors", "TextHandlers", List]:
+        """Used internally in all functions to convert results to type (Selectors|TextHandlers) in bulk when possible"""
         if not len(
             result
         ):  # Lxml will give a warning if I used something like `not result`
-            return Adaptors([])
+            return Selectors([])
 
         # From within the code, this method will always get a list of the same type,
         # so we will continue without checks for a slight performance boost
         if self._is_text_node(result[0]):
             return TextHandlers(list(map(self.__content_convertor, result)))
 
-        return Adaptors(list(map(self.__element_convertor, result)))
+        return Selectors(list(map(self.__element_convertor, result)))
 
     def __getstate__(self) -> Any:
         # lxml don't like it :)
-        raise TypeError("Can't pickle Adaptor objects")
+        raise TypeError("Can't pickle Selector objects")
 
     # The following four properties I made them into functions instead of variables directly
     # So they don't slow down the process of initializing many instances of the class and gets executed only
@@ -322,7 +322,7 @@ class Adaptor(SelectorsGeneration):
         return TextHandler(separator).join(_all_strings)
 
     def urljoin(self, relative_url: str) -> str:
-        """Join this Adaptor's url with a relative url to form an absolute full URL."""
+        """Join this Selector's url with a relative url to form an absolute full URL."""
         return urljoin(self.url, relative_url)
 
     @property
@@ -363,20 +363,20 @@ class Adaptor(SelectorsGeneration):
         return class_name in self._root.classes
 
     @property
-    def parent(self) -> Union["Adaptor", None]:
+    def parent(self) -> Union["Selector", None]:
         """Return the direct parent of the element or ``None`` otherwise"""
         return self.__handle_element(self._root.getparent())
 
     @property
-    def below_elements(self) -> "Adaptors[Adaptor]":
+    def below_elements(self) -> "Selectors[Selector]":
         """Return all elements under the current element in the DOM tree"""
         below = self._root.xpath(".//*")
         return self.__handle_elements(below)
 
     @property
-    def children(self) -> "Adaptors[Adaptor]":
+    def children(self) -> "Selectors[Selector]":
         """Return the children elements of the current element or empty list otherwise"""
-        return Adaptors(
+        return Selectors(
             [
                 self.__element_convertor(child)
                 for child in self._root.iterchildren()
@@ -385,22 +385,22 @@ class Adaptor(SelectorsGeneration):
         )
 
     @property
-    def siblings(self) -> "Adaptors[Adaptor]":
+    def siblings(self) -> "Selectors[Selector]":
         """Return other children of the current element's parent or empty list otherwise"""
         if self.parent:
-            return Adaptors(
+            return Selectors(
                 [child for child in self.parent.children if child._root != self._root]
             )
-        return Adaptors([])
+        return Selectors([])
 
-    def iterancestors(self) -> Generator["Adaptor", None, None]:
+    def iterancestors(self) -> Generator["Selector", None, None]:
         """Return a generator that loops over all ancestors of the element, starting with the element's parent."""
         for ancestor in self._root.iterancestors():
             yield self.__element_convertor(ancestor)
 
     def find_ancestor(
-        self, func: Callable[["Adaptor"], bool]
-    ) -> Union["Adaptor", None]:
+        self, func: Callable[["Selector"], bool]
+    ) -> Union["Selector", None]:
         """Loop over all ancestors of the element till one match the passed function
         :param func: A function that takes each ancestor as an argument and returns True/False
         :return: The first ancestor that match the function or ``None`` otherwise.
@@ -411,13 +411,13 @@ class Adaptor(SelectorsGeneration):
         return None
 
     @property
-    def path(self) -> "Adaptors[Adaptor]":
-        """Returns a list of type `Adaptors` that contains the path leading to the current element from the root."""
+    def path(self) -> "Selectors[Selector]":
+        """Returns a list of type `Selectors` that contains the path leading to the current element from the root."""
         lst = list(self.iterancestors())
-        return Adaptors(lst)
+        return Selectors(lst)
 
     @property
-    def next(self) -> Union["Adaptor", None]:
+    def next(self) -> Union["Selector", None]:
         """Returns the next element of the current element in the children of the parent or ``None`` otherwise."""
         next_element = self._root.getnext()
         if next_element is not None:
@@ -428,7 +428,7 @@ class Adaptor(SelectorsGeneration):
         return self.__handle_element(next_element)
 
     @property
-    def previous(self) -> Union["Adaptor", None]:
+    def previous(self) -> Union["Selector", None]:
         """Returns the previous element of the current element in the children of the parent or ``None`` otherwise."""
         prev_element = self._root.getprevious()
         if prev_element is not None:
@@ -471,18 +471,18 @@ class Adaptor(SelectorsGeneration):
     # From here we start with the selecting functions
     def relocate(
         self,
-        element: Union[Dict, html.HtmlElement, "Adaptor"],
+        element: Union[Dict, html.HtmlElement, "Selector"],
         percentage: int = 0,
-        adaptor_type: bool = False,
-    ) -> Union[List[Union[html.HtmlElement, None]], "Adaptors"]:
+        selector_type: bool = False,
+    ) -> Union[List[Union[html.HtmlElement, None]], "Selectors"]:
         """This function will search again for the element in the page tree, used automatically on page structure change
 
         :param element: The element we want to relocate in the tree
         :param percentage: The minimum percentage to accept and not going lower than that. Be aware that the percentage
          calculation depends solely on the page structure, so don't play with this number unless you must know
          what you are doing!
-        :param adaptor_type: If True, the return result will be converted to `Adaptors` object
-        :return: List of pure HTML elements that got the highest matching score or 'Adaptors' object
+        :param selector_type: If True, the return result will be converted to `Selectors` object
+        :return: List of pure HTML elements that got the highest matching score or 'Selectors' object
         """
         score_table = {}
         # Note: `element` will most likely always be a dictionary at this point.
@@ -511,7 +511,7 @@ class Adaptor(SelectorsGeneration):
                             f"{percent} -> {self.__handle_elements(score_table[percent])}"
                         )
 
-                if not adaptor_type:
+                if not selector_type:
                     return score_table[highest_probability]
                 return self.__handle_elements(score_table[highest_probability])
         return []
@@ -520,10 +520,10 @@ class Adaptor(SelectorsGeneration):
         self,
         selector: str,
         identifier: str = "",
-        auto_match: bool = False,
+        adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 0,
-    ) -> Union["Adaptor", "TextHandler", None]:
+    ) -> Union["Selector", "TextHandler", None]:
         """Search the current tree with CSS3 selectors and return the first result if possible, otherwise return `None`
 
         **Important:
@@ -531,17 +531,15 @@ class Adaptor(SelectorsGeneration):
         and want to relocate the same element(s)**
 
         :param selector: The CSS3 selector to be used.
-        :param auto_match: Enabled will make the function try to relocate the element if it was 'saved' before
+        :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
         :param identifier: A string that will be used to save/retrieve element's data in auto-matching,
          otherwise the selector will be used.
-        :param auto_save: Automatically save new elements for `auto_match` later
+        :param auto_save: Automatically save new elements for `adaptive` later
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
         """
-        for element in self.css(
-            selector, identifier, auto_match, auto_save, percentage
-        ):
+        for element in self.css(selector, identifier, adaptive, auto_save, percentage):
             return element
         return None
 
@@ -549,11 +547,11 @@ class Adaptor(SelectorsGeneration):
         self,
         selector: str,
         identifier: str = "",
-        auto_match: bool = False,
+        adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 0,
         **kwargs: Any,
-    ) -> Union["Adaptor", "TextHandler", None]:
+    ) -> Union["Selector", "TextHandler", None]:
         """Search the current tree with XPath selectors and return the first result if possible, otherwise return `None`
 
         **Important:
@@ -563,16 +561,16 @@ class Adaptor(SelectorsGeneration):
          Note: **Additional keyword arguments will be passed as XPath variables in the XPath expression!**
 
         :param selector: The XPath selector to be used.
-        :param auto_match: Enabled will make the function try to relocate the element if it was 'saved' before
+        :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
         :param identifier: A string that will be used to save/retrieve element's data in auto-matching,
          otherwise the selector will be used.
-        :param auto_save: Automatically save new elements for `auto_match` later
+        :param auto_save: Automatically save new elements for `adaptive` later
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
         """
         for element in self.xpath(
-            selector, identifier, auto_match, auto_save, percentage, **kwargs
+            selector, identifier, adaptive, auto_save, percentage, **kwargs
         ):
             return element
         return None
@@ -581,10 +579,10 @@ class Adaptor(SelectorsGeneration):
         self,
         selector: str,
         identifier: str = "",
-        auto_match: bool = False,
+        adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 0,
-    ) -> Union["Adaptors[Adaptor]", List, "TextHandlers[TextHandler]"]:
+    ) -> Union["Selectors[Selector]", List, "TextHandlers[TextHandler]"]:
         """Search the current tree with CSS3 selectors
 
         **Important:
@@ -592,24 +590,24 @@ class Adaptor(SelectorsGeneration):
         and want to relocate the same element(s)**
 
         :param selector: The CSS3 selector to be used.
-        :param auto_match: Enabled will make the function try to relocate the element if it was 'saved' before
+        :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
         :param identifier: A string that will be used to save/retrieve element's data in auto-matching,
          otherwise the selector will be used.
-        :param auto_save: Automatically save new elements for `auto_match` later
+        :param auto_save: Automatically save new elements for `adaptive` later
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
-        :return: `Adaptors` class.
+        :return: `Selectors` class.
         """
         try:
-            if not self.__auto_match_enabled or "," not in selector:
+            if not self.__adaptive_enabled or "," not in selector:
                 # No need to split selectors in this case, let's save some CPU cycles :)
                 xpath_selector = translator_instance.css_to_xpath(selector)
                 return self.xpath(
                     xpath_selector,
                     identifier or selector,
-                    auto_match,
+                    adaptive,
                     auto_save,
                     percentage,
                 )
@@ -625,7 +623,7 @@ class Adaptor(SelectorsGeneration):
                     results += self.xpath(
                         xpath_selector,
                         identifier or single_selector.canonical(),
-                        auto_match,
+                        adaptive,
                         auto_save,
                         percentage,
                     )
@@ -643,11 +641,11 @@ class Adaptor(SelectorsGeneration):
         self,
         selector: str,
         identifier: str = "",
-        auto_match: bool = False,
+        adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 0,
         **kwargs: Any,
-    ) -> Union["Adaptors[Adaptor]", List, "TextHandlers[TextHandler]"]:
+    ) -> Union["Selectors[Selector]", List, "TextHandlers[TextHandler]"]:
         """Search the current tree with XPath selectors
 
         **Important:
@@ -657,31 +655,31 @@ class Adaptor(SelectorsGeneration):
          Note: **Additional keyword arguments will be passed as XPath variables in the XPath expression!**
 
         :param selector: The XPath selector to be used.
-        :param auto_match: Enabled will make the function try to relocate the element if it was 'saved' before
+        :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
         :param identifier: A string that will be used to save/retrieve element's data in auto-matching,
          otherwise the selector will be used.
-        :param auto_save: Automatically save new elements for `auto_match` later
+        :param auto_save: Automatically save new elements for `adaptive` later
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
-        :return: `Adaptors` class.
+        :return: `Selectors` class.
         """
         try:
             elements = self._root.xpath(selector, **kwargs)
 
             if elements:
                 if auto_save:
-                    if not self.__auto_match_enabled:
+                    if not self.__adaptive_enabled:
                         log.warning(
-                            "Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info."
+                            "Argument `auto_save` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
                         )
                     else:
                         self.save(elements[0], identifier or selector)
 
                 return self.__handle_elements(elements)
-            elif self.__auto_match_enabled:
-                if auto_match:
+            elif self.__adaptive_enabled:
+                if adaptive:
                     element_data = self.retrieve(identifier or selector)
                     if element_data:
                         elements = self.relocate(element_data, percentage)
@@ -690,13 +688,13 @@ class Adaptor(SelectorsGeneration):
 
                 return self.__handle_elements(elements)
             else:
-                if auto_match:
+                if adaptive:
                     log.warning(
-                        "Argument `auto_match` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info."
+                        "Argument `adaptive` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
                     )
                 elif auto_save:
                     log.warning(
-                        "Argument `auto_save` will be ignored because `auto_match` wasn't enabled on initialization. Check docs for more info."
+                        "Argument `auto_save` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
                     )
 
                 return self.__handle_elements(elements)
@@ -713,12 +711,12 @@ class Adaptor(SelectorsGeneration):
         self,
         *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]],
         **kwargs: str,
-    ) -> "Adaptors":
+    ) -> "Selectors":
         """Find elements by filters of your creations for ease.
 
         :param args: Tag name(s), iterable of tag names, regex patterns, function, or a dictionary of elements' attributes. Leave empty for selecting all.
         :param kwargs: The attributes you want to filter elements based on it.
-        :return: The `Adaptors` object of the elements or empty list
+        :return: The `Selectors` object of the elements or empty list
         """
         # Attributes that are Python reserved words and can't be used directly
         # Ex: find_all('a', class="blah") -> find_all('a', class_="blah")
@@ -735,7 +733,7 @@ class Adaptor(SelectorsGeneration):
 
         attributes = dict()
         tags, patterns = set(), set()
-        results, functions, selectors = Adaptors([]), [], []
+        results, functions, selectors = Selectors([]), [], []
 
         # Brace yourself for a wonderful journey!
         for arg in args:
@@ -766,7 +764,7 @@ class Adaptor(SelectorsGeneration):
                     functions.append(arg)
                 else:
                     raise TypeError(
-                        "Callable filter function must have at least one argument to take `Adaptor` objects."
+                        "Callable filter function must have at least one argument to take `Selector` objects."
                     )
 
             else:
@@ -820,12 +818,12 @@ class Adaptor(SelectorsGeneration):
         self,
         *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]],
         **kwargs: str,
-    ) -> Union["Adaptor", None]:
+    ) -> Union["Selector", None]:
         """Find elements by filters of your creations for ease, then return the first result. Otherwise return `None`.
 
         :param args: Tag name(s), iterable of tag names, regex patterns, function, or a dictionary of elements' attributes. Leave empty for selecting all.
         :param kwargs: The attributes you want to filter elements based on it.
-        :return: The `Adaptor` object of the element or `None` if the result didn't match
+        :return: The `Selector` object of the element or `None` if the result didn't match
         """
         for element in self.find_all(*args, **kwargs):
             return element
@@ -928,15 +926,15 @@ class Adaptor(SelectorsGeneration):
         return score
 
     def save(
-        self, element: Union["Adaptor", html.HtmlElement], identifier: str
+        self, element: Union["Selector", html.HtmlElement], identifier: str
     ) -> None:
         """Saves the element's unique properties to the storage for retrieval and relocation later
 
-        :param element: The element itself that we want to save to storage, it can be an ` Adaptor ` or pure ` HtmlElement `
+        :param element: The element itself that we want to save to storage, it can be an ` Selector ` or pure ` HtmlElement `
         :param identifier: This is the identifier that will be used to retrieve the element later from the storage. See
             the docs for more info.
         """
-        if self.__auto_match_enabled:
+        if self.__adaptive_enabled:
             if isinstance(element, self.__class__):
                 element = element._root
 
@@ -956,7 +954,7 @@ class Adaptor(SelectorsGeneration):
             the docs for more info.
         :return: A dictionary of the unique properties
         """
-        if self.__auto_match_enabled:
+        if self.__adaptive_enabled:
             return self._storage.retrieve(identifier)
 
         log.critical(
@@ -1065,7 +1063,7 @@ class Adaptor(SelectorsGeneration):
             "src",
         ),
         match_text: bool = False,
-    ) -> Union["Adaptors[Adaptor]", List]:
+    ) -> Union["Selectors[Selector]", List]:
         """Find elements that are in the same tree depth in the page with the same tag name and same parent tag etc...
         then return the ones that match the current element attributes with a percentage higher than the input threshold.
 
@@ -1084,7 +1082,7 @@ class Adaptor(SelectorsGeneration):
         :param match_text: If True, element text content will be taken into calculation while matching.
             Not recommended to use in normal cases, but it depends.
 
-        :return: A ``Adaptors`` container of ``Adaptor`` objects or empty list
+        :return: A ``Selectors`` container of ``Selector`` objects or empty list
         """
         # We will use the elements' root from now on to get the speed boost of using Lxml directly
         root = self._root
@@ -1128,7 +1126,7 @@ class Adaptor(SelectorsGeneration):
         partial: bool = False,
         case_sensitive: bool = False,
         clean_match: bool = True,
-    ) -> Union["Adaptors[Adaptor]", "Adaptor"]:
+    ) -> Union["Selectors[Selector]", "Selector"]:
         """Find elements that its text content fully/partially matches input.
         :param text: Text query to match
         :param first_match: Returns the first element that matches conditions, enabled by default
@@ -1137,7 +1135,7 @@ class Adaptor(SelectorsGeneration):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         """
 
-        results = Adaptors([])
+        results = Selectors([])
         if not case_sensitive:
             text = text.lower()
 
@@ -1174,14 +1172,14 @@ class Adaptor(SelectorsGeneration):
         first_match: bool = True,
         case_sensitive: bool = False,
         clean_match: bool = True,
-    ) -> Union["Adaptors[Adaptor]", "Adaptor"]:
+    ) -> Union["Selectors[Selector]", "Selector"]:
         """Find elements that its text content matches the input regex pattern.
         :param query: Regex query/pattern to match
         :param first_match: Return the first element that matches conditions; enabled by default.
         :param case_sensitive: If enabled, the letters case will be taken into consideration in the regex.
         :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching.
         """
-        results = Adaptors([])
+        results = Selectors([])
 
         # This selector gets all elements with text content
         for node in self.__handle_elements(
@@ -1206,24 +1204,24 @@ class Adaptor(SelectorsGeneration):
         return results
 
 
-class Adaptors(List[Adaptor]):
+class Selectors(List[Selector]):
     """
-    The `Adaptors` class is a subclass of the builtin ``List`` class, which provides a few additional methods.
+    The `Selectors` class is a subclass of the builtin ``List`` class, which provides a few additional methods.
     """
 
     __slots__ = ()
 
     @typing.overload
-    def __getitem__(self, pos: SupportsIndex) -> Adaptor:
+    def __getitem__(self, pos: SupportsIndex) -> Selector:
         pass
 
     @typing.overload
-    def __getitem__(self, pos: slice) -> "Adaptors":
+    def __getitem__(self, pos: slice) -> "Selectors":
         pass
 
     def __getitem__(
         self, pos: Union[SupportsIndex, slice]
-    ) -> Union[Adaptor, "Adaptors"]:
+    ) -> Union[Selector, "Selectors"]:
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
             return self.__class__(lst)
@@ -1237,10 +1235,10 @@ class Adaptors(List[Adaptor]):
         auto_save: bool = False,
         percentage: int = 0,
         **kwargs: Any,
-    ) -> "Adaptors[Adaptor]":
+    ) -> "Selectors[Selector]":
         """
         Call the ``.xpath()`` method for each element in this list and return
-        their results as another `Adaptors` class.
+        their results as another `Selectors` class.
 
         **Important:
         It's recommended to use the identifier argument if you plan to use a different selector later
@@ -1251,12 +1249,12 @@ class Adaptors(List[Adaptor]):
         :param selector: The XPath selector to be used.
         :param identifier: A string that will be used to retrieve element's data in auto-matching,
          otherwise the selector will be used.
-        :param auto_save: Automatically save new elements for `auto_match` later
+        :param auto_save: Automatically save new elements for `adaptive` later
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
-        :return: `Adaptors` class.
+        :return: `Selectors` class.
         """
         results = [
             n.xpath(
@@ -1272,10 +1270,10 @@ class Adaptors(List[Adaptor]):
         identifier: str = "",
         auto_save: bool = False,
         percentage: int = 0,
-    ) -> "Adaptors[Adaptor]":
+    ) -> "Selectors[Selector]":
         """
         Call the ``.css()`` method for each element in this list and return
-        their results flattened as another `Adaptors` class.
+        their results flattened as another `Selectors` class.
 
         **Important:
         It's recommended to use the identifier argument if you plan to use a different selector later
@@ -1284,12 +1282,12 @@ class Adaptors(List[Adaptor]):
         :param selector: The CSS3 selector to be used.
         :param identifier: A string that will be used to retrieve element's data in auto-matching,
          otherwise the selector will be used.
-        :param auto_save: Automatically save new elements for `auto_match` later
+        :param auto_save: Automatically save new elements for `adaptive` later
         :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
-        :return: `Adaptors` class.
+        :return: `Selectors` class.
         """
         results = [
             n.css(selector, identifier or selector, False, auto_save, percentage)
@@ -1340,7 +1338,7 @@ class Adaptors(List[Adaptor]):
                 return result
         return default
 
-    def search(self, func: Callable[["Adaptor"], bool]) -> Union["Adaptor", None]:
+    def search(self, func: Callable[["Selector"], bool]) -> Union["Selector", None]:
         """Loop over all current elements and return the first element that matches the passed function
         :param func: A function that takes each element as an argument and returns True/False
         :return: The first element that match the function or ``None`` otherwise.
@@ -1350,10 +1348,10 @@ class Adaptors(List[Adaptor]):
                 return element
         return None
 
-    def filter(self, func: Callable[["Adaptor"], bool]) -> "Adaptors[Adaptor]":
+    def filter(self, func: Callable[["Selector"], bool]) -> "Selectors[Selector]":
         """Filter current elements based on the passed function
         :param func: A function that takes each element as an argument and returns True/False
-        :return: The new `Adaptors` object or empty list otherwise.
+        :return: The new `Selectors` object or empty list otherwise.
         """
         return self.__class__([element for element in self if func(element)])
 
@@ -1382,4 +1380,4 @@ class Adaptors(List[Adaptor]):
 
     def __getstate__(self) -> Any:
         # lxml don't like it :)
-        raise TypeError("Can't pickle Adaptors object")
+        raise TypeError("Can't pickle Selectors object")

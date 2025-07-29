@@ -239,7 +239,7 @@ class ResponseFactory:
 
         :param response: `curl_cffi` response object
         :param parser_arguments: Additional arguments to be passed to the `Response` object constructor.
-        :return: A `Response` object that is the same as `Adaptor` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
+        :return: A `Response` object that is the same as `Selector` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         return Response(
             url=response.url,

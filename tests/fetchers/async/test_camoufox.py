@@ -3,7 +3,7 @@ import pytest_httpbin
 
 from scrapling import StealthyFetcher
 
-StealthyFetcher.auto_match = True
+StealthyFetcher.adaptive = True
 
 
 @pytest_httpbin.use_class_based_httpbin

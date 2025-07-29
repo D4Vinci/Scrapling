@@ -3,7 +3,7 @@ import pytest_httpbin
 
 from scrapling.fetchers import AsyncFetcher
 
-AsyncFetcher.auto_match = True
+AsyncFetcher.adaptive = True
 
 
 @pytest_httpbin.use_class_based_httpbin

@@ -10,12 +10,12 @@ def __getattr__(name):
         from scrapling.fetchers import Fetcher as cls
 
         return cls
-    elif name == "Adaptor":
-        from scrapling.parser import Adaptor as cls
+    elif name == "Selector":
+        from scrapling.parser import Selector as cls
 
         return cls
-    elif name == "Adaptors":
-        from scrapling.parser import Adaptors as cls
+    elif name == "Selectors":
+        from scrapling.parser import Selectors as cls
 
         return cls
     elif name == "AttributesHandler":
@@ -46,4 +46,4 @@ def __getattr__(name):
         raise AttributeError(f"module 'scrapling' has no attribute '{name}'")
 
 
-__all__ = ["Adaptor", "Fetcher", "AsyncFetcher", "StealthyFetcher", "DynamicFetcher"]
+__all__ = ["Selector", "Fetcher", "AsyncFetcher", "StealthyFetcher", "DynamicFetcher"]

@@ -12,7 +12,7 @@ from parsel import Selector
 from pyquery import PyQuery as pq
 from selectolax.parser import HTMLParser
 
-from scrapling import Adaptor
+from scrapling import Selector as ScraplingSelector
 
 large_html = (
     "<html><body>" + '<div class="item">' * 5000 + "</div>" * 5000 + "</body></html>"
@@ -73,9 +73,9 @@ def test_pyquery():
 @benchmark
 def test_scrapling():
     # No need to do `.extract()` like parsel to extract text
-    # Also, this is faster than `[t.text for t in Adaptor(large_html, auto_match=False).css('.item')]`
+    # Also, this is faster than `[t.text for t in Selector(large_html, adaptive=False).css('.item')]`
     # for obvious reasons, of course.
-    return Adaptor(large_html, auto_match=False).css(".item::text")
+    return ScraplingSelector(large_html, adaptive=False).css(".item::text")
 
 
 @benchmark
@@ -112,7 +112,7 @@ def test_scrapling_text(request_html):
     # Will loop over resulted elements to get text too to make comparison even more fair otherwise Scrapling will be even faster
     return [
         element.text
-        for element in Adaptor(request_html, auto_match=False)
+        for element in ScraplingSelector(request_html, adaptive=False)
         .find_by_text("Tipping the Velvet", first_match=True)
         .find_similar(ignore_attributes=["title"])
     ]

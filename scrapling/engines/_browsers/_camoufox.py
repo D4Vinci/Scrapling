@@ -70,8 +70,8 @@ class StealthySession:
         "os_randomize",
         "disable_ads",
         "geoip",
-        "adaptor_arguments",
-        "additional_arguments",
+        "selector_config",
+        "additional_args",
         "playwright",
         "browser",
         "context",
@@ -105,8 +105,8 @@ class StealthySession:
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,
-        adaptor_arguments: Optional[Dict] = None,
-        additional_arguments: Optional[Dict] = None,
+        selector_config: Optional[Dict] = None,
+        additional_args: Optional[Dict] = None,
     ):
         """A Browser session manager with page pooling
 
@@ -136,8 +136,8 @@ class StealthySession:
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
-        :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
-        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
 
         params = {
@@ -163,8 +163,8 @@ class StealthySession:
             "os_randomize": os_randomize,
             "disable_ads": disable_ads,
             "geoip": geoip,
-            "adaptor_arguments": adaptor_arguments,
-            "additional_arguments": additional_arguments,
+            "selector_config": selector_config,
+            "additional_args": additional_args,
         }
         config = validate(params, CamoufoxConfig)
 
@@ -190,14 +190,14 @@ class StealthySession:
         self.os_randomize = config.os_randomize
         self.disable_ads = config.disable_ads
         self.geoip = config.geoip
-        self.adaptor_arguments = config.adaptor_arguments
-        self.additional_arguments = config.additional_arguments
+        self.selector_config = config.selector_config
+        self.additional_args = config.additional_args
 
         self.playwright: Optional[Playwright] = None
         self.context: Optional[BrowserContext] = None
         self.page_pool = PagePool(self.max_pages)
         self._closed = False
-        self.adaptor_arguments = config.adaptor_arguments
+        self.selector_config = config.selector_config
         self.page_action = config.page_action
         self._headers_keys = (
             set(map(str.lower, self.extra_headers.keys()))
@@ -223,7 +223,7 @@ class StealthySession:
                 "block_images": self.block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
                 "os": None if self.os_randomize else get_os_name(),
                 "user_data_dir": "",
-                **self.additional_arguments,
+                **self.additional_args,
             }
         )
 
@@ -433,7 +433,7 @@ class StealthySession:
 
             page_info.page.wait_for_timeout(self.wait)
             response = ResponseFactory.from_playwright_response(
-                page_info.page, first_response, final_response, self.adaptor_arguments
+                page_info.page, first_response, final_response, self.selector_config
             )
 
             # Mark the page as ready for next use
@@ -482,8 +482,8 @@ class AsyncStealthySession(StealthySession):
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,
-        adaptor_arguments: Optional[Dict] = None,
-        additional_arguments: Optional[Dict] = None,
+        selector_config: Optional[Dict] = None,
+        additional_args: Optional[Dict] = None,
     ):
         """A Browser session manager with page pooling
 
@@ -513,8 +513,8 @@ class AsyncStealthySession(StealthySession):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
-        :param adaptor_arguments: The arguments that will be passed in the end while creating the final Adaptor's class.
-        :param additional_arguments: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
         super().__init__(
             max_pages,
@@ -539,8 +539,8 @@ class AsyncStealthySession(StealthySession):
             os_randomize,
             disable_ads,
             geoip,
-            adaptor_arguments,
-            additional_arguments,
+            selector_config,
+            additional_args,
         )
         self.playwright: Optional[AsyncPlaywright] = None
         self.context: Optional[AsyncBrowserContext] = None
@@ -731,7 +731,7 @@ class AsyncStealthySession(StealthySession):
 
             # Create response object
             response = await ResponseFactory.from_async_playwright_response(
-                page_info.page, first_response, final_response, self.adaptor_arguments
+                page_info.page, first_response, final_response, self.selector_config
             )
 
             # Mark the page as ready for next use

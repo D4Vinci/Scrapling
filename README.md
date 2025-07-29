@@ -52,14 +52,14 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 ```python
 >> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
->> StealthyFetcher.auto_match = True
+>> StealthyFetcher.adaptive = True
 # Fetch websites' source under the radar!
 >> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
 >> print(page.status)
 200
 >> products = page.css('.product', auto_save=True)  # Scrape data that survives website design changes!
->> # Later, if the website structure changes, pass `auto_match=True`
->> products = page.css('.product', auto_match=True)  # and Scrapling still finds them!
+>> # Later, if the website structure changes, pass `adaptive=True`
+>> products = page.css('.product', adaptive=True)  # and Scrapling still finds them!
 ```
 
 # Sponsors 
@@ -150,7 +150,7 @@ Tired of your PC slowing you down? Can’t keep your machine on 24/7 for scrapin
 ```python
 from scrapling.fetchers import Fetcher
 
-# Do HTTP GET request to a web page and create an Adaptor instance
+# Do HTTP GET request to a web page and create an Selector instance
 page = Fetcher.get('https://quotes.toscrape.com/', stealthy_headers=True)
 # Get all text content from all HTML tags in the page except the `script` and `style` tags
 page.get_all_text(ignore_tags=('script', 'style'))
@@ -219,7 +219,7 @@ Here are the results:
 |  Scrapling  |   2.51    |     1.0x     |
 | AutoScraper |   11.41   |    4.546x    |
 
-Scrapling can find elements with more methods and returns the entire element's `Adaptor` object, not only text like AutoScraper. So, to make this test fair, both libraries will extract an element with text, find similar elements, and then extract the text content for all of them. 
+Scrapling can find elements with more methods and returns the entire element's `Selector` object, not only text like AutoScraper. So, to make this test fair, both libraries will extract an element with text, find similar elements, and then extract the text content for all of them. 
 
 As you see, Scrapling is still 4.5 times faster at the same task. 
 

@@ -39,7 +39,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     cookies: Optional[List[Dict]] = None
     network_idle: bool = False
     wait_selector_state: SelectorWaitStates = "attached"
-    adaptor_arguments: Optional[Dict] = None
+    selector_config: Optional[Dict] = None
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
@@ -57,8 +57,8 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
             self.__validate_cdp(self.cdp_url)
         if not self.cookies:
             self.cookies = []
-        if not self.adaptor_arguments:
-            self.adaptor_arguments = {}
+        if not self.selector_config:
+            self.selector_config = {}
 
     @staticmethod
     def __validate_cdp(cdp_url):
@@ -105,8 +105,8 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     os_randomize: bool = False
     disable_ads: bool = False
     geoip: bool = False
-    adaptor_arguments: Optional[Dict] = None
-    additional_arguments: Optional[Dict] = None
+    selector_config: Optional[Dict] = None
+    additional_args: Optional[Dict] = None
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
@@ -136,10 +136,10 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
             self.cookies = []
         if self.solve_cloudflare and self.timeout < 60_000:
             self.timeout = 60_000
-        if not self.adaptor_arguments:
-            self.adaptor_arguments = {}
-        if not self.additional_arguments:
-            self.additional_arguments = {}
+        if not self.selector_config:
+            self.selector_config = {}
+        if not self.additional_args:
+            self.additional_args = {}
 
 
 def validate(params, model):
