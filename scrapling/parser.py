@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import re
 from inspect import signature
 from difflib import SequenceMatcher
@@ -38,6 +38,8 @@ from scrapling.core.storage import (
 )
 from scrapling.core.translator import translator_instance
 from scrapling.core.utils import clean_spaces, flatten, html_forbidden, is_jsonable, log
+
+__DEFAULT_DB_FILE__ = str(Path(__file__).parent / "elements_storage.db")
 
 
 class Selector(SelectorsGeneration):
@@ -145,9 +147,7 @@ class Selector(SelectorsGeneration):
             else:
                 if not storage_args:
                     storage_args = {
-                        "storage_file": os.path.join(
-                            os.path.dirname(__file__), "elements_storage.db"
-                        ),
+                        "storage_file": __DEFAULT_DB_FILE__,
                         "url": url,
                     }
 

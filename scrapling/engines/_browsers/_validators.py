@@ -1,13 +1,12 @@
 from msgspec import Struct, convert, ValidationError
 from urllib.parse import urlparse
-from os.path import exists, isdir
+from pathlib import Path
 
 from scrapling.core._types import (
     Optional,
     Union,
     Dict,
     Callable,
-    Literal,
     List,
     SelectorWaitStates,
 )
@@ -125,9 +124,10 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
             self.addons = []
         else:
             for addon in self.addons:
-                if not exists(addon):
+                addon_path = Path(addon)
+                if not addon_path.exists():
                     raise FileNotFoundError(f"Addon's path not found: {addon}")
-                elif not isdir(addon):
+                elif not addon_path.is_dir():
                     raise ValueError(
                         f"Addon's path is not a folder, you need to pass a folder of the extracted addon: {addon}"
                     )

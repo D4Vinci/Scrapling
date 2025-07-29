@@ -2,16 +2,19 @@
 Functions related to files and URLs
 """
 
-import os
+from pathlib import Path
+from functools import lru_cache
 from urllib.parse import urlencode, urlparse
 
 from playwright.async_api import Route as async_Route
 from msgspec import Struct, structs, convert, ValidationError
 from playwright.sync_api import Route
 
+from scrapling.core.utils import log
 from scrapling.core._types import Dict, Optional, Union, Tuple
-from scrapling.core.utils import log, lru_cache
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
+
+__BYPASSES_DIR__ = Path(__file__).parent / "bypasses"
 
 
 class ProxyDict(Struct):
@@ -129,5 +132,4 @@ def js_bypass_path(filename: str) -> str:
     :param filename: The base filename of the JS file.
     :return: The full path of the JS file.
     """
-    current_directory = os.path.dirname(__file__)
-    return os.path.join(current_directory, "bypasses", filename)
+    return str(__BYPASSES_DIR__ / filename)

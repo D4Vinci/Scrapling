@@ -6,7 +6,6 @@ from http import cookies as Cookie
 from collections import namedtuple
 from shlex import split as shlex_split
 from tempfile import mkstemp as make_temp_file
-from os import write as os_write, close as os_close
 from urllib.parse import urlparse, urlunparse, parse_qsl
 from argparse import ArgumentParser, SUPPRESS
 from webbrowser import open as open_in_browser
@@ -405,9 +404,10 @@ def show_page_in_browser(page: Selector):
         return
 
     try:
-        fd, fname = make_temp_file(".html")
-        os_write(fd, page.body.encode("utf-8"))
-        os_close(fd)
+        fd, fname = make_temp_file(prefix="scrapling_view_", suffix=".html")
+        with open(fd, "w", encoding="utf-8") as f:
+            f.write(page.body)
+
         open_in_browser(f"file://{fname}")
     except IOError as e:
         log.error(f"Failed to write temporary file for viewing: {e}")
