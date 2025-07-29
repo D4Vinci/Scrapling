@@ -125,17 +125,6 @@ class _StorageTools:
         )
 
 
-# def _root_type_verifier(method):
-#     # Just to make sure we are safe
-#     @wraps(method)
-#     def _impl(self, *args, **kw):
-#         # All html types inherits from HtmlMixin so this to check for all at once
-#         if not issubclass(type(self._root), html.HtmlMixin):
-#             raise ValueError(f"Cannot use function on a Node of type {type(self._root)!r}")
-#         return method(self, *args, **kw)
-#     return _impl
-
-
 @lru_cache(128, typed=True)
 def clean_spaces(string):
     string = string.translate(__CLEANING_TABLE__)
