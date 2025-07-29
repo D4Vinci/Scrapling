@@ -1383,3 +1383,8 @@ class Selectors(List[Selector]):
     def __getstate__(self) -> Any:
         # lxml don't like it :)
         raise TypeError("Can't pickle Selectors object")
+
+
+# For backward compatibility
+Adaptor = Selector
+Adaptors = Selectors
