@@ -34,8 +34,7 @@ class ResponseFactory:
                         Response(
                             url=current_request.url,
                             # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                            text="",
-                            body=b"",
+                            content="",
                             status=current_response.status if current_response else 301,
                             reason=(
                                 current_response.status_text
@@ -112,8 +111,7 @@ class ResponseFactory:
 
         return Response(
             url=page.url,
-            text=page_content,
-            body=page_content.encode("utf-8"),
+            content=page_content,
             status=final_response.status,
             reason=status_text,
             encoding=encoding,
@@ -141,8 +139,7 @@ class ResponseFactory:
                         Response(
                             url=current_request.url,
                             # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                            text="",
-                            body=b"",
+                            content="",
                             status=current_response.status if current_response else 301,
                             reason=(
                                 current_response.status_text
@@ -221,8 +218,7 @@ class ResponseFactory:
 
         return Response(
             url=page.url,
-            text=page_content,
-            body=page_content.encode("utf-8"),
+            content=page_content,
             status=final_response.status,
             reason=status_text,
             encoding=encoding,
@@ -243,8 +239,7 @@ class ResponseFactory:
         """
         return Response(
             url=response.url,
-            text=response.text,
-            body=response.content
+            content=response.content
             if type(response.content) is bytes
             else response.content.encode(),
             status=response.status_code,

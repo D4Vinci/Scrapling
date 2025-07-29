@@ -173,10 +173,7 @@ class TestErrorHandling:
             _ = Selector(root="ayo", adaptive=False)
 
         with pytest.raises(TypeError):
-            _ = Selector(text=1, adaptive=False)
-
-        with pytest.raises(TypeError):
-            _ = Selector(body=1, adaptive=False)
+            _ = Selector(content=1, adaptive=False)
 
     def test_invalid_storage(self, page, html_content):
         """Test invalid storage parameter"""

@@ -50,9 +50,8 @@ class Selector(SelectorsGeneration):
 
     def __init__(
         self,
-        text: Optional[str] = None,
+        content: Optional[Union[str, bytes]] = None,
         url: Optional[str] = None,
-        body: bytes = b"",
         encoding: str = "utf8",
         huge_tree: bool = True,
         root: Optional[html.HtmlElement] = None,
@@ -72,9 +71,8 @@ class Selector(SelectorsGeneration):
         not possible. You can test it here and see code explodes with `AssertionError: invalid Element proxy at...`.
         It's an old issue with lxml, see `this entry <https://bugs.launchpad.net/lxml/+bug/736708>`
 
-        :param text: HTML body passed as text.
+        :param content: HTML content as either string or bytes.
         :param url: It allows storing a URL with the HTML data for retrieving later.
-        :param body: HTML body as an ``bytes`` object. It can be used instead of the ``text`` argument.
         :param encoding: The encoding type that will be used in HTML parsing, default is `UTF-8`
         :param huge_tree: Enabled by default, should always be enabled when parsing large HTML documents. This controls
              the libxml2 feature that forbids parsing certain large documents to protect from possible memory exhaustion.
@@ -88,27 +86,23 @@ class Selector(SelectorsGeneration):
         :param storage_args: A dictionary of ``argument->value`` pairs to be passed for the storage class.
             If empty, default values will be used.
         """
-        if root is None and not body and text is None:
+        if root is None and content is None:
             raise ValueError(
-                "Selector class needs text, body, or root arguments to work"
+                "Selector class needs HTML content, or root arguments to work"
             )
 
         self.__text = ""
         if root is None:
-            if text is None:
-                if not body or not isinstance(body, bytes):
-                    raise TypeError(
-                        f"body argument must be valid and of type bytes, got {body.__class__}"
-                    )
-
-                body = body.replace(b"\x00", b"").strip()
+            if isinstance(content, bytes):
+                body = content.replace(b"\x00", b"").strip()
+            elif isinstance(content, str):
+                body = (
+                    content.strip().replace("\x00", "").encode(encoding) or b"<html/>"
+                )
             else:
-                if not isinstance(text, str):
-                    raise TypeError(
-                        f"text argument must be of type str, got {text.__class__}"
-                    )
-
-                body = text.strip().replace("\x00", "").encode(encoding) or b"<html/>"
+                raise TypeError(
+                    f"content argument must be str or bytes, got {type(content)}"
+                )
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
             parser = html.HTMLParser(
@@ -122,8 +116,10 @@ class Selector(SelectorsGeneration):
                 strip_cdata=(not keep_cdata),
             )
             self._root = etree.fromstring(body, parser=parser, base_url=url)
-            if is_jsonable(text or body.decode()):
-                self.__text = TextHandler(text or body.decode())
+
+            jsonable_text = content if isinstance(content, str) else body.decode()
+            if is_jsonable(jsonable_text):
+                self.__text = TextHandler(jsonable_text)
 
         else:
             # All HTML types inherit from HtmlMixin so this to check for all at once
@@ -930,7 +926,7 @@ class Selector(SelectorsGeneration):
     ) -> None:
         """Saves the element's unique properties to the storage for retrieval and relocation later
 
-        :param element: The element itself that we want to save to storage, it can be an ` Selector ` or pure ` HtmlElement `
+        :param element: The element itself that we want to save to storage, it can be a ` Selector ` or pure ` HtmlElement `
         :param identifier: This is the identifier that will be used to retrieve the element later from the storage. See
             the docs for more info.
         """

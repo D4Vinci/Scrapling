@@ -103,8 +103,7 @@ class Response(Selector):
     def __init__(
         self,
         url: str,
-        text: str,
-        body: bytes,
+        content: str | bytes,
         status: int,
         reason: str,
         cookies: Union[Tuple[Dict[str, str], ...], Dict[str, str]],
@@ -122,10 +121,11 @@ class Response(Selector):
         self.headers = headers
         self.request_headers = request_headers
         self.history = history or []
-        encoding = ResponseEncoding.get_value(encoding, text)
+        encoding = ResponseEncoding.get_value(
+            encoding, content.decode("utf-8") if isinstance(content, bytes) else content
+        )
         super().__init__(
-            text=text,
-            body=body,
+            content=content,
             url=adaptive_domain or url,
             encoding=encoding,
             **selector_config,

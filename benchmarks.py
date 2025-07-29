@@ -80,7 +80,7 @@ def test_scrapling():
 
 @benchmark
 def test_parsel():
-    return Selector(text=large_html).css(".item::text").extract()
+    return Selector(content=large_html).css(".item::text").extract()
 
 
 @benchmark
