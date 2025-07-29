@@ -18,11 +18,12 @@ from scrapling.core._types import (
     Generator,
     SupportsIndex,
 )
-from scrapling.core.utils import _is_iterable, flatten
+from scrapling.core.utils import _is_iterable, flatten, __CONSECUTIVE_SPACES_REGEX__
 from scrapling.core._html_utils import _replace_entities
 
 # Define type variable for AttributeHandler value type
 _TextHandlerType = TypeVar("_TextHandlerType", bound="TextHandler")
+__CLEANING_TABLE__ = str.maketrans("\t\r\n", "   ")
 
 
 class TextHandler(str):
@@ -118,9 +119,8 @@ class TextHandler(str):
 
     def clean(self) -> Union[str, "TextHandler"]:
         """Return a new version of the string after removing all white spaces and consecutive spaces"""
-        trans_table = str.maketrans("\t\r\n", "   ")
-        data = self.translate(trans_table)
-        return self.__class__(sub(" +", " ", data).strip())
+        data = self.translate(__CLEANING_TABLE__)
+        return self.__class__(__CONSECUTIVE_SPACES_REGEX__.sub(" ", data).strip())
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):

@@ -14,6 +14,9 @@ html_forbidden = {
     html.HtmlComment,
 }
 
+__CLEANING_TABLE__ = str.maketrans({"\t": " ", "\n": None, "\r": None})
+__CONSECUTIVE_SPACES_REGEX__ = re.compile(r" +")
+
 
 @lru_cache(1, typed=True)
 def setup_logger():
@@ -135,6 +138,5 @@ class _StorageTools:
 
 @lru_cache(128, typed=True)
 def clean_spaces(string):
-    string = string.replace("\t", " ")
-    string = re.sub("[\n|\r]", "", string)
-    return re.sub(" +", " ", string)
+    string = string.translate(__CLEANING_TABLE__)
+    return __CONSECUTIVE_SPACES_REGEX__.sub(" ", string)
