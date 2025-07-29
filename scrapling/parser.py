@@ -253,14 +253,14 @@ class Selector(SelectorsGeneration):
         if not len(
             result
         ):  # Lxml will give a warning if I used something like `not result`
-            return Selectors([])
+            return Selectors()
 
         # From within the code, this method will always get a list of the same type,
         # so we will continue without checks for a slight performance boost
         if self._is_text_node(result[0]):
             return TextHandlers(list(map(self.__content_convertor, result)))
 
-        return Selectors(list(map(self.__element_convertor, result)))
+        return Selectors(map(self.__element_convertor, result))
 
     def __getstate__(self) -> Any:
         # lxml don't like it :)
@@ -378,11 +378,9 @@ class Selector(SelectorsGeneration):
     def children(self) -> "Selectors[Selector]":
         """Return the children elements of the current element or empty list otherwise"""
         return Selectors(
-            [
-                self.__element_convertor(child)
-                for child in self._root.iterchildren()
-                if type(child) not in html_forbidden
-            ]
+            self.__element_convertor(child)
+            for child in self._root.iterchildren()
+            if type(child) not in html_forbidden
         )
 
     @property
@@ -390,9 +388,9 @@ class Selector(SelectorsGeneration):
         """Return other children of the current element's parent or empty list otherwise"""
         if self.parent:
             return Selectors(
-                [child for child in self.parent.children if child._root != self._root]
+                child for child in self.parent.children if child._root != self._root
             )
-        return Selectors([])
+        return Selectors()
 
     def iterancestors(self) -> Generator["Selector", None, None]:
         """Return a generator that loops over all ancestors of the element, starting with the element's parent."""
@@ -734,7 +732,7 @@ class Selector(SelectorsGeneration):
 
         attributes = dict()
         tags, patterns = set(), set()
-        results, functions, selectors = Selectors([]), [], []
+        results, functions, selectors = Selectors(), [], []
 
         # Brace yourself for a wonderful journey!
         for arg in args:
@@ -1134,7 +1132,7 @@ class Selector(SelectorsGeneration):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         """
 
-        results = Selectors([])
+        results = Selectors()
         if not case_sensitive:
             text = text.lower()
 
@@ -1178,7 +1176,7 @@ class Selector(SelectorsGeneration):
         :param case_sensitive: If enabled, the letters case will be taken into consideration in the regex.
         :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching.
         """
-        results = Selectors([])
+        results = Selectors()
 
         # This selector gets all elements with text content
         for node in self.__handle_elements(
