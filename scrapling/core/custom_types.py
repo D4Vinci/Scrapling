@@ -116,9 +116,9 @@ class TextHandler(str):
 
     def clean(self) -> Union[str, "TextHandler"]:
         """Return a new version of the string after removing all white spaces and consecutive spaces"""
-        data = re.sub(r"[\t|\r|\n]", "", self)
-        data = re.sub(" +", " ", data)
-        return self.__class__(data.strip())
+        trans_table = str.maketrans("\t\r\n", "   ")
+        data = self.translate(trans_table)
+        return self.__class__(re.sub(" +", " ", data).strip())
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
     def get(self, default=None):
