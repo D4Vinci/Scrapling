@@ -150,7 +150,7 @@ Tired of your PC slowing you down? Can’t keep your machine on 24/7 for scrapin
 ```python
 from scrapling.fetchers import Fetcher
 
-# Do HTTP GET request to a web page and create an Selector instance
+# Do HTTP GET request to a web page and create a Selector instance
 page = Fetcher.get('https://quotes.toscrape.com/', stealthy_headers=True)
 # Get all text content from all HTML tags in the page except the `script` and `style` tags
 page.get_all_text(ignore_tags=('script', 'style'))

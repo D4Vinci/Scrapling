@@ -1,11 +1,11 @@
 """
-Most of this file is adapted version of the translator of parsel library with some modifications simply for 1 important reason...
+Most of this file is an adapted version of the parsel library's translator with some modifications simply for 1 important reason...
 
-To add pseudo-elements ``::text`` and ``::attr(ATTR_NAME)`` so we match Parsel/Scrapy selectors format which will be important in future releases but most importantly...
+To add pseudo-elements ``::text`` and ``::attr(ATTR_NAME)`` so we match the Parsel/Scrapy selectors format which will be important in future releases but most importantly...
 
 So you don't have to learn a new selectors/api method like what bs4 done with soupsieve :)
 
-    if you want to learn about this, head to https://cssselect.readthedocs.io/en/latest/#cssselect.FunctionalPseudoElement
+    If you want to learn about this, head to https://cssselect.readthedocs.io/en/latest/#cssselect.FunctionalPseudoElement
 """
 
 import re

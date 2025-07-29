@@ -570,7 +570,7 @@ Type 'exit' or press Ctrl+D to exit.
 class Convertor:
     """Utils for the extract shell command"""
 
-    _extension_map: dict[str, extraction_types] = {
+    _extension_map: Dict[str, extraction_types] = {
         "md": "markdown",
         "html": "html",
         "txt": "text",
@@ -591,7 +591,7 @@ class Convertor:
         css_selector: Optional[str] = None,
         main_content_only: bool = False,
     ) -> Generator[str, None, None]:
-        """Extract the content of an Selector"""
+        """Extract the content of a Selector"""
         if not page or not isinstance(page, Selector):
             raise TypeError("Input must be of type `Selector`")
         elif not extraction_type or extraction_type not in cls._extension_map.values():
@@ -624,7 +624,7 @@ class Convertor:
     def write_content_to_file(
         cls, page: Selector, filename: str, css_selector: Optional[str] = None
     ) -> None:
-        """Write an Selector's content to a file"""
+        """Write a Selector's content to a file"""
         if not page or not isinstance(page, Selector):
             raise TypeError("Input must be of type `Selector`")
         elif not filename or not isinstance(filename, str) or not filename.strip():

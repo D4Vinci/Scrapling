@@ -4,6 +4,7 @@ Type definitions for type checking purposes.
 
 from typing import (
     TYPE_CHECKING,
+    cast,
     overload,
     Any,
     Callable,
@@ -32,8 +33,13 @@ extraction_types = Literal["text", "html", "markdown"]
 StrOrBytes = Union[str, bytes]
 
 
-if TYPE_CHECKING:
-    # typing.Self requires Python 3.11
-    from typing_extensions import Self
-else:
-    Self = object
+try:
+    # Python 3.11+
+    from typing import Self  # novermin
+except ImportError:
+    try:
+        from typing_extensions import Self  # Backport
+    except ImportError:
+        from typing import TypeVar
+
+        Self = object

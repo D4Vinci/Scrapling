@@ -1,9 +1,13 @@
 class SelectorsGeneration:
-    """Selectors generation functions
+    """
+    Functions for generating selectors
     Trying to generate selectors like Firefox or maybe cleaner ones!? Ehm
-    Inspiration: https://searchfox.org/mozilla-central/source/devtools/shared/inspector/css-logic.js#591"""
+    Inspiration: https://searchfox.org/mozilla-central/source/devtools/shared/inspector/css-logic.js#591
+    """
 
-    def __general_selection(self, selection: str = "css", full_path=False) -> str:
+    def __general_selection(
+        self, selection: str = "css", full_path: bool = False
+    ) -> str:
         """Generate a selector for the current element.
         :return: A string of the generated selector.
         """
@@ -80,7 +84,7 @@ class SelectorsGeneration:
 
     @property
     def generate_xpath_selector(self) -> str:
-        """Generate a XPath selector for the current element
+        """Generate an XPath selector for the current element
         :return: A string of the generated selector.
         """
         return self.__general_selection("xpath")

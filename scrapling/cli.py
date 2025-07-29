@@ -3,6 +3,7 @@ from subprocess import check_output
 from sys import executable as python_executable
 
 from scrapling.core.utils import log
+from scrapling.engines.toolbelt import Response
 from scrapling.core._types import List, Optional, Dict, Tuple, Any, Callable
 from scrapling.fetchers import Fetcher, DynamicFetcher, StealthyFetcher
 from scrapling.core.shell import Convertor, _CookieParser, _ParseHeaders
@@ -32,12 +33,12 @@ def __ParseJSONData(json_string: Optional[str] = None) -> Optional[Dict[str, Any
 
 
 def __Request_and_Save(
-    fetcher_func: Callable,
+    fetcher_func: Callable[..., Response],
     url: str,
     output_file: str,
     css_selector: Optional[str] = None,
     **kwargs,
-):
+) -> None:
     """Make a request using the specified fetcher function and save the result"""
     # Handle relative paths - convert to an absolute path based on the current working directory
     output_path = Path(output_file)
