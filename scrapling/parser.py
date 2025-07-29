@@ -7,7 +7,14 @@ from urllib.parse import urljoin
 
 from cssselect import SelectorError, SelectorSyntaxError
 from cssselect import parse as split_selectors
-from lxml import etree, html
+from lxml.html import HtmlElement, HtmlMixin, HTMLParser
+from lxml.etree import (
+    tostring,
+    fromstring,
+    XPathError,
+    XPathEvalError,
+    _ElementUnicodeResult,
+)
 
 from scrapling.core._types import (
     Any,
@@ -54,7 +61,7 @@ class Selector(SelectorsGeneration):
         url: Optional[str] = None,
         encoding: str = "utf8",
         huge_tree: bool = True,
-        root: Optional[html.HtmlElement] = None,
+        root: Optional[HtmlElement] = None,
         keep_comments: Optional[bool] = False,
         keep_cdata: Optional[bool] = False,
         adaptive: Optional[bool] = False,
@@ -105,7 +112,7 @@ class Selector(SelectorsGeneration):
                 )
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
-            parser = html.HTMLParser(
+            parser = HTMLParser(
                 recover=True,
                 remove_blank_text=True,
                 remove_comments=(not keep_comments),
@@ -115,7 +122,7 @@ class Selector(SelectorsGeneration):
                 default_doctype=True,
                 strip_cdata=(not keep_cdata),
             )
-            self._root = etree.fromstring(body, parser=parser, base_url=url)
+            self._root = fromstring(body, parser=parser, base_url=url)
 
             jsonable_text = content if isinstance(content, str) else body.decode()
             if is_jsonable(jsonable_text):
@@ -123,7 +130,7 @@ class Selector(SelectorsGeneration):
 
         else:
             # All HTML types inherit from HtmlMixin so this to check for all at once
-            if not issubclass(type(root), html.HtmlMixin):
+            if not issubclass(type(root), HtmlMixin):
                 raise TypeError(
                     f"Root have to be a valid element of `html` module types to work, not of type {type(root)}"
                 )
@@ -190,7 +197,7 @@ class Selector(SelectorsGeneration):
     # Node functionalities, I wanted to move to a separate Mixin class, but it had a slight impact on performance
     @staticmethod
     def _is_text_node(
-        element: Union[html.HtmlElement, etree._ElementUnicodeResult],
+        element: Union[HtmlElement, _ElementUnicodeResult],
     ) -> bool:
         """Return True if the given element is a result of a string expression
         Examples:
@@ -198,11 +205,11 @@ class Selector(SelectorsGeneration):
             CSS3 -> '::text', '::attr(attrib)'...
         """
         # Faster than checking `element.is_attribute or element.is_text or element.is_tail`
-        return issubclass(type(element), etree._ElementUnicodeResult)
+        return issubclass(type(element), _ElementUnicodeResult)
 
     @staticmethod
     def __content_convertor(
-        element: Union[html.HtmlElement, etree._ElementUnicodeResult],
+        element: Union[HtmlElement, _ElementUnicodeResult],
     ) -> TextHandler:
         """Used internally to convert a single element's text content to TextHandler directly without checks
 
@@ -210,7 +217,7 @@ class Selector(SelectorsGeneration):
         """
         return TextHandler(str(element))
 
-    def __element_convertor(self, element: html.HtmlElement) -> "Selector":
+    def __element_convertor(self, element: HtmlElement) -> "Selector":
         """Used internally to convert a single HtmlElement to Selector directly without checks"""
         db_instance = (
             self._storage if (hasattr(self, "_storage") and self._storage) else None
@@ -228,19 +235,19 @@ class Selector(SelectorsGeneration):
         )
 
     def __handle_element(
-        self, element: Union[html.HtmlElement, etree._ElementUnicodeResult]
+        self, element: Union[HtmlElement, _ElementUnicodeResult]
     ) -> Union[TextHandler, "Selector", None]:
         """Used internally in all functions to convert a single element to type (Selector|TextHandler) when possible"""
         if element is None:
             return None
         elif self._is_text_node(element):
-            # etree._ElementUnicodeResult basically inherit from `str` so it's fine
+            # `_ElementUnicodeResult` basically inherit from `str` so it's fine
             return self.__content_convertor(element)
         else:
             return self.__element_convertor(element)
 
     def __handle_elements(
-        self, result: List[Union[html.HtmlElement, etree._ElementUnicodeResult]]
+        self, result: List[Union[HtmlElement, _ElementUnicodeResult]]
     ) -> Union["Selectors", "TextHandlers", List]:
         """Used internally in all functions to convert results to type (Selectors|TextHandlers) in bulk when possible"""
         if not len(
@@ -332,9 +339,7 @@ class Selector(SelectorsGeneration):
     def html_content(self) -> TextHandler:
         """Return the inner HTML code of the element"""
         return TextHandler(
-            etree.tostring(
-                self._root, encoding="unicode", method="html", with_tail=False
-            )
+            tostring(self._root, encoding="unicode", method="html", with_tail=False)
         )
 
     body = html_content
@@ -342,7 +347,7 @@ class Selector(SelectorsGeneration):
     def prettify(self) -> TextHandler:
         """Return a prettified version of the element's inner html-code"""
         return TextHandler(
-            etree.tostring(
+            tostring(
                 self._root,
                 encoding="unicode",
                 pretty_print=True,
@@ -467,10 +472,10 @@ class Selector(SelectorsGeneration):
     # From here we start with the selecting functions
     def relocate(
         self,
-        element: Union[Dict, html.HtmlElement, "Selector"],
+        element: Union[Dict, HtmlElement, "Selector"],
         percentage: int = 0,
         selector_type: bool = False,
-    ) -> Union[List[Union[html.HtmlElement, None]], "Selectors"]:
+    ) -> Union[List[Union[HtmlElement, None]], "Selectors"]:
         """This function will search again for the element in the page tree, used automatically on page structure change
 
         :param element: The element we want to relocate in the tree
@@ -485,7 +490,7 @@ class Selector(SelectorsGeneration):
         if isinstance(element, self.__class__):
             element = element._root
 
-        if issubclass(type(element), html.HtmlElement):
+        if issubclass(type(element), HtmlElement):
             element = _StorageTools.element_to_dict(element)
 
         for node in self._root.xpath(".//*"):
@@ -698,8 +703,8 @@ class Selector(SelectorsGeneration):
         except (
             SelectorError,
             SelectorSyntaxError,
-            etree.XPathError,
-            etree.XPathEvalError,
+            XPathError,
+            XPathEvalError,
         ) as e:
             raise SelectorSyntaxError(f"Invalid XPath selector: {selector}") from e
 
@@ -826,7 +831,7 @@ class Selector(SelectorsGeneration):
         return None
 
     def __calculate_similarity_score(
-        self, original: Dict, candidate: html.HtmlElement
+        self, original: Dict, candidate: HtmlElement
     ) -> float:
         """Used internally to calculate a score that shows how a candidate element similar to the original one
 
@@ -921,9 +926,7 @@ class Selector(SelectorsGeneration):
         )
         return score
 
-    def save(
-        self, element: Union["Selector", html.HtmlElement], identifier: str
-    ) -> None:
+    def save(self, element: Union["Selector", HtmlElement], identifier: str) -> None:
         """Saves the element's unique properties to the storage for retrieval and relocation later
 
         :param element: The element itself that we want to save to storage, it can be a ` Selector ` or pure ` HtmlElement `
@@ -1004,16 +1007,16 @@ class Selector(SelectorsGeneration):
 
     @staticmethod
     def __get_attributes(
-        element: html.HtmlElement, ignore_attributes: Union[List, Tuple]
+        element: HtmlElement, ignore_attributes: Union[List, Tuple]
     ) -> Dict:
         """Return attributes dictionary without the ignored list"""
         return {k: v for k, v in element.attrib.items() if k not in ignore_attributes}
 
     def __are_alike(
         self,
-        original: html.HtmlElement,
+        original: HtmlElement,
         original_attributes: Dict,
-        candidate: html.HtmlElement,
+        candidate: HtmlElement,
         ignore_attributes: Union[List, Tuple],
         similarity_threshold: float,
         match_text: bool = False,
