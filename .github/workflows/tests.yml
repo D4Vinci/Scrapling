@@ -46,16 +46,43 @@ jobs:
           pyproject.toml
           tox.ini
 
-    # Install browsers ONCE at the workflow level
-    - name: Install browser dependencies
+    - name: Install all browsers dependencies
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install playwright==1.52.0 rebrowser-playwright==1.52.0 camoufox
 
-    - name: Install browsers
+    - name: Retrieve Playwright browsers from cache if any
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/ms-playwright
+          ~/Library/Caches/ms-playwright
+          ~/.ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+
+    - name: Install Playwright browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
       run: |
         python3 -m playwright install chromium
         python3 -m playwright install-deps chromium firefox
+
+    - name: Retrieve Camoufox browser from cache if any
+      id: camoufox-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/camoufox
+          ~/Library/Caches/camoufox
+        key: ${{ runner.os }}-camoufox-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-camoufox-
+
+    - name: Install Camoufox browser
+      if: steps.camoufox-cache.outputs.cache-hit != 'true'
+      run: |
         python3 -m camoufox fetch --browserforge
 
     # Cache tox environments
