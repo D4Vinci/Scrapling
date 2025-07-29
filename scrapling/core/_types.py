@@ -16,7 +16,6 @@ from typing import (
     Optional,
     Pattern,
     Tuple,
-    Type,
     TypeVar,
     Union,
     Match,

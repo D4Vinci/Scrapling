@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from playwright.sync_api import Page as SyncPage
 from playwright.async_api import Page as AsyncPage
 
-from scrapling.core._types import Optional, Union, List, Literal
+from scrapling.core._types import Optional, List, Literal
 
 PageState = Literal["ready", "busy", "error"]  # States that a page can be in
 
@@ -14,7 +14,7 @@ class PageInfo:
     """Information about the page and its current state"""
 
     __slots__ = ("page", "state", "url")
-    page: Union[SyncPage, AsyncPage]
+    page: SyncPage | AsyncPage
     state: PageState
     url: Optional[str]
 
@@ -52,7 +52,7 @@ class PagePool:
         self.pages: List[PageInfo] = []
         self._lock = RLock()
 
-    def add_page(self, page: Union[SyncPage, AsyncPage]) -> PageInfo:
+    def add_page(self, page: SyncPage | AsyncPage) -> PageInfo:
         """Add a new page to the pool"""
         with self._lock:
             if len(self.pages) >= self.max_pages:

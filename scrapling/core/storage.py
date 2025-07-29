@@ -1,20 +1,20 @@
-from sqlite3 import connect as db_connect
-from threading import RLock
-from abc import ABC, abstractmethod
 from hashlib import sha256
+from threading import RLock
 from functools import lru_cache
+from abc import ABC, abstractmethod
+from sqlite3 import connect as db_connect
 
-from lxml.html import HtmlElement
 from orjson import dumps, loads
+from lxml.html import HtmlElement
 from tldextract import extract as tld
 
 from scrapling.core.utils import _StorageTools, log
-from scrapling.core._types import Dict, Optional, Union, Any
+from scrapling.core._types import Dict, Optional, Any
 
 
 class StorageSystemMixin(ABC):
     # If you want to make your own storage system, you have to inherit from this
-    def __init__(self, url: Union[str, None] = None):
+    def __init__(self, url: Optional[str] = None):
         """
         :param url: URL of the website we are working on to separate it from other websites data
         """
@@ -74,7 +74,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
     Mainly built, so the library can run in threaded frameworks like scrapy or threaded tools
     > It's optimized for threaded applications, but running it without threads shouldn't make it slow."""
 
-    def __init__(self, storage_file: str, url: Union[str, None] = None):
+    def __init__(self, storage_file: str, url: Optional[str] = None):
         """
         :param storage_file: File to be used to store elements' data.
         :param url: URL of the website we are working on to separate it from other websites data

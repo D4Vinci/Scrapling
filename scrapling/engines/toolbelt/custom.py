@@ -10,8 +10,6 @@ from scrapling.core._types import (
     List,
     Optional,
     Tuple,
-    Type,
-    Union,
 )
 from scrapling.core.custom_types import MappingProxyType
 from scrapling.core.utils import log, lru_cache
@@ -106,7 +104,7 @@ class Response(Selector):
         content: str | bytes,
         status: int,
         reason: str,
-        cookies: Union[Tuple[Dict[str, str], ...], Dict[str, str]],
+        cookies: Tuple[Dict[str, str], ...] | Dict[str, str],
         headers: Dict,
         request_headers: Dict,
         encoding: str = "utf-8",
@@ -318,51 +316,3 @@ def get_variable_name(var: Any) -> Optional[str]:
             if value is var:
                 return name
     return None
-
-
-def check_type_validity(
-    variable: Any,
-    valid_types: Union[List[Type], None],
-    default_value: Any = None,
-    critical: bool = False,
-    param_name: Optional[str] = None,
-) -> Any:
-    """Check if a variable matches the specified type constraints.
-    :param variable: The variable to check
-    :param valid_types: List of valid types for the variable
-    :param default_value: Value to return if type check fails
-    :param critical: If True, raises TypeError instead of logging error
-    :param param_name: Optional parameter name for error messages
-    :return: The original variable if valid, default_value if invalid
-    :raise TypeError: If critical=True and type check fails
-    """
-    # Use provided param_name or try to get it automatically
-    var_name = param_name or get_variable_name(variable) or "Unknown"
-
-    # Convert valid_types to a list if None
-    valid_types = valid_types or []
-
-    # Handle None value
-    if variable is None:
-        if type(None) in valid_types:
-            return variable
-        error_msg = f'Argument "{var_name}" cannot be None'
-        if critical:
-            raise TypeError(error_msg)
-        log.error(f"[Ignored] {error_msg}")
-        return default_value
-
-    # If no valid_types specified and variable has a value, return it
-    if not valid_types:
-        return variable
-
-    # Check if variable type matches any of the valid types
-    if not any(isinstance(variable, t) for t in valid_types):
-        type_names = [t.__name__ for t in valid_types]
-        error_msg = f'Argument "{var_name}" must be of type {" or ".join(type_names)}'
-        if critical:
-            raise TypeError(error_msg)
-        log.error(f"[Ignored] {error_msg}")
-        return default_value
-
-    return variable

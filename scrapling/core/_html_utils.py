@@ -6,7 +6,7 @@ Repo source code: https://github.com/scrapy/w3lib/blob/master/w3lib/html.py
 
 from re import compile as _re_compile, IGNORECASE
 
-from scrapling.core._types import Iterable, Union, Match, StrOrBytes
+from scrapling.core._types import Iterable, Optional, Match, StrOrBytes
 
 _ent_re = _re_compile(
     r"&((?P<named>[a-z\d]+)|#(?P<dec>\d+)|#x(?P<hex>[a-f\d]+))(?P<semicolon>;?)",
@@ -270,7 +270,7 @@ name2codepoint = {
 
 
 def to_unicode(
-    text: StrOrBytes, encoding: Union[str, None] = None, errors: str = "strict"
+    text: StrOrBytes, encoding: Optional[str] = None, errors: str = "strict"
 ) -> str:
     """Return the Unicode representation of a bytes object `text`. If `text`
     is already a Unicode object, return it as-is."""

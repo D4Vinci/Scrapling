@@ -4,7 +4,6 @@ from pathlib import Path
 
 from scrapling.core._types import (
     Optional,
-    Union,
     Dict,
     Callable,
     List,
@@ -24,15 +23,15 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     disable_webgl: bool = False
     real_chrome: bool = False
     stealth: bool = False
-    wait: Union[int, float] = 0
+    wait: int | float = 0
     page_action: Optional[Callable] = None
-    proxy: Optional[Union[str, Dict[str, str]]] = (
+    proxy: Optional[str | Dict[str, str]] = (
         None  # The default value for proxy in Playwright's source is `None`
     )
     locale: str = "en-US"
     extra_headers: Optional[Dict[str, str]] = None
     useragent: Optional[str] = None
-    timeout: Union[int, float] = 30000
+    timeout: int | float = 30000
     disable_resources: bool = False
     wait_selector: Optional[str] = None
     cookies: Optional[List[Dict]] = None
@@ -87,10 +86,10 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     block_webrtc: bool = False
     allow_webgl: bool = True
     network_idle: bool = False
-    humanize: Union[bool, float] = True
+    humanize: bool | float = True
     solve_cloudflare: bool = False
-    wait: Union[int, float] = 0
-    timeout: Union[int, float] = 30000
+    wait: int | float = 0
+    timeout: int | float = 30000
     page_action: Optional[Callable] = None
     wait_selector: Optional[str] = None
     addons: Optional[List[str]] = None
@@ -98,7 +97,7 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     cookies: Optional[List[Dict]] = None
     google_search: bool = True
     extra_headers: Optional[Dict[str, str]] = None
-    proxy: Optional[Union[str, Dict[str, str]]] = (
+    proxy: Optional[str | Dict[str, str]] = (
         None  # The default value for proxy in Playwright's source is `None`
     )
     os_randomize: bool = False

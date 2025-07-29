@@ -7,7 +7,7 @@ from platform import system as platform_system
 from tldextract import extract
 from browserforge.headers import Browser, HeaderGenerator
 
-from scrapling.core._types import Dict, Union
+from scrapling.core._types import Dict, Optional
 from scrapling.core.utils import lru_cache
 
 __OS_NAME__ = platform_system()
@@ -28,7 +28,7 @@ def generate_convincing_referer(url: str) -> str:
 
 
 @lru_cache(1, typed=True)
-def get_os_name() -> Union[str, None]:
+def get_os_name() -> Optional[str]:
     """Get the current OS name in the same format needed for browserforge
 
     :return: Current OS name or `None` otherwise

@@ -59,7 +59,7 @@ class Selector(SelectorsGeneration):
 
     def __init__(
         self,
-        content: Optional[Union[str, bytes]] = None,
+        content: Optional[str | bytes] = None,
         url: Optional[str] = None,
         encoding: str = "utf8",
         huge_tree: bool = True,
@@ -197,7 +197,7 @@ class Selector(SelectorsGeneration):
     # Node functionalities, I wanted to move to a separate Mixin class, but it had a slight impact on performance
     @staticmethod
     def _is_text_node(
-        element: Union[HtmlElement, _ElementUnicodeResult],
+        element: HtmlElement | _ElementUnicodeResult,
     ) -> bool:
         """Return True if the given element is a result of a string expression
         Examples:
@@ -209,7 +209,7 @@ class Selector(SelectorsGeneration):
 
     @staticmethod
     def __content_convertor(
-        element: Union[HtmlElement, _ElementUnicodeResult],
+        element: HtmlElement | _ElementUnicodeResult,
     ) -> TextHandler:
         """Used internally to convert a single element's text content to TextHandler directly without checks
 
@@ -235,8 +235,8 @@ class Selector(SelectorsGeneration):
         )
 
     def __handle_element(
-        self, element: Union[HtmlElement, _ElementUnicodeResult]
-    ) -> Union[TextHandler, "Selector", None]:
+        self, element: HtmlElement | _ElementUnicodeResult
+    ) -> Optional[TextHandler | "Selector"]:
         """Used internally in all functions to convert a single element to type (Selector|TextHandler) when possible"""
         if element is None:
             return None
@@ -247,7 +247,7 @@ class Selector(SelectorsGeneration):
             return self.__element_convertor(element)
 
     def __handle_elements(
-        self, result: List[Union[HtmlElement, _ElementUnicodeResult]]
+        self, result: List[HtmlElement | _ElementUnicodeResult]
     ) -> Union["Selectors", "TextHandlers"]:
         """Used internally in all functions to convert results to type (Selectors|TextHandlers) in bulk when possible"""
         if not len(
@@ -364,18 +364,18 @@ class Selector(SelectorsGeneration):
         return class_name in self._root.classes
 
     @property
-    def parent(self) -> Union["Selector", None]:
+    def parent(self) -> Optional["Selector"]:
         """Return the direct parent of the element or ``None`` otherwise"""
         return self.__handle_element(self._root.getparent())
 
     @property
-    def below_elements(self) -> "Selectors[Selector]":
+    def below_elements(self) -> "Selectors":
         """Return all elements under the current element in the DOM tree"""
         below = self._root.xpath(".//*")
         return self.__handle_elements(below)
 
     @property
-    def children(self) -> "Selectors[Selector]":
+    def children(self) -> "Selectors":
         """Return the children elements of the current element or empty list otherwise"""
         return Selectors(
             self.__element_convertor(child)
@@ -384,7 +384,7 @@ class Selector(SelectorsGeneration):
         )
 
     @property
-    def siblings(self) -> "Selectors[Selector]":
+    def siblings(self) -> "Selectors":
         """Return other children of the current element's parent or empty list otherwise"""
         if self.parent:
             return Selectors(
@@ -397,9 +397,7 @@ class Selector(SelectorsGeneration):
         for ancestor in self._root.iterancestors():
             yield self.__element_convertor(ancestor)
 
-    def find_ancestor(
-        self, func: Callable[["Selector"], bool]
-    ) -> Union["Selector", None]:
+    def find_ancestor(self, func: Callable[["Selector"], bool]) -> Optional["Selector"]:
         """Loop over all ancestors of the element till one match the passed function
         :param func: A function that takes each ancestor as an argument and returns True/False
         :return: The first ancestor that match the function or ``None`` otherwise.
@@ -410,13 +408,13 @@ class Selector(SelectorsGeneration):
         return None
 
     @property
-    def path(self) -> "Selectors[Selector]":
+    def path(self) -> "Selectors":
         """Returns a list of type `Selectors` that contains the path leading to the current element from the root."""
         lst = list(self.iterancestors())
         return Selectors(lst)
 
     @property
-    def next(self) -> Union["Selector", None]:
+    def next(self) -> Optional["Selector"]:
         """Returns the next element of the current element in the children of the parent or ``None`` otherwise."""
         next_element = self._root.getnext()
         if next_element is not None:
@@ -427,7 +425,7 @@ class Selector(SelectorsGeneration):
         return self.__handle_element(next_element)
 
     @property
-    def previous(self) -> Union["Selector", None]:
+    def previous(self) -> Optional["Selector"]:
         """Returns the previous element of the current element in the children of the parent or ``None`` otherwise."""
         prev_element = self._root.getprevious()
         if prev_element is not None:
@@ -470,10 +468,10 @@ class Selector(SelectorsGeneration):
     # From here we start with the selecting functions
     def relocate(
         self,
-        element: Union[Dict, HtmlElement, "Selector"],
+        element: Dict | HtmlElement | "Selector",
         percentage: int = 0,
         selector_type: bool = False,
-    ) -> Union[List[Union[HtmlElement, None]], "Selectors"]:
+    ) -> List[HtmlElement] | "Selectors":
         """This function will search again for the element in the page tree, used automatically on page structure change
 
         :param element: The element we want to relocate in the tree
@@ -581,7 +579,7 @@ class Selector(SelectorsGeneration):
         adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 0,
-    ) -> Union["Selectors[Selector]", List, "TextHandlers[TextHandler]"]:
+    ) -> "Selectors" | List | "TextHandlers":
         """Search the current tree with CSS3 selectors
 
         **Important:
@@ -644,7 +642,7 @@ class Selector(SelectorsGeneration):
         auto_save: bool = False,
         percentage: int = 0,
         **kwargs: Any,
-    ) -> Union["Selectors[Selector]", List, "TextHandlers[TextHandler]"]:
+    ) -> "Selectors" | List | "TextHandlers":
         """Search the current tree with XPath selectors
 
         **Important:
@@ -708,7 +706,7 @@ class Selector(SelectorsGeneration):
 
     def find_all(
         self,
-        *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]],
+        *args: str | Iterable[str] | Pattern | Callable | Dict[str, str],
         **kwargs: str,
     ) -> "Selectors":
         """Find elements by filters of your creations for ease.
@@ -815,9 +813,9 @@ class Selector(SelectorsGeneration):
 
     def find(
         self,
-        *args: Union[str, Iterable[str], Pattern, Callable, Dict[str, str]],
+        *args: str | Iterable[str] | Pattern | Callable | Dict[str, str],
         **kwargs: str,
-    ) -> Union["Selector", None]:
+    ) -> Optional["Selector"]:
         """Find elements by filters of your creations for ease, then return the first result. Otherwise return `None`.
 
         :param args: Tag name(s), iterable of tag names, regex patterns, function, or a dictionary of elements' attributes. Leave empty for selecting all.
@@ -924,7 +922,7 @@ class Selector(SelectorsGeneration):
         )
         return score
 
-    def save(self, element: Union["Selector", HtmlElement], identifier: str) -> None:
+    def save(self, element: "Selector" | HtmlElement, identifier: str) -> None:
         """Saves the element's unique properties to the storage for retrieval and relocation later
 
         :param element: The element itself that we want to save to storage, it can be a ` Selector ` or pure ` HtmlElement `
@@ -969,7 +967,7 @@ class Selector(SelectorsGeneration):
 
     def re(
         self,
-        regex: Union[str, Pattern[str]],
+        regex: str | Pattern[str],
         replace_entities: bool = True,
         clean_match: bool = False,
         case_sensitive: bool = True,
@@ -985,7 +983,7 @@ class Selector(SelectorsGeneration):
 
     def re_first(
         self,
-        regex: Union[str, Pattern[str]],
+        regex: str | Pattern[str],
         default=None,
         replace_entities: bool = True,
         clean_match: bool = False,
@@ -1004,9 +1002,7 @@ class Selector(SelectorsGeneration):
         )
 
     @staticmethod
-    def __get_attributes(
-        element: HtmlElement, ignore_attributes: Union[List, Tuple]
-    ) -> Dict:
+    def __get_attributes(element: HtmlElement, ignore_attributes: List | Tuple) -> Dict:
         """Return attributes dictionary without the ignored list"""
         return {k: v for k, v in element.attrib.items() if k not in ignore_attributes}
 
@@ -1015,7 +1011,7 @@ class Selector(SelectorsGeneration):
         original: HtmlElement,
         original_attributes: Dict,
         candidate: HtmlElement,
-        ignore_attributes: Union[List, Tuple],
+        ignore_attributes: List | Tuple,
         similarity_threshold: float,
         match_text: bool = False,
     ) -> bool:
@@ -1055,12 +1051,12 @@ class Selector(SelectorsGeneration):
     def find_similar(
         self,
         similarity_threshold: float = 0.2,
-        ignore_attributes: Union[List, Tuple] = (
+        ignore_attributes: List | Tuple = (
             "href",
             "src",
         ),
         match_text: bool = False,
-    ) -> Union["Selectors[Selector]", List]:
+    ) -> "Selectors" | List:
         """Find elements that are in the same tree depth in the page with the same tag name and same parent tag etc...
         then return the ones that match the current element attributes with a percentage higher than the input threshold.
 
@@ -1123,7 +1119,7 @@ class Selector(SelectorsGeneration):
         partial: bool = False,
         case_sensitive: bool = False,
         clean_match: bool = True,
-    ) -> Union["Selectors[Selector]", "Selector"]:
+    ) -> Union["Selectors", "Selector"]:
         """Find elements that its text content fully/partially matches input.
         :param text: Text query to match
         :param first_match: Returns the first element that matches conditions, enabled by default
@@ -1165,11 +1161,11 @@ class Selector(SelectorsGeneration):
 
     def find_by_regex(
         self,
-        query: Union[str, Pattern[str]],
+        query: str | Pattern[str],
         first_match: bool = True,
         case_sensitive: bool = False,
         clean_match: bool = True,
-    ) -> Union["Selectors[Selector]", "Selector"]:
+    ) -> Union["Selectors", "Selector"]:
         """Find elements that its text content matches the input regex pattern.
         :param query: Regex query/pattern to match
         :param first_match: Return the first element that matches conditions; enabled by default.
@@ -1216,9 +1212,7 @@ class Selectors(List[Selector]):
     def __getitem__(self, pos: slice) -> "Selectors":
         pass
 
-    def __getitem__(
-        self, pos: Union[SupportsIndex, slice]
-    ) -> Union[Selector, "Selectors"]:
+    def __getitem__(self, pos: SupportsIndex | slice) -> Selector | "Selectors":
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
             return self.__class__(lst)
@@ -1232,7 +1226,7 @@ class Selectors(List[Selector]):
         auto_save: bool = False,
         percentage: int = 0,
         **kwargs: Any,
-    ) -> "Selectors[Selector]":
+    ) -> "Selectors":
         """
         Call the ``.xpath()`` method for each element in this list and return
         their results as another `Selectors` class.
@@ -1267,7 +1261,7 @@ class Selectors(List[Selector]):
         identifier: str = "",
         auto_save: bool = False,
         percentage: int = 0,
-    ) -> "Selectors[Selector]":
+    ) -> "Selectors":
         """
         Call the ``.css()`` method for each element in this list and return
         their results flattened as another `Selectors` class.
@@ -1294,11 +1288,11 @@ class Selectors(List[Selector]):
 
     def re(
         self,
-        regex: Union[str, Pattern[str]],
+        regex: str | Pattern,
         replace_entities: bool = True,
         clean_match: bool = False,
         case_sensitive: bool = True,
-    ) -> TextHandlers[TextHandler]:
+    ) -> TextHandlers:
         """Call the ``.re()`` method for each element in this list and return
         their results flattened as List of TextHandler.
 
@@ -1315,7 +1309,7 @@ class Selectors(List[Selector]):
 
     def re_first(
         self,
-        regex: Union[str, Pattern[str]],
+        regex: str | Pattern,
         default=None,
         replace_entities: bool = True,
         clean_match: bool = False,
@@ -1335,7 +1329,7 @@ class Selectors(List[Selector]):
                 return result
         return default
 
-    def search(self, func: Callable[["Selector"], bool]) -> Union["Selector", None]:
+    def search(self, func: Callable[["Selector"], bool]) -> Optional["Selector"]:
         """Loop over all current elements and return the first element that matches the passed function
         :param func: A function that takes each element as an argument and returns True/False
         :return: The first element that match the function or ``None`` otherwise.
@@ -1345,7 +1339,7 @@ class Selectors(List[Selector]):
                 return element
         return None
 
-    def filter(self, func: Callable[["Selector"], bool]) -> "Selectors[Selector]":
+    def filter(self, func: Callable[["Selector"], bool]) -> "Selectors":
         """Filter current elements based on the passed function
         :param func: A function that takes each element as an argument and returns True/False
         :return: The new `Selectors` object or empty list otherwise.

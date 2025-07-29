@@ -26,10 +26,9 @@ from ._page import PageInfo, PagePool
 from ._validators import validate, CamoufoxConfig
 from scrapling.core._types import (
     Dict,
-    Optional,
-    Union,
-    Callable,
     List,
+    Optional,
+    Callable,
     SelectorWaitStates,
 )
 from scrapling.engines.toolbelt import (
@@ -84,16 +83,16 @@ class StealthySession:
     def __init__(
         self,
         max_pages: int = 1,
-        headless: Union[bool] = True,  # noqa: F821
+        headless: bool = True,  # noqa: F821
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
         allow_webgl: bool = True,
         network_idle: bool = False,
-        humanize: Union[bool, float] = True,
+        humanize: bool | float = True,
         solve_cloudflare: bool = False,
-        wait: Union[int, float] = 0,
-        timeout: Union[int, float] = 30000,
+        wait: int | float = 0,
+        timeout: int | float = 30000,
         page_action: Optional[Callable] = None,
         wait_selector: Optional[str] = None,
         addons: Optional[List[str]] = None,
@@ -101,7 +100,7 @@ class StealthySession:
         cookies: Optional[List[Dict]] = None,
         google_search: bool = True,
         extra_headers: Optional[Dict[str, str]] = None,
-        proxy: Optional[Union[str, Dict[str, str]]] = None,
+        proxy: Optional[str | Dict[str, str]] = None,
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,
@@ -461,16 +460,16 @@ class AsyncStealthySession(StealthySession):
     def __init__(
         self,
         max_pages: int = 1,
-        headless: Union[bool] = True,  # noqa: F821
+        headless: bool = True,  # noqa: F821
         block_images: bool = False,
         disable_resources: bool = False,
         block_webrtc: bool = False,
         allow_webgl: bool = True,
         network_idle: bool = False,
-        humanize: Union[bool, float] = True,
+        humanize: bool | float = True,
         solve_cloudflare: bool = False,
-        wait: Union[int, float] = 0,
-        timeout: Union[int, float] = 30000,
+        wait: int | float = 0,
+        timeout: int | float = 30000,
         page_action: Optional[Callable] = None,
         wait_selector: Optional[str] = None,
         addons: Optional[List[str]] = None,
@@ -478,7 +477,7 @@ class AsyncStealthySession(StealthySession):
         cookies: Optional[List[Dict]] = None,
         google_search: bool = True,
         extra_headers: Optional[Dict[str, str]] = None,
-        proxy: Optional[Union[str, Dict[str, str]]] = None,
+        proxy: Optional[str | Dict[str, str]] = None,
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,

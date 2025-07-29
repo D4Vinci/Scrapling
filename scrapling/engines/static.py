@@ -17,7 +17,6 @@ from scrapling.core._types import (
     Dict,
     Optional,
     Tuple,
-    Union,
     Mapping,
     SUPPORTED_HTTP_METHODS,
     Awaitable,
@@ -55,14 +54,14 @@ class FetcherSession:
         proxies: Optional[Dict[str, str]] = None,
         proxy: Optional[str] = None,
         proxy_auth: Optional[Tuple[str, str]] = None,
-        timeout: Optional[Union[int, float]] = 30,
+        timeout: Optional[int | float] = 30,
         headers: Optional[Dict[str, str]] = None,
         retries: Optional[int] = 3,
         retry_delay: Optional[int] = 1,
         follow_redirects: bool = True,
         max_redirects: int = 30,
         verify: bool = True,
-        cert: Optional[Union[str, Tuple[str, str]]] = None,
+        cert: Optional[str | Tuple[str, str]] = None,
         selector_config: Optional[Dict] = None,
     ):
         """
@@ -357,7 +356,7 @@ class FetcherSession:
         method: SUPPORTED_HTTP_METHODS,
         stealth: Optional[bool] = None,
         **kwargs,
-    ) -> Union[Response, Awaitable[Response]]:
+    ) -> Response | Awaitable[Response]:
         """
         Internal dispatcher. Prepares arguments and calls sync or async request helper.
 
@@ -390,10 +389,10 @@ class FetcherSession:
     def get(
         self,
         url: str,
-        params: Optional[Union[Dict, List, Tuple]] = None,
+        params: Optional[Dict | List | Tuple] = None,
         headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = _UNSET,
+        timeout: Optional[int | float] = _UNSET,
         follow_redirects: Optional[bool] = _UNSET,
         max_redirects: Optional[int] = _UNSET,
         retries: Optional[int] = _UNSET,
@@ -403,12 +402,12 @@ class FetcherSession:
         proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
-        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        cert: Optional[str | Tuple[str, str]] = _UNSET,
         impersonate: Optional[BrowserTypeLiteral] = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
-    ) -> Union[Response, Awaitable[Response]]:
+    ) -> Response | Awaitable[Response]:
         """
         Perform a GET request.
 
@@ -461,12 +460,12 @@ class FetcherSession:
     def post(
         self,
         url: str,
-        data: Optional[Union[Dict, str]] = None,
-        json: Optional[Union[Dict, List]] = None,
+        data: Optional[Dict | str] = None,
+        json: Optional[Dict | List] = None,
         headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        params: Optional[Union[Dict, List, Tuple]] = None,
+        params: Optional[Dict | List | Tuple] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = _UNSET,
+        timeout: Optional[int | float] = _UNSET,
         follow_redirects: Optional[bool] = _UNSET,
         max_redirects: Optional[int] = _UNSET,
         retries: Optional[int] = _UNSET,
@@ -476,12 +475,12 @@ class FetcherSession:
         proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
-        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        cert: Optional[str | Tuple[str, str]] = _UNSET,
         impersonate: Optional[BrowserTypeLiteral] = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
-    ) -> Union[Response, Awaitable[Response]]:
+    ) -> Response | Awaitable[Response]:
         """
         Perform a POST request.
 
@@ -538,12 +537,12 @@ class FetcherSession:
     def put(
         self,
         url: str,
-        data: Optional[Union[Dict, str]] = None,
-        json: Optional[Union[Dict, List]] = None,
+        data: Optional[Dict | str] = None,
+        json: Optional[Dict | List] = None,
         headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        params: Optional[Union[Dict, List, Tuple]] = None,
+        params: Optional[Dict | List | Tuple] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = _UNSET,
+        timeout: Optional[int | float] = _UNSET,
         follow_redirects: Optional[bool] = _UNSET,
         max_redirects: Optional[int] = _UNSET,
         retries: Optional[int] = _UNSET,
@@ -553,12 +552,12 @@ class FetcherSession:
         proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
-        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        cert: Optional[str | Tuple[str, str]] = _UNSET,
         impersonate: Optional[BrowserTypeLiteral] = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
-    ) -> Union[Response, Awaitable[Response]]:
+    ) -> Response | Awaitable[Response]:
         """
         Perform a PUT request.
 
@@ -615,12 +614,12 @@ class FetcherSession:
     def delete(
         self,
         url: str,
-        data: Optional[Union[Dict, str]] = None,
-        json: Optional[Union[Dict, List]] = None,
+        data: Optional[Dict | str] = None,
+        json: Optional[Dict | List] = None,
         headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        params: Optional[Union[Dict, List, Tuple]] = None,
+        params: Optional[Dict | List | Tuple] = None,
         cookies: Optional[CookieTypes] = None,
-        timeout: Optional[Union[int, float]] = _UNSET,
+        timeout: Optional[int | float] = _UNSET,
         follow_redirects: Optional[bool] = _UNSET,
         max_redirects: Optional[int] = _UNSET,
         retries: Optional[int] = _UNSET,
@@ -630,12 +629,12 @@ class FetcherSession:
         proxy_auth: Optional[Tuple[str, str]] = _UNSET,
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
-        cert: Optional[Union[str, Tuple[str, str]]] = _UNSET,
+        cert: Optional[str | Tuple[str, str]] = _UNSET,
         impersonate: Optional[BrowserTypeLiteral] = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
-    ) -> Union[Response, Awaitable[Response]]:
+    ) -> Response | Awaitable[Response]:
         """
         Perform a DELETE request.
 

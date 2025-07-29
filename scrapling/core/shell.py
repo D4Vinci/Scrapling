@@ -33,7 +33,6 @@ from scrapling.core._types import (
     Dict,
     Tuple,
     Any,
-    Union,
     extraction_types,
     Generator,
 )
@@ -254,7 +253,7 @@ class CurlParser:
 
         # --- Process Data Payload ---
         params = dict()
-        data_payload: Union[str, bytes, Dict, None] = None
+        data_payload: Optional[str | bytes | Dict] = None
         json_payload: Optional[Any] = None
 
         # DevTools often uses --data-raw for JSON bodies
@@ -358,7 +357,7 @@ class CurlParser:
             follow_redirects=True,  # Scrapling default is True
         )
 
-    def convert2fetcher(self, curl_command: Union[Request, str]) -> Optional[Response]:
+    def convert2fetcher(self, curl_command: Request | str) -> Optional[Response]:
         if isinstance(curl_command, (Request, str)):
             request = (
                 self.parse(curl_command)
