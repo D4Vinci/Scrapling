@@ -44,7 +44,6 @@ jobs:
         cache: 'pip'
         cache-dependency-path: |
           pyproject.toml
-          requirements*.txt
           tox.ini
 
     # Install browsers ONCE at the workflow level
@@ -64,8 +63,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .tox
-        # Include python version and os in cache key
-        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('tox.ini', 'pyproject.toml', 'requirements*.txt') }}
+        # Include python version and os in the cache key
+        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('tox.ini', 'pyproject.toml') }}
         restore-keys: |
           tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-
           tox-v1-${{ runner.os }}-
