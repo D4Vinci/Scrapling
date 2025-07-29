@@ -1377,6 +1377,11 @@ class Selectors(List[Selector]):
         """Returns the last item of the current list or `None` if the list is empty"""
         return self[-1] if len(self) > 0 else None
 
+    @property
+    def length(self):
+        """Returns the length of the current list"""
+        return len(self)
+
     def __getstate__(self) -> Any:
         # lxml don't like it :)
         raise TypeError("Can't pickle Selectors object")
