@@ -236,7 +236,7 @@ class Selector(SelectorsGeneration):
 
     def __handle_element(
         self, element: HtmlElement | _ElementUnicodeResult
-    ) -> Optional[TextHandler | "Selector"]:
+    ) -> Optional[Union[TextHandler, "Selector"]]:
         """Used internally in all functions to convert a single element to type (Selector|TextHandler) when possible"""
         if element is None:
             return None
@@ -468,10 +468,10 @@ class Selector(SelectorsGeneration):
     # From here we start with the selecting functions
     def relocate(
         self,
-        element: Dict | HtmlElement | "Selector",
+        element: Union[Dict, HtmlElement, "Selector"],
         percentage: int = 0,
         selector_type: bool = False,
-    ) -> List[HtmlElement] | "Selectors":
+    ) -> Union[List[HtmlElement], "Selectors"]:
         """This function will search again for the element in the page tree, used automatically on page structure change
 
         :param element: The element we want to relocate in the tree
@@ -579,7 +579,7 @@ class Selector(SelectorsGeneration):
         adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 0,
-    ) -> "Selectors" | List | "TextHandlers":
+    ) -> Union["Selectors", List, "TextHandlers"]:
         """Search the current tree with CSS3 selectors
 
         **Important:
@@ -642,7 +642,7 @@ class Selector(SelectorsGeneration):
         auto_save: bool = False,
         percentage: int = 0,
         **kwargs: Any,
-    ) -> "Selectors" | List | "TextHandlers":
+    ) -> Union["Selectors", List, "TextHandlers"]:
         """Search the current tree with XPath selectors
 
         **Important:
@@ -927,7 +927,7 @@ class Selector(SelectorsGeneration):
         )
         return score
 
-    def save(self, element: "Selector" | HtmlElement, identifier: str) -> None:
+    def save(self, element: Union["Selector", HtmlElement], identifier: str) -> None:
         """Saves the element's unique properties to the storage for retrieval and relocation later
 
         :param element: The element itself that we want to save to storage, it can be a ` Selector ` or pure ` HtmlElement `
@@ -1061,7 +1061,7 @@ class Selector(SelectorsGeneration):
             "src",
         ),
         match_text: bool = False,
-    ) -> "Selectors" | List:
+    ) -> Union["Selectors", List]:
         """Find elements that are in the same tree depth in the page with the same tag name and same parent tag etc...
         then return the ones that match the current element attributes with a percentage higher than the input threshold.
 
@@ -1217,7 +1217,7 @@ class Selectors(List[Selector]):
     def __getitem__(self, pos: slice) -> "Selectors":
         pass
 
-    def __getitem__(self, pos: SupportsIndex | slice) -> Selector | "Selectors":
+    def __getitem__(self, pos: SupportsIndex | slice) -> Union[Selector, "Selectors"]:
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
             return self.__class__(lst)

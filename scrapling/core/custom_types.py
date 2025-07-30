@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from types import MappingProxyType
-from re import compile as re_compile, sub, UNICODE, IGNORECASE
+from re import compile as re_compile, UNICODE, IGNORECASE
 
 from orjson import dumps, loads
 
@@ -165,7 +165,7 @@ class TextHandler(str):
         clean_match: bool = False,
         case_sensitive: bool = True,
         check_match: bool = False,
-    ) -> "TextHandlers" | bool:
+    ) -> Union["TextHandlers", bool]:
         """Apply the given regex to the current text and return a list of strings with the matches.
 
         :param regex: Can be either a compiled regular expression or a string.
@@ -244,7 +244,9 @@ class TextHandlers(List[TextHandler]):
     def __getitem__(self, pos: slice) -> "TextHandlers":
         pass
 
-    def __getitem__(self, pos: SupportsIndex | slice) -> TextHandler | "TextHandlers":
+    def __getitem__(
+        self, pos: SupportsIndex | slice
+    ) -> Union[TextHandler, "TextHandlers"]:
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
             lst = [TextHandler(s) for s in lst]
