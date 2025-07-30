@@ -8,6 +8,7 @@ from scrapling.core._types import (
     cast,
     Dict,
     List,
+    Union,
     overload,
     TypeVar,
     Literal,
@@ -45,72 +46,78 @@ class TextHandler(str):
             )
         )
 
-    def strip(self, chars: str = None) -> str | "TextHandler":
+    def strip(self, chars: str = None) -> Union[str, "TextHandler"]:
         return TextHandler(super().strip(chars))
 
-    def lstrip(self, chars: str = None) -> str | "TextHandler":
+    def lstrip(self, chars: str = None) -> Union[str, "TextHandler"]:
         return TextHandler(super().lstrip(chars))
 
-    def rstrip(self, chars: str = None) -> str | "TextHandler":
+    def rstrip(self, chars: str = None) -> Union[str, "TextHandler"]:
         return TextHandler(super().rstrip(chars))
 
-    def capitalize(self) -> str | "TextHandler":
+    def capitalize(self) -> Union[str, "TextHandler"]:
         return TextHandler(super().capitalize())
 
-    def casefold(self) -> str | "TextHandler":
+    def casefold(self) -> Union[str, "TextHandler"]:
         return TextHandler(super().casefold())
 
-    def center(self, width: SupportsIndex, fillchar: str = " ") -> str | "TextHandler":
+    def center(
+        self, width: SupportsIndex, fillchar: str = " "
+    ) -> Union[str, "TextHandler"]:
         return TextHandler(super().center(width, fillchar))
 
-    def expandtabs(self, tabsize: SupportsIndex = 8) -> str | "TextHandler":
+    def expandtabs(self, tabsize: SupportsIndex = 8) -> Union[str, "TextHandler"]:
         return TextHandler(super().expandtabs(tabsize))
 
-    def format(self, *args: str, **kwargs: str) -> str | "TextHandler":
+    def format(self, *args: str, **kwargs: str) -> Union[str, "TextHandler"]:
         return TextHandler(super().format(*args, **kwargs))
 
-    def format_map(self, mapping) -> str | "TextHandler":
+    def format_map(self, mapping) -> Union[str, "TextHandler"]:
         return TextHandler(super().format_map(mapping))
 
-    def join(self, iterable: Iterable[str]) -> str | "TextHandler":
+    def join(self, iterable: Iterable[str]) -> Union[str, "TextHandler"]:
         return TextHandler(super().join(iterable))
 
-    def ljust(self, width: SupportsIndex, fillchar: str = " ") -> str | "TextHandler":
+    def ljust(
+        self, width: SupportsIndex, fillchar: str = " "
+    ) -> Union[str, "TextHandler"]:
         return TextHandler(super().ljust(width, fillchar))
 
-    def rjust(self, width: SupportsIndex, fillchar: str = " ") -> str | "TextHandler":
+    def rjust(
+        self, width: SupportsIndex, fillchar: str = " "
+    ) -> Union[str, "TextHandler"]:
         return TextHandler(super().rjust(width, fillchar))
 
-    def swapcase(self) -> str | "TextHandler":
+    def swapcase(self) -> Union[str, "TextHandler"]:
         return TextHandler(super().swapcase())
 
-    def title(self) -> str | "TextHandler":
+    def title(self) -> Union[str, "TextHandler"]:
         return TextHandler(super().title())
 
-    def translate(self, table) -> str | "TextHandler":
+    def translate(self, table) -> Union[str, "TextHandler"]:
         return TextHandler(super().translate(table))
 
-    def zfill(self, width: SupportsIndex) -> str | "TextHandler":
+    def zfill(self, width: SupportsIndex) -> Union[str, "TextHandler"]:
         return TextHandler(super().zfill(width))
 
     def replace(
         self, old: str, new: str, count: SupportsIndex = -1
-    ) -> str | "TextHandler":
+    ) -> Union[str, "TextHandler"]:
         return TextHandler(super().replace(old, new, count))
 
-    def upper(self) -> str | "TextHandler":
+    def upper(self) -> Union[str, "TextHandler"]:
         return TextHandler(super().upper())
 
-    def lower(self) -> str | "TextHandler":
+    def lower(self) -> Union[str, "TextHandler"]:
         return TextHandler(super().lower())
 
     ##############
 
-    def sort(self, reverse: bool = False) -> str | "TextHandler":
+    def sort(self, reverse: bool = False) -> Union[str, "TextHandler"]:
         """Return a sorted version of the string"""
         return self.__class__("".join(sorted(self, reverse=reverse)))
 
-    def clean(self) -> str | "TextHandler":
+    def clean(self) -> Union[str, "TextHandler"]:
         """Return a new version of the string after removing all white spaces and consecutive spaces"""
         data = self.translate(__CLEANING_TABLE__)
         return self.__class__(__CONSECUTIVE_SPACES_REGEX__.sub(" ", data).strip())
