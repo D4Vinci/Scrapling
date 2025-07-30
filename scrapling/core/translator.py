@@ -8,7 +8,7 @@ So you don't have to learn a new selectors/api method like what bs4 done with so
     If you want to learn about this, head to https://cssselect.readthedocs.io/en/latest/#cssselect.FunctionalPseudoElement
 """
 
-import re
+from functools import lru_cache
 
 from cssselect import HTMLTranslator as OriginalHTMLTranslator
 from cssselect.parser import Element, FunctionalPseudoElement, PseudoElement
@@ -16,11 +16,6 @@ from cssselect.xpath import ExpressionError
 from cssselect.xpath import XPathExpr as OriginalXPathExpr
 
 from scrapling.core._types import Any, Optional, Protocol, Self
-from scrapling.core.utils import lru_cache
-
-HTML5_WHITESPACE = " \t\n\r\x0c"  # From w3lib.html.HTML5_WHITESPACE
-regex = f"[{HTML5_WHITESPACE}]+"
-replace_html5_whitespaces = re.compile(regex).sub
 
 
 class XPathExpr(OriginalXPathExpr):
@@ -33,7 +28,7 @@ class XPathExpr(OriginalXPathExpr):
         xpath: OriginalXPathExpr,
         textnode: bool = False,
         attribute: Optional[str] = None,
-    ) -> "Self":
+    ) -> Self:
         x = cls(path=xpath.path, element=xpath.element, condition=xpath.condition)
         x.textnode = textnode
         x.attribute = attribute
@@ -57,12 +52,12 @@ class XPathExpr(OriginalXPathExpr):
         return path
 
     def join(
-        self: "Self",
+        self: Self,
         combiner: str,
         other: OriginalXPathExpr,
         *args: Any,
         **kwargs: Any,
-    ) -> "Self":
+    ) -> Self:
         if not isinstance(other, XPathExpr):
             raise ValueError(
                 f"Expressions of type {__name__}.XPathExpr can ony join expressions"
@@ -90,7 +85,7 @@ class TranslatorMixin:
     """
 
     def xpath_element(self: TranslatorProtocol, selector: Element) -> XPathExpr:
-        # https://github.com/python/mypy/issues/12344
+        # https://github.com/python/mypy/issues/14757
         xpath = super().xpath_element(selector)  # type: ignore[safe-super]
         return XPathExpr.from_xpath(xpath)
 
@@ -98,7 +93,7 @@ class TranslatorMixin:
         self, xpath: OriginalXPathExpr, pseudo_element: PseudoElement
     ) -> OriginalXPathExpr:
         """
-        Dispatch method that transforms XPath to support pseudo-elements.
+        Dispatch method that transforms XPath to support the pseudo-element.
         """
         if isinstance(pseudo_element, FunctionalPseudoElement):
             method_name = f"xpath_{pseudo_element.name.replace('-', '_')}_functional_pseudo_element"
@@ -143,4 +138,4 @@ class HTMLTranslator(TranslatorMixin, OriginalHTMLTranslator):
         return super().css_to_xpath(css, prefix)
 
 
-translator_instance = HTMLTranslator()
+translator = HTMLTranslator()
