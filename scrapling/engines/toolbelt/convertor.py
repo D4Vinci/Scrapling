@@ -240,7 +240,7 @@ class ResponseFactory:
         return Response(
             url=response.url,
             content=response.content
-            if type(response.content) is bytes
+            if isinstance(response.content, bytes)
             else response.content.encode(),
             status=response.status_code,
             reason=response.reason,

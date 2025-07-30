@@ -22,7 +22,7 @@ class StorageSystemMixin(ABC):
 
     @lru_cache(64, typed=True)
     def _get_base_url(self, default_value: str = "default") -> str:
-        if not self.url or type(self.url) is not str:
+        if not self.url or not isinstance(self.url, str):
             return default_value
 
         try:

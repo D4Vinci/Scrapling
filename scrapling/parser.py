@@ -734,11 +734,11 @@ class Selector(SelectorsGeneration):
 
         # Brace yourself for a wonderful journey!
         for arg in args:
-            if type(arg) is str:
+            if isinstance(arg, str):
                 tags.add(arg)
 
-            elif type(arg) in [list, tuple, set]:
-                if not all(map(lambda x: type(x) is str, arg)):
+            elif type(arg) in (list, tuple, set):
+                if not all(map(lambda x: isinstance(x, str), arg)):
                     raise TypeError(
                         "Nested Iterables are not accepted, only iterables of tag names are accepted"
                     )
@@ -746,7 +746,10 @@ class Selector(SelectorsGeneration):
 
             elif isinstance(arg, dict):
                 if not all(
-                    [(type(k) is str and type(v) is str) for k, v in arg.items()]
+                    [
+                        (isinstance(k, str) and isinstance(v, str))
+                        for k, v in arg.items()
+                    ]
                 ):
                     raise TypeError(
                         "Nested dictionaries are not accepted, only string keys and string values are accepted"
@@ -769,7 +772,9 @@ class Selector(SelectorsGeneration):
                     f'Argument with type "{type(arg)}" is not accepted, please read the docs.'
                 )
 
-        if not all([(type(k) is str and type(v) is str) for k, v in kwargs.items()]):
+        if not all(
+            [(isinstance(k, str) and isinstance(v, str)) for k, v in kwargs.items()]
+        ):
             raise TypeError("Only string values are accepted for arguments")
 
         for attribute_name, value in kwargs.items():

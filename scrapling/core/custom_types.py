@@ -310,7 +310,7 @@ class AttributesHandler(Mapping[str, _TextHandlerType]):
     def __init__(self, mapping=None, **kwargs):
         mapping = (
             {
-                key: TextHandler(value) if type(value) is str else value
+                key: TextHandler(value) if isinstance(value, str) else value
                 for key, value in mapping.items()
             }
             if mapping is not None
@@ -320,7 +320,7 @@ class AttributesHandler(Mapping[str, _TextHandlerType]):
         if kwargs:
             mapping.update(
                 {
-                    key: TextHandler(value) if type(value) is str else value
+                    key: TextHandler(value) if isinstance(value, str) else value
                     for key, value in kwargs.items()
                 }
             )

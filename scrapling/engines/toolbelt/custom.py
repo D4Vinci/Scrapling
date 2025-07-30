@@ -216,7 +216,7 @@ class BaseFetcher:
             storage_args=cls.storage_args,
         )
         if cls.adaptive_domain:
-            if type(cls.adaptive_domain) is not str:
+            if not isinstance(cls.adaptive_domain, str):
                 log.warning(
                     '[Ignored] The argument "adaptive_domain" must be of string type'
                 )
