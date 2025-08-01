@@ -546,7 +546,14 @@ class Selector(SelectorsGeneration):
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
         """
-        for element in self.css(selector, identifier, adaptive, auto_save, percentage):
+        for element in self.css(
+            selector,
+            identifier,
+            adaptive,
+            auto_save,
+            percentage,
+            _scrapling_first_match=True,
+        ):
             return element
         return None
 
@@ -577,7 +584,13 @@ class Selector(SelectorsGeneration):
          number unless you must know what you are doing!
         """
         for element in self.xpath(
-            selector, identifier, adaptive, auto_save, percentage, **kwargs
+            selector,
+            identifier,
+            adaptive,
+            auto_save,
+            percentage,
+            _scrapling_first_match=True,
+            **kwargs,
         ):
             return element
         return None
@@ -589,6 +602,7 @@ class Selector(SelectorsGeneration):
         adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 0,
+        **kwargs: Any,
     ) -> Union["Selectors", List, "TextHandlers"]:
         """Search the current tree with CSS3 selectors
 
@@ -617,6 +631,7 @@ class Selector(SelectorsGeneration):
                     adaptive,
                     auto_save,
                     percentage,
+                    _scrapling_first_match=kwargs.pop("_scrapling_first_match", False),
                 )
 
             results = []
@@ -630,6 +645,7 @@ class Selector(SelectorsGeneration):
                     adaptive,
                     auto_save,
                     percentage,
+                    _scrapling_first_match=kwargs.pop("_scrapling_first_match", False),
                 )
 
             return results
@@ -649,7 +665,7 @@ class Selector(SelectorsGeneration):
         auto_save: bool = False,
         percentage: int = 0,
         **kwargs: Any,
-    ) -> Union["Selectors", List, "TextHandlers"]:
+    ) -> Union["Selectors", "TextHandlers"]:
         """Search the current tree with XPath selectors
 
         **Important:
@@ -669,6 +685,9 @@ class Selector(SelectorsGeneration):
 
         :return: `Selectors` class.
         """
+        _first_match = kwargs.pop(
+            "_scrapling_first_match", False
+        )  # Used internally only to speed up `css_first` and `xpath_first`
         try:
             if elements := self._root.xpath(selector, **kwargs):
                 if not self.__adaptive_enabled and auto_save:
@@ -678,7 +697,9 @@ class Selector(SelectorsGeneration):
                 elif self.__adaptive_enabled and auto_save:
                     self.save(elements[0], identifier or selector)
 
-                return self.__handle_elements(elements)
+                return self.__handle_elements(
+                    elements[0:1] if (_first_match and elements) else elements
+                )
             elif self.__adaptive_enabled:
                 if adaptive:
                     element_data = self.retrieve(identifier or selector)
@@ -687,7 +708,9 @@ class Selector(SelectorsGeneration):
                         if elements is not None and auto_save:
                             self.save(elements[0], identifier or selector)
 
-                return self.__handle_elements(elements)
+                return self.__handle_elements(
+                    elements[0:1] if (_first_match and elements) else elements
+                )
             else:
                 if adaptive:
                     log.warning(
@@ -698,7 +721,9 @@ class Selector(SelectorsGeneration):
                         "Argument `auto_save` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
                     )
 
-                return self.__handle_elements(elements)
+                return self.__handle_elements(
+                    elements[0:1] if (_first_match and elements) else elements
+                )
 
         except (
             SelectorError,
