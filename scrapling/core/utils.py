@@ -2,7 +2,6 @@ import logging
 from itertools import chain
 from re import compile as re_compile
 
-from orjson import loads as orjson_loads, JSONDecodeError
 from lxml import html
 
 from scrapling.core._types import Any, Dict, Iterable, List
@@ -40,17 +39,6 @@ def setup_logger():
 
 
 log = setup_logger()
-
-
-def is_jsonable(content: bytes | str) -> bool:
-    if isinstance(content, bytes):
-        content = content.decode()
-
-    try:
-        _ = orjson_loads(content)
-        return True
-    except JSONDecodeError:
-        return False
 
 
 def flatten(lst: Iterable[Any]) -> List[Any]:
