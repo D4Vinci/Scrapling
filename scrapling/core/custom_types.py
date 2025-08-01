@@ -249,7 +249,6 @@ class TextHandlers(List[TextHandler]):
     ) -> Union[TextHandler, "TextHandlers"]:
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
-            lst = [TextHandler(s) for s in lst]
             return TextHandlers(cast(List[_TextHandlerType], lst))
         return cast(_TextHandlerType, TextHandler(lst))
 

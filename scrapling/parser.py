@@ -37,7 +37,7 @@ from scrapling.core.storage import (
     _StorageTools,
 )
 from scrapling.core.translator import translator as _translator
-from scrapling.core.utils import clean_spaces, flatten, html_forbidden, is_jsonable, log
+from scrapling.core.utils import clean_spaces, flatten, html_forbidden, log
 
 __DEFAULT_DB_FILE__ = str(Path(__file__).parent / "elements_storage.db")
 
@@ -55,6 +55,7 @@ class Selector(SelectorsGeneration):
         "__text",
         "__tag",
         "__keep_cdata",
+        "_raw_body",
     )
 
     def __init__(
@@ -102,12 +103,12 @@ class Selector(SelectorsGeneration):
 
         self.__text = ""
         if root is None:
-            if isinstance(content, bytes):
-                body = content.replace(b"\x00", b"").strip()
-            elif isinstance(content, str):
+            if isinstance(content, str):
                 body = (
                     content.strip().replace("\x00", "").encode(encoding) or b"<html/>"
                 )
+            elif isinstance(content, bytes):
+                body = content.replace(b"\x00", b"").strip()
             else:
                 raise TypeError(
                     f"content argument must be str or bytes, got {type(content)}"
@@ -126,9 +127,7 @@ class Selector(SelectorsGeneration):
             )
             self._root = fromstring(body, parser=parser, base_url=url)
 
-            jsonable_text = content if isinstance(content, str) else body.decode()
-            if is_jsonable(jsonable_text):
-                self.__text = TextHandler(jsonable_text)
+            self._raw_body = body.decode()
 
         else:
             # All HTML types inherit from HtmlMixin so this to check for all at once
@@ -138,6 +137,7 @@ class Selector(SelectorsGeneration):
                 )
 
             self._root = root
+            self._raw_body = ""
 
         self.__adaptive_enabled = adaptive
 
@@ -171,22 +171,27 @@ class Selector(SelectorsGeneration):
         # For selector stuff
         self.__attributes = None
         self.__tag = None
+
+    @property
+    def __response_data(self):
         # No need to check if all response attributes exist or not because if `status` exist, then the rest exist (Save some CPU cycles for speed)
-        self.__response_data = (
-            {
-                key: getattr(self, key)
-                for key in (
-                    "status",
-                    "reason",
-                    "cookies",
-                    "history",
-                    "headers",
-                    "request_headers",
-                )
-            }
-            if hasattr(self, "status")
-            else {}
-        )
+        if not hasattr(self, "_cached_response_data"):
+            self._cached_response_data = (
+                {
+                    key: getattr(self, key)
+                    for key in (
+                        "status",
+                        "reason",
+                        "cookies",
+                        "history",
+                        "headers",
+                        "request_headers",
+                    )
+                }
+                if hasattr(self, "status")
+                else {}
+            )
+        return self._cached_response_data
 
     def __getitem__(self, key: str) -> TextHandler:
         return self.attrib[key]
@@ -215,7 +220,7 @@ class Selector(SelectorsGeneration):
 
         This single line has been isolated like this, so when it's used with `map` we get that slight performance boost vs. list comprehension
         """
-        return TextHandler(str(element))
+        return TextHandler(element)
 
     def __element_convertor(self, element: HtmlElement) -> "Selector":
         """Used internally to convert a single HtmlElement to Selector directly without checks"""
@@ -250,15 +255,13 @@ class Selector(SelectorsGeneration):
         self, result: List[HtmlElement | _ElementUnicodeResult]
     ) -> Union["Selectors", "TextHandlers"]:
         """Used internally in all functions to convert results to type (Selectors|TextHandlers) in bulk when possible"""
-        if not len(
-            result
-        ):  # Lxml will give a warning if I used something like `not result`
+        if not result:
             return Selectors()
 
         # From within the code, this method will always get a list of the same type,
         # so we will continue without checks for a slight performance boost
         if self._is_text_node(result[0]):
-            return TextHandlers(list(map(self.__content_convertor, result)))
+            return TextHandlers(map(TextHandler, result))
 
         return Selectors(map(self.__element_convertor, result))
 
@@ -380,7 +383,7 @@ class Selector(SelectorsGeneration):
         return Selectors(
             self.__element_convertor(child)
             for child in self._root.iterchildren()
-            if type(child) not in html_forbidden
+            if not isinstance(child, html_forbidden)
         )
 
     @property
@@ -418,7 +421,7 @@ class Selector(SelectorsGeneration):
         """Returns the next element of the current element in the children of the parent or ``None`` otherwise."""
         next_element = self._root.getnext()
         if next_element is not None:
-            while type(next_element) in html_forbidden:
+            while isinstance(next_element, html_forbidden):
                 # Ignore HTML comments and unwanted types
                 next_element = next_element.getnext()
 
@@ -429,7 +432,7 @@ class Selector(SelectorsGeneration):
         """Returns the previous element of the current element in the children of the parent or ``None`` otherwise."""
         prev_element = self._root.getprevious()
         if prev_element is not None:
-            while type(prev_element) in html_forbidden:
+            while isinstance(prev_element, html_forbidden):
                 # Ignore HTML comments and unwanted types
                 prev_element = prev_element.getprevious()
 
@@ -947,7 +950,7 @@ class Selector(SelectorsGeneration):
                 "Can't use Auto-match features while disabled globally, you have to start a new class instance."
             )
 
-    def retrieve(self, identifier: str) -> Optional[Dict]:
+    def retrieve(self, identifier: str) -> Optional[Dict[str, Any]]:
         """Using the identifier, we search the storage and return the unique properties of the element
 
         :param identifier: This is the identifier that will be used to retrieve the element from the storage. See
@@ -965,7 +968,9 @@ class Selector(SelectorsGeneration):
     # Operations on text functions
     def json(self) -> Dict:
         """Return JSON response if the response is jsonable otherwise throws error"""
-        if self.text:
+        if self._raw_body:
+            return TextHandler(self._raw_body).json()
+        elif self.text:
             return self.text.json()
         else:
             return self.get_all_text(strip=True).json()

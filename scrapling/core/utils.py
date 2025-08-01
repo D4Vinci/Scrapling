@@ -10,9 +10,7 @@ from scrapling.core._types import Any, Dict, Iterable, List
 # Using cache on top of a class is a brilliant way to achieve a Singleton design pattern without much code
 from functools import lru_cache  # isort:skip
 
-html_forbidden = {
-    html.HtmlComment,
-}
+html_forbidden = (html.HtmlComment,)
 
 __CLEANING_TABLE__ = str.maketrans({"\t": " ", "\n": None, "\r": None})
 __CONSECUTIVE_SPACES_REGEX__ = re_compile(r" +")
@@ -108,7 +106,7 @@ class _StorageTools:
         children = [
             child.tag
             for child in element.iterchildren()
-            if type(child) not in html_forbidden
+            if not isinstance(child, html_forbidden)
         ]
         if children:
             result.update({"children": tuple(children)})
