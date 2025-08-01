@@ -31,9 +31,6 @@ class TextHandler(str):
 
     __slots__ = ()
 
-    def __new__(cls, string):
-        return super().__new__(cls, str(string))
-
     def __getitem__(self, key: SupportsIndex | slice) -> "TextHandler":
         lst = super().__getitem__(key)
         return cast(_TextHandlerType, TextHandler(lst))

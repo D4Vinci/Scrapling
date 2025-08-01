@@ -40,6 +40,13 @@ from scrapling.core.translator import translator as _translator
 from scrapling.core.utils import clean_spaces, flatten, html_forbidden, log
 
 __DEFAULT_DB_FILE__ = str(Path(__file__).parent / "elements_storage.db")
+# Attributes that are Python reserved words and can't be used directly
+# Ex: find_all('a', class="blah") -> find_all('a', class_="blah")
+# https://www.w3schools.com/python/python_ref_keywords.asp
+_whitelisted = {
+    "class_": "class",
+    "for_": "for",
+}
 
 
 class Selector(SelectorsGeneration):
@@ -101,7 +108,7 @@ class Selector(SelectorsGeneration):
                 "Selector class needs HTML content, or root arguments to work"
             )
 
-        self.__text = ""
+        self.__text = None
         if root is None:
             if isinstance(content, str):
                 body = (
@@ -284,10 +291,10 @@ class Selector(SelectorsGeneration):
     @property
     def text(self) -> TextHandler:
         """Get text content of the element"""
-        if not self.__text:
+        if self.__text is None:
             # If you want to escape lxml default behavior and remove comments like this `<span>CONDITION: <!-- -->Excellent</span>`
             # before extracting text, then keep `keep_comments` set to False while initializing the first class
-            self.__text = TextHandler(self._root.text)
+            self.__text = TextHandler(self._root.text or "")
         return self.__text
 
     def get_all_text(
@@ -613,20 +620,17 @@ class Selector(SelectorsGeneration):
                 )
 
             results = []
-            if "," in selector:
-                for single_selector in split_selectors(selector):
-                    # I'm doing this only so the `save` function saves data correctly for combined selectors
-                    # Like using the ',' to combine two different selectors that point to different elements.
-                    xpath_selector = _translator.css_to_xpath(
-                        single_selector.canonical()
-                    )
-                    results += self.xpath(
-                        xpath_selector,
-                        identifier or single_selector.canonical(),
-                        adaptive,
-                        auto_save,
-                        percentage,
-                    )
+            for single_selector in split_selectors(selector):
+                # I'm doing this only so the `save` function saves data correctly for combined selectors
+                # Like using the ',' to combine two different selectors that point to different elements.
+                xpath_selector = _translator.css_to_xpath(single_selector.canonical())
+                results += self.xpath(
+                    xpath_selector,
+                    identifier or single_selector.canonical(),
+                    adaptive,
+                    auto_save,
+                    percentage,
+                )
 
             return results
         except (
@@ -666,16 +670,13 @@ class Selector(SelectorsGeneration):
         :return: `Selectors` class.
         """
         try:
-            elements = self._root.xpath(selector, **kwargs)
-
-            if elements:
-                if auto_save:
-                    if not self.__adaptive_enabled:
-                        log.warning(
-                            "Argument `auto_save` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
-                        )
-                    else:
-                        self.save(elements[0], identifier or selector)
+            if elements := self._root.xpath(selector, **kwargs):
+                if not self.__adaptive_enabled and auto_save:
+                    log.warning(
+                        "Argument `auto_save` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
+                    )
+                elif self.__adaptive_enabled and auto_save:
+                    self.save(elements[0], identifier or selector)
 
                 return self.__handle_elements(elements)
             elif self.__adaptive_enabled:
@@ -718,13 +719,6 @@ class Selector(SelectorsGeneration):
         :param kwargs: The attributes you want to filter elements based on it.
         :return: The `Selectors` object of the elements or empty list
         """
-        # Attributes that are Python reserved words and can't be used directly
-        # Ex: find_all('a', class="blah") -> find_all('a', class_="blah")
-        # https://www.w3schools.com/python/python_ref_keywords.asp
-        whitelisted = {
-            "class_": "class",
-            "for_": "for",
-        }
 
         if not args and not kwargs:
             raise TypeError(
@@ -782,7 +776,7 @@ class Selector(SelectorsGeneration):
 
         for attribute_name, value in kwargs.items():
             # Only replace names for kwargs, replacing them in dictionaries doesn't make sense
-            attribute_name = whitelisted.get(attribute_name, attribute_name)
+            attribute_name = _whitelisted.get(attribute_name, attribute_name)
             attributes[attribute_name] = value
 
         # It's easier and faster to build a selector than traversing the tree
