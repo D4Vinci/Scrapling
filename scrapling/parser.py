@@ -50,6 +50,9 @@ _whitelisted = {
 }
 # Pre-compiled selectors for efficiency
 _find_all_elements = XPath(".//*")
+_find_all_elements_with_spaces = XPath(
+    ".//*[normalize-space(text())]"
+)  # This selector gets all elements with text content
 
 
 class Selector(SelectorsGeneration):
@@ -1161,10 +1164,7 @@ class Selector(SelectorsGeneration):
         if not case_sensitive:
             text = text.lower()
 
-        # This selector gets all elements with text content
-        for node in self.__handle_elements(
-            self._root.xpath(".//*[normalize-space(text())]")
-        ):
+        for node in self.__handle_elements(_find_all_elements_with_spaces(self._root)):
             """Check if element matches given text otherwise, traverse the children tree and iterate"""
             node_text = node.text
             if clean_match:
@@ -1203,10 +1203,7 @@ class Selector(SelectorsGeneration):
         """
         results = Selectors()
 
-        # This selector gets all elements with text content
-        for node in self.__handle_elements(
-            self._root.xpath(".//*[normalize-space(text())]")
-        ):
+        for node in self.__handle_elements(_find_all_elements_with_spaces(self._root)):
             """Check if element matches given regex otherwise, traverse the children tree and iterate"""
             node_text = node.text
             if node_text.re(
