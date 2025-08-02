@@ -426,10 +426,9 @@ class Selector(SelectorsGeneration):
     def next(self) -> Optional["Selector"]:
         """Returns the next element of the current element in the children of the parent or ``None`` otherwise."""
         next_element = self._root.getnext()
-        if next_element is not None:
-            while isinstance(next_element, html_forbidden):
-                # Ignore HTML comments and unwanted types
-                next_element = next_element.getnext()
+        while next_element is not None and isinstance(next_element, html_forbidden):
+            # Ignore HTML comments and unwanted types
+            next_element = next_element.getnext()
 
         return self.__handle_element(next_element)
 
@@ -437,10 +436,9 @@ class Selector(SelectorsGeneration):
     def previous(self) -> Optional["Selector"]:
         """Returns the previous element of the current element in the children of the parent or ``None`` otherwise."""
         prev_element = self._root.getprevious()
-        if prev_element is not None:
-            while isinstance(prev_element, html_forbidden):
-                # Ignore HTML comments and unwanted types
-                prev_element = prev_element.getprevious()
+        while prev_element is not None and isinstance(prev_element, html_forbidden):
+            # Ignore HTML comments and unwanted types
+            prev_element = prev_element.getprevious()
 
         return self.__handle_element(prev_element)
 
