@@ -1082,7 +1082,7 @@ class Selector(SelectorsGeneration):
             "src",
         ),
         match_text: bool = False,
-    ) -> Union["Selectors", List]:
+    ) -> "Selectors":
         """Find elements that are in the same tree depth in the page with the same tag name and same parent tag etc...
         then return the ones that match the current element attributes with a percentage higher than the input threshold.
 
@@ -1136,7 +1136,7 @@ class Selector(SelectorsGeneration):
             ):
                 similar_elements.append(potential_match)
 
-        return self.__handle_elements(similar_elements)
+        return Selectors(map(self.__element_convertor, similar_elements))
 
     def find_by_text(
         self,
