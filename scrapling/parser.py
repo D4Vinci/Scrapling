@@ -323,7 +323,7 @@ class Selector(SelectorsGeneration):
                 ignored_elements.update(set(element.iterchildren()))
 
         _all_strings = []
-        for node in self._root.xpath(".//*"):
+        for node in self._root.iter():
             if node not in ignored_elements:
                 text = node.text
                 if text and isinstance(text, str):
@@ -496,7 +496,7 @@ class Selector(SelectorsGeneration):
         if issubclass(type(element), HtmlElement):
             element = _StorageTools.element_to_dict(element)
 
-        for node in self._root.xpath(".//*"):
+        for node in self._root.iter("*"):
             # Collect all elements in the page, then for each element get the matching score of it against the node.
             # Hence: the code doesn't stop even if the score was 100%
             # because there might be another element(s) left in page with the same score
