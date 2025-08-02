@@ -8,6 +8,7 @@ from cssselect import SelectorError, SelectorSyntaxError
 from cssselect import parse as split_selectors
 from lxml.html import HtmlElement, HtmlMixin, HTMLParser
 from lxml.etree import (
+    XPath,
     tostring,
     fromstring,
     XPathError,
@@ -47,6 +48,8 @@ _whitelisted = {
     "class_": "class",
     "for_": "for",
 }
+# Pre-compiled selectors for efficiency
+_find_all_elements = XPath(".//*")
 
 
 class Selector(SelectorsGeneration):
@@ -380,7 +383,7 @@ class Selector(SelectorsGeneration):
     @property
     def below_elements(self) -> "Selectors":
         """Return all elements under the current element in the DOM tree"""
-        below = self._root.xpath(".//*")
+        below = _find_all_elements(self._root)
         return self.__handle_elements(below)
 
     @property
@@ -496,7 +499,7 @@ class Selector(SelectorsGeneration):
         if issubclass(type(element), HtmlElement):
             element = _StorageTools.element_to_dict(element)
 
-        for node in self._root.iter("*"):
+        for node in _find_all_elements(self._root):
             # Collect all elements in the page, then for each element get the matching score of it against the node.
             # Hence: the code doesn't stop even if the score was 100%
             # because there might be another element(s) left in page with the same score
