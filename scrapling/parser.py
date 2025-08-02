@@ -318,10 +318,9 @@ class Selector(SelectorsGeneration):
         """
         ignored_elements = set()
         if ignore_tags:
-            for tag in ignore_tags:
-                for element in self._root.xpath(f".//{tag}"):
-                    ignored_elements.add(element)
-                    ignored_elements.update(set(element.iterchildren()))
+            for element in self._root.iter(*ignore_tags):
+                ignored_elements.add(element)
+                ignored_elements.update(set(element.iterchildren()))
 
         _all_strings = []
         for node in self._root.xpath(".//*"):
