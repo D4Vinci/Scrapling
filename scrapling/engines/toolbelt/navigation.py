@@ -65,16 +65,24 @@ def construct_proxy_dict(
     """
     if isinstance(proxy_string, str):
         proxy = urlparse(proxy_string)
+        if (
+            proxy.scheme not in ("http", "https", "socks4", "socks5")
+            or not proxy.hostname
+        ):
+            raise ValueError("Invalid proxy string!")
+
         try:
             result = {
-                "server": f"{proxy.scheme}://{proxy.hostname}:{proxy.port}",
+                "server": f"{proxy.scheme}://{proxy.hostname}",
                 "username": proxy.username or "",
                 "password": proxy.password or "",
             }
+            if proxy.port:
+                result["server"] += f":{proxy.port}"
             return tuple(result.items()) if as_tuple else result
         except ValueError:
             # Urllib will say that one of the parameters above can't be casted to the correct type like `int` for port etc...
-            raise TypeError("The proxy argument's string is in invalid format!")
+            raise ValueError("The proxy argument's string is in invalid format!")
 
     elif isinstance(proxy_string, dict):
         try:
@@ -105,6 +113,13 @@ def construct_cdp_url(cdp_url: str, query_params: Optional[Dict] = None) -> str:
         # Validate hostname and port
         if not parsed.netloc:
             raise ValueError("Invalid hostname for the CDP URL")
+
+        try:
+            # Checking if the port is valid (if available)
+            _ = parsed.port
+        except ValueError:
+            # urlparse will raise `ValueError` if the port can't be casted to integer
+            raise ValueError("Invalid port for the CDP URL")
 
         # Ensure the path starts with /
         path = parsed.path
