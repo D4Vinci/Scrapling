@@ -1,6 +1,17 @@
 import pytest
+from pathlib import Path
 
-from scrapling.engines.toolbelt.custom import ResponseEncoding, StatusText
+from scrapling.engines.toolbelt.custom import ResponseEncoding, StatusText, Response
+from scrapling.engines.toolbelt.navigation import (
+    construct_proxy_dict,
+    construct_cdp_url,
+    js_bypass_path
+)
+from scrapling.engines.toolbelt.fingerprints import (
+    generate_convincing_referer,
+    get_os_name,
+    generate_headers
+)
 
 
 @pytest.fixture
@@ -122,7 +133,7 @@ def status_map():
 
 
 def test_parsing_content_type(content_type_map):
-    """Test if parsing different types of content-type returns the expected result"""
+    """Test if parsing different types of 'content-type' returns the expected result"""
     for header_value, expected_encoding in content_type_map.items():
         assert ResponseEncoding.get_value(header_value) == expected_encoding
 
@@ -136,3 +147,208 @@ def test_parsing_response_status(status_map):
 def test_unknown_status_code():
     """Test handling of an unknown status code"""
     assert StatusText.get(1000) == "Unknown Status Code"
+
+
+class TestConstructProxyDict:
+    """Test proxy dictionary construction"""
+
+    def test_proxy_string_basic(self):
+        """Test a basic proxy string"""
+        result = construct_proxy_dict("http://proxy.example.com:8080")
+
+        expected = {
+            "server": "http://proxy.example.com:8080",
+            "username": "",
+            "password": ""
+        }
+        assert result == expected
+
+    def test_proxy_string_with_auth(self):
+        """Test proxy string with authentication"""
+        result = construct_proxy_dict("http://user:pass@proxy.example.com:8080")
+
+        expected = {
+            "server": "http://proxy.example.com:8080",
+            "username": "user",
+            "password": "pass"
+        }
+        assert result == expected
+
+    def test_proxy_dict_input(self):
+        """Test proxy dictionary input"""
+        input_dict = {
+            "server": "http://proxy.example.com:8080",
+            "username": "user",
+            "password": "pass"
+        }
+        result = construct_proxy_dict(input_dict)
+
+        assert result == input_dict
+
+    def test_proxy_dict_minimal(self):
+        """Test minimal proxy dictionary"""
+        input_dict = {"server": "http://proxy.example.com:8080"}
+        result = construct_proxy_dict(input_dict)
+
+        expected = {
+            "server": "http://proxy.example.com:8080",
+            "username": "",
+            "password": ""
+        }
+        assert result == expected
+
+    def test_proxy_as_tuple(self):
+        """Test returning proxy as a tuple"""
+        result = construct_proxy_dict("http://proxy.example.com:8080", as_tuple=True)
+
+        assert isinstance(result, tuple)
+        result_dict = dict(result)
+        assert result_dict["server"] == "http://proxy.example.com:8080"
+
+    def test_invalid_proxy_string(self):
+        """Test invalid proxy string"""
+        with pytest.raises(ValueError):
+            construct_proxy_dict("invalid-proxy-format")
+
+    def test_invalid_proxy_dict(self):
+        """Test invalid proxy dictionary"""
+        with pytest.raises(TypeError):
+            construct_proxy_dict({"invalid": "structure"})
+
+
+class TestConstructCdpUrl:
+    """Test CDP URL construction"""
+
+    def test_basic_cdp_url(self):
+        """Test basic CDP URL"""
+        result = construct_cdp_url("ws://localhost:9222/devtools/browser")
+        assert result == "ws://localhost:9222/devtools/browser"
+
+    def test_cdp_url_with_params(self):
+        """Test CDP URL with query parameters"""
+        params = {"timeout": "30000", "headless": "true"}
+        result = construct_cdp_url("ws://localhost:9222/devtools/browser", params)
+
+        assert "timeout=30000" in result
+        assert "headless=true" in result
+
+    def test_cdp_url_without_leading_slash(self):
+        """Test CDP URL without a leading slash in the path"""
+        with pytest.raises(ValueError):
+            construct_cdp_url("ws://localhost:9222devtools/browser")
+
+    def test_invalid_cdp_scheme(self):
+        """Test invalid CDP URL scheme"""
+        with pytest.raises(ValueError):
+            construct_cdp_url("http://localhost:9222/devtools/browser")
+
+    def test_invalid_cdp_netloc(self):
+        """Test invalid CDP URL network location"""
+        with pytest.raises(ValueError):
+            construct_cdp_url("ws:///devtools/browser")
+
+    def test_malformed_cdp_url(self):
+        """Test malformed CDP URL"""
+        with pytest.raises(ValueError):
+            construct_cdp_url("not-a-url")
+
+
+class TestJsBypassPath:
+    """Test JavaScript bypass path utility"""
+
+    def test_js_bypass_path(self):
+        """Test getting JavaScript bypass file path"""
+        result = js_bypass_path("webdriver_fully.js")
+
+        assert isinstance(result, str)
+        assert result.endswith("webdriver_fully.js")
+        assert Path(result).exists()
+
+    def test_js_bypass_path_caching(self):
+        """Test that js_bypass_path is cached"""
+        result1 = js_bypass_path("webdriver_fully.js")
+        result2 = js_bypass_path("webdriver_fully.js")
+
+        assert result1 == result2
+
+
+class TestFingerprintFunctions:
+    """Test fingerprint generation functions"""
+
+    def test_generate_convincing_referer(self):
+        """Test referer generation"""
+        url = "https://sub.example.com/page.html"
+        result = generate_convincing_referer(url)
+
+        assert result.startswith("https://www.google.com/search?q=")
+        assert "example" in result
+
+    def test_generate_convincing_referer_caching(self):
+        """Test referer generation caching"""
+        url = "https://example.com"
+        result1 = generate_convincing_referer(url)
+        result2 = generate_convincing_referer(url)
+
+        assert result1 == result2
+
+    def test_get_os_name(self):
+        """Test OS name detection"""
+        result = get_os_name()
+
+        # Should return one of the known OS names or None
+        valid_names = ["linux", "macos", "windows", "ios"]
+        assert result is None or result in valid_names
+
+    def test_generate_headers_basic(self):
+        """Test basic header generation"""
+        headers = generate_headers()
+
+        assert isinstance(headers, dict)
+        assert "User-Agent" in headers
+        assert len(headers["User-Agent"]) > 0
+
+    def test_generate_headers_browser_mode(self):
+        """Test header generation in browser mode"""
+        headers = generate_headers(browser_mode=True)
+
+        assert isinstance(headers, dict)
+        assert "User-Agent" in headers
+
+
+class TestResponse:
+    """Test Response class functionality"""
+
+    def test_response_creation(self):
+        """Test Response object creation"""
+        response = Response(
+            url="https://example.com",
+            content="<html><body>Test</body></html>",
+            status=200,
+            reason="OK",
+            cookies={"session": "abc123"},
+            headers={"Content-Type": "text/html"},
+            request_headers={"User-Agent": "Test"},
+            encoding="utf-8"
+        )
+
+        assert response.url == "https://example.com"
+        assert response.status == 200
+        assert response.reason == "OK"
+        assert response.cookies == {"session": "abc123"}
+
+    def test_response_with_bytes_content(self):
+        """Test Response with 'bytes' content"""
+        content_bytes = "<html><body>Test</body></html>".encode('utf-8')
+
+        response = Response(
+            url="https://example.com",
+            content=content_bytes,
+            status=200,
+            reason="OK",
+            cookies={},
+            headers={},
+            request_headers={}
+        )
+
+        # Should handle 'bytes' content properly
+        assert response.status == 200
