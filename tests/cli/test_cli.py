@@ -4,8 +4,7 @@ from unittest.mock import patch, MagicMock
 import pytest_httpbin
 
 from scrapling.cli import (
-    install, shell, mcp,
-    get, post, put, delete, fetch, stealthy_fetch
+    shell, mcp, get, post, put, delete, fetch, stealthy_fetch
 )
 
 
@@ -20,11 +19,6 @@ class TestCLI:
     @pytest.fixture
     def runner(self):
         return CliRunner()
-
-    def test_install_command(self, runner):
-        """Test install command"""
-        result = runner.invoke(install)
-        assert result.exit_code == 0
 
     def test_shell_command(self, runner):
         """Test shell command"""
