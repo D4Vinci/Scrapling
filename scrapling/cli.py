@@ -55,11 +55,12 @@ def __ParseExtractArguments(
 ) -> Tuple[Dict[str, str], Dict[str, str], Dict[str, str], Optional[Dict[str, str]]]:
     """Parse arguments for extract command"""
     parsed_headers, parsed_cookies = _ParseHeaders(headers)
-    for key, value in _CookieParser(cookies):
-        try:
-            parsed_cookies[key] = value
-        except Exception as e:
-            raise ValueError(f"Could not parse cookies '{cookies}': {e}")
+    if cookies:
+        for key, value in _CookieParser(cookies):
+            try:
+                parsed_cookies[key] = value
+            except Exception as e:
+                raise ValueError(f"Could not parse cookies '{cookies}': {e}")
 
     parsed_json = __ParseJSONData(json)
     parsed_params = {}

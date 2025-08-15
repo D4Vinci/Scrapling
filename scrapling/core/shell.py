@@ -207,10 +207,13 @@ class CurlParser:
         try:
             parsed_args, unknown = self.parser.parse_known_args(tokens)
             if unknown:
-                log.warning(f"Ignored unknown curl arguments: {unknown}")
+                raise AttributeError(f"Unknown/Unsupported curl arguments: {unknown}")
 
         except ValueError:
             return None
+
+        except AttributeError:
+            raise
 
         except Exception as e:
             log.error(
