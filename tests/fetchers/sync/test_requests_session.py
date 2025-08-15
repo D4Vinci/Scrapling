@@ -1,7 +1,7 @@
 import pytest
 
 
-from scrapling.engines.static import FetcherSession, FetcherClient, AsyncFetcherClient
+from scrapling.engines.static import FetcherSession, FetcherClient
 
 
 class TestFetcherSession:
@@ -45,12 +45,3 @@ class TestFetcherSession:
         assert client.__enter__ is None
         assert client.__exit__ is None
         assert client._curl_session is True  # Special marker
-
-    def test_async_fetcher_client_creation(self):
-        """Test AsyncFetcherClient creation"""
-        client = AsyncFetcherClient()
-
-        # Should not have context manager methods
-        assert client.__aenter__ is None
-        assert client.__aexit__ is None
-        assert client._async_curl_session is True  # Special marker
