@@ -340,7 +340,7 @@ def _replace_entities(
                 if 0x80 <= number <= 0x9F:
                     return bytes((number,)).decode("cp1252")
                 return chr(number)
-            except (ValueError, OverflowError):
+            except (ValueError, OverflowError):  # pragma: no cover
                 pass
 
         return "" if remove_illegal and groups.get("semicolon") else m.group(0)

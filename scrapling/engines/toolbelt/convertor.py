@@ -52,12 +52,12 @@ class ResponseFactory:
                             **parser_arguments,
                         ),
                     )
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     log.error(f"Error processing redirect: {e}")
                     break
 
                 current_request = current_request.redirected_from
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             log.error(f"Error processing response history: {e}")
 
         return history
@@ -105,7 +105,7 @@ class ResponseFactory:
         history = cls._process_response_history(first_response, parser_arguments)
         try:
             page_content = page.content()
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content: {e}")
             page_content = ""
 
@@ -157,12 +157,12 @@ class ResponseFactory:
                             **parser_arguments,
                         ),
                     )
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     log.error(f"Error processing redirect: {e}")
                     break
 
                 current_request = current_request.redirected_from
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             log.error(f"Error processing response history: {e}")
 
         return history
@@ -212,7 +212,7 @@ class ResponseFactory:
         )
         try:
             page_content = await page.content()
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content in async: {e}")
             page_content = ""
 

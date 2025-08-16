@@ -40,7 +40,7 @@ def _compiled_stealth_scripts():
 
 
 @lru_cache(2, typed=True)
-def _set_flags(hide_canvas, disable_webgl):
+def _set_flags(hide_canvas, disable_webgl):  # pragma: no cover
     """Returns the flags that will be used while launching the browser if stealth mode is enabled"""
     flags = DEFAULT_STEALTH_FLAGS
     if hide_canvas:

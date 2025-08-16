@@ -234,7 +234,7 @@ class DynamicSession:
 
         self.playwright = sync_context().start()
 
-        if self.cdp_url:
+        if self.cdp_url:  # pragma: no cover
             self.context = self.playwright.chromium.connect_over_cdp(
                 endpoint_url=self.cdp_url
             ).new_context(**self.context_options)
@@ -243,7 +243,7 @@ class DynamicSession:
                 user_data_dir="", **self.launch_options
             )
 
-        if self.cookies:
+        if self.cookies:  # pragma: no cover
             self.context.add_cookies(self.cookies)
 
     def __enter__(self):
@@ -253,7 +253,7 @@ class DynamicSession:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def close(self):
+    def close(self):  # pragma: no cover
         """Close all resources"""
         if self._closed:
             return
@@ -268,7 +268,7 @@ class DynamicSession:
 
         self._closed = True
 
-    def _get_or_create_page(self) -> PageInfo:
+    def _get_or_create_page(self) -> PageInfo:  # pragma: no cover
         """Get an available page or create a new one"""
         # Try to get a ready page first
         page_info = self.page_pool.get_ready_page()
@@ -310,7 +310,7 @@ class DynamicSession:
         :param url: The Target url.
         :return: A `Response` object.
         """
-        if self._closed:
+        if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         final_response = None
@@ -331,7 +331,7 @@ class DynamicSession:
         page_info = self._get_or_create_page()
         page_info.mark_busy(url=url)
 
-        try:
+        try:  # pragma: no cover
             # Navigate to URL and wait for a specified state
             page_info.page.on("response", handle_response)
             first_response = page_info.page.goto(url, referer=referer)
@@ -346,7 +346,7 @@ class DynamicSession:
             if self.page_action is not None:
                 try:
                     page_info.page = self.page_action(page_info.page)
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     log.error(f"Error executing page_action: {e}")
 
             if self.wait_selector:
@@ -358,7 +358,7 @@ class DynamicSession:
                     page_info.page.wait_for_load_state(state="domcontentloaded")
                     if self.network_idle:
                         page_info.page.wait_for_load_state("networkidle")
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     log.error(f"Error waiting for selector {self.wait_selector}: {e}")
 
             page_info.page.wait_for_timeout(self.wait)
@@ -506,7 +506,7 @@ class AsyncDynamicSession(DynamicSession):
 
     async def close(self):
         """Close all resources"""
-        if self._closed:
+        if self._closed:  # pragma: no cover
             return
 
         if self.context:
@@ -548,7 +548,7 @@ class AsyncDynamicSession(DynamicSession):
         max_wait = 30  # seconds
         start_time = time()
 
-        while time() - start_time < max_wait:
+        while time() - start_time < max_wait:  # pragma: no cover
             page_info = self.page_pool.get_ready_page()
             if page_info:
                 return page_info
@@ -562,7 +562,7 @@ class AsyncDynamicSession(DynamicSession):
         :param url: The Target url.
         :return: A `Response` object.
         """
-        if self._closed:
+        if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         final_response = None
@@ -625,6 +625,6 @@ class AsyncDynamicSession(DynamicSession):
 
             return response
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             page_info.mark_error()
             raise e

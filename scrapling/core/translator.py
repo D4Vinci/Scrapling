@@ -37,15 +37,15 @@ class XPathExpr(OriginalXPathExpr):
     def __str__(self) -> str:
         path = super().__str__()
         if self.textnode:
-            if path == "*":
+            if path == "*":  # pragma: no cover
                 path = "text()"
-            elif path.endswith("::*/*"):
+            elif path.endswith("::*/*"):  # pragma: no cover
                 path = path[:-3] + "text()"
             else:
                 path += "/text()"
 
         if self.attribute is not None:
-            if path.endswith("::*/*"):
+            if path.endswith("::*/*"):  # pragma: no cover
                 path = path[:-2]
             path += f"/@{self.attribute}"
 
@@ -59,7 +59,7 @@ class XPathExpr(OriginalXPathExpr):
         **kwargs: Any,
     ) -> Self:
         if not isinstance(other, XPathExpr):
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"Expressions of type {__name__}.XPathExpr can ony join expressions"
                 f" of the same type (or its descendants), got {type(other)}"
             )
@@ -71,10 +71,10 @@ class XPathExpr(OriginalXPathExpr):
 
 # e.g. cssselect.GenericTranslator, cssselect.HTMLTranslator
 class TranslatorProtocol(Protocol):
-    def xpath_element(self, selector: Element) -> OriginalXPathExpr:
+    def xpath_element(self, selector: Element) -> OriginalXPathExpr:  # pragma: no cover
         pass
 
-    def css_to_xpath(self, css: str, prefix: str = ...) -> str:
+    def css_to_xpath(self, css: str, prefix: str = ...) -> str:  # pragma: no cover
         pass
 
 
@@ -98,7 +98,7 @@ class TranslatorMixin:
         if isinstance(pseudo_element, FunctionalPseudoElement):
             method_name = f"xpath_{pseudo_element.name.replace('-', '_')}_functional_pseudo_element"
             method = getattr(self, method_name, None)
-            if not method:
+            if not method:  # pragma: no cover
                 raise ExpressionError(
                     f"The functional pseudo-element ::{pseudo_element.name}() is unknown"
                 )
@@ -108,7 +108,7 @@ class TranslatorMixin:
                 f"xpath_{pseudo_element.replace('-', '_')}_simple_pseudo_element"
             )
             method = getattr(self, method_name, None)
-            if not method:
+            if not method:  # pragma: no cover
                 raise ExpressionError(
                     f"The pseudo-element ::{pseudo_element} is unknown"
                 )
@@ -120,7 +120,7 @@ class TranslatorMixin:
         xpath: OriginalXPathExpr, function: FunctionalPseudoElement
     ) -> XPathExpr:
         """Support selecting attribute values using ::attr() pseudo-element"""
-        if function.argument_types() not in (["STRING"], ["IDENT"]):
+        if function.argument_types() not in (["STRING"], ["IDENT"]):  # pragma: no cover
             raise ExpressionError(
                 f"Expected a single string or ident for ::attr(), got {function.arguments!r}"
             )

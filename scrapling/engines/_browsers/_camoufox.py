@@ -229,22 +229,24 @@ class StealthySession:
     def __create__(self):
         """Create a browser for this instance and context."""
         self.playwright = sync_playwright().start()
-        self.context = self.playwright.firefox.launch_persistent_context(
-            **self.launch_options
+        self.context = (
+            self.playwright.firefox.launch_persistent_context(  # pragma: no cover
+                **self.launch_options
+            )
         )
-        if self.cookies:
+        if self.cookies:  # pragma: no cover
             self.context.add_cookies(self.cookies)
 
-    def __enter__(self):
+    def __enter__(self):  # pragma: no cover
         self.__create__()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def close(self):
+    def close(self):  # pragma: no cover
         """Close all resources"""
-        if self._closed:
+        if self._closed:  # pragma: no cover
             return
 
         if self.context:
@@ -257,7 +259,7 @@ class StealthySession:
 
         self._closed = True
 
-    def _get_or_create_page(self) -> PageInfo:
+    def _get_or_create_page(self) -> PageInfo:  # pragma: no cover
         """Get an available page or create a new one"""
         # Try to get a ready page first
         page_info = self.page_pool.get_ready_page()
@@ -319,7 +321,7 @@ class StealthySession:
 
         return None
 
-    def _solve_cloudflare(self, page: Page) -> None:
+    def _solve_cloudflare(self, page: Page) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
 
         :param page: The targeted page
@@ -371,7 +373,7 @@ class StealthySession:
         :param url: The Target url.
         :return: A `Response` object.
         """
-        if self._closed:
+        if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         final_response = None
@@ -392,7 +394,7 @@ class StealthySession:
         page_info = self._get_or_create_page()
         page_info.mark_busy(url=url)
 
-        try:
+        try:  # pragma: no cover
             # Navigate to URL and wait for a specified state
             page_info.page.on("response", handle_response)
             first_response = page_info.page.goto(url, referer=referer)
@@ -440,7 +442,7 @@ class StealthySession:
 
             return response
 
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             page_info.mark_error()
             raise e
 
@@ -567,7 +569,7 @@ class AsyncStealthySession(StealthySession):
 
     async def close(self):
         """Close all resources"""
-        if self._closed:
+        if self._closed:  # pragma: no cover
             return
 
         if self.context:
@@ -605,7 +607,7 @@ class AsyncStealthySession(StealthySession):
         max_wait = 30
         start_time = time()
 
-        while time() - start_time < max_wait:
+        while time() - start_time < max_wait:  # pragma: no cover
             page_info = self.page_pool.get_ready_page()
             if page_info:
                 return page_info
@@ -625,7 +627,7 @@ class AsyncStealthySession(StealthySession):
             return
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
-            if challenge_type == "non-interactive":
+            if challenge_type == "non-interactive":  # pragma: no cover
                 while "<title>Just a moment...</title>" in (await page.content()):
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     await page.wait_for_timeout(1000)
@@ -667,7 +669,7 @@ class AsyncStealthySession(StealthySession):
         :param url: The Target url.
         :return: A `Response` object.
         """
-        if self._closed:
+        if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         final_response = None

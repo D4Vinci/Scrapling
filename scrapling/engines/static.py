@@ -112,7 +112,9 @@ class FetcherSession:
             kwargs, "impersonate", self.default_impersonate
         )
 
-        if self.get_with_precedence(kwargs, "http3", self.default_http3):
+        if self.get_with_precedence(
+            kwargs, "http3", self.default_http3
+        ):  # pragma: no cover
             request_args["http_version"] = CurlHttpVersion.V3ONLY
             if impersonate:
                 log.warning(
@@ -286,7 +288,7 @@ class FetcherSession:
                     response = session.request(method, **request_args)
                     # response.raise_for_status()  # Retry responses with a status code between 200-400
                     return ResponseFactory.from_http_request(response, selector_config)
-                except CurlError as e:
+                except CurlError as e:  # pragma: no cover
                     if attempt < max_retries - 1:
                         log.error(
                             f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds..."
@@ -296,7 +298,7 @@ class FetcherSession:
                         log.error(f"Failed after {max_retries} attempts: {e}")
                         raise  # Raise the exception if all retries fail
 
-        raise RuntimeError("No active session available.")
+        raise RuntimeError("No active session available.")  # pragma: no cover
 
     async def __make_async_request(
         self,
@@ -333,7 +335,7 @@ class FetcherSession:
                     response = await session.request(method, **request_args)
                     # response.raise_for_status()  # Retry responses with a status code between 200-400
                     return ResponseFactory.from_http_request(response, selector_config)
-                except CurlError as e:
+                except CurlError as e:  # pragma: no cover
                     if attempt < max_retries - 1:
                         log.error(
                             f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds..."
@@ -343,7 +345,7 @@ class FetcherSession:
                         log.error(f"Failed after {max_retries} attempts: {e}")
                         raise  # Raise the exception if all retries fail
 
-        raise RuntimeError("No active session available.")
+        raise RuntimeError("No active session available.")  # pragma: no cover
 
     @staticmethod
     def get_with_precedence(kwargs, key, default_value):

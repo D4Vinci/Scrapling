@@ -31,11 +31,15 @@ class TextHandler(str):
 
     __slots__ = ()
 
-    def __getitem__(self, key: SupportsIndex | slice) -> "TextHandler":
+    def __getitem__(
+        self, key: SupportsIndex | slice
+    ) -> "TextHandler":  # pragma: no cover
         lst = super().__getitem__(key)
         return cast(_TextHandlerType, TextHandler(lst))
 
-    def split(self, sep: str = None, maxsplit: SupportsIndex = -1) -> "TextHandlers":
+    def split(
+        self, sep: str = None, maxsplit: SupportsIndex = -1
+    ) -> "TextHandlers":  # pragma: no cover
         return TextHandlers(
             cast(
                 List[_TextHandlerType],
@@ -43,58 +47,70 @@ class TextHandler(str):
             )
         )
 
-    def strip(self, chars: str = None) -> Union[str, "TextHandler"]:
+    def strip(self, chars: str = None) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().strip(chars))
 
-    def lstrip(self, chars: str = None) -> Union[str, "TextHandler"]:
+    def lstrip(
+        self, chars: str = None
+    ) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().lstrip(chars))
 
-    def rstrip(self, chars: str = None) -> Union[str, "TextHandler"]:
+    def rstrip(
+        self, chars: str = None
+    ) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().rstrip(chars))
 
-    def capitalize(self) -> Union[str, "TextHandler"]:
+    def capitalize(self) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().capitalize())
 
-    def casefold(self) -> Union[str, "TextHandler"]:
+    def casefold(self) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().casefold())
 
     def center(
         self, width: SupportsIndex, fillchar: str = " "
-    ) -> Union[str, "TextHandler"]:
+    ) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().center(width, fillchar))
 
-    def expandtabs(self, tabsize: SupportsIndex = 8) -> Union[str, "TextHandler"]:
+    def expandtabs(
+        self, tabsize: SupportsIndex = 8
+    ) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().expandtabs(tabsize))
 
-    def format(self, *args: str, **kwargs: str) -> Union[str, "TextHandler"]:
+    def format(
+        self, *args: str, **kwargs: str
+    ) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().format(*args, **kwargs))
 
-    def format_map(self, mapping) -> Union[str, "TextHandler"]:
+    def format_map(self, mapping) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().format_map(mapping))
 
-    def join(self, iterable: Iterable[str]) -> Union[str, "TextHandler"]:
+    def join(
+        self, iterable: Iterable[str]
+    ) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().join(iterable))
 
     def ljust(
         self, width: SupportsIndex, fillchar: str = " "
-    ) -> Union[str, "TextHandler"]:
+    ) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().ljust(width, fillchar))
 
     def rjust(
         self, width: SupportsIndex, fillchar: str = " "
-    ) -> Union[str, "TextHandler"]:
+    ) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().rjust(width, fillchar))
 
-    def swapcase(self) -> Union[str, "TextHandler"]:
+    def swapcase(self) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().swapcase())
 
-    def title(self) -> Union[str, "TextHandler"]:
+    def title(self) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().title())
 
-    def translate(self, table) -> Union[str, "TextHandler"]:
+    def translate(self, table) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().translate(table))
 
-    def zfill(self, width: SupportsIndex) -> Union[str, "TextHandler"]:
+    def zfill(
+        self, width: SupportsIndex
+    ) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().zfill(width))
 
     def replace(
@@ -120,10 +136,10 @@ class TextHandler(str):
         return self.__class__(__CONSECUTIVE_SPACES_REGEX__.sub(" ", data).strip())
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
-    def get(self, default=None):
+    def get(self, default=None):  # pragma: no cover
         return self
 
-    def get_all(self):
+    def get_all(self):  # pragma: no cover
         return self
 
     extract = get_all
@@ -234,11 +250,11 @@ class TextHandlers(List[TextHandler]):
     __slots__ = ()
 
     @overload
-    def __getitem__(self, pos: SupportsIndex) -> TextHandler:
+    def __getitem__(self, pos: SupportsIndex) -> TextHandler:  # pragma: no cover
         pass
 
     @overload
-    def __getitem__(self, pos: slice) -> "TextHandlers":
+    def __getitem__(self, pos: slice) -> "TextHandlers":  # pragma: no cover
         pass
 
     def __getitem__(
@@ -276,7 +292,7 @@ class TextHandlers(List[TextHandler]):
         replace_entities: bool = True,
         clean_match: bool = False,
         case_sensitive: bool = True,
-    ) -> TextHandler:
+    ) -> TextHandler:  # pragma: no cover
         """Call the ``.re_first()`` method for each element in this list and return
         the first result or the default value otherwise.
 

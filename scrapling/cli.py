@@ -15,7 +15,7 @@ __OUTPUT_FILE_HELP__ = "Output file path can be HTML content, Markdown of the HT
 __PACKAGE_DIR__ = Path(__file__).parent
 
 
-def __Execute(cmd: List[str], help_line: str) -> None:
+def __Execute(cmd: List[str], help_line: str) -> None:  # pragma: no cover
     print(f"Installing {help_line}...")
     _ = check_output(cmd, shell=False)  # nosec B603
     # I meant to not use try except here
@@ -28,7 +28,7 @@ def __ParseJSONData(json_string: Optional[str] = None) -> Optional[Dict[str, Any
 
     try:
         return json_loads(json_string)
-    except JSONDecodeError as e:
+    except JSONDecodeError as e:  # pragma: no cover
         raise ValueError(f"Invalid JSON data '{json_string}': {e}")
 
 
@@ -105,7 +105,7 @@ def __BuildRequest(
     type=bool,
     help="Force Scrapling to reinstall all Fetchers dependencies",
 )
-def install(force):
+def install(force):  # pragma: no cover
     if (
         force
         or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists()

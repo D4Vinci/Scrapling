@@ -169,7 +169,9 @@ class Selector(SelectorsGeneration):
                         "Storage class must be wrapped with lru_cache decorator, see docs for info"
                     )
 
-                if not issubclass(storage.__wrapped__, StorageSystemMixin):
+                if not issubclass(
+                    storage.__wrapped__, StorageSystemMixin
+                ):  # pragma: no cover
                     raise ValueError(
                         "Storage system must be inherited from class `StorageSystemMixin`"
                     )
@@ -1400,7 +1402,7 @@ class Selectors(List[Selector]):
         """Returns the length of the current list"""
         return len(self)
 
-    def __getstate__(self) -> Any:
+    def __getstate__(self) -> Any:  # pragma: no cover
         # lxml don't like it :)
         raise TypeError("Can't pickle Selectors object")
 

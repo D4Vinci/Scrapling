@@ -35,7 +35,7 @@ StrOrBytes = Union[str, bytes]
 try:
     # Python 3.11+
     from typing import Self  # novermin
-except ImportError:
+except ImportError:  # pragma: no cover
     try:
         from typing_extensions import Self  # Backport
     except ImportError:

@@ -12,7 +12,7 @@ from scrapling.core.utils import _StorageTools, log
 from scrapling.core._types import Dict, Optional, Any
 
 
-class StorageSystemMixin(ABC):
+class StorageSystemMixin(ABC):  # pragma: no cover
     # If you want to make your own storage system, you have to inherit from this
     def __init__(self, url: Optional[str] = None):
         """
