@@ -326,7 +326,7 @@ class Selector(SelectorsGeneration):
         if ignore_tags:
             for element in self._root.iter(*ignore_tags):
                 ignored_elements.add(element)
-                ignored_elements.update(set(element.iterchildren()))
+                ignored_elements.update(set(_find_all_elements(element)))
 
         _all_strings = []
         for node in self._root.iter():
