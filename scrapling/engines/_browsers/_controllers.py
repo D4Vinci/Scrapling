@@ -4,7 +4,6 @@ from asyncio import sleep as asyncio_sleep, Lock
 from playwright.sync_api import (
     Response as SyncPlaywrightResponse,
     sync_playwright,
-    BrowserType,
     BrowserContext,
     Playwright,
     Locator,
@@ -12,7 +11,6 @@ from playwright.sync_api import (
 from playwright.async_api import (
     async_playwright,
     Response as AsyncPlaywrightResponse,
-    BrowserType as AsyncBrowserType,
     BrowserContext as AsyncBrowserContext,
     Playwright as AsyncPlaywright,
     Locator as AsyncLocator,
@@ -236,12 +234,12 @@ class DynamicSession:
 
         self.playwright = sync_context().start()
 
-        browser_launcher: BrowserType = self.playwright.chromium
         if self.cdp_url:
-            browser = browser_launcher.connect_over_cdp(endpoint_url=self.cdp_url)
-            self.context = browser.new_context(**self.context_options)
+            self.context = self.playwright.chromium.connect_over_cdp(
+                endpoint_url=self.cdp_url
+            ).new_context(**self.context_options)
         else:
-            self.context = browser_launcher.launch_persistent_context(
+            self.context = self.playwright.chromium.launch_persistent_context(
                 user_data_dir="", **self.launch_options
             )
 
@@ -482,15 +480,16 @@ class AsyncDynamicSession(DynamicSession):
 
         self.playwright: AsyncPlaywright = await async_context().start()
 
-        browser_launcher: AsyncBrowserType = self.playwright.chromium
         if self.cdp_url:
-            browser = await browser_launcher.connect_over_cdp(endpoint_url=self.cdp_url)
+            browser = await self.playwright.chromium.connect_over_cdp(
+                endpoint_url=self.cdp_url
+            )
             self.context: AsyncBrowserContext = await browser.new_context(
                 **self.context_options
             )
         else:
             self.context: AsyncBrowserContext = (
-                await browser_launcher.launch_persistent_context(
+                await self.playwright.chromium.launch_persistent_context(
                     user_data_dir="", **self.launch_options
                 )
             )
