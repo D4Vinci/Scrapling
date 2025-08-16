@@ -37,7 +37,7 @@ class TestStealthyFetcher:
         assert cookies == {"test": "value"}
 
     def test_automation(self, fetcher):
-        """Test if automation break the code or not"""
+        """Test if automation breaks the code or not"""
 
         def scroll_page(page):
             page.mouse.wheel(10, 0)
@@ -59,6 +59,7 @@ class TestStealthyFetcher:
             {
                 "network_idle": True,
                 "wait": 10,
+                "timeout": 30_000,
                 "cookies": [],
                 "google_search": True,
                 "extra_headers": {"ayo": ""},
