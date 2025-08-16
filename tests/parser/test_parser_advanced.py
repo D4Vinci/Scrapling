@@ -1,8 +1,58 @@
 import re
 import pytest
+from unittest.mock import Mock
 
 from scrapling import Selector, Selectors
 from scrapling.core.custom_types import TextHandler, TextHandlers
+from scrapling.core.storage import SQLiteStorageSystem
+
+
+class TestSelectorAdvancedFeatures:
+    """Test advanced Selector features like adaptive matching"""
+
+    def test_adaptive_initialization_with_storage(self):
+        """Test adaptive initialization with custom storage"""
+        html = "<html><body><p>Test</p></body></html>"
+
+        # Use the actual SQLiteStorageSystem for this test
+        selector = Selector(
+            content=html,
+            adaptive=True,
+            storage=SQLiteStorageSystem,
+            storage_args={"storage_file": ":memory:", "url": "https://example.com"}
+        )
+
+        assert selector._Selector__adaptive_enabled is True
+        assert selector._storage is not None
+
+    def test_adaptive_initialization_with_default_storage_args(self):
+        """Test adaptive initialization with default storage args"""
+        html = "<html><body><p>Test</p></body></html>"
+        url = "https://example.com"
+
+        # Test that adaptive mode uses default storage when no explicit args provided
+        selector = Selector(
+            content=html,
+            url=url,
+            adaptive=True
+        )
+
+        # Should create storage with default args
+        assert selector._storage is not None
+
+    def test_adaptive_with_existing_storage(self):
+        """Test adaptive initialization with existing storage object"""
+        html = "<html><body><p>Test</p></body></html>"
+
+        mock_storage = Mock()
+
+        selector = Selector(
+            content=html,
+            adaptive=True,
+            _storage=mock_storage
+        )
+
+        assert selector._storage is mock_storage
 
 
 class TestAdvancedSelectors:

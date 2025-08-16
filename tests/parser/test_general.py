@@ -221,7 +221,7 @@ class TestElementNavigation:
         """Test parent and sibling navigation"""
         table = page.css(".product-list")[0]
         parent = table.parent
-        assert parent.attrib["id"] == "products"
+        assert parent["id"] == "products"
 
         parent_siblings = parent.siblings
         assert len(parent_siblings) == 1
@@ -267,7 +267,7 @@ class TestJSONAndAttributes:
         products = page.css(".product")
         product_ids = [product.attrib["data-id"] for product in products]
         assert product_ids == ["1", "2", "3"]
-        assert "data-id" in products[0].attrib
+        assert "data-id" in products[0]
 
         # Review rating calculations
         reviews = page.css(".review")
@@ -316,7 +316,9 @@ def test_selectors_generation(page):
 
     def _traverse(element: Selector):
         assert isinstance(element.generate_css_selector, str)
+        assert isinstance(element.generate_full_css_selector, str)
         assert isinstance(element.generate_xpath_selector, str)
+        assert isinstance(element.generate_full_xpath_selector, str)
         for branch in element.children:
             _traverse(branch)
 

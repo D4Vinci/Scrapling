@@ -1,11 +1,17 @@
 import pytest
+import pytest_httpbin
 from unittest.mock import Mock, patch
 
 from scrapling.core.ai import ScraplingMCPServer, ResponseModel
 
 
+@pytest_httpbin.use_class_based_httpbin
 class TestMCPServer:
     """Test MCP server functionality"""
+
+    @pytest.fixture(scope="class")
+    def test_url(self, httpbin):
+        return f"{httpbin.url}/html"
 
     @pytest.fixture
     def server(self):
@@ -16,71 +22,46 @@ class TestMCPServer:
         assert server._server is not None
         assert server._server.name == "Scrapling"
 
-    def test_get_tool(self):
+    def test_get_tool(self, server, test_url):
         """Test the get tool method"""
-        with patch('scrapling.fetchers.Fetcher.get') as mock_get:
-            mock_response = Mock()
-            mock_response.status = 200
-            mock_response.url = "https://example.com"
-            mock_get.return_value = mock_response
-
-            with patch('scrapling.core.ai.Convertor._extract_content') as mock_extract:
-                mock_extract.return_value = iter(["Content"])
-
-                result = ScraplingMCPServer.get(
-                    url="https://example.com",
-                    extraction_type="markdown"
-                )
-
-                assert isinstance(result, ResponseModel)
-                assert result.status == 200
-                assert result.url == "https://example.com"
+        result = server.get(url=test_url, extraction_type="markdown")
+        assert isinstance(result, ResponseModel)
+        assert result.status == 200
+        assert result.url == test_url
 
     @pytest.mark.asyncio
-    async def test_bulk_get_tool(self):
+    async def test_bulk_get_tool(self, server, test_url):
         """Test the bulk_get tool method"""
-        with patch('scrapling.engines.FetcherSession') as mock_session:
-            mock_instance = Mock()
-            mock_session.return_value.__aenter__.return_value = mock_instance
+        results = await server.bulk_get(urls=(test_url, test_url), extraction_type="html")
 
-            # Mock async get method
-            async def mock_async_get(*args, **kwargs):
-                mock_resp = Mock()
-                mock_resp.status = 200
-                mock_resp.url = args[0]
-                return mock_resp
-
-            mock_instance.get = mock_async_get
-
-            with patch('scrapling.core.ai.Convertor._extract_content') as mock_extract:
-                mock_extract.return_value = iter(["Content"])
-
-                results = await ScraplingMCPServer.bulk_get(
-                    urls=("https://example1.com", "https://example2.com"),
-                    extraction_type="html"
-                )
-
-                assert len(results) == 2
-                assert all(isinstance(r, ResponseModel) for r in results)
+        assert len(results) == 2
+        assert all(isinstance(r, ResponseModel) for r in results)
 
     @pytest.mark.asyncio
-    async def test_fetch_tool(self):
+    async def test_fetch_tool(self, server, test_url):
         """Test the fetch tool method"""
-        with patch('scrapling.fetchers.DynamicFetcher.async_fetch') as mock_fetch:
-            mock_response = Mock()
-            mock_response.status = 200
-            mock_response.url = "https://example.com"
-            mock_fetch.return_value = mock_response
+        result = await server.fetch(url=test_url, headless=True)
+        assert isinstance(result, ResponseModel)
+        assert result.status == 200
 
-            with patch('scrapling.core.ai.Convertor._extract_content') as mock_extract:
-                mock_extract.return_value = iter(["Content"])
+    @pytest.mark.asyncio
+    async def test_bulk_fetch_tool(self, server, test_url):
+        """Test the bulk_fetch tool method"""
+        result = await server.bulk_fetch(urls=(test_url, test_url), headless=True)
+        assert all(isinstance(r, ResponseModel) for r in result)
 
-                result = await ScraplingMCPServer.fetch(
-                    url="https://example.com",
-                    headless=True
-                )
+    @pytest.mark.asyncio
+    async def test_stealthy_fetch_tool(self, server, test_url):
+        """Test the stealthy_fetch tool method"""
+        result = await server.stealthy_fetch(url=test_url, headless=True)
+        assert isinstance(result, ResponseModel)
+        assert result.status == 200
 
-                assert isinstance(result, ResponseModel)
+    @pytest.mark.asyncio
+    async def test_bulk_stealthy_fetch_tool(self, server, test_url):
+        """Test the bulk_stealthy_fetch tool method"""
+        result = await server.bulk_stealthy_fetch(urls=(test_url, test_url), headless=True)
+        assert all(isinstance(r, ResponseModel) for r in result)
 
     def test_serve_method(self, server):
         """Test the serve method"""

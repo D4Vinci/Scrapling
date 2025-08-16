@@ -24,7 +24,12 @@ class TestStealthyFetcher:
             "html_url": f"{url}/html",
             "delayed_url": f"{url}/delay/10",  # 10 Seconds delay response
             "cookies_url": f"{url}/cookies/set/test/value",
+            "cloudflare_url": "https://nopecha.com/demo/cloudflare",  # Interactive turnstile page
         }
+
+    async def test_cloudflare_fetch(self, fetcher, urls):
+        """Test if Cloudflare bypass is working"""
+        assert (await fetcher.async_fetch(urls["cloudflare_url"], solve_cloudflare=True)).status == 200
 
     async def test_basic_fetch(self, fetcher, urls):
         """Test doing a basic fetch request with multiple statuses"""
@@ -63,7 +68,7 @@ class TestStealthyFetcher:
             {
                 "network_idle": True,
                 "wait": 10,
-                "cookies": [],
+                "cookies": [{"name": "test", "value": "123", "domain": "example.com", "path": "/"}],
                 "google_search": True,
                 "extra_headers": {"ayo": ""},
                 "os_randomize": True,

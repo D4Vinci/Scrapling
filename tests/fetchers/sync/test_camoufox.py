@@ -2,7 +2,6 @@ import pytest
 import pytest_httpbin
 
 from scrapling import StealthyFetcher
-
 StealthyFetcher.adaptive = True
 
 
@@ -23,6 +22,11 @@ class TestStealthyFetcher:
         self.html_url = f"{httpbin.url}/html"
         self.delayed_url = f"{httpbin.url}/delay/10"  # 10 Seconds delay response
         self.cookies_url = f"{httpbin.url}/cookies/set/test/value"
+        self.cloudflare_url = "https://nopecha.com/demo/cloudflare"  # Interactive turnstile page
+
+    def test_cloudflare_fetch(self, fetcher):
+        """Test if Cloudflare bypass is working"""
+        assert fetcher.fetch(self.cloudflare_url, solve_cloudflare=True).status == 200
 
     def test_basic_fetch(self, fetcher):
         """Test doing a basic fetch request with multiple statuses"""
@@ -60,7 +64,7 @@ class TestStealthyFetcher:
                 "network_idle": True,
                 "wait": 10,
                 "timeout": 30_000,
-                "cookies": [],
+                "cookies": [{"name": "test", "value": "123", "domain": "example.com", "path": "/"}],
                 "google_search": True,
                 "extra_headers": {"ayo": ""},
                 "os_randomize": True,
