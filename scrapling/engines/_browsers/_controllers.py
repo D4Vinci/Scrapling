@@ -236,9 +236,7 @@ class DynamicSession:
 
         self.playwright = sync_context().start()
 
-        browser_launcher: BrowserType = getattr(
-            self.playwright, "chrome" if self.real_chrome else "chromium"
-        )
+        browser_launcher: BrowserType = self.playwright.chromium
         if self.cdp_url:
             browser = browser_launcher.connect_over_cdp(endpoint_url=self.cdp_url)
             self.context = browser.new_context(**self.context_options)
@@ -484,9 +482,7 @@ class AsyncDynamicSession(DynamicSession):
 
         self.playwright: AsyncPlaywright = await async_context().start()
 
-        browser_launcher: AsyncBrowserType = getattr(
-            self.playwright, "chrome" if self.real_chrome else "chromium"
-        )
+        browser_launcher: AsyncBrowserType = self.playwright.chromium
         if self.cdp_url:
             browser = await browser_launcher.connect_over_cdp(endpoint_url=self.cdp_url)
             self.context: AsyncBrowserContext = await browser.new_context(
