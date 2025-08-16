@@ -1,5 +1,3 @@
-import os
-
 import pytest
 import pytest_httpbin
 
@@ -33,24 +31,6 @@ class TestDynamicFetcher:
         # assert fetcher.fetch(self.status_404).status == 404
         # assert fetcher.fetch(self.status_501).status == 501
 
-    def test_networkidle(self, fetcher):
-        """Test if waiting for `networkidle` make page does not finish loading or not"""
-        assert fetcher.fetch(self.basic_url, network_idle=True).status == 200
-
-    def test_blocking_resources(self, fetcher):
-        """Test if blocking resources make the page does not finish loading or not"""
-        assert fetcher.fetch(self.basic_url, disable_resources=True).status == 200
-
-    def test_waiting_selector(self, fetcher):
-        """Test if waiting for a selector make page does not finish loading or not"""
-        assert fetcher.fetch(self.html_url, wait_selector="h1").status == 200
-        assert (
-            fetcher.fetch(
-                self.html_url, wait_selector="h1", wait_selector_state="visible"
-            ).status
-            == 200
-        )
-
     def test_cookies_loading(self, fetcher):
         """Test if cookies are set after the request"""
         response = fetcher.fetch(self.cookies_url)
@@ -72,12 +52,21 @@ class TestDynamicFetcher:
         "kwargs",
         [
             {"disable_webgl": True, "hide_canvas": False},
-            {"disable_webgl": False, "hide_canvas": True},
+            {"disable_webgl": False, "hide_canvas": True, "disable_resources": True},
             {"stealth": True},  # causes issues with GitHub Actions
+            {"wait_selector": "h1", "wait_selector_state": "attached"},
+            {"wait_selector": "h1", "wait_selector_state": "visible"},
             {
-                "useragent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0"
+                "google_search": True,
+                "real_chrome": True,
+                "wait": 10,
+                "locale": "en-US",
+                "extra_headers": {"ayo": ""},
+                "useragent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0",
+                "cookies": [],
+                "network_idle": True,
+                "custom_config": {"keep_comments": False, "keep_cdata": False},
             },
-            {"extra_headers": {"ayo": ""}},
         ],
     )
     def test_properties(self, fetcher, kwargs):

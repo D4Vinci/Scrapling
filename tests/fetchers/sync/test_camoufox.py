@@ -25,29 +25,10 @@ class TestStealthyFetcher:
         self.cookies_url = f"{httpbin.url}/cookies/set/test/value"
 
     def test_basic_fetch(self, fetcher):
-        """Test doing basic fetch request with multiple statuses"""
+        """Test doing a basic fetch request with multiple statuses"""
         assert fetcher.fetch(self.status_200).status == 200
         assert fetcher.fetch(self.status_404).status == 404
         assert fetcher.fetch(self.status_501).status == 501
-
-    def test_networkidle(self, fetcher):
-        """Test if waiting for `networkidle` make page does not finish loading or not"""
-        assert fetcher.fetch(self.basic_url, network_idle=True).status == 200
-
-    def test_blocking_resources(self, fetcher):
-        """Test if blocking resources make page does not finish loading or not"""
-        assert fetcher.fetch(self.basic_url, block_images=True).status == 200
-        assert fetcher.fetch(self.basic_url, disable_resources=True).status == 200
-
-    def test_waiting_selector(self, fetcher):
-        """Test if waiting for a selector make page does not finish loading or not"""
-        assert fetcher.fetch(self.html_url, wait_selector="h1").status == 200
-        assert (
-            fetcher.fetch(
-                self.html_url, wait_selector="h1", wait_selector_state="visible"
-            ).status
-            == 200
-        )
 
     def test_cookies_loading(self, fetcher):
         """Test if cookies are set after the request"""
@@ -66,26 +47,35 @@ class TestStealthyFetcher:
 
         assert fetcher.fetch(self.html_url, page_action=scroll_page).status == 200
 
-    def test_properties(self, fetcher):
-        """Test if different arguments breaks the code or not"""
-        assert (
-            fetcher.fetch(self.html_url, block_webrtc=True, allow_webgl=True).status
-            == 200
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"block_webrtc": True, "allow_webgl": True, "disable_ads": False},
+            {"block_webrtc": False, "allow_webgl": True, "block_images": True},
+            {"block_webrtc": True, "allow_webgl": False, "disable_resources": True},
+            {"block_images": True, "disable_resources": True, },
+            {"wait_selector": "h1", "wait_selector_state": "attached"},
+            {"wait_selector": "h1", "wait_selector_state": "visible"},
+            {
+                "network_idle": True,
+                "wait": 10,
+                "cookies": [],
+                "google_search": True,
+                "extra_headers": {"ayo": ""},
+                "os_randomize": True,
+                "disable_ads": True,
+                "custom_config": {"keep_comments": False, "keep_cdata": False},
+                "additional_args": {"window": (1920, 1080)},
+            },
+        ],
+    )
+    def test_properties(self, fetcher, kwargs):
+        """Test if different arguments break the code or not"""
+        response = fetcher.fetch(
+            self.html_url,
+            **kwargs
         )
-        assert (
-            fetcher.fetch(self.html_url, block_webrtc=False, allow_webgl=True).status
-            == 200
-        )
-        assert (
-            fetcher.fetch(self.html_url, block_webrtc=True, allow_webgl=False).status
-            == 200
-        )
-        assert (
-            fetcher.fetch(
-                self.html_url, extra_headers={"ayo": ""}, os_randomize=True
-            ).status
-            == 200
-        )
+        assert response.status == 200
 
     def test_infinite_timeout(self, fetcher):
         """Test if infinite timeout breaks the code or not"""
