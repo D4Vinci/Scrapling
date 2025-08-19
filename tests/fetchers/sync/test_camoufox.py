@@ -69,6 +69,7 @@ class TestStealthyFetcher:
                 "extra_headers": {"ayo": ""},
                 "os_randomize": True,
                 "disable_ads": True,
+                "geoip": True,
                 "custom_config": {"keep_comments": False, "keep_cdata": False},
                 "additional_args": {"window": (1920, 1080)},
             },
