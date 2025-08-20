@@ -28,6 +28,17 @@ Scrapling is built from the ground up by Web scraping experts for beginners and 
 >> # Later, if the website structure changes, pass `auto_match=True`
 >> products = page.css('.product', auto_match=True)  # and Scrapling still finds them!
 ```
+
+## Top Sponsors 
+
+<!-- sponsors -->
+
+<a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png"></a>
+
+<!-- /sponsors -->
+
+<i><sub>Do you want to show your ad here? Click [here](https://github.com/sponsors/D4Vinci) and choose the tier that suites you!</sub></i>
+
 ## Key Features
 ### Fetch websites as you prefer with async support
 - **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class.
