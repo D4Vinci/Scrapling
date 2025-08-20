@@ -64,59 +64,16 @@ Scrapling is a high-performance, intelligent web scraping library for Python tha
 
 # Sponsors 
 
-[Evomi](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling) is your Swiss Quality Proxy Provider, starting at **$0.49/GB**
+<!-- sponsors -->
 
-- 👩‍💻 **$0.49 per GB Residential Proxies**: Our price is unbeatable
-- 👩‍💻 **24/7 Expert Support**: We will join your Slack Channel
-- 🌍 **Global Presence**: Available in 150+ Countries
-- ⚡ **Low Latency**
-- 🔒 **Swiss Quality and Privacy**
-- 🎁 **Free Trial**
-- 🛡️ **99.9% Uptime**
-- 🤝 **Special IP Pool selection**: Optimize for fast, quality, or quantity of ips
-- 🔧 **Easy Integration**: Compatible with most software and programming languages
+<a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png"></a>
+<a href="https://www.swiftproxy.net/" target="_blank" title="Unlock Reliable Proxy Services with Swiftproxy!"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/swiftproxy.png"></a>
+<a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>
+<a href="https://serpapi.com/?utm_source=scrapling" target="_blank" title="Scrape Google and other search engines with SerpApi"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png"></a>
 
-[![Evomi Banner](https://my.evomi.com/images/brand/cta.png)](https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling)
----
+<!-- /sponsors -->
 
-[Scrapeless](http://scrapeless.com/?utm_source=D4Vinci) – An all-in-one expandable and highly scalable tool for businesses & developers
-- ⚡ [Scraping Browser](https://www.scrapeless.com/en/product/scraping-browser?utm_source=D4Vinci): Cloud-based browser with stealth mode, built to unlock websites at scale. Supports high concurrency, automation, and large-volume scraping. Puppeteer/Playwright compatible.
-- ⚡ [Deep SerpApi](https://www.scrapeless.com/en/product/deep-serp-api?utm_source=D4Vinci): 13+ SERP types, $0.1/1K queries, 0.2s response.
-- ⚡ [Scraping API](https://www.scrapeless.com/en/product/scraping-api?utm_source=D4Vinci): Access TikTok, Shopee, Amazon, and more.
-- ⚡ [Universal Scraping API](https://www.scrapeless.com/en/product/universal-scraping-api?utm_source=D4Vinci): Web unlocker with IP rotation, fingerprinting, and CAPTCHA bypass.
-- ⚡ [Proxies](https://www.scrapeless.com/en/product/proxies?utm_source=D4Vinci): 70M+ IPs in 195 countries, stable & low-cost at $1.8/GB.
-
-📌 [Try now](https://app.scrapeless.com/passport/login?utm_source=D4Vinci) | [Docs](https://docs.scrapeless.com/en/scraping-browser/quickstart/introduction/?utm_source=D4Vinci)
-
-
-<a href="http://scrapeless.com/?utm_source=D4Vinci"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg" style="width:85%" alt="Scrapeless Banner" ></a>
----
-**Unlock Reliable Proxy Services with [Swiftproxy](https://www.swiftproxy.net/)**
-
-With [Swiftproxy](https://www.swiftproxy.net/), you can access high-performance, secure proxies to enhance your web automation, privacy, and data collection efforts.
-Developers and businesses trust our services to scale scraping tasks and ensure a safe online experience. Get started today at [Swiftproxy.net](https://www.swiftproxy.net/).
-
-Anyone who signs up can use the discount code GHB5 to get 10% off their purchase at checkout
-
-<img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/swiftproxy.jpeg" style="width:85%" alt="SwiftProxy Banner" >
-
----
-Tired of your PC slowing you down? Can’t keep your machine on 24/7 for scraping?
-
-**[PetroSky](https://petrosky.io/d4vinci)** delivers cutting-edge VPS hosting powered by:
-- AMD EPYC 7003/9004 Series CPUs
-- Up to 48GB RAM / 20 vCores
-- Blazing-fast 10Gbps network
-- Premium backbone with <0.7ms latency to Cloudflare, Google, AWS
-- NVMe SSD
-
-<img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png" style="width:80%;height:60%" alt="PetroSky Banner" >
-
----
-
-<p align="center">
-   <strong>Please consider <a href="https://github.com/sponsors/D4Vinci">joining them</a> to make <em>Scrapling</em>’s maintainance more sustainable!</strong>
-</p>
+<i><sub>Do you want to show your ad here? Click [here](https://github.com/sponsors/D4Vinci) and choose the tier that suites you!</sub></i>
 
 ---
 
@@ -129,7 +86,7 @@ Tired of your PC slowing you down? Can’t keep your machine on 24/7 for scrapin
 
 ### Adaptive Scraping
 - 🔄 **Smart Element Tracking**: Relocate elements after website changes using an intelligent similarity system and integrated storage.
-- 🎯 **Flexible Selection**: CSS selectors, XPath selectors, filters-based search, text search, regex search, and more.
+- 🎯 **Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more.
 - 🔍 **Find Similar Elements**: Automatically locate elements similar to the element you found!
 - 🧠 **Smart Content Scraping**: Extract data from multiple websites using Scrapling's powerful features without specific selectors.
 
@@ -237,10 +194,6 @@ Then run this command to install browsers' dependencies needed to use Fetcher cl
 scrapling install
 ```
 If you have any installation issues, please open an issue.
-
-
-## More Sponsors!
-<a href="https://serpapi.com/?utm_source=scrapling"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png" height="500" alt="SerpApi Banner" ></a>
 
 
 ## Contributing
