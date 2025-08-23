@@ -1,5 +1,5 @@
-name: Create Release
-# Creates a GitHub release when a PR is merged to main, using the PR title as the version (must start with 'v') and PR body as release notes.
+name: Create Release and Publish to PyPI
+# Creates a GitHub release when a PR is merged to main (using PR title as version and body as release notes), then publishes to PyPI.
 
 on:
   pull_request:
@@ -8,11 +8,15 @@ on:
       - main
 
 jobs:
-  create-release:
+  create-release-and-publish:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    environment:
+      name: PyPI
+      url: https://pypi.org/p/scrapling
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,3 +55,20 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Upgrade pip
+        run: python3 -m pip install --upgrade pip
+
+      - name: Install build
+        run: python3 -m pip install --upgrade build twine setuptools
+
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build --sdist --wheel --outdir dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
