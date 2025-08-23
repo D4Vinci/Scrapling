@@ -1,0 +1,173 @@
+site_name: Scrapling
+site_description: Scrapling - a Python library to make Web Scraping easy again!
+site_author: Karim Shoair
+repo_url: https://github.com/D4Vinci/Scrapling
+site_url: https://scrapling.readthedocs.io/en/latest/
+repo_name: D4Vinci/Scrapling
+copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">Change cookie settings</a>
+
+theme:
+  name: material
+  language: en
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/link
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off
+        name: Switch to system preference
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    repo: fontawesome/brands/github-alt
+  features:
+    - announce.dismiss
+    - navigation.top
+    - navigation.footer
+    - navigation.instant
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tracking
+    - navigation.instant
+    - navigation.instant.progress
+#    - navigation.tabs
+#    - navigation.expand
+#    - toc.integrate
+    - search.share
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.width.full
+    - content.action.view
+    - content.action.edit
+    - content.code.copy
+    - content.code.annotate
+    - content.code.annotation
+
+nav:
+  - Introduction: index.md
+  - Overview: overview.md
+  - Parsing Performance: benchmarks.md
+  - User Guide:
+    - Parsing:
+      - Querying elements: parsing/selection.md
+      - Main classes: parsing/main_classes.md
+      - Using automatch feature: parsing/automatch.md
+    - Fetching:
+      - Choosing a fetcher: fetching/choosing.md
+      - Static requests: fetching/static.md
+      - Dynamically loaded websites: fetching/dynamic.md
+      - Fully bypass protections while fetching: fetching/stealthy.md
+  - Tutorials:
+    - A Free Alternative to AI for Robust Web Scraping: tutorials/replacing_ai.md
+    - Migrating from BeautifulSoup: tutorials/migrating_from_beautifulsoup.md
+#    - Migrating from AutoScraper: tutorials/migrating_from_autoscraper.md
+  - Development:
+    - API Reference:
+      - Adaptor: api-reference/adaptor.md
+      - Fetchers: api-reference/fetchers.md
+      - Custom Types: api-reference/custom-types.md
+    - Writing your retrieval system: development/automatch_storage_system.md
+    - Using Scrapling's custom types: development/scrapling_custom_types.md
+  - Support and Advertisement: donate.md
+  - Contributing: contributing.md
+  - Changelog: 'https://github.com/D4Vinci/Scrapling/releases'
+
+markdown_extensions:
+  - admonition
+  - abbr
+#  - mkautodoc
+  - pymdownx.emoji
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - codehilite:
+      css_class: highlight
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - social:
+      cards_layout_options:
+        background_color: "#1f1f1f"
+        font_family: Roboto
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [scrapling]
+          options:
+            docstring_style: sphinx
+            show_source: true
+            show_root_heading: true
+            show_if_no_docstring: true
+            inherited_members: true
+            members_order: source
+            separate_signature: true
+            unwrap_annotated: true
+            filters:
+              - '!^_'
+            merge_init_into_class: true
+            docstring_section_style: spacy
+            signature_crossrefs: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+
+extra:
+  homepage: https://scrapling.readthedocs.io/en/latest/
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/D4Vinci/Scrapling
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/scrapling/
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/Scrapling_dev
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/EMgGbDceNQ
+  analytics:
+    provider: google
+    property: G-CS3DKLY73Z
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This page was helpful
+          data: 1
+          note: >-
+            Thanks for your feedback!
+        - icon: material/emoticon-sad-outline
+          name: This page could be improved
+          data: 0
+          note: >-
+            Thanks for your feedback!
+  consent:
+    title: Cookie consent
+    description: >-
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of our documentation and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our documentation better.
+
+extra_css:
+  - stylesheets/extra.css
