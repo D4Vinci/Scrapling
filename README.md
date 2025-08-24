@@ -269,7 +269,7 @@ Scrapling requires Python 3.10 or higher:
 pip install scrapling
 ```
 
-### Fetchers Setup
+#### Fetchers Setup
 
 If you are going to use any of the fetchers or their classes, then install browser dependencies with
 ```bash
@@ -280,17 +280,15 @@ This downloads all browsers with their system dependencies and fingerprint manip
 
 ### Optional Dependencies
 
-Install the MCP server feature:
+- Install the MCP server feature:
 ```bash
 pip install "scrapling[ai]"
 ```
-
-Install with shell features (Web Scraping shell and the `extract` command):
+- Install shell features (Web Scraping shell and the `extract` command): 
 ```bash
 pip install "scrapling[shell]"
 ```
-
-Install everything:
+- Install everything: 
 ```bash
 pip install "scrapling[all]"
 ```
