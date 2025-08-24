@@ -151,4 +151,4 @@ If you like Scrapling and want to support its development:
 
 ## License
 
-This project is licensed under BSD-3 License. See the [LICENSE](https://github.com/D4Vinci/Scrapling/blob/main/LICENSE) file for details.
+This project is licensed under the BSD-3 License. See the [LICENSE](https://github.com/D4Vinci/Scrapling/blob/main/LICENSE) file for details.
