@@ -4,29 +4,31 @@
 }
 </style>
 
-<p align="center">
+<div align="center">
     <a href="https://scrapling.readthedocs.io/en/latest/" alt="poster">
         <img alt="poster" src="assets/poster.png" style="width: 50%; height: 100%;"></a>
-</p>
+</div>
 
-Scrapling is an Undetectable, high-performance, intelligent Web scraping library for Python 3 to make Web Scraping easy!
+<div align="center">
+    <i><code>Easy, effortless Web Scraping as it should be!</code></i>
+</div>
 
-Scrapling isn't only about making undetectable requests or fetching pages under the radar!
+**Stop fighting anti-bot systems. Stop rewriting selectors after every website update.**
 
-It has its own parser that adapts to website changes and provides many element selection/querying options other than traditional selectors, powerful DOM traversal API, and many other features while significantly outperforming popular parsing alternatives.
+Scrapling isn't just another Web Scraping library. It's the first **adaptive** scraping library that learns from website changes and evolves with them. While other libraries break when websites update their structure, Scrapling automatically relocates your elements and keeps your scrapers running.
 
-Scrapling is built from the ground up by Web scraping experts for beginners and experts. The goal is to provide powerful features while maintaining simplicity and minimal boilerplate code.
+Built for the modern Web, Scrapling has its own rapid parsing engine and its fetchers to handle all Web Scraping challenges you are facing or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
->> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
->> StealthyFetcher.auto_match = True
+>> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+>> StealthyFetcher.adaptive = True
 # Fetch websites' source under the radar!
 >> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
 >> print(page.status)
 200
 >> products = page.css('.product', auto_save=True)  # Scrape data that survives website design changes!
->> # Later, if the website structure changes, pass `auto_match=True`
->> products = page.css('.product', auto_match=True)  # and Scrapling still finds them!
+>> # Later, if the website structure changes, pass `adaptive=True`
+>> products = page.css('.product', adaptive=True)  # and Scrapling still finds them!
 ```
 
 ## Top Sponsors 
@@ -38,31 +40,38 @@ Scrapling is built from the ground up by Web scraping experts for beginners and 
 </div>
 <!-- /sponsors -->
 
-<i><sub>Do you want to show your ad here? Click [here](https://github.com/sponsors/D4Vinci) and choose the tier that suites you!</sub></i>
+<i><sub>Do you want to show your ad here? Click [here](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=435495) and enjoy the rest of the perks!</sub></i>
 
 ## Key Features
-### Fetch websites as you prefer with async support
-- **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class.
-- **Dynamic Loading & Automation**: Fetch dynamic websites with the `PlayWrightFetcher` class through your real browser, Scrapling's stealth mode, Playwright's Chromium browser, or [NSTbrowser](https://app.nstbrowser.io/r/1vO5e5)'s browserless!
-- **Anti-bot Protections Bypass**: Easily bypass protections with the `StealthyFetcher` and `PlayWrightFetcher` classes.
 
-### Easy Scraping
-- **Smart Element Tracking**: Relocate elements after website changes using an intelligent similarity system and integrated storage.
-- **Flexible Selection**: CSS selectors, XPath selectors, filters-based search, text search, regex search, and more.
-- **Find Similar Elements**: Automatically locate elements similar to the element you found!
-- **Smart Content Scraping**: Extract data from multiple websites without specific selectors using Scrapling powerful features.
+### Advanced Websites Fetching with Session Support
+- **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP3.
+- **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium, real Chrome, and custom stealth mode.
+- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` using a modified version of Firefox and fingerprint spoofing. Can bypass all levels of Cloudflare's Turnstile with automation easily.
+- **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
+- **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 
-### High Performance
-- **Lightning Fast**: Built from the ground up with performance in mind, outperforming most popular Python scraping libraries.
-- **Memory Efficient**: Optimized data structures for minimal memory footprint.
-- **Fast JSON serialization**: 10x faster than standard library.
+### Adaptive Scraping & AI Integration
+- 🔄 **Smart Element Tracking**: Relocate elements after website changes using intelligent similarity algorithms.
+- 🎯 **Smart Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more. 
+- 🔍 **Find Similar Elements**: Automatically locate elements similar to found elements.
+- 🤖 **MCP Server to be used with AI**: Built-in MCP server for AI-assisted Web Scraping and data extraction. The MCP server features custom, powerful capabilities that utilize Scrapling to extract targeted content before passing it to the AI (Claude/Cursor/etc), thereby speeding up operations and reducing costs by minimizing token usage.
 
-### Developer Friendly
-- **Powerful Navigation API**: Easy DOM traversal in all directions.
-- **Rich Text Processing**: All strings have built-in regex, cleaning methods, and more. All elements' attributes are optimized dictionaries that use less memory than standard dictionaries with added methods.
-- **Auto Selectors Generation**: Generate robust short and full CSS/XPath selectors for any element.
-- **Familiar API**: Similar to Scrapy/BeautifulSoup and the same CSS pseudo-elements used in Scrapy.
-- **Type hints**: Complete type/doc-strings coverage for future-proofing and best autocompletion support.
+### High-Performance & battle-tested Architecture
+- 🚀 **Lightning Fast**: Optimized performance outperforming most Python scraping libraries.
+- 🔋 **Memory Efficient**: Optimized data structures and lazy loading for a minimal memory footprint.
+- ⚡ **Fast JSON Serialization**: 10x faster than the standard library.
+- 🏗️ **Battle tested**: Not only does Scrapling have 92% test coverage and full type hints coverage, but it has been used daily by hundreds of Web Scrapers over the past year.
+
+### Developer/Web Scraper Friendly Experience
+- 🎯 **Interactive Web Scraping Shell**: Optional built-in IPython shell with Scrapling integration, shortcuts, and new tools to speed up Web Scraping scripts development, like converting curl requests to Scrapling requests and viewing requests results in your browser.
+- 🚀 **Use it directly from the Terminal**: Optionally, you can use Scrapling to scrape a URL without writing a single code!
+- 🛠️ **Rich Navigation API**: Advanced DOM traversal with parent, sibling, and child navigation methods.
+- 🧬 **Enhanced Text Processing**: Built-in regex, cleaning methods, and optimized string operations.
+- 📝 **Auto Selector Generation**: Generate robust CSS/XPath selectors for any element.
+- 🔌 **Familiar API**: Similar to Scrapy/BeautifulSoup with the same pseudo-elements used in Scrapy/Parsel.
+- 📘 **Complete Type Coverage**: Full type hints for excellent IDE support and code completion.
+
 
 ## Star History
 Scrapling’s GitHub stars have grown steadily since its release (see chart below).
@@ -98,19 +107,35 @@ observer.observe(document.body, {
 </script>
 
 ## Installation
-Scrapling is a breeze to get started with!<br/>Starting from version 0.2.9, we require at least Python 3.9 to work.
+Scrapling requires Python 3.10 or higher:
 
-Run this command to install it with Python's pip.
 ```bash
-pip3 install scrapling
+pip install scrapling
 ```
-You are ready if you plan to use the parser only (the `Adaptor` class).
 
-But if you are going to make requests or fetch pages with Scrapling, then run this command to install browsers' dependencies needed to use the Fetchers
+#### Fetchers Setup
+
+If you are going to use any of the fetchers or their session classes, then install browser dependencies with
 ```bash
 scrapling install
 ```
-If you have any installation issues, please open an [issue](https://github.com/D4Vinci/Scrapling/issues/new/choose).
+
+This downloads all browsers with their system dependencies and fingerprint manipulation dependencies.
+
+### Optional Dependencies
+
+- Install the MCP server feature:
+```bash
+pip install "scrapling[ai]"
+```
+- Install shell features (Web Scraping shell and the `extract` command): 
+```bash
+pip install "scrapling[shell]"
+```
+- Install everything: 
+```bash
+pip install "scrapling[all]"
+```
 
 ## How the documentation is organized
 Scrapling has a lot of documentation, so we try to follow a guideline called the [Diátaxis documentation framework](https://diataxis.fr/).
@@ -121,7 +146,7 @@ If you like Scrapling and want to support its development:
 
 - ⭐ Star the [GitHub repository](https://github.com/D4Vinci/Scrapling)
 - 🚀 Follow us on [Twitter](https://x.com/Scrapling_dev) and join the [discord server](https://discord.gg/EMgGbDceNQ)
-- 💝 Consider [sponsoring the project or buying me a coffe](donate.md) :wink:
+- 💝 Consider [sponsoring the project or buying me a coffee](donate.md) :wink:
 - 🐛 Report bugs and suggest features through [GitHub Issues](https://github.com/D4Vinci/Scrapling/issues)
 
 ## License
