@@ -47,7 +47,7 @@ class TestParserAdaptive:
         new_page = Selector(changed_html, url="example.com", adaptive=True)
 
         # 'p1' was used as ID and now it's not and all the path elements have changes
-        # Also at the same time testing auto-match vs combined selectors
+        # Also at the same time testing `adaptive` vs combined selectors
         _ = old_page.css("#p1, #p2", auto_save=True)[0]
         relocated = new_page.css("#p1", adaptive=True)
 
@@ -101,7 +101,7 @@ class TestParserAdaptive:
         new_page = Selector(changed_html, url="example.com", adaptive=True)
 
         # 'p1' was used as ID and now it's not and all the path elements have changes
-        # Also at the same time testing auto-match vs combined selectors
+        # Also at the same time testing `adaptive` vs combined selectors
         _ = old_page.css("#p1, #p2", auto_save=True)[0]
         relocated = new_page.css("#p1", adaptive=True)
 

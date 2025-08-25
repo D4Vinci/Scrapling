@@ -68,7 +68,7 @@ We use:
 
    Example:
    ```
-   feat: add auto-matching for similar elements
+   feat: add `adaptive` for similar elements
    
    - Added find_similar() method
    - Implemented pattern matching

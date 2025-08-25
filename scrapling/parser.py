@@ -103,9 +103,9 @@ class Selector(SelectorsGeneration):
             Don't use it unless you know what you are doing!
         :param keep_comments: While parsing the HTML body, drop comments or not. Disabled by default for obvious reasons
         :param keep_cdata: While parsing the HTML body, drop cdata or not. Disabled by default for cleaner HTML.
-        :param adaptive: Globally turn off the auto-match feature in all functions, this argument takes higher
-            priority over all auto-match related arguments/functions in the class.
-        :param storage: The storage class to be passed for auto-matching functionalities, see ``Docs`` for more info.
+        :param adaptive: Globally turn off the adaptive feature in all functions, this argument takes higher
+            priority over all adaptive related arguments/functions in the class.
+        :param storage: The storage class to be passed for adaptive functionalities, see ``Docs`` for more info.
         :param storage_args: A dictionary of ``argument->value`` pairs to be passed for the storage class.
             If empty, default values will be used.
         """
@@ -544,10 +544,10 @@ class Selector(SelectorsGeneration):
 
         :param selector: The CSS3 selector to be used.
         :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
-        :param identifier: A string that will be used to save/retrieve element's data in auto-matching,
+        :param identifier: A string that will be used to save/retrieve element's data in adaptive,
          otherwise the selector will be used.
         :param auto_save: Automatically save new elements for `adaptive` later
-        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+        :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
         """
@@ -581,10 +581,10 @@ class Selector(SelectorsGeneration):
 
         :param selector: The XPath selector to be used.
         :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
-        :param identifier: A string that will be used to save/retrieve element's data in auto-matching,
+        :param identifier: A string that will be used to save/retrieve element's data in adaptive,
          otherwise the selector will be used.
         :param auto_save: Automatically save new elements for `adaptive` later
-        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+        :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
         """
@@ -617,10 +617,10 @@ class Selector(SelectorsGeneration):
 
         :param selector: The CSS3 selector to be used.
         :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
-        :param identifier: A string that will be used to save/retrieve element's data in auto-matching,
+        :param identifier: A string that will be used to save/retrieve element's data in adaptive,
          otherwise the selector will be used.
         :param auto_save: Automatically save new elements for `adaptive` later
-        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+        :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
@@ -681,10 +681,10 @@ class Selector(SelectorsGeneration):
 
         :param selector: The XPath selector to be used.
         :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
-        :param identifier: A string that will be used to save/retrieve element's data in auto-matching,
+        :param identifier: A string that will be used to save/retrieve element's data in adaptive,
          otherwise the selector will be used.
         :param auto_save: Automatically save new elements for `adaptive` later
-        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+        :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
@@ -971,7 +971,7 @@ class Selector(SelectorsGeneration):
             self._storage.save(element, identifier)
         else:
             log.critical(
-                "Can't use Auto-match features while disabled globally, you have to start a new class instance."
+                "Can't use `adaptive` features while it's disabled globally, you have to start a new class instance."
             )
 
     def retrieve(self, identifier: str) -> Optional[Dict[str, Any]]:
@@ -985,7 +985,7 @@ class Selector(SelectorsGeneration):
             return self._storage.retrieve(identifier)
 
         log.critical(
-            "Can't use Auto-match features while disabled globally, you have to start a new class instance."
+            "Can't use `adaptive` features while it's disabled globally, you have to start a new class instance."
         )
         return None
 
@@ -1266,10 +1266,10 @@ class Selectors(List[Selector]):
          Note: **Additional keyword arguments will be passed as XPath variables in the XPath expression!**
 
         :param selector: The XPath selector to be used.
-        :param identifier: A string that will be used to retrieve element's data in auto-matching,
+        :param identifier: A string that will be used to retrieve element's data in adaptive,
          otherwise the selector will be used.
         :param auto_save: Automatically save new elements for `adaptive` later
-        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+        :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
@@ -1299,10 +1299,10 @@ class Selectors(List[Selector]):
         and want to relocate the same element(s)**
 
         :param selector: The CSS3 selector to be used.
-        :param identifier: A string that will be used to retrieve element's data in auto-matching,
+        :param identifier: A string that will be used to retrieve element's data in adaptive,
          otherwise the selector will be used.
         :param auto_save: Automatically save new elements for `adaptive` later
-        :param percentage: The minimum percentage to accept while auto-matching and not going lower than that.
+        :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
