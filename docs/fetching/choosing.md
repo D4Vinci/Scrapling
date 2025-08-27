@@ -1,7 +1,7 @@
 ## Introduction
 Fetchers are classes that can do requests or fetch pages for you easily in a single-line fashion with many features and then return a [Response](#response-object) object. Starting with v0.3, all fetchers have other classes to keep the session running, so for example, a fetcher that uses a browser will keep the browser open till you finish all your requests through it instead of opening multiple browsers. So it depends on your use case.
 
-This feature was introduced because before v0.2, Scrapling was only a parsing engine, so we wanted to start moving step by step to be your one-stop shop for all Web Scraping needs.
+This feature was introduced because, before v0.2, Scrapling was only a parsing engine; therefore, we wanted to gradually transition to become your one-stop shop for all Web Scraping needs.
 
 > Fetchers are not wrappers built on top of other libraries. However, they utilize these libraries as an engine to request/fetch pages easily for you, while fully leveraging that engine and adding features for you. Some fetchers don't even use the official library for requests; instead, they use their own custom version. For example, `StealthyFetcher` utilizes `Camoufox` browser directly, without relying on its Python library for anything except launch options. This last part might change soon as well.
 
@@ -55,7 +55,7 @@ The available configuration arguments are: `adaptive`, `huge_tree`, `keep_commen
 > Note: The `adaptive` argument is disabled by default; you must enable it to use that feature.
 
 ### Set parser config per request
-As you probably understood, the logic above for setting the parser config will work globally for all requests/fetches done through that class, and it's intended for simplicity.
+As you probably understand, the logic above for setting the parser config will apply globally to all requests/fetches made through that class, and it's intended for simplicity.
 
 If your use case requires a different configuration for each request/fetch, you can pass a dictionary to the request method (`fetch`/`get`/`post`/...) to an argument named `custom_config`.
 
