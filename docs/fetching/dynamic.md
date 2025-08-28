@@ -121,7 +121,7 @@ page = DynamicFetcher.fetch(
 ```
 
 ### Browser Automation
-This is where your knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) comes into play. The function you pass here takes the page object from Playwright's API, performs the desired action, and then returns it for the current fetcher to continue working on it.
+This is where your knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) comes into play. The function you pass here takes the page object from Playwright's API, performs the desired action, and then returns it for the current fetcher to continue processing.
 
 This function is executed immediately after waiting for `network_idle` (if enabled) and before waiting for the `wait_selector` argument, allowing it to be used for various purposes, not just automation. You can alter the page as you want.
 
@@ -260,7 +260,8 @@ async def scrape_multiple_sites():
     async with AsyncDynamicSession(
         stealth=True,
         network_idle=True,
-        timeout=30000
+        timeout=30000,
+        max_pages=3
     ) as session:
         # Make async requests with shared browser configuration
         pages = await asyncio.gather(
@@ -270,6 +271,10 @@ async def scrape_multiple_sites():
         )
         return pages
 ```
+
+You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of waiting for one browser tab to become ready, it checks if the next tab in the pool is ready to be used and uses it. This allows for multiple websites to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
+
+When all tabs inside the pool are busy, the fetcher checks every subsecond if a tab becomes ready. If none become free within a 30-second interval, it raises a `TimeoutError` error. This can happen when the website you are fetching becomes unresponsive for some reason.
 
 ### Session Benefits
 
