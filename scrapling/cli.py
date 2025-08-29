@@ -197,7 +197,7 @@ def extract():
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page. It resolves to the first match if multiple matches are found.",
+    help="CSS selector to extract specific content from the page. It return all matches.",
 )
 @option(
     "--params",
@@ -292,7 +292,7 @@ def get(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page",
+    help="CSS selector to extract specific content from the page. It return all matches.",
 )
 @option(
     "--params",
@@ -388,7 +388,7 @@ def post(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page",
+    help="CSS selector to extract specific content from the page. It return all matches.",
 )
 @option(
     "--params",
@@ -482,7 +482,7 @@ def put(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page",
+    help="CSS selector to extract specific content from the page. It return all matches.",
 )
 @option(
     "--params",
@@ -587,7 +587,7 @@ def delete(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page",
+    help="CSS selector to extract specific content from the page. It return all matches.",
 )
 @option("--wait-selector", help="CSS selector to wait for before proceeding")
 @option("--locale", default="en-US", help="Browser locale (default: en-US)")
@@ -736,7 +736,7 @@ def fetch(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page",
+    help="CSS selector to extract specific content from the page. It return all matches.",
 )
 @option("--wait-selector", help="CSS selector to wait for before proceeding")
 @option(
