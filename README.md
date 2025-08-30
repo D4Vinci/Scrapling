@@ -2,8 +2,7 @@
   <br>
   <a href="https://scrapling.readthedocs.io/en/latest/" target="_blank"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png" style="width: 50%; height: 100%;"/></a>
   <br>
-  <i>Easy, effortless Web Scraping as it should be!</i>
-  <br>
+  <i><code>Easy, effortless Web Scraping as it should be!</code></i>
 </p>
 <p align="center">
     <a href="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml" alt="Tests">
