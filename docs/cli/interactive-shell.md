@@ -128,7 +128,7 @@ The shell provides a few functions to help you convert curl commands from the br
 - **Convert Curl command to Request Object**
 
     ```python
-    >>> curl_cmd = '''curl 'https://httpbin.org/post' \
+    >>> curl_cmd = '''curl 'https://scrapling.requestcatcher.com/post' \
     ...   -X POST \
     ...   -H 'Content-Type: application/json' \
     ...   -d '{"name": "test", "value": 123}' '''
@@ -137,7 +137,7 @@ The shell provides a few functions to help you convert curl commands from the br
     >>> request.method
     'post'
     >>> request.url
-    'https://httpbin.org/post'
+    'https://scrapling.requestcatcher.com/post'
     >>> request.headers
     {'Content-Type': 'application/json'}
     ```
