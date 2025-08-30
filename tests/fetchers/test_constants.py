@@ -1,7 +1,8 @@
 from scrapling.engines.constants import (
     DEFAULT_DISABLED_RESOURCES,
     DEFAULT_STEALTH_FLAGS,
-    HARMFUL_DEFAULT_ARGS
+    HARMFUL_DEFAULT_ARGS,
+    DEFAULT_FLAGS,
 )
 
 
@@ -20,8 +21,8 @@ class TestConstants:
         assert "--enable-automation" in HARMFUL_DEFAULT_ARGS
         assert "--disable-popup-blocking" in HARMFUL_DEFAULT_ARGS
 
-    def test_default_stealth_flags(self):
+    def test_flags(self):
         """Test default stealth flags"""
-        assert "--no-pings" in DEFAULT_STEALTH_FLAGS
+        assert "--no-pings" in DEFAULT_FLAGS
         assert "--incognito" in DEFAULT_STEALTH_FLAGS
         assert "--disable-blink-features=AutomationControlled" in DEFAULT_STEALTH_FLAGS
