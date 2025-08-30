@@ -1,7 +1,11 @@
 from functools import lru_cache
 
 from scrapling.core._types import Tuple
-from scrapling.engines.constants import DEFAULT_STEALTH_FLAGS, HARMFUL_DEFAULT_ARGS
+from scrapling.engines.constants import (
+    DEFAULT_STEALTH_FLAGS,
+    HARMFUL_DEFAULT_ARGS,
+    DEFAULT_FLAGS,
+)
 from scrapling.engines.toolbelt import js_bypass_path, generate_headers
 
 __default_useragent__ = generate_headers(browser_mode=True).get("User-Agent")
@@ -69,20 +73,21 @@ def _launch_kwargs(
 ) -> Tuple:
     """Creates the arguments we will use while launching playwright's browser"""
     launch_kwargs = {
+        "locale": locale,
         "headless": headless,
+        "args": DEFAULT_FLAGS,
+        "color_scheme": "dark",  # Bypasses the 'prefersLightColor' check in creepjs
+        "proxy": proxy or tuple(),
+        "device_scale_factor": 2,
         "ignore_default_args": HARMFUL_DEFAULT_ARGS,
         "channel": "chrome" if real_chrome else "chromium",
-        "proxy": proxy or tuple(),
-        "locale": locale,
-        "color_scheme": "dark",  # Bypasses the 'prefersLightColor' check in creepjs
-        "device_scale_factor": 2,
         "extra_http_headers": extra_headers or tuple(),
         "user_agent": useragent or __default_useragent__,
     }
     if stealth:
         launch_kwargs.update(
             {
-                "args": _set_flags(hide_canvas, disable_webgl),
+                "args": DEFAULT_FLAGS + _set_flags(hide_canvas, disable_webgl),
                 "chromium_sandbox": True,
                 "is_mobile": False,
                 "has_touch": False,

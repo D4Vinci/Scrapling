@@ -21,22 +21,32 @@ HARMFUL_DEFAULT_ARGS = (
     # '--disable-extensions',
 )
 
+DEFAULT_FLAGS = (
+    # Speed up chromium browsers by default
+    "--no-pings",
+    "--no-first-run",
+    "--disable-infobars",
+    "--disable-breakpad",
+    "--no-service-autorun",
+    "--homepage=about:blank",
+    "--password-store=basic",
+    "--no-default-browser-check",
+    "--disable-session-crashed-bubble",
+    "--disable-search-engine-choice-screen",
+)
+
 DEFAULT_STEALTH_FLAGS = (
     # Explanation: https://peter.sh/experiments/chromium-command-line-switches/
     # Generally this will make the browser faster and less detectable
-    "--no-pings",
     "--incognito",
     "--test-type",
     "--lang=en-US",
     "--mute-audio",
-    "--no-first-run",
     "--disable-sync",
     "--hide-scrollbars",
     "--disable-logging",
     "--start-maximized",  # For headless check bypass
     "--enable-async-dns",
-    "--disable-breakpad",
-    "--disable-infobars",
     "--accept-lang=en-US",
     "--use-mock-keychain",
     "--disable-translate",
@@ -48,7 +58,6 @@ DEFAULT_STEALTH_FLAGS = (
     "--enable-tcp-fast-open",
     "--enable-web-bluetooth",
     "--disable-hang-monitor",
-    "--password-store=basic",
     "--disable-cloud-import",
     "--disable-default-apps",
     "--disable-print-preview",
@@ -62,17 +71,15 @@ DEFAULT_STEALTH_FLAGS = (
     "--disable-prompt-on-repost",
     "--force-color-profile=srgb",
     "--font-render-hinting=none",
-    "--no-default-browser-check",
     "--aggressive-cache-discard",
     "--disable-component-update",
     "--disable-cookie-encryption",
     "--disable-domain-reliability",
     "--disable-threaded-animation",
     "--disable-threaded-scrolling",
-    # '--disable-reading-from-canvas',  # For Firefox
+    # '--disable-reading-from-canvas', # For Firefox
     "--enable-simple-cache-backend",
     "--disable-background-networking",
-    "--disable-session-crashed-bubble",
     "--enable-surface-synchronization",
     "--disable-image-animation-resync",
     "--disable-renderer-backgrounding",
