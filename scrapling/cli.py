@@ -11,7 +11,7 @@ from scrapling.core.shell import Convertor, _CookieParser, _ParseHeaders
 from orjson import loads as json_loads, JSONDecodeError
 from click import command, option, Choice, group, argument
 
-__OUTPUT_FILE_HELP__ = "Output file path can be HTML content, Markdown of the HTML content, or the text content. Use file extensions (`.html`/`.md`/`.txt`) respectively."
+__OUTPUT_FILE_HELP__ = "The output file path can be an HTML file, a Markdown file of the HTML content, or the text content itself. Use file extensions (`.html`/`.md`/`.txt`) respectively."
 __PACKAGE_DIR__ = Path(__file__).parent
 
 
@@ -179,7 +179,7 @@ def extract():
 
 
 @extract.command(
-    help=f"Perform a GET request and save content to file.\n\n{__OUTPUT_FILE_HELP__}"
+    help=f"Perform a GET request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
 )
 @argument("url", required=True)
 @argument("output_file", required=True)
@@ -197,7 +197,7 @@ def extract():
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page. It return all matches.",
+    help="CSS selector to extract specific content from the page. It returns all matches.",
 )
 @option(
     "--params",
@@ -236,7 +236,7 @@ def get(
     stealthy_headers,
 ):
     """
-    Perform a GET request and save content to file.
+    Perform a GET request and save the content to a file.
 
     :param url: Target URL for the request.
     :param output_file: Output file path (.md for Markdown, .html for HTML).
@@ -268,7 +268,7 @@ def get(
 
 
 @extract.command(
-    help=f"Perform a POST request and save content to file.\n\n{__OUTPUT_FILE_HELP__}"
+    help=f"Perform a POST request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
 )
 @argument("url", required=True)
 @argument("output_file", required=True)
@@ -292,7 +292,7 @@ def get(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page. It return all matches.",
+    help="CSS selector to extract specific content from the page. It returns all matches.",
 )
 @option(
     "--params",
@@ -333,7 +333,7 @@ def post(
     stealthy_headers,
 ):
     """
-    Perform a POST request and save content to file.
+    Perform a POST request and save the content to a file.
 
     :param url: Target URL for the request.
     :param output_file: Output file path (.md for Markdown, .html for HTML).
@@ -368,7 +368,7 @@ def post(
 
 
 @extract.command(
-    help=f"Perform a PUT request and save content to file.\n\n{__OUTPUT_FILE_HELP__}"
+    help=f"Perform a PUT request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
 )
 @argument("url", required=True)
 @argument("output_file", required=True)
@@ -388,7 +388,7 @@ def post(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page. It return all matches.",
+    help="CSS selector to extract specific content from the page. It returns all matches.",
 )
 @option(
     "--params",
@@ -429,7 +429,7 @@ def put(
     stealthy_headers,
 ):
     """
-    Perform a PUT request and save content to file.
+    Perform a PUT request and save the content to a file.
 
     :param url: Target URL for the request.
     :param output_file: Output file path (.md for Markdown, .html for HTML).
@@ -464,7 +464,7 @@ def put(
 
 
 @extract.command(
-    help=f"Perform a DELETE request and save content to file.\n\n{__OUTPUT_FILE_HELP__}"
+    help=f"Perform a DELETE request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
 )
 @argument("url", required=True)
 @argument("output_file", required=True)
@@ -482,7 +482,7 @@ def put(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page. It return all matches.",
+    help="CSS selector to extract specific content from the page. It returns all matches.",
 )
 @option(
     "--params",
@@ -521,7 +521,7 @@ def delete(
     stealthy_headers,
 ):
     """
-    Perform a DELETE request and save content to file.
+    Perform a DELETE request and save the content to a file.
 
     :param url: Target URL for the request.
     :param output_file: Output file path (.md for Markdown, .html for HTML).
@@ -587,7 +587,7 @@ def delete(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page. It return all matches.",
+    help="CSS selector to extract specific content from the page. It returns all matches.",
 )
 @option("--wait-selector", help="CSS selector to wait for before proceeding")
 @option("--locale", default="en-US", help="Browser locale (default: en-US)")
@@ -736,7 +736,7 @@ def fetch(
 @option(
     "--css-selector",
     "-s",
-    help="CSS selector to extract specific content from the page. It return all matches.",
+    help="CSS selector to extract specific content from the page. It returns all matches.",
 )
 @option("--wait-selector", help="CSS selector to wait for before proceeding")
 @option(
