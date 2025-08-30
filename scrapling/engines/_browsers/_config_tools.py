@@ -30,7 +30,6 @@ def _compiled_stealth_scripts():
             "webdriver_fully.js",
             "window_chrome.js",
             "navigator_plugins.js",
-            "pdf_viewer.js",
             "notification_permission.js",
             "screen_props.js",
             "playwright_fingerprint.js",
