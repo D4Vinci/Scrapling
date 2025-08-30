@@ -184,7 +184,7 @@ class DynamicSession:
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
-        if self.cdp_url:
+        if not self.cdp_url:
             # `launch_options` is used with persistent context
             self.launch_options = dict(
                 _launch_kwargs(
