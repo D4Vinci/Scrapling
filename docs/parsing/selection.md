@@ -30,7 +30,7 @@ In short, if you come from Scrapy/Parsel, you will find the same logic for selec
 To select elements with CSS selectors, you have the `css` and `css_first` methods. The latter is ~10% faster and more valuable when you are interested in the first element it finds, or if it's just one element, etc. It's beneficial when there's more than one, as it returns `Selectors`.
 
 ### What are XPath selectors?
-[XPath](https://en.wikipedia.org/wiki/XPath) is a language for selecting nodes in XML documents, which can also be used with HTML. This [cheatsheet] (https://devhints.io/xpath) is a good resource for learning about [XPath](https://en.wikipedia.org/wiki/XPath). Scrapling adds XPath selectors directly through [lxml](https://lxml.de/).
+[XPath](https://en.wikipedia.org/wiki/XPath) is a language for selecting nodes in XML documents, which can also be used with HTML. This [cheatsheet](https://devhints.io/xpath) is a good resource for learning about [XPath](https://en.wikipedia.org/wiki/XPath). Scrapling adds XPath selectors directly through [lxml](https://lxml.de/).
 
 In short, it is the same situation as CSS Selectors; if you come from Scrapy/Parsel, you will find the same logic for selectors here. However, Scrapling doesn't implement the XPath extension function `has-class` as Scrapy/Parsel does. Instead, it provides the `has_class` method, which can be used on elements returned for the same purpose.
 

@@ -11,6 +11,7 @@
 
 <div align="center">
     <i><code>Easy, effortless Web Scraping as it should be!</code></i>
+    <br/><br/>
 </div>
 
 **Stop fighting anti-bot systems. Stop rewriting selectors after every website update.**
@@ -45,7 +46,7 @@ Built for the modern Web, Scrapling has its own rapid parsing engine and its fet
 ## Key Features
 
 ### Advanced Websites Fetching with Session Support
-- **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP3.
+- **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP/3.
 - **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium, real Chrome, and custom stealth mode.
 - **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` using a modified version of Firefox and fingerprint spoofing. Can bypass all levels of Cloudflare's Turnstile with automation easily.
 - **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
