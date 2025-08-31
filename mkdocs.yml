@@ -1,5 +1,5 @@
 site_name: Scrapling
-site_description: Scrapling - a Python library to make Web Scraping easy again!
+site_description: Scrapling - Easy, effortless Web Scraping as it should be!
 site_author: Karim Shoair
 repo_url: https://github.com/D4Vinci/Scrapling
 site_url: https://scrapling.readthedocs.io/en/latest/
@@ -31,8 +31,8 @@ theme:
         icon: material/toggle-switch-off
         name: Switch to system preference
   font:
-    text: Roboto
-    code: Roboto Mono
+    text: Open Sans
+    code: JetBrains Mono
   icon:
     repo: fontawesome/brands/github-alt
   features:
@@ -62,27 +62,34 @@ theme:
 nav:
   - Introduction: index.md
   - Overview: overview.md
-  - Parsing Performance: benchmarks.md
+  - What's New in v0.3: whats-new-v0.3.md
+  - Performance Benchmarks: benchmarks.md
   - User Guide:
     - Parsing:
       - Querying elements: parsing/selection.md
       - Main classes: parsing/main_classes.md
-      - Using automatch feature: parsing/automatch.md
+      - Adaptive scraping: parsing/adaptive.md
     - Fetching:
       - Choosing a fetcher: fetching/choosing.md
       - Static requests: fetching/static.md
       - Dynamically loaded websites: fetching/dynamic.md
       - Fully bypass protections while fetching: fetching/stealthy.md
+    - Command Line Interface:
+      - Overview: cli/overview.md
+      - Interactive shell: cli/interactive-shell.md
+      - Extract commands: cli/extract-commands.md
+    - Integrations:
+      - AI MCP server: ai/mcp-server.md
   - Tutorials:
     - A Free Alternative to AI for Robust Web Scraping: tutorials/replacing_ai.md
     - Migrating from BeautifulSoup: tutorials/migrating_from_beautifulsoup.md
 #    - Migrating from AutoScraper: tutorials/migrating_from_autoscraper.md
   - Development:
     - API Reference:
-      - Adaptor: api-reference/adaptor.md
+      - Selector: api-reference/selector.md
       - Fetchers: api-reference/fetchers.md
       - Custom Types: api-reference/custom-types.md
-    - Writing your retrieval system: development/automatch_storage_system.md
+    - Writing your retrieval system: development/adaptive_storage_system.md
     - Using Scrapling's custom types: development/scrapling_custom_types.md
   - Support and Advertisement: donate.md
   - Contributing: contributing.md
