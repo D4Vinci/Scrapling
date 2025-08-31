@@ -89,6 +89,7 @@ nav:
       - Selector: api-reference/selector.md
       - Fetchers: api-reference/fetchers.md
       - Custom Types: api-reference/custom-types.md
+      - MCP Server: api-reference/mcp-server.md
     - Writing your retrieval system: development/adaptive_storage_system.md
     - Using Scrapling's custom types: development/scrapling_custom_types.md
   - Support and Advertisement: donate.md
