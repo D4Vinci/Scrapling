@@ -1,3 +1,20 @@
 .md-grid {
   max-width: 90%;
 }
+
+@font-face {
+  font-family: 'Maple Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(https://cdn.jsdelivr.net/fontsource/fonts/maple-mono@latest/latin-400-normal.woff2) format('woff2'), url(https://cdn.jsdelivr.net/fontsource/fonts/maple-mono@latest/latin-400-normal.woff) format('woff');
+}
+
+:root {
+  --md-code-font: 'Maple Mono';
+}
+[align="center"] code {
+  font-family: 'Maple Mono';
+  font-style: italic;
+  font-weight: 800;
+}

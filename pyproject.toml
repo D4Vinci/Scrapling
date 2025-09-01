@@ -1,0 +1,103 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scrapling"
+dynamic = ["version"]
+description = "Scrapling is an undetectable, powerful, flexible, high-performance Python library that makes Web Scraping easy and effortless as it should be!"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+authors = [
+    {name = "Karim Shoair", email = "karim.shoair@pm.me"}
+]
+maintainers = [
+    {name = "Karim Shoair", email = "karim.shoair@pm.me"}
+]
+keywords = [
+    "web-scraping",
+    "scraping",
+    "automation",
+    "browser-automation",
+    "data-extraction",
+    "html-parsing",
+    "undetectable",
+    "playwright",
+    "selenium-alternative",
+    "web-crawler",
+    "browser",
+    "crawling",
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    # "Development Status :: 5 - Production/Stable",
+    # "Development Status :: 6 - Mature",
+    # "Development Status :: 7 - Inactive",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Typing :: Typed",
+]
+dependencies = [
+    "lxml>=6.0.0",
+    "cssselect>=1.3.0",
+    "click>=8.2.1",
+    "orjson>=3.11.2",
+    "tldextract>=5.3.0",
+    "curl_cffi>=0.13.0",
+    "playwright>=1.52.0",
+    "rebrowser-playwright>=1.52.0",
+    "camoufox>=0.4.11",
+    "geoip2>=5.1.0",
+    "msgspec>=0.19.0",
+]
+
+[project.optional-dependencies]
+ai = [
+    "mcp>=1.13.0",
+    "markdownify>=1.2.0",
+]
+shell = [
+    "IPython>=8.37",  # The last version that supports Python 3.10
+    "markdownify>=1.2.0",
+]
+all = [
+    "scrapling[ai,shell]",
+]
+
+[project.urls]
+Homepage = "https://github.com/D4Vinci/Scrapling"
+Documentation = "https://scrapling.readthedocs.io/en/latest/"
+Repository = "https://github.com/D4Vinci/Scrapling"
+"Bug Tracker" = "https://github.com/D4Vinci/Scrapling/issues"
+
+[project.scripts]
+scrapling = "scrapling.cli:main"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "scrapling.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scrapling*"]

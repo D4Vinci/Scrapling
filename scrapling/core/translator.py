@@ -1,30 +1,24 @@
 """
-Most of this file is adapted version of the translator of parsel library with some modifications simply for 1 important reason...
+Most of this file is an adapted version of the parsel library's translator with some modifications simply for 1 important reason...
 
-To add pseudo-elements ``::text`` and ``::attr(ATTR_NAME)`` so we match Parsel/Scrapy selectors format which will be important in future releases but most importantly...
+To add pseudo-elements ``::text`` and ``::attr(ATTR_NAME)`` so we match the Parsel/Scrapy selectors format which will be important in future releases but most importantly...
 
 So you don't have to learn a new selectors/api method like what bs4 done with soupsieve :)
 
-    if you want to learn about this, head to https://cssselect.readthedocs.io/en/latest/#cssselect.FunctionalPseudoElement
+    If you want to learn about this, head to https://cssselect.readthedocs.io/en/latest/#cssselect.FunctionalPseudoElement
 """
 
-import re
+from functools import lru_cache
 
 from cssselect import HTMLTranslator as OriginalHTMLTranslator
 from cssselect.parser import Element, FunctionalPseudoElement, PseudoElement
 from cssselect.xpath import ExpressionError
 from cssselect.xpath import XPathExpr as OriginalXPathExpr
-from w3lib.html import HTML5_WHITESPACE
 
 from scrapling.core._types import Any, Optional, Protocol, Self
-from scrapling.core.utils import lru_cache
-
-regex = f"[{HTML5_WHITESPACE}]+"
-replace_html5_whitespaces = re.compile(regex).sub
 
 
 class XPathExpr(OriginalXPathExpr):
-
     textnode: bool = False
     attribute: Optional[str] = None
 
@@ -34,7 +28,7 @@ class XPathExpr(OriginalXPathExpr):
         xpath: OriginalXPathExpr,
         textnode: bool = False,
         attribute: Optional[str] = None,
-    ) -> "Self":
+    ) -> Self:
         x = cls(path=xpath.path, element=xpath.element, condition=xpath.condition)
         x.textnode = textnode
         x.attribute = attribute
@@ -43,29 +37,29 @@ class XPathExpr(OriginalXPathExpr):
     def __str__(self) -> str:
         path = super().__str__()
         if self.textnode:
-            if path == "*":
+            if path == "*":  # pragma: no cover
                 path = "text()"
-            elif path.endswith("::*/*"):
+            elif path.endswith("::*/*"):  # pragma: no cover
                 path = path[:-3] + "text()"
             else:
                 path += "/text()"
 
         if self.attribute is not None:
-            if path.endswith("::*/*"):
+            if path.endswith("::*/*"):  # pragma: no cover
                 path = path[:-2]
             path += f"/@{self.attribute}"
 
         return path
 
     def join(
-        self: "Self",
+        self: Self,
         combiner: str,
         other: OriginalXPathExpr,
         *args: Any,
         **kwargs: Any,
-    ) -> "Self":
+    ) -> Self:
         if not isinstance(other, XPathExpr):
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"Expressions of type {__name__}.XPathExpr can ony join expressions"
                 f" of the same type (or its descendants), got {type(other)}"
             )
@@ -77,10 +71,10 @@ class XPathExpr(OriginalXPathExpr):
 
 # e.g. cssselect.GenericTranslator, cssselect.HTMLTranslator
 class TranslatorProtocol(Protocol):
-    def xpath_element(self, selector: Element) -> OriginalXPathExpr:
+    def xpath_element(self, selector: Element) -> OriginalXPathExpr:  # pragma: no cover
         pass
 
-    def css_to_xpath(self, css: str, prefix: str = ...) -> str:
+    def css_to_xpath(self, css: str, prefix: str = ...) -> str:  # pragma: no cover
         pass
 
 
@@ -91,7 +85,7 @@ class TranslatorMixin:
     """
 
     def xpath_element(self: TranslatorProtocol, selector: Element) -> XPathExpr:
-        # https://github.com/python/mypy/issues/12344
+        # https://github.com/python/mypy/issues/14757
         xpath = super().xpath_element(selector)  # type: ignore[safe-super]
         return XPathExpr.from_xpath(xpath)
 
@@ -99,12 +93,12 @@ class TranslatorMixin:
         self, xpath: OriginalXPathExpr, pseudo_element: PseudoElement
     ) -> OriginalXPathExpr:
         """
-        Dispatch method that transforms XPath to support pseudo-elements.
+        Dispatch method that transforms XPath to support the pseudo-element.
         """
         if isinstance(pseudo_element, FunctionalPseudoElement):
             method_name = f"xpath_{pseudo_element.name.replace('-', '_')}_functional_pseudo_element"
             method = getattr(self, method_name, None)
-            if not method:
+            if not method:  # pragma: no cover
                 raise ExpressionError(
                     f"The functional pseudo-element ::{pseudo_element.name}() is unknown"
                 )
@@ -114,7 +108,7 @@ class TranslatorMixin:
                 f"xpath_{pseudo_element.replace('-', '_')}_simple_pseudo_element"
             )
             method = getattr(self, method_name, None)
-            if not method:
+            if not method:  # pragma: no cover
                 raise ExpressionError(
                     f"The pseudo-element ::{pseudo_element} is unknown"
                 )
@@ -123,10 +117,10 @@ class TranslatorMixin:
 
     @staticmethod
     def xpath_attr_functional_pseudo_element(
-            xpath: OriginalXPathExpr, function: FunctionalPseudoElement
+        xpath: OriginalXPathExpr, function: FunctionalPseudoElement
     ) -> XPathExpr:
         """Support selecting attribute values using ::attr() pseudo-element"""
-        if function.argument_types() not in (["STRING"], ["IDENT"]):
+        if function.argument_types() not in (["STRING"], ["IDENT"]):  # pragma: no cover
             raise ExpressionError(
                 f"Expected a single string or ident for ::attr(), got {function.arguments!r}"
             )
@@ -144,4 +138,4 @@ class HTMLTranslator(TranslatorMixin, OriginalHTMLTranslator):
         return super().css_to_xpath(css, prefix)
 
 
-translator_instance = HTMLTranslator()
+translator = HTMLTranslator()

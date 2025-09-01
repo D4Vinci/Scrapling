@@ -1,41 +1,28 @@
-
 __author__ = "Karim Shoair (karim.shoair@pm.me)"
-__version__ = "0.2.99"
+__version__ = "0.3"
 __copyright__ = "Copyright (c) 2024 Karim Shoair"
 
 
-# A lightweight approach to create lazy loader for each import for backward compatibility
+# A lightweight approach to create a lazy loader for each import for backward compatibility
 # This will reduces initial memory footprint significantly (only loads what's used)
 def __getattr__(name):
-    if name == 'Fetcher':
-        from scrapling.fetchers import Fetcher as cls
-        return cls
-    elif name == 'Adaptor':
-        from scrapling.parser import Adaptor as cls
-        return cls
-    elif name == 'Adaptors':
-        from scrapling.parser import Adaptors as cls
-        return cls
-    elif name == 'AttributesHandler':
-        from scrapling.core.custom_types import AttributesHandler as cls
-        return cls
-    elif name == 'TextHandler':
-        from scrapling.core.custom_types import TextHandler as cls
-        return cls
-    elif name == 'AsyncFetcher':
-        from scrapling.fetchers import AsyncFetcher as cls
-        return cls
-    elif name == 'StealthyFetcher':
-        from scrapling.fetchers import StealthyFetcher as cls
-        return cls
-    elif name == 'PlayWrightFetcher':
-        from scrapling.fetchers import PlayWrightFetcher as cls
-        return cls
-    elif name == 'CustomFetcher':
-        from scrapling.fetchers import CustomFetcher as cls
-        return cls
+    lazy_imports = {
+        "Fetcher": ("scrapling.fetchers", "Fetcher"),
+        "Selector": ("scrapling.parser", "Selector"),
+        "Selectors": ("scrapling.parser", "Selectors"),
+        "AttributesHandler": ("scrapling.core.custom_types", "AttributesHandler"),
+        "TextHandler": ("scrapling.core.custom_types", "TextHandler"),
+        "AsyncFetcher": ("scrapling.fetchers", "AsyncFetcher"),
+        "StealthyFetcher": ("scrapling.fetchers", "StealthyFetcher"),
+        "DynamicFetcher": ("scrapling.fetchers", "DynamicFetcher"),
+    }
+
+    if name in lazy_imports:
+        module_path, class_name = lazy_imports[name]
+        module = __import__(module_path, fromlist=[class_name])
+        return getattr(module, class_name)
     else:
         raise AttributeError(f"module 'scrapling' has no attribute '{name}'")
 
 
-__all__ = ['Adaptor', 'Fetcher', 'AsyncFetcher', 'StealthyFetcher', 'PlayWrightFetcher']
+__all__ = ["Selector", "Fetcher", "AsyncFetcher", "StealthyFetcher", "DynamicFetcher"]
