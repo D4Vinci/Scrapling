@@ -186,7 +186,7 @@ from scrapling.parser import Selector
 
 page = Selector("<html>...</html>")
 ```
-And it works exactly the same!
+And it works exactly the same way!
 
 ### Async Session Management Examples
 ```python
@@ -214,6 +214,8 @@ async with AsyncStealthySession(max_pages=2) as session:
 ## CLI & Interactive Shell
 
 Scrapling v0.3 includes a powerful command-line interface:
+
+[![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
 ```bash
 # Launch interactive Web Scraping shell
