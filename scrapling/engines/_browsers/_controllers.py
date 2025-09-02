@@ -60,6 +60,7 @@ class DynamicSession:
         "disable_resources",
         "network_idle",
         "wait_selector",
+        "init_script",
         "wait_selector_state",
         "wait",
         "playwright",
@@ -94,6 +95,7 @@ class DynamicSession:
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
+        init_script: Optional[str] = None,
         cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
@@ -112,6 +114,7 @@ class DynamicSession:
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
@@ -143,6 +146,7 @@ class DynamicSession:
             "selector_config": selector_config,
             "disable_resources": disable_resources,
             "wait_selector": wait_selector,
+            "init_script": init_script,
             "cookies": cookies,
             "network_idle": network_idle,
             "wait_selector_state": wait_selector_state,
@@ -168,6 +172,7 @@ class DynamicSession:
         self.cdp_url = config.cdp_url
         self.network_idle = config.network_idle
         self.wait_selector = config.wait_selector
+        self.init_script = config.init_script
         self.wait_selector_state = config.wait_selector_state
 
         self.playwright: Optional[Playwright] = None
@@ -242,6 +247,9 @@ class DynamicSession:
             self.context = self.playwright.chromium.launch_persistent_context(
                 user_data_dir="", **self.launch_options
             )
+
+        if self.init_script:  # pragma: no cover
+            self.context.add_init_script(path=self.init_script)
 
         if self.cookies:  # pragma: no cover
             self.context.add_cookies(self.cookies)
@@ -409,6 +417,7 @@ class AsyncDynamicSession(DynamicSession):
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
+        init_script: Optional[str] = None,
         cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
@@ -427,6 +436,7 @@ class AsyncDynamicSession(DynamicSession):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
@@ -459,6 +469,7 @@ class AsyncDynamicSession(DynamicSession):
             timeout,
             disable_resources,
             wait_selector,
+            init_script,
             cookies,
             network_idle,
             wait_selector_state,
@@ -493,6 +504,9 @@ class AsyncDynamicSession(DynamicSession):
                     user_data_dir="", **self.launch_options
                 )
             )
+
+        if self.init_script:  # pragma: no cover
+            await self.context.add_init_script(path=self.init_script)
 
         if self.cookies:
             await self.context.add_cookies(self.cookies)

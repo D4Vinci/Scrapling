@@ -282,6 +282,7 @@ class DynamicFetcher(BaseFetcher):
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
+        init_script: Optional[str] = None,
         cookies: Optional[Iterable[Dict]] = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
@@ -301,6 +302,7 @@ class DynamicFetcher(BaseFetcher):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
@@ -334,6 +336,7 @@ class DynamicFetcher(BaseFetcher):
             real_chrome=real_chrome,
             page_action=page_action,
             hide_canvas=hide_canvas,
+            init_script=init_script,
             network_idle=network_idle,
             google_search=google_search,
             extra_headers=extra_headers,
@@ -365,6 +368,7 @@ class DynamicFetcher(BaseFetcher):
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
+        init_script: Optional[str] = None,
         cookies: Optional[Iterable[Dict]] = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
@@ -384,6 +388,7 @@ class DynamicFetcher(BaseFetcher):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
@@ -418,6 +423,7 @@ class DynamicFetcher(BaseFetcher):
             real_chrome=real_chrome,
             page_action=page_action,
             hide_canvas=hide_canvas,
+            init_script=init_script,
             network_idle=network_idle,
             google_search=google_search,
             extra_headers=extra_headers,
