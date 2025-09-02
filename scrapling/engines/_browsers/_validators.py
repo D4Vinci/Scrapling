@@ -90,6 +90,7 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     solve_cloudflare: bool = False
     wait: int | float = 0
     timeout: int | float = 30000
+    init_script: Optional[str] = None
     page_action: Optional[Callable] = None
     wait_selector: Optional[str] = None
     addons: Optional[List[str]] = None
@@ -130,6 +131,15 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
                     raise ValueError(
                         f"Addon's path is not a folder, you need to pass a folder of the extracted addon: {addon}"
                     )
+
+        if self.init_script is not None:
+            script_path = Path(self.init_script)
+            if not script_path.exists():
+                raise ValueError("Init script path not found")
+            elif not script_path.is_file():
+                raise ValueError("Init script is not a file")
+            elif not script_path.is_absolute():
+                raise ValueError("Init script is not a absolute path")
 
         if not self.cookies:
             self.cookies = []
