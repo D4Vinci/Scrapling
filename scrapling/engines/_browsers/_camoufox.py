@@ -60,6 +60,7 @@ class StealthySession:
         "timeout",
         "page_action",
         "wait_selector",
+        "init_script",
         "addons",
         "wait_selector_state",
         "cookies",
@@ -95,6 +96,7 @@ class StealthySession:
         timeout: int | float = 30000,
         page_action: Optional[Callable] = None,
         wait_selector: Optional[str] = None,
+        init_script: Optional[str] = None,
         addons: Optional[List[str]] = None,
         wait_selector_state: SelectorWaitStates = "attached",
         cookies: Optional[List[Dict]] = None,
@@ -128,6 +130,7 @@ class StealthySession:
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
             It will also calculate and spoof the browser's language based on the distribution of language speakers in the target region.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
@@ -153,6 +156,7 @@ class StealthySession:
             "timeout": timeout,
             "page_action": page_action,
             "wait_selector": wait_selector,
+            "init_script": init_script,
             "addons": addons,
             "wait_selector_state": wait_selector_state,
             "cookies": cookies,
@@ -180,6 +184,7 @@ class StealthySession:
         self.timeout = config.timeout
         self.page_action = config.page_action
         self.wait_selector = config.wait_selector
+        self.init_script = config.init_script
         self.addons = config.addons
         self.wait_selector_state = config.wait_selector_state
         self.cookies = config.cookies
@@ -234,6 +239,9 @@ class StealthySession:
                 **self.launch_options
             )
         )
+        if self.init_script:  # pragma: no cover
+            self.context.add_init_script(path=self.init_script)
+
         if self.cookies:  # pragma: no cover
             self.context.add_cookies(self.cookies)
 
@@ -474,6 +482,7 @@ class AsyncStealthySession(StealthySession):
         timeout: int | float = 30000,
         page_action: Optional[Callable] = None,
         wait_selector: Optional[str] = None,
+        init_script: Optional[str] = None,
         addons: Optional[List[str]] = None,
         wait_selector_state: SelectorWaitStates = "attached",
         cookies: Optional[List[Dict]] = None,
@@ -507,6 +516,7 @@ class AsyncStealthySession(StealthySession):
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
             It will also calculate and spoof the browser's language based on the distribution of language speakers in the target region.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
@@ -531,6 +541,7 @@ class AsyncStealthySession(StealthySession):
             timeout,
             page_action,
             wait_selector,
+            init_script,
             addons,
             wait_selector_state,
             cookies,
@@ -557,6 +568,9 @@ class AsyncStealthySession(StealthySession):
                 **self.launch_options
             )
         )
+        if self.init_script:  # pragma: no cover
+            await self.context.add_init_script(path=self.init_script)
+
         if self.cookies:
             await self.context.add_cookies(self.cookies)
 
