@@ -20,7 +20,6 @@ from logging import (
     getLevelName,
 )
 
-from IPython.terminal.embed import InteractiveShellEmbed
 from orjson import loads as json_loads, JSONDecodeError
 
 from scrapling import __version__
@@ -394,8 +393,7 @@ class CurlParser:
 
         else:  # pragma: no cover
             log.error("Input must be a valid curl command string or a Request object.")
-
-        return None
+            return None
 
 
 def show_page_in_browser(page: Selector):  # pragma: no cover
@@ -544,6 +542,8 @@ Type 'exit' or press Ctrl+D to exit.
 
     def start(self):  # pragma: no cover
         """Start the interactive shell"""
+        from IPython.terminal.embed import InteractiveShellEmbed
+
         # Get our namespace with application objects
         namespace = self.get_namespace()
         ipython_shell = InteractiveShellEmbed(
