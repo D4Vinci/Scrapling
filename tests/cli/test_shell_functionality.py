@@ -178,23 +178,21 @@ class TestCustomShell:
 
     def test_shell_initialization(self):
         """Test shell initialization"""
-        with patch('scrapling.core.shell.InteractiveShellEmbed'):
-            shell = CustomShell(code="", log_level="debug")
+        shell = CustomShell(code="", log_level="debug")
 
-            assert shell.log_level == 10  # DEBUG level
-            assert shell.page is None
-            assert len(shell.pages) == 0
+        assert shell.log_level == 10  # DEBUG level
+        assert shell.page is None
+        assert len(shell.pages) == 0
 
     def test_shell_namespace(self):
         """Test shell namespace creation"""
-        with patch('scrapling.core.shell.InteractiveShellEmbed'):
-            shell = CustomShell(code="")
-            namespace = shell.get_namespace()
+        shell = CustomShell(code="")
+        namespace = shell.get_namespace()
 
-            # Check all expected functions/classes are available
-            assert 'get' in namespace
-            assert 'post' in namespace
-            assert 'Fetcher' in namespace
-            assert 'DynamicFetcher' in namespace
-            assert 'view' in namespace
-            assert 'uncurl' in namespace
+        # Check all expected functions/classes are available
+        assert 'get' in namespace
+        assert 'post' in namespace
+        assert 'Fetcher' in namespace
+        assert 'DynamicFetcher' in namespace
+        assert 'view' in namespace
+        assert 'uncurl' in namespace
