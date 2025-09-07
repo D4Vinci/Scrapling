@@ -3,7 +3,10 @@ from re import compile as re_compile
 from asyncio import sleep as asyncio_sleep, Lock
 
 from camoufox import DefaultAddons
-from camoufox.utils import launch_options as generate_launch_options
+from camoufox.utils import (
+    launch_options as generate_launch_options,
+    installed_verstr as camoufox_version,
+)
 from playwright.sync_api import (
     Response as SyncPlaywrightResponse,
     sync_playwright,
@@ -41,6 +44,7 @@ from scrapling.engines.toolbelt import (
 )
 
 __CF_PATTERN__ = re_compile("challenges.cloudflare.com/cdn-cgi/challenge-platform/.*")
+__ff_version_str__ = camoufox_version().split(".", 1)[0]
 
 
 class StealthySession:
@@ -216,7 +220,6 @@ class StealthySession:
             **{
                 "geoip": self.geoip,
                 "proxy": dict(self.proxy) if self.proxy else self.proxy,
-                "enable_cache": True,
                 "addons": self.addons,
                 "exclude_addons": [] if self.disable_ads else [DefaultAddons.UBO],
                 "headless": self.headless,
@@ -227,6 +230,15 @@ class StealthySession:
                 "block_images": self.block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
                 "os": None if self.os_randomize else get_os_name(),
                 "user_data_dir": "",
+                "ff_version": __ff_version_str__,
+                "firefox_user_prefs": {
+                    # This is what enabling `enable_cache` does internally, so we do it from here instead
+                    "browser.sessionhistory.max_entries": 10,
+                    "browser.sessionhistory.max_total_viewers": -1,
+                    "browser.cache.memory.enable": True,
+                    "browser.cache.disk_cache_ssl": True,
+                    "browser.cache.disk.smart_size.enabled": True,
+                },
                 **self.additional_args,
             }
         )
