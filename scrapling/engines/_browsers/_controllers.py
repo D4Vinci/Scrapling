@@ -248,6 +248,10 @@ class DynamicSession:
                 user_data_dir="", **self.launch_options
             )
 
+        # Get the default page and close it
+        default_page = self.context.pages[0]
+        default_page.close()
+
         if self.init_script:  # pragma: no cover
             self.context.add_init_script(path=self.init_script)
 
@@ -504,6 +508,10 @@ class AsyncDynamicSession(DynamicSession):
                     user_data_dir="", **self.launch_options
                 )
             )
+
+        # Get the default page and close it
+        default_page = self.context.pages[0]
+        await default_page.close()
 
         if self.init_script:  # pragma: no cover
             await self.context.add_init_script(path=self.init_script)
