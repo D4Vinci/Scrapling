@@ -53,7 +53,6 @@ class TestStealthySession:
         """Test if the session is created correctly"""
 
         with StealthySession(
-            max_pages=3,
             headless=True,
             block_images=True,
             disable_resources=True,
@@ -63,7 +62,7 @@ class TestStealthySession:
             cookies=[{"name": "test", "value": "123", "domain": "example.com", "path": "/"}],
         ) as session:
 
-            assert session.max_pages == 3
+            assert session.max_pages == 1
             assert session.headless is True
             assert session.block_images is True
             assert session.disable_resources is True
