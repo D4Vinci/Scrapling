@@ -118,7 +118,6 @@ class StealthyFetcher(BaseFetcher):
 
         with StealthySession(
             wait=wait,
-            max_pages=1,
             proxy=proxy,
             geoip=geoip,
             addons=addons,

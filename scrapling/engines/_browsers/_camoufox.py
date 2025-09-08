@@ -1,17 +1,8 @@
-from time import time, sleep
 from re import compile as re_compile
-from asyncio import sleep as asyncio_sleep, Lock
 
-from camoufox import DefaultAddons
-from camoufox.utils import (
-    launch_options as generate_launch_options,
-    installed_verstr as camoufox_version,
-)
 from playwright.sync_api import (
     Response as SyncPlaywrightResponse,
     sync_playwright,
-    BrowserContext,
-    Playwright,
     Locator,
     Page,
 )
@@ -24,9 +15,8 @@ from playwright.async_api import (
     Page as async_Page,
 )
 
+from ._base import SyncSession, AsyncSession, StealthySessionMixin
 from scrapling.core.utils import log
-from ._page import PageInfo, PagePool
-from ._validators import validate, CamoufoxConfig
 from scrapling.core._types import (
     Dict,
     List,
@@ -37,17 +27,13 @@ from scrapling.core._types import (
 from scrapling.engines.toolbelt import (
     Response,
     ResponseFactory,
-    async_intercept_route,
     generate_convincing_referer,
-    get_os_name,
-    intercept_route,
 )
 
 __CF_PATTERN__ = re_compile("challenges.cloudflare.com/cdn-cgi/challenge-platform/.*")
-__ff_version_str__ = camoufox_version().split(".", 1)[0]
 
 
-class StealthySession:
+class StealthySession(StealthySessionMixin, SyncSession):
     """A Stealthy session manager with page pooling."""
 
     __slots__ = (
@@ -87,7 +73,7 @@ class StealthySession:
 
     def __init__(
         self,
-        max_pages: int = 1,
+        __max_pages: int = 1,
         headless: bool = True,  # noqa: F821
         block_images: bool = False,
         disable_resources: bool = False,
@@ -141,107 +127,38 @@ class StealthySession:
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
 
-        params = {
-            "max_pages": max_pages,
-            "headless": headless,
-            "block_images": block_images,
-            "disable_resources": disable_resources,
-            "block_webrtc": block_webrtc,
-            "allow_webgl": allow_webgl,
-            "network_idle": network_idle,
-            "humanize": humanize,
-            "solve_cloudflare": solve_cloudflare,
-            "wait": wait,
-            "timeout": timeout,
-            "page_action": page_action,
-            "wait_selector": wait_selector,
-            "init_script": init_script,
-            "addons": addons,
-            "wait_selector_state": wait_selector_state,
-            "cookies": cookies,
-            "google_search": google_search,
-            "extra_headers": extra_headers,
-            "proxy": proxy,
-            "os_randomize": os_randomize,
-            "disable_ads": disable_ads,
-            "geoip": geoip,
-            "selector_config": selector_config,
-            "additional_args": additional_args,
-        }
-        config = validate(params, CamoufoxConfig)
-
-        self.max_pages = config.max_pages
-        self.headless = config.headless
-        self.block_images = config.block_images
-        self.disable_resources = config.disable_resources
-        self.block_webrtc = config.block_webrtc
-        self.allow_webgl = config.allow_webgl
-        self.network_idle = config.network_idle
-        self.humanize = config.humanize
-        self.solve_cloudflare = config.solve_cloudflare
-        self.wait = config.wait
-        self.timeout = config.timeout
-        self.page_action = config.page_action
-        self.wait_selector = config.wait_selector
-        self.init_script = config.init_script
-        self.addons = config.addons
-        self.wait_selector_state = config.wait_selector_state
-        self.cookies = config.cookies
-        self.google_search = config.google_search
-        self.extra_headers = config.extra_headers
-        self.proxy = config.proxy
-        self.os_randomize = config.os_randomize
-        self.disable_ads = config.disable_ads
-        self.geoip = config.geoip
-        self.selector_config = config.selector_config
-        self.additional_args = config.additional_args
-
-        self.playwright: Optional[Playwright] = None
-        self.context: Optional[BrowserContext] = None
-        self.page_pool = PagePool(self.max_pages)
-        self._closed = False
-        self.selector_config = config.selector_config
-        self.page_action = config.page_action
-        self._headers_keys = (
-            set(map(str.lower, self.extra_headers.keys()))
-            if self.extra_headers
-            else set()
+        self.__validate__(
+            __max_pages,
+            headless,
+            block_images,
+            disable_resources,
+            block_webrtc,
+            allow_webgl,
+            network_idle,
+            humanize,
+            solve_cloudflare,
+            wait,
+            timeout,
+            page_action,
+            wait_selector,
+            init_script,
+            addons,
+            wait_selector_state,
+            cookies,
+            google_search,
+            extra_headers,
+            proxy,
+            os_randomize,
+            disable_ads,
+            geoip,
+            selector_config,
+            additional_args,
         )
-        self.__initiate_browser_options__()
-
-    def __initiate_browser_options__(self):
-        """Initiate browser options."""
-        self.launch_options = generate_launch_options(
-            **{
-                "geoip": self.geoip,
-                "proxy": dict(self.proxy) if self.proxy else self.proxy,
-                "addons": self.addons,
-                "exclude_addons": [] if self.disable_ads else [DefaultAddons.UBO],
-                "headless": self.headless,
-                "humanize": True if self.solve_cloudflare else self.humanize,
-                "i_know_what_im_doing": True,  # To turn warnings off with the user configurations
-                "allow_webgl": self.allow_webgl,
-                "block_webrtc": self.block_webrtc,
-                "block_images": self.block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
-                "os": None if self.os_randomize else get_os_name(),
-                "user_data_dir": "",
-                "ff_version": __ff_version_str__,
-                "firefox_user_prefs": {
-                    # This is what enabling `enable_cache` does internally, so we do it from here instead
-                    "browser.sessionhistory.max_entries": 10,
-                    "browser.sessionhistory.max_total_viewers": -1,
-                    "browser.cache.memory.enable": True,
-                    "browser.cache.disk_cache_ssl": True,
-                    "browser.cache.disk.smart_size.enabled": True,
-                },
-                **self.additional_args,
-            }
-        )
+        super().__init__(max_pages=self.max_pages)
 
     def __create__(self):
         """Create a browser for this instance and context."""
@@ -283,68 +200,6 @@ class StealthySession:
             self.playwright = None
 
         self._closed = True
-
-    def _get_or_create_page(self) -> PageInfo:  # pragma: no cover
-        """Get an available page or create a new one"""
-        # Try to get a ready page first
-        page_info = self.page_pool.get_ready_page()
-        if page_info:
-            return page_info
-
-        # Create a new page if under limit
-        if self.page_pool.pages_count < self.max_pages:
-            page = self.context.new_page()
-            page.set_default_navigation_timeout(self.timeout)
-            page.set_default_timeout(self.timeout)
-            if self.extra_headers:
-                page.set_extra_http_headers(self.extra_headers)
-
-            if self.disable_resources:
-                page.route("**/*", intercept_route)
-
-            return self.page_pool.add_page(page)
-
-        # Wait for a page to become available
-        max_wait = 30
-        start_time = time()
-
-        while time() - start_time < max_wait:
-            page_info = self.page_pool.get_ready_page()
-            if page_info:
-                return page_info
-            sleep(0.05)
-
-        raise TimeoutError("No pages available within timeout period")
-
-    @staticmethod
-    def _detect_cloudflare(page_content):
-        """
-        Detect the type of Cloudflare challenge present in the provided page content.
-
-        This function analyzes the given page content to identify whether a specific
-        type of Cloudflare challenge is present. It checks for three predefined
-        challenge types: non-interactive, managed, and interactive. If a challenge
-        type is detected, it returns the corresponding type as a string. If no
-        challenge type is detected, it returns None.
-
-        Args:
-            page_content (str): The content of the page to analyze for Cloudflare
-                challenge types.
-
-        Returns:
-            str: A string representing the detected Cloudflare challenge type, if
-                found. Returns None if no challenge matches.
-        """
-        challenge_types = (
-            "non-interactive",
-            "managed",
-            "interactive",
-        )
-        for ctype in challenge_types:
-            if f"cType: '{ctype}'" in page_content:
-                return ctype
-
-        return None
 
     def _solve_cloudflare(self, page: Page) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
@@ -416,7 +271,7 @@ class StealthySession:
             ):
                 final_response = finished_response
 
-        page_info = self._get_or_create_page()
+        page_info = self._get_page()
         page_info.mark_busy(url=url)
 
         try:  # pragma: no cover
@@ -462,8 +317,8 @@ class StealthySession:
                 page_info.page, first_response, final_response, self.selector_config
             )
 
-            # Mark the page as ready for next use
-            page_info.mark_ready()
+            # Mark the page as finished for next use
+            page_info.mark_finished()
 
             return response
 
@@ -471,17 +326,8 @@ class StealthySession:
             page_info.mark_error()
             raise e
 
-    def get_pool_stats(self) -> Dict[str, int]:
-        """Get statistics about the current page pool"""
-        return {
-            "total_pages": self.page_pool.pages_count,
-            "ready_pages": self.page_pool.ready_count,
-            "busy_pages": self.page_pool.busy_count,
-            "max_pages": self.max_pages,
-        }
 
-
-class AsyncStealthySession(StealthySession):
+class AsyncStealthySession(StealthySessionMixin, AsyncSession):
     """A Stealthy session manager with page pooling."""
 
     def __init__(
@@ -544,7 +390,7 @@ class AsyncStealthySession(StealthySession):
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
-        super().__init__(
+        self.__validate__(
             max_pages,
             headless,
             block_images,
@@ -571,11 +417,7 @@ class AsyncStealthySession(StealthySession):
             selector_config,
             additional_args,
         )
-        self.playwright: Optional[AsyncPlaywright] = None
-        self.context: Optional[AsyncBrowserContext] = None
-        self._lock = Lock()
-        self.__enter__ = None
-        self.__exit__ = None
+        super().__init__(max_pages=self.max_pages)
 
     async def __create__(self):
         """Create a browser for this instance and context."""
@@ -617,39 +459,6 @@ class AsyncStealthySession(StealthySession):
             self.playwright = None
 
         self._closed = True
-
-    async def _get_or_create_page(self) -> PageInfo:
-        """Get an available page or create a new one"""
-        async with self._lock:
-            # Try to get a ready page first
-            page_info = self.page_pool.get_ready_page()
-            if page_info:
-                return page_info
-
-            # Create a new page if under limit
-            if self.page_pool.pages_count < self.max_pages:
-                page = await self.context.new_page()
-                page.set_default_navigation_timeout(self.timeout)
-                page.set_default_timeout(self.timeout)
-                if self.extra_headers:
-                    await page.set_extra_http_headers(self.extra_headers)
-
-                if self.disable_resources:
-                    await page.route("**/*", async_intercept_route)
-
-                return self.page_pool.add_page(page)
-
-        # Wait for a page to become available
-        max_wait = 30
-        start_time = time()
-
-        while time() - start_time < max_wait:  # pragma: no cover
-            page_info = self.page_pool.get_ready_page()
-            if page_info:
-                return page_info
-            await asyncio_sleep(0.05)
-
-        raise TimeoutError("No pages available within timeout period")
 
     async def _solve_cloudflare(self, page: async_Page):
         """Solve the cloudflare challenge displayed on the playwright page passed. The async version
@@ -723,7 +532,7 @@ class AsyncStealthySession(StealthySession):
             ):
                 final_response = finished_response
 
-        page_info = await self._get_or_create_page()
+        page_info = await self._get_page()
         page_info.mark_busy(url=url)
 
         try:
@@ -771,8 +580,8 @@ class AsyncStealthySession(StealthySession):
                 page_info.page, first_response, final_response, self.selector_config
             )
 
-            # Mark the page as ready for next use
-            page_info.mark_ready()
+            # Mark the page as finished for next use
+            page_info.mark_finished()
 
             return response
 

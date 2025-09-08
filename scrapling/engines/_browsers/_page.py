@@ -6,7 +6,9 @@ from playwright.async_api import Page as AsyncPage
 
 from scrapling.core._types import Optional, List, Literal
 
-PageState = Literal["ready", "busy", "error"]  # States that a page can be in
+PageState = Literal[
+    "finished", "ready", "busy", "error"
+]  # States that a page can be in
 
 
 @dataclass
@@ -23,9 +25,9 @@ class PageInfo:
         self.state = "busy"
         self.url = url
 
-    def mark_ready(self):
-        """Mark the page as ready for new requests"""
-        self.state = "ready"
+    def mark_finished(self):
+        """Mark the page as finished for new requests"""
+        self.state = "finished"
         self.url = ""
 
     def mark_error(self):
@@ -62,24 +64,16 @@ class PagePool:
             self.pages.append(page_info)
             return page_info
 
-    def get_ready_page(self) -> Optional[PageInfo]:
-        """Get a page that's ready for use"""
-        with self._lock:
-            for page_info in self.pages:
-                if page_info.state == "ready":
-                    return page_info
-            return None
-
     @property
     def pages_count(self) -> int:
         """Get the total number of pages"""
         return len(self.pages)
 
     @property
-    def ready_count(self) -> int:
-        """Get the number of ready pages"""
+    def finished_count(self) -> int:
+        """Get the number of finished pages"""
         with self._lock:
-            return sum(1 for p in self.pages if p.state == "ready")
+            return sum(1 for p in self.pages if p.state == "finished")
 
     @property
     def busy_count(self) -> int:
@@ -91,3 +85,33 @@ class PagePool:
         """Remove pages in error state"""
         with self._lock:
             self.pages = [p for p in self.pages if p.state != "error"]
+
+    def close_all_finished_pages(self):
+        """Close all pages in finished state and remove them from the pool"""
+        with self._lock:
+            pages_to_remove = []
+            for page_info in self.pages:
+                if page_info.state == "finished":
+                    try:
+                        page_info.page.close()
+                    except Exception:
+                        pass
+                    pages_to_remove.append(page_info)
+
+            for page_info in pages_to_remove:
+                self.pages.remove(page_info)
+
+    async def aclose_all_finished_pages(self):
+        """Async version: Close all pages in finished state and remove them from the pool"""
+        with self._lock:
+            pages_to_remove = []
+            for page_info in self.pages:
+                if page_info.state == "finished":
+                    try:
+                        await page_info.page.close()
+                    except Exception:
+                        pass
+                    pages_to_remove.append(page_info)
+
+            for page_info in pages_to_remove:
+                self.pages.remove(page_info)

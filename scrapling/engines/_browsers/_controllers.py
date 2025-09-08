@@ -1,10 +1,6 @@
-from time import time, sleep
-from asyncio import sleep as asyncio_sleep, Lock
-
 from playwright.sync_api import (
     Response as SyncPlaywrightResponse,
     sync_playwright,
-    BrowserContext,
     Playwright,
     Locator,
 )
@@ -21,9 +17,7 @@ from rebrowser_playwright.async_api import (
 )
 
 from scrapling.core.utils import log
-from ._page import PageInfo, PagePool
-from ._validators import validate, PlaywrightConfig
-from ._config_tools import _compiled_stealth_scripts, _launch_kwargs, _context_kwargs
+from ._base import SyncSession, AsyncSession, DynamicSessionMixin
 from scrapling.core._types import (
     Dict,
     List,
@@ -35,12 +29,10 @@ from scrapling.engines.toolbelt import (
     Response,
     ResponseFactory,
     generate_convincing_referer,
-    intercept_route,
-    async_intercept_route,
 )
 
 
-class DynamicSession:
+class DynamicSession(DynamicSessionMixin, SyncSession):
     """A Browser session manager with page pooling."""
 
     __slots__ = (
@@ -127,108 +119,31 @@ class DynamicSession:
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         """
-
-        params = {
-            "max_pages": __max_pages,
-            "headless": headless,
-            "google_search": google_search,
-            "hide_canvas": hide_canvas,
-            "disable_webgl": disable_webgl,
-            "real_chrome": real_chrome,
-            "stealth": stealth,
-            "wait": wait,
-            "page_action": page_action,
-            "proxy": proxy,
-            "locale": locale,
-            "extra_headers": extra_headers,
-            "useragent": useragent,
-            "timeout": timeout,
-            "selector_config": selector_config,
-            "disable_resources": disable_resources,
-            "wait_selector": wait_selector,
-            "init_script": init_script,
-            "cookies": cookies,
-            "network_idle": network_idle,
-            "wait_selector_state": wait_selector_state,
-            "cdp_url": cdp_url,
-        }
-        config = validate(params, PlaywrightConfig)
-
-        self.max_pages = config.max_pages
-        self.headless = config.headless
-        self.hide_canvas = config.hide_canvas
-        self.disable_webgl = config.disable_webgl
-        self.real_chrome = config.real_chrome
-        self.stealth = config.stealth
-        self.google_search = config.google_search
-        self.wait = config.wait
-        self.proxy = config.proxy
-        self.locale = config.locale
-        self.extra_headers = config.extra_headers
-        self.useragent = config.useragent
-        self.timeout = config.timeout
-        self.cookies = config.cookies
-        self.disable_resources = config.disable_resources
-        self.cdp_url = config.cdp_url
-        self.network_idle = config.network_idle
-        self.wait_selector = config.wait_selector
-        self.init_script = config.init_script
-        self.wait_selector_state = config.wait_selector_state
-
-        self.playwright: Optional[Playwright] = None
-        self.context: Optional[BrowserContext] = None
-        self.page_pool = PagePool(self.max_pages)
-        self._closed = False
-        self.selector_config = config.selector_config
-        self.page_action = config.page_action
-        self._headers_keys = (
-            set(map(str.lower, self.extra_headers.keys()))
-            if self.extra_headers
-            else set()
+        self.__validate__(
+            __max_pages,
+            headless,
+            google_search,
+            hide_canvas,
+            disable_webgl,
+            real_chrome,
+            stealth,
+            wait,
+            page_action,
+            proxy,
+            locale,
+            extra_headers,
+            useragent,
+            cdp_url,
+            timeout,
+            disable_resources,
+            wait_selector,
+            init_script,
+            cookies,
+            network_idle,
+            wait_selector_state,
+            selector_config,
         )
-        self.__initiate_browser_options__()
-
-    def __initiate_browser_options__(self):
-        if not self.cdp_url:
-            # `launch_options` is used with persistent context
-            self.launch_options = dict(
-                _launch_kwargs(
-                    self.headless,
-                    self.proxy,
-                    self.locale,
-                    tuple(self.extra_headers.items())
-                    if self.extra_headers
-                    else tuple(),
-                    self.useragent,
-                    self.real_chrome,
-                    self.stealth,
-                    self.hide_canvas,
-                    self.disable_webgl,
-                )
-            )
-            self.launch_options["extra_http_headers"] = dict(
-                self.launch_options["extra_http_headers"]
-            )
-            self.launch_options["proxy"] = dict(self.launch_options["proxy"]) or None
-            self.context_options = dict()
-        else:
-            # while `context_options` is left to be used when cdp mode is enabled
-            self.launch_options = dict()
-            self.context_options = dict(
-                _context_kwargs(
-                    self.proxy,
-                    self.locale,
-                    tuple(self.extra_headers.items())
-                    if self.extra_headers
-                    else tuple(),
-                    self.useragent,
-                    self.stealth,
-                )
-            )
-            self.context_options["extra_http_headers"] = dict(
-                self.context_options["extra_http_headers"]
-            )
-            self.context_options["proxy"] = dict(self.context_options["proxy"]) or None
+        super().__init__(max_pages=self.max_pages)
 
     def __create__(self):
         """Create a browser for this instance and context."""
@@ -237,7 +152,7 @@ class DynamicSession:
             # Because rebrowser_playwright doesn't play well with real browsers
             sync_context = sync_playwright
 
-        self.playwright = sync_context().start()
+        self.playwright: Playwright = sync_context().start()
 
         if self.cdp_url:  # pragma: no cover
             self.context = self.playwright.chromium.connect_over_cdp(
@@ -280,43 +195,10 @@ class DynamicSession:
 
         self._closed = True
 
-    def _get_or_create_page(self) -> PageInfo:  # pragma: no cover
-        """Get an available page or create a new one"""
-        # Try to get a ready page first
-        page_info = self.page_pool.get_ready_page()
-        if page_info:
-            return page_info
-
-        # Create a new page if under limit
-        if self.page_pool.pages_count < self.max_pages:
-            page = self.context.new_page()
-            page.set_default_navigation_timeout(self.timeout)
-            page.set_default_timeout(self.timeout)
-            if self.extra_headers:
-                page.set_extra_http_headers(self.extra_headers)
-
-            if self.disable_resources:
-                page.route("**/*", intercept_route)
-
-            if self.stealth:
-                for script in _compiled_stealth_scripts():
-                    page.add_init_script(script=script)
-
-            return self.page_pool.add_page(page)
-
-        # Wait for a page to become available
-        max_wait = 30
-        start_time = time()
-
-        while time() - start_time < max_wait:
-            page_info = self.page_pool.get_ready_page()
-            if page_info:
-                return page_info
-            sleep(0.05)
-
-        raise TimeoutError("No pages available within timeout period")
-
-    def fetch(self, url: str) -> Response:
+    def fetch(
+        self,
+        url: str,
+    ) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
@@ -340,7 +222,7 @@ class DynamicSession:
             ):
                 final_response = finished_response
 
-        page_info = self._get_or_create_page()
+        page_info = self._get_page()
         page_info.mark_busy(url=url)
 
         try:  # pragma: no cover
@@ -380,8 +262,8 @@ class DynamicSession:
                 page_info.page, first_response, final_response, self.selector_config
             )
 
-            # Mark the page as ready for next use
-            page_info.mark_ready()
+            # Mark the page as finished for next use
+            page_info.mark_finished()
 
             return response
 
@@ -389,17 +271,8 @@ class DynamicSession:
             page_info.mark_error()
             raise e
 
-    def get_pool_stats(self) -> Dict[str, int]:
-        """Get statistics about the current page pool"""
-        return {
-            "total_pages": self.page_pool.pages_count,
-            "ready_pages": self.page_pool.ready_count,
-            "busy_pages": self.page_pool.busy_count,
-            "max_pages": self.max_pages,
-        }
 
-
-class AsyncDynamicSession(DynamicSession):
+class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
     """An async Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory."""
 
     def __init__(
@@ -455,7 +328,7 @@ class AsyncDynamicSession(DynamicSession):
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         """
 
-        super().__init__(
+        self.__validate__(
             max_pages,
             headless,
             google_search,
@@ -479,12 +352,7 @@ class AsyncDynamicSession(DynamicSession):
             wait_selector_state,
             selector_config,
         )
-
-        self.playwright: Optional[AsyncPlaywright] = None
-        self.context: Optional[AsyncBrowserContext] = None
-        self._lock = Lock()
-        self.__enter__ = None
-        self.__exit__ = None
+        super().__init__(max_pages=self.max_pages)
 
     async def __create__(self):
         """Create a browser for this instance and context."""
@@ -541,43 +409,6 @@ class AsyncDynamicSession(DynamicSession):
 
         self._closed = True
 
-    async def _get_or_create_page(self) -> PageInfo:
-        """Get an available page or create a new one"""
-        async with self._lock:
-            # Try to get a ready page first
-            page_info = self.page_pool.get_ready_page()
-            if page_info:
-                return page_info
-
-            # Create a new page if under limit
-            if self.page_pool.pages_count < self.max_pages:
-                page = await self.context.new_page()
-                page.set_default_navigation_timeout(self.timeout)
-                page.set_default_timeout(self.timeout)
-                if self.extra_headers:
-                    await page.set_extra_http_headers(self.extra_headers)
-
-                if self.disable_resources:
-                    await page.route("**/*", async_intercept_route)
-
-                if self.stealth:
-                    for script in _compiled_stealth_scripts():
-                        await page.add_init_script(script=script)
-
-                return self.page_pool.add_page(page)
-
-        # Wait for a page to become available
-        max_wait = 30  # seconds
-        start_time = time()
-
-        while time() - start_time < max_wait:  # pragma: no cover
-            page_info = self.page_pool.get_ready_page()
-            if page_info:
-                return page_info
-            await asyncio_sleep(0.05)
-
-        raise TimeoutError("No pages available within timeout period")
-
     async def fetch(self, url: str) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
@@ -602,7 +433,7 @@ class AsyncDynamicSession(DynamicSession):
             ):
                 final_response = finished_response
 
-        page_info = await self._get_or_create_page()
+        page_info = await self._get_page()
         page_info.mark_busy(url=url)
 
         try:
@@ -642,8 +473,8 @@ class AsyncDynamicSession(DynamicSession):
                 page_info.page, first_response, final_response, self.selector_config
             )
 
-            # Mark the page as ready for next use
-            page_info.mark_ready()
+            # Mark the page as finished for next use
+            page_info.mark_finished()
 
             return response
 
