@@ -31,6 +31,8 @@ from scrapling.engines.toolbelt import (
     generate_convincing_referer,
 )
 
+_UNSET = object()
+
 
 class DynamicSession(DynamicSessionMixin, SyncSession):
     """A Browser session manager with page pooling."""
@@ -198,19 +200,66 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
     def fetch(
         self,
         url: str,
+        google_search: bool = _UNSET,
+        timeout: int | float = _UNSET,
+        wait: int | float = _UNSET,
+        page_action: Optional[Callable] = _UNSET,
+        extra_headers: Optional[Dict[str, str]] = _UNSET,
+        disable_resources: bool = _UNSET,
+        wait_selector: Optional[str] = _UNSET,
+        wait_selector_state: SelectorWaitStates = _UNSET,
+        network_idle: bool = _UNSET,
+        selector_config: Optional[Dict] = _UNSET,
     ) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
+        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
+        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
+        google_search = self._get_with_precedence(
+            google_search, self.google_search, _UNSET
+        )
+        timeout = self._get_with_precedence(timeout, self.timeout, _UNSET)
+        wait = self._get_with_precedence(wait, self.wait, _UNSET)
+        page_action = self._get_with_precedence(page_action, self.page_action, _UNSET)
+        extra_headers = self._get_with_precedence(
+            extra_headers, self.extra_headers, _UNSET
+        )
+        disable_resources = self._get_with_precedence(
+            disable_resources, self.disable_resources, _UNSET
+        )
+        wait_selector = self._get_with_precedence(
+            wait_selector, self.wait_selector, _UNSET
+        )
+        wait_selector_state = self._get_with_precedence(
+            wait_selector_state, self.wait_selector_state, _UNSET
+        )
+        network_idle = self._get_with_precedence(
+            network_idle, self.network_idle, _UNSET
+        )
+        selector_config = self._get_with_precedence(
+            selector_config, self.selector_config, _UNSET
+        )
+
         if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         final_response = None
         referer = (
             generate_convincing_referer(url)
-            if (self.google_search and "referer" not in self._headers_keys)
+            if (google_search and "referer" not in self._headers_keys)
             else None
         )
 
@@ -222,7 +271,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
             ):
                 final_response = finished_response
 
-        page_info = self._get_page()
+        page_info = self._get_page(timeout, extra_headers, disable_resources)
         page_info.mark_busy(url=url)
 
         try:  # pragma: no cover
@@ -231,35 +280,35 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
             first_response = page_info.page.goto(url, referer=referer)
             page_info.page.wait_for_load_state(state="domcontentloaded")
 
-            if self.network_idle:
+            if network_idle:
                 page_info.page.wait_for_load_state("networkidle")
 
             if not first_response:
                 raise RuntimeError(f"Failed to get response for {url}")
 
-            if self.page_action is not None:
+            if page_action is not None:
                 try:
-                    page_info.page = self.page_action(page_info.page)
+                    _ = page_action(page_info.page)
                 except Exception as e:  # pragma: no cover
                     log.error(f"Error executing page_action: {e}")
 
-            if self.wait_selector:
+            if wait_selector:
                 try:
-                    waiter: Locator = page_info.page.locator(self.wait_selector)
-                    waiter.first.wait_for(state=self.wait_selector_state)
+                    waiter: Locator = page_info.page.locator(wait_selector)
+                    waiter.first.wait_for(state=wait_selector_state)
                     # Wait again after waiting for the selector, helpful with protections like Cloudflare
                     page_info.page.wait_for_load_state(state="load")
                     page_info.page.wait_for_load_state(state="domcontentloaded")
-                    if self.network_idle:
+                    if network_idle:
                         page_info.page.wait_for_load_state("networkidle")
                 except Exception as e:  # pragma: no cover
-                    log.error(f"Error waiting for selector {self.wait_selector}: {e}")
+                    log.error(f"Error waiting for selector {wait_selector}: {e}")
 
-            page_info.page.wait_for_timeout(self.wait)
+            page_info.page.wait_for_timeout(wait)
 
             # Create response object
             response = ResponseFactory.from_playwright_response(
-                page_info.page, first_response, final_response, self.selector_config
+                page_info.page, first_response, final_response, selector_config
             )
 
             # Mark the page as finished for next use
@@ -409,19 +458,69 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
 
         self._closed = True
 
-    async def fetch(self, url: str) -> Response:
+    async def fetch(
+        self,
+        url: str,
+        google_search: bool = _UNSET,
+        timeout: int | float = _UNSET,
+        wait: int | float = _UNSET,
+        page_action: Optional[Callable] = _UNSET,
+        extra_headers: Optional[Dict[str, str]] = _UNSET,
+        disable_resources: bool = _UNSET,
+        wait_selector: Optional[str] = _UNSET,
+        wait_selector_state: SelectorWaitStates = _UNSET,
+        network_idle: bool = _UNSET,
+        selector_config: Optional[Dict] = _UNSET,
+    ) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
+        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
+        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
+        google_search = self._get_with_precedence(
+            google_search, self.google_search, _UNSET
+        )
+        timeout = self._get_with_precedence(timeout, self.timeout, _UNSET)
+        wait = self._get_with_precedence(wait, self.wait, _UNSET)
+        page_action = self._get_with_precedence(page_action, self.page_action, _UNSET)
+        extra_headers = self._get_with_precedence(
+            extra_headers, self.extra_headers, _UNSET
+        )
+        disable_resources = self._get_with_precedence(
+            disable_resources, self.disable_resources, _UNSET
+        )
+        wait_selector = self._get_with_precedence(
+            wait_selector, self.wait_selector, _UNSET
+        )
+        wait_selector_state = self._get_with_precedence(
+            wait_selector_state, self.wait_selector_state, _UNSET
+        )
+        network_idle = self._get_with_precedence(
+            network_idle, self.network_idle, _UNSET
+        )
+        selector_config = self._get_with_precedence(
+            selector_config, self.selector_config, _UNSET
+        )
+
         if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         final_response = None
         referer = (
             generate_convincing_referer(url)
-            if (self.google_search and "referer" not in self._headers_keys)
+            if (google_search and "referer" not in self._headers_keys)
             else None
         )
 
@@ -433,7 +532,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             ):
                 final_response = finished_response
 
-        page_info = await self._get_page()
+        page_info = await self._get_page(timeout, extra_headers, disable_resources)
         page_info.mark_busy(url=url)
 
         try:
@@ -442,35 +541,35 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             first_response = await page_info.page.goto(url, referer=referer)
             await page_info.page.wait_for_load_state(state="domcontentloaded")
 
-            if self.network_idle:
+            if network_idle:
                 await page_info.page.wait_for_load_state("networkidle")
 
             if not first_response:
                 raise RuntimeError(f"Failed to get response for {url}")
 
-            if self.page_action is not None:
+            if page_action is not None:
                 try:
-                    page_info.page = await self.page_action(page_info.page)
+                    _ = await page_action(page_info.page)
                 except Exception as e:
                     log.error(f"Error executing page_action: {e}")
 
-            if self.wait_selector:
+            if wait_selector:
                 try:
-                    waiter: AsyncLocator = page_info.page.locator(self.wait_selector)
-                    await waiter.first.wait_for(state=self.wait_selector_state)
+                    waiter: AsyncLocator = page_info.page.locator(wait_selector)
+                    await waiter.first.wait_for(state=wait_selector_state)
                     # Wait again after waiting for the selector, helpful with protections like Cloudflare
                     await page_info.page.wait_for_load_state(state="load")
                     await page_info.page.wait_for_load_state(state="domcontentloaded")
-                    if self.network_idle:
+                    if network_idle:
                         await page_info.page.wait_for_load_state("networkidle")
                 except Exception as e:
-                    log.error(f"Error waiting for selector {self.wait_selector}: {e}")
+                    log.error(f"Error waiting for selector {wait_selector}: {e}")
 
-            await page_info.page.wait_for_timeout(self.wait)
+            await page_info.page.wait_for_timeout(wait)
 
             # Create response object
             response = await ResponseFactory.from_async_playwright_response(
-                page_info.page, first_response, final_response, self.selector_config
+                page_info.page, first_response, final_response, selector_config
             )
 
             # Mark the page as finished for next use

@@ -22,6 +22,7 @@ from ._config_tools import _compiled_stealth_scripts
 from ._validators import validate, PlaywrightConfig, CamoufoxConfig
 from ._config_tools import _launch_kwargs, _context_kwargs
 from scrapling.core._types import (
+    Any,
     Dict,
     Optional,
 )
@@ -38,7 +39,12 @@ class SyncSession:
         self.context: Optional[BrowserContext] = None
         self._closed = False
 
-    def _get_page(self) -> PageInfo:  # pragma: no cover
+    def _get_page(
+        self,
+        timeout: int | float,
+        extra_headers: Optional[Dict[str, str]],
+        disable_resources: bool,
+    ) -> PageInfo:  # pragma: no cover
         """Get a new page to use"""
 
         # Close all finished pages to ensure clean state
@@ -59,13 +65,12 @@ class SyncSession:
                 )
 
         page = self.context.new_page()
-        timeout = getattr(self, "timeout", 30000)
         page.set_default_navigation_timeout(timeout)
         page.set_default_timeout(timeout)
-        if getattr(self, "extra_headers", False):
-            page.set_extra_http_headers(getattr(self, "extra_headers"))
+        if extra_headers:
+            page.set_extra_http_headers(extra_headers)
 
-        if getattr(self, "disable_resources", False):
+        if disable_resources:
             page.route("**/*", intercept_route)
 
         if getattr(self, "stealth", False):
@@ -73,6 +78,13 @@ class SyncSession:
                 page.add_init_script(script=script)
 
         return self.page_pool.add_page(page)
+
+    @staticmethod
+    def _get_with_precedence(
+        request_value: Any, session_value: Any, sentinel_value: object
+    ) -> Any:
+        """Get value with request-level priority over session-level"""
+        return request_value if request_value is not sentinel_value else session_value
 
     def get_pool_stats(self) -> Dict[str, int]:
         """Get statistics about the current page pool"""
@@ -90,7 +102,12 @@ class AsyncSession(SyncSession):
         self.context: Optional[AsyncBrowserContext] = None
         self._lock = Lock()
 
-    async def _get_page(self) -> PageInfo:  # pragma: no cover
+    async def _get_page(
+        self,
+        timeout: int | float,
+        extra_headers: Optional[Dict[str, str]],
+        disable_resources: bool,
+    ) -> PageInfo:  # pragma: no cover
         """Get a new page to use"""
         async with self._lock:
             # Close all finished pages to ensure clean state
@@ -111,13 +128,12 @@ class AsyncSession(SyncSession):
                     )
 
             page = await self.context.new_page()
-            timeout = getattr(self, "timeout", 30000)
             page.set_default_navigation_timeout(timeout)
             page.set_default_timeout(timeout)
-            if getattr(self, "extra_headers", False):
-                await page.set_extra_http_headers(getattr(self, "extra_headers"))
+            if extra_headers:
+                await page.set_extra_http_headers(extra_headers)
 
-            if getattr(self, "disable_resources", False):
+            if disable_resources:
                 await page.route("**/*", async_intercept_route)
 
             if getattr(self, "stealth", False):
@@ -334,7 +350,6 @@ class StealthySessionMixin:
         self.geoip = config.geoip
         self.selector_config = config.selector_config
         self.additional_args = config.additional_args
-        self.selector_config = config.selector_config
         self.page_action = config.page_action
         self._headers_keys = (
             set(map(str.lower, self.extra_headers.keys()))
