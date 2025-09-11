@@ -31,7 +31,7 @@ Before jumping to [examples](#examples), here's the full list of arguments
 |    google_search    | Enabled by default, Scrapling will set the referer header as if this request came from a Google search of this website's domain name.                                                                                                                                                                                                                                                                                      |    ✔️    |
 |    extra_headers    | A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._                                                                                                                                                                                                                                                          |    ✔️    |
 |    block_webrtc     | Blocks WebRTC entirely.                                                                                                                                                                                                                                                                                                                                                                                                    |    ✔️    |
-|     page_action     | Added for automation. Pass a function that takes the `page` object and does the necessary automation, then returns `page` again.                                                                                                                                                                                                                                                                                           |    ✔️    |
+|     page_action     | Added for automation. Pass a function that takes the `page` object and does the necessary automation.                                                                                                                                                                                                                                                                                                                      |    ✔️    |
 |       addons        | List of Firefox addons to use. **Must be paths to extracted addons.**                                                                                                                                                                                                                                                                                                                                                      |    ✔️    |
 |      humanize       | Humanize the cursor movement. The cursor movement takes either True or the maximum duration in seconds. The cursor typically takes up to 1.5 seconds to move across the window.                                                                                                                                                                                                                                            |    ✔️    |
 |     allow_webgl     | Enabled by default. Disabling WebGL is not recommended, as many WAFs now check if WebGL is enabled.                                                                                                                                                                                                                                                                                                                        |    ✔️    |
@@ -156,7 +156,6 @@ def scroll_page(page: Page):
     page.mouse.wheel(10, 0)
     page.mouse.move(100, 400)
     page.mouse.up()
-    return page
 
 page = StealthyFetcher.fetch(
     'https://example.com',
@@ -171,7 +170,6 @@ async def scroll_page(page: Page):
    await page.mouse.wheel(10, 0)
    await page.mouse.move(100, 400)
    await page.mouse.up()
-   return page
 
 page = await StealthyFetcher.async_fetch(
     'https://example.com',
@@ -278,9 +276,14 @@ async def scrape_multiple_sites():
         return pages
 ```
 
-You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of waiting for one browser tab to become ready, it checks if the next tab in the pool is ready to be used and uses it. This allows for multiple websites to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
+You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of using one tab for all your requests, you set a limit of the maximum number of pages allowed and with each request, the library will close all tabs that finished its task and check if the number of the current tabs is lower than the number of maximum allowed number of pages/tabs then:
 
-When all tabs inside the pool are busy, the fetcher checks every subsecond if a tab becomes ready. If none become free within a 30-second interval, it raises a `TimeoutError` error. This can happen when the website you are fetching becomes unresponsive for some reason.
+1. If you are within the allowed range, the fetcher will create a new tab for you and then all is as normal.
+2. Otherwise, it will keep checking every sub second if creating a new tab is allowed or not for 60 seconds then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive for some reason.
+
+This logic allows for multiple websites to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
+
+In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resources/time but this logic proved to have flaws since it's nearly impossible to protections pages/tabs from contamination of the previous configuration you used with the request before this one.
 
 ### Session Benefits
 

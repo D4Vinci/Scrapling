@@ -77,7 +77,7 @@ Scrapling provides many options with this fetcher. To make it as simple as possi
 |    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                                                                                                                                                                                                              |    ✔️    |
 |       timeout       | The timeout (milliseconds) used in all operations and waits through the page. The default is 30,000 ms (30 seconds).                                                                                                                                                                                                                                                                                                       |    ✔️    |
 |        wait         | The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the `Response` object.                                                                                                                                                                                                                                                                                       |    ✔️    |
-|     page_action     | Added for automation. Pass a function that takes the `page` object and does the necessary automation, then returns `page` again.                                                                                                                                                                                                                                                                                           |    ✔️    |
+|     page_action     | Added for automation. Pass a function that takes the `page` object and does the necessary automation.                                                                                                                                                                                                                                                                                                                      |    ✔️    |
 |    wait_selector    | Wait for a specific css selector to be in a specific state.                                                                                                                                                                                                                                                                                                                                                                |    ✔️    |
 |     init_script     | An absolute path to a JavaScript file to be executed on page creation for all pages in this session.                                                                                                                                                                                                                                                                                                                       |    ✔️    |
 | wait_selector_state | Scrapling will wait for the given state to be fulfilled for the selector given with `wait_selector`. _Default state is `attached`._                                                                                                                                                                                                                                                                                        |    ✔️    |
@@ -134,7 +134,6 @@ def scroll_page(page: Page):
     page.mouse.wheel(10, 0)
     page.mouse.move(100, 400)
     page.mouse.up()
-    return page
 
 page = DynamicFetcher.fetch(
     'https://example.com',
@@ -149,7 +148,6 @@ async def scroll_page(page: Page):
    await page.mouse.wheel(10, 0)
    await page.mouse.move(100, 400)
    await page.mouse.up()
-   return page
 
 page = await DynamicFetcher.async_fetch(
     'https://example.com',
@@ -273,9 +271,14 @@ async def scrape_multiple_sites():
         return pages
 ```
 
-You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of waiting for one browser tab to become ready, it checks if the next tab in the pool is ready to be used and uses it. This allows for multiple websites to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
+You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of using one tab for all your requests, you set a limit of the maximum number of pages allowed and with each request, the library will close all tabs that finished its task and check if the number of the current tabs is lower than the number of maximum allowed number of pages/tabs then:
 
-When all tabs inside the pool are busy, the fetcher checks every subsecond if a tab becomes ready. If none become free within a 30-second interval, it raises a `TimeoutError` error. This can happen when the website you are fetching becomes unresponsive for some reason.
+1. If you are within the allowed range, the fetcher will create a new tab for you and then all is as normal.
+2. Otherwise, it will keep checking every sub second if creating a new tab is allowed or not for 60 seconds then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive for some reason.
+
+This logic allows for multiple websites to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
+
+In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resources/time but this logic proved to have flaws since it's nearly impossible to protections pages/tabs from contamination of the previous configuration you used with the request before this one.
 
 ### Session Benefits
 

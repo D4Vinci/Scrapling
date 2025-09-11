@@ -119,7 +119,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
@@ -269,7 +269,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
@@ -433,7 +433,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
@@ -585,7 +585,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.

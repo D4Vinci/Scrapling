@@ -96,7 +96,7 @@ class StealthyFetcher(BaseFetcher):
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
@@ -194,7 +194,7 @@ class StealthyFetcher(BaseFetcher):
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
@@ -299,7 +299,7 @@ class DynamicFetcher(BaseFetcher):
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
@@ -385,7 +385,7 @@ class DynamicFetcher(BaseFetcher):
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
