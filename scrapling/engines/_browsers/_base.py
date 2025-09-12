@@ -145,7 +145,7 @@ class AsyncSession(SyncSession):
 
 class DynamicSessionMixin:
     def __validate__(self, **params):
-        config = validate(**params, model=PlaywrightConfig)
+        config = validate(params, model=PlaywrightConfig)
 
         self.max_pages = config.max_pages
         self.headless = config.headless
@@ -221,7 +221,7 @@ class DynamicSessionMixin:
 
 class StealthySessionMixin:
     def __validate__(self, **params):
-        config = validate(**params, model=CamoufoxConfig)
+        config = validate(params, model=CamoufoxConfig)
 
         self.max_pages = config.max_pages
         self.headless = config.headless
