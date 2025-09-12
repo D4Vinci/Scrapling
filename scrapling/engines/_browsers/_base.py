@@ -144,56 +144,8 @@ class AsyncSession(SyncSession):
 
 
 class DynamicSessionMixin:
-    def __validate__(
-        self,
-        __max_pages,
-        headless,
-        google_search,
-        hide_canvas,
-        disable_webgl,
-        real_chrome,
-        stealth,
-        wait,
-        page_action,
-        proxy,
-        locale,
-        extra_headers,
-        useragent,
-        cdp_url,
-        timeout,
-        disable_resources,
-        wait_selector,
-        init_script,
-        cookies,
-        network_idle,
-        wait_selector_state,
-        selector_config,
-    ):
-        params = {
-            "max_pages": __max_pages,
-            "headless": headless,
-            "google_search": google_search,
-            "hide_canvas": hide_canvas,
-            "disable_webgl": disable_webgl,
-            "real_chrome": real_chrome,
-            "stealth": stealth,
-            "wait": wait,
-            "page_action": page_action,
-            "proxy": proxy,
-            "locale": locale,
-            "extra_headers": extra_headers,
-            "useragent": useragent,
-            "timeout": timeout,
-            "selector_config": selector_config,
-            "disable_resources": disable_resources,
-            "wait_selector": wait_selector,
-            "init_script": init_script,
-            "cookies": cookies,
-            "network_idle": network_idle,
-            "wait_selector_state": wait_selector_state,
-            "cdp_url": cdp_url,
-        }
-        config = validate(params, PlaywrightConfig)
+    def __validate__(self, **params):
+        config = validate(**params, model=PlaywrightConfig)
 
         self.max_pages = config.max_pages
         self.headless = config.headless
@@ -268,62 +220,8 @@ class DynamicSessionMixin:
 
 
 class StealthySessionMixin:
-    def __validate__(
-        self,
-        max_pages,
-        headless,
-        block_images,
-        disable_resources,
-        block_webrtc,
-        allow_webgl,
-        network_idle,
-        humanize,
-        solve_cloudflare,
-        wait,
-        timeout,
-        page_action,
-        wait_selector,
-        init_script,
-        addons,
-        wait_selector_state,
-        cookies,
-        google_search,
-        extra_headers,
-        proxy,
-        os_randomize,
-        disable_ads,
-        geoip,
-        selector_config,
-        additional_args,
-    ):
-        params = {
-            "max_pages": max_pages,
-            "headless": headless,
-            "block_images": block_images,
-            "disable_resources": disable_resources,
-            "block_webrtc": block_webrtc,
-            "allow_webgl": allow_webgl,
-            "network_idle": network_idle,
-            "humanize": humanize,
-            "solve_cloudflare": solve_cloudflare,
-            "wait": wait,
-            "timeout": timeout,
-            "page_action": page_action,
-            "wait_selector": wait_selector,
-            "init_script": init_script,
-            "addons": addons,
-            "wait_selector_state": wait_selector_state,
-            "cookies": cookies,
-            "google_search": google_search,
-            "extra_headers": extra_headers,
-            "proxy": proxy,
-            "os_randomize": os_randomize,
-            "disable_ads": disable_ads,
-            "geoip": geoip,
-            "selector_config": selector_config,
-            "additional_args": additional_args,
-        }
-        config = validate(params, CamoufoxConfig)
+    def __validate__(self, **params):
+        config = validate(**params, model=CamoufoxConfig)
 
         self.max_pages = config.max_pages
         self.headless = config.headless
