@@ -54,6 +54,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         "cookies",
         "disable_resources",
         "network_idle",
+        "load_dom",
         "wait_selector",
         "init_script",
         "wait_selector_state",
@@ -93,6 +94,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         init_script: Optional[str] = None,
         cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
+        load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
         selector_config: Optional[Dict] = None,
     ):
@@ -116,6 +118,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
@@ -130,6 +133,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
             stealth=stealth,
             cdp_url=cdp_url,
             cookies=cookies,
+            load_dom=load_dom,
             headless=headless,
             useragent=useragent,
             max_pages=__max_pages,
@@ -208,6 +212,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         wait_selector: Optional[str] = _UNSET,
         wait_selector_state: SelectorWaitStates = _UNSET,
         network_idle: bool = _UNSET,
+        load_dom: bool = _UNSET,
         selector_config: Optional[Dict] = _UNSET,
     ) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -224,6 +229,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
@@ -239,6 +245,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
                 wait_selector=self._get_with_precedence(wait_selector, self.wait_selector, _UNSET),
                 wait_selector_state=self._get_with_precedence(wait_selector_state, self.wait_selector_state, _UNSET),
                 network_idle=self._get_with_precedence(network_idle, self.network_idle, _UNSET),
+                load_dom=self._get_with_precedence(load_dom, self.load_dom, _UNSET),
                 selector_config=self._get_with_precedence(selector_config, self.selector_config, _UNSET),
             ),
             PlaywrightConfig,
@@ -267,7 +274,8 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
             # Navigate to URL and wait for a specified state
             page_info.page.on("response", handle_response)
             first_response = page_info.page.goto(url, referer=referer)
-            page_info.page.wait_for_load_state(state="domcontentloaded")
+            if params.load_dom:
+                page_info.page.wait_for_load_state(state="domcontentloaded")
 
             if params.network_idle:
                 page_info.page.wait_for_load_state("networkidle")
@@ -287,7 +295,8 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
                     waiter.first.wait_for(state=params.wait_selector_state)
                     # Wait again after waiting for the selector, helpful with protections like Cloudflare
                     page_info.page.wait_for_load_state(state="load")
-                    page_info.page.wait_for_load_state(state="domcontentloaded")
+                    if params.load_dom:
+                        page_info.page.wait_for_load_state(state="domcontentloaded")
                     if params.network_idle:
                         page_info.page.wait_for_load_state("networkidle")
                 except Exception as e:  # pragma: no cover
@@ -335,6 +344,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         init_script: Optional[str] = None,
         cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
+        load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
         selector_config: Optional[Dict] = None,
     ):
@@ -347,6 +357,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
@@ -374,6 +385,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             stealth=stealth,
             cdp_url=cdp_url,
             cookies=cookies,
+            load_dom=load_dom,
             headless=headless,
             useragent=useragent,
             max_pages=max_pages,
@@ -453,6 +465,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         wait_selector: Optional[str] = _UNSET,
         wait_selector_state: SelectorWaitStates = _UNSET,
         network_idle: bool = _UNSET,
+        load_dom: bool = _UNSET,
         selector_config: Optional[Dict] = _UNSET,
     ) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -469,6 +482,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
@@ -484,6 +498,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
                 wait_selector=self._get_with_precedence(wait_selector, self.wait_selector, _UNSET),
                 wait_selector_state=self._get_with_precedence(wait_selector_state, self.wait_selector_state, _UNSET),
                 network_idle=self._get_with_precedence(network_idle, self.network_idle, _UNSET),
+                load_dom=self._get_with_precedence(load_dom, self.load_dom, _UNSET),
                 selector_config=self._get_with_precedence(selector_config, self.selector_config, _UNSET),
             ),
             PlaywrightConfig,
@@ -512,7 +527,8 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             # Navigate to URL and wait for a specified state
             page_info.page.on("response", handle_response)
             first_response = await page_info.page.goto(url, referer=referer)
-            await page_info.page.wait_for_load_state(state="domcontentloaded")
+            if self.load_dom:
+                await page_info.page.wait_for_load_state(state="domcontentloaded")
 
             if params.network_idle:
                 await page_info.page.wait_for_load_state("networkidle")
@@ -532,7 +548,8 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
                     await waiter.first.wait_for(state=params.wait_selector_state)
                     # Wait again after waiting for the selector, helpful with protections like Cloudflare
                     await page_info.page.wait_for_load_state(state="load")
-                    await page_info.page.wait_for_load_state(state="domcontentloaded")
+                    if self.load_dom:
+                        await page_info.page.wait_for_load_state(state="domcontentloaded")
                     if params.network_idle:
                         await page_info.page.wait_for_load_state("networkidle")
                 except Exception as e:

@@ -35,6 +35,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     wait_selector: Optional[str] = None
     cookies: Optional[List[Dict]] = None
     network_idle: bool = False
+    load_dom: bool = True
     wait_selector_state: SelectorWaitStates = "attached"
     selector_config: Optional[Dict] = None
 
@@ -92,6 +93,7 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     block_webrtc: bool = False
     allow_webgl: bool = True
     network_idle: bool = False
+    load_dom: bool = True
     humanize: bool | float = True
     solve_cloudflare: bool = False
     wait: int | float = 0

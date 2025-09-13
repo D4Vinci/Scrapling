@@ -162,6 +162,7 @@ class DynamicSessionMixin:
         self.disable_resources = config.disable_resources
         self.cdp_url = config.cdp_url
         self.network_idle = config.network_idle
+        self.load_dom = config.load_dom
         self.wait_selector = config.wait_selector
         self.init_script = config.init_script
         self.wait_selector_state = config.wait_selector_state
@@ -216,6 +217,7 @@ class StealthySessionMixin:
         self.block_webrtc = config.block_webrtc
         self.allow_webgl = config.allow_webgl
         self.network_idle = config.network_idle
+        self.load_dom = config.load_dom
         self.humanize = config.humanize
         self.solve_cloudflare = config.solve_cloudflare
         self.wait = config.wait

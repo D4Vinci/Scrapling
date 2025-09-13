@@ -46,6 +46,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         "block_webrtc",
         "allow_webgl",
         "network_idle",
+        "load_dom",
         "humanize",
         "solve_cloudflare",
         "wait",
@@ -82,6 +83,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         block_webrtc: bool = False,
         allow_webgl: bool = True,
         network_idle: bool = False,
+        load_dom: bool = True,
         humanize: bool | float = True,
         solve_cloudflare: bool = False,
         wait: int | float = 0,
@@ -116,6 +118,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param disable_ads: Disabled by default, this installs the `uBlock Origin` addon on the browser if enabled.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
@@ -142,6 +145,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
             cookies=cookies,
             headless=headless,
             humanize=humanize,
+            load_dom=load_dom,
             max_pages=__max_pages,
             disable_ads=disable_ads,
             allow_webgl=allow_webgl,
@@ -259,6 +263,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         wait_selector: Optional[str] = _UNSET,
         wait_selector_state: SelectorWaitStates = _UNSET,
         network_idle: bool = _UNSET,
+        load_dom: bool = _UNSET,
         solve_cloudflare: bool = _UNSET,
         selector_config: Optional[Dict] = _UNSET,
     ) -> Response:
@@ -276,6 +281,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
@@ -292,6 +298,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 wait_selector=self._get_with_precedence(wait_selector, self.wait_selector, _UNSET),
                 wait_selector_state=self._get_with_precedence(wait_selector_state, self.wait_selector_state, _UNSET),
                 network_idle=self._get_with_precedence(network_idle, self.network_idle, _UNSET),
+                load_dom=self._get_with_precedence(load_dom, self.load_dom, _UNSET),
                 solve_cloudflare=self._get_with_precedence(solve_cloudflare, self.solve_cloudflare, _UNSET),
                 selector_config=self._get_with_precedence(selector_config, self.selector_config, _UNSET),
             ),
@@ -321,7 +328,8 @@ class StealthySession(StealthySessionMixin, SyncSession):
             # Navigate to URL and wait for a specified state
             page_info.page.on("response", handle_response)
             first_response = page_info.page.goto(url, referer=referer)
-            page_info.page.wait_for_load_state(state="domcontentloaded")
+            if params.load_dom:
+                page_info.page.wait_for_load_state(state="domcontentloaded")
 
             if params.network_idle:
                 page_info.page.wait_for_load_state("networkidle")
@@ -333,7 +341,8 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 self._solve_cloudflare(page_info.page)
                 # Make sure the page is fully loaded after the captcha
                 page_info.page.wait_for_load_state(state="load")
-                page_info.page.wait_for_load_state(state="domcontentloaded")
+                if params.load_dom:
+                    page_info.page.wait_for_load_state(state="domcontentloaded")
                 if params.network_idle:
                     page_info.page.wait_for_load_state("networkidle")
 
@@ -349,7 +358,8 @@ class StealthySession(StealthySessionMixin, SyncSession):
                     waiter.first.wait_for(state=params.wait_selector_state)
                     # Wait again after waiting for the selector, helpful with protections like Cloudflare
                     page_info.page.wait_for_load_state(state="load")
-                    page_info.page.wait_for_load_state(state="domcontentloaded")
+                    if params.load_dom:
+                        page_info.page.wait_for_load_state(state="domcontentloaded")
                     if params.network_idle:
                         page_info.page.wait_for_load_state("networkidle")
                 except Exception as e:
@@ -382,6 +392,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         block_webrtc: bool = False,
         allow_webgl: bool = True,
         network_idle: bool = False,
+        load_dom: bool = True,
         humanize: bool | float = True,
         solve_cloudflare: bool = False,
         wait: int | float = 0,
@@ -416,6 +427,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param disable_ads: Disabled by default, this installs the `uBlock Origin` addon on the browser if enabled.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
@@ -441,6 +453,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
             timeout=timeout,
             cookies=cookies,
             headless=headless,
+            load_dom=load_dom,
             humanize=humanize,
             max_pages=max_pages,
             disable_ads=disable_ads,
@@ -559,6 +572,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         wait_selector: Optional[str] = _UNSET,
         wait_selector_state: SelectorWaitStates = _UNSET,
         network_idle: bool = _UNSET,
+        load_dom: bool = _UNSET,
         solve_cloudflare: bool = _UNSET,
         selector_config: Optional[Dict] = _UNSET,
     ) -> Response:
@@ -576,6 +590,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
@@ -591,6 +606,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 wait_selector=self._get_with_precedence(wait_selector, self.wait_selector, _UNSET),
                 wait_selector_state=self._get_with_precedence(wait_selector_state, self.wait_selector_state, _UNSET),
                 network_idle=self._get_with_precedence(network_idle, self.network_idle, _UNSET),
+                load_dom=self._get_with_precedence(load_dom, self.load_dom, _UNSET),
                 solve_cloudflare=self._get_with_precedence(solve_cloudflare, self.solve_cloudflare, _UNSET),
                 selector_config=self._get_with_precedence(selector_config, self.selector_config, _UNSET),
             ),
@@ -620,7 +636,8 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
             # Navigate to URL and wait for a specified state
             page_info.page.on("response", handle_response)
             first_response = await page_info.page.goto(url, referer=referer)
-            await page_info.page.wait_for_load_state(state="domcontentloaded")
+            if params.load_dom:
+                await page_info.page.wait_for_load_state(state="domcontentloaded")
 
             if params.network_idle:
                 await page_info.page.wait_for_load_state("networkidle")
@@ -632,7 +649,8 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 await self._solve_cloudflare(page_info.page)
                 # Make sure the page is fully loaded after the captcha
                 await page_info.page.wait_for_load_state(state="load")
-                await page_info.page.wait_for_load_state(state="domcontentloaded")
+                if params.load_dom:
+                    await page_info.page.wait_for_load_state(state="domcontentloaded")
                 if params.network_idle:
                     await page_info.page.wait_for_load_state("networkidle")
 
@@ -648,7 +666,8 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                     await waiter.first.wait_for(state=params.wait_selector_state)
                     # Wait again after waiting for the selector, helpful with protections like Cloudflare
                     await page_info.page.wait_for_load_state(state="load")
-                    await page_info.page.wait_for_load_state(state="domcontentloaded")
+                    if params.load_dom:
+                        await page_info.page.wait_for_load_state(state="domcontentloaded")
                     if params.network_idle:
                         await page_info.page.wait_for_load_state("networkidle")
                 except Exception as e:
