@@ -12,20 +12,17 @@ from camoufox.utils import (
     installed_verstr as camoufox_version,
 )
 
-from scrapling.engines.toolbelt import (
-    intercept_route,
-    async_intercept_route,
-    get_os_name,
-)
-from ._page import PageInfo, PagePool
-from ._config_tools import _compiled_stealth_scripts
-from ._validators import validate, PlaywrightConfig, CamoufoxConfig
-from ._config_tools import _launch_kwargs, _context_kwargs
+from scrapling.engines.toolbelt.navigation import intercept_route, async_intercept_route
 from scrapling.core._types import (
     Any,
     Dict,
     Optional,
 )
+from ._page import PageInfo, PagePool
+from ._config_tools import _compiled_stealth_scripts
+from ._config_tools import _launch_kwargs, _context_kwargs
+from scrapling.engines.toolbelt.fingerprints import get_os_name
+from ._validators import validate, PlaywrightConfig, CamoufoxConfig
 
 __ff_version_str__ = camoufox_version().split(".", 1)[0]
 

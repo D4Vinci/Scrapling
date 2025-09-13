@@ -2,11 +2,9 @@ from pathlib import Path
 from subprocess import check_output
 from sys import executable as python_executable
 
-from scrapling.core.utils import log
-from scrapling.engines.toolbelt import Response
+from scrapling.engines.toolbelt.custom import Response
+from scrapling.core.utils import log, _CookieParser, _ParseHeaders
 from scrapling.core._types import List, Optional, Dict, Tuple, Any, Callable
-from scrapling.fetchers import Fetcher, DynamicFetcher, StealthyFetcher
-from scrapling.core.shell import Convertor, _CookieParser, _ParseHeaders
 
 from orjson import loads as json_loads, JSONDecodeError
 from click import command, option, Choice, group, argument
@@ -40,6 +38,8 @@ def __Request_and_Save(
     **kwargs,
 ) -> None:
     """Make a request using the specified fetcher function and save the result"""
+    from scrapling.core.shell import Convertor
+
     # Handle relative paths - convert to an absolute path based on the current working directory
     output_path = Path(output_file)
     if not output_path.is_absolute():
@@ -251,6 +251,8 @@ def get(
         impersonate=impersonate,
         proxy=proxy,
     )
+    from scrapling.fetchers import Fetcher
+
     __Request_and_Save(Fetcher.get, url, output_file, css_selector, **kwargs)
 
 
@@ -347,6 +349,8 @@ def post(
         proxy=proxy,
         data=data,
     )
+    from scrapling.fetchers import Fetcher
+
     __Request_and_Save(Fetcher.post, url, output_file, css_selector, **kwargs)
 
 
@@ -439,6 +443,8 @@ def put(
         proxy=proxy,
         data=data,
     )
+    from scrapling.fetchers import Fetcher
+
     __Request_and_Save(Fetcher.put, url, output_file, css_selector, **kwargs)
 
 
@@ -524,6 +530,8 @@ def delete(
         impersonate=impersonate,
         proxy=proxy,
     )
+    from scrapling.fetchers import Fetcher
+
     __Request_and_Save(Fetcher.delete, url, output_file, css_selector, **kwargs)
 
 
@@ -642,6 +650,8 @@ def fetch(
         kwargs["proxy"] = proxy
     if parsed_headers:
         kwargs["extra_headers"] = parsed_headers
+
+    from scrapling.fetchers import DynamicFetcher
 
     __Request_and_Save(DynamicFetcher.fetch, url, output_file, css_selector, **kwargs)
 
@@ -789,6 +799,8 @@ def stealthy_fetch(
         kwargs["proxy"] = proxy
     if parsed_headers:
         kwargs["extra_headers"] = parsed_headers
+
+    from scrapling.fetchers import StealthyFetcher
 
     __Request_and_Save(StealthyFetcher.fetch, url, output_file, css_selector, **kwargs)
 

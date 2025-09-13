@@ -26,11 +26,11 @@ from scrapling.core._types import (
     Callable,
     SelectorWaitStates,
 )
-from scrapling.engines.toolbelt import (
+from scrapling.engines.toolbelt.convertor import (
     Response,
     ResponseFactory,
-    generate_convincing_referer,
 )
+from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
 
 _UNSET = object()
 

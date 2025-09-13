@@ -26,11 +26,11 @@ from scrapling.core._types import (
 
 from .toolbelt import (
     Response,
-    generate_convincing_referer,
     generate_headers,
-    ResponseFactory,
     __default_useragent__,
 )
+from .toolbelt.convertor import ResponseFactory
+from .toolbelt.fingerprints import generate_convincing_referer
 
 _UNSET = object()
 

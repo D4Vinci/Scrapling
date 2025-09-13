@@ -1,12 +1,11 @@
-from pathlib import Path
 import re
+from pathlib import Path
 from inspect import signature
-from difflib import SequenceMatcher
 from urllib.parse import urljoin
+from difflib import SequenceMatcher
 
-from cssselect import SelectorError, SelectorSyntaxError
-from cssselect import parse as split_selectors
 from lxml.html import HtmlElement, HtmlMixin, HTMLParser
+from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
 from lxml.etree import (
     XPath,
     tostring,

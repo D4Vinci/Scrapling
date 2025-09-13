@@ -61,6 +61,10 @@ dependencies = [
     "click>=8.2.1",
     "orjson>=3.11.3",
     "tldextract>=5.3.0",
+]
+
+[project.optional-dependencies]
+fetchers = [
     "curl_cffi>=0.13.0",
     "playwright>=1.52.0",
     "rebrowser-playwright>=1.52.0",
@@ -68,15 +72,15 @@ dependencies = [
     "geoip2>=5.1.0",
     "msgspec>=0.19.0",
 ]
-
-[project.optional-dependencies]
 ai = [
     "mcp>=1.14.0",
     "markdownify>=1.2.0",
+    "scrapling[fetchers]",
 ]
 shell = [
     "IPython>=8.37",  # The last version that supports Python 3.10
     "markdownify>=1.2.0",
+    "scrapling[fetchers]",
 ]
 all = [
     "scrapling[ai,shell]",

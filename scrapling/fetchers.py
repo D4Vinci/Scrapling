@@ -6,14 +6,16 @@ from scrapling.core._types import (
     SelectorWaitStates,
     Iterable,
 )
-from scrapling.engines import (
+from scrapling.engines.static import (
     FetcherSession,
-    StealthySession,
-    AsyncStealthySession,
-    DynamicSession,
-    AsyncDynamicSession,
     FetcherClient as _FetcherClient,
     AsyncFetcherClient as _AsyncFetcherClient,
+)
+from scrapling.engines._browsers import (
+    DynamicSession,
+    StealthySession,
+    AsyncDynamicSession,
+    AsyncStealthySession,
 )
 from scrapling.engines.toolbelt import BaseFetcher, Response
 

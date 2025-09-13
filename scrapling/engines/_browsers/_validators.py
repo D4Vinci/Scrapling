@@ -9,7 +9,7 @@ from scrapling.core._types import (
     List,
     SelectorWaitStates,
 )
-from scrapling.engines.toolbelt import construct_proxy_dict
+from scrapling.engines.toolbelt.navigation import construct_proxy_dict
 
 
 class PlaywrightConfig(Struct, kw_only=True, frozen=False):
