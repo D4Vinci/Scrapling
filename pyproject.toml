@@ -56,10 +56,10 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "lxml>=6.0.0",
+    "lxml>=6.0.1",
     "cssselect>=1.3.0",
-    "click>=8.2.1",
-    "orjson>=3.11.2",
+    "click>=8.2.2",
+    "orjson>=3.11.3",
     "tldextract>=5.3.0",
     "curl_cffi>=0.13.0",
     "playwright>=1.52.0",
@@ -71,7 +71,7 @@ dependencies = [
 
 [project.optional-dependencies]
 ai = [
-    "mcp>=1.13.0",
+    "mcp>=1.14.0",
     "markdownify>=1.2.0",
 ]
 shell = [
