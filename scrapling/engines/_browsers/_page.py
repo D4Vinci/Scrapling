@@ -6,9 +6,7 @@ from playwright.async_api import Page as AsyncPage
 
 from scrapling.core._types import Optional, List, Literal
 
-PageState = Literal[
-    "finished", "ready", "busy", "error"
-]  # States that a page can be in
+PageState = Literal["finished", "ready", "busy", "error"]  # States that a page can be in
 
 
 @dataclass

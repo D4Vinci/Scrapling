@@ -72,14 +72,10 @@ def __ParseExtractArguments(
     return parsed_headers, parsed_cookies, parsed_params, parsed_json
 
 
-def __BuildRequest(
-    headers: List[str], cookies: str, params: str, json: Optional[str] = None, **kwargs
-) -> Dict:
+def __BuildRequest(headers: List[str], cookies: str, params: str, json: Optional[str] = None, **kwargs) -> Dict:
     """Build a request object using the specified arguments"""
     # Parse parameters
-    parsed_headers, parsed_cookies, parsed_params, parsed_json = (
-        __ParseExtractArguments(headers, cookies, params, json)
-    )
+    parsed_headers, parsed_cookies, parsed_params, parsed_json = __ParseExtractArguments(headers, cookies, params, json)
     # Build request arguments
     request_kwargs = {
         "headers": parsed_headers if parsed_headers else None,
@@ -106,10 +102,7 @@ def __BuildRequest(
     help="Force Scrapling to reinstall all Fetchers dependencies",
 )
 def install(force):  # pragma: no cover
-    if (
-        force
-        or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists()
-    ):
+    if force or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists():
         __Execute(
             [python_executable, "-m", "playwright", "install", "chromium"],
             "Playwright browsers",
@@ -158,9 +151,7 @@ def mcp():
     "level",
     is_flag=False,
     default="debug",
-    type=Choice(
-        ["debug", "info", "warning", "error", "critical", "fatal"], case_sensitive=False
-    ),
+    type=Choice(["debug", "info", "warning", "error", "critical", "fatal"], case_sensitive=False),
     help="Log level (default: DEBUG)",
 )
 def shell(code, level):
@@ -178,9 +169,7 @@ def extract():
     pass
 
 
-@extract.command(
-    help=f"Perform a GET request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Perform a GET request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(
@@ -190,9 +179,7 @@ def extract():
     help='HTTP headers in format "Key: Value" (can be used multiple times)',
 )
 @option("--cookies", help='Cookies string in format "name1=value1; name2=value2"')
-@option(
-    "--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)"
-)
+@option("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)")
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
     "--css-selector",
@@ -267,9 +254,7 @@ def get(
     __Request_and_Save(Fetcher.get, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Perform a POST request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Perform a POST request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(
@@ -285,9 +270,7 @@ def get(
     help='HTTP headers in format "Key: Value" (can be used multiple times)',
 )
 @option("--cookies", help='Cookies string in format "name1=value1; name2=value2"')
-@option(
-    "--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)"
-)
+@option("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)")
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
     "--css-selector",
@@ -367,9 +350,7 @@ def post(
     __Request_and_Save(Fetcher.post, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Perform a PUT request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Perform a PUT request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option("--data", "-d", help="Form data to include in the request body")
@@ -381,9 +362,7 @@ def post(
     help='HTTP headers in format "Key: Value" (can be used multiple times)',
 )
 @option("--cookies", help='Cookies string in format "name1=value1; name2=value2"')
-@option(
-    "--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)"
-)
+@option("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)")
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
     "--css-selector",
@@ -463,9 +442,7 @@ def put(
     __Request_and_Save(Fetcher.put, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Perform a DELETE request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Perform a DELETE request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(
@@ -475,9 +452,7 @@ def put(
     help='HTTP headers in format "Key: Value" (can be used multiple times)',
 )
 @option("--cookies", help='Cookies string in format "name1=value1; name2=value2"')
-@option(
-    "--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)"
-)
+@option("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)")
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
     "--css-selector",
@@ -552,9 +527,7 @@ def delete(
     __Request_and_Save(Fetcher.delete, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Use DynamicFetcher to fetch content with browser automation.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Use DynamicFetcher to fetch content with browser automation.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(
@@ -591,9 +564,7 @@ def delete(
 )
 @option("--wait-selector", help="CSS selector to wait for before proceeding")
 @option("--locale", default="en-US", help="Browser locale (default: en-US)")
-@option(
-    "--stealth/--no-stealth", default=False, help="Enable stealth mode (default: False)"
-)
+@option("--stealth/--no-stealth", default=False, help="Enable stealth mode (default: False)")
 @option(
     "--hide-canvas/--show-canvas",
     default=False,
@@ -675,9 +646,7 @@ def fetch(
     __Request_and_Save(DynamicFetcher.fetch, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Use StealthyFetcher to fetch content with advanced stealth features.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Use StealthyFetcher to fetch content with advanced stealth features.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(

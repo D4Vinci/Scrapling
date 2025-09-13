@@ -25,9 +25,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     stealth: bool = False
     wait: int | float = 0
     page_action: Optional[Callable] = None
-    proxy: Optional[str | Dict[str, str]] = (
-        None  # The default value for proxy in Playwright's source is `None`
-    )
+    proxy: Optional[str | Dict[str, str]] = None  # The default value for proxy in Playwright's source is `None`
     locale: str = "en-US"
     extra_headers: Optional[Dict[str, str]] = None
     useragent: Optional[str] = None
@@ -46,10 +44,8 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
             raise ValueError("max_pages must be between 1 and 50")
         if self.timeout < 0:
             raise ValueError("timeout must be >= 0")
-        if self.page_action is not None and not callable(self.page_action):
-            raise TypeError(
-                f"page_action must be callable, got {type(self.page_action).__name__}"
-            )
+        if self.page_action and not callable(self.page_action):
+            raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
         if self.proxy:
             self.proxy = construct_proxy_dict(self.proxy, as_tuple=True)
         if self.cdp_url:
@@ -108,9 +104,7 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     cookies: Optional[List[Dict]] = None
     google_search: bool = True
     extra_headers: Optional[Dict[str, str]] = None
-    proxy: Optional[str | Dict[str, str]] = (
-        None  # The default value for proxy in Playwright's source is `None`
-    )
+    proxy: Optional[str | Dict[str, str]] = None  # The default value for proxy in Playwright's source is `None`
     os_randomize: bool = False
     disable_ads: bool = False
     geoip: bool = False
@@ -123,10 +117,8 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
             raise ValueError("max_pages must be between 1 and 50")
         if self.timeout < 0:
             raise ValueError("timeout must be >= 0")
-        if self.page_action is not None and not callable(self.page_action):
-            raise TypeError(
-                f"page_action must be callable, got {type(self.page_action).__name__}"
-            )
+        if self.page_action and not callable(self.page_action):
+            raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
         if self.proxy:
             self.proxy = construct_proxy_dict(self.proxy, as_tuple=True)
 

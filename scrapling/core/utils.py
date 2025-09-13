@@ -24,9 +24,7 @@ def setup_logger():
     logger = logging.getLogger("scrapling")
     logger.setLevel(logging.INFO)
 
-    formatter = logging.Formatter(
-        fmt="[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    formatter = logging.Formatter(fmt="[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
@@ -61,11 +59,7 @@ class _StorageTools:
     def __clean_attributes(element: html.HtmlElement, forbidden: tuple = ()) -> Dict:
         if not element.attrib:
             return {}
-        return {
-            k: v.strip()
-            for k, v in element.attrib.items()
-            if v and v.strip() and k not in forbidden
-        }
+        return {k: v.strip() for k, v in element.attrib.items() if v and v.strip() and k not in forbidden}
 
     @classmethod
     def element_to_dict(cls, element: html.HtmlElement) -> Dict:
@@ -85,17 +79,11 @@ class _StorageTools:
                 }
             )
 
-            siblings = [
-                child.tag for child in parent.iterchildren() if child != element
-            ]
+            siblings = [child.tag for child in parent.iterchildren() if child != element]
             if siblings:
                 result.update({"siblings": tuple(siblings)})
 
-        children = [
-            child.tag
-            for child in element.iterchildren()
-            if not isinstance(child, html_forbidden)
-        ]
+        children = [child.tag for child in element.iterchildren() if not isinstance(child, html_forbidden)]
         if children:
             result.update({"children": tuple(children)})
 
@@ -104,11 +92,7 @@ class _StorageTools:
     @classmethod
     def _get_element_path(cls, element: html.HtmlElement):
         parent = element.getparent()
-        return tuple(
-            (element.tag,)
-            if parent is None
-            else (cls._get_element_path(parent) + (element.tag,))
-        )
+        return tuple((element.tag,) if parent is None else (cls._get_element_path(parent) + (element.tag,)))
 
 
 @lru_cache(128, typed=True)

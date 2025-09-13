@@ -112,9 +112,7 @@ class StealthyFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(
-                f"The custom parser config must be of type dictionary, got {cls.__class__}"
-            )
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         with StealthySession(
             wait=wait,
@@ -210,9 +208,7 @@ class StealthyFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(
-                f"The custom parser config must be of type dictionary, got {cls.__class__}"
-            )
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         async with AsyncStealthySession(
             wait=wait,
@@ -318,9 +314,7 @@ class DynamicFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            raise ValueError(
-                f"The custom parser config must be of type dictionary, got {cls.__class__}"
-            )
+            raise ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         with DynamicSession(
             wait=wait,
@@ -404,9 +398,7 @@ class DynamicFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            raise ValueError(
-                f"The custom parser config must be of type dictionary, got {cls.__class__}"
-            )
+            raise ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         async with AsyncDynamicSession(
             wait=wait,

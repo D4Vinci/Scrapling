@@ -89,9 +89,7 @@ class TranslatorMixin:
         xpath = super().xpath_element(selector)  # type: ignore[safe-super]
         return XPathExpr.from_xpath(xpath)
 
-    def xpath_pseudo_element(
-        self, xpath: OriginalXPathExpr, pseudo_element: PseudoElement
-    ) -> OriginalXPathExpr:
+    def xpath_pseudo_element(self, xpath: OriginalXPathExpr, pseudo_element: PseudoElement) -> OriginalXPathExpr:
         """
         Dispatch method that transforms XPath to support the pseudo-element.
         """
@@ -99,31 +97,21 @@ class TranslatorMixin:
             method_name = f"xpath_{pseudo_element.name.replace('-', '_')}_functional_pseudo_element"
             method = getattr(self, method_name, None)
             if not method:  # pragma: no cover
-                raise ExpressionError(
-                    f"The functional pseudo-element ::{pseudo_element.name}() is unknown"
-                )
+                raise ExpressionError(f"The functional pseudo-element ::{pseudo_element.name}() is unknown")
             xpath = method(xpath, pseudo_element)
         else:
-            method_name = (
-                f"xpath_{pseudo_element.replace('-', '_')}_simple_pseudo_element"
-            )
+            method_name = f"xpath_{pseudo_element.replace('-', '_')}_simple_pseudo_element"
             method = getattr(self, method_name, None)
             if not method:  # pragma: no cover
-                raise ExpressionError(
-                    f"The pseudo-element ::{pseudo_element} is unknown"
-                )
+                raise ExpressionError(f"The pseudo-element ::{pseudo_element} is unknown")
             xpath = method(xpath)
         return xpath
 
     @staticmethod
-    def xpath_attr_functional_pseudo_element(
-        xpath: OriginalXPathExpr, function: FunctionalPseudoElement
-    ) -> XPathExpr:
+    def xpath_attr_functional_pseudo_element(xpath: OriginalXPathExpr, function: FunctionalPseudoElement) -> XPathExpr:
         """Support selecting attribute values using ::attr() pseudo-element"""
         if function.argument_types() not in (["STRING"], ["IDENT"]):  # pragma: no cover
-            raise ExpressionError(
-                f"Expected a single string or ident for ::attr(), got {function.arguments!r}"
-            )
+            raise ExpressionError(f"Expected a single string or ident for ::attr(), got {function.arguments!r}")
         return XPathExpr.from_xpath(xpath, attribute=function.arguments[0].value)
 
     @staticmethod

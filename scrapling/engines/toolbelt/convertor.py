@@ -18,9 +18,7 @@ class ResponseFactory:
     """
 
     @classmethod
-    def _process_response_history(
-        cls, first_response: SyncResponse, parser_arguments: Dict
-    ) -> list[Response]:
+    def _process_response_history(cls, first_response: SyncResponse, parser_arguments: Dict) -> list[Response]:
         """Process response history to build a list of `Response` objects"""
         history = []
         current_request = first_response.request.redirected_from
@@ -36,18 +34,12 @@ class ResponseFactory:
                             # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
                             content="",
                             status=current_response.status if current_response else 301,
-                            reason=(
-                                current_response.status_text
-                                or StatusText.get(current_response.status)
-                            )
+                            reason=(current_response.status_text or StatusText.get(current_response.status))
                             if current_response
                             else StatusText.get(301),
-                            encoding=current_response.headers.get("content-type", "")
-                            or "utf-8",
+                            encoding=current_response.headers.get("content-type", "") or "utf-8",
                             cookies=tuple(),
-                            headers=current_response.all_headers()
-                            if current_response
-                            else {},
+                            headers=current_response.all_headers() if current_response else {},
                             request_headers=current_request.all_headers(),
                             **parser_arguments,
                         ),
@@ -94,13 +86,9 @@ class ResponseFactory:
             raise ValueError("Failed to get a response from the page")
 
         # This will be parsed inside `Response`
-        encoding = (
-            final_response.headers.get("content-type", "") or "utf-8"
-        )  # default encoding
+        encoding = final_response.headers.get("content-type", "") or "utf-8"  # default encoding
         # PlayWright API sometimes give empty status text for some reason!
-        status_text = final_response.status_text or StatusText.get(
-            final_response.status
-        )
+        status_text = final_response.status_text or StatusText.get(final_response.status)
 
         history = cls._process_response_history(first_response, parser_arguments)
         try:
@@ -141,18 +129,12 @@ class ResponseFactory:
                             # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
                             content="",
                             status=current_response.status if current_response else 301,
-                            reason=(
-                                current_response.status_text
-                                or StatusText.get(current_response.status)
-                            )
+                            reason=(current_response.status_text or StatusText.get(current_response.status))
                             if current_response
                             else StatusText.get(301),
-                            encoding=current_response.headers.get("content-type", "")
-                            or "utf-8",
+                            encoding=current_response.headers.get("content-type", "") or "utf-8",
                             cookies=tuple(),
-                            headers=await current_response.all_headers()
-                            if current_response
-                            else {},
+                            headers=await current_response.all_headers() if current_response else {},
                             request_headers=await current_request.all_headers(),
                             **parser_arguments,
                         ),
@@ -199,17 +181,11 @@ class ResponseFactory:
             raise ValueError("Failed to get a response from the page")
 
         # This will be parsed inside `Response`
-        encoding = (
-            final_response.headers.get("content-type", "") or "utf-8"
-        )  # default encoding
+        encoding = final_response.headers.get("content-type", "") or "utf-8"  # default encoding
         # PlayWright API sometimes give empty status text for some reason!
-        status_text = final_response.status_text or StatusText.get(
-            final_response.status
-        )
+        status_text = final_response.status_text or StatusText.get(final_response.status)
 
-        history = await cls._async_process_response_history(
-            first_response, parser_arguments
-        )
+        history = await cls._async_process_response_history(first_response, parser_arguments)
         try:
             page_content = await page.content()
         except Exception as e:  # pragma: no cover
@@ -239,9 +215,7 @@ class ResponseFactory:
         """
         return Response(
             url=response.url,
-            content=response.content
-            if isinstance(response.content, bytes)
-            else response.content.encode(),
+            content=response.content if isinstance(response.content, bytes) else response.content.encode(),
             status=response.status_code,
             reason=response.reason,
             encoding=response.encoding or "utf-8",

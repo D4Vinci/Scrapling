@@ -269,17 +269,13 @@ name2codepoint = {
 }
 
 
-def to_unicode(
-    text: StrOrBytes, encoding: Optional[str] = None, errors: str = "strict"
-) -> str:
+def to_unicode(text: StrOrBytes, encoding: Optional[str] = None, errors: str = "strict") -> str:
     """Return the Unicode representation of a bytes object `text`. If `text`
     is already a Unicode object, return it as-is."""
     if isinstance(text, str):
         return text
     if not isinstance(text, (bytes, str)):
-        raise TypeError(
-            f"to_unicode must receive bytes or str, got {type(text).__name__}"
-        )
+        raise TypeError(f"to_unicode must receive bytes or str, got {type(text).__name__}")
     if encoding is None:
         encoding = "utf-8"
     return text.decode(encoding, errors)
@@ -328,9 +324,7 @@ def _replace_entities(
             entity_name = groups["named"]
             if entity_name.lower() in keep:
                 return m.group(0)
-            number = name2codepoint.get(entity_name) or name2codepoint.get(
-                entity_name.lower()
-            )
+            number = name2codepoint.get(entity_name) or name2codepoint.get(entity_name.lower())
         if number is not None:
             # Browsers typically
             # interpret numeric character references in the 80-9F range as representing the characters mapped

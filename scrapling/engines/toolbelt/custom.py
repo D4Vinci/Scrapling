@@ -49,9 +49,7 @@ class ResponseEncoding:
 
     @classmethod
     @lru_cache(maxsize=128)
-    def get_value(
-        cls, content_type: Optional[str], text: Optional[str] = "test"
-    ) -> str:
+    def get_value(cls, content_type: Optional[str], text: Optional[str] = "test") -> str:
         """Determine the appropriate character encoding from a content-type header.
 
         The encoding is determined by these rules in order:
@@ -84,9 +82,7 @@ class ResponseEncoding:
                 encoding = cls.__DEFAULT_ENCODING
 
             if encoding:
-                _ = text.encode(
-                    encoding
-                )  # Validate encoding and validate it can encode the given text
+                _ = text.encode(encoding)  # Validate encoding and validate it can encode the given text
                 return encoding
 
             return cls.__DEFAULT_ENCODING
@@ -129,9 +125,7 @@ class Response(Selector):
             **selector_config,
         )
         # For easier debugging while working from a Python shell
-        log.info(
-            f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})"
-        )
+        log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
 
 
 class BaseFetcher:
@@ -190,18 +184,12 @@ class BaseFetcher:
                     setattr(cls, key, value)
                 else:
                     # Yup, no fun allowed LOL
-                    raise AttributeError(
-                        f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?'
-                    )
+                    raise AttributeError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
             else:
-                raise ValueError(
-                    f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?'
-                )
+                raise ValueError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
 
         if not kwargs:
-            raise AttributeError(
-                f"You must pass a keyword to configure, current keywords: {cls.parser_keywords}?"
-            )
+            raise AttributeError(f"You must pass a keyword to configure, current keywords: {cls.parser_keywords}?")
 
     @classmethod
     def _generate_parser_arguments(cls) -> Dict:
@@ -217,9 +205,7 @@ class BaseFetcher:
         )
         if cls.adaptive_domain:
             if not isinstance(cls.adaptive_domain, str):
-                log.warning(
-                    '[Ignored] The argument "adaptive_domain" must be of string type'
-                )
+                log.warning('[Ignored] The argument "adaptive_domain" must be of string type')
             else:
                 parser_arguments.update({"adaptive_domain": cls.adaptive_domain})
 

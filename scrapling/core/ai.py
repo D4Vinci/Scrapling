@@ -32,21 +32,13 @@ class ResponseModel(BaseModel):
     """Request's response information structure."""
 
     status: int = Field(description="The status code returned by the website.")
-    content: list[str] = Field(
-        description="The content as Markdown/HTML or the text content of the page."
-    )
-    url: str = Field(
-        description="The URL given by the user that resulted in this response."
-    )
+    content: list[str] = Field(description="The content as Markdown/HTML or the text content of the page.")
+    url: str = Field(description="The URL given by the user that resulted in this response.")
 
 
-def _ContentTranslator(
-    content: Generator[str, None, None], page: _ScraplingResponse
-) -> ResponseModel:
+def _ContentTranslator(content: Generator[str, None, None], page: _ScraplingResponse) -> ResponseModel:
     """Convert a content generator to a list of ResponseModel objects."""
-    return ResponseModel(
-        status=page.status, content=[result for result in content], url=page.url
-    )
+    return ResponseModel(status=page.status, content=[result for result in content], url=page.url)
 
 
 class ScraplingMCPServer:

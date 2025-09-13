@@ -30,9 +30,7 @@ def intercept_route(route: Route):
     :return: PlayWright `Route` object
     """
     if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
-        log.debug(
-            f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"'
-        )
+        log.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
         route.abort()
     else:
         route.continue_()
@@ -45,17 +43,13 @@ async def async_intercept_route(route: async_Route):
     :return: PlayWright `Route` object
     """
     if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
-        log.debug(
-            f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"'
-        )
+        log.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
         await route.abort()
     else:
         await route.continue_()
 
 
-def construct_proxy_dict(
-    proxy_string: str | Dict[str, str], as_tuple=False
-) -> Optional[Dict | Tuple]:
+def construct_proxy_dict(proxy_string: str | Dict[str, str], as_tuple=False) -> Optional[Dict | Tuple]:
     """Validate a proxy and return it in the acceptable format for Playwright
     Reference: https://playwright.dev/python/docs/network#http-proxy
 
@@ -65,10 +59,7 @@ def construct_proxy_dict(
     """
     if isinstance(proxy_string, str):
         proxy = urlparse(proxy_string)
-        if (
-            proxy.scheme not in ("http", "https", "socks4", "socks5")
-            or not proxy.hostname
-        ):
+        if proxy.scheme not in ("http", "https", "socks4", "socks5") or not proxy.hostname:
             raise ValueError("Invalid proxy string!")
 
         try:
