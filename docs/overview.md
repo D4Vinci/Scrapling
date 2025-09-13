@@ -292,7 +292,6 @@ It's built on top of [Playwright](https://playwright.dev/python/) and it's curre
 - Stealthy Playwright with custom stealth mode explicitly written for it. It's not top-tier stealth mode, but it bypasses many online tests like [Sannysoft's](https://bot.sannysoft.com/). Check out the `StealthyFetcher` class below for more advanced stealth mode. It uses the Chromium browser.
 - Real browsers like your Chrome browser by passing the `real_chrome` argument or the CDP URL of your browser to be controlled by the Fetcher, and most of the options can be enabled on it.
 
-> Note: All requests done by this fetcher are waiting by default for all JavaScript to be fully loaded and executed. In detail, it waits for the `load` and `domcontentloaded` load states to be reached; you can make it wait for the `networkidle` load state by passing `network_idle=True`, as you will see later.
 
 Again, this is just the tip of the iceberg with this fetcher. Check out the rest from [here](fetching/dynamic.md) for all details and the complete list of arguments.
 
@@ -314,7 +313,6 @@ True
 >>> page.status == 200
 True
 ```
-> Note: All requests done by this fetcher are waiting by default for all JavaScript to be fully loaded and executed. In detail, it waits for the `load` and `domcontentloaded` load states to be reached; you can make it wait for the `networkidle` load state by passing `network_idle=True`, as you will see later.
 
 Again, this is just the tip of the iceberg with this fetcher. Check out the rest from [here](fetching/dynamic.md) for all details and the complete list of arguments.
 

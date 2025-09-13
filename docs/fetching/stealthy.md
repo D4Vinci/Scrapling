@@ -12,10 +12,7 @@ You have one primary way to import this Fetcher, which is the same for all fetch
 ```
 Check out how to configure the parsing options [here](choosing.md#parser-configuration-in-all-fetchers)
 
-> Notes: 
-> 
-> 1. Every time you fetch a website with this fetcher, it waits by default for all JavaScript to fully load and execute, so you don't have to (wait for the `domcontentloaded` state).
-> 2. Of course, the async version of the `fetch` method is the `async_fetch` method.
+> Note: The async version of the `fetch` method is the `async_fetch` method, of course.
 
 ## Full list of arguments
 Before jumping to [examples](#examples), here's the full list of arguments
@@ -40,6 +37,7 @@ Before jumping to [examples](#examples), here's the full list of arguments
 |     disable_ads     | Disabled by default; this installs the `uBlock Origin` addon on the browser if enabled.                                                                                                                                                                                                                                                                                                                                    |    ✔️    |
 |  solve_cloudflare   | When enabled, fetcher solves all three types of Cloudflare's Turnstile wait/captcha page before returning the response to you.                                                                                                                                                                                                                                                                                             |    ✔️    |
 |    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                                                                                                                                                                                                              |    ✔️    |
+|      load_dom       | Enabled by default, wait for all JavaScript on page(s) to fully load and execute (wait for the `domcontentloaded` state).                                                                                                                                                                                                                                                                                                  |    ✔️    |
 |       timeout       | The timeout used in all operations and waits through the page. It's in milliseconds, and the default is 30000.                                                                                                                                                                                                                                                                                                             |    ✔️    |
 |        wait         | The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the `Response` object.                                                                                                                                                                                                                                                                                       |    ✔️    |
 |    wait_selector    | Wait for a specific css selector to be in a specific state.                                                                                                                                                                                                                                                                                                                                                                |    ✔️    |
@@ -188,7 +186,7 @@ page = StealthyFetcher.fetch(
 ```
 This is the last wait the fetcher will do before returning the response (if enabled). You pass a CSS selector to the `wait_selector` argument, and the fetcher will wait for the state you passed in the `wait_selector_state` argument to be fulfilled. If you didn't pass a state, the default would be `attached`, which means it will wait for the element to be present in the DOM.
 
-After that, the fetcher will check again to see if all JS files are loaded and executed (the `domcontentloaded` state) or continue waiting. If you have enabled `network_idle`, the fetcher will wait for `network_idle` to be fulfilled again, as explained above.
+After that, if `load_dom` is enabled (the default), the fetcher will check again to see if all JS files are loaded and executed (the `domcontentloaded` state) or continue waiting. If you have enabled `network_idle`, the fetcher will wait for `network_idle` to be fulfilled again, as explained above.
 
 The states the fetcher can wait for can be any of the following ([source](https://playwright.dev/python/docs/api/class-page#page-wait-for-selector)):
 
@@ -276,14 +274,14 @@ async def scrape_multiple_sites():
         return pages
 ```
 
-You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of using one tab for all your requests, you set a limit of the maximum number of pages allowed and with each request, the library will close all tabs that finished its task and check if the number of the current tabs is lower than the number of maximum allowed number of pages/tabs then:
+You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of using one tab for all your requests, you set a limit on the maximum number of pages allowed. With each request, the library will close all tabs that have finished their task and check if the number of the current tabs is lower than the maximum allowed number of pages/tabs, then:
 
-1. If you are within the allowed range, the fetcher will create a new tab for you and then all is as normal.
-2. Otherwise, it will keep checking every sub second if creating a new tab is allowed or not for 60 seconds then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive for some reason.
+1. If you are within the allowed range, the fetcher will create a new tab for you, and then all is as normal.
+2. Otherwise, it will keep checking every subsecond if creating a new tab is allowed or not for 60 seconds, then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive for some reason.
 
 This logic allows for multiple websites to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
 
-In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resources/time but this logic proved to have flaws since it's nearly impossible to protections pages/tabs from contamination of the previous configuration you used with the request before this one.
+In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resources/time. That logic proved to have flaws since it's nearly impossible to protect pages/tabs from contamination of the previous configuration you used with the request before this one.
 
 ### Session Benefits
 
