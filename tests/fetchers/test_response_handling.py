@@ -1,8 +1,8 @@
 from unittest.mock import Mock
 
 from scrapling.parser import Selector
-from scrapling.engines.toolbelt import ResponseFactory, Response
 from scrapling.engines.toolbelt.custom import ResponseEncoding
+from scrapling.engines.toolbelt.convertor import ResponseFactory, Response
 
 
 class TestResponseFactory:

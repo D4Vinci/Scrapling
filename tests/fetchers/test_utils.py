@@ -4,7 +4,6 @@ from pathlib import Path
 from scrapling.engines.toolbelt.custom import ResponseEncoding, StatusText, Response
 from scrapling.engines.toolbelt.navigation import (
     construct_proxy_dict,
-    construct_cdp_url,
     js_bypass_path
 )
 from scrapling.engines.toolbelt.fingerprints import (
@@ -214,43 +213,6 @@ class TestConstructProxyDict:
         """Test invalid proxy dictionary"""
         with pytest.raises(TypeError):
             construct_proxy_dict({"invalid": "structure"})
-
-
-class TestConstructCdpUrl:
-    """Test CDP URL construction"""
-
-    def test_basic_cdp_url(self):
-        """Test basic CDP URL"""
-        result = construct_cdp_url("ws://localhost:9222/devtools/browser")
-        assert result == "ws://localhost:9222/devtools/browser"
-
-    def test_cdp_url_with_params(self):
-        """Test CDP URL with query parameters"""
-        params = {"timeout": "30000", "headless": "true"}
-        result = construct_cdp_url("ws://localhost:9222/devtools/browser", params)
-
-        assert "timeout=30000" in result
-        assert "headless=true" in result
-
-    def test_cdp_url_without_leading_slash(self):
-        """Test CDP URL without a leading slash in the path"""
-        with pytest.raises(ValueError):
-            construct_cdp_url("ws://localhost:9222devtools/browser")
-
-    def test_invalid_cdp_scheme(self):
-        """Test invalid CDP URL scheme"""
-        with pytest.raises(ValueError):
-            construct_cdp_url("http://localhost:9222/devtools/browser")
-
-    def test_invalid_cdp_netloc(self):
-        """Test invalid CDP URL network location"""
-        with pytest.raises(ValueError):
-            construct_cdp_url("ws:///devtools/browser")
-
-    def test_malformed_cdp_url(self):
-        """Test malformed CDP URL"""
-        with pytest.raises(ValueError):
-            construct_cdp_url("not-a-url")
 
 
 class TestJsBypassPath:
