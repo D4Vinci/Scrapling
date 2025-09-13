@@ -10,8 +10,10 @@ exclude = [
     "benchmarks.py",
 ]
 
-# Assume Python 3.9
-target-version = "py39"
+# Assume Python 3.10
+target-version = "py310"
+# Allow lines to be as long as 120.
+line-length = 120
 
 [lint]
 select = ["E", "F", "W"]
