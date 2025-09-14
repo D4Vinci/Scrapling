@@ -132,8 +132,7 @@ class Selector(SelectorsGeneration):
                 strip_cdata=(not keep_cdata),
             )
             self._root = fromstring(body, parser=parser, base_url=url)
-
-            self._raw_body = body.decode()
+            self._raw_body = content
 
         else:
             # All HTML types inherit from HtmlMixin so this to check for all at once
@@ -342,7 +341,10 @@ class Selector(SelectorsGeneration):
         """Return the inner HTML code of the element"""
         return TextHandler(tostring(self._root, encoding=self.encoding, method="html", with_tail=False))
 
-    body = html_content
+    @property
+    def body(self):
+        """Return the raw body of the current `Selector` without any processing. Useful for binary and non-HTML requests."""
+        return self._raw_body
 
     def prettify(self) -> TextHandler:
         """Return a prettified version of the element's inner html-code"""
@@ -934,7 +936,7 @@ class Selector(SelectorsGeneration):
     # Operations on text functions
     def json(self) -> Dict:
         """Return JSON response if the response is jsonable otherwise throws error"""
-        if self._raw_body:
+        if self._raw_body and isinstance(self._raw_body, str):
             return TextHandler(self._raw_body).json()
         elif self.text:
             return self.text.json()
