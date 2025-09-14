@@ -17,7 +17,7 @@ from scrapling.engines._browsers import (
     AsyncDynamicSession,
     AsyncStealthySession,
 )
-from scrapling.engines.toolbelt import BaseFetcher, Response
+from scrapling.engines.toolbelt.custom import BaseFetcher, Response
 
 __FetcherClientInstance__ = _FetcherClient()
 __AsyncFetcherClientInstance__ = _AsyncFetcherClient()

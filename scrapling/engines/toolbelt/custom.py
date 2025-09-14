@@ -3,7 +3,6 @@ Functions related to custom types or type checking
 """
 
 from functools import lru_cache
-from email.message import Message
 
 from scrapling.core.utils import log
 from scrapling.core._types import (

@@ -4,7 +4,7 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
 from scrapling.core.shell import Convertor
-from scrapling.engines.toolbelt import Response as _ScraplingResponse
+from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.fetchers import (
     Fetcher,
     FetcherSession,

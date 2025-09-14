@@ -24,13 +24,9 @@ from scrapling.core._types import (
     Any,
 )
 
-from .toolbelt import (
-    Response,
-    generate_headers,
-    __default_useragent__,
-)
+from .toolbelt.custom import Response
 from .toolbelt.convertor import ResponseFactory
-from .toolbelt.fingerprints import generate_convincing_referer
+from .toolbelt.fingerprints import generate_convincing_referer, generate_headers, __default_useragent__
 
 _UNSET = object()
 

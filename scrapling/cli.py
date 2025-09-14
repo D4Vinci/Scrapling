@@ -10,10 +10,10 @@ from orjson import loads as json_loads, JSONDecodeError
 
 try:
     from click import command, option, Choice, group, argument
-except ImportError:
-    raise ImportError(
+except (ImportError, ModuleNotFoundError) as e:
+    raise ModuleNotFoundError(
         "You need to install scrapling with any of the extras to enable Shell commands. See: https://scrapling.readthedocs.io/en/latest/#installation"
-    )
+    ) from e
 
 __OUTPUT_FILE_HELP__ = "The output file path can be an HTML file, a Markdown file of the HTML content, or the text content itself. Use file extensions (`.html`/`.md`/`.txt`) respectively."
 __PACKAGE_DIR__ = Path(__file__).parent
