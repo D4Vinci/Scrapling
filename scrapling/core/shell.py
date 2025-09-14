@@ -317,7 +317,7 @@ def show_page_in_browser(page: Selector):  # pragma: no cover
 
     try:
         fd, fname = make_temp_file(prefix="scrapling_view_", suffix=".html")
-        with open(fd, "w", encoding="utf-8") as f:
+        with open(fd, "w", encoding=page.encoding) as f:
             f.write(page.body)
 
         open_in_browser(f"file://{fname}")
@@ -556,7 +556,7 @@ class Convertor:
         elif not filename.endswith((".md", ".html", ".txt")):
             raise ValueError("Unknown file type: filename must end with '.md', '.html', or '.txt'")
         else:
-            with open(filename, "w", encoding="utf-8") as f:
+            with open(filename, "w", encoding=page.encoding) as f:
                 extension = filename.split(".")[-1]
                 f.write(
                     "".join(

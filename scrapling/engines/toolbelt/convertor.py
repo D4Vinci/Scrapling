@@ -1,10 +1,15 @@
+from functools import lru_cache
+from re import compile as re_compile
+
 from curl_cffi.requests import Response as CurlResponse
 from playwright.sync_api import Page as SyncPage, Response as SyncResponse
 from playwright.async_api import Page as AsyncPage, Response as AsyncResponse
 
 from scrapling.core.utils import log
-from scrapling.core._types import Dict, Optional
 from .custom import Response, StatusText
+from scrapling.core._types import Dict, Optional
+
+__CHARSET_RE__ = re_compile(r"charset=([\w-]+)")
 
 
 class ResponseFactory:
@@ -16,6 +21,18 @@ class ResponseFactory:
     and raw HTTP request responses. It supports handling response histories, constructing the proper
     response objects, and managing encoding, headers, cookies, and other attributes.
     """
+
+    @classmethod
+    @lru_cache(maxsize=16)
+    def __extract_browser_encoding(cls, content_type: str | None) -> Optional[str]:
+        """Extract browser encoding from headers.
+        Ex: from header "content-type: text/html; charset=utf-8" -> "utf-8
+        """
+        if content_type:
+            # Because Playwright can't do that by themselves like all libraries for some reason :3
+            match = __CHARSET_RE__.search(content_type)
+            return match.group(1) if match else None
+        return None
 
     @classmethod
     def _process_response_history(cls, first_response: SyncResponse, parser_arguments: Dict) -> list[Response]:
@@ -30,18 +47,23 @@ class ResponseFactory:
                     history.insert(
                         0,
                         Response(
-                            url=current_request.url,
-                            # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                            content="",
-                            status=current_response.status if current_response else 301,
-                            reason=(current_response.status_text or StatusText.get(current_response.status))
-                            if current_response
-                            else StatusText.get(301),
-                            encoding=current_response.headers.get("content-type", "") or "utf-8",
-                            cookies=tuple(),
-                            headers=current_response.all_headers() if current_response else {},
-                            request_headers=current_request.all_headers(),
-                            **parser_arguments,
+                            **{
+                                "url": current_request.url,
+                                # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                                "content": "",
+                                "status": current_response.status if current_response else 301,
+                                "reason": (current_response.status_text or StatusText.get(current_response.status))
+                                if current_response
+                                else StatusText.get(301),
+                                "encoding": cls.__extract_browser_encoding(
+                                    current_response.headers.get("content-type", "")
+                                )
+                                or "utf-8",
+                                "cookies": tuple(),
+                                "headers": current_response.all_headers() if current_response else {},
+                                "request_headers": current_request.all_headers(),
+                                **parser_arguments,
+                            }
                         ),
                     )
                 except Exception as e:  # pragma: no cover
@@ -85,8 +107,9 @@ class ResponseFactory:
         if not final_response:
             raise ValueError("Failed to get a response from the page")
 
-        # This will be parsed inside `Response`
-        encoding = final_response.headers.get("content-type", "") or "utf-8"  # default encoding
+        encoding = (
+            cls.__extract_browser_encoding(final_response.headers.get("content-type", "")) or "utf-8"
+        )  # default encoding
         # PlayWright API sometimes give empty status text for some reason!
         status_text = final_response.status_text or StatusText.get(final_response.status)
 
@@ -98,16 +121,18 @@ class ResponseFactory:
             page_content = ""
 
         return Response(
-            url=page.url,
-            content=page_content,
-            status=final_response.status,
-            reason=status_text,
-            encoding=encoding,
-            cookies=tuple(dict(cookie) for cookie in page.context.cookies()),
-            headers=first_response.all_headers(),
-            request_headers=first_response.request.all_headers(),
-            history=history,
-            **parser_arguments,
+            **{
+                "url": page.url,
+                "content": page_content,
+                "status": final_response.status,
+                "reason": status_text,
+                "encoding": encoding,
+                "cookies": tuple(dict(cookie) for cookie in page.context.cookies()),
+                "headers": first_response.all_headers(),
+                "request_headers": first_response.request.all_headers(),
+                "history": history,
+                **parser_arguments,
+            }
         )
 
     @classmethod
@@ -125,18 +150,23 @@ class ResponseFactory:
                     history.insert(
                         0,
                         Response(
-                            url=current_request.url,
-                            # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
-                            content="",
-                            status=current_response.status if current_response else 301,
-                            reason=(current_response.status_text or StatusText.get(current_response.status))
-                            if current_response
-                            else StatusText.get(301),
-                            encoding=current_response.headers.get("content-type", "") or "utf-8",
-                            cookies=tuple(),
-                            headers=await current_response.all_headers() if current_response else {},
-                            request_headers=await current_request.all_headers(),
-                            **parser_arguments,
+                            **{
+                                "url": current_request.url,
+                                # using current_response.text() will trigger "Error: Response.text: Response body is unavailable for redirect responses"
+                                "content": "",
+                                "status": current_response.status if current_response else 301,
+                                "reason": (current_response.status_text or StatusText.get(current_response.status))
+                                if current_response
+                                else StatusText.get(301),
+                                "encoding": cls.__extract_browser_encoding(
+                                    current_response.headers.get("content-type", "")
+                                )
+                                or "utf-8",
+                                "cookies": tuple(),
+                                "headers": await current_response.all_headers() if current_response else {},
+                                "request_headers": await current_request.all_headers(),
+                                **parser_arguments,
+                            }
                         ),
                     )
                 except Exception as e:  # pragma: no cover
@@ -180,8 +210,9 @@ class ResponseFactory:
         if not final_response:
             raise ValueError("Failed to get a response from the page")
 
-        # This will be parsed inside `Response`
-        encoding = final_response.headers.get("content-type", "") or "utf-8"  # default encoding
+        encoding = (
+            cls.__extract_browser_encoding(final_response.headers.get("content-type", "")) or "utf-8"
+        )  # default encoding
         # PlayWright API sometimes give empty status text for some reason!
         status_text = final_response.status_text or StatusText.get(final_response.status)
 
@@ -193,16 +224,18 @@ class ResponseFactory:
             page_content = ""
 
         return Response(
-            url=page.url,
-            content=page_content,
-            status=final_response.status,
-            reason=status_text,
-            encoding=encoding,
-            cookies=tuple(dict(cookie) for cookie in await page.context.cookies()),
-            headers=await first_response.all_headers(),
-            request_headers=await first_response.request.all_headers(),
-            history=history,
-            **parser_arguments,
+            **{
+                "url": page.url,
+                "content": page_content,
+                "status": final_response.status,
+                "reason": status_text,
+                "encoding": encoding,
+                "cookies": tuple(dict(cookie) for cookie in await page.context.cookies()),
+                "headers": await first_response.all_headers(),
+                "request_headers": await first_response.request.all_headers(),
+                "history": history,
+                **parser_arguments,
+            }
         )
 
     @staticmethod
@@ -214,15 +247,17 @@ class ResponseFactory:
         :return: A `Response` object that is the same as `Selector` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         return Response(
-            url=response.url,
-            content=response.content if isinstance(response.content, bytes) else response.content.encode(),
-            status=response.status_code,
-            reason=response.reason,
-            encoding=response.encoding or "utf-8",
-            cookies=dict(response.cookies),
-            headers=dict(response.headers),
-            request_headers=dict(response.request.headers),
-            method=response.request.method,
-            history=response.history,  # https://github.com/lexiforest/curl_cffi/issues/82
-            **parser_arguments,
+            **{
+                "url": response.url,
+                "content": response.content,
+                "status": response.status_code,
+                "reason": response.reason,
+                "encoding": response.encoding or "utf-8",
+                "cookies": dict(response.cookies),
+                "headers": dict(response.headers),
+                "request_headers": dict(response.request.headers),
+                "method": response.request.method,
+                "history": response.history,  # https://github.com/lexiforest/curl_cffi/issues/82
+                **parser_arguments,
+            }
         )

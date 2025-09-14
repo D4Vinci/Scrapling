@@ -74,7 +74,7 @@ class Selector(SelectorsGeneration):
         self,
         content: Optional[str | bytes] = None,
         url: Optional[str] = None,
-        encoding: str = "utf8",
+        encoding: str = "utf-8",
         huge_tree: bool = True,
         root: Optional[HtmlElement] = None,
         keep_comments: Optional[bool] = False,
@@ -116,7 +116,7 @@ class Selector(SelectorsGeneration):
             if isinstance(content, str):
                 body = content.strip().replace("\x00", "").encode(encoding) or b"<html/>"
             elif isinstance(content, bytes):
-                body = content.replace(b"\x00", b"").strip()
+                body = content.replace(b"\x00", b"")
             else:
                 raise TypeError(f"content argument must be str or bytes, got {type(content)}")
 
@@ -340,7 +340,7 @@ class Selector(SelectorsGeneration):
     @property
     def html_content(self) -> TextHandler:
         """Return the inner HTML code of the element"""
-        return TextHandler(tostring(self._root, encoding="unicode", method="html", with_tail=False))
+        return TextHandler(tostring(self._root, encoding=self.encoding, method="html", with_tail=False))
 
     body = html_content
 
@@ -349,7 +349,7 @@ class Selector(SelectorsGeneration):
         return TextHandler(
             tostring(
                 self._root,
-                encoding="unicode",
+                encoding=self.encoding,
                 pretty_print=True,
                 method="html",
                 with_tail=False,
