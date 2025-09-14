@@ -62,7 +62,7 @@ DynamicFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
 Instead of launching a browser locally (Chromium/Google Chrome), you can connect to a remote browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/).
 
 ## Full list of arguments
-Scrapling provides many options with this fetcher. To make it as simple as possible, we will list the options here and give examples of using most of them.
+Scrapling provides many options with this fetcher and its session classes. To make it as simple as possible, we will list the options here and give examples of using most of them.
 
 |      Argument       | Description                                                                                                                                                                                                                                                                                                                                                                                                                | Optional |
 |:-------------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
@@ -89,6 +89,9 @@ Scrapling provides many options with this fetcher. To make it as simple as possi
 |       locale        | Set the locale for the browser if wanted. The default value is `en-US`.                                                                                                                                                                                                                                                                                                                                                    |    ✔️    |
 |       cdp_url       | Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.                                                                                                                                                                                                                                                                                                                 |    ✔️    |
 |   selector_config   | A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.                                                                                                                                                                                                                                                                                                                   |    ✔️    |
+
+In the session classes, all these arguments can be set for the session globally. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, and `selector_config`.
+
 
 ## Examples
 It's easier to understand with examples, so let's take a look.

@@ -15,7 +15,7 @@ Check out how to configure the parsing options [here](choosing.md#parser-configu
 > Note: The async version of the `fetch` method is the `async_fetch` method, of course.
 
 ## Full list of arguments
-Before jumping to [examples](#examples), here's the full list of arguments
+Scrapling provides many options with this fetcher and its session classes. Before jumping to the [examples](#examples), here's the full list of arguments
 
 
 |      Argument       | Description                                                                                                                                                                                                                                                                                                                                                                                                                | Optional |
@@ -47,6 +47,7 @@ Before jumping to [examples](#examples), here's the full list of arguments
 |   additional_args   | Additional arguments to be passed to Camoufox as additional settings, and they take higher priority than Scrapling's settings.                                                                                                                                                                                                                                                                                             |    ✔️    |
 |   selector_config   | A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.                                                                                                                                                                                                                                                                                                                   |    ✔️    |
 
+In the session classes, all these arguments can be set for the session globally. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `solve_cloudflare`, and `selector_config`.
 
 ## Examples
 It's easier to understand with examples, so we will now review most of the arguments individually with examples.
