@@ -114,7 +114,7 @@ Scrapling requires Python 3.10 or higher:
 pip install scrapling
 ```
 
-Starting with v0.3.2, this installation only includes the parser engine and its dependencies, without any fetchers.
+Starting with v0.3.2, this installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies.
 
 ### Optional Dependencies
 
