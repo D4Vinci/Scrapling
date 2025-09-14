@@ -297,7 +297,7 @@ class CurlParser:
                     _ = request_args.pop("json", None)
 
                 try:
-                    return getattr(self.__Fetcher, method)(**request_args)
+                    return getattr(self.__fetcher, method)(**request_args)
                 except Exception as e:  # pragma: no cover
                     log.error(f"Error calling Fetcher.{method}: {e}")
                     return None
