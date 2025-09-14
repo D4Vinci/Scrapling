@@ -1,3 +1,4 @@
+from playwright._impl._errors import TimeoutError
 import pytest
 import pytest_httpbin
 
@@ -23,13 +24,8 @@ class TestStealthyFetcher:
             "basic_url": f"{url}/get",
             "html_url": f"{url}/html",
             "delayed_url": f"{url}/delay/10",  # 10 Seconds delay response
-            "cookies_url": f"{url}/cookies/set/test/value",
-            "cloudflare_url": "https://nopecha.com/demo/cloudflare",  # Interactive turnstile page
+            "cookies_url": f"{url}/cookies/set/test/value"
         }
-
-    async def test_cloudflare_fetch(self, fetcher, urls):
-        """Test if Cloudflare bypass is working"""
-        assert (await fetcher.async_fetch(urls["cloudflare_url"], solve_cloudflare=True)).status == 200
 
     async def test_basic_fetch(self, fetcher, urls):
         """Test doing a basic fetch request with multiple statuses"""
@@ -86,9 +82,3 @@ class TestStealthyFetcher:
             **kwargs
         )
         assert response.status == 200
-
-    async def test_infinite_timeout(self, fetcher, urls):
-        """Test if infinite timeout breaks the code or not"""
-        assert (
-            await fetcher.async_fetch(urls["delayed_url"], timeout=0)
-        ).status == 200

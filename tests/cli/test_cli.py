@@ -14,6 +14,7 @@ def configure_selector_mock():
     """Helper function to create a properly configured Selector mock"""
     mock_response = MagicMock(spec=Selector)
     mock_response.body = "<html><body>Test content</body></html>"
+    mock_response.encoding = "utf-8"
     mock_response.get_all_text.return_value = "Test content"
     mock_response.css_first.return_value = mock_response
     mock_response.css.return_value = [mock_response]

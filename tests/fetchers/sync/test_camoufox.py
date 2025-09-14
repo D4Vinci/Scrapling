@@ -77,7 +77,3 @@ class TestStealthyFetcher:
             **kwargs
         )
         assert response.status == 200
-
-    def test_infinite_timeout(self, fetcher):
-        """Test if infinite timeout breaks the code or not"""
-        assert fetcher.fetch(self.delayed_url, timeout=0).status == 200

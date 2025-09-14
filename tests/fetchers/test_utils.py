@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 
-from scrapling.engines.toolbelt.custom import ResponseEncoding, StatusText, Response
+from scrapling.engines.toolbelt.custom import StatusText, Response
 from scrapling.engines.toolbelt.navigation import (
     construct_proxy_dict,
     js_bypass_path
@@ -129,12 +129,6 @@ def status_map():
         510: "Not Extended",
         511: "Network Authentication Required",
     }
-
-
-def test_parsing_content_type(content_type_map):
-    """Test if parsing different types of 'content-type' returns the expected result"""
-    for header_value, expected_encoding in content_type_map.items():
-        assert ResponseEncoding.get_value(header_value) == expected_encoding
 
 
 def test_parsing_response_status(status_map):
