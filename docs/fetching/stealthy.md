@@ -12,13 +12,10 @@ You have one primary way to import this Fetcher, which is the same for all fetch
 ```
 Check out how to configure the parsing options [here](choosing.md#parser-configuration-in-all-fetchers)
 
-> Notes: 
-> 
-> 1. Every time you fetch a website with this fetcher, it waits by default for all JavaScript to fully load and execute, so you don't have to (wait for the `domcontentloaded` state).
-> 2. Of course, the async version of the `fetch` method is the `async_fetch` method.
+> Note: The async version of the `fetch` method is the `async_fetch` method, of course.
 
 ## Full list of arguments
-Before jumping to [examples](#examples), here's the full list of arguments
+Scrapling provides many options with this fetcher and its session classes. Before jumping to the [examples](#examples), here's the full list of arguments
 
 
 |      Argument       | Description                                                                                                                                                                                                                                                                                                                                                                                                                | Optional |
@@ -31,7 +28,7 @@ Before jumping to [examples](#examples), here's the full list of arguments
 |    google_search    | Enabled by default, Scrapling will set the referer header as if this request came from a Google search of this website's domain name.                                                                                                                                                                                                                                                                                      |    ✔️    |
 |    extra_headers    | A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._                                                                                                                                                                                                                                                          |    ✔️    |
 |    block_webrtc     | Blocks WebRTC entirely.                                                                                                                                                                                                                                                                                                                                                                                                    |    ✔️    |
-|     page_action     | Added for automation. Pass a function that takes the `page` object and does the necessary automation, then returns `page` again.                                                                                                                                                                                                                                                                                           |    ✔️    |
+|     page_action     | Added for automation. Pass a function that takes the `page` object and does the necessary automation.                                                                                                                                                                                                                                                                                                                      |    ✔️    |
 |       addons        | List of Firefox addons to use. **Must be paths to extracted addons.**                                                                                                                                                                                                                                                                                                                                                      |    ✔️    |
 |      humanize       | Humanize the cursor movement. The cursor movement takes either True or the maximum duration in seconds. The cursor typically takes up to 1.5 seconds to move across the window.                                                                                                                                                                                                                                            |    ✔️    |
 |     allow_webgl     | Enabled by default. Disabling WebGL is not recommended, as many WAFs now check if WebGL is enabled.                                                                                                                                                                                                                                                                                                                        |    ✔️    |
@@ -40,6 +37,7 @@ Before jumping to [examples](#examples), here's the full list of arguments
 |     disable_ads     | Disabled by default; this installs the `uBlock Origin` addon on the browser if enabled.                                                                                                                                                                                                                                                                                                                                    |    ✔️    |
 |  solve_cloudflare   | When enabled, fetcher solves all three types of Cloudflare's Turnstile wait/captcha page before returning the response to you.                                                                                                                                                                                                                                                                                             |    ✔️    |
 |    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                                                                                                                                                                                                              |    ✔️    |
+|      load_dom       | Enabled by default, wait for all JavaScript on page(s) to fully load and execute (wait for the `domcontentloaded` state).                                                                                                                                                                                                                                                                                                  |    ✔️    |
 |       timeout       | The timeout used in all operations and waits through the page. It's in milliseconds, and the default is 30000.                                                                                                                                                                                                                                                                                                             |    ✔️    |
 |        wait         | The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the `Response` object.                                                                                                                                                                                                                                                                                       |    ✔️    |
 |    wait_selector    | Wait for a specific css selector to be in a specific state.                                                                                                                                                                                                                                                                                                                                                                |    ✔️    |
@@ -49,6 +47,7 @@ Before jumping to [examples](#examples), here's the full list of arguments
 |   additional_args   | Additional arguments to be passed to Camoufox as additional settings, and they take higher priority than Scrapling's settings.                                                                                                                                                                                                                                                                                             |    ✔️    |
 |   selector_config   | A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.                                                                                                                                                                                                                                                                                                                   |    ✔️    |
 
+In the session classes, all these arguments can be set for the session globally. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `solve_cloudflare`, and `selector_config`.
 
 ## Examples
 It's easier to understand with examples, so we will now review most of the arguments individually with examples.
@@ -156,7 +155,6 @@ def scroll_page(page: Page):
     page.mouse.wheel(10, 0)
     page.mouse.move(100, 400)
     page.mouse.up()
-    return page
 
 page = StealthyFetcher.fetch(
     'https://example.com',
@@ -171,7 +169,6 @@ async def scroll_page(page: Page):
    await page.mouse.wheel(10, 0)
    await page.mouse.move(100, 400)
    await page.mouse.up()
-   return page
 
 page = await StealthyFetcher.async_fetch(
     'https://example.com',
@@ -190,7 +187,7 @@ page = StealthyFetcher.fetch(
 ```
 This is the last wait the fetcher will do before returning the response (if enabled). You pass a CSS selector to the `wait_selector` argument, and the fetcher will wait for the state you passed in the `wait_selector_state` argument to be fulfilled. If you didn't pass a state, the default would be `attached`, which means it will wait for the element to be present in the DOM.
 
-After that, the fetcher will check again to see if all JS files are loaded and executed (the `domcontentloaded` state) or continue waiting. If you have enabled `network_idle`, the fetcher will wait for `network_idle` to be fulfilled again, as explained above.
+After that, if `load_dom` is enabled (the default), the fetcher will check again to see if all JS files are loaded and executed (the `domcontentloaded` state) or continue waiting. If you have enabled `network_idle`, the fetcher will wait for `network_idle` to be fulfilled again, as explained above.
 
 The states the fetcher can wait for can be any of the following ([source](https://playwright.dev/python/docs/api/class-page#page-wait-for-selector)):
 
@@ -278,9 +275,14 @@ async def scrape_multiple_sites():
         return pages
 ```
 
-You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of waiting for one browser tab to become ready, it checks if the next tab in the pool is ready to be used and uses it. This allows for multiple websites to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
+You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of using one tab for all your requests, you set a limit on the maximum number of pages allowed. With each request, the library will close all tabs that have finished their task and check if the number of the current tabs is lower than the maximum allowed number of pages/tabs, then:
 
-When all tabs inside the pool are busy, the fetcher checks every subsecond if a tab becomes ready. If none become free within a 30-second interval, it raises a `TimeoutError` error. This can happen when the website you are fetching becomes unresponsive for some reason.
+1. If you are within the allowed range, the fetcher will create a new tab for you, and then all is as normal.
+2. Otherwise, it will keep checking every subsecond if creating a new tab is allowed or not for 60 seconds, then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive for some reason.
+
+This logic allows for multiple websites to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
+
+In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resources/time. That logic proved to have flaws since it's nearly impossible to protect pages/tabs from contamination of the previous configuration you used with the request before this one.
 
 ### Session Benefits
 

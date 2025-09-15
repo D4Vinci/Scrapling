@@ -90,9 +90,3 @@ class TestDynamicFetcherAsync:
 
         with pytest.raises(Exception):
             await fetcher.async_fetch(urls["html_url"], cdp_url="ws://blahblah")
-
-    @pytest.mark.asyncio
-    async def test_infinite_timeout(self, fetcher, urls):
-        """Test if infinite timeout breaks the code or not"""
-        response = await fetcher.async_fetch(urls["delayed_url"], timeout=0)
-        assert response.status == 200

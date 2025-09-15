@@ -2,8 +2,9 @@
 Functions related to custom types or type checking
 """
 
-from email.message import Message
+from functools import lru_cache
 
+from scrapling.core.utils import log
 from scrapling.core._types import (
     Any,
     Dict,
@@ -12,87 +13,7 @@ from scrapling.core._types import (
     Tuple,
 )
 from scrapling.core.custom_types import MappingProxyType
-from scrapling.core.utils import log, lru_cache
 from scrapling.parser import Selector, SQLiteStorageSystem
-
-
-class ResponseEncoding:
-    __DEFAULT_ENCODING = "utf-8"
-    __ISO_8859_1_CONTENT_TYPES = {
-        "text/plain",
-        "text/html",
-        "text/css",
-        "text/javascript",
-    }
-
-    @classmethod
-    @lru_cache(maxsize=128)
-    def __parse_content_type(cls, header_value: str) -> Tuple[str, Dict[str, str]]:
-        """Parse content type and parameters from a content-type header value.
-
-            Uses `email.message.Message` for robust header parsing according to RFC 2045.
-
-        :param header_value: Raw content-type header string
-        :return: Tuple of (content_type, parameters_dict)
-        """
-        # Create a Message object and set the Content-Type header then get the content type and parameters
-        msg = Message()
-        msg["content-type"] = header_value
-
-        content_type = msg.get_content_type()
-        params = dict(msg.get_params(failobj=[]))
-
-        # Remove the content-type from params if present somehow
-        params.pop("content-type", None)
-
-        return content_type, params
-
-    @classmethod
-    @lru_cache(maxsize=128)
-    def get_value(
-        cls, content_type: Optional[str], text: Optional[str] = "test"
-    ) -> str:
-        """Determine the appropriate character encoding from a content-type header.
-
-        The encoding is determined by these rules in order:
-            1. If no content-type is provided, use UTF-8
-            2. If charset parameter is present, use that encoding
-            3. If content-type is `text/*`, use ISO-8859-1 per HTTP/1.1 spec
-            4. If content-type is application/json, use UTF-8 per RFC 4627
-            5. Default to UTF-8 if nothing else matches
-
-        :param content_type: Content-Type header value or None
-        :param text: A text to test the encoding on it
-        :return: String naming the character encoding
-        """
-        if not content_type:
-            return cls.__DEFAULT_ENCODING
-
-        try:
-            encoding = None
-            content_type, params = cls.__parse_content_type(content_type)
-
-            # First check for explicit charset parameter
-            if "charset" in params:
-                encoding = params["charset"].strip("'\"")
-
-            # Apply content-type specific rules
-            elif content_type in cls.__ISO_8859_1_CONTENT_TYPES:
-                encoding = "ISO-8859-1"
-
-            elif content_type == "application/json":
-                encoding = cls.__DEFAULT_ENCODING
-
-            if encoding:
-                _ = text.encode(
-                    encoding
-                )  # Validate encoding and validate it can encode the given text
-                return encoding
-
-            return cls.__DEFAULT_ENCODING
-
-        except (ValueError, LookupError, UnicodeEncodeError):
-            return cls.__DEFAULT_ENCODING
 
 
 class Response(Selector):
@@ -119,9 +40,6 @@ class Response(Selector):
         self.headers = headers
         self.request_headers = request_headers
         self.history = history or []
-        encoding = ResponseEncoding.get_value(
-            encoding, content.decode("utf-8") if isinstance(content, bytes) else content
-        )
         super().__init__(
             content=content,
             url=adaptive_domain or url,
@@ -129,9 +47,7 @@ class Response(Selector):
             **selector_config,
         )
         # For easier debugging while working from a Python shell
-        log.info(
-            f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})"
-        )
+        log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
 
 
 class BaseFetcher:
@@ -190,18 +106,12 @@ class BaseFetcher:
                     setattr(cls, key, value)
                 else:
                     # Yup, no fun allowed LOL
-                    raise AttributeError(
-                        f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?'
-                    )
+                    raise AttributeError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
             else:
-                raise ValueError(
-                    f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?'
-                )
+                raise ValueError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
 
         if not kwargs:
-            raise AttributeError(
-                f"You must pass a keyword to configure, current keywords: {cls.parser_keywords}?"
-            )
+            raise AttributeError(f"You must pass a keyword to configure, current keywords: {cls.parser_keywords}?")
 
     @classmethod
     def _generate_parser_arguments(cls) -> Dict:
@@ -217,9 +127,7 @@ class BaseFetcher:
         )
         if cls.adaptive_domain:
             if not isinstance(cls.adaptive_domain, str):
-                log.warning(
-                    '[Ignored] The argument "adaptive_domain" must be of string type'
-                )
+                log.warning('[Ignored] The argument "adaptive_domain" must be of string type')
             else:
                 parser_arguments.update({"adaptive_domain": cls.adaptive_domain})
 

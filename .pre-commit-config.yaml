@@ -1,12 +1,12 @@
 repos:
 - repo: https://github.com/PyCQA/bandit
-  rev: 1.8.3
+  rev: 1.8.6
   hooks:
   - id: bandit
     args: [-r, -c, .bandit.yml]
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
-  rev: v0.11.5
+  rev: v0.13.0
   hooks:
     # Run the linter.
     - id: ruff

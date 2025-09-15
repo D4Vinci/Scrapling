@@ -92,7 +92,7 @@ Built for the modern Web, Scrapling has its own rapid parsing engine and its fet
 - 🔄 **Smart Element Tracking**: Relocate elements after website changes using intelligent similarity algorithms.
 - 🎯 **Smart Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more. 
 - 🔍 **Find Similar Elements**: Automatically locate elements similar to found elements.
-- 🤖 **MCP Server to be used with AI**: Built-in MCP server for AI-assisted Web Scraping and data extraction. The MCP server features custom, powerful capabilities that utilize Scrapling to extract targeted content before passing it to the AI (Claude/Cursor/etc), thereby speeding up operations and reducing costs by minimizing token usage.
+- 🤖 **MCP Server to be used with AI**: Built-in MCP server for AI-assisted Web Scraping and data extraction. The MCP server features custom, powerful capabilities that utilize Scrapling to extract targeted content before passing it to the AI (Claude/Cursor/etc), thereby speeding up operations and reducing costs by minimizing token usage. ([demo video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 
 ### High-Performance & battle-tested Architecture
 - 🚀 **Lightning Fast**: Optimized performance outperforming most Python scraping libraries.
@@ -134,7 +134,7 @@ quotes = page.css('.quote .text::text')
 
 # Advanced stealth mode (Keep the browser open until you finish)
 with StealthySession(headless=True, solve_cloudflare=True) as session:
-    page = session.fetch('https://nopecha.com/demo/cloudflare')
+    page = session.fetch('https://nopecha.com/demo/cloudflare', google_search=False)
     data = page.css('#padded_content a')
 
 # Or use one-off request style, it opens the browser for this request, then closes it after finishing
@@ -143,7 +143,7 @@ data = page.css('#padded_content a')
     
 # Full browser automation (Keep the browser open until you finish)
 with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:
-    page = session.fetch('https://quotes.toscrape.com/')
+    page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()')  # XPath selector if you prefer it
 
 # Or use one-off request style, it opens the browser for this request, then closes it after finishing
@@ -187,7 +187,7 @@ from scrapling.parser import Selector
 
 page = Selector("<html>...</html>")
 ```
-And it works exactly the same way!
+And it works precisely the same way!
 
 ### Async Session Management Examples
 ```python
@@ -236,20 +236,20 @@ scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.
 
 ## Performance Benchmarks
 
-Scrapling isn't just powerful—it's also blazing fast, and version 0.3 delivers exceptional performance improvements across all operations!
+Scrapling isn't just powerful—it's also blazing fast, and the updates since version 0.3 deliver exceptional performance improvements across all operations!
 
 ### Text Extraction Speed Test (5000 nested elements)
 
 | # |      Library      | Time (ms) | vs Scrapling | 
 |---|:-----------------:|:---------:|:------------:|
-| 1 |     Scrapling     |   1.88    |     1.0x     |
-| 2 |   Parsel/Scrapy   |   1.96    |    1.043x    |
-| 3 |     Raw Lxml      |   2.32    |    1.234x    |
-| 4 |      PyQuery      |   20.2    |     ~11x     |
-| 5 |    Selectolax     |   85.2    |     ~45x     |
-| 6 |  MechanicalSoup   |  1305.84  |    ~695x     |
-| 7 |   BS4 with Lxml   |  1307.92  |    ~696x     |
-| 8 | BS4 with html5lib |  3336.28  |    ~1775x    |
+| 1 |     Scrapling     |   1.92    |     1.0x     |
+| 2 |   Parsel/Scrapy   |   1.99    |    1.036x    |
+| 3 |     Raw Lxml      |   2.33    |    1.214x    |
+| 4 |      PyQuery      |   20.61   |     ~11x     |
+| 5 |    Selectolax     |   80.65   |     ~42x     |
+| 6 |   BS4 with Lxml   |  1283.21  |    ~698x     |
+| 7 |  MechanicalSoup   |  1304.57  |    ~679x     |
+| 8 | BS4 with html5lib |  3331.96  |    ~1735x    |
 
 ### Element Similarity & Text Search Performance
 
@@ -257,8 +257,8 @@ Scrapling's adaptive element finding capabilities significantly outperform alter
 
 |   Library   | Time (ms) | vs Scrapling |
 |-------------|:---------:|:------------:|
-|  Scrapling  |   2.02    |     1.0x     |
-| AutoScraper |   10.26   |    5.08x     |
+|  Scrapling  |   1.87    |     1.0x     |
+| AutoScraper |   10.24   |    5.476x    |
 
 
 > All benchmarks represent averages of 100+ runs. See [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology.
@@ -271,29 +271,33 @@ Scrapling requires Python 3.10 or higher:
 pip install scrapling
 ```
 
-#### Fetchers Setup
-
-If you are going to use any of the fetchers or their classes, then install browser dependencies with
-```bash
-scrapling install
-```
-
-This downloads all browsers with their system dependencies and fingerprint manipulation dependencies.
+Starting with v0.3.2, this installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies.
 
 ### Optional Dependencies
 
-- Install the MCP server feature:
-```bash
-pip install "scrapling[ai]"
-```
-- Install shell features (Web Scraping shell and the `extract` command): 
-```bash
-pip install "scrapling[shell]"
-```
-- Install everything: 
-```bash
-pip install "scrapling[all]"
-```
+1. If you are going to use any of the extra features below, the fetchers, or their classes, then you need to install fetchers' dependencies, and then install their browser dependencies with
+    ```bash
+    pip install "scrapling[fetchers]"
+    
+    scrapling install
+    ```
+
+    This downloads all browsers with their system dependencies and fingerprint manipulation dependencies.
+
+2. Extra features:
+   - Install the MCP server feature:
+       ```bash
+       pip install "scrapling[ai]"
+       ```
+   - Install shell features (Web Scraping shell and the `extract` command): 
+       ```bash
+       pip install "scrapling[shell]"
+       ```
+   - Install everything: 
+       ```bash
+       pip install "scrapling[all]"
+       ```
+   Don't forget that you need to install the browser dependencies with `scrapling install` after any of these extras (if you didn't already)
 
 ## Contributing
 

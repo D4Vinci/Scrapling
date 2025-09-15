@@ -27,11 +27,7 @@ class StorageSystemMixin(ABC):  # pragma: no cover
 
         try:
             extracted = tld(self.url)
-            return (
-                extracted.top_domain_under_public_suffix
-                or extracted.domain
-                or default_value
-            )
+            return extracted.top_domain_under_public_suffix or extracted.domain or default_value
         except AttributeError:
             return default_value
 
@@ -90,9 +86,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.cursor = self.connection.cursor()
         self._setup_database()
-        log.debug(
-            f'Storage system loaded with arguments (storage_file="{storage_file}", url="{url}")'
-        )
+        log.debug(f'Storage system loaded with arguments (storage_file="{storage_file}", url="{url}")')
 
     def _setup_database(self) -> None:
         self.cursor.execute("""

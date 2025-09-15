@@ -6,16 +6,18 @@ from scrapling.core._types import (
     SelectorWaitStates,
     Iterable,
 )
-from scrapling.engines import (
+from scrapling.engines.static import (
     FetcherSession,
-    StealthySession,
-    AsyncStealthySession,
-    DynamicSession,
-    AsyncDynamicSession,
     FetcherClient as _FetcherClient,
     AsyncFetcherClient as _AsyncFetcherClient,
 )
-from scrapling.engines.toolbelt import BaseFetcher, Response
+from scrapling.engines._browsers import (
+    DynamicSession,
+    StealthySession,
+    AsyncDynamicSession,
+    AsyncStealthySession,
+)
+from scrapling.engines.toolbelt.custom import BaseFetcher, Response
 
 __FetcherClientInstance__ = _FetcherClient()
 __AsyncFetcherClientInstance__ = _AsyncFetcherClient()
@@ -56,6 +58,7 @@ class StealthyFetcher(BaseFetcher):
         block_webrtc: bool = False,
         allow_webgl: bool = True,
         network_idle: bool = False,
+        load_dom: bool = True,
         humanize: bool | float = True,
         solve_cloudflare: bool = False,
         wait: int | float = 0,
@@ -92,11 +95,12 @@ class StealthyFetcher(BaseFetcher):
         :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param disable_ads: Disabled by default, this installs the `uBlock Origin` addon on the browser if enabled.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
@@ -112,13 +116,10 @@ class StealthyFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(
-                f"The custom parser config must be of type dictionary, got {cls.__class__}"
-            )
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         with StealthySession(
             wait=wait,
-            max_pages=1,
             proxy=proxy,
             geoip=geoip,
             addons=addons,
@@ -126,6 +127,7 @@ class StealthyFetcher(BaseFetcher):
             cookies=cookies,
             headless=headless,
             humanize=humanize,
+            load_dom=load_dom,
             disable_ads=disable_ads,
             allow_webgl=allow_webgl,
             page_action=page_action,
@@ -155,6 +157,7 @@ class StealthyFetcher(BaseFetcher):
         block_webrtc: bool = False,
         allow_webgl: bool = True,
         network_idle: bool = False,
+        load_dom: bool = True,
         humanize: bool | float = True,
         solve_cloudflare: bool = False,
         wait: int | float = 0,
@@ -191,11 +194,12 @@ class StealthyFetcher(BaseFetcher):
         :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param disable_ads: Disabled by default, this installs the `uBlock Origin` addon on the browser if enabled.
         :param os_randomize: If enabled, Scrapling will randomize the OS fingerprints used. The default is Scrapling matching the fingerprints with the current OS.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param geoip: Recommended to use with proxies; Automatically use IP's longitude, latitude, timezone, country, locale, and spoof the WebRTC IP address.
@@ -211,9 +215,7 @@ class StealthyFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            ValueError(
-                f"The custom parser config must be of type dictionary, got {cls.__class__}"
-            )
+            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         async with AsyncStealthySession(
             wait=wait,
@@ -225,6 +227,7 @@ class StealthyFetcher(BaseFetcher):
             cookies=cookies,
             headless=headless,
             humanize=humanize,
+            load_dom=load_dom,
             disable_ads=disable_ads,
             allow_webgl=allow_webgl,
             page_action=page_action,
@@ -285,6 +288,7 @@ class DynamicFetcher(BaseFetcher):
         init_script: Optional[str] = None,
         cookies: Optional[Iterable[Dict]] = None,
         network_idle: bool = False,
+        load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
         custom_config: Optional[Dict] = None,
     ) -> Response:
@@ -298,9 +302,10 @@ class DynamicFetcher(BaseFetcher):
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
@@ -319,9 +324,7 @@ class DynamicFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            raise ValueError(
-                f"The custom parser config must be of type dictionary, got {cls.__class__}"
-            )
+            raise ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         with DynamicSession(
             wait=wait,
@@ -332,6 +335,7 @@ class DynamicFetcher(BaseFetcher):
             cdp_url=cdp_url,
             cookies=cookies,
             headless=headless,
+            load_dom=load_dom,
             useragent=useragent,
             real_chrome=real_chrome,
             page_action=page_action,
@@ -371,6 +375,7 @@ class DynamicFetcher(BaseFetcher):
         init_script: Optional[str] = None,
         cookies: Optional[Iterable[Dict]] = None,
         network_idle: bool = False,
+        load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
         custom_config: Optional[Dict] = None,
     ) -> Response:
@@ -384,9 +389,10 @@ class DynamicFetcher(BaseFetcher):
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param page_action: Added for automation. A function that takes the `page` object, does the automation you need, then returns `page` again.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation with this request.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
@@ -405,12 +411,11 @@ class DynamicFetcher(BaseFetcher):
         if not custom_config:
             custom_config = {}
         elif not isinstance(custom_config, dict):
-            raise ValueError(
-                f"The custom parser config must be of type dictionary, got {cls.__class__}"
-            )
+            raise ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         async with AsyncDynamicSession(
             wait=wait,
+            max_pages=1,
             proxy=proxy,
             locale=locale,
             timeout=timeout,
@@ -418,8 +423,8 @@ class DynamicFetcher(BaseFetcher):
             cdp_url=cdp_url,
             cookies=cookies,
             headless=headless,
+            load_dom=load_dom,
             useragent=useragent,
-            max_pages=1,
             real_chrome=real_chrome,
             page_action=page_action,
             hide_canvas=hide_canvas,

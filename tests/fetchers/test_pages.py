@@ -24,8 +24,8 @@ class TestPageInfo:
         assert page_info.state == "busy"
         assert page_info.url == "https://example.com"
 
-        page_info.mark_ready()
-        assert page_info.state == "ready"
+        page_info.mark_finished()
+        assert page_info.state == "finished"
         assert page_info.url == ""
 
         page_info.mark_error()
@@ -63,7 +63,6 @@ class TestPagePool:
 
         assert pool.max_pages == 5
         assert pool.pages_count == 0
-        assert pool.ready_count == 0
         assert pool.busy_count == 0
 
     def test_add_page(self):
@@ -97,42 +96,13 @@ class TestPagePool:
         page1 = pool.add_page(Mock())
         page2 = pool.add_page(Mock())
 
-        # Mark one as busy
-        page1.mark_busy("https://example.com")
+        # Mark them as finished
+        page1.mark_finished()
+        page2.mark_finished()
 
-        # Should get the ready page
-        ready_page = pool.get_ready_page()
-        assert ready_page == page2
-
-    def test_get_ready_page_none_available(self):
-        """Test getting ready page when none available"""
-        pool = PagePool(max_pages=2)
-
-        # Add pages and mark all as busy
-        page1 = pool.add_page(Mock())
-        page2 = pool.add_page(Mock())
-        page1.mark_busy("https://example1.com")
-        page2.mark_busy("https://example2.com")
-
-        # Should return None
-        ready_page = pool.get_ready_page()
-        assert ready_page is None
-
-    def test_page_counts(self):
-        """Test page count properties"""
-        pool = PagePool(max_pages=3)
-
-        # Add pages with different states
-        page1 = pool.add_page(Mock())
-        page2 = pool.add_page(Mock())
-        page3 = pool.add_page(Mock())
-
-        page1.mark_busy("https://example.com")
-        page3.mark_error()
-
-        assert pool.pages_count == 3
-        assert pool.ready_count == 1
-        assert pool.busy_count == 1
+        # test
+        pool.close_all_finished_pages()
+        assert pool.pages_count == 0
 
     def test_cleanup_error_pages(self):
         """Test cleaning up error pages"""
@@ -140,7 +110,7 @@ class TestPagePool:
 
         # Add pages
         page1 = pool.add_page(Mock())
-        page2 = pool.add_page(Mock())
+        _ = pool.add_page(Mock())
         page3 = pool.add_page(Mock())
 
         # Mark some as error
@@ -151,4 +121,4 @@ class TestPagePool:
 
         pool.cleanup_error_pages()
 
-        assert pool.pages_count == 1  # Only page2 should remain
+        assert pool.pages_count == 1  # Only 2 should remain

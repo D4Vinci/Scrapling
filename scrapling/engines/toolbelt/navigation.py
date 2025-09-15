@@ -30,9 +30,7 @@ def intercept_route(route: Route):
     :return: PlayWright `Route` object
     """
     if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
-        log.debug(
-            f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"'
-        )
+        log.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
         route.abort()
     else:
         route.continue_()
@@ -45,17 +43,13 @@ async def async_intercept_route(route: async_Route):
     :return: PlayWright `Route` object
     """
     if route.request.resource_type in DEFAULT_DISABLED_RESOURCES:
-        log.debug(
-            f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"'
-        )
+        log.debug(f'Blocking background resource "{route.request.url}" of type "{route.request.resource_type}"')
         await route.abort()
     else:
         await route.continue_()
 
 
-def construct_proxy_dict(
-    proxy_string: str | Dict[str, str], as_tuple=False
-) -> Optional[Dict | Tuple]:
+def construct_proxy_dict(proxy_string: str | Dict[str, str], as_tuple=False) -> Optional[Dict | Tuple]:
     """Validate a proxy and return it in the acceptable format for Playwright
     Reference: https://playwright.dev/python/docs/network#http-proxy
 
@@ -65,10 +59,7 @@ def construct_proxy_dict(
     """
     if isinstance(proxy_string, str):
         proxy = urlparse(proxy_string)
-        if (
-            proxy.scheme not in ("http", "https", "socks4", "socks5")
-            or not proxy.hostname
-        ):
+        if proxy.scheme not in ("http", "https", "socks4", "socks5") or not proxy.hostname:
             raise ValueError("Invalid proxy string!")
 
         try:
@@ -93,51 +84,6 @@ def construct_proxy_dict(
             raise TypeError(f"Invalid proxy dictionary: {e}")
 
     return None
-
-
-def construct_cdp_url(cdp_url: str, query_params: Optional[Dict] = None) -> str:
-    """Takes a CDP URL, reconstruct it to check it's valid, then adds encoded parameters if exists
-
-    :param cdp_url: The target URL.
-    :param query_params: A dictionary of the parameters to add.
-    :return: The new CDP URL.
-    """
-    try:
-        # Validate the base URL structure
-        parsed = urlparse(cdp_url)
-
-        # Check scheme
-        if parsed.scheme not in ("ws", "wss"):
-            raise ValueError("CDP URL must use 'ws://' or 'wss://' scheme")
-
-        # Validate hostname and port
-        if not parsed.netloc:
-            raise ValueError("Invalid hostname for the CDP URL")
-
-        try:
-            # Checking if the port is valid (if available)
-            _ = parsed.port
-        except ValueError:
-            # urlparse will raise `ValueError` if the port can't be casted to integer
-            raise ValueError("Invalid port for the CDP URL")
-
-        # Ensure the path starts with /
-        path = parsed.path
-        if not path.startswith("/"):
-            path = "/" + path
-
-        # Reconstruct the base URL with validated parts
-        validated_base = f"{parsed.scheme}://{parsed.netloc}{path}"
-
-        # Add query parameters
-        if query_params:
-            query_string = urlencode(query_params)
-            return f"{validated_base}?{query_string}"
-
-        return validated_base
-
-    except Exception as e:
-        raise ValueError(f"Invalid CDP URL: {str(e)}")
 
 
 @lru_cache(10, typed=True)

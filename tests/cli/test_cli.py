@@ -3,12 +3,24 @@ from click.testing import CliRunner
 from unittest.mock import patch, MagicMock
 import pytest_httpbin
 
+from scrapling.parser import Selector
 from scrapling.cli import (
     shell, mcp, get, post, put, delete, fetch, stealthy_fetch
 )
 
 
 @pytest_httpbin.use_class_based_httpbin
+def configure_selector_mock():
+    """Helper function to create a properly configured Selector mock"""
+    mock_response = MagicMock(spec=Selector)
+    mock_response.body = "<html><body>Test content</body></html>"
+    mock_response.encoding = "utf-8"
+    mock_response.get_all_text.return_value = "Test content"
+    mock_response.css_first.return_value = mock_response
+    mock_response.css.return_value = [mock_response]
+    return mock_response
+
+
 class TestCLI:
     """Test CLI functionality"""
 
@@ -45,136 +57,129 @@ class TestCLI:
         output_file = tmp_path / "output.md"
 
         with patch('scrapling.fetchers.Fetcher.get') as mock_get:
-            mock_response = MagicMock()
+            mock_response = configure_selector_mock()
             mock_response.status = 200
             mock_get.return_value = mock_response
 
-            with patch('scrapling.cli.Convertor.write_content_to_file'):
-                result = runner.invoke(
-                    get,
-                    [html_url, str(output_file)]
-                )
-                assert result.exit_code == 0
+            result = runner.invoke(
+                get,
+                [html_url, str(output_file)]
+            )
+            assert result.exit_code == 0
 
         # Test with various options
         with patch('scrapling.fetchers.Fetcher.get') as mock_get:
             mock_get.return_value = mock_response
 
-            with patch('scrapling.cli.Convertor.write_content_to_file'):
-                result = runner.invoke(
-                    get,
-                    [
-                        html_url,
-                        str(output_file),
-                        '-H', 'User-Agent: Test',
-                        '--cookies', 'session=abc123',
-                        '--timeout', '60',
-                        '--proxy', 'http://proxy:8080',
-                        '-s', '.content',
-                        '-p', 'page=1'
-                    ]
-                )
-                assert result.exit_code == 0
+            result = runner.invoke(
+                get,
+                [
+                    html_url,
+                    str(output_file),
+                    '-H', 'User-Agent: Test',
+                    '--cookies', 'session=abc123',
+                    '--timeout', '60',
+                    '--proxy', 'http://proxy:8080',
+                    '-s', '.content',
+                    '-p', 'page=1'
+                ]
+            )
+            assert result.exit_code == 0
 
     def test_extract_post_command(self, runner, tmp_path, html_url):
         """Test extract `post` command"""
         output_file = tmp_path / "output.html"
 
         with patch('scrapling.fetchers.Fetcher.post') as mock_post:
-            mock_response = MagicMock()
+            mock_response = configure_selector_mock()
             mock_post.return_value = mock_response
 
-            with patch('scrapling.cli.Convertor.write_content_to_file'):
-                result = runner.invoke(
-                    post,
-                    [
-                        html_url,
-                        str(output_file),
-                        '-d', 'key=value',
-                        '-j', '{"data": "test"}'
-                    ]
-                )
-                assert result.exit_code == 0
+            result = runner.invoke(
+                post,
+                [
+                    html_url,
+                    str(output_file),
+                    '-d', 'key=value',
+                    '-j', '{"data": "test"}'
+                ]
+            )
+            assert result.exit_code == 0
 
     def test_extract_put_command(self, runner, tmp_path, html_url):
         """Test extract `put` command"""
         output_file = tmp_path / "output.html"
 
         with patch('scrapling.fetchers.Fetcher.put') as mock_put:
-            mock_response = MagicMock()
+            mock_response = configure_selector_mock()
             mock_put.return_value = mock_response
 
-            with patch('scrapling.cli.Convertor.write_content_to_file'):
-                result = runner.invoke(
-                    put,
-                    [
-                        html_url,
-                        str(output_file),
-                        '-d', 'key=value',
-                        '-j', '{"data": "test"}'
-                    ]
-                )
-                assert result.exit_code == 0
+            result = runner.invoke(
+                put,
+                [
+                    html_url,
+                    str(output_file),
+                    '-d', 'key=value',
+                    '-j', '{"data": "test"}'
+                ]
+            )
+            assert result.exit_code == 0
 
     def test_extract_delete_command(self, runner, tmp_path, html_url):
         """Test extract `delete` command"""
         output_file = tmp_path / "output.html"
 
         with patch('scrapling.fetchers.Fetcher.delete') as mock_delete:
-            mock_response = MagicMock()
+            mock_response = configure_selector_mock()
             mock_delete.return_value = mock_response
 
-            with patch('scrapling.cli.Convertor.write_content_to_file'):
-                result = runner.invoke(
-                    delete,
-                    [
-                        html_url,
-                        str(output_file)
-                    ]
-                )
-                assert result.exit_code == 0
+            result = runner.invoke(
+                delete,
+                [
+                    html_url,
+                    str(output_file)
+                ]
+            )
+            assert result.exit_code == 0
 
     def test_extract_fetch_command(self, runner, tmp_path, html_url):
         """Test extract fetch command"""
         output_file = tmp_path / "output.txt"
 
         with patch('scrapling.fetchers.DynamicFetcher.fetch') as mock_fetch:
-            mock_response = MagicMock()
+            mock_response = configure_selector_mock()
             mock_fetch.return_value = mock_response
 
-            with patch('scrapling.cli.Convertor.write_content_to_file'):
-                result = runner.invoke(
-                    fetch,
-                    [
-                        html_url,
-                        str(output_file),
-                        '--headless',
-                        '--stealth',
-                        '--timeout', '60000'
-                    ]
-                )
-                assert result.exit_code == 0
+            result = runner.invoke(
+                fetch,
+                [
+                    html_url,
+                    str(output_file),
+                    '--headless',
+                    '--stealth',
+                    '--timeout', '60000'
+                ]
+            )
+            assert result.exit_code == 0
 
     def test_extract_stealthy_fetch_command(self, runner, tmp_path, html_url):
         """Test extract fetch command"""
         output_file = tmp_path / "output.md"
 
         with patch('scrapling.fetchers.StealthyFetcher.fetch') as mock_fetch:
-            mock_response = MagicMock()
+            mock_response = configure_selector_mock()
             mock_fetch.return_value = mock_response
 
-            with patch('scrapling.cli.Convertor.write_content_to_file'):
-                result = runner.invoke(
-                    stealthy_fetch,
-                    [
-                        html_url,
-                        str(output_file),
-                        '--headless',
-                        '--css-selector', 'body',
-                        '--timeout', '60000'
-                    ]
-                )
-                assert result.exit_code == 0
+            result = runner.invoke(
+                stealthy_fetch,
+                [
+                    html_url,
+                    str(output_file),
+                    '--headless',
+                    '--css-selector', 'body',
+                    '--timeout', '60000'
+                ]
+            )
+            assert result.exit_code == 0
 
     def test_invalid_arguments(self, runner, html_url):
         """Test invalid arguments handling"""
@@ -182,12 +187,8 @@ class TestCLI:
         result = runner.invoke(get)
         assert result.exit_code != 0
 
-        # Invalid output file extension
-        with patch('scrapling.cli.Convertor.write_content_to_file') as mock_write:
-            mock_write.side_effect = ValueError("Unknown file type")
-
-            _ = runner.invoke(
-                get,
-                [html_url, 'output.invalid']
-            )
-            # Should handle the error gracefully
+        _ = runner.invoke(
+            get,
+            [html_url, 'output.invalid']
+        )
+        # Should handle the error gracefully

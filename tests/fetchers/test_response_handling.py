@@ -1,8 +1,7 @@
 from unittest.mock import Mock
 
 from scrapling.parser import Selector
-from scrapling.engines.toolbelt import ResponseFactory, Response
-from scrapling.engines.toolbelt.custom import ResponseEncoding
+from scrapling.engines.toolbelt.convertor import ResponseFactory, Response
 
 
 class TestResponseFactory:
@@ -31,20 +30,6 @@ class TestResponseFactory:
         assert response.status == 200
         assert response.url == "https://example.com"
         assert isinstance(response, Response)
-
-    def test_response_encoding_edge_cases(self):
-        """Test response encoding handling"""
-        # Test various content types
-        test_cases = [
-            (None, "utf-8"),
-            ("", "utf-8"),
-            ("text/html; charset=invalid", "utf-8"),
-            ("application/octet-stream", "utf-8"),
-        ]
-
-        for content_type, expected in test_cases:
-            encoding = ResponseEncoding.get_value(content_type)
-            assert encoding == expected
 
     def test_response_history_processing(self):
         """Test processing response history"""

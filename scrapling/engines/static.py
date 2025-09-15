@@ -24,13 +24,9 @@ from scrapling.core._types import (
     Any,
 )
 
-from .toolbelt import (
-    Response,
-    generate_convincing_referer,
-    generate_headers,
-    ResponseFactory,
-    __default_useragent__,
-)
+from .toolbelt.custom import Response
+from .toolbelt.convertor import ResponseFactory
+from .toolbelt.fingerprints import generate_convincing_referer, generate_headers, __default_useragent__
 
 _UNSET = object()
 
@@ -108,13 +104,9 @@ class FetcherSession:
 
         headers = self.get_with_precedence(kwargs, "headers", self.default_headers)
         stealth = self.get_with_precedence(kwargs, "stealth", self.stealth)
-        impersonate = self.get_with_precedence(
-            kwargs, "impersonate", self.default_impersonate
-        )
+        impersonate = self.get_with_precedence(kwargs, "impersonate", self.default_impersonate)
 
-        if self.get_with_precedence(
-            kwargs, "http3", self.default_http3
-        ):  # pragma: no cover
+        if self.get_with_precedence(kwargs, "http3", self.default_http3):  # pragma: no cover
             request_args["http_version"] = CurlHttpVersion.V3ONLY
             if impersonate:
                 log.warning(
@@ -126,25 +118,13 @@ class FetcherSession:
                 "url": url,
                 # Curl automatically generates the suitable browser headers when you use `impersonate`
                 "headers": self._headers_job(url, headers, stealth, bool(impersonate)),
-                "proxies": self.get_with_precedence(
-                    kwargs, "proxies", self.default_proxies
-                ),
+                "proxies": self.get_with_precedence(kwargs, "proxies", self.default_proxies),
                 "proxy": self.get_with_precedence(kwargs, "proxy", self.default_proxy),
-                "proxy_auth": self.get_with_precedence(
-                    kwargs, "proxy_auth", self.default_proxy_auth
-                ),
-                "timeout": self.get_with_precedence(
-                    kwargs, "timeout", self.default_timeout
-                ),
-                "allow_redirects": self.get_with_precedence(
-                    kwargs, "allow_redirects", self.default_follow_redirects
-                ),
-                "max_redirects": self.get_with_precedence(
-                    kwargs, "max_redirects", self.default_max_redirects
-                ),
-                "verify": self.get_with_precedence(
-                    kwargs, "verify", self.default_verify
-                ),
+                "proxy_auth": self.get_with_precedence(kwargs, "proxy_auth", self.default_proxy_auth),
+                "timeout": self.get_with_precedence(kwargs, "timeout", self.default_timeout),
+                "allow_redirects": self.get_with_precedence(kwargs, "allow_redirects", self.default_follow_redirects),
+                "max_redirects": self.get_with_precedence(kwargs, "max_redirects", self.default_max_redirects),
+                "verify": self.get_with_precedence(kwargs, "verify", self.default_verify),
                 "cert": self.get_with_precedence(kwargs, "cert", self.default_cert),
                 "impersonate": impersonate,
                 **{
@@ -192,18 +172,12 @@ class FetcherSession:
 
             extra_headers = generate_headers(browser_mode=False)
             # Don't overwrite user-supplied headers
-            extra_headers = {
-                key: value
-                for key, value in extra_headers.items()
-                if key.lower() not in headers_keys
-            }
+            extra_headers = {key: value for key, value in extra_headers.items() if key.lower() not in headers_keys}
             headers.update(extra_headers)
 
         elif "user-agent" not in headers_keys and not impersonate_enabled:
             headers["User-Agent"] = __default_useragent__
-            log.debug(
-                f"Can't find useragent in headers so '{headers['User-Agent']}' was used."
-            )
+            log.debug(f"Can't find useragent in headers so '{headers['User-Agent']}' was used.")
 
         return headers
 
@@ -215,9 +189,7 @@ class FetcherSession:
                 "Create a new FetcherSession instance for a new independent session, "
                 "or use the current instance sequentially after the previous context has exited."
             )
-        if (
-            self._async_curl_session
-        ):  # Prevent mixing if async is active from this instance
+        if self._async_curl_session:  # Prevent mixing if async is active from this instance
             raise RuntimeError(
                 "This FetcherSession instance has an active asynchronous session. "
                 "Cannot enter a synchronous context simultaneously with the same manager instance."
@@ -275,9 +247,7 @@ class FetcherSession:
         :return: A `Response` object for synchronous requests or an awaitable for asynchronous.
         """
         session = self._curl_session
-        if session is True and not any(
-            (self.__enter__, self.__exit__, self.__aenter__, self.__aexit__)
-        ):
+        if session is True and not any((self.__enter__, self.__exit__, self.__aenter__, self.__aexit__)):
             # For usage inside FetcherClient
             # It turns out `curl_cffi` caches impersonation state, so if you turned it off, then on then off, it won't be off on the last time.
             session = CurlSession()
@@ -290,9 +260,7 @@ class FetcherSession:
                     return ResponseFactory.from_http_request(response, selector_config)
                 except CurlError as e:  # pragma: no cover
                     if attempt < max_retries - 1:
-                        log.error(
-                            f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds..."
-                        )
+                        log.error(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
                         time_sleep(retry_delay)
                     else:
                         log.error(f"Failed after {max_retries} attempts: {e}")
@@ -320,9 +288,7 @@ class FetcherSession:
         :return: A `Response` object for synchronous requests or an awaitable for asynchronous.
         """
         session = self._async_curl_session
-        if session is True and not any(
-            (self.__enter__, self.__exit__, self.__aenter__, self.__aexit__)
-        ):
+        if session is True and not any((self.__enter__, self.__exit__, self.__aenter__, self.__aexit__)):
             # For usage inside the ` AsyncFetcherClient ` class, and that's for several reasons
             # 1. It turns out `curl_cffi` caches impersonation state, so if you turned it off, then on then off, it won't be off on the last time.
             # 2. `curl_cffi` doesn't support making async requests without sessions
@@ -337,9 +303,7 @@ class FetcherSession:
                     return ResponseFactory.from_http_request(response, selector_config)
                 except CurlError as e:  # pragma: no cover
                     if attempt < max_retries - 1:
-                        log.error(
-                            f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds..."
-                        )
+                        log.error(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
                         await asyncio_sleep(retry_delay)
                     else:
                         log.error(f"Failed after {max_retries} attempts: {e}")
@@ -372,19 +336,13 @@ class FetcherSession:
 
         selector_config = kwargs.pop("selector_config", {}) or self.selector_config
         max_retries = self.get_with_precedence(kwargs, "retries", self.default_retries)
-        retry_delay = self.get_with_precedence(
-            kwargs, "retry_delay", self.default_retry_delay
-        )
+        retry_delay = self.get_with_precedence(kwargs, "retry_delay", self.default_retry_delay)
         request_args = self._merge_request_args(stealth=stealth, **kwargs)
         if self._curl_session:
-            return self.__make_request(
-                method, request_args, max_retries, retry_delay, selector_config
-            )
+            return self.__make_request(method, request_args, max_retries, retry_delay, selector_config)
         elif self._async_curl_session:
             # The returned value is a Coroutine
-            return self.__make_async_request(
-                method, request_args, max_retries, retry_delay, selector_config
-            )
+            return self.__make_async_request(method, request_args, max_retries, retry_delay, selector_config)
 
         raise RuntimeError("No active session available.")
 
@@ -455,9 +413,7 @@ class FetcherSession:
             "http3": http3,
             **kwargs,
         }
-        return self.__prepare_and_dispatch(
-            "GET", stealth=stealthy_headers, **request_args
-        )
+        return self.__prepare_and_dispatch("GET", stealth=stealthy_headers, **request_args)
 
     def post(
         self,
@@ -532,9 +488,7 @@ class FetcherSession:
             "http3": http3,
             **kwargs,
         }
-        return self.__prepare_and_dispatch(
-            "POST", stealth=stealthy_headers, **request_args
-        )
+        return self.__prepare_and_dispatch("POST", stealth=stealthy_headers, **request_args)
 
     def put(
         self,
@@ -609,9 +563,7 @@ class FetcherSession:
             "http3": http3,
             **kwargs,
         }
-        return self.__prepare_and_dispatch(
-            "PUT", stealth=stealthy_headers, **request_args
-        )
+        return self.__prepare_and_dispatch("PUT", stealth=stealthy_headers, **request_args)
 
     def delete(
         self,
@@ -688,9 +640,7 @@ class FetcherSession:
             "http3": http3,
             **kwargs,
         }
-        return self.__prepare_and_dispatch(
-            "DELETE", stealth=stealthy_headers, **request_args
-        )
+        return self.__prepare_and_dispatch("DELETE", stealth=stealthy_headers, **request_args)
 
 
 class FetcherClient(FetcherSession):

@@ -1,12 +1,11 @@
-from pathlib import Path
 import re
+from pathlib import Path
 from inspect import signature
-from difflib import SequenceMatcher
 from urllib.parse import urljoin
+from difflib import SequenceMatcher
 
-from cssselect import SelectorError, SelectorSyntaxError
-from cssselect import parse as split_selectors
 from lxml.html import HtmlElement, HtmlMixin, HTMLParser
+from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
 from lxml.etree import (
     XPath,
     tostring,
@@ -75,7 +74,7 @@ class Selector(SelectorsGeneration):
         self,
         content: Optional[str | bytes] = None,
         url: Optional[str] = None,
-        encoding: str = "utf8",
+        encoding: str = "utf-8",
         huge_tree: bool = True,
         root: Optional[HtmlElement] = None,
         keep_comments: Optional[bool] = False,
@@ -110,22 +109,16 @@ class Selector(SelectorsGeneration):
             If empty, default values will be used.
         """
         if root is None and content is None:
-            raise ValueError(
-                "Selector class needs HTML content, or root arguments to work"
-            )
+            raise ValueError("Selector class needs HTML content, or root arguments to work")
 
         self.__text = None
         if root is None:
             if isinstance(content, str):
-                body = (
-                    content.strip().replace("\x00", "").encode(encoding) or b"<html/>"
-                )
+                body = content.strip().replace("\x00", "").encode(encoding) or b"<html/>"
             elif isinstance(content, bytes):
-                body = content.replace(b"\x00", b"").strip()
+                body = content.replace(b"\x00", b"")
             else:
-                raise TypeError(
-                    f"content argument must be str or bytes, got {type(content)}"
-                )
+                raise TypeError(f"content argument must be str or bytes, got {type(content)}")
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
             parser = HTMLParser(
@@ -139,8 +132,7 @@ class Selector(SelectorsGeneration):
                 strip_cdata=(not keep_cdata),
             )
             self._root = fromstring(body, parser=parser, base_url=url)
-
-            self._raw_body = body.decode()
+            self._raw_body = content
 
         else:
             # All HTML types inherit from HtmlMixin so this to check for all at once
@@ -165,16 +157,10 @@ class Selector(SelectorsGeneration):
                     }
 
                 if not hasattr(storage, "__wrapped__"):
-                    raise ValueError(
-                        "Storage class must be wrapped with lru_cache decorator, see docs for info"
-                    )
+                    raise ValueError("Storage class must be wrapped with lru_cache decorator, see docs for info")
 
-                if not issubclass(
-                    storage.__wrapped__, StorageSystemMixin
-                ):  # pragma: no cover
-                    raise ValueError(
-                        "Storage system must be inherited from class `StorageSystemMixin`"
-                    )
+                if not issubclass(storage.__wrapped__, StorageSystemMixin):  # pragma: no cover
+                    raise ValueError("Storage system must be inherited from class `StorageSystemMixin`")
 
                 self._storage = storage(**storage_args)
 
@@ -239,9 +225,7 @@ class Selector(SelectorsGeneration):
 
     def __element_convertor(self, element: HtmlElement) -> "Selector":
         """Used internally to convert a single HtmlElement to Selector directly without checks"""
-        db_instance = (
-            self._storage if (hasattr(self, "_storage") and self._storage) else None
-        )
+        db_instance = self._storage if (hasattr(self, "_storage") and self._storage) else None
         return Selector(
             root=element,
             url=self.url,
@@ -355,18 +339,19 @@ class Selector(SelectorsGeneration):
     @property
     def html_content(self) -> TextHandler:
         """Return the inner HTML code of the element"""
-        return TextHandler(
-            tostring(self._root, encoding="unicode", method="html", with_tail=False)
-        )
+        return TextHandler(tostring(self._root, encoding=self.encoding, method="html", with_tail=False))
 
-    body = html_content
+    @property
+    def body(self):
+        """Return the raw body of the current `Selector` without any processing. Useful for binary and non-HTML requests."""
+        return self._raw_body
 
     def prettify(self) -> TextHandler:
         """Return a prettified version of the element's inner html-code"""
         return TextHandler(
             tostring(
                 self._root,
-                encoding="unicode",
+                encoding=self.encoding,
                 pretty_print=True,
                 method="html",
                 with_tail=False,
@@ -404,9 +389,7 @@ class Selector(SelectorsGeneration):
     def siblings(self) -> "Selectors":
         """Return other children of the current element's parent or empty list otherwise"""
         if self.parent:
-            return Selectors(
-                child for child in self.parent.children if child._root != self._root
-            )
+            return Selectors(child for child in self.parent.children if child._root != self._root)
         return Selectors()
 
     def iterancestors(self) -> Generator["Selector", None, None]:
@@ -519,9 +502,7 @@ class Selector(SelectorsGeneration):
                     log.debug(f"Highest probability was {highest_probability}%")
                     log.debug("Top 5 best matching elements are: ")
                     for percent in tuple(sorted(score_table.keys(), reverse=True))[:5]:
-                        log.debug(
-                            f"{percent} -> {self.__handle_elements(score_table[percent])}"
-                        )
+                        log.debug(f"{percent} -> {self.__handle_elements(score_table[percent])}")
 
                 if not selector_type:
                     return score_table[highest_probability]
@@ -658,9 +639,7 @@ class Selector(SelectorsGeneration):
             SelectorError,
             SelectorSyntaxError,
         ) as e:
-            raise SelectorSyntaxError(
-                f"Invalid CSS selector '{selector}': {str(e)}"
-            ) from e
+            raise SelectorSyntaxError(f"Invalid CSS selector '{selector}': {str(e)}") from e
 
     def xpath(
         self,
@@ -702,9 +681,7 @@ class Selector(SelectorsGeneration):
                 elif self.__adaptive_enabled and auto_save:
                     self.save(elements[0], identifier or selector)
 
-                return self.__handle_elements(
-                    elements[0:1] if (_first_match and elements) else elements
-                )
+                return self.__handle_elements(elements[0:1] if (_first_match and elements) else elements)
             elif self.__adaptive_enabled:
                 if adaptive:
                     element_data = self.retrieve(identifier or selector)
@@ -713,9 +690,7 @@ class Selector(SelectorsGeneration):
                         if elements is not None and auto_save:
                             self.save(elements[0], identifier or selector)
 
-                return self.__handle_elements(
-                    elements[0:1] if (_first_match and elements) else elements
-                )
+                return self.__handle_elements(elements[0:1] if (_first_match and elements) else elements)
             else:
                 if adaptive:
                     log.warning(
@@ -726,9 +701,7 @@ class Selector(SelectorsGeneration):
                         "Argument `auto_save` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
                     )
 
-                return self.__handle_elements(
-                    elements[0:1] if (_first_match and elements) else elements
-                )
+                return self.__handle_elements(elements[0:1] if (_first_match and elements) else elements)
 
         except (
             SelectorError,
@@ -751,9 +724,7 @@ class Selector(SelectorsGeneration):
         """
 
         if not args and not kwargs:
-            raise TypeError(
-                "You have to pass something to search with, like tag name(s), tag attributes, or both."
-            )
+            raise TypeError("You have to pass something to search with, like tag name(s), tag attributes, or both.")
 
         attributes = dict()
         tags, patterns = set(), set()
@@ -766,18 +737,11 @@ class Selector(SelectorsGeneration):
 
             elif type(arg) in (list, tuple, set):
                 if not all(map(lambda x: isinstance(x, str), arg)):
-                    raise TypeError(
-                        "Nested Iterables are not accepted, only iterables of tag names are accepted"
-                    )
+                    raise TypeError("Nested Iterables are not accepted, only iterables of tag names are accepted")
                 tags.update(set(arg))
 
             elif isinstance(arg, dict):
-                if not all(
-                    [
-                        (isinstance(k, str) and isinstance(v, str))
-                        for k, v in arg.items()
-                    ]
-                ):
+                if not all([(isinstance(k, str) and isinstance(v, str)) for k, v in arg.items()]):
                     raise TypeError(
                         "Nested dictionaries are not accepted, only string keys and string values are accepted"
                     )
@@ -795,13 +759,9 @@ class Selector(SelectorsGeneration):
                     )
 
             else:
-                raise TypeError(
-                    f'Argument with type "{type(arg)}" is not accepted, please read the docs.'
-                )
+                raise TypeError(f'Argument with type "{type(arg)}" is not accepted, please read the docs.')
 
-        if not all(
-            [(isinstance(k, str) and isinstance(v, str)) for k, v in kwargs.items()]
-        ):
+        if not all([(isinstance(k, str) and isinstance(v, str)) for k, v in kwargs.items()]):
             raise TypeError("Only string values are accepted for arguments")
 
         for attribute_name, value in kwargs.items():
@@ -825,9 +785,7 @@ class Selector(SelectorsGeneration):
             if results:
                 # From the results, get the ones that fulfill passed regex patterns
                 for pattern in patterns:
-                    results = results.filter(
-                        lambda e: e.text.re(pattern, check_match=True)
-                    )
+                    results = results.filter(lambda e: e.text.re(pattern, check_match=True))
 
                 # From the results, get the ones that fulfill passed functions
                 for function in functions:
@@ -858,9 +816,7 @@ class Selector(SelectorsGeneration):
             return element
         return None
 
-    def __calculate_similarity_score(
-        self, original: Dict, candidate: HtmlElement
-    ) -> float:
+    def __calculate_similarity_score(self, original: Dict, candidate: HtmlElement) -> float:
         """Used internally to calculate a score that shows how a candidate element similar to the original one
 
         :param original: The original element in the form of the dictionary generated from `element_to_dict` function
@@ -877,15 +833,11 @@ class Selector(SelectorsGeneration):
         checks += 1
 
         if original["text"]:
-            score += SequenceMatcher(
-                None, original["text"], candidate.get("text") or ""
-            ).ratio()  # * 0.3  # 30%
+            score += SequenceMatcher(None, original["text"], candidate.get("text") or "").ratio()  # * 0.3  # 30%
             checks += 1
 
         # if both don't have attributes, it still counts for something!
-        score += self.__calculate_dict_diff(
-            original["attributes"], candidate["attributes"]
-        )  # * 0.3  # 30%
+        score += self.__calculate_dict_diff(original["attributes"], candidate["attributes"])  # * 0.3  # 30%
         checks += 1
 
         # Separate similarity test for class, id, href,... this will help in full structural changes
@@ -903,9 +855,7 @@ class Selector(SelectorsGeneration):
                 ).ratio()  # * 0.3  # 30%
                 checks += 1
 
-        score += SequenceMatcher(
-            None, original["path"], candidate["path"]
-        ).ratio()  # * 0.1  # 10%
+        score += SequenceMatcher(None, original["path"], candidate["path"]).ratio()  # * 0.1  # 10%
         checks += 1
 
         if original.get("parent_name"):
@@ -944,14 +894,8 @@ class Selector(SelectorsGeneration):
     @staticmethod
     def __calculate_dict_diff(dict1: Dict, dict2: Dict) -> float:
         """Used internally to calculate similarity between two dictionaries as SequenceMatcher doesn't accept dictionaries"""
-        score = (
-            SequenceMatcher(None, tuple(dict1.keys()), tuple(dict2.keys())).ratio()
-            * 0.5
-        )
-        score += (
-            SequenceMatcher(None, tuple(dict1.values()), tuple(dict2.values())).ratio()
-            * 0.5
-        )
+        score = SequenceMatcher(None, tuple(dict1.keys()), tuple(dict2.keys())).ratio() * 0.5
+        score += SequenceMatcher(None, tuple(dict1.values()), tuple(dict2.values())).ratio() * 0.5
         return score
 
     def save(self, element: Union["Selector", HtmlElement], identifier: str) -> None:
@@ -992,7 +936,7 @@ class Selector(SelectorsGeneration):
     # Operations on text functions
     def json(self) -> Dict:
         """Return JSON response if the response is jsonable otherwise throws error"""
-        if self._raw_body:
+        if self._raw_body and isinstance(self._raw_body, str):
             return TextHandler(self._raw_body).json()
         elif self.text:
             return self.text.json()
@@ -1031,9 +975,7 @@ class Selector(SelectorsGeneration):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         :param case_sensitive: if disabled, the function will set the regex to ignore the letters case while compiling it
         """
-        return self.text.re_first(
-            regex, default, replace_entities, clean_match, case_sensitive
-        )
+        return self.text.re_first(regex, default, replace_entities, clean_match, case_sensitive)
 
     @staticmethod
     def __get_attributes(element: HtmlElement, ignore_attributes: List | Tuple) -> Dict:
@@ -1052,9 +994,7 @@ class Selector(SelectorsGeneration):
         """Calculate a score of how much these elements are alike and return True
         if the score is higher or equals the threshold"""
         candidate_attributes = (
-            self.__get_attributes(candidate, ignore_attributes)
-            if ignore_attributes
-            else candidate.attrib
+            self.__get_attributes(candidate, ignore_attributes) if ignore_attributes else candidate.attrib
         )
         score, checks = 0, 0
 
@@ -1116,11 +1056,7 @@ class Selector(SelectorsGeneration):
         similar_elements = list()
 
         current_depth = len(list(root.iterancestors()))
-        target_attrs = (
-            self.__get_attributes(root, ignore_attributes)
-            if ignore_attributes
-            else root.attrib
-        )
+        target_attrs = self.__get_attributes(root, ignore_attributes) if ignore_attributes else root.attrib
 
         path_parts = [self.tag]
         if (parent := root.getparent()) is not None:
@@ -1129,9 +1065,7 @@ class Selector(SelectorsGeneration):
                 path_parts.insert(0, grandparent.tag)
 
         xpath_path = "//{}".format("/".join(path_parts))
-        potential_matches = root.xpath(
-            f"{xpath_path}[count(ancestor::*) = {current_depth}]"
-        )
+        potential_matches = root.xpath(f"{xpath_path}[count(ancestor::*) = {current_depth}]")
 
         for potential_match in potential_matches:
             if potential_match != root and self.__are_alike(
@@ -1275,12 +1209,7 @@ class Selectors(List[Selector]):
 
         :return: `Selectors` class.
         """
-        results = [
-            n.xpath(
-                selector, identifier or selector, False, auto_save, percentage, **kwargs
-            )
-            for n in self
-        ]
+        results = [n.xpath(selector, identifier or selector, False, auto_save, percentage, **kwargs) for n in self]
         return self.__class__(flatten(results))
 
     def css(
@@ -1308,10 +1237,7 @@ class Selectors(List[Selector]):
 
         :return: `Selectors` class.
         """
-        results = [
-            n.css(selector, identifier or selector, False, auto_save, percentage)
-            for n in self
-        ]
+        results = [n.css(selector, identifier or selector, False, auto_save, percentage) for n in self]
         return self.__class__(flatten(results))
 
     def re(
@@ -1329,10 +1255,7 @@ class Selectors(List[Selector]):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         :param case_sensitive: if disabled, the function will set the regex to ignore the letters case while compiling it
         """
-        results = [
-            n.text.re(regex, replace_entities, clean_match, case_sensitive)
-            for n in self
-        ]
+        results = [n.text.re(regex, replace_entities, clean_match, case_sensitive) for n in self]
         return TextHandlers(flatten(results))
 
     def re_first(

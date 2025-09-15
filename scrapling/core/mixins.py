@@ -5,9 +5,7 @@ class SelectorsGeneration:
     Inspiration: https://searchfox.org/mozilla-central/source/devtools/shared/inspector/css-logic.js#591
     """
 
-    def __general_selection(
-        self, selection: str = "css", full_path: bool = False
-    ) -> str:
+    def __general_selection(self, selection: str = "css", full_path: bool = False) -> str:
         """Generate a selector for the current element.
         :return: A string of the generated selector.
         """
@@ -18,18 +16,10 @@ class SelectorsGeneration:
             if target.parent:
                 if target.attrib.get("id"):
                     # id is enough
-                    part = (
-                        f"#{target.attrib['id']}"
-                        if css
-                        else f"[@id='{target.attrib['id']}']"
-                    )
+                    part = f"#{target.attrib['id']}" if css else f"[@id='{target.attrib['id']}']"
                     selectorPath.append(part)
                     if not full_path:
-                        return (
-                            " > ".join(reversed(selectorPath))
-                            if css
-                            else "//*" + "/".join(reversed(selectorPath))
-                        )
+                        return " > ".join(reversed(selectorPath)) if css else "//*" + "/".join(reversed(selectorPath))
                 else:
                     part = f"{target.tag}"
                     # We won't use classes anymore because I some websites share exact classes between elements
@@ -45,28 +35,16 @@ class SelectorsGeneration:
                             break
 
                     if counter[target.tag] > 1:
-                        part += (
-                            f":nth-of-type({counter[target.tag]})"
-                            if css
-                            else f"[{counter[target.tag]}]"
-                        )
+                        part += f":nth-of-type({counter[target.tag]})" if css else f"[{counter[target.tag]}]"
 
                 selectorPath.append(part)
                 target = target.parent
                 if target is None or target.tag == "html":
-                    return (
-                        " > ".join(reversed(selectorPath))
-                        if css
-                        else "//" + "/".join(reversed(selectorPath))
-                    )
+                    return " > ".join(reversed(selectorPath)) if css else "//" + "/".join(reversed(selectorPath))
             else:
                 break
 
-        return (
-            " > ".join(reversed(selectorPath))
-            if css
-            else "//" + "/".join(reversed(selectorPath))
-        )
+        return " > ".join(reversed(selectorPath)) if css else "//" + "/".join(reversed(selectorPath))
 
     @property
     def generate_css_selector(self) -> str:

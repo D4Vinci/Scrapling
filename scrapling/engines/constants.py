@@ -16,9 +16,9 @@ HARMFUL_DEFAULT_ARGS = (
     # This will be ignored to avoid detection more and possibly avoid the popup crashing bug abuse: https://issues.chromium.org/issues/340836884
     "--enable-automation",
     "--disable-popup-blocking",
-    # '--disable-component-update',
-    # '--disable-default-apps',
-    # '--disable-extensions',
+    "--disable-component-update",
+    "--disable-default-apps",
+    "--disable-extensions",
 )
 
 DEFAULT_FLAGS = (
@@ -50,7 +50,6 @@ DEFAULT_STEALTH_FLAGS = (
     "--accept-lang=en-US",
     "--use-mock-keychain",
     "--disable-translate",
-    "--disable-extensions",
     "--disable-voice-input",
     "--window-position=0,0",
     "--disable-wake-on-wifi",
@@ -59,7 +58,6 @@ DEFAULT_STEALTH_FLAGS = (
     "--enable-web-bluetooth",
     "--disable-hang-monitor",
     "--disable-cloud-import",
-    "--disable-default-apps",
     "--disable-print-preview",
     "--disable-dev-shm-usage",
     # '--disable-popup-blocking',
@@ -72,7 +70,6 @@ DEFAULT_STEALTH_FLAGS = (
     "--force-color-profile=srgb",
     "--font-render-hinting=none",
     "--aggressive-cache-discard",
-    "--disable-component-update",
     "--disable-cookie-encryption",
     "--disable-domain-reliability",
     "--disable-threaded-animation",

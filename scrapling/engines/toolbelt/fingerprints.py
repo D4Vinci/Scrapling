@@ -2,13 +2,13 @@
 Functions related to generating headers and fingerprints generally
 """
 
+from functools import lru_cache
 from platform import system as platform_system
 
 from tldextract import extract
 from browserforge.headers import Browser, HeaderGenerator
 
 from scrapling.core._types import Dict, Optional
-from scrapling.core.utils import lru_cache
 
 __OS_NAME__ = platform_system()
 
@@ -37,8 +37,6 @@ def get_os_name() -> Optional[str]:
         "Linux": "linux",
         "Darwin": "macos",
         "Windows": "windows",
-        # For the future? because why not?
-        "iOS": "ios",
     }.get(__OS_NAME__)
 
 

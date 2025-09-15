@@ -2,14 +2,18 @@ from pathlib import Path
 from subprocess import check_output
 from sys import executable as python_executable
 
-from scrapling.core.utils import log
-from scrapling.engines.toolbelt import Response
+from scrapling.engines.toolbelt.custom import Response
+from scrapling.core.utils import log, _CookieParser, _ParseHeaders
 from scrapling.core._types import List, Optional, Dict, Tuple, Any, Callable
-from scrapling.fetchers import Fetcher, DynamicFetcher, StealthyFetcher
-from scrapling.core.shell import Convertor, _CookieParser, _ParseHeaders
 
 from orjson import loads as json_loads, JSONDecodeError
-from click import command, option, Choice, group, argument
+
+try:
+    from click import command, option, Choice, group, argument
+except (ImportError, ModuleNotFoundError) as e:
+    raise ModuleNotFoundError(
+        "You need to install scrapling with any of the extras to enable Shell commands. See: https://scrapling.readthedocs.io/en/latest/#installation"
+    ) from e
 
 __OUTPUT_FILE_HELP__ = "The output file path can be an HTML file, a Markdown file of the HTML content, or the text content itself. Use file extensions (`.html`/`.md`/`.txt`) respectively."
 __PACKAGE_DIR__ = Path(__file__).parent
@@ -40,6 +44,8 @@ def __Request_and_Save(
     **kwargs,
 ) -> None:
     """Make a request using the specified fetcher function and save the result"""
+    from scrapling.core.shell import Convertor
+
     # Handle relative paths - convert to an absolute path based on the current working directory
     output_path = Path(output_file)
     if not output_path.is_absolute():
@@ -72,14 +78,10 @@ def __ParseExtractArguments(
     return parsed_headers, parsed_cookies, parsed_params, parsed_json
 
 
-def __BuildRequest(
-    headers: List[str], cookies: str, params: str, json: Optional[str] = None, **kwargs
-) -> Dict:
+def __BuildRequest(headers: List[str], cookies: str, params: str, json: Optional[str] = None, **kwargs) -> Dict:
     """Build a request object using the specified arguments"""
     # Parse parameters
-    parsed_headers, parsed_cookies, parsed_params, parsed_json = (
-        __ParseExtractArguments(headers, cookies, params, json)
-    )
+    parsed_headers, parsed_cookies, parsed_params, parsed_json = __ParseExtractArguments(headers, cookies, params, json)
     # Build request arguments
     request_kwargs = {
         "headers": parsed_headers if parsed_headers else None,
@@ -106,10 +108,7 @@ def __BuildRequest(
     help="Force Scrapling to reinstall all Fetchers dependencies",
 )
 def install(force):  # pragma: no cover
-    if (
-        force
-        or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists()
-    ):
+    if force or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists():
         __Execute(
             [python_executable, "-m", "playwright", "install", "chromium"],
             "Playwright browsers",
@@ -158,9 +157,7 @@ def mcp():
     "level",
     is_flag=False,
     default="debug",
-    type=Choice(
-        ["debug", "info", "warning", "error", "critical", "fatal"], case_sensitive=False
-    ),
+    type=Choice(["debug", "info", "warning", "error", "critical", "fatal"], case_sensitive=False),
     help="Log level (default: DEBUG)",
 )
 def shell(code, level):
@@ -178,9 +175,7 @@ def extract():
     pass
 
 
-@extract.command(
-    help=f"Perform a GET request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Perform a GET request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(
@@ -190,9 +185,7 @@ def extract():
     help='HTTP headers in format "Key: Value" (can be used multiple times)',
 )
 @option("--cookies", help='Cookies string in format "name1=value1; name2=value2"')
-@option(
-    "--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)"
-)
+@option("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)")
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
     "--css-selector",
@@ -264,12 +257,12 @@ def get(
         impersonate=impersonate,
         proxy=proxy,
     )
+    from scrapling.fetchers import Fetcher
+
     __Request_and_Save(Fetcher.get, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Perform a POST request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Perform a POST request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(
@@ -285,9 +278,7 @@ def get(
     help='HTTP headers in format "Key: Value" (can be used multiple times)',
 )
 @option("--cookies", help='Cookies string in format "name1=value1; name2=value2"')
-@option(
-    "--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)"
-)
+@option("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)")
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
     "--css-selector",
@@ -364,12 +355,12 @@ def post(
         proxy=proxy,
         data=data,
     )
+    from scrapling.fetchers import Fetcher
+
     __Request_and_Save(Fetcher.post, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Perform a PUT request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Perform a PUT request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option("--data", "-d", help="Form data to include in the request body")
@@ -381,9 +372,7 @@ def post(
     help='HTTP headers in format "Key: Value" (can be used multiple times)',
 )
 @option("--cookies", help='Cookies string in format "name1=value1; name2=value2"')
-@option(
-    "--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)"
-)
+@option("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)")
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
     "--css-selector",
@@ -460,12 +449,12 @@ def put(
         proxy=proxy,
         data=data,
     )
+    from scrapling.fetchers import Fetcher
+
     __Request_and_Save(Fetcher.put, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Perform a DELETE request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Perform a DELETE request and save the content to a file.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(
@@ -475,9 +464,7 @@ def put(
     help='HTTP headers in format "Key: Value" (can be used multiple times)',
 )
 @option("--cookies", help='Cookies string in format "name1=value1; name2=value2"')
-@option(
-    "--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)"
-)
+@option("--timeout", type=int, default=30, help="Request timeout in seconds (default: 30)")
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
     "--css-selector",
@@ -549,12 +536,12 @@ def delete(
         impersonate=impersonate,
         proxy=proxy,
     )
+    from scrapling.fetchers import Fetcher
+
     __Request_and_Save(Fetcher.delete, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Use DynamicFetcher to fetch content with browser automation.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Use DynamicFetcher to fetch content with browser automation.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(
@@ -591,9 +578,7 @@ def delete(
 )
 @option("--wait-selector", help="CSS selector to wait for before proceeding")
 @option("--locale", default="en-US", help="Browser locale (default: en-US)")
-@option(
-    "--stealth/--no-stealth", default=False, help="Enable stealth mode (default: False)"
-)
+@option("--stealth/--no-stealth", default=False, help="Enable stealth mode (default: False)")
 @option(
     "--hide-canvas/--show-canvas",
     default=False,
@@ -672,12 +657,12 @@ def fetch(
     if parsed_headers:
         kwargs["extra_headers"] = parsed_headers
 
+    from scrapling.fetchers import DynamicFetcher
+
     __Request_and_Save(DynamicFetcher.fetch, url, output_file, css_selector, **kwargs)
 
 
-@extract.command(
-    help=f"Use StealthyFetcher to fetch content with advanced stealth features.\n\n{__OUTPUT_FILE_HELP__}"
-)
+@extract.command(help=f"Use StealthyFetcher to fetch content with advanced stealth features.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
 @option(
@@ -820,6 +805,8 @@ def stealthy_fetch(
         kwargs["proxy"] = proxy
     if parsed_headers:
         kwargs["extra_headers"] = parsed_headers
+
+    from scrapling.fetchers import StealthyFetcher
 
     __Request_and_Save(StealthyFetcher.fetch, url, output_file, css_selector, **kwargs)
 

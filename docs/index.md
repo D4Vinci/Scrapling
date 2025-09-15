@@ -114,29 +114,33 @@ Scrapling requires Python 3.10 or higher:
 pip install scrapling
 ```
 
-#### Fetchers Setup
-
-If you are going to use any of the fetchers or their session classes, then install browser dependencies with
-```bash
-scrapling install
-```
-
-This downloads all browsers with their system dependencies and fingerprint manipulation dependencies.
+Starting with v0.3.2, this installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies.
 
 ### Optional Dependencies
 
-- Install the MCP server feature:
-```bash
-pip install "scrapling[ai]"
-```
-- Install shell features (Web Scraping shell and the `extract` command): 
-```bash
-pip install "scrapling[shell]"
-```
-- Install everything: 
-```bash
-pip install "scrapling[all]"
-```
+1. If you are going to use any of the extra features below, the fetchers, or their classes, then you need to install fetchers' dependencies, and then install their browser dependencies with
+    ```bash
+    pip install "scrapling[fetchers]"
+    
+    scrapling install
+    ```
+
+    This downloads all browsers with their system dependencies and fingerprint manipulation dependencies.
+
+2. Extra features:
+   - Install the MCP server feature:
+       ```bash
+       pip install "scrapling[ai]"
+       ```
+   - Install shell features (Web Scraping shell and the `extract` command): 
+       ```bash
+       pip install "scrapling[shell]"
+       ```
+   - Install everything: 
+       ```bash
+       pip install "scrapling[all]"
+       ```
+   Don't forget that you need to install the browser dependencies with `scrapling install` after any of these extras (if you didn't already)
 
 ## How the documentation is organized
 Scrapling has a lot of documentation, so we try to follow a guideline called the [Diátaxis documentation framework](https://diataxis.fr/).

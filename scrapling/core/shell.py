@@ -2,7 +2,6 @@
 from re import sub as re_sub
 from sys import stderr
 from functools import wraps
-from http import cookies as Cookie
 from collections import namedtuple
 from shlex import split as shlex_split
 from tempfile import mkstemp as make_temp_file
@@ -23,24 +22,16 @@ from logging import (
 from orjson import loads as json_loads, JSONDecodeError
 
 from scrapling import __version__
-from scrapling.core.custom_types import TextHandler
-from scrapling.core.utils import log
 from scrapling.parser import Selector, Selectors
+from scrapling.core.custom_types import TextHandler
+from scrapling.engines.toolbelt.custom import Response
+from scrapling.core.utils import log, _ParseHeaders, _CookieParser
 from scrapling.core._types import (
-    List,
     Optional,
     Dict,
-    Tuple,
     Any,
     extraction_types,
     Generator,
-)
-from scrapling.fetchers import (
-    Fetcher,
-    AsyncFetcher,
-    DynamicFetcher,
-    StealthyFetcher,
-    Response,
 )
 
 
@@ -71,54 +62,6 @@ Request = namedtuple(
 )
 
 
-def _CookieParser(cookie_string):
-    # Errors will be handled on call so the log can be specified
-    cookie_parser = Cookie.SimpleCookie()
-    cookie_parser.load(cookie_string)
-    for key, morsel in cookie_parser.items():
-        yield key, morsel.value
-
-
-def _ParseHeaders(
-    header_lines: List[str], parse_cookies: bool = True
-) -> Tuple[Dict[str, str], Dict[str, str]]:
-    """Parses headers into separate header and cookie dictionaries."""
-    header_dict = dict()
-    cookie_dict = dict()
-
-    for header_line in header_lines:
-        if ":" not in header_line:
-            if header_line.endswith(";"):
-                header_key = header_line[:-1].strip()
-                header_value = ""
-                header_dict[header_key] = header_value
-            else:
-                raise ValueError(
-                    f"Could not parse header without colon: '{header_line}'."
-                )
-        else:
-            header_key, header_value = header_line.split(":", 1)
-            header_key = header_key.strip()
-            header_value = header_value.strip()
-
-            if parse_cookies:
-                if header_key.lower() == "cookie":
-                    try:
-                        cookie_dict = {
-                            key: value for key, value in _CookieParser(header_value)
-                        }
-                    except Exception as e:  # pragma: no cover
-                        raise ValueError(
-                            f"Could not parse cookie string from header '{header_value}': {e}"
-                        )
-                else:
-                    header_dict[header_key] = header_value
-            else:
-                header_dict[header_key] = header_value
-
-    return header_dict, cookie_dict
-
-
 # Suppress exit on error to handle parsing errors gracefully
 class NoExitArgumentParser(ArgumentParser):  # pragma: no cover
     def error(self, message):
@@ -129,15 +72,16 @@ class NoExitArgumentParser(ArgumentParser):  # pragma: no cover
         if message:
             log.error(f"Scrapling shell exited with status {status}: {message}")
             self._print_message(message, stderr)
-        raise ValueError(
-            f"Scrapling shell exited with status {status}: {message or 'Unknown reason'}"
-        )
+        raise ValueError(f"Scrapling shell exited with status {status}: {message or 'Unknown reason'}")
 
 
 class CurlParser:
     """Builds the argument parser for relevant curl flags from DevTools."""
 
     def __init__(self):
+        from scrapling.fetchers import Fetcher as __Fetcher
+
+        self.__fetcher = __Fetcher
         # We will use argparse parser to parse the curl command directly instead of regex
         # We will focus more on flags that will show up on curl commands copied from DevTools's network tab
         _parser = NoExitArgumentParser(add_help=False)  # Disable default help
@@ -152,15 +96,11 @@ class CurlParser:
 
         # Data arguments (prioritizing types common from DevTools)
         _parser.add_argument("-d", "--data", default=None)
-        _parser.add_argument(
-            "--data-raw", default=None
-        )  # Often used by browsers for JSON body
+        _parser.add_argument("--data-raw", default=None)  # Often used by browsers for JSON body
         _parser.add_argument("--data-binary", default=None)
         # Keep urlencode for completeness, though less common from browser copy/paste
         _parser.add_argument("--data-urlencode", action="append", default=[])
-        _parser.add_argument(
-            "-G", "--get", action="store_true"
-        )  # Use GET and put data in URL
+        _parser.add_argument("-G", "--get", action="store_true")  # Use GET and put data in URL
 
         _parser.add_argument(
             "-b",
@@ -175,9 +115,7 @@ class CurlParser:
 
         # Connection/Security
         _parser.add_argument("-k", "--insecure", action="store_true")
-        _parser.add_argument(
-            "--compressed", action="store_true"
-        )  # Very common from browsers
+        _parser.add_argument("--compressed", action="store_true")  # Very common from browsers
 
         # Other flags often included but may not map directly to request args
         _parser.add_argument("-i", "--include", action="store_true")
@@ -194,9 +132,7 @@ class CurlParser:
         clean_command = curl_command.strip().lstrip("curl").strip().replace("\\\n", " ")
 
         try:
-            tokens = shlex_split(
-                clean_command
-            )  # Split the string using shell-like syntax
+            tokens = shlex_split(clean_command)  # Split the string using shell-like syntax
         except ValueError as e:  # pragma: no cover
             log.error(f"Could not split command line: {e}")
             return None
@@ -213,9 +149,7 @@ class CurlParser:
             raise
 
         except Exception as e:  # pragma: no cover
-            log.error(
-                f"An unexpected error occurred during curl arguments parsing: {e}"
-            )
+            log.error(f"An unexpected error occurred during curl arguments parsing: {e}")
             return None
 
         # --- Determine Method ---
@@ -247,9 +181,7 @@ class CurlParser:
                     cookies[key] = value
                 log.debug(f"Parsed cookies from -b argument: {list(cookies.keys())}")
             except Exception as e:  # pragma: no cover
-                log.error(
-                    f"Could not parse cookie string from -b '{parsed_args.cookie}': {e}"
-                )
+                log.error(f"Could not parse cookie string from -b '{parsed_args.cookie}': {e}")
 
         # --- Process Data Payload ---
         params = dict()
@@ -280,9 +212,7 @@ class CurlParser:
             try:
                 data_payload = dict(parse_qsl(combined_data, keep_blank_values=True))
             except Exception as e:
-                log.warning(
-                    f"Could not parse urlencoded data '{combined_data}': {e}. Treating as raw string."
-                )
+                log.warning(f"Could not parse urlencoded data '{combined_data}': {e}. Treating as raw string.")
                 data_payload = combined_data
 
         # Check if raw data looks like JSON, prefer 'json' param if so
@@ -303,9 +233,7 @@ class CurlParser:
                 try:
                     params.update(dict(parse_qsl(data_payload, keep_blank_values=True)))
                 except ValueError:
-                    log.warning(
-                        f"Could not parse data '{data_payload}' into GET parameters for -G."
-                    )
+                    log.warning(f"Could not parse data '{data_payload}' into GET parameters for -G.")
 
             if params:
                 data_payload = None  # Clear data as it's moved to params
@@ -314,21 +242,13 @@ class CurlParser:
         # --- Process Proxy ---
         proxies: Optional[Dict[str, str]] = None
         if parsed_args.proxy:
-            proxy_url = (
-                f"http://{parsed_args.proxy}"
-                if "://" not in parsed_args.proxy
-                else parsed_args.proxy
-            )
+            proxy_url = f"http://{parsed_args.proxy}" if "://" not in parsed_args.proxy else parsed_args.proxy
 
             if parsed_args.proxy_user:
                 user_pass = parsed_args.proxy_user
                 parts = urlparse(proxy_url)
                 netloc_parts = parts.netloc.split("@")
-                netloc = (
-                    f"{user_pass}@{netloc_parts[-1]}"
-                    if len(netloc_parts) > 1
-                    else f"{user_pass}@{parts.netloc}"
-                )
+                netloc = f"{user_pass}@{netloc_parts[-1]}" if len(netloc_parts) > 1 else f"{user_pass}@{parts.netloc}"
                 proxy_url = urlunparse(
                     (
                         parts.scheme,
@@ -359,11 +279,7 @@ class CurlParser:
 
     def convert2fetcher(self, curl_command: Request | str) -> Optional[Response]:
         if isinstance(curl_command, (Request, str)):
-            request = (
-                self.parse(curl_command)
-                if isinstance(curl_command, str)
-                else curl_command
-            )
+            request = self.parse(curl_command) if isinstance(curl_command, str) else curl_command
 
             # Ensure request parsing was successful before proceeding
             if request is None:  # pragma: no cover
@@ -381,14 +297,12 @@ class CurlParser:
                     _ = request_args.pop("json", None)
 
                 try:
-                    return getattr(Fetcher, method)(**request_args)
+                    return getattr(self.__fetcher, method)(**request_args)
                 except Exception as e:  # pragma: no cover
                     log.error(f"Error calling Fetcher.{method}: {e}")
                     return None
             else:  # pragma: no cover
-                log.error(
-                    f'Request method "{method}" isn\'t supported by Scrapling yet'
-                )
+                log.error(f'Request method "{method}" isn\'t supported by Scrapling yet')
                 return None
 
         else:  # pragma: no cover
@@ -403,7 +317,7 @@ def show_page_in_browser(page: Selector):  # pragma: no cover
 
     try:
         fd, fname = make_temp_file(prefix="scrapling_view_", suffix=".html")
-        with open(fd, "w", encoding="utf-8") as f:
+        with open(fd, "w", encoding=page.encoding) as f:
             f.write(page.body)
 
         open_in_browser(f"file://{fname}")
@@ -417,6 +331,19 @@ class CustomShell:
     """A custom IPython shell with minimal dependencies"""
 
     def __init__(self, code, log_level="debug"):
+        from IPython.terminal.embed import InteractiveShellEmbed as __InteractiveShellEmbed
+        from scrapling.fetchers import (
+            Fetcher as __Fetcher,
+            AsyncFetcher as __AsyncFetcher,
+            DynamicFetcher as __DynamicFetcher,
+            StealthyFetcher as __StealthyFetcher,
+        )
+
+        self.__InteractiveShellEmbed = __InteractiveShellEmbed
+        self.__Fetcher = __Fetcher
+        self.__AsyncFetcher = __AsyncFetcher
+        self.__DynamicFetcher = __DynamicFetcher
+        self.__StealthyFetcher = __StealthyFetcher
         self.code = code
         self.page = None
         self.pages = Selectors([])
@@ -440,7 +367,7 @@ class CustomShell:
         if self.log_level:
             getLogger("scrapling").setLevel(self.log_level)
 
-        settings = Fetcher.display_config()
+        settings = self.__Fetcher.display_config()
         settings.pop("storage", None)
         settings.pop("storage_args", None)
         log.info(f"Scrapling {__version__} shell started")
@@ -506,12 +433,12 @@ Type 'exit' or press Ctrl+D to exit.
         """Create a namespace with application-specific objects"""
 
         # Create wrapped versions of fetch functions
-        get = self.create_wrapper(Fetcher.get)
-        post = self.create_wrapper(Fetcher.post)
-        put = self.create_wrapper(Fetcher.put)
-        delete = self.create_wrapper(Fetcher.delete)
-        dynamic_fetch = self.create_wrapper(DynamicFetcher.fetch)
-        stealthy_fetch = self.create_wrapper(StealthyFetcher.fetch)
+        get = self.create_wrapper(self.__Fetcher.get)
+        post = self.create_wrapper(self.__Fetcher.post)
+        put = self.create_wrapper(self.__Fetcher.put)
+        delete = self.create_wrapper(self.__Fetcher.delete)
+        dynamic_fetch = self.create_wrapper(self.__DynamicFetcher.fetch)
+        stealthy_fetch = self.create_wrapper(self.__StealthyFetcher.fetch)
         curl2fetcher = self.create_wrapper(self._curl_parser.convert2fetcher)
 
         # Create the namespace dictionary
@@ -520,12 +447,12 @@ Type 'exit' or press Ctrl+D to exit.
             "post": post,
             "put": put,
             "delete": delete,
-            "Fetcher": Fetcher,
-            "AsyncFetcher": AsyncFetcher,
+            "Fetcher": self.__Fetcher,
+            "AsyncFetcher": self.__AsyncFetcher,
             "fetch": dynamic_fetch,
-            "DynamicFetcher": DynamicFetcher,
+            "DynamicFetcher": self.__DynamicFetcher,
             "stealthy_fetch": stealthy_fetch,
-            "StealthyFetcher": StealthyFetcher,
+            "StealthyFetcher": self.__StealthyFetcher,
             "Selector": Selector,
             "page": self.page,
             "response": self.page,
@@ -542,11 +469,10 @@ Type 'exit' or press Ctrl+D to exit.
 
     def start(self):  # pragma: no cover
         """Start the interactive shell"""
-        from IPython.terminal.embed import InteractiveShellEmbed
 
         # Get our namespace with application objects
         namespace = self.get_namespace()
-        ipython_shell = InteractiveShellEmbed(
+        ipython_shell = self.__InteractiveShellEmbed(
             banner1=self.banner(),
             banner2="",
             enable_tip=False,
@@ -621,20 +547,16 @@ class Convertor:
             yield ""
 
     @classmethod
-    def write_content_to_file(
-        cls, page: Selector, filename: str, css_selector: Optional[str] = None
-    ) -> None:
+    def write_content_to_file(cls, page: Selector, filename: str, css_selector: Optional[str] = None) -> None:
         """Write a Selector's content to a file"""
         if not page or not isinstance(page, Selector):  # pragma: no cover
             raise TypeError("Input must be of type `Selector`")
         elif not filename or not isinstance(filename, str) or not filename.strip():
             raise ValueError("Filename must be provided")
         elif not filename.endswith((".md", ".html", ".txt")):
-            raise ValueError(
-                "Unknown file type: filename must end with '.md', '.html', or '.txt'"
-            )
+            raise ValueError("Unknown file type: filename must end with '.md', '.html', or '.txt'")
         else:
-            with open(filename, "w", encoding="utf-8") as f:
+            with open(filename, "w", encoding=page.encoding) as f:
                 extension = filename.split(".")[-1]
                 f.write(
                     "".join(

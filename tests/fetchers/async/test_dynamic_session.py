@@ -3,7 +3,7 @@ import asyncio
 
 import pytest_httpbin
 
-from scrapling.engines import AsyncDynamicSession
+from scrapling.engines._browsers import AsyncDynamicSession
 
 
 @pytest_httpbin.use_class_based_httpbin

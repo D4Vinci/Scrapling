@@ -6,7 +6,8 @@ from scrapling.engines.constants import (
     HARMFUL_DEFAULT_ARGS,
     DEFAULT_FLAGS,
 )
-from scrapling.engines.toolbelt import js_bypass_path, generate_headers
+from scrapling.engines.toolbelt.navigation import js_bypass_path
+from scrapling.engines.toolbelt.fingerprints import generate_headers
 
 __default_useragent__ = generate_headers(browser_mode=True).get("User-Agent")
 

@@ -99,7 +99,7 @@ class TestAdvancedSelectors:
             keep_comments=False,
             keep_cdata=False
         )
-        content = page.body
+        content = page.html_content
         assert "Comment" not in content
 
     def test_advanced_xpath_variables(self, complex_html):

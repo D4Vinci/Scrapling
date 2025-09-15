@@ -4,6 +4,15 @@ on:
     branches:
       - main
       - dev
+    paths-ignore:
+      - '*.md'
+      - '**/*.md'
+      - 'docs/*'
+      - 'images/*'
+      - '.github/*'
+      - '*.yml'
+      - '*.yaml'
+      - 'ruff.toml'
 
 concurrency:
   group: ${{github.workflow}}-${{ github.ref }}
