@@ -1,5 +1,5 @@
 __author__ = "Karim Shoair (karim.shoair@pm.me)"
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __copyright__ = "Copyright (c) 2024 Karim Shoair"
 
 
