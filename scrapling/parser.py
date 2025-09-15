@@ -339,7 +339,10 @@ class Selector(SelectorsGeneration):
     @property
     def html_content(self) -> TextHandler:
         """Return the inner HTML code of the element"""
-        return TextHandler(tostring(self._root, encoding=self.encoding, method="html", with_tail=False))
+        content = tostring(self._root, encoding=self.encoding, method="html", with_tail=False)
+        if isinstance(content, bytes):
+            content = content.decode("utf-8")
+        return TextHandler(content)
 
     @property
     def body(self):
@@ -348,15 +351,16 @@ class Selector(SelectorsGeneration):
 
     def prettify(self) -> TextHandler:
         """Return a prettified version of the element's inner html-code"""
-        return TextHandler(
-            tostring(
-                self._root,
-                encoding=self.encoding,
-                pretty_print=True,
-                method="html",
-                with_tail=False,
-            )
+        content = tostring(
+            self._root,
+            encoding=self.encoding,
+            pretty_print=True,
+            method="html",
+            with_tail=False,
         )
+        if isinstance(content, bytes):
+            content = content.decode("utf-8")
+        return TextHandler(content)
 
     def has_class(self, class_name: str) -> bool:
         """Check if the element has a specific class
