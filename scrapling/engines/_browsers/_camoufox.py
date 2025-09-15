@@ -173,10 +173,6 @@ class StealthySession(StealthySessionMixin, SyncSession):
             **self.launch_options
         )
 
-        # Get the default page and close it
-        default_page = self.context.pages[0]
-        default_page.close()
-
         if self.init_script:  # pragma: no cover
             self.context.add_init_script(path=self.init_script)
 
@@ -481,10 +477,6 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         self.context: AsyncBrowserContext = await self.playwright.firefox.launch_persistent_context(
             **self.launch_options
         )
-
-        # Get the default page and close it
-        default_page = self.context.pages[0]
-        await default_page.close()
 
         if self.init_script:  # pragma: no cover
             await self.context.add_init_script(path=self.init_script)
