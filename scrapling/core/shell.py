@@ -335,15 +335,25 @@ class CustomShell:
         from scrapling.fetchers import (
             Fetcher as __Fetcher,
             AsyncFetcher as __AsyncFetcher,
+            FetcherSession as __FetcherSession,
             DynamicFetcher as __DynamicFetcher,
+            DynamicSession as __DynamicSession,
+            AsyncDynamicSession as __AsyncDynamicSession,
             StealthyFetcher as __StealthyFetcher,
+            StealthySession as __StealthySession,
+            AsyncStealthySession as __AsyncStealthySession,
         )
 
         self.__InteractiveShellEmbed = __InteractiveShellEmbed
         self.__Fetcher = __Fetcher
         self.__AsyncFetcher = __AsyncFetcher
+        self.__FetcherSession = __FetcherSession
         self.__DynamicFetcher = __DynamicFetcher
+        self.__DynamicSession = __DynamicSession
+        self.__AsyncDynamicSession = __AsyncDynamicSession
         self.__StealthyFetcher = __StealthyFetcher
+        self.__StealthySession = __StealthySession
+        self.__AsyncStealthySession = __AsyncStealthySession
         self.code = code
         self.page = None
         self.pages = Selectors([])
@@ -379,9 +389,9 @@ class CustomShell:
         """Create a custom banner for the shell"""
         return f"""
 -> Available Scrapling objects:
-   - Fetcher/AsyncFetcher
-   - DynamicFetcher
-   - StealthyFetcher
+   - Fetcher/AsyncFetcher/FetcherSession
+   - DynamicFetcher/DynamicSession/AsyncDynamicSession
+   - StealthyFetcher/StealthySession/AsyncStealthySession
    - Selector
 
 -> Useful shortcuts:
@@ -449,6 +459,11 @@ Type 'exit' or press Ctrl+D to exit.
             "delete": delete,
             "Fetcher": self.__Fetcher,
             "AsyncFetcher": self.__AsyncFetcher,
+            "FetcherSession": self.__FetcherSession,
+            "DynamicSession": self.__DynamicSession,
+            "AsyncDynamicSession": self.__AsyncDynamicSession,
+            "StealthySession": self.__StealthySession,
+            "AsyncStealthySession": self.__AsyncStealthySession,
             "fetch": dynamic_fetch,
             "DynamicFetcher": self.__DynamicFetcher,
             "stealthy_fetch": stealthy_fetch,
