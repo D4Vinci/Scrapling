@@ -317,7 +317,7 @@ def show_page_in_browser(page: Selector):  # pragma: no cover
 
     try:
         fd, fname = make_temp_file(prefix="scrapling_view_", suffix=".html")
-        with open(fd, "w", encoding=page.encoding) as f:
+        with open(fd, "wb") as f:
             f.write(page.body)
 
         open_in_browser(f"file://{fname}")
