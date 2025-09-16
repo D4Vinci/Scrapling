@@ -31,7 +31,7 @@ class SyncSession:
     def __init__(self, max_pages: int = 1):
         self.max_pages = max_pages
         self.page_pool = PagePool(max_pages)
-        self.__max_wait_for_page = 60
+        self._max_wait_for_page = 60
         self.playwright: Optional[Playwright] = None
         self.context: Optional[BrowserContext] = None
         self._closed = False
@@ -50,7 +50,7 @@ class SyncSession:
         # If we're at max capacity after cleanup, wait for busy pages to finish
         if self.page_pool.pages_count >= self.max_pages:
             start_time = time()
-            while time() - start_time < self.__max_wait_for_page:
+            while time() - start_time < self._max_wait_for_page:
                 # Wait for any pages to finish, then clean them up
                 sleep(0.05)
                 self.page_pool.close_all_finished_pages()
@@ -58,7 +58,7 @@ class SyncSession:
                     break
             else:
                 raise TimeoutError(
-                    f"No pages finished to clear place in the pool within the {self.__max_wait_for_page}s timeout period"
+                    f"No pages finished to clear place in the pool within the {self._max_wait_for_page}s timeout period"
                 )
 
         page = self.context.new_page()
@@ -111,7 +111,7 @@ class AsyncSession(SyncSession):
             # If we're at max capacity after cleanup, wait for busy pages to finish
             if self.page_pool.pages_count >= self.max_pages:
                 start_time = time()
-                while time() - start_time < self.__max_wait_for_page:
+                while time() - start_time < self._max_wait_for_page:
                     # Wait for any pages to finish, then clean them up
                     await asyncio_sleep(0.05)
                     await self.page_pool.aclose_all_finished_pages()
@@ -119,7 +119,7 @@ class AsyncSession(SyncSession):
                         break
                 else:
                     raise TimeoutError(
-                        f"No pages finished to clear place in the pool within the {self.__max_wait_for_page}s timeout period"
+                        f"No pages finished to clear place in the pool within the {self._max_wait_for_page}s timeout period"
                     )
 
             page = await self.context.new_page()

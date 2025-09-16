@@ -14,6 +14,7 @@ from playwright.async_api import (
     Locator as AsyncLocator,
     Page as async_Page,
 )
+from playwright._impl._errors import Error as PlaywrightError
 
 from ._validators import validate, CamoufoxConfig
 from ._base import SyncSession, AsyncSession, StealthySessionMixin
@@ -201,20 +202,34 @@ class StealthySession(StealthySessionMixin, SyncSession):
 
         self._closed = True
 
+    @staticmethod
+    def _get_page_content(page: Page) -> str | None:
+        """
+        A workaround for Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
+        :param page: The page to extract content from.
+        :return:
+        """
+        while True:
+            try:
+                return page.content() or ""
+            except PlaywrightError:
+                page.wait_for_timeout(1000)
+                continue
+
     def _solve_cloudflare(self, page: Page) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
 
         :param page: The targeted page
         :return:
         """
-        challenge_type = self._detect_cloudflare(page.content())
+        challenge_type = self._detect_cloudflare(self._get_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
             return
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":
-                while "<title>Just a moment...</title>" in (page.content()):
+                while "<title>Just a moment...</title>" in (self._get_page_content(page)):
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     page.wait_for_timeout(1000)
                     page.wait_for_load_state()
@@ -222,7 +237,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 return
 
             else:
-                while "Verifying you are human." in page.content():
+                while "Verifying you are human." in self._get_page_content(page):
                     # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
                     page.wait_for_timeout(500)
 
@@ -506,20 +521,34 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
 
         self._closed = True
 
+    @staticmethod
+    async def _get_page_content(page: async_Page) -> str | None:
+        """
+        A workaround for Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
+        :param page: The page to extract content from.
+        :return:
+        """
+        while True:
+            try:
+                return (await page.content()) or ""
+            except PlaywrightError:
+                await page.wait_for_timeout(1000)
+                continue
+
     async def _solve_cloudflare(self, page: async_Page):
         """Solve the cloudflare challenge displayed on the playwright page passed. The async version
 
         :param page: The async targeted page
         :return:
         """
-        challenge_type = self._detect_cloudflare(await page.content())
+        challenge_type = self._detect_cloudflare(await self._get_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
             return
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":  # pragma: no cover
-                while "<title>Just a moment...</title>" in (await page.content()):
+                while "<title>Just a moment...</title>" in (await self._get_page_content(page)):
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     await page.wait_for_timeout(1000)
                     await page.wait_for_load_state()
@@ -527,7 +556,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 return
 
             else:
-                while "Verifying you are human." in (await page.content()):
+                while "Verifying you are human." in (await self._get_page_content(page)):
                     # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
                     await page.wait_for_timeout(500)
 
