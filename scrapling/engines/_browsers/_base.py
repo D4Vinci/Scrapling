@@ -44,16 +44,11 @@ class SyncSession:
     ) -> PageInfo:  # pragma: no cover
         """Get a new page to use"""
 
-        # Close all finished pages to ensure clean state
-        self.page_pool.close_all_finished_pages()
-
         # If we're at max capacity after cleanup, wait for busy pages to finish
         if self.page_pool.pages_count >= self.max_pages:
             start_time = time()
             while time() - start_time < self._max_wait_for_page:
-                # Wait for any pages to finish, then clean them up
                 sleep(0.05)
-                self.page_pool.close_all_finished_pages()
                 if self.page_pool.pages_count < self.max_pages:
                     break
             else:
@@ -105,16 +100,11 @@ class AsyncSession(SyncSession):
     ) -> PageInfo:  # pragma: no cover
         """Get a new page to use"""
         async with self._lock:
-            # Close all finished pages to ensure clean state
-            await self.page_pool.aclose_all_finished_pages()
-
             # If we're at max capacity after cleanup, wait for busy pages to finish
             if self.page_pool.pages_count >= self.max_pages:
                 start_time = time()
                 while time() - start_time < self._max_wait_for_page:
-                    # Wait for any pages to finish, then clean them up
                     await asyncio_sleep(0.05)
-                    await self.page_pool.aclose_all_finished_pages()
                     if self.page_pool.pages_count < self.max_pages:
                         break
                 else:
