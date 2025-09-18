@@ -1259,7 +1259,7 @@ class Selectors(List[Selector]):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         :param case_sensitive: if disabled, the function will set the regex to ignore the letters case while compiling it
         """
-        results = [n.text.re(regex, replace_entities, clean_match, case_sensitive) for n in self]
+        results = [n.re(regex, replace_entities, clean_match, case_sensitive) for n in self]
         return TextHandlers(flatten(results))
 
     def re_first(
