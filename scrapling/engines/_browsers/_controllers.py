@@ -305,8 +305,9 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
                 page_info.page, first_response, final_response, params.selector_config
             )
 
-            # Mark the page as finished for next use
-            page_info.mark_finished()
+            # Close the page, to free up resources
+            page_info.page.close()
+            self.page_pool.pages.remove(page_info)
 
             return response
 
@@ -554,9 +555,9 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
                 page_info.page, first_response, final_response, params.selector_config
             )
 
-            # Mark the page as finished for next use
-            page_info.mark_finished()
-
+            # Close the page, to free up resources
+            await page_info.page.close()
+            self.page_pool.pages.remove(page_info)
             return response
 
         except Exception as e:  # pragma: no cover

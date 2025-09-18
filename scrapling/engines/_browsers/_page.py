@@ -23,11 +23,6 @@ class PageInfo:
         self.state = "busy"
         self.url = url
 
-    def mark_finished(self):
-        """Mark the page as finished for new requests"""
-        self.state = "finished"
-        self.url = ""
-
     def mark_error(self):
         """Mark the page as having an error"""
         self.state = "error"
@@ -83,33 +78,3 @@ class PagePool:
         """Remove pages in error state"""
         with self._lock:
             self.pages = [p for p in self.pages if p.state != "error"]
-
-    def close_all_finished_pages(self):
-        """Close all pages in finished state and remove them from the pool"""
-        with self._lock:
-            pages_to_remove = []
-            for page_info in self.pages:
-                if page_info.state == "finished":
-                    try:
-                        page_info.page.close()
-                    except Exception:
-                        pass
-                    pages_to_remove.append(page_info)
-
-            for page_info in pages_to_remove:
-                self.pages.remove(page_info)
-
-    async def aclose_all_finished_pages(self):
-        """Async version: Close all pages in finished state and remove them from the pool"""
-        with self._lock:
-            pages_to_remove = []
-            for page_info in self.pages:
-                if page_info.state == "finished":
-                    try:
-                        await page_info.page.close()
-                    except Exception:
-                        pass
-                    pages_to_remove.append(page_info)
-
-            for page_info in pages_to_remove:
-                self.pages.remove(page_info)
