@@ -54,6 +54,7 @@ class TestDynamicFetcher:
             {"disable_webgl": True, "hide_canvas": False},
             {"disable_webgl": False, "hide_canvas": True, "disable_resources": True},
             {"stealth": True},  # causes issues with GitHub Actions
+            {"stealth": True, "real_chrome": True},  # causes issues with GitHub Actions
             {"wait_selector": "h1", "wait_selector_state": "attached"},
             {"wait_selector": "h1", "wait_selector_state": "visible"},
             {
