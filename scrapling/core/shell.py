@@ -545,7 +545,7 @@ class Convertor:
             for page in pages:
                 match extraction_type:
                     case "markdown":
-                        yield cls._convert_to_markdown(page.body)
+                        yield cls._convert_to_markdown(page.html_content)
                     case "html":
                         yield page.body
                     case "text":

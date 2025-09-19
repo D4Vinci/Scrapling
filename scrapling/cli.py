@@ -32,8 +32,8 @@ def __ParseJSONData(json_string: Optional[str] = None) -> Optional[Dict[str, Any
 
     try:
         return json_loads(json_string)
-    except JSONDecodeError as e:  # pragma: no cover
-        raise ValueError(f"Invalid JSON data '{json_string}': {e}")
+    except JSONDecodeError as err:  # pragma: no cover
+        raise ValueError(f"Invalid JSON data '{json_string}': {err}")
 
 
 def __Request_and_Save(
@@ -65,8 +65,8 @@ def __ParseExtractArguments(
         for key, value in _CookieParser(cookies):
             try:
                 parsed_cookies[key] = value
-            except Exception as e:
-                raise ValueError(f"Could not parse cookies '{cookies}': {e}")
+            except Exception as err:
+                raise ValueError(f"Could not parse cookies '{cookies}': {err}")
 
     parsed_json = __ParseJSONData(json)
     parsed_params = {}
