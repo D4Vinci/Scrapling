@@ -201,7 +201,7 @@ class CurlParser:
                 data_payload = parsed_args.data_binary  # Fallback to string
 
         elif parsed_args.data_raw is not None:
-            data_payload = parsed_args.data_raw
+            data_payload = parsed_args.data_raw.lstrip("$")
 
         elif parsed_args.data is not None:
             data_payload = parsed_args.data
