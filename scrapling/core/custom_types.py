@@ -145,7 +145,7 @@ class TextHandler(str):
         clean_match: bool = False,
         case_sensitive: bool = True,
         check_match: Literal[False] = False,
-    ) -> "TextHandlers[TextHandler]": ...
+    ) -> "TextHandlers": ...
 
     def re(
         self,
@@ -241,7 +241,7 @@ class TextHandlers(List[TextHandler]):
         replace_entities: bool = True,
         clean_match: bool = False,
         case_sensitive: bool = True,
-    ) -> "TextHandlers[TextHandler]":
+    ) -> "TextHandlers":
         """Call the ``.re()`` method for each element in this list and return
         their results flattened as TextHandlers.
 

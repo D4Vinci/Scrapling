@@ -94,8 +94,8 @@ class FetcherSession:
         self.default_http3 = http3
         self.selector_config = selector_config or {}
 
-        self._curl_session: Optional[CurlSession] = None
-        self._async_curl_session: Optional[AsyncCurlSession] = None
+        self._curl_session: Optional[CurlSession] | bool = None
+        self._async_curl_session: Optional[AsyncCurlSession] | bool = None
 
     def _merge_request_args(self, **kwargs) -> Dict[str, Any]:
         """Merge request-specific arguments with default session arguments."""
@@ -239,7 +239,6 @@ class FetcherSession:
         Perform an HTTP request using the configured session.
 
         :param method: HTTP method to be used, supported methods are ["GET", "POST", "PUT", "DELETE"]
-        :param url: Target URL for the request.
         :param request_args: Arguments to be passed to the session's `request()` method.
         :param max_retries: Maximum number of retries for the request.
         :param retry_delay: Number of seconds to wait between retries.
@@ -280,7 +279,6 @@ class FetcherSession:
         Perform an HTTP request using the configured session.
 
         :param method: HTTP method to be used, supported methods are ["GET", "POST", "PUT", "DELETE"]
-        :param url: Target URL for the request.
         :param request_args: Arguments to be passed to the session's `request()` method.
         :param max_retries: Maximum number of retries for the request.
         :param retry_delay: Number of seconds to wait between retries.

@@ -4,7 +4,7 @@ Functions related to files and URLs
 
 from pathlib import Path
 from functools import lru_cache
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlparse
 
 from playwright.async_api import Route as async_Route
 from msgspec import Struct, structs, convert, ValidationError

@@ -6,7 +6,7 @@ from playwright.async_api import Page as AsyncPage
 
 from scrapling.core._types import Optional, List, Literal
 
-PageState = Literal["finished", "ready", "busy", "error"]  # States that a page can be in
+PageState = Literal["ready", "busy", "error"]  # States that a page can be in
 
 
 @dataclass
@@ -61,12 +61,6 @@ class PagePool:
     def pages_count(self) -> int:
         """Get the total number of pages"""
         return len(self.pages)
-
-    @property
-    def finished_count(self) -> int:
-        """Get the number of finished pages"""
-        with self._lock:
-            return sum(1 for p in self.pages if p.state == "finished")
 
     @property
     def busy_count(self) -> int:

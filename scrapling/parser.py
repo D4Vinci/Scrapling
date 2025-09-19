@@ -239,7 +239,7 @@ class Selector(SelectorsGeneration):
         )
 
     def __handle_element(
-        self, element: HtmlElement | _ElementUnicodeResult
+        self, element: Optional[HtmlElement | _ElementUnicodeResult]
     ) -> Optional[Union[TextHandler, "Selector"]]:
         """Used internally in all functions to convert a single element to type (Selector|TextHandler) when possible"""
         if element is None:
@@ -345,7 +345,7 @@ class Selector(SelectorsGeneration):
         return TextHandler(content)
 
     @property
-    def body(self):
+    def body(self) -> str | bytes:
         """Return the raw body of the current `Selector` without any processing. Useful for binary and non-HTML requests."""
         return self._raw_body
 
