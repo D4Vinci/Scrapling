@@ -58,7 +58,7 @@ jobs:
     - name: Install all browsers dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install playwright==1.52.0 rebrowser-playwright==1.52.0 camoufox
+        python3 -m pip install playwright>=1.55.0 patchright>=1.55.0 camoufox
 
     - name: Retrieve Playwright browsers from cache if any
       id: playwright-cache

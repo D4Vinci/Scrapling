@@ -35,7 +35,7 @@ It's the same as the vanilla Playwright option, but it provides a simple stealth
 
 Some of the things this fetcher's stealth mode does include:
 
-  * Patching the CDP runtime fingerprint.
+  * Patching the CDP runtime fingerprint through using PatchRight.
   * Mimics some of the real browsers' properties by injecting several JS files and using custom options.
   * Custom flags are used on launch to hide Playwright even more and make it faster.
   * Generates real browser headers of the same type and user OS, then appends them to the request's headers.

@@ -11,10 +11,8 @@ from playwright.async_api import (
     Playwright as AsyncPlaywright,
     Locator as AsyncLocator,
 )
-from rebrowser_playwright.sync_api import sync_playwright as sync_rebrowser_playwright
-from rebrowser_playwright.async_api import (
-    async_playwright as async_rebrowser_playwright,
-)
+from patchright.sync_api import sync_playwright as sync_patchright
+from patchright.async_api import async_playwright as async_patchright
 
 from scrapling.core.utils import log
 from ._base import SyncSession, AsyncSession, DynamicSessionMixin
@@ -154,10 +152,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
 
     def __create__(self):
         """Create a browser for this instance and context."""
-        sync_context = sync_rebrowser_playwright
-        if not self.stealth or self.real_chrome:
-            # Because rebrowser_playwright doesn't play well with real browsers
-            sync_context = sync_playwright
+        sync_context = sync_patchright if self.stealth else sync_playwright
 
         self.playwright: Playwright = sync_context().start()
 
@@ -403,10 +398,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
 
     async def __create__(self):
         """Create a browser for this instance and context."""
-        async_context = async_rebrowser_playwright
-        if not self.stealth or self.real_chrome:
-            # Because rebrowser_playwright doesn't play well with real browsers
-            async_context = async_playwright
+        async_context = async_patchright if self.stealth else async_playwright
 
         self.playwright: AsyncPlaywright = await async_context().start()
 

@@ -322,10 +322,9 @@ This project includes code adapted from:
 ## Thanks and References
 
 - [Daijro](https://github.com/daijro)'s brilliant work on [BrowserForge](https://github.com/daijro/browserforge) and [Camoufox](https://github.com/daijro/camoufox)
-- [Vinyzu](https://github.com/Vinyzu)'s work on [Botright](https://github.com/Vinyzu/Botright)
+- [Vinyzu](https://github.com/Vinyzu)'s brilliant work on [Botright](https://github.com/Vinyzu/Botright) and [PatchRight](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright)
 - [brotector](https://github.com/kaliiiiiiiiii/brotector) for browser detection bypass techniques
-- [fakebrowser](https://github.com/kkoooqq/fakebrowser) for fingerprinting research
-- [rebrowser-patches](https://github.com/rebrowser/rebrowser-patches) for stealth improvements
+- [fakebrowser](https://github.com/kkoooqq/fakebrowser) and [BotBrowser](https://github.com/botswin/BotBrowser) for fingerprinting research
 
 ---
 <div align="center"><small>Designed & crafted with ❤️ by Karim Shoair.</small></div><br>
