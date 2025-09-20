@@ -60,11 +60,6 @@ class SyncSession:
 
         return self.page_pool.add_page(page)
 
-    @staticmethod
-    def _get_with_precedence(request_value: Any, session_value: Any, sentinel_value: object) -> Any:
-        """Get value with request-level priority over session-level"""
-        return request_value if request_value is not sentinel_value else session_value
-
     def get_pool_stats(self) -> Dict[str, int]:
         """Get statistics about the current page pool"""
         return {

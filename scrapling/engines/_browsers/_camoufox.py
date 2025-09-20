@@ -16,7 +16,7 @@ from playwright.async_api import (
 )
 from playwright._impl._errors import Error as PlaywrightError
 
-from ._validators import validate, CamoufoxConfig
+from ._validators import validate_fetch as _validate
 from ._base import SyncSession, AsyncSession, StealthySessionMixin
 from scrapling.core.utils import log
 from scrapling.core._types import (
@@ -297,23 +297,22 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
-        # Validate all resolved parameters
-        params = validate(
-            dict(
-                google_search=self._get_with_precedence(google_search, self.google_search, _UNSET),
-                timeout=self._get_with_precedence(timeout, self.timeout, _UNSET),
-                wait=self._get_with_precedence(wait, self.wait, _UNSET),
-                page_action=self._get_with_precedence(page_action, self.page_action, _UNSET),
-                extra_headers=self._get_with_precedence(extra_headers, self.extra_headers, _UNSET),
-                disable_resources=self._get_with_precedence(disable_resources, self.disable_resources, _UNSET),
-                wait_selector=self._get_with_precedence(wait_selector, self.wait_selector, _UNSET),
-                wait_selector_state=self._get_with_precedence(wait_selector_state, self.wait_selector_state, _UNSET),
-                network_idle=self._get_with_precedence(network_idle, self.network_idle, _UNSET),
-                load_dom=self._get_with_precedence(load_dom, self.load_dom, _UNSET),
-                solve_cloudflare=self._get_with_precedence(solve_cloudflare, self.solve_cloudflare, _UNSET),
-                selector_config=self._get_with_precedence(selector_config, self.selector_config, _UNSET),
-            ),
-            CamoufoxConfig,
+        params = _validate(
+            [
+                ("google_search", google_search, self.google_search),
+                ("timeout", timeout, self.timeout),
+                ("wait", wait, self.wait),
+                ("page_action", page_action, self.page_action),
+                ("extra_headers", extra_headers, self.extra_headers),
+                ("disable_resources", disable_resources, self.disable_resources),
+                ("wait_selector", wait_selector, self.wait_selector),
+                ("wait_selector_state", wait_selector_state, self.wait_selector_state),
+                ("network_idle", network_idle, self.network_idle),
+                ("load_dom", load_dom, self.load_dom),
+                ("solve_cloudflare", solve_cloudflare, self.solve_cloudflare),
+                ("selector_config", selector_config, self.selector_config),
+            ],
+            _UNSET,
         )
 
         if self._closed:  # pragma: no cover
@@ -617,22 +616,22 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
-        params = validate(
-            dict(
-                google_search=self._get_with_precedence(google_search, self.google_search, _UNSET),
-                timeout=self._get_with_precedence(timeout, self.timeout, _UNSET),
-                wait=self._get_with_precedence(wait, self.wait, _UNSET),
-                page_action=self._get_with_precedence(page_action, self.page_action, _UNSET),
-                extra_headers=self._get_with_precedence(extra_headers, self.extra_headers, _UNSET),
-                disable_resources=self._get_with_precedence(disable_resources, self.disable_resources, _UNSET),
-                wait_selector=self._get_with_precedence(wait_selector, self.wait_selector, _UNSET),
-                wait_selector_state=self._get_with_precedence(wait_selector_state, self.wait_selector_state, _UNSET),
-                network_idle=self._get_with_precedence(network_idle, self.network_idle, _UNSET),
-                load_dom=self._get_with_precedence(load_dom, self.load_dom, _UNSET),
-                solve_cloudflare=self._get_with_precedence(solve_cloudflare, self.solve_cloudflare, _UNSET),
-                selector_config=self._get_with_precedence(selector_config, self.selector_config, _UNSET),
-            ),
-            CamoufoxConfig,
+        params = _validate(
+            [
+                ("google_search", google_search, self.google_search),
+                ("timeout", timeout, self.timeout),
+                ("wait", wait, self.wait),
+                ("page_action", page_action, self.page_action),
+                ("extra_headers", extra_headers, self.extra_headers),
+                ("disable_resources", disable_resources, self.disable_resources),
+                ("wait_selector", wait_selector, self.wait_selector),
+                ("wait_selector_state", wait_selector_state, self.wait_selector_state),
+                ("network_idle", network_idle, self.network_idle),
+                ("load_dom", load_dom, self.load_dom),
+                ("solve_cloudflare", solve_cloudflare, self.solve_cloudflare),
+                ("selector_config", selector_config, self.selector_config),
+            ],
+            _UNSET,
         )
 
         if self._closed:  # pragma: no cover
