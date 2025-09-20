@@ -53,16 +53,18 @@ class TestAsyncDynamicSession:
         """Test page pool creation and reuse"""
         async with AsyncDynamicSession() as session:
             # The first request creates a page
-            _ = await session.fetch(urls["basic"])
-            assert session.page_pool.pages_count == 1
-
+            response = await session.fetch(urls["basic"])
+            assert response.status == 200
+            assert session.page_pool.pages_count == 0
+            
             # The second request should reuse the page
-            _ = await session.fetch(urls["html"])
-            assert session.page_pool.pages_count == 1
+            response = await session.fetch(urls["html"])
+            assert response.status == 200
+            assert session.page_pool.pages_count == 0
 
             # Check pool stats
             stats = session.get_pool_stats()
-            assert stats["total_pages"] == 1
+            assert stats["total_pages"] == 0
             assert stats["max_pages"] == 1
 
     async def test_dynamic_session_with_options(self, urls):

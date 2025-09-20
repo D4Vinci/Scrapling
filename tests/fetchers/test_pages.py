@@ -24,10 +24,6 @@ class TestPageInfo:
         assert page_info.state == "busy"
         assert page_info.url == "https://example.com"
 
-        page_info.mark_finished()
-        assert page_info.state == "finished"
-        assert page_info.url == ""
-
         page_info.mark_error()
         assert page_info.state == "error"
 
@@ -88,21 +84,7 @@ class TestPagePool:
         with pytest.raises(RuntimeError):
             pool.add_page(Mock())
 
-    def test_get_ready_page(self):
-        """Test getting ready page"""
-        pool = PagePool(max_pages=3)
 
-        # Add pages
-        page1 = pool.add_page(Mock())
-        page2 = pool.add_page(Mock())
-
-        # Mark them as finished
-        page1.mark_finished()
-        page2.mark_finished()
-
-        # test
-        pool.close_all_finished_pages()
-        assert pool.pages_count == 0
 
     def test_cleanup_error_pages(self):
         """Test cleaning up error pages"""

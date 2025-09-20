@@ -1,4 +1,4 @@
-from time import time, sleep
+from time import time
 from asyncio import sleep as asyncio_sleep, Lock
 
 from camoufox import DefaultAddons
@@ -44,23 +44,7 @@ class SyncSession:
     ) -> PageInfo:  # pragma: no cover
         """Get a new page to use"""
 
-        # Close all finished pages to ensure clean state
-        self.page_pool.close_all_finished_pages()
-
-        # If we're at max capacity after cleanup, wait for busy pages to finish
-        if self.page_pool.pages_count >= self.max_pages:
-            start_time = time()
-            while time() - start_time < self._max_wait_for_page:
-                # Wait for any pages to finish, then clean them up
-                sleep(0.05)
-                self.page_pool.close_all_finished_pages()
-                if self.page_pool.pages_count < self.max_pages:
-                    break
-            else:
-                raise TimeoutError(
-                    f"No pages finished to clear place in the pool within the {self._max_wait_for_page}s timeout period"
-                )
-
+        # No need to check if a page is available or not in sync code because the code blocked before reaching here till the page closed, ofc.
         page = self.context.new_page()
         page.set_default_navigation_timeout(timeout)
         page.set_default_timeout(timeout)
@@ -75,11 +59,6 @@ class SyncSession:
                 page.add_init_script(script=script)
 
         return self.page_pool.add_page(page)
-
-    @staticmethod
-    def _get_with_precedence(request_value: Any, session_value: Any, sentinel_value: object) -> Any:
-        """Get value with request-level priority over session-level"""
-        return request_value if request_value is not sentinel_value else session_value
 
     def get_pool_stats(self) -> Dict[str, int]:
         """Get statistics about the current page pool"""
@@ -105,16 +84,11 @@ class AsyncSession(SyncSession):
     ) -> PageInfo:  # pragma: no cover
         """Get a new page to use"""
         async with self._lock:
-            # Close all finished pages to ensure clean state
-            await self.page_pool.aclose_all_finished_pages()
-
             # If we're at max capacity after cleanup, wait for busy pages to finish
             if self.page_pool.pages_count >= self.max_pages:
                 start_time = time()
                 while time() - start_time < self._max_wait_for_page:
-                    # Wait for any pages to finish, then clean them up
                     await asyncio_sleep(0.05)
-                    await self.page_pool.aclose_all_finished_pages()
                     if self.page_pool.pages_count < self.max_pages:
                         break
                 else:

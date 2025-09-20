@@ -201,7 +201,7 @@ class CurlParser:
                 data_payload = parsed_args.data_binary  # Fallback to string
 
         elif parsed_args.data_raw is not None:
-            data_payload = parsed_args.data_raw
+            data_payload = parsed_args.data_raw.lstrip("$")
 
         elif parsed_args.data is not None:
             data_payload = parsed_args.data
@@ -317,8 +317,8 @@ def show_page_in_browser(page: Selector):  # pragma: no cover
 
     try:
         fd, fname = make_temp_file(prefix="scrapling_view_", suffix=".html")
-        with open(fd, "wb") as f:
-            f.write(page.body)
+        with open(fd, "w", encoding=page.encoding) as f:
+            f.write(page.html_content)
 
         open_in_browser(f"file://{fname}")
     except IOError as e:
@@ -545,7 +545,7 @@ class Convertor:
             for page in pages:
                 match extraction_type:
                     case "markdown":
-                        yield cls._convert_to_markdown(page.body)
+                        yield cls._convert_to_markdown(page.html_content)
                     case "html":
                         yield page.body
                     case "text":

@@ -11,14 +11,12 @@ from playwright.async_api import (
     Playwright as AsyncPlaywright,
     Locator as AsyncLocator,
 )
-from rebrowser_playwright.sync_api import sync_playwright as sync_rebrowser_playwright
-from rebrowser_playwright.async_api import (
-    async_playwright as async_rebrowser_playwright,
-)
+from patchright.sync_api import sync_playwright as sync_patchright
+from patchright.async_api import async_playwright as async_patchright
 
 from scrapling.core.utils import log
 from ._base import SyncSession, AsyncSession, DynamicSessionMixin
-from ._validators import validate, PlaywrightConfig
+from ._validators import validate_fetch as _validate
 from scrapling.core._types import (
     Dict,
     List,
@@ -154,10 +152,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
 
     def __create__(self):
         """Create a browser for this instance and context."""
-        sync_context = sync_rebrowser_playwright
-        if not self.stealth or self.real_chrome:
-            # Because rebrowser_playwright doesn't play well with real browsers
-            sync_context = sync_playwright
+        sync_context = sync_patchright if self.stealth else sync_playwright
 
         self.playwright: Playwright = sync_context().start()
 
@@ -229,22 +224,21 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
-        # Validate all resolved parameters
-        params = validate(
-            dict(
-                google_search=self._get_with_precedence(google_search, self.google_search, _UNSET),
-                timeout=self._get_with_precedence(timeout, self.timeout, _UNSET),
-                wait=self._get_with_precedence(wait, self.wait, _UNSET),
-                page_action=self._get_with_precedence(page_action, self.page_action, _UNSET),
-                extra_headers=self._get_with_precedence(extra_headers, self.extra_headers, _UNSET),
-                disable_resources=self._get_with_precedence(disable_resources, self.disable_resources, _UNSET),
-                wait_selector=self._get_with_precedence(wait_selector, self.wait_selector, _UNSET),
-                wait_selector_state=self._get_with_precedence(wait_selector_state, self.wait_selector_state, _UNSET),
-                network_idle=self._get_with_precedence(network_idle, self.network_idle, _UNSET),
-                load_dom=self._get_with_precedence(load_dom, self.load_dom, _UNSET),
-                selector_config=self._get_with_precedence(selector_config, self.selector_config, _UNSET),
-            ),
-            PlaywrightConfig,
+        params = _validate(
+            [
+                ("google_search", google_search, self.google_search),
+                ("timeout", timeout, self.timeout),
+                ("wait", wait, self.wait),
+                ("page_action", page_action, self.page_action),
+                ("extra_headers", extra_headers, self.extra_headers),
+                ("disable_resources", disable_resources, self.disable_resources),
+                ("wait_selector", wait_selector, self.wait_selector),
+                ("wait_selector_state", wait_selector_state, self.wait_selector_state),
+                ("network_idle", network_idle, self.network_idle),
+                ("load_dom", load_dom, self.load_dom),
+                ("selector_config", selector_config, self.selector_config),
+            ],
+            _UNSET,
         )
 
         if self._closed:  # pragma: no cover
@@ -305,8 +299,9 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
                 page_info.page, first_response, final_response, params.selector_config
             )
 
-            # Mark the page as finished for next use
-            page_info.mark_finished()
+            # Close the page, to free up resources
+            page_info.page.close()
+            self.page_pool.pages.remove(page_info)
 
             return response
 
@@ -402,10 +397,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
 
     async def __create__(self):
         """Create a browser for this instance and context."""
-        async_context = async_rebrowser_playwright
-        if not self.stealth or self.real_chrome:
-            # Because rebrowser_playwright doesn't play well with real browsers
-            async_context = async_playwright
+        async_context = async_patchright if self.stealth else async_playwright
 
         self.playwright: AsyncPlaywright = await async_context().start()
 
@@ -478,22 +470,21 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
-        # Validate all resolved parameters
-        params = validate(
-            dict(
-                google_search=self._get_with_precedence(google_search, self.google_search, _UNSET),
-                timeout=self._get_with_precedence(timeout, self.timeout, _UNSET),
-                wait=self._get_with_precedence(wait, self.wait, _UNSET),
-                page_action=self._get_with_precedence(page_action, self.page_action, _UNSET),
-                extra_headers=self._get_with_precedence(extra_headers, self.extra_headers, _UNSET),
-                disable_resources=self._get_with_precedence(disable_resources, self.disable_resources, _UNSET),
-                wait_selector=self._get_with_precedence(wait_selector, self.wait_selector, _UNSET),
-                wait_selector_state=self._get_with_precedence(wait_selector_state, self.wait_selector_state, _UNSET),
-                network_idle=self._get_with_precedence(network_idle, self.network_idle, _UNSET),
-                load_dom=self._get_with_precedence(load_dom, self.load_dom, _UNSET),
-                selector_config=self._get_with_precedence(selector_config, self.selector_config, _UNSET),
-            ),
-            PlaywrightConfig,
+        params = _validate(
+            [
+                ("google_search", google_search, self.google_search),
+                ("timeout", timeout, self.timeout),
+                ("wait", wait, self.wait),
+                ("page_action", page_action, self.page_action),
+                ("extra_headers", extra_headers, self.extra_headers),
+                ("disable_resources", disable_resources, self.disable_resources),
+                ("wait_selector", wait_selector, self.wait_selector),
+                ("wait_selector_state", wait_selector_state, self.wait_selector_state),
+                ("network_idle", network_idle, self.network_idle),
+                ("load_dom", load_dom, self.load_dom),
+                ("selector_config", selector_config, self.selector_config),
+            ],
+            _UNSET,
         )
 
         if self._closed:  # pragma: no cover
@@ -554,9 +545,9 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
                 page_info.page, first_response, final_response, params.selector_config
             )
 
-            # Mark the page as finished for next use
-            page_info.mark_finished()
-
+            # Close the page, to free up resources
+            await page_info.page.close()
+            self.page_pool.pages.remove(page_info)
             return response
 
         except Exception as e:  # pragma: no cover

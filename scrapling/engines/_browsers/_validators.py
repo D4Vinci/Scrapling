@@ -1,21 +1,69 @@
-from msgspec import Struct, convert, ValidationError
-from urllib.parse import urlparse
 from pathlib import Path
+from typing import Annotated
+from dataclasses import dataclass
+from urllib.parse import urlparse
+
+from msgspec import Struct, Meta, convert, ValidationError
 
 from scrapling.core._types import (
-    Optional,
     Dict,
-    Callable,
     List,
+    Tuple,
+    Optional,
+    Callable,
     SelectorWaitStates,
 )
 from scrapling.engines.toolbelt.navigation import construct_proxy_dict
 
 
+# Custom validators for msgspec
+def _validate_file_path(value: str):
+    """Fast file path validation"""
+    path = Path(value)
+    if not path.exists():
+        raise ValueError(f"Init script path not found: {value}")
+    if not path.is_file():
+        raise ValueError(f"Init script is not a file: {value}")
+    if not path.is_absolute():
+        raise ValueError(f"Init script is not a absolute path: {value}")
+
+
+def _validate_addon_path(value: str):
+    """Fast addon path validation"""
+    path = Path(value)
+    if not path.exists():
+        raise FileNotFoundError(f"Addon path not found: {value}")
+    if not path.is_dir():
+        raise ValueError(f"Addon path must be a directory of the extracted addon: {value}")
+
+
+def _validate_cdp_url(cdp_url: str):
+    """Fast CDP URL validation"""
+    try:
+        # Check the scheme
+        if not cdp_url.startswith(("ws://", "wss://")):
+            raise ValueError("CDP URL must use 'ws://' or 'wss://' scheme")
+
+        # Validate hostname and port
+        if not urlparse(cdp_url).netloc:
+            raise ValueError("Invalid hostname for the CDP URL")
+
+    except AttributeError as e:
+        raise ValueError(f"Malformed CDP URL: {cdp_url}: {str(e)}")
+
+    except Exception as e:
+        raise ValueError(f"Invalid CDP URL '{cdp_url}': {str(e)}")
+
+
+# Type aliases for cleaner annotations
+PagesCount = Annotated[int, Meta(ge=1, le=50)]
+Seconds = Annotated[int, float, Meta(ge=0)]
+
+
 class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     """Configuration struct for validation"""
 
-    max_pages: int = 1
+    max_pages: PagesCount = 1
     cdp_url: Optional[str] = None
     headless: bool = True
     google_search: bool = True
@@ -23,13 +71,13 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     disable_webgl: bool = False
     real_chrome: bool = False
     stealth: bool = False
-    wait: int | float = 0
+    wait: Seconds = 0
     page_action: Optional[Callable] = None
     proxy: Optional[str | Dict[str, str]] = None  # The default value for proxy in Playwright's source is `None`
     locale: str = "en-US"
     extra_headers: Optional[Dict[str, str]] = None
     useragent: Optional[str] = None
-    timeout: int | float = 30000
+    timeout: Seconds = 30000
     init_script: Optional[str] = None
     disable_resources: bool = False
     wait_selector: Optional[str] = None
@@ -41,52 +89,26 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
-        if self.max_pages < 1 or self.max_pages > 50:
-            raise ValueError("max_pages must be between 1 and 50")
-        if self.timeout < 0:
-            raise ValueError("timeout must be >= 0")
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
         if self.proxy:
             self.proxy = construct_proxy_dict(self.proxy, as_tuple=True)
         if self.cdp_url:
-            self.__validate_cdp(self.cdp_url)
+            _validate_cdp_url(self.cdp_url)
+
         if not self.cookies:
             self.cookies = []
         if not self.selector_config:
             self.selector_config = {}
 
         if self.init_script is not None:
-            script_path = Path(self.init_script)
-            if not script_path.exists():
-                raise ValueError("Init script path not found")
-            elif not script_path.is_file():
-                raise ValueError("Init script is not a file")
-            elif not script_path.is_absolute():
-                raise ValueError("Init script is not a absolute path")
-
-    @staticmethod
-    def __validate_cdp(cdp_url):
-        try:
-            # Check the scheme
-            if not cdp_url.startswith(("ws://", "wss://")):
-                raise ValueError("CDP URL must use 'ws://' or 'wss://' scheme")
-
-            # Validate hostname and port
-            if not urlparse(cdp_url).netloc:
-                raise ValueError("Invalid hostname for the CDP URL")
-
-        except AttributeError as e:
-            raise ValueError(f"Malformed CDP URL: {cdp_url}: {str(e)}")
-
-        except Exception as e:
-            raise ValueError(f"Invalid CDP URL '{cdp_url}': {str(e)}")
+            _validate_file_path(self.init_script)
 
 
 class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     """Configuration struct for validation"""
 
-    max_pages: int = 1
+    max_pages: PagesCount = 1
     headless: bool = True  # noqa: F821
     block_images: bool = False
     disable_resources: bool = False
@@ -96,8 +118,8 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     load_dom: bool = True
     humanize: bool | float = True
     solve_cloudflare: bool = False
-    wait: int | float = 0
-    timeout: int | float = 30000
+    wait: Seconds = 0
+    timeout: Seconds = 30000
     init_script: Optional[str] = None
     page_action: Optional[Callable] = None
     wait_selector: Optional[str] = None
@@ -115,38 +137,23 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
-        if self.max_pages < 1 or self.max_pages > 50:
-            raise ValueError("max_pages must be between 1 and 50")
-        if self.timeout < 0:
-            raise ValueError("timeout must be >= 0")
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
         if self.proxy:
             self.proxy = construct_proxy_dict(self.proxy, as_tuple=True)
 
-        if not self.addons:
-            self.addons = []
-        else:
+        if self.addons and isinstance(self.addons, list):
             for addon in self.addons:
-                addon_path = Path(addon)
-                if not addon_path.exists():
-                    raise FileNotFoundError(f"Addon's path not found: {addon}")
-                elif not addon_path.is_dir():
-                    raise ValueError(
-                        f"Addon's path is not a folder, you need to pass a folder of the extracted addon: {addon}"
-                    )
+                _validate_addon_path(addon)
+        else:
+            self.addons = []
 
         if self.init_script is not None:
-            script_path = Path(self.init_script)
-            if not script_path.exists():
-                raise ValueError("Init script path not found")
-            elif not script_path.is_file():
-                raise ValueError("Init script is not a file")
-            elif not script_path.is_absolute():
-                raise ValueError("Init script is not a absolute path")
+            _validate_file_path(self.init_script)
 
         if not self.cookies:
             self.cookies = []
+        # Cloudflare timeout adjustment
         if self.solve_cloudflare and self.timeout < 60_000:
             self.timeout = 60_000
         if not self.selector_config:
@@ -155,10 +162,68 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
             self.additional_args = {}
 
 
-def validate(params, model):
-    try:
-        config = convert(params, model)
-    except ValidationError as e:
-        raise TypeError(f"Invalid argument type: {e}")
+# Code parts to validate `fetch` in the least possible numbers of lines overall
+class FetchConfig(Struct, kw_only=True):
+    """Configuration struct for `fetch` calls validation"""
 
-    return config
+    google_search: bool = True
+    timeout: Seconds = 30000
+    wait: Seconds = 0
+    page_action: Optional[Callable] = None
+    extra_headers: Optional[Dict[str, str]] = None
+    disable_resources: bool = False
+    wait_selector: Optional[str] = None
+    wait_selector_state: SelectorWaitStates = "attached"
+    network_idle: bool = False
+    load_dom: bool = True
+    solve_cloudflare: bool = False
+    selector_config: Optional[Dict] = {}
+
+    def to_dict(self):
+        return {f: getattr(self, f) for f in self.__struct_fields__}
+
+
+@dataclass
+class _fetch_params:
+    """A dataclass of all parameters used by `fetch` calls"""
+
+    google_search: bool
+    timeout: Seconds
+    wait: Seconds
+    page_action: Optional[Callable]
+    extra_headers: Optional[Dict[str, str]]
+    disable_resources: bool
+    wait_selector: Optional[str]
+    wait_selector_state: SelectorWaitStates
+    network_idle: bool
+    load_dom: bool
+    solve_cloudflare: bool
+    selector_config: Optional[Dict]
+
+
+def validate_fetch(params: List[Tuple], sentinel=None) -> _fetch_params:
+    result = {}
+    overrides = {}
+
+    for arg, request_value, session_value in params:
+        if request_value is not sentinel:
+            overrides[arg] = request_value
+        else:
+            result[arg] = session_value
+
+    if overrides:
+        overrides = validate(overrides, FetchConfig).to_dict()
+        overrides.update(result)
+        return _fetch_params(**overrides)
+
+    if not result.get("solve_cloudflare"):
+        result["solve_cloudflare"] = False
+
+    return _fetch_params(**result)
+
+
+def validate(params: Dict, model) -> PlaywrightConfig | CamoufoxConfig | FetchConfig:
+    try:
+        return convert(params, model)
+    except ValidationError as e:
+        raise TypeError(f"Invalid argument type: {e}") from e

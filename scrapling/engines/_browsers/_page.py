@@ -6,7 +6,7 @@ from playwright.async_api import Page as AsyncPage
 
 from scrapling.core._types import Optional, List, Literal
 
-PageState = Literal["finished", "ready", "busy", "error"]  # States that a page can be in
+PageState = Literal["ready", "busy", "error"]  # States that a page can be in
 
 
 @dataclass
@@ -22,11 +22,6 @@ class PageInfo:
         """Mark the page as busy"""
         self.state = "busy"
         self.url = url
-
-    def mark_finished(self):
-        """Mark the page as finished for new requests"""
-        self.state = "finished"
-        self.url = ""
 
     def mark_error(self):
         """Mark the page as having an error"""
@@ -68,12 +63,6 @@ class PagePool:
         return len(self.pages)
 
     @property
-    def finished_count(self) -> int:
-        """Get the number of finished pages"""
-        with self._lock:
-            return sum(1 for p in self.pages if p.state == "finished")
-
-    @property
     def busy_count(self) -> int:
         """Get the number of busy pages"""
         with self._lock:
@@ -83,33 +72,3 @@ class PagePool:
         """Remove pages in error state"""
         with self._lock:
             self.pages = [p for p in self.pages if p.state != "error"]
-
-    def close_all_finished_pages(self):
-        """Close all pages in finished state and remove them from the pool"""
-        with self._lock:
-            pages_to_remove = []
-            for page_info in self.pages:
-                if page_info.state == "finished":
-                    try:
-                        page_info.page.close()
-                    except Exception:
-                        pass
-                    pages_to_remove.append(page_info)
-
-            for page_info in pages_to_remove:
-                self.pages.remove(page_info)
-
-    async def aclose_all_finished_pages(self):
-        """Async version: Close all pages in finished state and remove them from the pool"""
-        with self._lock:
-            pages_to_remove = []
-            for page_info in self.pages:
-                if page_info.state == "finished":
-                    try:
-                        await page_info.page.close()
-                    except Exception:
-                        pass
-                    pages_to_remove.append(page_info)
-
-            for page_info in pages_to_remove:
-                self.pages.remove(page_info)
