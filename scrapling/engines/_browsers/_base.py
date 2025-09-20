@@ -1,4 +1,4 @@
-from time import time, sleep
+from time import time
 from asyncio import sleep as asyncio_sleep, Lock
 
 from camoufox import DefaultAddons
@@ -44,18 +44,7 @@ class SyncSession:
     ) -> PageInfo:  # pragma: no cover
         """Get a new page to use"""
 
-        # If we're at max capacity after cleanup, wait for busy pages to finish
-        if self.page_pool.pages_count >= self.max_pages:
-            start_time = time()
-            while time() - start_time < self._max_wait_for_page:
-                sleep(0.05)
-                if self.page_pool.pages_count < self.max_pages:
-                    break
-            else:
-                raise TimeoutError(
-                    f"No pages finished to clear place in the pool within the {self._max_wait_for_page}s timeout period"
-                )
-
+        # No need to check if a page is available or not in sync code because the code blocked before reaching here till the page closed, ofc.
         page = self.context.new_page()
         page.set_default_navigation_timeout(timeout)
         page.set_default_timeout(timeout)
