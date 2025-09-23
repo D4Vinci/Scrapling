@@ -2,8 +2,9 @@ from pathlib import Path
 from subprocess import check_output
 from sys import executable as python_executable
 
+from scrapling.core.utils import log
 from scrapling.engines.toolbelt.custom import Response
-from scrapling.core.utils import log, _CookieParser, _ParseHeaders
+from scrapling.core.utils._shell import _CookieParser, _ParseHeaders
 from scrapling.core._types import List, Optional, Dict, Tuple, Any, Callable
 
 from orjson import loads as json_loads, JSONDecodeError

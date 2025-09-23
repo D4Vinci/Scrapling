@@ -1,8 +1,8 @@
-import re
 from pathlib import Path
 from inspect import signature
 from urllib.parse import urljoin
 from difflib import SequenceMatcher
+from re import Pattern as re_Pattern
 
 from lxml.html import HtmlElement, HtmlMixin, HTMLParser
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
@@ -751,7 +751,7 @@ class Selector(SelectorsGeneration):
                     )
                 attributes.update(arg)
 
-            elif isinstance(arg, re.Pattern):
+            elif isinstance(arg, re_Pattern):
                 patterns.add(arg)
 
             elif callable(arg):

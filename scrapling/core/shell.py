@@ -22,10 +22,11 @@ from logging import (
 from orjson import loads as json_loads, JSONDecodeError
 
 from scrapling import __version__
+from scrapling.core.utils import log
 from scrapling.parser import Selector, Selectors
 from scrapling.core.custom_types import TextHandler
 from scrapling.engines.toolbelt.custom import Response
-from scrapling.core.utils import log, _ParseHeaders, _CookieParser
+from scrapling.core.utils._shell import _ParseHeaders, _CookieParser
 from scrapling.core._types import (
     Optional,
     Dict,
