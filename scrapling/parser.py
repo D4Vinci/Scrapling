@@ -341,7 +341,7 @@ class Selector(SelectorsGeneration):
         """Return the inner HTML code of the element"""
         content = tostring(self._root, encoding=self.encoding, method="html", with_tail=False)
         if isinstance(content, bytes):
-            content = content.decode("utf-8")
+            content = content.strip().decode(self.encoding)
         return TextHandler(content)
 
     @property
@@ -359,7 +359,7 @@ class Selector(SelectorsGeneration):
             with_tail=False,
         )
         if isinstance(content, bytes):
-            content = content.decode("utf-8")
+            content = content.strip().decode(self.encoding)
         return TextHandler(content)
 
     def has_class(self, class_name: str) -> bool:
