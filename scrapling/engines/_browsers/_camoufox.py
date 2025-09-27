@@ -237,26 +237,33 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 return
 
             else:
-                while "Verifying you are human." in self._get_page_content(page):
-                    # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
-                    page.wait_for_timeout(500)
+                box_selector = "#cf_turnstile div, #cf-turnstile div, .turnstile>div>div"
+                if challenge_type != "embedded":
+                    box_selector = ".main-content p+div>div>div"
+                    while "Verifying you are human." in self._get_page_content(page):
+                        # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
+                        page.wait_for_timeout(500)
 
                 iframe = page.frame(url=__CF_PATTERN__)
                 if iframe is None:
-                    log.info("Didn't find Cloudflare iframe!")
+                    log.error("Didn't find Cloudflare iframe!")
                     return
 
-                while not iframe.frame_element().is_visible():
-                    # Double-checking that the iframe is loaded
-                    page.wait_for_timeout(500)
+                if challenge_type != "embedded":
+                    while not iframe.frame_element().is_visible():
+                        # Double-checking that the iframe is loaded
+                        page.wait_for_timeout(500)
 
+                iframe.wait_for_load_state(state="domcontentloaded")
+                iframe.wait_for_load_state("networkidle")
                 # Calculate the Captcha coordinates for any viewport
-                outer_box = page.locator(".main-content p+div>div>div").bounding_box()
+                outer_box = page.locator(box_selector).last.bounding_box()
                 captcha_x, captcha_y = outer_box["x"] + 26, outer_box["y"] + 25
 
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
-                page.locator(".zone-name-title").wait_for(state="hidden")
+                if challenge_type != "embedded":
+                    page.locator(".zone-name-title").wait_for(state="hidden")
                 page.wait_for_load_state(state="domcontentloaded")
 
                 log.info("Cloudflare captcha is solved")
@@ -556,26 +563,33 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 return
 
             else:
-                while "Verifying you are human." in (await self._get_page_content(page)):
-                    # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
-                    await page.wait_for_timeout(500)
+                box_selector = "#cf_turnstile div, #cf-turnstile div, .turnstile>div>div"
+                if challenge_type != "embedded":
+                    box_selector = ".main-content p+div>div>div"
+                    while "Verifying you are human." in (await self._get_page_content(page)):
+                        # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
+                        await page.wait_for_timeout(500)
 
                 iframe = page.frame(url=__CF_PATTERN__)
                 if iframe is None:
-                    log.info("Didn't find Cloudflare iframe!")
+                    log.error("Didn't find Cloudflare iframe!")
                     return
 
-                while not await (await iframe.frame_element()).is_visible():
-                    # Double-checking that the iframe is loaded
-                    await page.wait_for_timeout(500)
+                if challenge_type != "embedded":
+                    while not await (await iframe.frame_element()).is_visible():
+                        # Double-checking that the iframe is loaded
+                        await page.wait_for_timeout(500)
 
+                await iframe.wait_for_load_state(state="domcontentloaded")
+                await iframe.wait_for_load_state("networkidle")
                 # Calculate the Captcha coordinates for any viewport
-                outer_box = await page.locator(".main-content p+div>div>div").bounding_box()
+                outer_box = await page.locator(box_selector).last.bounding_box()
                 captcha_x, captcha_y = outer_box["x"] + 26, outer_box["y"] + 25
 
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 await page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
-                await page.locator(".zone-name-title").wait_for(state="hidden")
+                if challenge_type != "embedded":
+                    await page.locator(".zone-name-title").wait_for(state="hidden")
                 await page.wait_for_load_state(state="domcontentloaded")
 
                 log.info("Cloudflare captcha is solved")
