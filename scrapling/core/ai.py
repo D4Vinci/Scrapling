@@ -41,10 +41,9 @@ def _ContentTranslator(content: Generator[str, None, None], page: _ScraplingResp
     return ResponseModel(status=page.status, content=[result for result in content], url=page.url)
 
 
-class ScraplingMCPServer:
-    _server = FastMCP(name="Scrapling")
+def ScraplingMCPServer(host: str, port: int) -> FastMCP:
+    _server = FastMCP(name="Scrapling", host=host, port=port)
 
-    @staticmethod
     @_server.tool()
     def get(
         url: str,
@@ -123,7 +122,6 @@ class ScraplingMCPServer:
             page,
         )
 
-    @staticmethod
     @_server.tool()
     async def bulk_get(
         urls: Tuple[str, ...],
@@ -210,7 +208,6 @@ class ScraplingMCPServer:
                 for page in responses
             ]
 
-    @staticmethod
     @_server.tool()
     async def fetch(
         url: str,
@@ -299,7 +296,6 @@ class ScraplingMCPServer:
             page,
         )
 
-    @staticmethod
     @_server.tool()
     async def bulk_fetch(
         urls: Tuple[str, ...],
@@ -393,7 +389,6 @@ class ScraplingMCPServer:
                 for page in responses
             ]
 
-    @staticmethod
     @_server.tool()
     async def stealthy_fetch(
         url: str,
@@ -493,7 +488,6 @@ class ScraplingMCPServer:
             page,
         )
 
-    @staticmethod
     @_server.tool()
     async def bulk_stealthy_fetch(
         urls: Tuple[str, ...],
@@ -598,6 +592,4 @@ class ScraplingMCPServer:
                 for page in responses
             ]
 
-    def serve(self):
-        """Serve the MCP server."""
-        self._server.run(transport="stdio")
+    return _server

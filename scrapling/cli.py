@@ -136,10 +136,26 @@ def install(force):  # pragma: no cover
 
 
 @command(help="Run Scrapling's MCP server (Check the docs for more info).")
-def mcp():
+@option(
+    "--http",
+    type=bool,
+    default=False,
+    help="Whether to run the MCP server in streamable-http transport or leave it as stdio (Default: False)",
+)
+@option(
+    "--host",
+    type=str,
+    default="0.0.0.0",
+    help="The host to use if streamable-http transport is enabled (Default: '0.0.0.0')",
+)
+@option(
+    "--port", type=int, default=8000, help="The port to use if streamable-http transport is enabled (Default: 8000)"
+)
+def mcp(http, host, port):
     from scrapling.core.ai import ScraplingMCPServer
 
-    ScraplingMCPServer().serve()
+    server = ScraplingMCPServer(host, port)
+    server.run(transport="stdio" if not http else "streamable-http")
 
 
 @command(help="Interactive scraping console")
