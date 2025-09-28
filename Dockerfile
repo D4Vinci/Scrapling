@@ -1,31 +1,34 @@
-FROM python:3.12-slim-trixie AS builder
+FROM python:3.12-slim-trixie
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
-
-ADD . /app
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-# Install dependencies
+# Copy dependency file first for better layer caching
+COPY pyproject.toml ./
+
+# Install dependencies only
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --no-install-project --all-extras --compile-bytecode
 
-# Install all browsers and their deps
-RUN uv run playwright install-deps chromium firefox
-RUN uv run playwright install chromium
-RUN uv run camoufox fetch --browserforge
+# Copy source code
+COPY . .
 
-# Sync the project
+# Install browsers and project in one optimized layer
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --all-extras --compile-bytecode
-
-# Clean up to save space
-RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    apt-get update && \
+    uv run playwright install-deps chromium firefox && \
+    uv run playwright install chromium && \
+    uv run camoufox fetch --browserforge && \
+    uv sync --all-extras --compile-bytecode && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Expose port for MCP server HTTP transport
 EXPOSE 8000
