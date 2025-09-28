@@ -41,10 +41,8 @@ def _ContentTranslator(content: Generator[str, None, None], page: _ScraplingResp
     return ResponseModel(status=page.status, content=[result for result in content], url=page.url)
 
 
-def ScraplingMCPServer(host: str, port: int) -> FastMCP:
-    _server = FastMCP(name="Scrapling", host=host, port=port)
-
-    @_server.tool()
+class ScraplingMCPServer:
+    @staticmethod
     def get(
         url: str,
         impersonate: Optional[BrowserTypeLiteral] = "chrome",
@@ -122,7 +120,7 @@ def ScraplingMCPServer(host: str, port: int) -> FastMCP:
             page,
         )
 
-    @_server.tool()
+    @staticmethod
     async def bulk_get(
         urls: Tuple[str, ...],
         impersonate: Optional[BrowserTypeLiteral] = "chrome",
@@ -208,7 +206,7 @@ def ScraplingMCPServer(host: str, port: int) -> FastMCP:
                 for page in responses
             ]
 
-    @_server.tool()
+    @staticmethod
     async def fetch(
         url: str,
         extraction_type: extraction_types = "markdown",
@@ -296,7 +294,7 @@ def ScraplingMCPServer(host: str, port: int) -> FastMCP:
             page,
         )
 
-    @_server.tool()
+    @staticmethod
     async def bulk_fetch(
         urls: Tuple[str, ...],
         extraction_type: extraction_types = "markdown",
@@ -389,7 +387,7 @@ def ScraplingMCPServer(host: str, port: int) -> FastMCP:
                 for page in responses
             ]
 
-    @_server.tool()
+    @staticmethod
     async def stealthy_fetch(
         url: str,
         extraction_type: extraction_types = "markdown",
@@ -488,7 +486,7 @@ def ScraplingMCPServer(host: str, port: int) -> FastMCP:
             page,
         )
 
-    @_server.tool()
+    @staticmethod
     async def bulk_stealthy_fetch(
         urls: Tuple[str, ...],
         extraction_type: extraction_types = "markdown",
@@ -592,4 +590,22 @@ def ScraplingMCPServer(host: str, port: int) -> FastMCP:
                 for page in responses
             ]
 
-    return _server
+    def serve(self, http: bool, host: str, port: int):
+        """Serve the MCP server."""
+        server = FastMCP(name="Scrapling", host=host, port=port)
+        server.add_tool(self.get, title="get", description=self.get.__doc__, structured_output=True)
+        server.add_tool(self.bulk_get, title="bulk_get", description=self.bulk_get.__doc__, structured_output=True)
+        server.add_tool(self.fetch, title="fetch", description=self.fetch.__doc__, structured_output=True)
+        server.add_tool(
+            self.bulk_fetch, title="bulk_fetch", description=self.bulk_fetch.__doc__, structured_output=True
+        )
+        server.add_tool(
+            self.stealthy_fetch, title="stealthy_fetch", description=self.stealthy_fetch.__doc__, structured_output=True
+        )
+        server.add_tool(
+            self.bulk_stealthy_fetch,
+            title="bulk_stealthy_fetch",
+            description=self.bulk_stealthy_fetch.__doc__,
+            structured_output=True,
+        )
+        server.run(transport="stdio" if not http else "streamable-http")

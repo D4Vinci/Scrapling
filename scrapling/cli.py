@@ -154,8 +154,8 @@ def install(force):  # pragma: no cover
 def mcp(http, host, port):
     from scrapling.core.ai import ScraplingMCPServer
 
-    server = ScraplingMCPServer(host, port)
-    server.run(transport="stdio" if not http else "streamable-http")
+    server = ScraplingMCPServer()
+    server.serve(http, host, port)
 
 
 @command(help="Interactive scraping console")
