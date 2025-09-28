@@ -138,7 +138,7 @@ def install(force):  # pragma: no cover
 @command(help="Run Scrapling's MCP server (Check the docs for more info).")
 @option(
     "--http",
-    type=bool,
+    is_flag=True,
     default=False,
     help="Whether to run the MCP server in streamable-http transport or leave it as stdio (Default: False)",
 )
