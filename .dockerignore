@@ -1,0 +1,110 @@
+# Github
+.github/
+
+# docs
+docs/
+images/
+.cache/
+.claude/
+
+# cached files
+__pycache__/
+*.py[cod]
+.cache
+.DS_Store
+*~
+.*.sw[po]
+.build
+.ve
+.env
+.pytest
+.benchmarks
+.bootstrap
+.appveyor.token
+*.bak
+*.db
+*.db-*
+
+# installation package
+*.egg-info/
+dist/
+build/
+
+# environments
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# C extensions
+*.so
+
+# pycharm
+.idea/
+
+# vscode
+*.code-workspace
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+.eggs
+parts
+bin
+var
+sdist
+wheelhouse
+develop-eggs
+.installed.cfg
+lib
+lib64
+venv*/
+.venv*/
+pyvenv*/
+pip-wheel-metadata/
+poetry.lock
+
+# Installer logs
+pip-log.txt
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+mypy.ini
+
+# test caches
+.tox/
+.pytest_cache/
+.coverage
+htmlcov
+report.xml
+nosetests.xml
+coverage.xml
+
+# Translations
+*.mo
+
+# Buildout
+.mr.developer.cfg
+
+# IDE project files
+.project
+.pydevproject
+.idea
+*.iml
+*.komodoproject
+
+# Complexity
+output/*.html
+output/*/index.html
+
+# Sphinx
+docs/_build
+public/
+web/
