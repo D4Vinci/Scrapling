@@ -17,20 +17,20 @@ The Scrapling MCP Server provides six powerful tools for web scraping:
 - **`bulk_fetch`**: An async version of the above tool that allows scraping of multiple URLs in different browser tabs at the same time!
 
 ### 🔒 Stealth Scraping
-- **`stealthy_fetch`**: Uses our modified version of Camoufox browser to bypass Cloudflare Turnstile and other anti-bot systems with complete control over the request/browser! 
+- **`stealthy_fetch`**: Uses our modified version of Camoufox browser to bypass Cloudflare Turnstile/Interstitial and other anti-bot systems with complete control over the request/browser! 
 - **`bulk_stealthy_fetch`**: An async version of the above tool that allows stealth scraping of multiple URLs in different browser tabs at the same time!
 
 ### Key Capabilities
 - **Smart Content Extraction**: Convert web pages/elements to Markdown, HTML, or extract a clean version of the text content
 - **CSS Selector Support**: Use the Scrapling engine to target specific elements with precision before handing the content to the AI
-- **Anti-Bot Bypass**: Handle Cloudflare Turnstile and other protections
+- **Anti-Bot Bypass**: Handle Cloudflare Turnstile, Interstitial, and other protections
 - **Proxy Support**: Use proxies for anonymity and geo-targeting
 - **Browser Impersonation**: Mimic real browsers with TLS fingerprinting, real browser headers matching that version, and more
 - **Parallel Processing**: Scrape multiple URLs concurrently for efficiency
 
 #### But why use Scrapling MCP Server instead of other available tools?
 
-Aside from its stealth capabilities and ability to bypass Cloudflare Turnstile, Scrapling's server is the only one that allows you to pass a CSS selector in the prompt to extract specific elements before handing the content to the AI.
+Aside from its stealth capabilities and ability to bypass Cloudflare Turnstile/Interstitial, Scrapling's server is the only one that allows you to pass a CSS selector in the prompt to extract specific elements before handing the content to the AI.
 
 The way other servers work is that they extract the content, then pass it all to the AI to extract the fields you want. This causes the AI to consume a lot more tokens that are not needed (from irrelevant content). Scrapling solves this problem by allowing you to pass a CSS selector to narrow down the content you want before passing it to the AI, which makes the whole process much faster and more efficient.
 
@@ -46,6 +46,11 @@ pip install "scrapling[ai]"
 
 # Install browser dependencies
 scrapling install
+```
+
+Or use the Docker image directly:
+```bash
+docker pull scrapling
 ```
 
 ## Setting up the MCP Server
@@ -101,6 +106,20 @@ For me, on my Mac, it returned `/Users/<MyUsername>/.venv/bin/scrapling`, so the
   }
 }
 ```
+#### Docker
+If you are using the Docker image, then it would be something like
+```json
+{
+  "mcpServers": {
+    "ScraplingServer": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "scrapling", "mcp"
+      ]
+    }
+  }
+}
+```
 
 The same logic applies to [Cursor](https://docs.cursor.com/en/context/mcp), [WindSurf](https://windsurf.com/university/tutorials/configuring-first-mcp-server), and others.
 
@@ -119,6 +138,22 @@ Here's the main article from Anthropic on [how to add MCP servers to Claude code
 
 
 Then, after you've added the server, you need to completely quit and restart the app you used above. In Claude Desktop, you should see an MCP server indicator (🔧) in the bottom-right corner of the chat input or see `ScraplingServer` in the `Search and tools` dropdown in the chat input box.
+
+### Streamable HTTP
+As per version 0.3.6, we have added the ability to make the MCP server use the 'Streamable HTTP' transport mode instead of the traditional 'stdio' transport.
+
+So instead of using the following command (the 'stdio' one):
+```bash
+scrapling mcp
+```
+Use the following to enable 'Streamable HTTP' transport mode:
+```bash
+scrapling mcp --http
+```
+Hence, the default value for the host the server is listening on is '0.0.0.0' and the port is 8000, which both can be configured as below:
+```bash
+scrapling mcp --http --host '127.0.0.1' --port 8000
+```
 
 ## Examples
 

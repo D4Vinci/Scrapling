@@ -783,7 +783,7 @@ def stealthy_fetch(
     :param disable_resources: Drop requests of unnecessary resources for a speed boost.
     :param block_webrtc: Blocks WebRTC entirely.
     :param humanize: Humanize the cursor movement.
-    :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page.
+    :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges.
     :param allow_webgl: Allow WebGL (recommended to keep enabled).
     :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
     :param disable_ads: Install the uBlock Origin addon on the browser.

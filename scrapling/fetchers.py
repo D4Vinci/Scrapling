@@ -92,7 +92,7 @@ class StealthyFetcher(BaseFetcher):
         :param cookies: Set cookies for the next request.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
-        :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
+        :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
@@ -191,7 +191,7 @@ class StealthyFetcher(BaseFetcher):
         :param cookies: Set cookies for the next request.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
-        :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
+        :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.

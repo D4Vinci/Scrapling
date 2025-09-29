@@ -36,6 +36,9 @@ The extract command is a set of simple terminal tools that:
     
     # Save a clean version of the text content of the webpage to the file
     scrapling extract get "https://example.com" content.txt
+  
+    # Or use the Docker image with something like this:
+    docker run -v $(pwd)/output:/output scrapling extract get "https://blog.example.com" /output/article.md 
     ```
 
 - **Extract Specific Content**
@@ -345,4 +348,4 @@ If you are not a Web Scraping expert and can't decide what to choose, you can us
 
 ---
 
-*Happy scraping! Remember to always respect website policies and comply with all applicable legal requirements.*
+*Happy scraping! Remember to always respect website policies and comply with all applicable laws and regulations.*

@@ -18,7 +18,7 @@
 
 Scrapling isn't just another Web Scraping library. It's the first **adaptive** scraping library that learns from website changes and evolves with them. While other libraries break when websites update their structure, Scrapling automatically relocates your elements and keeps your scrapers running.
 
-Built for the modern Web, Scrapling has its own rapid parsing engine and its fetchers to handle all Web Scraping challenges you are facing or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
+Built for the modern Web, Scrapling features its own rapid parsing engine and fetchers to handle all Web Scraping challenges you face or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
 >> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
@@ -50,7 +50,7 @@ Built for the modern Web, Scrapling has its own rapid parsing engine and its fet
 ### Advanced Websites Fetching with Session Support
 - **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP/3.
 - **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium, real Chrome, and custom stealth mode.
-- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` using a modified version of Firefox and fingerprint spoofing. Can bypass all levels of Cloudflare's Turnstile with automation easily.
+- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` using a modified version of Firefox and fingerprint spoofing. Can bypass all types of Cloudflare's Turnstile/Interstitial with automation easily.
 - **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
 - **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 

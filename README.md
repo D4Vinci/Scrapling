@@ -49,7 +49,7 @@
 
 Scrapling isn't just another Web Scraping library. It's the first **adaptive** scraping library that learns from website changes and evolves with them. While other libraries break when websites update their structure, Scrapling automatically relocates your elements and keeps your scrapers running.
 
-Built for the modern Web, Scrapling has its own rapid parsing engine and its fetchers to handle all Web Scraping challenges you are facing or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
+Built for the modern Web, Scrapling features its own rapid parsing engine and fetchers to handle all Web Scraping challenges you face or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
 >> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
@@ -87,7 +87,7 @@ Built for the modern Web, Scrapling has its own rapid parsing engine and its fet
 ### Advanced Websites Fetching with Session Support
 - **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP3.
 - **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium, real Chrome, and custom stealth mode.
-- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` using a modified version of Firefox and fingerprint spoofing. Can bypass all levels of Cloudflare's Turnstile with automation easily.
+- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` using a modified version of Firefox and fingerprint spoofing. Can bypass all types of Cloudflare's Turnstile and Interstitial with automation easily.
 - **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
 - **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 
@@ -235,11 +235,11 @@ scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.
 ```
 
 > [!NOTE]
-> There are many additional features, but we want to keep this page short, like the MCP server and the interactive Web Scraping Shell. Check out the full documentation [here](https://scrapling.readthedocs.io/en/latest/)
+> There are many additional features, but we want to keep this page concise, such as the MCP server and the interactive Web Scraping Shell. Check out the full documentation [here](https://scrapling.readthedocs.io/en/latest/)
 
 ## Performance Benchmarks
 
-Scrapling isn't just powerful—it's also blazing fast, and the updates since version 0.3 deliver exceptional performance improvements across all operations!
+Scrapling isn't just powerful—it's also blazing fast, and the updates since version 0.3 have delivered exceptional performance improvements across all operations.
 
 ### Text Extraction Speed Test (5000 nested elements)
 
@@ -302,6 +302,13 @@ Starting with v0.3.2, this installation only includes the parser engine and its 
        ```
    Don't forget that you need to install the browser dependencies with `scrapling install` after any of these extras (if you didn't already)
 
+### Docker
+You can also install a Docker image with all extras and browsers with the following command:
+```bash
+docker pull scrapling
+```
+This image is automatically built and pushed to Docker Hub through GitHub actions right here.
+
 ## Contributing
 
 We welcome contributions! Please read our [contributing guidelines](https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md) before getting started.
@@ -309,7 +316,7 @@ We welcome contributions! Please read our [contributing guidelines](https://gith
 ## Disclaimer
 
 > [!CAUTION]
-> This library is provided for educational and research purposes only. By using this library, you agree to comply with local and international data scraping and privacy laws. The authors and contributors are not responsible for any misuse of this software. Always respect website terms of service and robots.txt files.
+> This library is provided for educational and research purposes only. By using this library, you agree to comply with local and international data scraping and privacy laws. The authors and contributors are not responsible for any misuse of this software. Always respect the terms of service of websites and robots.txt files.
 
 ## License
 
