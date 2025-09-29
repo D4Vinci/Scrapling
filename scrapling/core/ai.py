@@ -258,7 +258,7 @@ class ScraplingMCPServer:
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
+        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -346,7 +346,7 @@ class ScraplingMCPServer:
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
+        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.

@@ -81,7 +81,7 @@ class TestDynamicFetcher:
             fetcher.fetch(self.html_url, cdp_url="blahblah")
 
         with pytest.raises(TypeError):
-            fetcher.fetch(self.html_url, cdp_url="blahblah", nstbrowser_mode=True)
+            fetcher.fetch(self.html_url, cdp_url="blahblah")
 
         with pytest.raises(Exception):
             fetcher.fetch(self.html_url, cdp_url="ws://blahblah")
