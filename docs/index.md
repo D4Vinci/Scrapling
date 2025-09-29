@@ -130,19 +130,21 @@ Starting with v0.3.2, this installation only includes the parser engine and its 
     This downloads all browsers with their system dependencies and fingerprint manipulation dependencies.
 
 2. Extra features:
-   - Install the MCP server feature:
+
+
+     - Install the MCP server feature:
        ```bash
        pip install "scrapling[ai]"
        ```
-   - Install shell features (Web Scraping shell and the `extract` command): 
-       ```bash
-       pip install "scrapling[shell]"
-       ```
-   - Install everything: 
-       ```bash
-       pip install "scrapling[all]"
-       ```
-   Don't forget that you need to install the browser dependencies with `scrapling install` after any of these extras (if you didn't already)
+     - Install shell features (Web Scraping shell and the `extract` command): 
+         ```bash
+         pip install "scrapling[shell]"
+         ```
+     - Install everything: 
+         ```bash
+         pip install "scrapling[all]"
+         ```
+     Don't forget that you need to install the browser dependencies with `scrapling install` after any of these extras (if you didn't already)
 
 ## How the documentation is organized
 Scrapling has a lot of documentation, so we try to follow a guideline called the [Diátaxis documentation framework](https://diataxis.fr/).
