@@ -50,7 +50,7 @@ scrapling install
 
 Or use the Docker image directly:
 ```bash
-docker pull scrapling
+docker pull pyd4vinci/scrapling
 ```
 
 ## Setting up the MCP Server

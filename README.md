@@ -299,7 +299,7 @@ Starting with v0.3.2, this installation only includes the parser engine and its 
 ### Docker
 You can also install a Docker image with all extras and browsers with the following command:
 ```bash
-docker pull scrapling
+docker pull pyd4vinci/scrapling
 ```
 This image is automatically built and pushed to Docker Hub through GitHub actions right here.
 
