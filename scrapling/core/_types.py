@@ -39,6 +39,4 @@ except ImportError:  # pragma: no cover
     try:
         from typing_extensions import Self  # Backport
     except ImportError:
-        from typing import TypeVar
-
         Self = object
