@@ -1,7 +1,7 @@
 from time import sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
-from curl_cffi.requests.session import CurlError
+from curl_cffi.curl import CurlError
 from curl_cffi import CurlHttpVersion
 from curl_cffi.requests.impersonate import DEFAULT_CHROME
 from curl_cffi.requests import (
@@ -22,13 +22,14 @@ from scrapling.core._types import (
     Awaitable,
     List,
     Any,
+    cast,
 )
 
 from .toolbelt.custom import Response
 from .toolbelt.convertor import ResponseFactory
 from .toolbelt.fingerprints import generate_convincing_referer, generate_headers, __default_useragent__
 
-_UNSET = object()
+_UNSET: Any = object()
 
 
 class FetcherSession:
@@ -94,8 +95,8 @@ class FetcherSession:
         self.default_http3 = http3
         self.selector_config = selector_config or {}
 
-        self._curl_session: Optional[CurlSession] | bool = None
-        self._async_curl_session: Optional[AsyncCurlSession] | bool = None
+        self._curl_session: Optional[CurlSession] = None
+        self._async_curl_session: Optional[AsyncCurlSession] = None
 
     def _merge_request_args(self, **kwargs) -> Dict[str, Any]:
         """Merge request-specific arguments with default session arguments."""
@@ -233,7 +234,7 @@ class FetcherSession:
         request_args: Dict[str, Any],
         max_retries: int,
         retry_delay: int,
-        selector_config: Optional[Dict] = None,
+        selector_config: Dict,
     ) -> Response:
         """
         Perform an HTTP request using the configured session.
@@ -273,7 +274,7 @@ class FetcherSession:
         request_args: Dict[str, Any],
         max_retries: int,
         retry_delay: int,
-        selector_config: Optional[Dict] = None,
+        selector_config: Dict,
     ) -> Response:
         """
         Perform an HTTP request using the configured session.
@@ -644,11 +645,11 @@ class FetcherSession:
 class FetcherClient(FetcherSession):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__enter__ = None
-        self.__exit__ = None
-        self.__aenter__ = None
-        self.__aexit__ = None
-        self._curl_session = True
+        self.__enter__: Any = None
+        self.__exit__: Any = None
+        self.__aenter__: Any = None
+        self.__aexit__: Any = None
+        self._curl_session: Any = True
 
     # Setting the correct return types for the type checking/autocompletion
     def get(
@@ -673,26 +674,29 @@ class FetcherClient(FetcherSession):
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Response:
-        return super().get(
-            url,
-            params,
-            headers,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-            stealthy_headers,
-            **kwargs,
+        return cast(
+            Response,
+            super().get(
+                url,
+                params,
+                headers,
+                cookies,
+                timeout,
+                follow_redirects,
+                max_redirects,
+                retries,
+                retry_delay,
+                proxies,
+                proxy,
+                proxy_auth,
+                auth,
+                verify,
+                cert,
+                impersonate,
+                http3,
+                stealthy_headers,
+                **kwargs,
+            ),
         )
 
     def post(
@@ -719,28 +723,31 @@ class FetcherClient(FetcherSession):
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Response:
-        return super().post(
-            url,
-            data,
-            json,
-            headers,
-            params,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-            stealthy_headers,
-            **kwargs,
+        return cast(
+            Response,
+            super().post(
+                url,
+                data,
+                json,
+                headers,
+                params,
+                cookies,
+                timeout,
+                follow_redirects,
+                max_redirects,
+                retries,
+                retry_delay,
+                proxies,
+                proxy,
+                proxy_auth,
+                auth,
+                verify,
+                cert,
+                impersonate,
+                http3,
+                stealthy_headers,
+                **kwargs,
+            ),
         )
 
     def put(
@@ -767,28 +774,31 @@ class FetcherClient(FetcherSession):
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Response:
-        return super().put(
-            url,
-            data,
-            json,
-            headers,
-            params,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-            stealthy_headers,
-            **kwargs,
+        return cast(
+            Response,
+            super().put(
+                url,
+                data,
+                json,
+                headers,
+                params,
+                cookies,
+                timeout,
+                follow_redirects,
+                max_redirects,
+                retries,
+                retry_delay,
+                proxies,
+                proxy,
+                proxy_auth,
+                auth,
+                verify,
+                cert,
+                impersonate,
+                http3,
+                stealthy_headers,
+                **kwargs,
+            ),
         )
 
     def delete(
@@ -815,39 +825,42 @@ class FetcherClient(FetcherSession):
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Response:
-        return super().delete(
-            url,
-            data,
-            json,
-            headers,
-            params,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-            stealthy_headers,
-            **kwargs,
+        return cast(
+            Response,
+            super().delete(
+                url,
+                data,
+                json,
+                headers,
+                params,
+                cookies,
+                timeout,
+                follow_redirects,
+                max_redirects,
+                retries,
+                retry_delay,
+                proxies,
+                proxy,
+                proxy_auth,
+                auth,
+                verify,
+                cert,
+                impersonate,
+                http3,
+                stealthy_headers,
+                **kwargs,
+            ),
         )
 
 
 class AsyncFetcherClient(FetcherSession):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__enter__ = None
-        self.__exit__ = None
-        self.__aenter__ = None
-        self.__aexit__ = None
-        self._async_curl_session = True
+        self.__enter__: Any = None
+        self.__exit__: Any = None
+        self.__aenter__: Any = None
+        self.__aexit__: Any = None
+        self._async_curl_session: Any = True
 
     # Setting the correct return types for the type checking/autocompletion
     def get(
@@ -872,26 +885,29 @@ class AsyncFetcherClient(FetcherSession):
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Awaitable[Response]:
-        return super().get(
-            url,
-            params,
-            headers,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-            stealthy_headers,
-            **kwargs,
+        return cast(
+            Awaitable[Response],
+            super().get(
+                url,
+                params,
+                headers,
+                cookies,
+                timeout,
+                follow_redirects,
+                max_redirects,
+                retries,
+                retry_delay,
+                proxies,
+                proxy,
+                proxy_auth,
+                auth,
+                verify,
+                cert,
+                impersonate,
+                http3,
+                stealthy_headers,
+                **kwargs,
+            ),
         )
 
     def post(
@@ -918,28 +934,31 @@ class AsyncFetcherClient(FetcherSession):
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Awaitable[Response]:
-        return super().post(
-            url,
-            data,
-            json,
-            headers,
-            params,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-            stealthy_headers,
-            **kwargs,
+        return cast(
+            Awaitable[Response],
+            super().post(
+                url,
+                data,
+                json,
+                headers,
+                params,
+                cookies,
+                timeout,
+                follow_redirects,
+                max_redirects,
+                retries,
+                retry_delay,
+                proxies,
+                proxy,
+                proxy_auth,
+                auth,
+                verify,
+                cert,
+                impersonate,
+                http3,
+                stealthy_headers,
+                **kwargs,
+            ),
         )
 
     def put(
@@ -966,28 +985,31 @@ class AsyncFetcherClient(FetcherSession):
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Awaitable[Response]:
-        return super().put(
-            url,
-            data,
-            json,
-            headers,
-            params,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-            stealthy_headers,
-            **kwargs,
+        return cast(
+            Awaitable[Response],
+            super().put(
+                url,
+                data,
+                json,
+                headers,
+                params,
+                cookies,
+                timeout,
+                follow_redirects,
+                max_redirects,
+                retries,
+                retry_delay,
+                proxies,
+                proxy,
+                proxy_auth,
+                auth,
+                verify,
+                cert,
+                impersonate,
+                http3,
+                stealthy_headers,
+                **kwargs,
+            ),
         )
 
     def delete(
@@ -1014,26 +1036,29 @@ class AsyncFetcherClient(FetcherSession):
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
     ) -> Awaitable[Response]:
-        return super().delete(
-            url,
-            data,
-            json,
-            headers,
-            params,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-            stealthy_headers,
-            **kwargs,
+        return cast(
+            Awaitable[Response],
+            super().delete(
+                url,
+                data,
+                json,
+                headers,
+                params,
+                cookies,
+                timeout,
+                follow_redirects,
+                max_redirects,
+                retries,
+                retry_delay,
+                proxies,
+                proxy,
+                proxy_auth,
+                auth,
+                verify,
+                cert,
+                impersonate,
+                http3,
+                stealthy_headers,
+                **kwargs,
+            ),
         )
