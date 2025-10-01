@@ -2,8 +2,9 @@ from pathlib import Path
 from subprocess import check_output
 from sys import executable as python_executable
 
+from scrapling.core.utils import log
 from scrapling.engines.toolbelt.custom import Response
-from scrapling.core.utils import log, _CookieParser, _ParseHeaders
+from scrapling.core.utils._shell import _CookieParser, _ParseHeaders
 from scrapling.core._types import List, Optional, Dict, Tuple, Any, Callable
 
 from orjson import loads as json_loads, JSONDecodeError
@@ -135,10 +136,26 @@ def install(force):  # pragma: no cover
 
 
 @command(help="Run Scrapling's MCP server (Check the docs for more info).")
-def mcp():
+@option(
+    "--http",
+    is_flag=True,
+    default=False,
+    help="Whether to run the MCP server in streamable-http transport or leave it as stdio (Default: False)",
+)
+@option(
+    "--host",
+    type=str,
+    default="0.0.0.0",
+    help="The host to use if streamable-http transport is enabled (Default: '0.0.0.0')",
+)
+@option(
+    "--port", type=int, default=8000, help="The port to use if streamable-http transport is enabled (Default: 8000)"
+)
+def mcp(http, host, port):
     from scrapling.core.ai import ScraplingMCPServer
 
-    ScraplingMCPServer().serve()
+    server = ScraplingMCPServer()
+    server.serve(http, host, port)
 
 
 @command(help="Interactive scraping console")
@@ -766,7 +783,7 @@ def stealthy_fetch(
     :param disable_resources: Drop requests of unnecessary resources for a speed boost.
     :param block_webrtc: Blocks WebRTC entirely.
     :param humanize: Humanize the cursor movement.
-    :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page.
+    :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges.
     :param allow_webgl: Allow WebGL (recommended to keep enabled).
     :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
     :param disable_ads: Install the uBlock Origin addon on the browser.

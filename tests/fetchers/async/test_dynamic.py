@@ -86,7 +86,7 @@ class TestDynamicFetcherAsync:
 
         with pytest.raises(TypeError):
             await fetcher.async_fetch(
-                urls["html_url"], cdp_url="blahblah", nstbrowser_mode=True
+                urls["html_url"], cdp_url="blahblah"
             )
 
         with pytest.raises(Exception):

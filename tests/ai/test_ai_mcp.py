@@ -1,6 +1,5 @@
 import pytest
 import pytest_httpbin
-from unittest.mock import Mock, patch
 
 from scrapling.core.ai import ScraplingMCPServer, ResponseModel
 
@@ -16,11 +15,6 @@ class TestMCPServer:
     @pytest.fixture
     def server(self):
         return ScraplingMCPServer()
-
-    def test_server_creation(self, server):
-        """Test server instance creation"""
-        assert server._server is not None
-        assert server._server.name == "Scrapling"
 
     def test_get_tool(self, server, test_url):
         """Test the get tool method"""
@@ -62,9 +56,3 @@ class TestMCPServer:
         """Test the bulk_stealthy_fetch tool method"""
         result = await server.bulk_stealthy_fetch(urls=(test_url, test_url), headless=True)
         assert all(isinstance(r, ResponseModel) for r in result)
-
-    def test_serve_method(self, server):
-        """Test the serve method"""
-        with patch.object(server._server, 'run') as mock_run:
-            server.serve()
-            mock_run.assert_called_once_with(transport="stdio")

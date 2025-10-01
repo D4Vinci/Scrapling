@@ -7,4 +7,3 @@ from ._utils import (
     clean_spaces,
     html_forbidden,
 )
-from ._shell import _CookieParser, _ParseHeaders

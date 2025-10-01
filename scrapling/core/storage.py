@@ -6,7 +6,6 @@ from sqlite3 import connect as db_connect
 
 from orjson import dumps, loads
 from lxml.html import HtmlElement
-from tldextract import extract as tld
 
 from scrapling.core.utils import _StorageTools, log
 from scrapling.core._types import Dict, Optional, Any
@@ -26,6 +25,8 @@ class StorageSystemMixin(ABC):  # pragma: no cover
             return default_value
 
         try:
+            from tldextract import extract as tld
+
             extracted = tld(self.url)
             return extracted.top_domain_under_public_suffix or extracted.domain or default_value
         except AttributeError:

@@ -101,18 +101,3 @@ DEFAULT_STEALTH_FLAGS = (
     "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
     "--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process,TranslateUI,BlinkGenPropertyTrees",
 )
-
-# Defaulting to the docker mode, token doesn't matter in it as it's passed for the container
-NSTBROWSER_DEFAULT_QUERY = {
-    "once": True,
-    "headless": True,
-    "autoClose": True,
-    "fingerprint": {
-        "flags": {"timezone": "BasedOnIp", "screen": "Custom"},
-        "platform": "linux",  # support: windows, mac, linux
-        "kernel": "chromium",  # only support: chromium
-        "kernelMilestone": "128",
-        "hardwareConcurrency": 8,
-        "deviceMemory": 8,
-    },
-}

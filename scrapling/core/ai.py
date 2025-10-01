@@ -42,10 +42,7 @@ def _ContentTranslator(content: Generator[str, None, None], page: _ScraplingResp
 
 
 class ScraplingMCPServer:
-    _server = FastMCP(name="Scrapling")
-
     @staticmethod
-    @_server.tool()
     def get(
         url: str,
         impersonate: Optional[BrowserTypeLiteral] = "chrome",
@@ -124,7 +121,6 @@ class ScraplingMCPServer:
         )
 
     @staticmethod
-    @_server.tool()
     async def bulk_get(
         urls: Tuple[str, ...],
         impersonate: Optional[BrowserTypeLiteral] = "chrome",
@@ -211,7 +207,6 @@ class ScraplingMCPServer:
             ]
 
     @staticmethod
-    @_server.tool()
     async def fetch(
         url: str,
         extraction_type: extraction_types = "markdown",
@@ -263,7 +258,7 @@ class ScraplingMCPServer:
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
+        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -300,7 +295,6 @@ class ScraplingMCPServer:
         )
 
     @staticmethod
-    @_server.tool()
     async def bulk_fetch(
         urls: Tuple[str, ...],
         extraction_type: extraction_types = "markdown",
@@ -352,7 +346,7 @@ class ScraplingMCPServer:
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers/NSTBrowser through CDP.
+        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -394,7 +388,6 @@ class ScraplingMCPServer:
             ]
 
     @staticmethod
-    @_server.tool()
     async def stealthy_fetch(
         url: str,
         extraction_type: extraction_types = "markdown",
@@ -443,7 +436,7 @@ class ScraplingMCPServer:
         :param cookies: Set cookies for the next request.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
-        :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
+        :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param disable_ads: Disabled by default, this installs the `uBlock Origin` addon on the browser if enabled.
@@ -494,7 +487,6 @@ class ScraplingMCPServer:
         )
 
     @staticmethod
-    @_server.tool()
     async def bulk_stealthy_fetch(
         urls: Tuple[str, ...],
         extraction_type: extraction_types = "markdown",
@@ -543,7 +535,7 @@ class ScraplingMCPServer:
         :param cookies: Set cookies for the next request.
         :param addons: List of Firefox addons to use. Must be paths to extracted addons.
         :param humanize: Humanize the cursor movement. Takes either True or the MAX duration in seconds of the cursor movement. The cursor typically takes up to 1.5 seconds to move across the window.
-        :param solve_cloudflare: Solves all 3 types of the Cloudflare's Turnstile wait page before returning the response to you.
+        :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param disable_ads: Disabled by default, this installs the `uBlock Origin` addon on the browser if enabled.
@@ -598,6 +590,22 @@ class ScraplingMCPServer:
                 for page in responses
             ]
 
-    def serve(self):
+    def serve(self, http: bool, host: str, port: int):
         """Serve the MCP server."""
-        self._server.run(transport="stdio")
+        server = FastMCP(name="Scrapling", host=host, port=port)
+        server.add_tool(self.get, title="get", description=self.get.__doc__, structured_output=True)
+        server.add_tool(self.bulk_get, title="bulk_get", description=self.bulk_get.__doc__, structured_output=True)
+        server.add_tool(self.fetch, title="fetch", description=self.fetch.__doc__, structured_output=True)
+        server.add_tool(
+            self.bulk_fetch, title="bulk_fetch", description=self.bulk_fetch.__doc__, structured_output=True
+        )
+        server.add_tool(
+            self.stealthy_fetch, title="stealthy_fetch", description=self.stealthy_fetch.__doc__, structured_output=True
+        )
+        server.add_tool(
+            self.bulk_stealthy_fetch,
+            title="bulk_stealthy_fetch",
+            description=self.bulk_stealthy_fetch.__doc__,
+            structured_output=True,
+        )
+        server.run(transport="stdio" if not http else "streamable-http")

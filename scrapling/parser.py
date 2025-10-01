@@ -1,8 +1,8 @@
-import re
 from pathlib import Path
 from inspect import signature
 from urllib.parse import urljoin
 from difflib import SequenceMatcher
+from re import Pattern as re_Pattern
 
 from lxml.html import HtmlElement, HtmlMixin, HTMLParser
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
@@ -341,7 +341,7 @@ class Selector(SelectorsGeneration):
         """Return the inner HTML code of the element"""
         content = tostring(self._root, encoding=self.encoding, method="html", with_tail=False)
         if isinstance(content, bytes):
-            content = content.decode("utf-8")
+            content = content.strip().decode(self.encoding)
         return TextHandler(content)
 
     @property
@@ -359,7 +359,7 @@ class Selector(SelectorsGeneration):
             with_tail=False,
         )
         if isinstance(content, bytes):
-            content = content.decode("utf-8")
+            content = content.strip().decode(self.encoding)
         return TextHandler(content)
 
     def has_class(self, class_name: str) -> bool:
@@ -751,7 +751,7 @@ class Selector(SelectorsGeneration):
                     )
                 attributes.update(arg)
 
-            elif isinstance(arg, re.Pattern):
+            elif isinstance(arg, re_Pattern):
                 patterns.add(arg)
 
             elif callable(arg):

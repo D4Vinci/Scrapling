@@ -12,17 +12,13 @@ from camoufox.utils import (
     installed_verstr as camoufox_version,
 )
 
-from scrapling.engines.toolbelt.navigation import intercept_route, async_intercept_route
-from scrapling.core._types import (
-    Any,
-    Dict,
-    Optional,
-)
 from ._page import PageInfo, PagePool
-from ._config_tools import _compiled_stealth_scripts
-from ._config_tools import _launch_kwargs, _context_kwargs
+from scrapling.parser import Selector
+from scrapling.core._types import Dict, Optional
 from scrapling.engines.toolbelt.fingerprints import get_os_name
 from ._validators import validate, PlaywrightConfig, CamoufoxConfig
+from ._config_tools import _compiled_stealth_scripts, _launch_kwargs, _context_kwargs
+from scrapling.engines.toolbelt.navigation import intercept_route, async_intercept_route
 
 __ff_version_str__ = camoufox_version().split(".", 1)[0]
 
@@ -267,5 +263,10 @@ class StealthySessionMixin:
         for ctype in challenge_types:
             if f"cType: '{ctype}'" in page_content:
                 return ctype
+
+        # Check if turnstile captcha is embedded inside the page (Usually inside a closed Shadow iframe)
+        selector = Selector(content=page_content)
+        if selector.css('script[src*="challenges.cloudflare.com/turnstile/v"]'):
+            return "embedded"
 
         return None

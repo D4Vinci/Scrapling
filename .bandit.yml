@@ -6,3 +6,4 @@ skips:
 - B404  # Using subprocess library
 - B602  # subprocess call with shell=True identified
 - B110  # Try, Except, Pass detected.
+- B104  # Possible binding to all interfaces.
