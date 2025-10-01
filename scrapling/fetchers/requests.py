@@ -1,17 +1,9 @@
-from scrapling.core._types import (
-    Callable,
-    Dict,
-    List,
-    Optional,
-    SelectorWaitStates,
-    Iterable,
-)
 from scrapling.engines.static import (
     FetcherSession,
     FetcherClient as _FetcherClient,
     AsyncFetcherClient as _AsyncFetcherClient,
 )
-from scrapling.engines.toolbelt.custom import BaseFetcher, Response
+from scrapling.engines.toolbelt.custom import BaseFetcher
 
 
 __FetcherClientInstance__ = _FetcherClient()
