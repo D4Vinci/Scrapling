@@ -4,7 +4,7 @@ import asyncio
 
 import pytest_httpbin
 
-from scrapling.engines._browsers import AsyncStealthySession
+from scrapling.fetchers import AsyncStealthySession
 
 
 @pytest_httpbin.use_class_based_httpbin
