@@ -111,13 +111,7 @@ Built for the modern Web, Scrapling features its own rapid parsing engine and fe
 - 📝 **Auto Selector Generation**: Generate robust CSS/XPath selectors for any element.
 - 🔌 **Familiar API**: Similar to Scrapy/BeautifulSoup with the same pseudo-elements used in Scrapy/Parsel.
 - 📘 **Complete Type Coverage**: Full type hints for excellent IDE support and code completion.
-
-### New Session Architecture
-Scrapling 0.3 introduces a completely revamped session system:
-- **Persistent Sessions**: Maintain cookies, headers, and authentication across multiple requests
-- **Automatic Session Management**: Smart session lifecycle handling with proper cleanup
-- **Session Inheritance**: All fetchers support both one-off requests and persistent session usage
-- **Concurrent Session Support**: Run multiple isolated sessions simultaneously
+- 🔋 **Ready Docker image**: With each release, a Docker image containing all browsers is automatically built and pushed.
 
 ## Getting Started
 

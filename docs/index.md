@@ -74,6 +74,7 @@ Built for the modern Web, Scrapling features its own rapid parsing engine and fe
 - 📝 **Auto Selector Generation**: Generate robust CSS/XPath selectors for any element.
 - 🔌 **Familiar API**: Similar to Scrapy/BeautifulSoup with the same pseudo-elements used in Scrapy/Parsel.
 - 📘 **Complete Type Coverage**: Full type hints for excellent IDE support and code completion.
+- 🔋 **Ready Docker image**: With each release, a Docker image containing all browsers is automatically built and pushed.
 
 
 ## Star History
