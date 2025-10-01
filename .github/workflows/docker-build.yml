@@ -12,7 +12,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ github.repository_owner }}/scrapling
+  IMAGE_NAME: pyd4vinci/scrapling
 
 jobs:
   build-and-push:
