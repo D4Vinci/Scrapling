@@ -1,3 +1,4 @@
+from random import randint
 from re import compile as re_compile
 
 from playwright.sync_api import (
@@ -20,6 +21,7 @@ from ._validators import validate_fetch as _validate
 from ._base import SyncSession, AsyncSession, StealthySessionMixin
 from scrapling.core.utils import log
 from scrapling.core._types import (
+    Any,
     Dict,
     List,
     Optional,
@@ -33,7 +35,7 @@ from scrapling.engines.toolbelt.convertor import (
 from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
 
 __CF_PATTERN__ = re_compile("challenges.cloudflare.com/cdn-cgi/challenge-platform/.*")
-_UNSET = object()
+_UNSET: Any = object()
 
 
 class StealthySession(StealthySessionMixin, SyncSession):
@@ -222,6 +224,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param page: The targeted page
         :return:
         """
+        page.wait_for_load_state("networkidle")
         challenge_type = self._detect_cloudflare(self._get_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
@@ -244,25 +247,29 @@ class StealthySession(StealthySessionMixin, SyncSession):
                         # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
                         page.wait_for_timeout(500)
 
+                outer_box = {}
                 iframe = page.frame(url=__CF_PATTERN__)
-                if iframe is None:
-                    log.error("Didn't find Cloudflare iframe!")
-                    return
+                if iframe is not None:
+                    iframe.wait_for_load_state(state="domcontentloaded")
+                    iframe.wait_for_load_state("networkidle")
 
-                if challenge_type != "embedded":
-                    while not iframe.frame_element().is_visible():
-                        # Double-checking that the iframe is loaded
-                        page.wait_for_timeout(500)
+                    if challenge_type != "embedded":
+                        while not iframe.frame_element().is_visible():
+                            # Double-checking that the iframe is loaded
+                            page.wait_for_timeout(500)
+                    outer_box: Any = iframe.frame_element().bounding_box()
 
-                iframe.wait_for_load_state(state="domcontentloaded")
-                iframe.wait_for_load_state("networkidle")
+                if not iframe or not outer_box:
+                    outer_box: Any = page.locator(box_selector).last.bounding_box()
+
                 # Calculate the Captcha coordinates for any viewport
-                outer_box = page.locator(box_selector).last.bounding_box()
-                captcha_x, captcha_y = outer_box["x"] + 26, outer_box["y"] + 25
+                captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
 
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
+                page.wait_for_load_state("networkidle")
                 if challenge_type != "embedded":
+                    page.locator(box_selector).wait_for(state="detached")
                     page.locator(".zone-name-title").wait_for(state="hidden")
                 page.wait_for_load_state(state="domcontentloaded")
 
@@ -548,6 +555,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param page: The async targeted page
         :return:
         """
+        await page.wait_for_load_state("networkidle")
         challenge_type = self._detect_cloudflare(await self._get_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
@@ -570,25 +578,29 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                         # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
                         await page.wait_for_timeout(500)
 
+                outer_box = {}
                 iframe = page.frame(url=__CF_PATTERN__)
-                if iframe is None:
-                    log.error("Didn't find Cloudflare iframe!")
-                    return
+                if iframe is not None:
+                    await iframe.wait_for_load_state(state="domcontentloaded")
+                    await iframe.wait_for_load_state("networkidle")
 
-                if challenge_type != "embedded":
-                    while not await (await iframe.frame_element()).is_visible():
-                        # Double-checking that the iframe is loaded
-                        await page.wait_for_timeout(500)
+                    if challenge_type != "embedded":
+                        while not await (await iframe.frame_element()).is_visible():
+                            # Double-checking that the iframe is loaded
+                            await page.wait_for_timeout(500)
+                    outer_box: Any = await (await iframe.frame_element()).bounding_box()
 
-                await iframe.wait_for_load_state(state="domcontentloaded")
-                await iframe.wait_for_load_state("networkidle")
+                elif not iframe or not outer_box:
+                    outer_box: Any = await page.locator(box_selector).last.bounding_box()
+
                 # Calculate the Captcha coordinates for any viewport
-                outer_box = await page.locator(box_selector).last.bounding_box()
-                captcha_x, captcha_y = outer_box["x"] + 26, outer_box["y"] + 25
+                captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
 
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 await page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
+                await page.wait_for_load_state("networkidle")
                 if challenge_type != "embedded":
+                    await page.locator(box_selector).wait_for(state="detached")
                     await page.locator(".zone-name-title").wait_for(state="hidden")
                 await page.wait_for_load_state(state="domcontentloaded")
 
