@@ -56,13 +56,13 @@ class StorageSystemMixin(ABC):  # pragma: no cover
     @lru_cache(128, typed=True)
     def _get_hash(identifier: str) -> str:
         """If you want to hash identifier in your storage system, use this safer"""
-        identifier = identifier.lower().strip()
-        if isinstance(identifier, str):
+        _identifier = identifier.lower().strip()
+        if isinstance(_identifier, str):
             # Hash functions have to take bytes
-            identifier = identifier.encode("utf-8")
+            _identifier = _identifier.encode("utf-8")
 
-        hash_value = sha256(identifier).hexdigest()
-        return f"{hash_value}_{len(identifier)}"  # Length to reduce collision chance
+        hash_value = sha256(_identifier).hexdigest()
+        return f"{hash_value}_{len(_identifier)}"  # Length to reduce collision chance
 
 
 @lru_cache(1, typed=True)

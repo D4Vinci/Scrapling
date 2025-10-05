@@ -62,7 +62,7 @@ def _set_flags(hide_canvas, disable_webgl):  # pragma: no cover
 @lru_cache(2, typed=True)
 def _launch_kwargs(
     headless,
-    proxy,
+    proxy: Tuple,
     locale,
     extra_headers,
     useragent,

@@ -1,10 +1,9 @@
 from scrapling.core._types import (
     Callable,
-    Dict,
     List,
+    Dict,
     Optional,
     SelectorWaitStates,
-    Iterable,
 )
 from scrapling.engines.toolbelt.custom import BaseFetcher, Response
 from scrapling.engines._browsers._controllers import DynamicSession, AsyncDynamicSession
@@ -47,7 +46,7 @@ class DynamicFetcher(BaseFetcher):
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
         init_script: Optional[str] = None,
-        cookies: Optional[Iterable[Dict]] = None,
+        cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
@@ -134,7 +133,7 @@ class DynamicFetcher(BaseFetcher):
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
         init_script: Optional[str] = None,
-        cookies: Optional[Iterable[Dict]] = None,
+        cookies: Optional[List[Dict]] = None,
         network_idle: bool = False,
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",

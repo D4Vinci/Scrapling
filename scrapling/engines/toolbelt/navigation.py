@@ -11,7 +11,7 @@ from msgspec import Struct, structs, convert, ValidationError
 from playwright.sync_api import Route
 
 from scrapling.core.utils import log
-from scrapling.core._types import Dict, Optional, Tuple
+from scrapling.core._types import Dict, Tuple, overload, Literal
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
 __BYPASSES_DIR__ = Path(__file__).parent / "bypasses"
@@ -49,7 +49,15 @@ async def async_intercept_route(route: async_Route):
         await route.continue_()
 
 
-def construct_proxy_dict(proxy_string: str | Dict[str, str], as_tuple=False) -> Optional[Dict | Tuple]:
+@overload
+def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple, as_tuple: Literal[True]) -> Tuple: ...
+
+
+@overload
+def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple, as_tuple: Literal[False] = False) -> Dict: ...
+
+
+def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple, as_tuple: bool = False) -> Dict | Tuple:
     """Validate a proxy and return it in the acceptable format for Playwright
     Reference: https://playwright.dev/python/docs/network#http-proxy
 
@@ -83,7 +91,7 @@ def construct_proxy_dict(proxy_string: str | Dict[str, str], as_tuple=False) -> 
         except ValidationError as e:
             raise TypeError(f"Invalid proxy dictionary: {e}")
 
-    return None
+    raise TypeError(f"Invalid proxy string: {proxy_string}")
 
 
 @lru_cache(10, typed=True)

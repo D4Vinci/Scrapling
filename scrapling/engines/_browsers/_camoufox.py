@@ -26,6 +26,7 @@ from scrapling.core._types import (
     List,
     Optional,
     Callable,
+    TYPE_CHECKING,
     SelectorWaitStates,
 )
 from scrapling.engines.toolbelt.convertor import (
@@ -205,7 +206,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         self._closed = True
 
     @staticmethod
-    def _get_page_content(page: Page) -> str | None:
+    def _get_page_content(page: Page) -> str:
         """
         A workaround for Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
         :param page: The page to extract content from.
@@ -217,6 +218,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
             except PlaywrightError:
                 page.wait_for_timeout(1000)
                 continue
+        return ""  # pyright: ignore
 
     def _solve_cloudflare(self, page: Page) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
@@ -502,8 +504,8 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
 
     async def __create__(self):
         """Create a browser for this instance and context."""
-        self.playwright: AsyncPlaywright = await async_playwright().start()
-        self.context: AsyncBrowserContext = await self.playwright.firefox.launch_persistent_context(
+        self.playwright: AsyncPlaywright | None = await async_playwright().start()
+        self.context: AsyncBrowserContext | None = await self.playwright.firefox.launch_persistent_context(
             **self.launch_options
         )
 
@@ -511,7 +513,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
             await self.context.add_init_script(path=self.init_script)
 
         if self.cookies:
-            await self.context.add_cookies(self.cookies)
+            await self.context.add_cookies(self.cookies)  # pyright: ignore [reportArgumentType]
 
     async def __aenter__(self):
         await self.__create__()
@@ -536,7 +538,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         self._closed = True
 
     @staticmethod
-    async def _get_page_content(page: async_Page) -> str | None:
+    async def _get_page_content(page: async_Page) -> str:
         """
         A workaround for Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
         :param page: The page to extract content from.
@@ -548,6 +550,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
             except PlaywrightError:
                 await page.wait_for_timeout(1000)
                 continue
+        return ""  # pyright: ignore
 
     async def _solve_cloudflare(self, page: async_Page):
         """Solve the cloudflare challenge displayed on the playwright page passed. The async version
@@ -678,6 +681,10 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
 
         page_info = await self._get_page(params.timeout, params.extra_headers, params.disable_resources)
         page_info.mark_busy(url=url)
+
+        if TYPE_CHECKING:
+            if not isinstance(page_info.page, async_Page):
+                raise TypeError
 
         try:
             # Navigate to URL and wait for a specified state

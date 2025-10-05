@@ -19,7 +19,17 @@ _LAZY_IMPORTS = {
     "AsyncStealthySession": ("scrapling.fetchers.firefox", "AsyncStealthySession"),
 }
 
-__all__ = ["Fetcher", "AsyncFetcher", "StealthyFetcher", "DynamicFetcher"]
+__all__ = [
+    "Fetcher",
+    "AsyncFetcher",
+    "FetcherSession",
+    "DynamicFetcher",
+    "DynamicSession",
+    "AsyncDynamicSession",
+    "StealthyFetcher",
+    "StealthySession",
+    "AsyncStealthySession",
+]
 
 
 def __getattr__(name: str) -> Any:

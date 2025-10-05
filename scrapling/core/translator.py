@@ -10,24 +10,23 @@ So you don't have to learn a new selectors/api method like what bs4 done with so
 
 from functools import lru_cache
 
-from cssselect.xpath import ExpressionError
-from cssselect.xpath import XPathExpr as OriginalXPathExpr
 from cssselect import HTMLTranslator as OriginalHTMLTranslator
+from cssselect.xpath import ExpressionError, XPathExpr as OriginalXPathExpr
 from cssselect.parser import Element, FunctionalPseudoElement, PseudoElement
 
-from scrapling.core._types import Any, Optional, Protocol, Self
+from scrapling.core._types import Any, Protocol, Self
 
 
 class XPathExpr(OriginalXPathExpr):
     textnode: bool = False
-    attribute: Optional[str] = None
+    attribute: str | None = None
 
     @classmethod
     def from_xpath(
         cls,
         xpath: OriginalXPathExpr,
         textnode: bool = False,
-        attribute: Optional[str] = None,
+        attribute: str | None = None,
     ) -> Self:
         x = cls(path=xpath.path, element=xpath.element, condition=xpath.condition)
         x.textnode = textnode
@@ -71,10 +70,10 @@ class XPathExpr(OriginalXPathExpr):
 
 # e.g. cssselect.GenericTranslator, cssselect.HTMLTranslator
 class TranslatorProtocol(Protocol):
-    def xpath_element(self, selector: Element) -> OriginalXPathExpr:  # pragma: no cover
+    def xpath_element(self, selector: Element) -> OriginalXPathExpr:  # pyright: ignore # pragma: no cover
         pass
 
-    def css_to_xpath(self, css: str, prefix: str = ...) -> str:  # pragma: no cover
+    def css_to_xpath(self, css: str, prefix: str = ...) -> str:  # pyright: ignore # pragma: no cover
         pass
 
 
@@ -121,9 +120,15 @@ class TranslatorMixin:
 
 
 class HTMLTranslator(TranslatorMixin, OriginalHTMLTranslator):
-    @lru_cache(maxsize=256)
     def css_to_xpath(self, css: str, prefix: str = "descendant-or-self::") -> str:
         return super().css_to_xpath(css, prefix)
 
 
 translator = HTMLTranslator()
+# Using a function instead of the translator directly to avoid Pyright override error
+
+
+@lru_cache(maxsize=256)
+def css_to_xpath(query: str) -> str:
+    """Return translated XPath version of a given CSS query"""
+    return translator.css_to_xpath(query)

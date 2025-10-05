@@ -58,7 +58,8 @@ class ResponseFactory:
                                 "encoding": cls.__extract_browser_encoding(
                                     current_response.headers.get("content-type", "")
                                 )
-                                or "utf-8",
+                                if current_response
+                                else "utf-8",
                                 "cookies": tuple(),
                                 "headers": current_response.all_headers() if current_response else {},
                                 "request_headers": current_request.all_headers(),
@@ -161,7 +162,8 @@ class ResponseFactory:
                                 "encoding": cls.__extract_browser_encoding(
                                     current_response.headers.get("content-type", "")
                                 )
-                                or "utf-8",
+                                if current_response
+                                else "utf-8",
                                 "cookies": tuple(),
                                 "headers": await current_response.all_headers() if current_response else {},
                                 "request_headers": await current_request.all_headers(),
@@ -255,8 +257,8 @@ class ResponseFactory:
                 "encoding": response.encoding or "utf-8",
                 "cookies": dict(response.cookies),
                 "headers": dict(response.headers),
-                "request_headers": dict(response.request.headers),
-                "method": response.request.method,
+                "request_headers": dict(response.request.headers) if response.request else {},
+                "method": response.request.method if response.request else "GET",
                 "history": response.history,  # https://github.com/lexiforest/curl_cffi/issues/82
                 **parser_arguments,
             }

@@ -83,8 +83,6 @@ class StealthyFetcher(BaseFetcher):
         """
         if not custom_config:
             custom_config = {}
-        elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         with StealthySession(
             wait=wait,
@@ -182,8 +180,6 @@ class StealthyFetcher(BaseFetcher):
         """
         if not custom_config:
             custom_config = {}
-        elif not isinstance(custom_config, dict):
-            ValueError(f"The custom parser config must be of type dictionary, got {cls.__class__}")
 
         async with AsyncStealthySession(
             wait=wait,

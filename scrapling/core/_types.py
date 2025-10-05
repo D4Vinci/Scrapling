@@ -12,9 +12,11 @@ from typing import (
     Generator,
     Iterable,
     List,
+    Set,
     Literal,
     Optional,
     Pattern,
+    Sequence,
     Tuple,
     TypeVar,
     Union,
@@ -22,6 +24,7 @@ from typing import (
     Mapping,
     Awaitable,
     Protocol,
+    Coroutine,
     SupportsIndex,
 )
 

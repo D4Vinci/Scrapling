@@ -10,6 +10,7 @@ from playwright.async_api import (
     BrowserContext as AsyncBrowserContext,
     Playwright as AsyncPlaywright,
     Locator as AsyncLocator,
+    Page as async_Page,
 )
 from patchright.sync_api import sync_playwright as sync_patchright
 from patchright.async_api import async_playwright as async_patchright
@@ -18,10 +19,12 @@ from scrapling.core.utils import log
 from ._base import SyncSession, AsyncSession, DynamicSessionMixin
 from ._validators import validate_fetch as _validate
 from scrapling.core._types import (
+    Any,
     Dict,
     List,
     Optional,
     Callable,
+    TYPE_CHECKING,
     SelectorWaitStates,
 )
 from scrapling.engines.toolbelt.convertor import (
@@ -30,7 +33,7 @@ from scrapling.engines.toolbelt.convertor import (
 )
 from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
 
-_UNSET = object()
+_UNSET: Any = object()
 
 
 class DynamicSession(DynamicSessionMixin, SyncSession):
@@ -154,7 +157,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         """Create a browser for this instance and context."""
         sync_context = sync_patchright if self.stealth else sync_playwright
 
-        self.playwright: Playwright = sync_context().start()
+        self.playwright: Playwright = sync_context().start()  # pyright: ignore [reportAttributeAccessIssue]
 
         if self.cdp_url:  # pragma: no cover
             self.context = self.playwright.chromium.connect_over_cdp(endpoint_url=self.cdp_url).new_context(
@@ -187,7 +190,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
 
         if self.playwright:
             self.playwright.stop()
-            self.playwright = None
+            self.playwright = None  # pyright: ignore
 
         self._closed = True
 
@@ -399,7 +402,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         """Create a browser for this instance and context."""
         async_context = async_patchright if self.stealth else async_playwright
 
-        self.playwright: AsyncPlaywright = await async_context().start()
+        self.playwright: AsyncPlaywright = await async_context().start()  # pyright: ignore [reportAttributeAccessIssue]
 
         if self.cdp_url:
             browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self.cdp_url)
@@ -413,7 +416,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             await self.context.add_init_script(path=self.init_script)
 
         if self.cookies:
-            await self.context.add_cookies(self.cookies)
+            await self.context.add_cookies(self.cookies)  # pyright: ignore
 
     async def __aenter__(self):
         await self.__create__()
@@ -429,11 +432,11 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
 
         if self.context:
             await self.context.close()
-            self.context = None
+            self.context = None  # pyright: ignore
 
         if self.playwright:
             await self.playwright.stop()
-            self.playwright = None
+            self.playwright = None  # pyright: ignore
 
         self._closed = True
 
@@ -505,6 +508,10 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
 
         page_info = await self._get_page(params.timeout, params.extra_headers, params.disable_resources)
         page_info.mark_busy(url=url)
+
+        if TYPE_CHECKING:
+            if not isinstance(page_info.page, async_Page):
+                raise TypeError
 
         try:
             # Navigate to URL and wait for a specified state

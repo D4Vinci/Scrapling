@@ -182,7 +182,7 @@ class FetcherSession:
 
         return headers
 
-    def __enter__(self):
+    def __enter__(self) -> "FetcherClient":
         """Creates and returns a new synchronous Fetcher Session"""
         if self._curl_session:
             raise RuntimeError(
@@ -197,7 +197,7 @@ class FetcherSession:
             )
 
         self._curl_session = CurlSession()
-        return self
+        return cast("FetcherClient", self)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Closes the active synchronous session managed by this instance, if any."""
@@ -205,7 +205,7 @@ class FetcherSession:
             self._curl_session.close()
             self._curl_session = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "AsyncFetcherClient":
         """Creates and returns a new asynchronous Session."""
         if self._async_curl_session:
             raise RuntimeError(
@@ -220,7 +220,7 @@ class FetcherSession:
             )
 
         self._async_curl_session = AsyncCurlSession()
-        return self
+        return cast("AsyncFetcherClient", self)
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Closes the active asynchronous session managed by this instance, if any."""
