@@ -6,7 +6,7 @@ repos:
     args: [-r, -c, .bandit.yml]
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
-  rev: v0.13.0
+  rev: v0.13.3
   hooks:
     # Run the linter.
     - id: ruff
