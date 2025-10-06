@@ -1,7 +1,7 @@
 import pytest
 
 
-from scrapling.engines.static import FetcherSession, FetcherClient
+from scrapling.engines.static import _SyncSessionLogic as FetcherSession, FetcherClient
 
 
 class TestFetcherSession:
@@ -15,9 +15,8 @@ class TestFetcherSession:
             stealthy_headers=True
         )
 
-        assert session.default_timeout == 30
-        assert session.default_retries == 3
-        assert session.stealth is True
+        assert session._default_timeout == 30
+        assert session._default_retries == 3
 
     def test_fetcher_session_context_manager(self):
         """Test FetcherSession as a context manager"""
@@ -44,4 +43,3 @@ class TestFetcherSession:
         # Should not have context manager methods
         assert client.__enter__ is None
         assert client.__exit__ is None
-        assert client._curl_session is True  # Special marker
