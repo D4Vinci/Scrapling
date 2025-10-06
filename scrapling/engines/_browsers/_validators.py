@@ -13,7 +13,6 @@ from scrapling.core._types import (
     Callable,
     Iterable,
     SelectorWaitStates,
-    cast,
     overload,
 )
 from scrapling.engines.toolbelt.navigation import construct_proxy_dict
@@ -215,7 +214,7 @@ def validate_fetch(params: List[Tuple], sentinel=None) -> _fetch_params:
             result[arg] = session_value
 
     if overrides:
-        overrides = cast(FetchConfig, validate(overrides, FetchConfig)).to_dict()
+        overrides = validate(overrides, FetchConfig).to_dict()
         overrides.update(result)
         return _fetch_params(**overrides)
 
