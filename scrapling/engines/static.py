@@ -52,24 +52,6 @@ class _ConfigurationLogic(ABC):
         cert: Optional[str | Tuple[str, str]] = None,
         selector_config: Optional[Dict] = None,
     ):
-        """
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
-        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
-        :param proxies: Dict of proxies to use. Format: {"http": proxy_url, "https": proxy_url}.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
-        :param timeout: Number of seconds to wait before timing out.
-        :param headers: Headers to include in the session with every request.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :param retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
-        :param follow_redirects: Whether to follow redirects. Defaults to True.
-        :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
-        :param verify: Whether to verify HTTPS certificates. Defaults to True.
-        :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param selector_config: Arguments passed when creating the final Selector class.
-        """
         self._default_impersonate = impersonate
         self._stealth = stealthy_headers
         self._default_proxies = proxies or {}
@@ -227,11 +209,6 @@ class _SyncSessionLogic(_ConfigurationLogic):
     ) -> Response:
         """
         Perform an HTTP request using the configured session.
-
-        :param method: HTTP method to be used, supported methods are ["GET", "POST", "PUT", "DELETE"]
-        :param stealth: Whether to enable the `stealthy_headers` argument to this request or not. If `None`, it defaults to the session default value.
-        :param kwargs: Additional request-specific arguments.
-        :return: A `Response` object.
         """
         stealth = self._stealth if stealth is None else stealth
 
@@ -638,11 +615,6 @@ class _ASyncSessionLogic(_ConfigurationLogic):
     ) -> Response:
         """
         Perform an HTTP request using the configured session.
-
-        :param method: HTTP method to be used, supported methods are ["GET", "POST", "PUT", "DELETE"]
-        :param stealth: Whether to enable the `stealthy_headers` argument to this request or not. If `None`, it defaults to the session default value.
-        :param kwargs: Additional request-specific arguments.
-        :return: A `Response` object.
         """
         stealth = self._stealth if stealth is None else stealth
 
