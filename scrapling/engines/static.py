@@ -94,7 +94,8 @@ class _ConfigurationLogic(ABC):
     def _merge_request_args(self, **method_kwargs) -> Dict[str, Any]:
         """Merge request-specific arguments with default session arguments."""
         url = method_kwargs.pop("url")
-        impersonate = self._get_with_precedence(method_kwargs.get("impersonate"), self._default_impersonate)
+        impersonate = self._get_with_precedence(method_kwargs.pop("impersonate"), self._default_impersonate)
+        http3_enabled = self._get_with_precedence(method_kwargs.pop("http3"), self._default_http3)
         final_args = {
             "url": url,
             # Curl automatically generates the suitable browser headers when you use `impersonate`
@@ -125,7 +126,7 @@ class _ConfigurationLogic(ABC):
                 )
             },  # Add any remaining parameters (after all known ones are popped)
         }
-        if self._get_with_precedence(method_kwargs.pop("http3"), self._default_http3):  # pragma: no cover
+        if http3_enabled:  # pragma: no cover
             final_args["http_version"] = CurlHttpVersion.V3ONLY
             if impersonate:
                 log.warning(
@@ -141,7 +142,7 @@ class _ConfigurationLogic(ABC):
         3. Generates a referer header that looks like as if this request came from a Google's search of the current URL's domain.
         """
         # Merge session headers with request headers, request takes precedence (if it was set)
-        final_headers = {**self._default_headers, **(headers if headers is not _UNSET else {})}
+        final_headers = {**self._default_headers, **(headers if headers and headers is not _UNSET else {})}
         headers_keys = {k.lower() for k in final_headers}
         if stealth:
             if "referer" not in headers_keys:
@@ -252,8 +253,6 @@ class _SyncSessionLogic(_ConfigurationLogic):
                 try:
                     response = session.request(method, **request_args)
                     result = ResponseFactory.from_http_request(response, selector_config)
-                    if one_off_request:
-                        session.close()
                     return result
                 except CurlError as e:  # pragma: no cover
                     if attempt < max_retries - 1:
@@ -667,8 +666,6 @@ class _ASyncSessionLogic(_ConfigurationLogic):
                 try:
                     response = await session.request(method, **request_args)
                     result = ResponseFactory.from_http_request(response, selector_config)
-                    if one_off_request:
-                        await session.close()
                     return result
                 except CurlError as e:  # pragma: no cover
                     if attempt < max_retries - 1:
