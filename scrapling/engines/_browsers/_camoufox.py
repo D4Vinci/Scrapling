@@ -227,6 +227,10 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param page: The targeted page
         :return:
         """
+        try:
+            page.wait_for_load_state("networkidle", timeout=5000)
+        except PlaywrightError:
+            pass
         challenge_type = self._detect_cloudflare(self._get_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
@@ -277,6 +281,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 if challenge_type != "embedded":
                     page.locator(box_selector).last.wait_for(state="detached")
                     page.locator(".zone-name-title").wait_for(state="hidden")
+                page.wait_for_load_state(state="load")
                 page.wait_for_load_state(state="domcontentloaded")
 
                 log.info("Cloudflare captcha is solved")
@@ -566,6 +571,10 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param page: The async targeted page
         :return:
         """
+        try:
+            await page.wait_for_load_state("networkidle", timeout=5000)
+        except PlaywrightError:
+            pass
         challenge_type = self._detect_cloudflare(await self._get_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
@@ -616,6 +625,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 if challenge_type != "embedded":
                     await page.locator(box_selector).wait_for(state="detached")
                     await page.locator(".zone-name-title").wait_for(state="hidden")
+                await page.wait_for_load_state(state="load")
                 await page.wait_for_load_state(state="domcontentloaded")
 
                 log.info("Cloudflare captcha is solved")
