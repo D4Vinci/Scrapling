@@ -344,6 +344,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
             if (
                 finished_response.request.resource_type == "document"
                 and finished_response.request.is_navigation_request()
+                and finished_response.request.frame == page_info.page.main_frame
             ):
                 final_response = finished_response
 
@@ -676,6 +677,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
             if (
                 finished_response.request.resource_type == "document"
                 and finished_response.request.is_navigation_request()
+                and finished_response.request.frame == page_info.page.main_frame
             ):
                 final_response = finished_response
 
