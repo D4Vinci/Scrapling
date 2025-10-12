@@ -99,6 +99,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         wait_selector_state: SelectorWaitStates = "attached",
         user_data_dir: str = "",
         selector_config: Optional[Dict] = None,
+        additional_args: Optional[Dict] = None,
     ):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
@@ -127,6 +128,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
         self.__validate__(
             wait=wait,
@@ -151,6 +153,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
             selector_config=selector_config,
+            additional_args=additional_args,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
         )
@@ -306,7 +309,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
                 page_info.page, first_response, final_response, params.selector_config
             )
 
-            # Close the page, to free up resources
+            # Close the page to free up resources
             page_info.page.close()
             self.page_pool.pages.remove(page_info)
 
@@ -346,6 +349,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         wait_selector_state: SelectorWaitStates = "attached",
         user_data_dir: str = "",
         selector_config: Optional[Dict] = None,
+        additional_args: Optional[Dict] = None,
     ):
         """A Browser session manager with page pooling
 
@@ -375,6 +379,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
 
         self.__validate__(
@@ -400,6 +405,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
             selector_config=selector_config,
+            additional_args=additional_args,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
         )
@@ -560,7 +566,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
                 page_info.page, first_response, final_response, params.selector_config
             )
 
-            # Close the page, to free up resources
+            # Close the page to free up resources
             await page_info.page.close()
             self.page_pool.pages.remove(page_info)
             return response

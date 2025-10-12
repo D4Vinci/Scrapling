@@ -148,6 +148,7 @@ class DynamicSessionMixin:
         self.init_script = config.init_script
         self.wait_selector_state = config.wait_selector_state
         self.selector_config = config.selector_config
+        self.additional_args = config.additional_args
         self.page_action = config.page_action
         self.user_data_dir = config.user_data_dir
         self._headers_keys = {header.lower() for header in self.extra_headers.keys()} if self.extra_headers else set()
@@ -175,6 +176,7 @@ class DynamicSessionMixin:
             self.launch_options["extra_http_headers"] = dict(self.launch_options["extra_http_headers"])
             self.launch_options["proxy"] = dict(self.launch_options["proxy"]) or None
             self.launch_options["user_data_dir"] = self.user_data_dir
+            self.launch_options.update(cast(Dict, self.additional_args))
             self.context_options = dict()
         else:
             # while `context_options` is left to be used when cdp mode is enabled
@@ -190,6 +192,7 @@ class DynamicSessionMixin:
             )
             self.context_options["extra_http_headers"] = dict(self.context_options["extra_http_headers"])
             self.context_options["proxy"] = dict(self.context_options["proxy"]) or None
+            self.context_options.update(cast(Dict, self.additional_args))
 
 
 class StealthySessionMixin:
