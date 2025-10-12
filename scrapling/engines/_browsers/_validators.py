@@ -87,6 +87,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     network_idle: bool = False
     load_dom: bool = True
     wait_selector_state: SelectorWaitStates = "attached"
+    user_data_dir: str = ""
     selector_config: Optional[Dict] = {}
 
     def __post_init__(self):
@@ -134,6 +135,7 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     os_randomize: bool = False
     disable_ads: bool = False
     geoip: bool = False
+    user_data_dir: str = ""
     selector_config: Optional[Dict] = {}
     additional_args: Optional[Dict] = {}
 

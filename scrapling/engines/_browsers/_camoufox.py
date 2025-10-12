@@ -104,6 +104,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,
+        user_data_dir: str = "",
         selector_config: Optional[Dict] = None,
         additional_args: Optional[Dict] = None,
     ):
@@ -136,6 +137,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
+        :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
@@ -159,6 +161,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
             block_images=block_images,
             block_webrtc=block_webrtc,
             os_randomize=os_randomize,
+            user_data_dir=user_data_dir,
             wait_selector=wait_selector,
             google_search=google_search,
             extra_headers=extra_headers,
@@ -173,9 +176,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
     def __create__(self):
         """Create a browser for this instance and context."""
         self.playwright = sync_playwright().start()
-        self.context = self.playwright.firefox.launch_persistent_context(  # pragma: no cover
-            **self.launch_options
-        )
+        self.context = self.playwright.firefox.launch_persistent_context(**self.launch_options)
 
         if self.init_script:  # pragma: no cover
             self.context.add_init_script(path=self.init_script)
@@ -226,7 +227,6 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param page: The targeted page
         :return:
         """
-        page.wait_for_load_state("networkidle")
         challenge_type = self._detect_cloudflare(self._get_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
@@ -441,6 +441,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         os_randomize: bool = False,
         disable_ads: bool = False,
         geoip: bool = False,
+        user_data_dir: str = "",
         selector_config: Optional[Dict] = None,
         additional_args: Optional[Dict] = None,
     ):
@@ -474,6 +475,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
+        :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
@@ -499,6 +501,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
             wait_selector=wait_selector,
             google_search=google_search,
             extra_headers=extra_headers,
+            user_data_dir=user_data_dir,
             additional_args=additional_args,
             selector_config=selector_config,
             solve_cloudflare=solve_cloudflare,
@@ -509,8 +512,8 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
 
     async def __create__(self):
         """Create a browser for this instance and context."""
-        self.playwright: AsyncPlaywright | None = await async_playwright().start()
-        self.context: AsyncBrowserContext | None = await self.playwright.firefox.launch_persistent_context(
+        self.playwright: AsyncPlaywright = await async_playwright().start()
+        self.context: AsyncBrowserContext = await self.playwright.firefox.launch_persistent_context(
             **self.launch_options
         )
 
@@ -534,11 +537,11 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
 
         if self.context:
             await self.context.close()
-            self.context = None
+            self.context = None  # pyright: ignore
 
         if self.playwright:
             await self.playwright.stop()
-            self.playwright = None
+            self.playwright = None  # pyright: ignore
 
         self._closed = True
 
@@ -563,7 +566,6 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param page: The async targeted page
         :return:
         """
-        await page.wait_for_load_state("networkidle")
         challenge_type = self._detect_cloudflare(await self._get_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")

@@ -149,7 +149,8 @@ class DynamicSessionMixin:
         self.wait_selector_state = config.wait_selector_state
         self.selector_config = config.selector_config
         self.page_action = config.page_action
-        self._headers_keys = set(map(str.lower, self.extra_headers.keys())) if self.extra_headers else set()
+        self.user_data_dir = config.user_data_dir
+        self._headers_keys = {header.lower() for header in self.extra_headers.keys()} if self.extra_headers else set()
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
@@ -173,6 +174,7 @@ class DynamicSessionMixin:
             )
             self.launch_options["extra_http_headers"] = dict(self.launch_options["extra_http_headers"])
             self.launch_options["proxy"] = dict(self.launch_options["proxy"]) or None
+            self.launch_options["user_data_dir"] = self.user_data_dir
             self.context_options = dict()
         else:
             # while `context_options` is left to be used when cdp mode is enabled
@@ -221,7 +223,8 @@ class StealthySessionMixin:
         self.selector_config = config.selector_config
         self.additional_args = config.additional_args
         self.page_action = config.page_action
-        self._headers_keys = set(map(str.lower, self.extra_headers.keys())) if self.extra_headers else set()
+        self.user_data_dir = config.user_data_dir
+        self._headers_keys = {header.lower() for header in self.extra_headers.keys()} if self.extra_headers else set()
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
@@ -239,7 +242,7 @@ class StealthySessionMixin:
                 "block_webrtc": self.block_webrtc,
                 "block_images": self.block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
                 "os": None if self.os_randomize else get_os_name(),
-                "user_data_dir": "",
+                "user_data_dir": self.user_data_dir,
                 "ff_version": __ff_version_str__,
                 "firefox_user_prefs": {
                     # This is what enabling `enable_cache` does internally, so we do it from here instead

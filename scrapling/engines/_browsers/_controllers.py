@@ -97,6 +97,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         network_idle: bool = False,
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
+        user_data_dir: str = "",
         selector_config: Optional[Dict] = None,
     ):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
@@ -124,6 +125,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
+        :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         """
         self.__validate__(
@@ -143,6 +145,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
             hide_canvas=hide_canvas,
             init_script=init_script,
             network_idle=network_idle,
+            user_data_dir=user_data_dir,
             google_search=google_search,
             extra_headers=extra_headers,
             wait_selector=wait_selector,
@@ -164,7 +167,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
                 **self.context_options
             )
         else:
-            self.context = self.playwright.chromium.launch_persistent_context(user_data_dir="", **self.launch_options)
+            self.context = self.playwright.chromium.launch_persistent_context(**self.launch_options)
 
         if self.init_script:  # pragma: no cover
             self.context.add_init_script(path=self.init_script)
@@ -341,6 +344,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         network_idle: bool = False,
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
+        user_data_dir: str = "",
         selector_config: Optional[Dict] = None,
     ):
         """A Browser session manager with page pooling
@@ -369,6 +373,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
+        :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         """
 
@@ -389,6 +394,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             hide_canvas=hide_canvas,
             init_script=init_script,
             network_idle=network_idle,
+            user_data_dir=user_data_dir,
             google_search=google_search,
             extra_headers=extra_headers,
             wait_selector=wait_selector,
@@ -410,7 +416,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             self.context: AsyncBrowserContext = await browser.new_context(**self.context_options)
         else:
             self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
-                user_data_dir="", **self.launch_options
+                **self.launch_options
             )
 
         if self.init_script:  # pragma: no cover
