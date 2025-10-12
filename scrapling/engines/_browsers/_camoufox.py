@@ -593,7 +593,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                             await page.wait_for_timeout(500)
                     outer_box: Any = await (await iframe.frame_element()).bounding_box()
 
-                elif not iframe or not outer_box:
+                if not iframe or not outer_box:
                     outer_box: Any = await page.locator(box_selector).last.bounding_box()
 
                 # Calculate the Captcha coordinates for any viewport
