@@ -208,7 +208,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
     @staticmethod
     def _get_page_content(page: Page) -> str:
         """
-        A workaround for Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
+        A workaround for the Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
         :param page: The page to extract content from.
         :return:
         """
@@ -270,8 +270,12 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
                 page.wait_for_load_state("networkidle")
+                if iframe is not None:
+                    # Wait for the frame to be removed from the page
+                    while iframe in page.frames:
+                        page.wait_for_timeout(100)
                 if challenge_type != "embedded":
-                    page.locator(box_selector).wait_for(state="detached")
+                    page.locator(box_selector).last.wait_for(state="detached")
                     page.locator(".zone-name-title").wait_for(state="hidden")
                 page.wait_for_load_state(state="domcontentloaded")
 
@@ -397,7 +401,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 page_info.page, first_response, final_response, params.selector_config
             )
 
-            # Close the page, to free up resources
+            # Close the page to free up resources
             page_info.page.close()
             self.page_pool.pages.remove(page_info)
 
@@ -541,7 +545,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
     @staticmethod
     async def _get_page_content(page: async_Page) -> str:
         """
-        A workaround for Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
+        A workaround for the Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
         :param page: The page to extract content from.
         :return:
         """
@@ -603,6 +607,10 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 await page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
                 await page.wait_for_load_state("networkidle")
+                if iframe is not None:
+                    # Wait for the frame to be removed from the page
+                    while iframe in page.frames:
+                        await page.wait_for_timeout(100)
                 if challenge_type != "embedded":
                     await page.locator(box_selector).wait_for(state="detached")
                     await page.locator(".zone-name-title").wait_for(state="hidden")
@@ -736,7 +744,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 page_info.page, first_response, final_response, params.selector_config
             )
 
-            # Close the page, to free up resources
+            # Close the page to free up resources
             await page_info.page.close()
             self.page_pool.pages.remove(page_info)
 
