@@ -149,11 +149,6 @@ Get the HTML content of the element
 >>> article.html_content
 '<article class="product" data-id="1"><h3>Product 1</h3>\n        <p class="description">This is product 1</p>\n        <span class="price">$10.99</span>\n        <div class="hidden stock">In stock: 5</div>\n      </article>'
 ```
-It's the same if you used the `.body` property
-```python
->>> article.body
-'<article class="product" data-id="1"><h3>Product 1</h3>\n        <p class="description">This is product 1</p>\n        <span class="price">$10.99</span>\n        <div class="hidden stock">In stock: 5</div>\n      </article>'
-```
 Get the prettified version of the element's HTML content
 ```python
 >>> print(article.prettify())
@@ -162,6 +157,11 @@ Get the prettified version of the element's HTML content
     <span class="price">$10.99</span>
     <div class="hidden stock">In stock: 5</div>
 </article>
+```
+Use `.body` property to get the raw content of page
+```python
+>>> page.body
+'<html>\n  <head>\n    <title>Some page</title>\n  </head>\n  <body>\n    <div class="product-list">\n      <article class="product" data-id="1">\n        <h3>Product 1</h3>\n        <p class="description">This is product 1</p>\n        <span class="price">$10.99</span>\n        <div class="hidden stock">In stock: 5</div>\n      </article>\n\n      <article class="product" data-id="2">\n        <h3>Product 2</h3>\n        <p class="description">This is product 2</p>\n        <span class="price">$20.99</span>\n        <div class="hidden stock">In stock: 3</div>\n      </article>\n\n      <article class="product" data-id="3">\n        <h3>Product 3</h3>\n        <p class="description">This is product 3</p>\n        <span class="price">$15.99</span>\n        <div class="hidden stock">Out of stock</div>\n      </article>\n    </div>\n\n    <script id="page-data" type="application/json">\n      {\n        "lastUpdated": "2024-09-22T10:30:00Z",\n        "totalProducts": 3\n      }\n    </script>\n  </body>\n</html>'
 ```
 To get all the ancestors in the DOM tree of this element
 ```python

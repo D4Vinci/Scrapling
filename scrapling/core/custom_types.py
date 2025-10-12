@@ -5,6 +5,7 @@ from re import compile as re_compile, UNICODE, IGNORECASE
 from orjson import dumps, loads
 
 from scrapling.core._types import (
+    Any,
     cast,
     Dict,
     List,
@@ -14,7 +15,6 @@ from scrapling.core._types import (
     Literal,
     Pattern,
     Iterable,
-    Optional,
     Generator,
     SupportsIndex,
 )
@@ -33,23 +33,20 @@ class TextHandler(str):
 
     def __getitem__(self, key: SupportsIndex | slice) -> "TextHandler":  # pragma: no cover
         lst = super().__getitem__(key)
-        return cast(_TextHandlerType, TextHandler(lst))
+        return TextHandler(lst)
 
-    def split(self, sep: str = None, maxsplit: SupportsIndex = -1) -> "TextHandlers":  # pragma: no cover
-        return TextHandlers(
-            cast(
-                List[_TextHandlerType],
-                [TextHandler(s) for s in super().split(sep, maxsplit)],
-            )
-        )
+    def split(
+        self, sep: str | None = None, maxsplit: SupportsIndex = -1
+    ) -> Union[List, "TextHandlers"]:  # pragma: no cover
+        return TextHandlers([TextHandler(s) for s in super().split(sep, maxsplit)])
 
-    def strip(self, chars: str = None) -> Union[str, "TextHandler"]:  # pragma: no cover
+    def strip(self, chars: str | None = None) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().strip(chars))
 
-    def lstrip(self, chars: str = None) -> Union[str, "TextHandler"]:  # pragma: no cover
+    def lstrip(self, chars: str | None = None) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().lstrip(chars))
 
-    def rstrip(self, chars: str = None) -> Union[str, "TextHandler"]:  # pragma: no cover
+    def rstrip(self, chars: str | None = None) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().rstrip(chars))
 
     def capitalize(self) -> Union[str, "TextHandler"]:  # pragma: no cover
@@ -64,7 +61,7 @@ class TextHandler(str):
     def expandtabs(self, tabsize: SupportsIndex = 8) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().expandtabs(tabsize))
 
-    def format(self, *args: str, **kwargs: str) -> Union[str, "TextHandler"]:  # pragma: no cover
+    def format(self, *args: object, **kwargs: str) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().format(*args, **kwargs))
 
     def format_map(self, mapping) -> Union[str, "TextHandler"]:  # pragma: no cover
@@ -131,10 +128,11 @@ class TextHandler(str):
     def re(
         self,
         regex: str | Pattern,
-        check_match: Literal[True],
         replace_entities: bool = True,
         clean_match: bool = False,
         case_sensitive: bool = True,
+        *,
+        check_match: Literal[True],
     ) -> bool: ...
 
     @overload
@@ -179,19 +177,14 @@ class TextHandler(str):
             results = flatten(results)
 
         if not replace_entities:
-            return TextHandlers(cast(List[_TextHandlerType], [TextHandler(string) for string in results]))
+            return TextHandlers([TextHandler(string) for string in results])
 
-        return TextHandlers(
-            cast(
-                List[_TextHandlerType],
-                [TextHandler(_replace_entities(s)) for s in results],
-            )
-        )
+        return TextHandlers([TextHandler(_replace_entities(s)) for s in results])
 
     def re_first(
         self,
         regex: str | Pattern,
-        default=None,
+        default: Any = None,
         replace_entities: bool = True,
         clean_match: bool = False,
         case_sensitive: bool = True,
@@ -232,8 +225,8 @@ class TextHandlers(List[TextHandler]):
     def __getitem__(self, pos: SupportsIndex | slice) -> Union[TextHandler, "TextHandlers"]:
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
-            return TextHandlers(cast(List[_TextHandlerType], lst))
-        return cast(_TextHandlerType, TextHandler(lst))
+            return TextHandlers(cast(List[TextHandler], lst))
+        return TextHandler(cast(TextHandler, lst))
 
     def re(
         self,
@@ -256,7 +249,7 @@ class TextHandlers(List[TextHandler]):
     def re_first(
         self,
         regex: str | Pattern,
-        default=None,
+        default: Any = None,
         replace_entities: bool = True,
         clean_match: bool = False,
         case_sensitive: bool = True,
@@ -309,9 +302,9 @@ class AttributesHandler(Mapping[str, _TextHandlerType]):
             )
 
         # Fastest read-only mapping type
-        self._data = MappingProxyType(mapping)
+        self._data: Mapping[str, Any] = MappingProxyType(mapping)
 
-    def get(self, key: str, default: Optional[str] = None) -> Optional[_TextHandlerType]:
+    def get(self, key: str, default: Any = None) -> _TextHandlerType:
         """Acts like the standard dictionary `.get()` method"""
         return self._data.get(key, default)
 

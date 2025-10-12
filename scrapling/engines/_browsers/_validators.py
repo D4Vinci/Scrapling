@@ -11,7 +11,9 @@ from scrapling.core._types import (
     Tuple,
     Optional,
     Callable,
+    Iterable,
     SelectorWaitStates,
+    overload,
 )
 from scrapling.engines.toolbelt.navigation import construct_proxy_dict
 
@@ -73,7 +75,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     stealth: bool = False
     wait: Seconds = 0
     page_action: Optional[Callable] = None
-    proxy: Optional[str | Dict[str, str]] = None  # The default value for proxy in Playwright's source is `None`
+    proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
     locale: str = "en-US"
     extra_headers: Optional[Dict[str, str]] = None
     useragent: Optional[str] = None
@@ -81,11 +83,13 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     init_script: Optional[str] = None
     disable_resources: bool = False
     wait_selector: Optional[str] = None
-    cookies: Optional[List[Dict]] = None
+    cookies: Optional[Iterable[Dict]] = None
     network_idle: bool = False
     load_dom: bool = True
     wait_selector_state: SelectorWaitStates = "attached"
-    selector_config: Optional[Dict] = None
+    user_data_dir: str = ""
+    selector_config: Optional[Dict] = {}
+    additional_args: Optional[Dict] = {}
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
@@ -100,6 +104,8 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
             self.cookies = []
         if not self.selector_config:
             self.selector_config = {}
+        if not self.additional_args:
+            self.additional_args = {}
 
         if self.init_script is not None:
             _validate_file_path(self.init_script)
@@ -125,15 +131,16 @@ class CamoufoxConfig(Struct, kw_only=True, frozen=False):
     wait_selector: Optional[str] = None
     addons: Optional[List[str]] = None
     wait_selector_state: SelectorWaitStates = "attached"
-    cookies: Optional[List[Dict]] = None
+    cookies: Optional[Iterable[Dict]] = None
     google_search: bool = True
     extra_headers: Optional[Dict[str, str]] = None
-    proxy: Optional[str | Dict[str, str]] = None  # The default value for proxy in Playwright's source is `None`
+    proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
     os_randomize: bool = False
     disable_ads: bool = False
     geoip: bool = False
-    selector_config: Optional[Dict] = None
-    additional_args: Optional[Dict] = None
+    user_data_dir: str = ""
+    selector_config: Optional[Dict] = {}
+    additional_args: Optional[Dict] = {}
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
@@ -177,7 +184,7 @@ class FetchConfig(Struct, kw_only=True):
     network_idle: bool = False
     load_dom: bool = True
     solve_cloudflare: bool = False
-    selector_config: Optional[Dict] = {}
+    selector_config: Dict = {}
 
     def to_dict(self):
         return {f: getattr(self, f) for f in self.__struct_fields__}
@@ -198,7 +205,7 @@ class _fetch_params:
     network_idle: bool
     load_dom: bool
     solve_cloudflare: bool
-    selector_config: Optional[Dict]
+    selector_config: Dict
 
 
 def validate_fetch(params: List[Tuple], sentinel=None) -> _fetch_params:
@@ -222,7 +229,21 @@ def validate_fetch(params: List[Tuple], sentinel=None) -> _fetch_params:
     return _fetch_params(**result)
 
 
-def validate(params: Dict, model) -> PlaywrightConfig | CamoufoxConfig | FetchConfig:
+@overload
+def validate(params: Dict, model: type[PlaywrightConfig]) -> PlaywrightConfig: ...
+
+
+@overload
+def validate(params: Dict, model: type[CamoufoxConfig]) -> CamoufoxConfig: ...
+
+
+@overload
+def validate(params: Dict, model: type[FetchConfig]) -> FetchConfig: ...
+
+
+def validate(
+    params: Dict, model: type[PlaywrightConfig] | type[CamoufoxConfig] | type[FetchConfig]
+) -> PlaywrightConfig | CamoufoxConfig | FetchConfig:
     try:
         return convert(params, model)
     except ValidationError as e:

@@ -24,15 +24,15 @@ class ResponseFactory:
 
     @classmethod
     @lru_cache(maxsize=16)
-    def __extract_browser_encoding(cls, content_type: str | None) -> Optional[str]:
+    def __extract_browser_encoding(cls, content_type: str | None, default: str = "utf-8") -> str:
         """Extract browser encoding from headers.
         Ex: from header "content-type: text/html; charset=utf-8" -> "utf-8
         """
         if content_type:
             # Because Playwright can't do that by themselves like all libraries for some reason :3
             match = __CHARSET_RE__.search(content_type)
-            return match.group(1) if match else None
-        return None
+            return match.group(1) if match else default
+        return default
 
     @classmethod
     def _process_response_history(cls, first_response: SyncResponse, parser_arguments: Dict) -> list[Response]:
@@ -58,7 +58,8 @@ class ResponseFactory:
                                 "encoding": cls.__extract_browser_encoding(
                                     current_response.headers.get("content-type", "")
                                 )
-                                or "utf-8",
+                                if current_response
+                                else "utf-8",
                                 "cookies": tuple(),
                                 "headers": current_response.all_headers() if current_response else {},
                                 "request_headers": current_request.all_headers(),
@@ -107,15 +108,13 @@ class ResponseFactory:
         if not final_response:
             raise ValueError("Failed to get a response from the page")
 
-        encoding = (
-            cls.__extract_browser_encoding(final_response.headers.get("content-type", "")) or "utf-8"
-        )  # default encoding
+        encoding = cls.__extract_browser_encoding(final_response.headers.get("content-type", ""))
         # PlayWright API sometimes give empty status text for some reason!
         status_text = final_response.status_text or StatusText.get(final_response.status)
 
         history = cls._process_response_history(first_response, parser_arguments)
         try:
-            page_content = page.content()
+            page_content = final_response.text()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content: {e}")
             page_content = ""
@@ -161,7 +160,8 @@ class ResponseFactory:
                                 "encoding": cls.__extract_browser_encoding(
                                     current_response.headers.get("content-type", "")
                                 )
-                                or "utf-8",
+                                if current_response
+                                else "utf-8",
                                 "cookies": tuple(),
                                 "headers": await current_response.all_headers() if current_response else {},
                                 "request_headers": await current_request.all_headers(),
@@ -210,15 +210,13 @@ class ResponseFactory:
         if not final_response:
             raise ValueError("Failed to get a response from the page")
 
-        encoding = (
-            cls.__extract_browser_encoding(final_response.headers.get("content-type", "")) or "utf-8"
-        )  # default encoding
+        encoding = cls.__extract_browser_encoding(final_response.headers.get("content-type", ""))
         # PlayWright API sometimes give empty status text for some reason!
         status_text = final_response.status_text or StatusText.get(final_response.status)
 
         history = await cls._async_process_response_history(first_response, parser_arguments)
         try:
-            page_content = await page.content()
+            page_content = await final_response.text()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content in async: {e}")
             page_content = ""
@@ -255,8 +253,8 @@ class ResponseFactory:
                 "encoding": response.encoding or "utf-8",
                 "cookies": dict(response.cookies),
                 "headers": dict(response.headers),
-                "request_headers": dict(response.request.headers),
-                "method": response.request.method,
+                "request_headers": dict(response.request.headers) if response.request else {},
+                "method": response.request.method if response.request else "GET",
                 "history": response.history,  # https://github.com/lexiforest/curl_cffi/issues/82
                 **parser_arguments,
             }

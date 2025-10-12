@@ -7,14 +7,12 @@ from playwright.async_api import (
     BrowserContext as AsyncBrowserContext,
     Playwright as AsyncPlaywright,
 )
-from camoufox.utils import (
-    launch_options as generate_launch_options,
-    installed_verstr as camoufox_version,
-)
+from camoufox.pkgman import installed_verstr as camoufox_version
+from camoufox.utils import launch_options as generate_launch_options
 
 from ._page import PageInfo, PagePool
 from scrapling.parser import Selector
-from scrapling.core._types import Dict, Optional
+from scrapling.core._types import Any, cast, Dict, Optional, TYPE_CHECKING
 from scrapling.engines.toolbelt.fingerprints import get_os_name
 from ._validators import validate, PlaywrightConfig, CamoufoxConfig
 from ._config_tools import _compiled_stealth_scripts, _launch_kwargs, _context_kwargs
@@ -41,6 +39,7 @@ class SyncSession:
         """Get a new page to use"""
 
         # No need to check if a page is available or not in sync code because the code blocked before reaching here till the page closed, ofc.
+        assert self.context is not None, "Browser context not initialized"
         page = self.context.new_page()
         page.set_default_navigation_timeout(timeout)
         page.set_default_timeout(timeout)
@@ -65,11 +64,14 @@ class SyncSession:
         }
 
 
-class AsyncSession(SyncSession):
+class AsyncSession:
     def __init__(self, max_pages: int = 1):
-        super().__init__(max_pages)
+        self.max_pages = max_pages
+        self.page_pool = PagePool(max_pages)
+        self._max_wait_for_page = 60
         self.playwright: Optional[AsyncPlaywright] = None
         self.context: Optional[AsyncBrowserContext] = None
+        self._closed = False
         self._lock = Lock()
 
     async def _get_page(
@@ -79,6 +81,9 @@ class AsyncSession(SyncSession):
         disable_resources: bool,
     ) -> PageInfo:  # pragma: no cover
         """Get a new page to use"""
+        if TYPE_CHECKING:
+            assert self.context is not None, "Browser context not initialized"
+
         async with self._lock:
             # If we're at max capacity after cleanup, wait for busy pages to finish
             if self.page_pool.pages_count >= self.max_pages:
@@ -92,6 +97,7 @@ class AsyncSession(SyncSession):
                         f"No pages finished to clear place in the pool within the {self._max_wait_for_page}s timeout period"
                     )
 
+            assert self.context is not None, "Browser context not initialized"
             page = await self.context.new_page()
             page.set_default_navigation_timeout(timeout)
             page.set_default_timeout(timeout)
@@ -106,6 +112,14 @@ class AsyncSession(SyncSession):
                     await page.add_init_script(script=script)
 
             return self.page_pool.add_page(page)
+
+    def get_pool_stats(self) -> Dict[str, int]:
+        """Get statistics about the current page pool"""
+        return {
+            "total_pages": self.page_pool.pages_count,
+            "busy_pages": self.page_pool.busy_count,
+            "max_pages": self.max_pages,
+        }
 
 
 class DynamicSessionMixin:
@@ -134,11 +148,16 @@ class DynamicSessionMixin:
         self.init_script = config.init_script
         self.wait_selector_state = config.wait_selector_state
         self.selector_config = config.selector_config
+        self.additional_args = config.additional_args
         self.page_action = config.page_action
-        self._headers_keys = set(map(str.lower, self.extra_headers.keys())) if self.extra_headers else set()
+        self.user_data_dir = config.user_data_dir
+        self._headers_keys = {header.lower() for header in self.extra_headers.keys()} if self.extra_headers else set()
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
+        if TYPE_CHECKING:
+            assert isinstance(self.proxy, tuple)
+
         if not self.cdp_url:
             # `launch_options` is used with persistent context
             self.launch_options = dict(
@@ -156,6 +175,8 @@ class DynamicSessionMixin:
             )
             self.launch_options["extra_http_headers"] = dict(self.launch_options["extra_http_headers"])
             self.launch_options["proxy"] = dict(self.launch_options["proxy"]) or None
+            self.launch_options["user_data_dir"] = self.user_data_dir
+            self.launch_options.update(cast(Dict, self.additional_args))
             self.context_options = dict()
         else:
             # while `context_options` is left to be used when cdp mode is enabled
@@ -171,11 +192,12 @@ class DynamicSessionMixin:
             )
             self.context_options["extra_http_headers"] = dict(self.context_options["extra_http_headers"])
             self.context_options["proxy"] = dict(self.context_options["proxy"]) or None
+            self.context_options.update(cast(Dict, self.additional_args))
 
 
 class StealthySessionMixin:
     def __validate__(self, **params):
-        config = validate(params, model=CamoufoxConfig)
+        config: CamoufoxConfig = validate(params, model=CamoufoxConfig)
 
         self.max_pages = config.max_pages
         self.headless = config.headless
@@ -204,15 +226,16 @@ class StealthySessionMixin:
         self.selector_config = config.selector_config
         self.additional_args = config.additional_args
         self.page_action = config.page_action
-        self._headers_keys = set(map(str.lower, self.extra_headers.keys())) if self.extra_headers else set()
+        self.user_data_dir = config.user_data_dir
+        self._headers_keys = {header.lower() for header in self.extra_headers.keys()} if self.extra_headers else set()
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
         """Initiate browser options."""
-        self.launch_options = generate_launch_options(
+        self.launch_options: Dict[str, Any] = generate_launch_options(
             **{
                 "geoip": self.geoip,
-                "proxy": dict(self.proxy) if self.proxy else self.proxy,
+                "proxy": dict(self.proxy) if self.proxy and isinstance(self.proxy, tuple) else self.proxy,
                 "addons": self.addons,
                 "exclude_addons": [] if self.disable_ads else [DefaultAddons.UBO],
                 "headless": self.headless,
@@ -222,7 +245,7 @@ class StealthySessionMixin:
                 "block_webrtc": self.block_webrtc,
                 "block_images": self.block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
                 "os": None if self.os_randomize else get_os_name(),
-                "user_data_dir": "",
+                "user_data_dir": self.user_data_dir,
                 "ff_version": __ff_version_str__,
                 "firefox_user_prefs": {
                     # This is what enabling `enable_cache` does internally, so we do it from here instead
@@ -232,7 +255,7 @@ class StealthySessionMixin:
                     "browser.cache.disk_cache_ssl": True,
                     "browser.cache.disk.smart_size.enabled": True,
                 },
-                **self.additional_args,
+                **cast(Dict, self.additional_args),
             }
         )
 

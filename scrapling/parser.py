@@ -17,17 +17,21 @@ from lxml.etree import (
 
 from scrapling.core._types import (
     Any,
+    Set,
     Dict,
+    cast,
     List,
     Tuple,
     Union,
     Pattern,
     Callable,
+    Literal,
     Optional,
     Iterable,
     overload,
     Generator,
     SupportsIndex,
+    TYPE_CHECKING,
 )
 from scrapling.core.custom_types import AttributesHandler, TextHandler, TextHandlers
 from scrapling.core.mixins import SelectorsGeneration
@@ -36,7 +40,7 @@ from scrapling.core.storage import (
     StorageSystemMixin,
     _StorageTools,
 )
-from scrapling.core.translator import translator as _translator
+from scrapling.core.translator import css_to_xpath as _css_to_xpath
 from scrapling.core.utils import clean_spaces, flatten, html_forbidden, log
 
 __DEFAULT_DB_FILE__ = str(Path(__file__).parent / "elements_storage.db")
@@ -70,20 +74,23 @@ class Selector(SelectorsGeneration):
         "_raw_body",
     )
 
+    if TYPE_CHECKING:
+        _storage: StorageSystemMixin
+
     def __init__(
         self,
         content: Optional[str | bytes] = None,
-        url: Optional[str] = None,
+        url: str = "",
         encoding: str = "utf-8",
         huge_tree: bool = True,
         root: Optional[HtmlElement] = None,
         keep_comments: Optional[bool] = False,
         keep_cdata: Optional[bool] = False,
         adaptive: Optional[bool] = False,
-        _storage: object = None,
+        _storage: Optional[StorageSystemMixin] = None,
         storage: Any = SQLiteStorageSystem,
         storage_args: Optional[Dict] = None,
-        **kwargs,
+        **_,
     ):
         """The main class that works as a wrapper for the HTML input data. Using this class, you can search for elements
         with expressions in CSS, XPath, or with simply text. Check the docs for more info.
@@ -131,7 +138,7 @@ class Selector(SelectorsGeneration):
                 default_doctype=True,
                 strip_cdata=(not keep_cdata),
             )
-            self._root = fromstring(body, parser=parser, base_url=url)
+            self._root = cast(HtmlElement, fromstring(body, parser=parser, base_url=url or None))
             self._raw_body = content
 
         else:
@@ -141,7 +148,7 @@ class Selector(SelectorsGeneration):
                     f"Root have to be a valid element of `html` module types to work, not of type {type(root)}"
                 )
 
-            self._root = root
+            self._root = cast(HtmlElement, root)
             self._raw_body = ""
 
         self.__adaptive_enabled = adaptive
@@ -238,6 +245,9 @@ class Selector(SelectorsGeneration):
             **self.__response_data,
         )
 
+    def __elements_convertor(self, elements: List[HtmlElement]) -> "Selectors":
+        return Selectors(map(self.__element_convertor, elements))
+
     def __handle_element(
         self, element: Optional[HtmlElement | _ElementUnicodeResult]
     ) -> Optional[Union[TextHandler, "Selector"]]:
@@ -262,7 +272,7 @@ class Selector(SelectorsGeneration):
         if self._is_text_node(result[0]):
             return TextHandlers(map(TextHandler, result))
 
-        return Selectors(map(self.__element_convertor, result))
+        return self.__elements_convertor(result)
 
     def __getstate__(self) -> Any:
         # lxml don't like it :)
@@ -323,7 +333,7 @@ class Selector(SelectorsGeneration):
                     if not valid_values or processed_text.strip():
                         _all_strings.append(processed_text)
 
-        return TextHandler(separator).join(_all_strings)
+        return cast(TextHandler, TextHandler(separator).join(_all_strings))
 
     def urljoin(self, relative_url: str) -> str:
         """Join this Selector's url with a relative url to form an absolute full URL."""
@@ -372,13 +382,14 @@ class Selector(SelectorsGeneration):
     @property
     def parent(self) -> Optional["Selector"]:
         """Return the direct parent of the element or ``None`` otherwise"""
-        return self.__handle_element(self._root.getparent())
+        _parent = self._root.getparent()
+        return self.__element_convertor(_parent) if _parent is not None else None
 
     @property
     def below_elements(self) -> "Selectors":
         """Return all elements under the current element in the DOM tree"""
         below = _find_all_elements(self._root)
-        return self.__handle_elements(below)
+        return self.__elements_convertor(below) if below is not None else Selectors()
 
     @property
     def children(self) -> "Selectors":
@@ -425,7 +436,7 @@ class Selector(SelectorsGeneration):
             # Ignore HTML comments and unwanted types
             next_element = next_element.getnext()
 
-        return self.__handle_element(next_element)
+        return self.__element_convertor(next_element) if next_element is not None else None
 
     @property
     def previous(self) -> Optional["Selector"]:
@@ -435,10 +446,10 @@ class Selector(SelectorsGeneration):
             # Ignore HTML comments and unwanted types
             prev_element = prev_element.getprevious()
 
-        return self.__handle_element(prev_element)
+        return self.__element_convertor(prev_element) if prev_element is not None else None
 
     # For easy copy-paste from Scrapy/parsel code when needed :)
-    def get(self, default=None):
+    def get(self, default=None):  # pyright: ignore
         return self
 
     def get_all(self):
@@ -468,6 +479,16 @@ class Selector(SelectorsGeneration):
         return data + ">"
 
     # From here we start with the selecting functions
+    @overload
+    def relocate(
+        self, element: Union[Dict, HtmlElement, "Selector"], percentage: int, selector_type: Literal[True]
+    ) -> "Selectors": ...
+
+    @overload
+    def relocate(
+        self, element: Union[Dict, HtmlElement, "Selector"], percentage: int, selector_type: Literal[False] = False
+    ) -> List[HtmlElement]: ...
+
     def relocate(
         self,
         element: Union[Dict, HtmlElement, "Selector"],
@@ -506,11 +527,11 @@ class Selector(SelectorsGeneration):
                     log.debug(f"Highest probability was {highest_probability}%")
                     log.debug("Top 5 best matching elements are: ")
                     for percent in tuple(sorted(score_table.keys(), reverse=True))[:5]:
-                        log.debug(f"{percent} -> {self.__handle_elements(score_table[percent])}")
+                        log.debug(f"{percent} -> {self.__elements_convertor(score_table[percent])}")
 
                 if not selector_type:
                     return score_table[highest_probability]
-                return self.__handle_elements(score_table[highest_probability])
+                return self.__elements_convertor(score_table[highest_probability])
         return []
 
     def css_first(
@@ -593,7 +614,7 @@ class Selector(SelectorsGeneration):
         auto_save: bool = False,
         percentage: int = 0,
         **kwargs: Any,
-    ) -> Union["Selectors", List, "TextHandlers"]:
+    ) -> Union["Selectors", List[Any], "TextHandlers"]:
         """Search the current tree with CSS3 selectors
 
         **Important:
@@ -614,7 +635,7 @@ class Selector(SelectorsGeneration):
         try:
             if not self.__adaptive_enabled or "," not in selector:
                 # No need to split selectors in this case, let's save some CPU cycles :)
-                xpath_selector = _translator.css_to_xpath(selector)
+                xpath_selector = _css_to_xpath(selector)
                 return self.xpath(
                     xpath_selector,
                     identifier or selector,
@@ -628,7 +649,7 @@ class Selector(SelectorsGeneration):
             for single_selector in split_selectors(selector):
                 # I'm doing this only so the `save` function saves data correctly for combined selectors
                 # Like using the ',' to combine two different selectors that point to different elements.
-                xpath_selector = _translator.css_to_xpath(single_selector.canonical())
+                xpath_selector = _css_to_xpath(single_selector.canonical())
                 results += self.xpath(
                     xpath_selector,
                     identifier or single_selector.canonical(),
@@ -731,7 +752,8 @@ class Selector(SelectorsGeneration):
             raise TypeError("You have to pass something to search with, like tag name(s), tag attributes, or both.")
 
         attributes = dict()
-        tags, patterns = set(), set()
+        tags: Set[str] = set()
+        patterns: Set[Pattern] = set()
         results, functions, selectors = Selectors(), [], []
 
         # Brace yourself for a wonderful journey!
@@ -740,6 +762,7 @@ class Selector(SelectorsGeneration):
                 tags.add(arg)
 
             elif type(arg) in (list, tuple, set):
+                arg = cast(Iterable, arg)  # Type narrowing for type checkers like pyright
                 if not all(map(lambda x: isinstance(x, str), arg)):
                     raise TypeError("Nested Iterables are not accepted, only iterables of tag names are accepted")
                 tags.update(set(arg))
@@ -774,7 +797,7 @@ class Selector(SelectorsGeneration):
             attributes[attribute_name] = value
 
         # It's easier and faster to build a selector than traversing the tree
-        tags = tags or ["*"]
+        tags = tags or set("*")
         for tag in tags:
             selector = tag
             for key, value in attributes.items():
@@ -785,7 +808,7 @@ class Selector(SelectorsGeneration):
                 selectors.append(selector)
 
         if selectors:
-            results = self.css(", ".join(selectors))
+            results = cast(Selectors, self.css(", ".join(selectors)))
             if results:
                 # From the results, get the ones that fulfill passed regex patterns
                 for pattern in patterns:
@@ -828,20 +851,20 @@ class Selector(SelectorsGeneration):
         :return: A percentage score of how similar is the candidate to the original element
         """
         score, checks = 0, 0
-        candidate = _StorageTools.element_to_dict(candidate)
+        data = _StorageTools.element_to_dict(candidate)
 
         # Possible TODO:
         # Study the idea of giving weight to each test below so some are more important than others
         # Current results: With weights some websites had better score while it was worse for others
-        score += 1 if original["tag"] == candidate["tag"] else 0  # * 0.3  # 30%
+        score += 1 if original["tag"] == data["tag"] else 0  # * 0.3  # 30%
         checks += 1
 
         if original["text"]:
-            score += SequenceMatcher(None, original["text"], candidate.get("text") or "").ratio()  # * 0.3  # 30%
+            score += SequenceMatcher(None, original["text"], data.get("text") or "").ratio()  # * 0.3  # 30%
             checks += 1
 
         # if both don't have attributes, it still counts for something!
-        score += self.__calculate_dict_diff(original["attributes"], candidate["attributes"])  # * 0.3  # 30%
+        score += self.__calculate_dict_diff(original["attributes"], data["attributes"])  # * 0.3  # 30%
         checks += 1
 
         # Separate similarity test for class, id, href,... this will help in full structural changes
@@ -855,23 +878,23 @@ class Selector(SelectorsGeneration):
                 score += SequenceMatcher(
                     None,
                     original["attributes"][attrib],
-                    candidate["attributes"].get(attrib) or "",
+                    data["attributes"].get(attrib) or "",
                 ).ratio()  # * 0.3  # 30%
                 checks += 1
 
-        score += SequenceMatcher(None, original["path"], candidate["path"]).ratio()  # * 0.1  # 10%
+        score += SequenceMatcher(None, original["path"], data["path"]).ratio()  # * 0.1  # 10%
         checks += 1
 
         if original.get("parent_name"):
             # Then we start comparing parents' data
-            if candidate.get("parent_name"):
+            if data.get("parent_name"):
                 score += SequenceMatcher(
-                    None, original["parent_name"], candidate.get("parent_name") or ""
+                    None, original["parent_name"], data.get("parent_name") or ""
                 ).ratio()  # * 0.2  # 20%
                 checks += 1
 
                 score += self.__calculate_dict_diff(
-                    original["parent_attribs"], candidate.get("parent_attribs") or {}
+                    original["parent_attribs"], data.get("parent_attribs") or {}
                 )  # * 0.2  # 20%
                 checks += 1
 
@@ -879,7 +902,7 @@ class Selector(SelectorsGeneration):
                     score += SequenceMatcher(
                         None,
                         original["parent_text"],
-                        candidate.get("parent_text") or "",
+                        data.get("parent_text") or "",
                     ).ratio()  # * 0.1  # 10%
                     checks += 1
             # else:
@@ -887,9 +910,7 @@ class Selector(SelectorsGeneration):
             #     score -= 0.1
 
         if original.get("siblings"):
-            score += SequenceMatcher(
-                None, original["siblings"], candidate.get("siblings") or []
-            ).ratio()  # * 0.1  # 10%
+            score += SequenceMatcher(None, original["siblings"], data.get("siblings") or []).ratio()  # * 0.1  # 10%
             checks += 1
 
         # How % sure? let's see
@@ -902,7 +923,7 @@ class Selector(SelectorsGeneration):
         score += SequenceMatcher(None, tuple(dict1.values()), tuple(dict2.values())).ratio() * 0.5
         return score
 
-    def save(self, element: Union["Selector", HtmlElement], identifier: str) -> None:
+    def save(self, element: HtmlElement, identifier: str) -> None:
         """Saves the element's unique properties to the storage for retrieval and relocation later
 
         :param element: The element itself that we want to save to storage, it can be a ` Selector ` or pure ` HtmlElement `
@@ -910,15 +931,16 @@ class Selector(SelectorsGeneration):
             the docs for more info.
         """
         if self.__adaptive_enabled:
-            if isinstance(element, self.__class__):
-                element = element._root
+            target = element
+            if isinstance(target, self.__class__):
+                target: HtmlElement = target._root
 
-            if self._is_text_node(element):
-                element = element.getparent()
+            if self._is_text_node(target):
+                target: HtmlElement = target.getparent()
 
-            self._storage.save(element, identifier)
+            self._storage.save(target, identifier)
         else:
-            log.critical(
+            raise RuntimeError(
                 "Can't use `adaptive` features while it's disabled globally, you have to start a new class instance."
             )
 
@@ -932,10 +954,9 @@ class Selector(SelectorsGeneration):
         if self.__adaptive_enabled:
             return self._storage.retrieve(identifier)
 
-        log.critical(
+        raise RuntimeError(
             "Can't use `adaptive` features while it's disabled globally, you have to start a new class instance."
         )
-        return None
 
     # Operations on text functions
     def json(self) -> Dict:
@@ -1104,28 +1125,30 @@ class Selector(SelectorsGeneration):
         if not case_sensitive:
             text = text.lower()
 
-        for node in self.__handle_elements(_find_all_elements_with_spaces(self._root)):
-            """Check if element matches given text otherwise, traverse the children tree and iterate"""
-            node_text = node.text
-            if clean_match:
-                node_text = node_text.clean()
+        possible_targets = _find_all_elements_with_spaces(self._root)
+        if possible_targets:
+            for node in self.__elements_convertor(possible_targets):
+                """Check if element matches given text otherwise, traverse the children tree and iterate"""
+                node_text = node.text
+                if clean_match:
+                    node_text = node_text.clean()
 
-            if not case_sensitive:
-                node_text = node_text.lower()
+                if not case_sensitive:
+                    node_text = node_text.lower()
 
-            if partial:
-                if text in node_text:
+                if partial:
+                    if text in node_text:
+                        results.append(node)
+                elif text == node_text:
                     results.append(node)
-            elif text == node_text:
-                results.append(node)
 
-            if first_match and results:
-                # we got an element so we should stop
-                break
+                if first_match and results:
+                    # we got an element so we should stop
+                    break
 
-        if first_match:
-            if results:
-                return results[0]
+            if first_match:
+                if results:
+                    return results[0]
         return results
 
     def find_by_regex(
@@ -1143,23 +1166,25 @@ class Selector(SelectorsGeneration):
         """
         results = Selectors()
 
-        for node in self.__handle_elements(_find_all_elements_with_spaces(self._root)):
-            """Check if element matches given regex otherwise, traverse the children tree and iterate"""
-            node_text = node.text
-            if node_text.re(
-                query,
-                check_match=True,
-                clean_match=clean_match,
-                case_sensitive=case_sensitive,
-            ):
-                results.append(node)
+        possible_targets = _find_all_elements_with_spaces(self._root)
+        if possible_targets:
+            for node in self.__elements_convertor(possible_targets):
+                """Check if element matches given regex otherwise, traverse the children tree and iterate"""
+                node_text = node.text
+                if node_text.re(
+                    query,
+                    check_match=True,
+                    clean_match=clean_match,
+                    case_sensitive=case_sensitive,
+                ):
+                    results.append(node)
 
-            if first_match and results:
-                # we got an element so we should stop
-                break
+                if first_match and results:
+                    # we got an element so we should stop
+                    break
 
-        if results and first_match:
-            return results[0]
+            if results and first_match:
+                return results[0]
         return results
 
 
@@ -1181,9 +1206,9 @@ class Selectors(List[Selector]):
     def __getitem__(self, pos: SupportsIndex | slice) -> Union[Selector, "Selectors"]:
         lst = super().__getitem__(pos)
         if isinstance(pos, slice):
-            return self.__class__(lst)
+            return self.__class__(cast(List[Selector], lst))
         else:
-            return lst
+            return cast(Selector, lst)
 
     def xpath(
         self,
@@ -1265,7 +1290,7 @@ class Selectors(List[Selector]):
     def re_first(
         self,
         regex: str | Pattern,
-        default=None,
+        default: Any = None,
         replace_entities: bool = True,
         clean_match: bool = False,
         case_sensitive: bool = True,

@@ -17,7 +17,7 @@ Now, we will review most of the arguments one by one, using examples. If you wan
 > Note: The async version of the `fetch` method is the `async_fetch` method, of course.
 
 
-This fetcher currently provides four main run options, which can be mixed as desired.
+This fetcher currently provides four main run options that can be combined as desired.
 
 Which are:
 
@@ -62,7 +62,7 @@ DynamicFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
 Instead of launching a browser locally (Chromium/Google Chrome), you can connect to a remote browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/).
 
 ## Full list of arguments
-Scrapling provides many options with this fetcher and its session classes. To make it as simple as possible, we will list the options here and give examples of using most of them.
+Scrapling provides many options with this fetcher and its session classes. To make it as simple as possible, we will list the options here and give examples of how to use most of them.
 
 |      Argument       | Description                                                                                                                                                                                                                                                                                                                                                                                                                 | Optional |
 |:-------------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
@@ -81,13 +81,15 @@ Scrapling provides many options with this fetcher and its session classes. To ma
 | wait_selector_state | Scrapling will wait for the given state to be fulfilled for the selector given with `wait_selector`. _Default state is `attached`._                                                                                                                                                                                                                                                                                         |    ✔️    |
 |    google_search    | Enabled by default, Scrapling will set the referer header as if this request came from a Google search of this website's domain name.                                                                                                                                                                                                                                                                                       |    ✔️    |
 |    extra_headers    | A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._                                                                                                                                                                                                                                                           |    ✔️    |
-|        proxy        | The proxy to be used with requests. It can be a string or a dictionary with the keys 'server', 'username', and 'password' only.                                                                                                                                                                                                                                                                                             |    ✔️    |
+|        proxy        | The proxy to be used with requests. It can be a string or a dictionary with only the keys 'server', 'username', and 'password'.                                                                                                                                                                                                                                                                                             |    ✔️    |
 |     hide_canvas     | Add random noise to canvas operations to prevent fingerprinting.                                                                                                                                                                                                                                                                                                                                                            |    ✔️    |
 |    disable_webgl    | Disables WebGL and WebGL 2.0 support entirely.                                                                                                                                                                                                                                                                                                                                                                              |    ✔️    |
 |       stealth       | Enables stealth mode; you should always check the documentation to see what the stealth mode does currently.                                                                                                                                                                                                                                                                                                                |    ✔️    |
 |     real_chrome     | If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch and use an instance of your browser.                                                                                                                                                                                                                                                                                        |    ✔️    |
 |       locale        | Set the locale for the browser if wanted. The default value is `en-US`.                                                                                                                                                                                                                                                                                                                                                     |    ✔️    |
 |       cdp_url       | Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.                                                                                                                                                                                                                                                                                                                  |    ✔️    |
+|    user_data_dir    | Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory. **Only Works with sessions**                                                                                                                                                                                                                                               |    ✔️    |
+|   additional_args   | Additional arguments to be passed to Playwright's context as additional settings, and they take higher priority than Scrapling's settings.                                                                                                                                                                                                                                                                                  |    ✔️    |
 |   selector_config   | A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.                                                                                                                                                                                                                                                                                                                    |    ✔️    |
 
 In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, and `selector_config`.
@@ -123,11 +125,11 @@ page = DynamicFetcher.fetch(
 ```
 
 ### Browser Automation
-This is where your knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) comes into play. The function you pass here takes the page object from Playwright's API, performs the desired action, and then returns it for the current fetcher to continue processing.
+This is where your knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) comes into play. The function you pass here takes the page object from Playwright's API, performs the desired action, and then the fetcher continues.
 
-This function is executed immediately after waiting for `network_idle` (if enabled) and before waiting for the `wait_selector` argument, allowing it to be used for various purposes, not just automation. You can alter the page as you want.
+This function is executed immediately after waiting for `network_idle` (if enabled) and before waiting for the `wait_selector` argument, allowing it to be used for purposes beyond automation. You can alter the page as you want.
 
-In the example below, I used page [mouse events](https://playwright.dev/python/docs/api/class-mouse) to move the mouse wheel to scroll the page and then move the mouse.
+In the example below, I used the pages' [mouse events](https://playwright.dev/python/docs/api/class-mouse) to scroll the page with the mouse wheel, then move the mouse.
 ```python
 from playwright.sync_api import Page
 
@@ -201,9 +203,9 @@ page = DynamicFetcher.fetch(
     locale='en-US'
 )
 ```
-Hence, the `hide_canvas` argument doesn't disable the canvas but instead hides it by adding random noise to canvas operations, preventing fingerprinting. Also, if you didn't set a user agent (preferred), the fetcher will generate a real User Agent of the same browser and use it.
+Hence, the `hide_canvas` argument doesn't disable the canvas; instead, it hides it by adding random noise to canvas operations, preventing fingerprinting. Also, if you didn't set a user agent (preferred), the fetcher will generate a real User Agent of the same browser and use it.
 
-The `google_search` argument is enabled by default, making the request look as if it came from a Google search page. So, a request for `https://example.com` will set the referer to `https://www.google.com/search?q=example`. Also, if used together, it takes priority over the referer set by the `extra_headers` argument.
+The `google_search` argument is enabled by default, making the request appear to come from a Google search page. So, a request for `https://example.com` will set the referer to `https://www.google.com/search?q=example`. Also, if used together, it takes priority over the referer set by the `extra_headers` argument.
 
 ### General example
 ```python
@@ -272,14 +274,14 @@ async def scrape_multiple_sites():
         return pages
 ```
 
-You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **pool of Browser tabs** that will be rotated automatically. Instead of using one tab for all your requests, you set a limit on the maximum number of pages allowed. With each request, the library will close all tabs that have finished their task and check if the number of the current tabs is lower than the maximum allowed number of pages/tabs, then:
+You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **rotating pool of Browser tabs**. Instead of using a single tab for all your requests, you set a limit on the maximum number of pages. With each request, the library will close all tabs that have finished their task and check if the number of the current tabs is lower than the maximum allowed number of pages/tabs, then:
 
 1. If you are within the allowed range, the fetcher will create a new tab for you, and then all is as normal.
-2. Otherwise, it will keep checking every subsecond if creating a new tab is allowed or not for 60 seconds, then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive for some reason.
+2. Otherwise, it will keep checking every subsecond if creating a new tab is allowed or not for 60 seconds, then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive.
 
 This logic allows for multiple websites to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
 
-In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resources/time. That logic proved to have flaws, as it's nearly impossible to protect pages/tabs from contamination by the previous configuration used with the request before this one.
+In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resources/time. That logic proved flawed, as it's nearly impossible to protect pages/tabs from contamination by the previous configuration used in the request before this one.
 
 ### Session Benefits
 

@@ -20,6 +20,7 @@ from scrapling.core._types import (
     Mapping,
     Dict,
     List,
+    Any,
     SelectorWaitStates,
     Generator,
 )
@@ -171,7 +172,7 @@ class ScraplingMCPServer:
         :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         """
         async with FetcherSession() as session:
-            tasks = [
+            tasks: List[Any] = [
                 session.get(
                     url,
                     auth=auth,

@@ -1,3 +1,9 @@
+from scrapling.core._types import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from scrapling.parser import Selector
+
+
 class SelectorsGeneration:
     """
     Functions for generating selectors
@@ -5,7 +11,7 @@ class SelectorsGeneration:
     Inspiration: https://searchfox.org/mozilla-central/source/devtools/shared/inspector/css-logic.js#591
     """
 
-    def __general_selection(self, selection: str = "css", full_path: bool = False) -> str:
+    def _general_selection(self: "Selector", selection: str = "css", full_path: bool = False) -> str:  # type: ignore[name-defined]
         """Generate a selector for the current element.
         :return: A string of the generated selector.
         """
@@ -47,29 +53,29 @@ class SelectorsGeneration:
         return " > ".join(reversed(selectorPath)) if css else "//" + "/".join(reversed(selectorPath))
 
     @property
-    def generate_css_selector(self) -> str:
+    def generate_css_selector(self: "Selector") -> str:  # type: ignore[name-defined]
         """Generate a CSS selector for the current element
         :return: A string of the generated selector.
         """
-        return self.__general_selection()
+        return self._general_selection()
 
     @property
-    def generate_full_css_selector(self) -> str:
+    def generate_full_css_selector(self: "Selector") -> str:  # type: ignore[name-defined]
         """Generate a complete CSS selector for the current element
         :return: A string of the generated selector.
         """
-        return self.__general_selection(full_path=True)
+        return self._general_selection(full_path=True)
 
     @property
-    def generate_xpath_selector(self) -> str:
+    def generate_xpath_selector(self: "Selector") -> str:  # type: ignore[name-defined]
         """Generate an XPath selector for the current element
         :return: A string of the generated selector.
         """
-        return self.__general_selection("xpath")
+        return self._general_selection("xpath")
 
     @property
-    def generate_full_xpath_selector(self) -> str:
+    def generate_full_xpath_selector(self: "Selector") -> str:  # type: ignore[name-defined]
         """Generate a complete XPath selector for the current element
         :return: A string of the generated selector.
         """
-        return self.__general_selection("xpath", full_path=True)
+        return self._general_selection("xpath", full_path=True)

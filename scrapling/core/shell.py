@@ -31,6 +31,7 @@ from scrapling.core._types import (
     Optional,
     Dict,
     Any,
+    cast,
     extraction_types,
     Generator,
 )
@@ -540,15 +541,15 @@ class Convertor:
             raise ValueError(f"Unknown extraction type: {extraction_type}")
         else:
             if main_content_only:
-                page = page.css_first("body") or page
+                page = cast(Selector, page.css_first("body")) or page
 
-            pages = [page] if not css_selector else page.css(css_selector)
+            pages = [page] if not css_selector else cast(Selectors, page.css(css_selector))
             for page in pages:
                 match extraction_type:
                     case "markdown":
                         yield cls._convert_to_markdown(page.html_content)
                     case "html":
-                        yield page.body
+                        yield page.html_content
                     case "text":
                         txt_content = page.get_all_text(strip=True)
                         for s in (

@@ -14,4 +14,3 @@ class TestFetcherSession:
         # Should not have context manager methods
         assert client.__aenter__ is None
         assert client.__aexit__ is None
-        assert client._async_curl_session is True  # Special marker

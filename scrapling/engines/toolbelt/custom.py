@@ -8,6 +8,7 @@ from scrapling.core.utils import log
 from scrapling.core._types import (
     Any,
     Dict,
+    cast,
     List,
     Optional,
     Tuple,
@@ -30,10 +31,10 @@ class Response(Selector):
         request_headers: Dict,
         encoding: str = "utf-8",
         method: str = "GET",
-        history: List = None,
-        **selector_config: Dict,
+        history: List | None = None,
+        **selector_config: Any,
     ):
-        adaptive_domain = selector_config.pop("adaptive_domain", None)
+        adaptive_domain: str = cast(str, selector_config.pop("adaptive_domain", ""))
         self.status = status
         self.reason = reason
         self.cookies = cookies
@@ -58,7 +59,7 @@ class BaseFetcher:
     keep_cdata: Optional[bool] = False
     storage_args: Optional[Dict] = None
     keep_comments: Optional[bool] = False
-    adaptive_domain: Optional[str] = None
+    adaptive_domain: str = ""
     parser_keywords: Tuple = (
         "huge_tree",
         "adaptive",
@@ -124,12 +125,8 @@ class BaseFetcher:
             adaptive=cls.adaptive,
             storage=cls.storage,
             storage_args=cls.storage_args,
+            adaptive_domain=cls.adaptive_domain,
         )
-        if cls.adaptive_domain:
-            if not isinstance(cls.adaptive_domain, str):
-                log.warning('[Ignored] The argument "adaptive_domain" must be of string type')
-            else:
-                parser_arguments.update({"adaptive_domain": cls.adaptive_domain})
 
         return parser_arguments
 
