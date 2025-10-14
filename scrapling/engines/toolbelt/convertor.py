@@ -114,7 +114,8 @@ class ResponseFactory:
 
         history = cls._process_response_history(first_response, parser_arguments)
         try:
-            page_content = final_response.text()
+            # Get current DOM content instead of original response to capture page_action changes
+            page_content = page.content()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content: {e}")
             page_content = ""
@@ -216,7 +217,8 @@ class ResponseFactory:
 
         history = await cls._async_process_response_history(first_response, parser_arguments)
         try:
-            page_content = await final_response.text()
+            # Get current DOM content instead of original response to capture page_action changes
+            page_content = await page.content()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content in async: {e}")
             page_content = ""
