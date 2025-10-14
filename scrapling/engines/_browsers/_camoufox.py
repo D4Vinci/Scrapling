@@ -253,9 +253,13 @@ class StealthySession(StealthySessionMixin, SyncSession):
                         # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
                         page.wait_for_timeout(500)
 
+                log.info(f"Looking for iframe with pattern: {__CF_PATTERN__.pattern}")
                 outer_box = {}
                 iframe = page.frame(url=__CF_PATTERN__)
+                log.info(f"Iframe found: {iframe is not None}")
+
                 if iframe is not None:
+                    log.info("Waiting for iframe to load...")
                     iframe.wait_for_load_state(state="domcontentloaded")
                     iframe.wait_for_load_state("networkidle")
 
@@ -263,24 +267,71 @@ class StealthySession(StealthySessionMixin, SyncSession):
                         while not iframe.frame_element().is_visible():
                             # Double-checking that the iframe is loaded
                             page.wait_for_timeout(500)
+                    log.info("Getting iframe bounding box...")
                     outer_box: Any = iframe.frame_element().bounding_box()
+                    log.info(f"Iframe bounding box: {outer_box}")
 
                 if not iframe or not outer_box:
-                    outer_box: Any = page.locator(box_selector).last.bounding_box()
+                    log.info(f"Trying to find element with selector: {box_selector}")
+                    try:
+                        outer_box: Any = page.locator(box_selector).last.bounding_box(timeout=5000)
+                        log.info(f"Element bounding box: {outer_box}")
+                    except Exception as e:
+                        log.error(f"Failed to get bounding box: {e}")
+                        # For embedded type, if we can't find the box, just skip clicking
+                        if challenge_type == "embedded":
+                            log.info("Embedded type: Skipping click and waiting for completion")
+                            page.wait_for_timeout(3000)
+                            try:
+                                page.wait_for_load_state("networkidle", timeout=10000)
+                            except PlaywrightError:
+                                pass
+                            page.wait_for_load_state(state="load")
+                            page.wait_for_load_state(state="domcontentloaded")
+                            log.info("Cloudflare captcha is solved (or bypassed)")
+                            return
+                        raise
 
                 # Calculate the Captcha coordinates for any viewport
+                log.info("Calculating captcha coordinates...")
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
+                log.info(f"Clicking at coordinates: ({captcha_x}, {captcha_y})")
 
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
-                page.wait_for_load_state("networkidle")
-                if iframe is not None:
-                    # Wait for the frame to be removed from the page
-                    while iframe in page.frames:
-                        page.wait_for_timeout(100)
+                log.info("Waiting for networkidle after click...")
+                try:
+                    page.wait_for_load_state("networkidle", timeout=5000)
+                except PlaywrightError:
+                    log.info("Initial networkidle timeout, continuing...")
+
                 if challenge_type != "embedded":
+                    if iframe is not None:
+                        # Wait for the frame to be removed from the page
+                        log.info("Waiting for iframe to be removed...")
+                        iframe_removal_attempts = 0
+                        while iframe in page.frames and iframe_removal_attempts < 50:  # Max 5 seconds
+                            page.wait_for_timeout(100)
+                            iframe_removal_attempts += 1
+                        log.info("Iframe removed or timeout reached")
+
+                    log.info("Waiting for elements to be detached/hidden...")
                     page.locator(box_selector).last.wait_for(state="detached")
                     page.locator(".zone-name-title").wait_for(state="hidden")
+                else:
+                    # For embedded type, the iframe and elements stay in the page
+                    # Just wait for the challenge to complete
+                    log.info("Embedded type: Waiting for challenge completion...")
+                    page.wait_for_timeout(3000)  # Give some time for the challenge to process
+                    # Wait for network to be idle as the challenge completion may trigger network requests
+                    try:
+                        page.wait_for_load_state("networkidle", timeout=10000)
+                    except PlaywrightError:
+                        # If networkidle times out, just continue as the challenge might be solved
+                        log.info("Networkidle timeout, continuing...")
+                        pass
+
+                log.info("Final page load states...")
                 page.wait_for_load_state(state="load")
                 page.wait_for_load_state(state="domcontentloaded")
 
@@ -610,21 +661,54 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                     outer_box: Any = await (await iframe.frame_element()).bounding_box()
 
                 if not iframe or not outer_box:
-                    outer_box: Any = await page.locator(box_selector).last.bounding_box()
+                    try:
+                        outer_box: Any = await page.locator(box_selector).last.bounding_box(timeout=5000)
+                    except Exception as e:
+                        log.error(f"Failed to get bounding box: {e}")
+                        # For embedded type, if we can't find the box, just skip clicking
+                        if challenge_type == "embedded":
+                            log.info("Embedded type: Skipping click and waiting for completion")
+                            await page.wait_for_timeout(3000)
+                            try:
+                                await page.wait_for_load_state("networkidle", timeout=10000)
+                            except PlaywrightError:
+                                pass
+                            await page.wait_for_load_state(state="load")
+                            await page.wait_for_load_state(state="domcontentloaded")
+                            log.info("Cloudflare captcha is solved (or bypassed)")
+                            return
+                        raise
 
                 # Calculate the Captcha coordinates for any viewport
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
 
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 await page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
-                await page.wait_for_load_state("networkidle")
-                if iframe is not None:
-                    # Wait for the frame to be removed from the page
-                    while iframe in page.frames:
-                        await page.wait_for_timeout(100)
+                try:
+                    await page.wait_for_load_state("networkidle", timeout=5000)
+                except PlaywrightError:
+                    pass
+
                 if challenge_type != "embedded":
+                    if iframe is not None:
+                        # Wait for the frame to be removed from the page
+                        iframe_removal_attempts = 0
+                        while iframe in page.frames and iframe_removal_attempts < 50:  # Max 5 seconds
+                            await page.wait_for_timeout(100)
+                            iframe_removal_attempts += 1
+
                     await page.locator(box_selector).wait_for(state="detached")
                     await page.locator(".zone-name-title").wait_for(state="hidden")
+                else:
+                    # For embedded type, the iframe and elements stay in the page
+                    # Just wait for the challenge to complete
+                    await page.wait_for_timeout(3000)  # Give some time for the challenge to process
+                    # Wait for network to be idle as the challenge completion may trigger network requests
+                    try:
+                        await page.wait_for_load_state("networkidle", timeout=10000)
+                    except PlaywrightError:
+                        # If networkidle times out, just continue as the challenge might be solved
+                        pass
                 await page.wait_for_load_state(state="load")
                 await page.wait_for_load_state(state="domcontentloaded")
 
