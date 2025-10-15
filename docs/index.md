@@ -40,6 +40,7 @@ Built for the modern Web, Scrapling features its own rapid parsing engine and fe
     <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png"></a>
     <a href="https://visit.decodo.com/Dy6W0b" target="_blank" title="Try the Most Efficient Residential Proxies for Free"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/decodo.png"></a>
     <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>
+    <a href="https://app.cyberyozh.com/?utm_source=github&utm_medium=scrapling" target="_blank" title="We have gathered the best solutions for multi‑accounting and automation in one place."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/cyberyozh.png"></a>
 </div>
 <!-- /sponsors -->
 
