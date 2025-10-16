@@ -1,39 +1,52 @@
 from random import randint
 from re import compile as re_compile
 
-from playwright.sync_api import (
-    Response as SyncPlaywrightResponse,
-    sync_playwright,
-    Locator,
-    Page,
+from playwright._impl._errors import Error as PlaywrightError
+from playwright.async_api import (
+    BrowserContext as AsyncBrowserContext,
+)
+from playwright.async_api import (
+    Locator as AsyncLocator,
+)
+from playwright.async_api import (
+    Page as async_Page,
+)
+from playwright.async_api import (
+    Playwright as AsyncPlaywright,
+)
+from playwright.async_api import (
+    Response as AsyncPlaywrightResponse,
 )
 from playwright.async_api import (
     async_playwright,
-    Response as AsyncPlaywrightResponse,
-    BrowserContext as AsyncBrowserContext,
-    Playwright as AsyncPlaywright,
-    Locator as AsyncLocator,
-    Page as async_Page,
 )
-from playwright._impl._errors import Error as PlaywrightError
+from playwright.sync_api import (
+    Locator,
+    Page,
+    sync_playwright,
+)
+from playwright.sync_api import (
+    Response as SyncPlaywrightResponse,
+)
 
-from ._validators import validate_fetch as _validate
-from ._base import SyncSession, AsyncSession, StealthySessionMixin
-from scrapling.core.utils import log
 from scrapling.core._types import (
+    TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
-    Callable,
-    TYPE_CHECKING,
     SelectorWaitStates,
 )
+from scrapling.core.utils import log
 from scrapling.engines.toolbelt.convertor import (
     Response,
     ResponseFactory,
 )
 from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
+
+from ._base import AsyncSession, StealthySessionMixin, SyncSession
+from ._validators import validate_fetch as _validate
 
 __CF_PATTERN__ = re_compile("challenges.cloudflare.com/cdn-cgi/challenge-platform/.*")
 _UNSET: Any = object()
@@ -178,7 +191,9 @@ class StealthySession(StealthySessionMixin, SyncSession):
         self.playwright = sync_playwright().start()
         self.context = self.playwright.firefox.launch_persistent_context(**self.launch_options)
 
-        if self.init_script:  # pragma: no cover
+        # Only add init_script if solve_cloudflare is disabled
+        # If solve_cloudflare is enabled, init_script will be added per-page after CF solving
+        if self.init_script and not self.solve_cloudflare:  # pragma: no cover
             self.context.add_init_script(path=self.init_script)
 
         if self.cookies:  # pragma: no cover
@@ -425,6 +440,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 raise RuntimeError(f"Failed to get response for {url}")
 
             if params.solve_cloudflare:
+                log.info("[BEFORE] Starting Cloudflare solving...")
                 self._solve_cloudflare(page_info.page)
                 # Make sure the page is fully loaded after the captcha
                 page_info.page.wait_for_load_state(state="load")
@@ -432,6 +448,19 @@ class StealthySession(StealthySessionMixin, SyncSession):
                     page_info.page.wait_for_load_state(state="domcontentloaded")
                 if params.network_idle:
                     page_info.page.wait_for_load_state("networkidle")
+                log.info("[AFTER] Cloudflare solving completed")
+
+                # Add init_script after Cloudflare solving
+                if self.init_script:  # pragma: no cover
+                    log.info("[AFTER CF] Adding init_script...")
+                    page_info.page.add_init_script(path=self.init_script)
+                    page_info.page.reload()  # Reload to apply the script
+                    page_info.page.wait_for_load_state(state="load")
+                    if params.load_dom:
+                        page_info.page.wait_for_load_state(state="domcontentloaded")
+                    if params.network_idle:
+                        page_info.page.wait_for_load_state("networkidle")
+                    log.info("[AFTER CF] init_script applied and page reloaded")
 
             if params.page_action:
                 try:
@@ -573,7 +602,9 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
             **self.launch_options
         )
 
-        if self.init_script:  # pragma: no cover
+        # Only add init_script if solve_cloudflare is disabled
+        # If solve_cloudflare is enabled, init_script will be added per-page after CF solving
+        if self.init_script and not self.solve_cloudflare:  # pragma: no cover
             await self.context.add_init_script(path=self.init_script)
 
         if self.cookies:
@@ -662,15 +693,15 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
 
                 if not iframe or not outer_box:
                     try:
-                        outer_box: Any = await page.locator(box_selector).last.bounding_box(timeout=5000)
+                        outer_box: Any = await page.locator(box_selector).last.bounding_box(timeout=3000)
                     except Exception as e:
                         log.error(f"Failed to get bounding box: {e}")
                         # For embedded type, if we can't find the box, just skip clicking
                         if challenge_type == "embedded":
                             log.info("Embedded type: Skipping click and waiting for completion")
-                            await page.wait_for_timeout(3000)
+                            await page.wait_for_timeout(2000)
                             try:
-                                await page.wait_for_load_state("networkidle", timeout=10000)
+                                await page.wait_for_load_state("networkidle", timeout=2000)
                             except PlaywrightError:
                                 pass
                             await page.wait_for_load_state(state="load")
@@ -705,7 +736,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                     await page.wait_for_timeout(3000)  # Give some time for the challenge to process
                     # Wait for network to be idle as the challenge completion may trigger network requests
                     try:
-                        await page.wait_for_load_state("networkidle", timeout=10000)
+                        await page.wait_for_load_state("networkidle", timeout=1000)
                     except PlaywrightError:
                         # If networkidle times out, just continue as the challenge might be solved
                         pass
@@ -806,6 +837,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 raise RuntimeError(f"Failed to get response for {url}")
 
             if params.solve_cloudflare:
+                log.info("[BEFORE] Starting Cloudflare solving...")
                 await self._solve_cloudflare(page_info.page)
                 # Make sure the page is fully loaded after the captcha
                 await page_info.page.wait_for_load_state(state="load")
@@ -813,10 +845,25 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                     await page_info.page.wait_for_load_state(state="domcontentloaded")
                 if params.network_idle:
                     await page_info.page.wait_for_load_state("networkidle")
+                log.info("[AFTER] Cloudflare solving completed")
+
+                # Add init_script after Cloudflare solving
+                if self.init_script:  # pragma: no cover
+                    log.info("[AFTER CF] Adding init_script...")
+                    await page_info.page.add_init_script(path=self.init_script)
+                    await page_info.page.reload()  # Reload to apply the script
+                    await page_info.page.wait_for_load_state(state="load")
+                    if params.load_dom:
+                        await page_info.page.wait_for_load_state(state="domcontentloaded")
+                    if params.network_idle:
+                        await page_info.page.wait_for_load_state("networkidle")
+                    log.info("[AFTER CF] init_script applied and page reloaded")
 
             if params.page_action:
                 try:
+                    log.info("[BEFORE] Executing page_action...")
                     _ = await params.page_action(page_info.page)
+                    log.info("[AFTER] page_action completed")
                 except Exception as e:
                     log.error(f"Error executing page_action: {e}")
 
