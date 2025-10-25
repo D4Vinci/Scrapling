@@ -206,21 +206,6 @@ class StealthySession(StealthySessionMixin, SyncSession):
 
         self._closed = True
 
-    @staticmethod
-    def _get_page_content(page: Page) -> str:
-        """
-        A workaround for the Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
-        :param page: The page to extract content from.
-        :return:
-        """
-        while True:
-            try:
-                return page.content() or ""
-            except PlaywrightError:
-                page.wait_for_timeout(1000)
-                continue
-        return ""  # pyright: ignore
-
     def _solve_cloudflare(self, page: Page) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
 
@@ -231,14 +216,14 @@ class StealthySession(StealthySessionMixin, SyncSession):
             page.wait_for_load_state("networkidle", timeout=5000)
         except PlaywrightError:
             pass
-        challenge_type = self._detect_cloudflare(self._get_page_content(page))
+        challenge_type = self._detect_cloudflare(ResponseFactory._get_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
             return
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":
-                while "<title>Just a moment...</title>" in (self._get_page_content(page)):
+                while "<title>Just a moment...</title>" in (ResponseFactory._get_page_content(page)):
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     page.wait_for_timeout(1000)
                     page.wait_for_load_state()
@@ -249,7 +234,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 box_selector = "#cf_turnstile div, #cf-turnstile div, .turnstile>div>div"
                 if challenge_type != "embedded":
                     box_selector = ".main-content p+div>div>div"
-                    while "Verifying you are human." in self._get_page_content(page):
+                    while "Verifying you are human." in ResponseFactory._get_page_content(page):
                         # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
                         page.wait_for_timeout(500)
 
@@ -403,7 +388,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
 
             page_info.page.wait_for_timeout(params.wait)
             response = ResponseFactory.from_playwright_response(
-                page_info.page, first_response, final_response, params.selector_config
+                page_info.page, first_response, final_response, params.selector_config, bool(params.page_action)
             )
 
             # Close the page to free up resources
@@ -550,21 +535,6 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
 
         self._closed = True
 
-    @staticmethod
-    async def _get_page_content(page: async_Page) -> str:
-        """
-        A workaround for the Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
-        :param page: The page to extract content from.
-        :return:
-        """
-        while True:
-            try:
-                return (await page.content()) or ""
-            except PlaywrightError:
-                await page.wait_for_timeout(1000)
-                continue
-        return ""  # pyright: ignore
-
     async def _solve_cloudflare(self, page: async_Page):
         """Solve the cloudflare challenge displayed on the playwright page passed. The async version
 
@@ -575,14 +545,14 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
             await page.wait_for_load_state("networkidle", timeout=5000)
         except PlaywrightError:
             pass
-        challenge_type = self._detect_cloudflare(await self._get_page_content(page))
+        challenge_type = self._detect_cloudflare(await ResponseFactory._get_async_page_content(page))
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
             return
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":  # pragma: no cover
-                while "<title>Just a moment...</title>" in (await self._get_page_content(page)):
+                while "<title>Just a moment...</title>" in (await ResponseFactory._get_async_page_content(page)):
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     await page.wait_for_timeout(1000)
                     await page.wait_for_load_state()
@@ -593,7 +563,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 box_selector = "#cf_turnstile div, #cf-turnstile div, .turnstile>div>div"
                 if challenge_type != "embedded":
                     box_selector = ".main-content p+div>div>div"
-                    while "Verifying you are human." in (await self._get_page_content(page)):
+                    while "Verifying you are human." in (await ResponseFactory._get_async_page_content(page)):
                         # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
                         await page.wait_for_timeout(500)
 
@@ -753,7 +723,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
 
             # Create response object
             response = await ResponseFactory.from_async_playwright_response(
-                page_info.page, first_response, final_response, params.selector_config
+                page_info.page, first_response, final_response, params.selector_config, bool(params.page_action)
             )
 
             # Close the page to free up resources

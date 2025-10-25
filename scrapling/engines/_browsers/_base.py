@@ -53,7 +53,9 @@ class SyncSession:
             for script in _compiled_stealth_scripts():
                 page.add_init_script(script=script)
 
-        return self.page_pool.add_page(page)
+        page_info = self.page_pool.add_page(page)
+        page_info.mark_busy()
+        return page_info
 
     def get_pool_stats(self) -> Dict[str, int]:
         """Get statistics about the current page pool"""
@@ -97,7 +99,6 @@ class AsyncSession:
                         f"No pages finished to clear place in the pool within the {self._max_wait_for_page}s timeout period"
                     )
 
-            assert self.context is not None, "Browser context not initialized"
             page = await self.context.new_page()
             page.set_default_navigation_timeout(timeout)
             page.set_default_timeout(timeout)

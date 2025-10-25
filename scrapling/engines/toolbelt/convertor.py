@@ -2,6 +2,7 @@ from functools import lru_cache
 from re import compile as re_compile
 
 from curl_cffi.requests import Response as CurlResponse
+from playwright._impl._errors import Error as PlaywrightError
 from playwright.sync_api import Page as SyncPage, Response as SyncResponse
 from playwright.async_api import Page as AsyncPage, Response as AsyncResponse
 
@@ -84,6 +85,7 @@ class ResponseFactory:
         first_response: SyncResponse,
         final_response: Optional[SyncResponse],
         parser_arguments: Dict,
+        automated_page: bool = False,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -99,6 +101,7 @@ class ResponseFactory:
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
+        :param automated_page: If True, it means the `page_action` argument was being used, so the response retrieving method changes to use Playwright's page instead of the final response.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -114,7 +117,7 @@ class ResponseFactory:
 
         history = cls._process_response_history(first_response, parser_arguments)
         try:
-            page_content = final_response.text()
+            page_content = final_response.text() if not automated_page else cls._get_page_content(page)
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content: {e}")
             page_content = ""
@@ -180,12 +183,43 @@ class ResponseFactory:
         return history
 
     @classmethod
+    def _get_page_content(cls, page: SyncPage) -> str:
+        """
+        A workaround for the Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
+        :param page: The page to extract content from.
+        :return:
+        """
+        while True:
+            try:
+                return page.content() or ""
+            except PlaywrightError:
+                page.wait_for_timeout(500)
+                continue
+        return ""  # pyright: ignore
+
+    @classmethod
+    async def _get_async_page_content(cls, page: AsyncPage) -> str:
+        """
+        A workaround for the Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
+        :param page: The page to extract content from.
+        :return:
+        """
+        while True:
+            try:
+                return (await page.content()) or ""
+            except PlaywrightError:
+                await page.wait_for_timeout(500)
+                continue
+        return ""  # pyright: ignore
+
+    @classmethod
     async def from_async_playwright_response(
         cls,
         page: AsyncPage,
         first_response: AsyncResponse,
         final_response: Optional[AsyncResponse],
         parser_arguments: Dict,
+        automated_page: bool = False,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -201,6 +235,7 @@ class ResponseFactory:
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
+        :param automated_page: If True, it means the `page_action` argument was being used, so the response retrieving method changes to use Playwright's page instead of the final response.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -216,7 +251,7 @@ class ResponseFactory:
 
         history = await cls._async_process_response_history(first_response, parser_arguments)
         try:
-            page_content = await final_response.text()
+            page_content = await (final_response.text() if not automated_page else cls._get_async_page_content(page))
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content in async: {e}")
             page_content = ""
