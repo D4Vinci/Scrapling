@@ -88,6 +88,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
     load_dom: bool = True
     wait_selector_state: SelectorWaitStates = "attached"
     user_data_dir: str = ""
+    extra_flags: Optional[List[str]] = None
     selector_config: Optional[Dict] = {}
     additional_args: Optional[Dict] = {}
 
@@ -102,6 +103,8 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False):
 
         if not self.cookies:
             self.cookies = []
+        if not self.extra_flags:
+            self.extra_flags = []
         if not self.selector_config:
             self.selector_config = {}
         if not self.additional_args:

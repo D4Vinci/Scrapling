@@ -95,6 +95,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
         user_data_dir: str = "",
+        extra_flags: Optional[List[str]] = None,
         selector_config: Optional[Dict] = None,
         additional_args: Optional[Dict] = None,
     ):
@@ -124,6 +125,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
+        :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
@@ -149,6 +151,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
             extra_headers=extra_headers,
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
+            extra_flags=extra_flags,
             selector_config=selector_config,
             additional_args=additional_args,
             disable_resources=disable_resources,
@@ -306,6 +309,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
         user_data_dir: str = "",
+        extra_flags: Optional[List[str]] = None,
         selector_config: Optional[Dict] = None,
         additional_args: Optional[Dict] = None,
     ):
@@ -336,6 +340,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
+        :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
@@ -362,6 +367,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             extra_headers=extra_headers,
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
+            extra_flags=extra_flags,
             selector_config=selector_config,
             additional_args=additional_args,
             disable_resources=disable_resources,

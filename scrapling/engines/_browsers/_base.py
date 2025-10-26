@@ -276,6 +276,7 @@ class DynamicSessionMixin:
         self.wait_selector = config.wait_selector
         self.init_script = config.init_script
         self.wait_selector_state = config.wait_selector_state
+        self.extra_flags = config.extra_flags
         self.selector_config = config.selector_config
         self.additional_args = config.additional_args
         self.page_action = config.page_action
@@ -300,6 +301,7 @@ class DynamicSessionMixin:
                     self.stealth,
                     self.hide_canvas,
                     self.disable_webgl,
+                    tuple(self.extra_flags) if self.extra_flags else tuple(),
                 )
             )
             self.launch_options["extra_http_headers"] = dict(self.launch_options["extra_http_headers"])

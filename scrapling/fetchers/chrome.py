@@ -50,6 +50,7 @@ class DynamicFetcher(BaseFetcher):
         network_idle: bool = False,
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
+        extra_flags: Optional[List[str]] = None,
         additional_args: Optional[Dict] = None,
         custom_config: Optional[Dict] = None,
     ) -> Response:
@@ -79,6 +80,7 @@ class DynamicFetcher(BaseFetcher):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
+        :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         :return: A `Response` object.
@@ -108,6 +110,7 @@ class DynamicFetcher(BaseFetcher):
             extra_headers=extra_headers,
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
+            extra_flags=extra_flags,
             additional_args=additional_args,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
@@ -140,6 +143,7 @@ class DynamicFetcher(BaseFetcher):
         network_idle: bool = False,
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
+        extra_flags: Optional[List[str]] = None,
         additional_args: Optional[Dict] = None,
         custom_config: Optional[Dict] = None,
     ) -> Response:
@@ -169,6 +173,7 @@ class DynamicFetcher(BaseFetcher):
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
+        :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param custom_config: A dictionary of custom parser arguments to use with this request. Any argument passed will override any class parameters values.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         :return: A `Response` object.
@@ -199,6 +204,7 @@ class DynamicFetcher(BaseFetcher):
             extra_headers=extra_headers,
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
+            extra_flags=extra_flags,
             additional_args=additional_args,
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
