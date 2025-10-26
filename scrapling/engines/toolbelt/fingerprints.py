@@ -7,8 +7,9 @@ from platform import system as platform_system
 
 from tldextract import extract
 from browserforge.headers import Browser, HeaderGenerator
+from browserforge.headers.generator import SUPPORTED_OPERATING_SYSTEMS
 
-from scrapling.core._types import Dict, Literal
+from scrapling.core._types import Dict, Literal, Tuple
 
 __OS_NAME__ = platform_system()
 OSName = Literal["linux", "macos", "windows"]
@@ -29,12 +30,12 @@ def generate_convincing_referer(url: str) -> str:
 
 
 @lru_cache(1, typed=True)
-def get_os_name() -> OSName | None:
+def get_os_name() -> OSName | Tuple:
     """Get the current OS name in the same format needed for browserforge, if the OS is Unknown, return None so browserforge uses all.
 
     :return: Current OS name or `None` otherwise
     """
-    match __OS_NAME__:
+    match __OS_NAME__:  # pragma: no cover
         case "Linux":
             return "linux"
         case "Darwin":
@@ -42,7 +43,7 @@ def get_os_name() -> OSName | None:
         case "Windows":
             return "windows"
         case _:
-            return None
+            return SUPPORTED_OPERATING_SYSTEMS
 
 
 def generate_headers(browser_mode: bool = False) -> Dict:
@@ -63,10 +64,7 @@ def generate_headers(browser_mode: bool = False) -> Dict:
                 Browser(name="edge", min_version=130),
             ]
         )
-    if os_name:
-        return HeaderGenerator(browser=browsers, os=os_name, device="desktop").generate()
-    else:
-        return HeaderGenerator(browser=browsers, device="desktop").generate()
+    return HeaderGenerator(browser=browsers, os=os_name, device="desktop").generate()
 
 
 __default_useragent__ = generate_headers(browser_mode=False).get("User-Agent")

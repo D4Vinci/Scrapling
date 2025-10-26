@@ -2,17 +2,27 @@ from time import time
 from asyncio import sleep as asyncio_sleep, Lock
 
 from camoufox import DefaultAddons
-from playwright.sync_api import BrowserContext, Playwright
-from playwright.async_api import (
-    BrowserContext as AsyncBrowserContext,
-    Playwright as AsyncPlaywright,
+from playwright.sync_api import (
+    Page,
+    Frame,
+    BrowserContext,
+    Playwright,
+    Response as SyncPlaywrightResponse,
 )
+from playwright.async_api import (
+    Page as AsyncPage,
+    Frame as AsyncFrame,
+    Playwright as AsyncPlaywright,
+    Response as AsyncPlaywrightResponse,
+    BrowserContext as AsyncBrowserContext,
+)
+from playwright._impl._errors import Error as PlaywrightError
 from camoufox.pkgman import installed_verstr as camoufox_version
 from camoufox.utils import launch_options as generate_launch_options
 
 from ._page import PageInfo, PagePool
 from scrapling.parser import Selector
-from scrapling.core._types import Any, cast, Dict, Optional, TYPE_CHECKING
+from scrapling.core._types import Any, cast, Dict, List, Optional, Callable, TYPE_CHECKING
 from scrapling.engines.toolbelt.fingerprints import get_os_name
 from ._validators import validate, PlaywrightConfig, CamoufoxConfig
 from ._config_tools import _compiled_stealth_scripts, _launch_kwargs, _context_kwargs
@@ -26,9 +36,34 @@ class SyncSession:
         self.max_pages = max_pages
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
-        self.playwright: Optional[Playwright] = None
-        self.context: Optional[BrowserContext] = None
+        self.playwright: Playwright | Any = None
+        self.context: BrowserContext | Any = None
         self._closed = False
+
+    def __create__(self):
+        pass
+
+    def close(self):  # pragma: no cover
+        """Close all resources"""
+        if self._closed:
+            return
+
+        if self.context:
+            self.context.close()
+            self.context = None
+
+        if self.playwright:
+            self.playwright.stop()
+            self.playwright = None  # pyright: ignore
+
+        self._closed = True
+
+    def __enter__(self):
+        self.__create__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     def _get_page(
         self,
@@ -65,16 +100,75 @@ class SyncSession:
             "max_pages": self.max_pages,
         }
 
+    @staticmethod
+    def _wait_for_networkidle(page: Page | Frame, timeout: Optional[int] = None):
+        """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
+        try:
+            page.wait_for_load_state("networkidle", timeout=timeout)
+        except PlaywrightError:
+            pass
+
+    def _wait_for_page_stability(self, page: Page | Frame, load_dom: bool, network_idle: bool):
+        page.wait_for_load_state(state="load")
+        if load_dom:
+            page.wait_for_load_state(state="domcontentloaded")
+        if network_idle:
+            self._wait_for_networkidle(page)
+
+    @staticmethod
+    def _create_response_handler(page_info: PageInfo, response_container: List) -> Callable:
+        """Create a response handler that captures the final navigation response.
+
+        :param page_info: The PageInfo object containing the page
+        :param response_container: A list to store the final response (mutable container)
+        :return: A callback function for page.on("response", ...)
+        """
+
+        def handle_response(finished_response: SyncPlaywrightResponse):
+            if (
+                finished_response.request.resource_type == "document"
+                and finished_response.request.is_navigation_request()
+                and finished_response.request.frame == page_info.page.main_frame
+            ):
+                response_container[0] = finished_response
+
+        return handle_response
+
 
 class AsyncSession:
     def __init__(self, max_pages: int = 1):
         self.max_pages = max_pages
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
-        self.playwright: Optional[AsyncPlaywright] = None
-        self.context: Optional[AsyncBrowserContext] = None
+        self.playwright: AsyncPlaywright | Any = None
+        self.context: AsyncBrowserContext | Any = None
         self._closed = False
         self._lock = Lock()
+
+    async def __create__(self):
+        pass
+
+    async def close(self):
+        """Close all resources"""
+        if self._closed:  # pragma: no cover
+            return
+
+        if self.context:
+            await self.context.close()
+            self.context = None  # pyright: ignore
+
+        if self.playwright:
+            await self.playwright.stop()
+            self.playwright = None  # pyright: ignore
+
+        self._closed = True
+
+    async def __aenter__(self):
+        await self.__create__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
 
     async def _get_page(
         self,
@@ -121,6 +215,40 @@ class AsyncSession:
             "busy_pages": self.page_pool.busy_count,
             "max_pages": self.max_pages,
         }
+
+    @staticmethod
+    async def _wait_for_networkidle(page: AsyncPage | AsyncFrame, timeout: Optional[int] = None):
+        """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
+        try:
+            await page.wait_for_load_state("networkidle", timeout=timeout)
+        except PlaywrightError:
+            pass
+
+    async def _wait_for_page_stability(self, page: AsyncPage | AsyncFrame, load_dom: bool, network_idle: bool):
+        await page.wait_for_load_state(state="load")
+        if load_dom:
+            await page.wait_for_load_state(state="domcontentloaded")
+        if network_idle:
+            await self._wait_for_networkidle(page)
+
+    @staticmethod
+    def _create_response_handler(page_info: PageInfo, response_container: List) -> Callable:
+        """Create an async response handler that captures the final navigation response.
+
+        :param page_info: The PageInfo object containing the page
+        :param response_container: A list to store the final response (mutable container)
+        :return: A callback function for page.on("response", ...)
+        """
+
+        async def handle_response(finished_response: AsyncPlaywrightResponse):
+            if (
+                finished_response.request.resource_type == "document"
+                and finished_response.request.is_navigation_request()
+                and finished_response.request.frame == page_info.page.main_frame
+            ):
+                response_container[0] = finished_response
+
+        return handle_response
 
 
 class DynamicSessionMixin:
