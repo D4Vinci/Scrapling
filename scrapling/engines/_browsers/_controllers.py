@@ -14,7 +14,7 @@ from patchright.async_api import async_playwright as async_patchright
 
 from scrapling.core.utils import log
 from ._base import SyncSession, AsyncSession, DynamicSessionMixin
-from ._validators import validate_fetch as _validate
+from ._validators import validate_fetch as _validate, PlaywrightConfig
 from scrapling.core._types import (
     Any,
     Dict,
@@ -225,6 +225,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
                 ("load_dom", load_dom, self.load_dom),
                 ("selector_config", selector_config, self.selector_config),
             ],
+            PlaywrightConfig,
             _UNSET,
         )
 
@@ -442,6 +443,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
                 ("load_dom", load_dom, self.load_dom),
                 ("selector_config", selector_config, self.selector_config),
             ],
+            PlaywrightConfig,
             _UNSET,
         )
 

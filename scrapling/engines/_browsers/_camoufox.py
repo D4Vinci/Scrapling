@@ -13,9 +13,8 @@ from playwright.async_api import (
     Playwright as AsyncPlaywright,
     BrowserContext as AsyncBrowserContext,
 )
-from playwright._impl._errors import Error as PlaywrightError
 
-from ._validators import validate_fetch as _validate
+from ._validators import validate_fetch as _validate, CamoufoxConfig
 from ._base import SyncSession, AsyncSession, StealthySessionMixin
 from scrapling.core.utils import log
 from scrapling.core._types import (
@@ -293,6 +292,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 ("solve_cloudflare", solve_cloudflare, self.solve_cloudflare),
                 ("selector_config", selector_config, self.selector_config),
             ],
+            CamoufoxConfig,
             _UNSET,
         )
 
@@ -574,6 +574,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 ("solve_cloudflare", solve_cloudflare, self.solve_cloudflare),
                 ("selector_config", selector_config, self.selector_config),
             ],
+            CamoufoxConfig,
             _UNSET,
         )
 
