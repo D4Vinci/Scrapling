@@ -70,12 +70,17 @@ def _launch_kwargs(
     stealth,
     hide_canvas,
     disable_webgl,
+    extra_flags: Tuple,
 ) -> Tuple:
     """Creates the arguments we will use while launching playwright's browser"""
+    base_args = DEFAULT_FLAGS
+    if extra_flags:
+        base_args = base_args + extra_flags
+
     launch_kwargs = {
         "locale": locale,
         "headless": headless,
-        "args": DEFAULT_FLAGS,
+        "args": base_args,
         "color_scheme": "dark",  # Bypasses the 'prefersLightColor' check in creepjs
         "proxy": proxy or tuple(),
         "device_scale_factor": 2,
@@ -85,9 +90,10 @@ def _launch_kwargs(
         "user_agent": useragent or __default_useragent__,
     }
     if stealth:
+        stealth_args = base_args + _set_flags(hide_canvas, disable_webgl)
         launch_kwargs.update(
             {
-                "args": DEFAULT_FLAGS + _set_flags(hide_canvas, disable_webgl),
+                "args": stealth_args,
                 "chromium_sandbox": True,
                 "is_mobile": False,
                 "has_touch": False,

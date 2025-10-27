@@ -209,15 +209,3 @@ class StatusText:
     def get(cls, status_code: int) -> str:
         """Get the phrase for a given HTTP status code."""
         return cls._phrases.get(status_code, "Unknown Status Code")
-
-
-def get_variable_name(var: Any) -> Optional[str]:
-    """Get the name of a variable using global and local scopes.
-    :param var: The variable to find the name for
-    :return: The name of the variable if found, None otherwise
-    """
-    for scope in [globals(), locals()]:
-        for name, value in scope.items():
-            if value is var:
-                return name
-    return None

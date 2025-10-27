@@ -1,23 +1,20 @@
 from playwright.sync_api import (
-    Response as SyncPlaywrightResponse,
-    sync_playwright,
-    Playwright,
     Locator,
+    Playwright,
+    sync_playwright,
 )
 from playwright.async_api import (
     async_playwright,
-    Response as AsyncPlaywrightResponse,
-    BrowserContext as AsyncBrowserContext,
-    Playwright as AsyncPlaywright,
     Locator as AsyncLocator,
-    Page as async_Page,
+    Playwright as AsyncPlaywright,
+    BrowserContext as AsyncBrowserContext,
 )
 from patchright.sync_api import sync_playwright as sync_patchright
 from patchright.async_api import async_playwright as async_patchright
 
 from scrapling.core.utils import log
 from ._base import SyncSession, AsyncSession, DynamicSessionMixin
-from ._validators import validate_fetch as _validate
+from ._validators import validate_fetch as _validate, PlaywrightConfig
 from scrapling.core._types import (
     Any,
     Dict,
@@ -98,6 +95,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
         user_data_dir: str = "",
+        extra_flags: Optional[List[str]] = None,
         selector_config: Optional[Dict] = None,
         additional_args: Optional[Dict] = None,
     ):
@@ -127,6 +125,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
+        :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
@@ -152,6 +151,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
             extra_headers=extra_headers,
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
+            extra_flags=extra_flags,
             selector_config=selector_config,
             additional_args=additional_args,
             disable_resources=disable_resources,
@@ -177,28 +177,6 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
 
         if self.cookies:  # pragma: no cover
             self.context.add_cookies(self.cookies)
-
-    def __enter__(self):
-        self.__create__()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-    def close(self):  # pragma: no cover
-        """Close all resources"""
-        if self._closed:
-            return
-
-        if self.context:
-            self.context.close()
-            self.context = None
-
-        if self.playwright:
-            self.playwright.stop()
-            self.playwright = None  # pyright: ignore
-
-        self._closed = True
 
     def fetch(
         self,
@@ -247,38 +225,26 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
                 ("load_dom", load_dom, self.load_dom),
                 ("selector_config", selector_config, self.selector_config),
             ],
+            PlaywrightConfig,
             _UNSET,
         )
 
         if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
-        final_response = None
         referer = (
             generate_convincing_referer(url) if (params.google_search and "referer" not in self._headers_keys) else None
         )
 
-        def handle_response(finished_response: SyncPlaywrightResponse):
-            nonlocal final_response
-            if (
-                finished_response.request.resource_type == "document"
-                and finished_response.request.is_navigation_request()
-                and finished_response.request.frame == page_info.page.main_frame
-            ):
-                final_response = finished_response
-
         page_info = self._get_page(params.timeout, params.extra_headers, params.disable_resources)
-        page_info.mark_busy(url=url)
+        final_response = [None]
+        handle_response = self._create_response_handler(page_info, final_response)
 
         try:  # pragma: no cover
             # Navigate to URL and wait for a specified state
             page_info.page.on("response", handle_response)
             first_response = page_info.page.goto(url, referer=referer)
-            if params.load_dom:
-                page_info.page.wait_for_load_state(state="domcontentloaded")
-
-            if params.network_idle:
-                page_info.page.wait_for_load_state("networkidle")
+            self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
 
             if not first_response:
                 raise RuntimeError(f"Failed to get response for {url}")
@@ -294,11 +260,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
                     waiter: Locator = page_info.page.locator(params.wait_selector)
                     waiter.first.wait_for(state=params.wait_selector_state)
                     # Wait again after waiting for the selector, helpful with protections like Cloudflare
-                    page_info.page.wait_for_load_state(state="load")
-                    if params.load_dom:
-                        page_info.page.wait_for_load_state(state="domcontentloaded")
-                    if params.network_idle:
-                        page_info.page.wait_for_load_state("networkidle")
+                    self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
                 except Exception as e:  # pragma: no cover
                     log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
@@ -306,7 +268,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
 
             # Create response object
             response = ResponseFactory.from_playwright_response(
-                page_info.page, first_response, final_response, params.selector_config
+                page_info.page, first_response, final_response[0], params.selector_config, bool(params.page_action)
             )
 
             # Close the page to free up resources
@@ -348,6 +310,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         load_dom: bool = True,
         wait_selector_state: SelectorWaitStates = "attached",
         user_data_dir: str = "",
+        extra_flags: Optional[List[str]] = None,
         selector_config: Optional[Dict] = None,
         additional_args: Optional[Dict] = None,
     ):
@@ -378,6 +341,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
+        :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
@@ -404,6 +368,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             extra_headers=extra_headers,
             wait_selector=wait_selector,
             disable_webgl=disable_webgl,
+            extra_flags=extra_flags,
             selector_config=selector_config,
             additional_args=additional_args,
             disable_resources=disable_resources,
@@ -430,28 +395,6 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
 
         if self.cookies:
             await self.context.add_cookies(self.cookies)  # pyright: ignore
-
-    async def __aenter__(self):
-        await self.__create__()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close()
-
-    async def close(self):
-        """Close all resources"""
-        if self._closed:  # pragma: no cover
-            return
-
-        if self.context:
-            await self.context.close()
-            self.context = None  # pyright: ignore
-
-        if self.playwright:
-            await self.playwright.stop()
-            self.playwright = None  # pyright: ignore
-
-        self._closed = True
 
     async def fetch(
         self,
@@ -500,30 +443,24 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
                 ("load_dom", load_dom, self.load_dom),
                 ("selector_config", selector_config, self.selector_config),
             ],
+            PlaywrightConfig,
             _UNSET,
         )
 
         if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
-        final_response = None
         referer = (
             generate_convincing_referer(url) if (params.google_search and "referer" not in self._headers_keys) else None
         )
 
-        async def handle_response(finished_response: AsyncPlaywrightResponse):
-            nonlocal final_response
-            if (
-                finished_response.request.resource_type == "document"
-                and finished_response.request.is_navigation_request()
-                and finished_response.request.frame == page_info.page.main_frame
-            ):
-                final_response = finished_response
-
         page_info = await self._get_page(params.timeout, params.extra_headers, params.disable_resources)
-        page_info.mark_busy(url=url)
+        final_response = [None]
+        handle_response = self._create_response_handler(page_info, final_response)
 
         if TYPE_CHECKING:
+            from playwright.async_api import Page as async_Page
+
             if not isinstance(page_info.page, async_Page):
                 raise TypeError
 
@@ -531,11 +468,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
             # Navigate to URL and wait for a specified state
             page_info.page.on("response", handle_response)
             first_response = await page_info.page.goto(url, referer=referer)
-            if self.load_dom:
-                await page_info.page.wait_for_load_state(state="domcontentloaded")
-
-            if params.network_idle:
-                await page_info.page.wait_for_load_state("networkidle")
+            await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
 
             if not first_response:
                 raise RuntimeError(f"Failed to get response for {url}")
@@ -551,11 +484,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
                     waiter: AsyncLocator = page_info.page.locator(params.wait_selector)
                     await waiter.first.wait_for(state=params.wait_selector_state)
                     # Wait again after waiting for the selector, helpful with protections like Cloudflare
-                    await page_info.page.wait_for_load_state(state="load")
-                    if self.load_dom:
-                        await page_info.page.wait_for_load_state(state="domcontentloaded")
-                    if params.network_idle:
-                        await page_info.page.wait_for_load_state("networkidle")
+                    await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
                 except Exception as e:
                     log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
@@ -563,7 +492,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
 
             # Create response object
             response = await ResponseFactory.from_async_playwright_response(
-                page_info.page, first_response, final_response, params.selector_config
+                page_info.page, first_response, final_response[0], params.selector_config, bool(params.page_action)
             )
 
             # Close the page to free up resources

@@ -13,8 +13,8 @@ on:
         default: 'latest'
 
 env:
-  REGISTRY: docker.io
-  IMAGE_NAME: pyd4vinci/scrapling
+  DOCKERHUB_IMAGE: pyd4vinci/scrapling
+  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/scrapling
 
 jobs:
   build-and-push:
@@ -35,15 +35,24 @@ jobs:
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
       with:
-        registry: ${{ env.REGISTRY }}
+        registry: docker.io
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.CONTAINER_TOKEN }}
 
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        images: |
+          ${{ env.DOCKERHUB_IMAGE }}
+          ${{ env.GHCR_IMAGE }}
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -51,6 +60,14 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
           type=raw,value=latest,enable={{is_default_branch}}
+        labels: |
+          org.opencontainers.image.title=Scrapling
+          org.opencontainers.image.description=An undetectable, powerful, flexible, high-performance Python library that makes Web Scraping easy and effortless as it should be!
+          org.opencontainers.image.vendor=D4Vinci
+          org.opencontainers.image.licenses=BSD
+          org.opencontainers.image.url=https://scrapling.readthedocs.io/en/latest/
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.documentation=https://scrapling.readthedocs.io/en/latest/
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5

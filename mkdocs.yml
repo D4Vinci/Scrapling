@@ -83,6 +83,7 @@ nav:
   - Tutorials:
     - A Free Alternative to AI for Robust Web Scraping: tutorials/replacing_ai.md
     - Migrating from BeautifulSoup: tutorials/migrating_from_beautifulsoup.md
+    - Using Scrapeless browser: tutorials/external.md
 #    - Migrating from AutoScraper: tutorials/migrating_from_autoscraper.md
   - Development:
     - API Reference:
