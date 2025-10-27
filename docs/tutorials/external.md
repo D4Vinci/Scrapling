@@ -1,4 +1,3 @@
-## External Cloud Browser Version
 
 If you have issues with the browser installation, such as resource management, we recommend you try the Cloud Browser from [Scrapeless](https://www.scrapeless.com/en/product/scraping-browser) for free!
 
