@@ -231,9 +231,14 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
                 self._wait_for_networkidle(page)
                 if iframe is not None:
-                    # Wait for the frame to be removed from the page
+                    # Wait for the frame to be removed from the page (with 30s timeout = 300 iterations * 100 ms)
+                    attempts = 0
                     while iframe in page.frames:
+                        if attempts >= 300:
+                            log.info("Cloudflare iframe didn't disappear after 30s, continuing...")
+                            break
                         page.wait_for_timeout(100)
+                        attempts += 1
                 if challenge_type != "embedded":
                     page.locator(box_selector).last.wait_for(state="detached")
                     page.locator(".zone-name-title").wait_for(state="hidden")
@@ -513,9 +518,14 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 await page.mouse.click(captcha_x, captcha_y, delay=60, button="left")
                 await self._wait_for_networkidle(page)
                 if iframe is not None:
-                    # Wait for the frame to be removed from the page
+                    # Wait for the frame to be removed from the page (with 30s timeout = 300 iterations * 100 ms)
+                    attempts = 0
                     while iframe in page.frames:
+                        if attempts >= 300:
+                            log.info("Cloudflare iframe didn't disappear after 30s, continuing...")
+                            break
                         await page.wait_for_timeout(100)
+                        attempts += 1
                 if challenge_type != "embedded":
                     await page.locator(box_selector).wait_for(state="detached")
                     await page.locator(".zone-name-title").wait_for(state="hidden")
