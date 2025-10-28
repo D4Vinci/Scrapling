@@ -297,11 +297,15 @@ Starting with v0.3.2, this installation only includes the parser engine and its 
    Don't forget that you need to install the browser dependencies with `scrapling install` after any of these extras (if you didn't already)
 
 ### Docker
-You can also install a Docker image with all extras and browsers with the following command:
+You can also install a Docker image with all extras and browsers with the following command from DockerHub:
 ```bash
 docker pull pyd4vinci/scrapling
 ```
-This image is automatically built and pushed to Docker Hub through GitHub actions right here.
+Or download it from the GitHub registry:
+```bash
+docker pull ghcr.io/d4vinci/scrapling:latest
+```
+This image is automatically built and pushed through GitHub actions on the repository's main branch.
 
 ## Contributing
 
