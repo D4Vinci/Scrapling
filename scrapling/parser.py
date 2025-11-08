@@ -220,16 +220,6 @@ class Selector(SelectorsGeneration):
         # Faster than checking `element.is_attribute or element.is_text or element.is_tail`
         return issubclass(type(element), _ElementUnicodeResult)
 
-    @staticmethod
-    def __content_convertor(
-        element: HtmlElement | _ElementUnicodeResult,
-    ) -> TextHandler:
-        """Used internally to convert a single element's text content to TextHandler directly without checks
-
-        This single line has been isolated like this, so when it's used with `map` we get that slight performance boost vs. list comprehension
-        """
-        return TextHandler(element)
-
     def __element_convertor(self, element: HtmlElement) -> "Selector":
         """Used internally to convert a single HtmlElement to Selector directly without checks"""
         db_instance = self._storage if (hasattr(self, "_storage") and self._storage) else None
@@ -247,18 +237,6 @@ class Selector(SelectorsGeneration):
 
     def __elements_convertor(self, elements: List[HtmlElement]) -> "Selectors":
         return Selectors(map(self.__element_convertor, elements))
-
-    def __handle_element(
-        self, element: Optional[HtmlElement | _ElementUnicodeResult]
-    ) -> Optional[Union[TextHandler, "Selector"]]:
-        """Used internally in all functions to convert a single element to type (Selector|TextHandler) when possible"""
-        if element is None:
-            return None
-        elif self._is_text_node(element):
-            # `_ElementUnicodeResult` basically inherit from `str` so it's fine
-            return self.__content_convertor(element)
-        else:
-            return self.__element_convertor(element)
 
     def __handle_elements(
         self, result: List[HtmlElement | _ElementUnicodeResult]
