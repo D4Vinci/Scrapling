@@ -31,6 +31,7 @@ class Response(Selector):
         request_headers: Dict,
         encoding: str = "utf-8",
         method: str = "GET",
+        raw_response: str | bytes = "",
         history: List | None = None,
         **selector_config: Any,
     ):
@@ -39,6 +40,7 @@ class Response(Selector):
         self.reason = reason
         self.cookies = cookies
         self.headers = headers
+        self.raw_response = raw_response or content
         self.request_headers = request_headers
         self.history = history or []
         super().__init__(

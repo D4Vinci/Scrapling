@@ -85,7 +85,6 @@ class ResponseFactory:
         first_response: SyncResponse,
         final_response: Optional[SyncResponse],
         parser_arguments: Dict,
-        automated_page: bool = False,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -101,7 +100,6 @@ class ResponseFactory:
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
-        :param automated_page: If True, it means the `page_action` argument was being used, so the response retrieving method changes to use Playwright's page instead of the final response.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -117,7 +115,7 @@ class ResponseFactory:
 
         history = cls._process_response_history(first_response, parser_arguments)
         try:
-            page_content = final_response.text() if not automated_page else cls._get_page_content(page)
+            page_content = cls._get_page_content(page)
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content: {e}")
             page_content = ""
@@ -126,6 +124,7 @@ class ResponseFactory:
             **{
                 "url": page.url,
                 "content": page_content,
+                "raw_response": final_response.text(),
                 "status": final_response.status,
                 "reason": status_text,
                 "encoding": encoding,
@@ -219,7 +218,6 @@ class ResponseFactory:
         first_response: AsyncResponse,
         final_response: Optional[AsyncResponse],
         parser_arguments: Dict,
-        automated_page: bool = False,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -235,7 +233,6 @@ class ResponseFactory:
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
-        :param automated_page: If True, it means the `page_action` argument was being used, so the response retrieving method changes to use Playwright's page instead of the final response.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -251,7 +248,7 @@ class ResponseFactory:
 
         history = await cls._async_process_response_history(first_response, parser_arguments)
         try:
-            page_content = await (final_response.text() if not automated_page else cls._get_async_page_content(page))
+            page_content = await cls._get_async_page_content(page)
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content in async: {e}")
             page_content = ""
@@ -261,6 +258,7 @@ class ResponseFactory:
                 "url": page.url,
                 "content": page_content,
                 "status": final_response.status,
+                "raw_response": await final_response.text(),
                 "reason": status_text,
                 "encoding": encoding,
                 "cookies": tuple(dict(cookie) for cookie in await page.context.cookies()),
