@@ -1,7 +1,7 @@
 ## Introduction
-Fetchers are classes that can do requests or fetch pages for you easily in a single-line fashion with many features and then return a [Response](#response-object) object. Starting with v0.3, all fetchers have other classes to keep the session running, so for example, a fetcher that uses a browser will keep the browser open till you finish all your requests through it instead of opening multiple browsers. So it depends on your use case.
+Fetchers are classes that can do requests or fetch pages for you easily in a single-line fashion with many features and then return a [Response](#response-object) object. Starting with v0.3, all fetchers have separate classes to keep the session running, so for example, a fetcher that uses a browser will keep the browser open till you finish all your requests through it instead of opening multiple browsers. So it depends on your use case.
 
-This feature was introduced because, before v0.2, Scrapling was only a parsing engine; therefore, we wanted to gradually transition to become your one-stop shop for all Web Scraping needs.
+This feature was introduced because, before v0.2, Scrapling was only a parsing engine. The target here is to gradually become the one-stop shop for all Web Scraping needs.
 
 > Fetchers are not wrappers built on top of other libraries. However, they utilize these libraries as an engine to request/fetch pages easily for you, while fully leveraging that engine and adding features for you. Some fetchers don't even use the official library for requests; instead, they use their own custom version. For example, `StealthyFetcher` utilizes `Camoufox` browser directly, without relying on its Python library for anything except launch options. This last part might change soon as well.
 
@@ -38,13 +38,13 @@ Then you use it right away without initializing like this, and it will use the d
 If you want to configure the parser ([Selector class](../parsing/main_classes.md#selector)) that will be used on the response before returning it for you, then do this first:
 ```python
 >>> from scrapling.fetchers import Fetcher
->>> Fetcher.configure(adaptive=True, encoding="utf8", keep_comments=False, keep_cdata=False)  # and the rest
+>>> Fetcher.configure(adaptive=True, encoding="utf-8", keep_comments=False, keep_cdata=False)  # and the rest
 ```
 or
 ```python
 >>> from scrapling.fetchers import Fetcher
 >>> Fetcher.adaptive=True
->>> Fetcher.encoding="utf8"
+>>> Fetcher.encoding="utf-8"
 >>> Fetcher.keep_comments=False
 >>> Fetcher.keep_cdata=False  # and the rest
 ```
@@ -71,7 +71,8 @@ The `Response` object is the same as the [Selector](../parsing/main_classes.md#s
 >>> page.headers         # Response headers
 >>> page.request_headers # Request headers
 >>> page.history         # Response history of redirections, if any
->>> page.body            # Raw response body
+>>> page.body            # Raw HTML response body without any processing
+>>> page.raw_response    # Raw response of the last request made by the browser, if any (Useful for downloading binary files and text/json files)
 >>> page.encoding        # Response encoding
 ```
 All fetchers return the `Response` object.
