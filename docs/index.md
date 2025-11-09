@@ -83,33 +83,10 @@ Scrapling’s GitHub stars have grown steadily since its release (see chart belo
 
 <div id="chartContainer">
   <a href="https://github.com/D4Vinci/Scrapling">
-    <img id="chartImage" alt="Star History Chart" loading="lazy" src="https://api.star-history.com/svg?repos=D4Vinci/Scrapling&type=Date" height="400"/>
+    <img id="chartImage" alt="Star History Chart" loading="lazy" src="https://api.star-history.com/svg?repos=D4Vinci/Scrapling&type=date&legend=top-left&theme=dark" height="400"/>
   </a>
 </div>
 
-<script>
-const observer = new MutationObserver((mutations) => {
-  mutations.forEach((mutation) => {
-    if (mutation.attributeName === 'data-md-color-media') {
-      const colorMedia = document.body.getAttribute('data-md-color-media');
-      const isDarkScheme = document.body.getAttribute('data-md-color-scheme') === 'slate';
-      const chartImg = document.querySelector('#chartImage');
-      const baseUrl = 'https://api.star-history.com/svg?repos=D4Vinci/Scrapling&type=Date';
-      
-      if (colorMedia === '(prefers-color-scheme)' ? isDarkScheme : colorMedia.includes('dark')) {
-        chartImg.src = `${baseUrl}&theme=dark`;
-      } else {
-        chartImg.src = baseUrl;
-      }
-    }
-  });
-});
-
-observer.observe(document.body, {
-  attributes: true,
-  attributeFilter: ['data-md-color-media', 'data-md-color-scheme']
-});
-</script>
 
 ## Installation
 Scrapling requires Python 3.10 or higher:

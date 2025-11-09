@@ -4,6 +4,14 @@
 
 The `scrapling extract` Command lets you download and extract content from websites directly from your terminal without writing any code. Ideal for beginners, researchers, and anyone requiring rapid web data extraction.
 
+> 💡 **Prerequisites:**
+> 
+> 1. You’ve completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
+> 2. You’ve completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
+> 3. You’ve completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
+> 4. You’ve completed or read at least one page from the fetchers section to use here for requests: [HTTP requests](../fetching/static.md), [Dynamic websites](../fetching/dynamic.md), or [Dynamic websites with hard protections](../fetching/stealthy.md).
+
+
 ## What is the Extract Command group?
 
 The extract command is a set of simple terminal tools that:
