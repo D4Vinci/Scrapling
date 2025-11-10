@@ -115,7 +115,10 @@ class ResponseFactory:
 
         history = cls._process_response_history(first_response, parser_arguments)
         try:
-            page_content = cls._get_page_content(page)
+            if "html" in final_response.headers.get("content-type", ""):
+                page_content = cls._get_page_content(page)
+            else:
+                page_content = final_response.text()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content: {e}")
             page_content = ""
@@ -124,7 +127,6 @@ class ResponseFactory:
             **{
                 "url": page.url,
                 "content": page_content,
-                "raw_response": final_response.text(),
                 "status": final_response.status,
                 "reason": status_text,
                 "encoding": encoding,
@@ -248,7 +250,10 @@ class ResponseFactory:
 
         history = await cls._async_process_response_history(first_response, parser_arguments)
         try:
-            page_content = await cls._get_async_page_content(page)
+            if "html" in final_response.headers.get("content-type", ""):
+                page_content = await cls._get_async_page_content(page)
+            else:
+                page_content = await final_response.text()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content in async: {e}")
             page_content = ""
@@ -258,7 +263,6 @@ class ResponseFactory:
                 "url": page.url,
                 "content": page_content,
                 "status": final_response.status,
-                "raw_response": await final_response.text(),
                 "reason": status_text,
                 "encoding": encoding,
                 "cookies": tuple(dict(cookie) for cookie in await page.context.cookies()),
