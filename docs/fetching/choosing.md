@@ -71,8 +71,7 @@ The `Response` object is the same as the [Selector](../parsing/main_classes.md#s
 >>> page.headers         # Response headers
 >>> page.request_headers # Request headers
 >>> page.history         # Response history of redirections, if any
->>> page.body            # Raw HTML response body without any processing
->>> page.raw_response    # Raw response of the last request made by the browser, if any (Useful for downloading binary files and text/json files)
+>>> page.body            # Raw response body without any processing
 >>> page.encoding        # Response encoding
 ```
 All fetchers return the `Response` object.

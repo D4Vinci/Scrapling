@@ -131,6 +131,17 @@ page = DynamicFetcher.fetch(
 )
 ```
 
+### Downloading Files
+
+```python
+page = DynamicFetcher.fetch('https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png')
+
+with open(file='poster.png', mode='wb') as f:
+    f.write(page.body)
+```
+
+The `body` attribute of the `Response` object is a `bytes` object containing the response body in case of Non-HTML responses.
+
 ### Browser Automation
 This is where your knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) comes into play. The function you pass here takes the page object from Playwright's API, performs the desired action, and then the fetcher continues.
 

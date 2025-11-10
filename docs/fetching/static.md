@@ -269,6 +269,16 @@ def scrape_products():
     return results
 ```
 
+### Downloading Files
+
+```python
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png')
+with open(file='poster.png', mode='wb') as f:
+   f.write(page.body)
+```
+
 ### Pagination Handling
 
 ```python
