@@ -1,3 +1,6 @@
+Automated translations: [العربيه](README_AR.md) | [Español](README_ES.md) | [Deutsch](README_DE.md) | [简体中文](README_CN.md) | [日本語](README_JP.md) | [Русский](README_RU.md)
+
+
 <p align=center>
   <br>
   <a href="https://scrapling.readthedocs.io/en/latest/" target="_blank"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png" style="width: 50%; height: 100%;" alt="main poster"/></a>
