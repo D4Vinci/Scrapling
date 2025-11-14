@@ -18,7 +18,7 @@ from scrapling.parser import Selector, SQLiteStorageSystem
 
 
 class Response(Selector):
-    """This class is returned by all engines as a way to unify response type between different libraries."""
+    """This class is returned by all engines as a way to unify the response type between different libraries."""
 
     def __init__(
         self,
@@ -132,7 +132,7 @@ class BaseFetcher:
 
 
 class StatusText:
-    """A class that gets the status text of response status code.
+    """A class that gets the status text of the response status code.
 
     Reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
     """
