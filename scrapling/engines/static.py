@@ -1,4 +1,5 @@
 from abc import ABC
+from random import choice
 from time import sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
@@ -31,12 +32,29 @@ from .toolbelt.fingerprints import generate_convincing_referer, generate_headers
 _UNSET: Any = object()
 _NO_SESSION: Any = object()
 
+# Type alias for `impersonate` parameter - accepts a single browser or list of browsers
+ImpersonateType = BrowserTypeLiteral | List[BrowserTypeLiteral] | None
+
+
+def _select_random_browser(impersonate: ImpersonateType) -> Optional[BrowserTypeLiteral]:
+    """
+    Handle browser selection logic for the ` impersonate ` parameter.
+
+    If impersonate is a list, randomly select one browser from it.
+    If it's a string or None, return as is.
+    """
+    if isinstance(impersonate, list):
+        if not impersonate:
+            return None
+        return choice(impersonate)
+    return impersonate
+
 
 class _ConfigurationLogic(ABC):
     # Core Logic Handler (Internal Engine)
     def __init__(
         self,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome",
+        impersonate: ImpersonateType = "chrome",
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
         proxies: Optional[Dict[str, str]] = None,
@@ -76,7 +94,9 @@ class _ConfigurationLogic(ABC):
     def _merge_request_args(self, **method_kwargs) -> Dict[str, Any]:
         """Merge request-specific arguments with default session arguments."""
         url = method_kwargs.pop("url")
-        impersonate = self._get_with_precedence(method_kwargs.pop("impersonate"), self._default_impersonate)
+        impersonate = _select_random_browser(
+            self._get_with_precedence(method_kwargs.pop("impersonate"), self._default_impersonate)
+        )
         http3_enabled = self._get_with_precedence(method_kwargs.pop("http3"), self._default_http3)
         final_args = {
             "url": url,
@@ -146,7 +166,7 @@ class _ConfigurationLogic(ABC):
 class _SyncSessionLogic(_ConfigurationLogic):
     def __init__(
         self,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome",
+        impersonate: ImpersonateType = "chrome",
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
         proxies: Optional[Dict[str, str]] = None,
@@ -261,7 +281,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
         cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        impersonate: ImpersonateType = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
@@ -334,7 +354,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
         cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        impersonate: ImpersonateType = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
@@ -411,7 +431,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
         cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        impersonate: ImpersonateType = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
@@ -488,7 +508,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
         cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        impersonate: ImpersonateType = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
@@ -552,7 +572,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
 class _ASyncSessionLogic(_ConfigurationLogic):
     def __init__(
         self,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome",
+        impersonate: ImpersonateType = "chrome",
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
         proxies: Optional[Dict[str, str]] = None,
@@ -669,7 +689,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
         cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        impersonate: ImpersonateType = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
@@ -742,7 +762,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
         cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        impersonate: ImpersonateType = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
@@ -819,7 +839,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
         cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        impersonate: ImpersonateType = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
@@ -896,7 +916,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         auth: Optional[Tuple[str, str]] = None,
         verify: Optional[bool] = _UNSET,
         cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: Optional[BrowserTypeLiteral] = _UNSET,
+        impersonate: ImpersonateType = _UNSET,
         http3: Optional[bool] = _UNSET,
         stealthy_headers: Optional[bool] = _UNSET,
         **kwargs,
@@ -970,7 +990,7 @@ class FetcherSession:
 
     def __init__(
         self,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome",
+        impersonate: ImpersonateType = "chrome",
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
         proxies: Optional[Dict[str, str]] = None,
@@ -987,7 +1007,7 @@ class FetcherSession:
         selector_config: Optional[Dict] = None,
     ):
         """
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+        :param impersonate: Browser version to impersonate. Can be a single browser string or a list of browser strings for random selection. (Default: latest available Chrome version)
         :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
         :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
         :param proxies: Dict of proxies to use. Format: {"http": proxy_url, "https": proxy_url}.
@@ -1004,7 +1024,7 @@ class FetcherSession:
         :param cert: Tuple of (cert, key) filenames for the client certificate.
         :param selector_config: Arguments passed when creating the final Selector class.
         """
-        self._default_impersonate: Optional[BrowserTypeLiteral] = impersonate
+        self._default_impersonate: ImpersonateType = impersonate
         self._stealth = stealthy_headers
         self._default_proxies = proxies or {}
         self._default_proxy = proxy or None

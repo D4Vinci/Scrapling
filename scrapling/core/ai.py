@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from scrapling.core.shell import Convertor
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
+from scrapling.engines.static import ImpersonateType
 from scrapling.fetchers import (
     Fetcher,
     FetcherSession,
@@ -23,9 +24,6 @@ from scrapling.core._types import (
     Any,
     SelectorWaitStates,
     Generator,
-)
-from curl_cffi.requests import (
-    BrowserTypeLiteral,
 )
 
 
@@ -46,7 +44,7 @@ class ScraplingMCPServer:
     @staticmethod
     def get(
         url: str,
-        impersonate: Optional[BrowserTypeLiteral] = "chrome",
+        impersonate: ImpersonateType = "chrome",
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
@@ -124,7 +122,7 @@ class ScraplingMCPServer:
     @staticmethod
     async def bulk_get(
         urls: Tuple[str, ...],
-        impersonate: Optional[BrowserTypeLiteral] = "chrome",
+        impersonate: ImpersonateType = "chrome",
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,

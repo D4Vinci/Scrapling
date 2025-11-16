@@ -2,6 +2,8 @@ from pathlib import Path
 from subprocess import check_output
 from sys import executable as python_executable
 
+from curl_cffi.requests import impersonate
+
 from scrapling.core.utils import log
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.core.utils._shell import _CookieParser, _ParseHeaders
@@ -84,7 +86,7 @@ def __BuildRequest(headers: List[str], cookies: str, params: str, json: Optional
     # Parse parameters
     parsed_headers, parsed_cookies, parsed_params, parsed_json = __ParseExtractArguments(headers, cookies, params, json)
     # Build request arguments
-    request_kwargs = {
+    request_kwargs: Dict[str, Any] = {
         "headers": parsed_headers if parsed_headers else None,
         "cookies": parsed_cookies if parsed_cookies else None,
     }
@@ -94,6 +96,10 @@ def __BuildRequest(headers: List[str], cookies: str, params: str, json: Optional
         request_kwargs["params"] = parsed_params
     if "proxy" in kwargs:
         request_kwargs["proxy"] = kwargs.pop("proxy")
+
+    # Parse impersonate parameter if it contains commas (for random selection)
+    if "impersonate" in kwargs and "," in (kwargs.get("impersonate") or ""):
+        kwargs["impersonate"] = [browser.strip() for browser in kwargs["impersonate"].split(",")]
 
     return {**request_kwargs, **kwargs}
 
@@ -225,7 +231,10 @@ def extract():
     default=True,
     help="Whether to verify SSL certificates (default: True)",
 )
-@option("--impersonate", help="Browser to impersonate (e.g., chrome, firefox).")
+@option(
+    "--impersonate",
+    help="Browser to impersonate. Can be a single browser (e.g., chrome) or comma-separated list for random selection (e.g., chrome,firefox,safari).",
+)
 @option(
     "--stealthy-headers/--no-stealthy-headers",
     default=True,
@@ -318,7 +327,10 @@ def get(
     default=True,
     help="Whether to verify SSL certificates (default: True)",
 )
-@option("--impersonate", help="Browser to impersonate (e.g., chrome, firefox).")
+@option(
+    "--impersonate",
+    help="Browser to impersonate. Can be a single browser (e.g., chrome) or comma-separated list for random selection (e.g., chrome,firefox,safari).",
+)
 @option(
     "--stealthy-headers/--no-stealthy-headers",
     default=True,
@@ -412,7 +424,10 @@ def post(
     default=True,
     help="Whether to verify SSL certificates (default: True)",
 )
-@option("--impersonate", help="Browser to impersonate (e.g., chrome, firefox).")
+@option(
+    "--impersonate",
+    help="Browser to impersonate. Can be a single browser (e.g., chrome) or comma-separated list for random selection (e.g., chrome,firefox,safari).",
+)
 @option(
     "--stealthy-headers/--no-stealthy-headers",
     default=True,
@@ -504,7 +519,10 @@ def put(
     default=True,
     help="Whether to verify SSL certificates (default: True)",
 )
-@option("--impersonate", help="Browser to impersonate (e.g., chrome, firefox).")
+@option(
+    "--impersonate",
+    help="Browser to impersonate. Can be a single browser (e.g., chrome) or comma-separated list for random selection (e.g., chrome,firefox,safari).",
+)
 @option(
     "--stealthy-headers/--no-stealthy-headers",
     default=True,
