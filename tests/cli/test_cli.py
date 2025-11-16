@@ -193,3 +193,51 @@ class TestCLI:
             [html_url, 'output.invalid']
         )
         # Should handle the error gracefully
+
+    def test_impersonate_comma_separated(self, runner, tmp_path, html_url):
+        """Test that comma-separated impersonate values are parsed correctly"""
+        output_file = tmp_path / "output.md"
+
+        with patch('scrapling.fetchers.Fetcher.get') as mock_get:
+            mock_response = configure_selector_mock()
+            mock_response.status = 200
+            mock_get.return_value = mock_response
+
+            result = runner.invoke(
+                get,
+                [
+                    html_url,
+                    str(output_file),
+                    '--impersonate', 'chrome,firefox,safari'
+                ]
+            )
+            assert result.exit_code == 0
+
+            # Verify that the impersonate argument was converted to a list
+            call_kwargs = mock_get.call_args[1]
+            assert isinstance(call_kwargs['impersonate'], list)
+            assert call_kwargs['impersonate'] == ['chrome', 'firefox', 'safari']
+
+    def test_impersonate_single_browser(self, runner, tmp_path, html_url):
+        """Test that single impersonate value remains as string"""
+        output_file = tmp_path / "output.md"
+
+        with patch('scrapling.fetchers.Fetcher.get') as mock_get:
+            mock_response = configure_selector_mock()
+            mock_response.status = 200
+            mock_get.return_value = mock_response
+
+            result = runner.invoke(
+                get,
+                [
+                    html_url,
+                    str(output_file),
+                    '--impersonate', 'chrome'
+                ]
+            )
+            assert result.exit_code == 0
+
+            # Verify that the impersonate argument remains a string
+            call_kwargs = mock_get.call_args[1]
+            assert isinstance(call_kwargs['impersonate'], str)
+            assert call_kwargs['impersonate'] == 'chrome'
