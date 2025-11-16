@@ -5,10 +5,8 @@
 
 ## Proposed change
 <!--
-  Describe the big picture of your changes here to communicate to the
-  maintainers why we should accept this pull request. If it fixes a bug
-  or resolves a feature request, be sure to link to that issue in the
-  additional information section.
+  Describe the big picture of your changes here to communicate to the maintainers why we should accept this pull request.
+  If it fixes a bug or resolves a feature request, be sure to link to that issue in the additional information section.
 -->
 
 
@@ -34,12 +32,12 @@
 
 ### Additional information
 <!--
-  Details are important, and help maintainers processing your PR.
+  Details are important and help maintainers processing your PR.
   Please be sure to fill out additional details, if applicable.
 -->
 
-- This PR fixes or closes issue: fixes #
-- This PR is related to issue: 
+- This PR fixes or closes an issue: fixes #
+- This PR is related to an issue: #
 - Link to documentation pull request: **
 
 ### Checklist:
