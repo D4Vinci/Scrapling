@@ -1,0 +1,150 @@
+name: Code Quality
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths-ignore:
+      - '*.md'
+      - '**/*.md'
+      - 'docs/**'
+      - 'images/**'
+      - '.github/**'
+      - '!.github/workflows/code-quality.yml'  # Always run when this workflow changes
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths-ignore:
+      - '*.md'
+      - '**/*.md'
+      - 'docs/**'
+      - 'images/**'
+  workflow_dispatch:  # Allow manual triggering
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # For PR annotations
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit[toml] ruff vermin
+
+      - name: Run Bandit (Security Linter)
+        id: bandit
+        continue-on-error: true
+        run: |
+          echo "::group::Bandit - Security Linter"
+          bandit -r -c .bandit.yml scrapling/ -f json -o bandit-report.json
+          bandit -r -c .bandit.yml scrapling/
+          echo "::endgroup::"
+
+      - name: Run Ruff Linter
+        id: ruff-lint
+        continue-on-error: true
+        run: |
+          echo "::group::Ruff - Linter"
+          ruff check scrapling/ --output-format=github
+          echo "::endgroup::"
+
+      - name: Run Ruff Formatter Check
+        id: ruff-format
+        continue-on-error: true
+        run: |
+          echo "::group::Ruff - Formatter Check"
+          ruff format --check scrapling/ --diff
+          echo "::endgroup::"
+
+      - name: Run Vermin (Python Version Compatibility)
+        id: vermin
+        continue-on-error: true
+        run: |
+          echo "::group::Vermin - Python 3.10+ Compatibility Check"
+          vermin -t=3.10- --violations --eval-annotations --no-tips scrapling/
+          echo "::endgroup::"
+
+      - name: Check results and create summary
+        if: always()
+        run: |
+          echo "# Code Quality Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Initialize status
+          all_passed=true
+
+          # Check Bandit
+          if [ "${{ steps.bandit.outcome }}" == "success" ]; then
+            echo "✅ **Bandit (Security)**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Bandit (Security)**: Failed" >> $GITHUB_STEP_SUMMARY
+            all_passed=false
+          fi
+
+          # Check Ruff Linter
+          if [ "${{ steps.ruff-lint.outcome }}" == "success" ]; then
+            echo "✅ **Ruff Linter**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Ruff Linter**: Failed" >> $GITHUB_STEP_SUMMARY
+            all_passed=false
+          fi
+
+          # Check Ruff Formatter
+          if [ "${{ steps.ruff-format.outcome }}" == "success" ]; then
+            echo "✅ **Ruff Formatter**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Ruff Formatter**: Failed" >> $GITHUB_STEP_SUMMARY
+            all_passed=false
+          fi
+
+          # Check Vermin
+          if [ "${{ steps.vermin.outcome }}" == "success" ]; then
+            echo "✅ **Vermin (Python 3.10+)**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Vermin (Python 3.10+)**: Failed" >> $GITHUB_STEP_SUMMARY
+            all_passed=false
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$all_passed" == "true" ]; then
+            echo "### 🎉 All checks passed!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Your code meets all quality standards." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Some checks failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the errors above and fix them." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Tip**: Run \`pre-commit run --all-files\` locally to catch these issues before pushing." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Upload Bandit report
+        if: always() && steps.bandit.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+          retention-days: 30
