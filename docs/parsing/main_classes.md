@@ -1,7 +1,13 @@
 ## Introduction
-After exploring the various ways to select elements with Scrapling and related features, let's take a step back and examine the [Selector](#selector) class generally and other objects to better understand the parsing engine.
 
-The [Selector](#selector) class is the core parsing engine in Scrapling that provides HTML parsing and element selection capabilities. You can always import it with any of the following imports
+> 💡 **Prerequisites:**
+> 
+> - You’ve completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector) object.
+> <br><br>
+
+After exploring the various ways to select elements with Scrapling and its related features, let's take a step back and examine the [Selector](#selector) class in general, as well as other objects, to gain a better understanding of the parsing engine.
+
+The [Selector](#selector) class is the core parsing engine in Scrapling, providing HTML parsing and element selection capabilities. You can always import it with any of the following imports
 ```python
 from scrapling import Selector
 from scrapling.parser import Selector
@@ -133,7 +139,7 @@ Getting the attributes of the element
 >>> print(article.attrib)
 {'class': 'product', 'data-id': '1'}
 ```
-Access a specific attribute with any method of the following
+Access a specific attribute with any of the following
 ```python
 >>> article.attrib['class']
 >>> article.attrib.get('class')
@@ -151,14 +157,16 @@ Get the HTML content of the element
 ```
 Get the prettified version of the element's HTML content
 ```python
->>> print(article.prettify())
+print(article.prettify())
+```
+```html
 <article class="product" data-id="1"><h3>Product 1</h3>
     <p class="description">This is product 1</p>
     <span class="price">$10.99</span>
     <div class="hidden stock">In stock: 5</div>
 </article>
 ```
-Use `.body` property to get the raw content of page
+Use the `.body` property to get the raw content of the page
 ```python
 >>> page.body
 '<html>\n  <head>\n    <title>Some page</title>\n  </head>\n  <body>\n    <div class="product-list">\n      <article class="product" data-id="1">\n        <h3>Product 1</h3>\n        <p class="description">This is product 1</p>\n        <span class="price">$10.99</span>\n        <div class="hidden stock">In stock: 5</div>\n      </article>\n\n      <article class="product" data-id="2">\n        <h3>Product 2</h3>\n        <p class="description">This is product 2</p>\n        <span class="price">$20.99</span>\n        <div class="hidden stock">In stock: 3</div>\n      </article>\n\n      <article class="product" data-id="3">\n        <h3>Product 3</h3>\n        <p class="description">This is product 3</p>\n        <span class="price">$15.99</span>\n        <div class="hidden stock">Out of stock</div>\n      </article>\n    </div>\n\n    <script id="page-data" type="application/json">\n      {\n        "lastUpdated": "2024-09-22T10:30:00Z",\n        "totalProducts": 3\n      }\n    </script>\n  </body>\n</html>'
@@ -192,7 +200,7 @@ If you are unfamiliar with the DOM tree or the tree data structure in general, t
 
 If you are too lazy to search about it, here's a quick explanation to give you a good idea.<br/>
 In simple words, the `html` element is the root of the website's tree, as every page starts with an `html` element.<br/>
-This element will be directly above elements like `head` and `body`. These are considered "children" of the `html` element, and the `html` element is considered their "parent." The element `body` is a "sibling" of the element `head` and vice versa.
+This element will be positioned directly above elements such as `head` and `body`. These are considered "children" of the `html` element, and the `html` element is considered their "parent". The element `body` is a "sibling" of the element `head` and vice versa.
 
 Accessing the parent of an element
 ```python
@@ -302,7 +310,7 @@ In the [Selector](#selector) class, all methods/properties that should return a 
 
 Let's see what [Selectors](#selectors) class adds to the table with that out of the way.
 ### Properties
-Apart from the normal operations on Python lists like iteration, slicing, etc...
+Apart from the normal operations on Python lists, such as iteration and slicing, etc.
 
 You can do the following:
 
@@ -326,9 +334,9 @@ Execute CSS and XPath selectors directly on the [Selector](#selector) instances 
  <data='<a href="catalogue/soumission_998/index....' parent='<h3><a href="catalogue/soumission_998/in...'>,
 ...]
 ```
-Run the `re` and `re_first` methods directly. They take the same arguments passed to the [Selector](#selector) class. I'm still leaving these methods to be explained in the [TextHandler](#texthandler) section below.
+Run the `re` and `re_first` methods directly. They take the same arguments passed to the [Selector](#selector) class. I will still leave these methods to be explained in the [TextHandler](#texthandler) section below.
 
-However, in this class, the `re_first` behaves differently as it runs `re` on each [Selector](#selector) within and returns the first one with a result. The `re` method will return a [TextHandlers](#texthandlers) object as normal, that has all the [TextHandler](#texthandler) instances combined in one [TextHandlers](#texthandlers) instance.
+However, in this class, the `re_first` behaves differently as it runs `re` on each [Selector](#selector) within and returns the first one with a result. The `re` method will return a [TextHandlers](#texthandlers) object as normal, which combines all the [TextHandler](#texthandler) instances into one [TextHandlers](#texthandlers) instance.
 ```python
 >>> page.css('.price_color').re(r'[\d\.]+')
 ['51.77',
@@ -381,15 +389,15 @@ Of course, TextHandler provides extra methods and properties that standard Pytho
 ### Usage
 First, before discussing the added methods, you need to know that all operations on it, like slicing, accessing by index, etc., and methods like `split`, `replace`, `strip`, etc., all return a `TextHandler` again, so you can chain them as you want. If you find a method or property that returns a standard string instead of `TextHandler`, please open an issue, and we will override it as well.
 
-First, we start with the `re` and `re_first` methods. These are the same methods that exist in the rest of the classes ([Selector](#selector), [Selectors](#selectors), and [TextHandlers](#texthandlers)), so they will take the same arguments as well.
+First, we start with the `re` and `re_first` methods. These are the same methods that exist in the other classes ([Selector](#selector), [Selectors](#selectors), and [TextHandlers](#texthandlers)), so they will accept the same arguments as well.
 
 - The `re` method takes a string/compiled regex pattern as the first argument. It searches the data for all strings matching the regex and returns them as a [TextHandlers](#texthandlers) instance. The `re_first` method takes the same arguments and behaves similarly, but as you probably figured out from the naming, it returns the first result only as a `TextHandler` instance.
     
     Also, it takes other helpful arguments, which are:
     
     - **replace_entities**: This is enabled by default. It replaces character entity references with their corresponding characters.
-    - **clean_match**: It's disabled by default. This makes the method ignore all whitespaces and consecutive spaces while matching.
-    - **case_sensitive**: It's enabled by default. As the name implies, disabling it will make the regex ignore the case of letters while compiling it.
+    - **clean_match**: It's disabled by default. This causes the method to ignore all whitespace and consecutive spaces while matching.
+    - **case_sensitive**: It's enabled by default. As the name implies, disabling it will cause the regex to ignore the case of letters while compiling.
   
     You have seen these examples before; the return result is [TextHandlers](#texthandlers) because we used the `re` method.
     ```python
@@ -484,7 +492,7 @@ First, we start with the `re` and `re_first` methods. These are the same methods
   >>> page.json()
   {'some_key': 'some_value'}
   ```
-  You might wonder how this happened while the `html` tag doesn't have direct text?<br/>
+  You might wonder how this happened, given that the `html` tag doesn't contain direct text.<br/>
   Well, for cases like JSON responses, I made the [Selector](#selector) class maintain a raw copy of the content passed to it. This way, when you use the `.json()` method, it checks for that raw copy and then converts it to JSON. If the raw copy is not available like the case with the elements, it checks for the current element text content, or otherwise it used the `get_all_text` method directly.<br/><br/>This might sound hacky a bit but remember, Scrapling is currently optimized to work with HTML pages only so that's the best way till now to handle JSON responses currently without sacrificing speed. This will be changed in the upcoming versions.
 
 - Another handy method is `.clean()`, which will remove all white spaces and consecutive spaces for you and return a new `TextHandler` instance
@@ -492,6 +500,7 @@ First, we start with the `re` and `re_first` methods. These are the same methods
 >>> TextHandler('\n wonderful  idea, \reh?').clean()
 'wonderful idea, eh?'
 ```
+Also, you can pass `remove_entities` argument to make `clean` replace HTML entities with their corresponding characters.
 
 - Another method that might be helpful in some cases is the `.sort()` method to sort the string for you, as you do with lists
 ```python
@@ -509,10 +518,10 @@ Other methods and properties will be added over time, but remember that this cla
 ## TextHandlers
 You probably guessed it: This class is similar to [Selectors](#selectors) and [Selector](#selector), but here it inherits the same logic and method as standard lists, with only `re` and `re_first` as new methods.
 
-The only difference is that the `re_first` method logic here does `re` on each [TextHandler](#texthandler) within and returns the first result it has or `None`. Nothing is new to explain here, but new methods will be added over time.
+The only difference is that the `re_first` method logic here does `re` on each [TextHandler](#texthandler) within and returns the first result it has or `None`. Nothing new needs to be explained here, but new methods will be added over time.
 
 ## AttributesHandler
-This is a read-only version of Python's standard dictionary or `dict` that's only used to store the attributes of each element or each [Selector](#selector) instance, in other words.
+This is a read-only version of Python's standard dictionary, or `dict`, that is used solely to store the attributes of each element or each [Selector](#selector) instance.
 ```python
 >>> print(page.find('script').attrib)
 {'id': 'page-data', 'type': 'application/json'}
@@ -525,7 +534,7 @@ It currently adds two extra simple methods:
 
 - The `search_values` method
 
-    In standard dictionaries, you can do `dict.get("key_name")` to check if a key exists. However, if you want to search by values instead of keys, it will take you some code lines. This method does that for you. It allows you to search the current attributes by values and returns a dictionary of each matching item.
+    In standard dictionaries, you can do `dict.get("key_name")` to check if a key exists. However, if you want to search by values instead of keys, it will require some additional code lines. This method does that for you. It allows you to search the current attributes by values and returns a dictionary of each matching item.
     
     A simple example would be
     ```python
@@ -552,8 +561,9 @@ It currently adds two extra simple methods:
 
 - The `json_string` property
 
-  This property converts current attributes to a JSON string if the attributes are JSON serializable; otherwise, it throws an error
-  ```python
+    This property converts current attributes to a JSON string if the attributes are JSON serializable; otherwise, it throws an error
+  
+    ```python
     >>>page.find('script').attrib.json_string
-  b'{"id":"page-data","type":"application/json"}'
-  ```
+    b'{"id":"page-data","type":"application/json"}'
+    ```

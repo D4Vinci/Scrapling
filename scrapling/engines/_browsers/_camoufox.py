@@ -343,7 +343,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
 
             page_info.page.wait_for_timeout(params.wait)
             response = ResponseFactory.from_playwright_response(
-                page_info.page, first_response, final_response[0], params.selector_config, bool(params.page_action)
+                page_info.page, first_response, final_response[0], params.selector_config
             )
 
             # Close the page to free up resources
@@ -636,7 +636,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
 
             # Create response object
             response = await ResponseFactory.from_async_playwright_response(
-                page_info.page, first_response, final_response[0], params.selector_config, bool(params.page_action)
+                page_info.page, first_response, final_response[0], params.selector_config
             )
 
             # Close the page to free up resources

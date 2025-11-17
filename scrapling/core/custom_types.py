@@ -103,9 +103,11 @@ class TextHandler(str):
         """Return a sorted version of the string"""
         return self.__class__("".join(sorted(self, reverse=reverse)))
 
-    def clean(self) -> Union[str, "TextHandler"]:
+    def clean(self, remove_entities=False) -> Union[str, "TextHandler"]:
         """Return a new version of the string after removing all white spaces and consecutive spaces"""
         data = self.translate(__CLEANING_TABLE__)
+        if remove_entities:
+            data = _replace_entities(data)
         return self.__class__(__CONSECUTIVE_SPACES_REGEX__.sub(" ", data).strip())
 
     # For easy copy-paste from Scrapy/parsel code when needed :)

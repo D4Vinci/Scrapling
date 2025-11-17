@@ -1,4 +1,11 @@
 ## Introduction
+
+> 💡 **Prerequisites:**
+> 
+> 1. You’ve completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector) object.
+> 2. You’ve completed or read the [Main classes](../parsing/main_classes.md) page to understand the [Selector](../parsing/main_classes.md#selector) class.
+> <br><br>
+
 Adaptive scraping (previously known as automatch) is one of Scrapling's most powerful features. It allows your scraper to survive website changes by intelligently tracking and relocating elements.
 
 Let's say you are scraping a page with a structure like this:

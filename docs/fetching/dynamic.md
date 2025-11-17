@@ -4,6 +4,12 @@ Here, we will discuss the `DynamicFetcher` class (previously known as `PlayWrigh
 
 As we will explain later, to automate the page, you need some knowledge of [Playwright's Page API](https://playwright.dev/python/docs/api/class-page).
 
+> 💡 **Prerequisites:**
+> 
+> 1. You’ve completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
+> 2. You’ve completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
+> 3. You’ve completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
+
 ## Basic Usage
 You have one primary way to import this Fetcher, which is the same for all fetchers.
 
@@ -124,6 +130,17 @@ page = DynamicFetcher.fetch(
     proxy='http://username:password@host:port'  # Or it can be a dictionary with the keys 'server', 'username', and 'password' only
 )
 ```
+
+### Downloading Files
+
+```python
+page = DynamicFetcher.fetch('https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png')
+
+with open(file='poster.png', mode='wb') as f:
+    f.write(page.body)
+```
+
+The `body` attribute of the `Response` object is a `bytes` object containing the response body in case of Non-HTML responses.
 
 ### Browser Automation
 This is where your knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) comes into play. The function you pass here takes the page object from Playwright's API, performs the desired action, and then the fetcher continues.
@@ -275,7 +292,7 @@ async def scrape_multiple_sites():
         return pages
 ```
 
-You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **rotating pool of Browser tabs**. Instead of using a single tab for all your requests, you set a limit on the maximum number of pages. With each request, the library will close all tabs that have finished their task and check if the number of the current tabs is lower than the maximum allowed number of pages/tabs, then:
+You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **rotating pool of Browser tabs**. Instead of using a single tab for all your requests, you set a limit on the maximum number of pages that can be displayed at once. With each request, the library will close all tabs that have finished their task and check if the number of the current tabs is lower than the maximum allowed number of pages/tabs, then:
 
 1. If you are within the allowed range, the fetcher will create a new tab for you, and then all is as normal.
 2. Otherwise, it will keep checking every subsecond if creating a new tab is allowed or not for 60 seconds, then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive.

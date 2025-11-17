@@ -268,7 +268,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
 
             # Create response object
             response = ResponseFactory.from_playwright_response(
-                page_info.page, first_response, final_response[0], params.selector_config, bool(params.page_action)
+                page_info.page, first_response, final_response[0], params.selector_config
             )
 
             # Close the page to free up resources
@@ -492,7 +492,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
 
             # Create response object
             response = await ResponseFactory.from_async_playwright_response(
-                page_info.page, first_response, final_response[0], params.selector_config, bool(params.page_action)
+                page_info.page, first_response, final_response[0], params.selector_config
             )
 
             # Close the page to free up resources

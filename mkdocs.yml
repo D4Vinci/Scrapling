@@ -12,24 +12,9 @@ theme:
   logo: assets/logo.png
   favicon: assets/favicon.ico
   palette:
-    - media: "(prefers-color-scheme)"
-      toggle:
-        icon: material/link
-        name: Switch to light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/toggle-switch
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: black
-      accent: indigo
-      toggle:
-        icon: material/toggle-switch-off
-        name: Switch to system preference
+    scheme: slate
+    primary: black
+    accent: deep purple
   font:
     text: Open Sans
     code: JetBrains Mono
@@ -70,10 +55,10 @@ nav:
       - Main classes: parsing/main_classes.md
       - Adaptive scraping: parsing/adaptive.md
     - Fetching:
-      - Choosing a fetcher: fetching/choosing.md
-      - Static requests: fetching/static.md
-      - Dynamically loaded websites: fetching/dynamic.md
-      - Fully bypass protections while fetching: fetching/stealthy.md
+      - Fetchers basics: fetching/choosing.md
+      - HTTP requests: fetching/static.md
+      - Dynamic websites: fetching/dynamic.md
+      - Dynamic websites with hard protections: fetching/stealthy.md
     - Command Line Interface:
       - Overview: cli/overview.md
       - Interactive shell: cli/interactive-shell.md
@@ -94,7 +79,7 @@ nav:
     - Writing your retrieval system: development/adaptive_storage_system.md
     - Using Scrapling's custom types: development/scrapling_custom_types.md
   - Support and Advertisement: donate.md
-  - Contributing: contributing.md
+  - Contributing: 'https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md'
   - Changelog: 'https://github.com/D4Vinci/Scrapling/releases'
 
 markdown_extensions:
@@ -118,10 +103,10 @@ markdown_extensions:
 
 plugins:
   - search
-  - social:
-      cards_layout_options:
-        background_color: "#1f1f1f"
-        font_family: Roboto
+#  - social:
+#      cards_layout_options:
+#        background_color: "#1f1f1f"
+#        font_family: Roboto
   - mkdocstrings:
       handlers:
         python:
