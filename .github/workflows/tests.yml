@@ -63,7 +63,7 @@ jobs:
     - name: Get Playwright version
       id: playwright-version
       run: |
-        PLAYWRIGHT_VERSION=$(python3 -c "import playwright; print(playwright.__version__)")
+        PLAYWRIGHT_VERSION=$(python3 -c "import importlib.metadata; print(importlib.metadata.version('playwright'))")
         echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
         echo "Playwright version: $PLAYWRIGHT_VERSION"
 
@@ -89,7 +89,7 @@ jobs:
     - name: Get Camoufox version
       id: camoufox-version
       run: |
-        CAMOUFOX_VERSION=$(python3 -c "import camoufox; print(camoufox.__version__)")
+        CAMOUFOX_VERSION=$(python3 -c "import importlib.metadata; print(importlib.metadata.version('camoufox'))")
         echo "version=$CAMOUFOX_VERSION" >> $GITHUB_OUTPUT
         echo "Camoufox version: $CAMOUFOX_VERSION"
 
