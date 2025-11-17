@@ -500,6 +500,7 @@ First, we start with the `re` and `re_first` methods. These are the same methods
 >>> TextHandler('\n wonderful  idea, \reh?').clean()
 'wonderful idea, eh?'
 ```
+Also, you can pass `remove_entities` argument to make `clean` replace HTML entities with their corresponding characters.
 
 - Another method that might be helpful in some cases is the `.sort()` method to sort the string for you, as you do with lists
 ```python
