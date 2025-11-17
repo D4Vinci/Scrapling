@@ -60,6 +60,13 @@ jobs:
         python3 -m pip install --upgrade pip
         python3 -m pip install playwright>=1.55.0 patchright>=1.55.0 camoufox
 
+    - name: Get Playwright version
+      id: playwright-version
+      run: |
+        PLAYWRIGHT_VERSION=$(python3 -c "import playwright; print(playwright.__version__)")
+        echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
+        echo "Playwright version: $PLAYWRIGHT_VERSION"
+
     - name: Retrieve Playwright browsers from cache if any
       id: playwright-cache
       uses: actions/cache@v4
@@ -68,15 +75,23 @@ jobs:
           ~/.cache/ms-playwright
           ~/Library/Caches/ms-playwright
           ~/.ms-playwright
-        key: ${{ runner.os }}-playwright-${{ hashFiles('pyproject.toml') }}
+        key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-v1
         restore-keys: |
+          ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-
           ${{ runner.os }}-playwright-
 
     - name: Install Playwright browsers
-      if: steps.playwright-cache.outputs.cache-hit != 'true'
       run: |
+        echo "Cache hit: ${{ steps.playwright-cache.outputs.cache-hit }}"
         python3 -m playwright install chromium
         python3 -m playwright install-deps chromium firefox
+
+    - name: Get Camoufox version
+      id: camoufox-version
+      run: |
+        CAMOUFOX_VERSION=$(python3 -c "import camoufox; print(camoufox.__version__)")
+        echo "version=$CAMOUFOX_VERSION" >> $GITHUB_OUTPUT
+        echo "Camoufox version: $CAMOUFOX_VERSION"
 
     - name: Retrieve Camoufox browser from cache if any
       id: camoufox-cache
@@ -85,13 +100,14 @@ jobs:
         path: |
           ~/.cache/camoufox
           ~/Library/Caches/camoufox
-        key: ${{ runner.os }}-camoufox-${{ hashFiles('pyproject.toml') }}
+        key: ${{ runner.os }}-camoufox-${{ steps.camoufox-version.outputs.version }}-v1
         restore-keys: |
+          ${{ runner.os }}-camoufox-${{ steps.camoufox-version.outputs.version }}-
           ${{ runner.os }}-camoufox-
 
     - name: Install Camoufox browser
-      if: steps.camoufox-cache.outputs.cache-hit != 'true'
       run: |
+        echo "Cache hit: ${{ steps.camoufox-cache.outputs.cache-hit }}"
         python3 -m camoufox fetch --browserforge
 
     # Cache tox environments
