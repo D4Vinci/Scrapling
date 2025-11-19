@@ -120,8 +120,26 @@ class Selector(SelectorsGeneration):
 
         self.__text = None
         if root is None:
-            if isinstance(content, str):
-                body = content.strip().replace("\x00", "").encode(encoding) or b"<html/>"
+            if isinstance(content, str):                
+                cleaned_content = content.strip().replace("\x00", "")
+                
+                # Handle encoding errors gracefully
+                try:
+                    body = cleaned_content.encode(encoding) or b"<html/>"
+                except (UnicodeEncodeError, LookupError) as e:
+                    # If specified encoding fails, try UTF-8 as fallback
+                    if encoding.lower() != "utf-8":
+                        try:
+                            body = cleaned_content.encode("utf-8") or b"<html/>"                            
+                            encoding = "utf-8"
+                        except UnicodeEncodeError:                            
+                            body = cleaned_content.encode(
+                                encoding, errors="ignore"
+                            ) or b"<html/>"
+                    else:                        
+                        body = cleaned_content.encode(
+                            encoding, errors="ignore"
+                        ) or b"<html/>"
             elif isinstance(content, bytes):
                 body = content.replace(b"\x00", b"")
             else:
