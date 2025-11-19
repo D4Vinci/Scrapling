@@ -21,5 +21,5 @@ Perks:
 - The same logo will be featured at [the top of Scrapling's PyPI page](https://pypi.org/project/scrapling/).
 - The same logo will be featured at [the top of Docker's image page](https://hub.docker.com/r/pyd4vinci/scrapling).
 - Your logo will be featured as a top sponsor on [Scrapling's website](https://scrapling.readthedocs.io/en/latest/) main page.
-- A Shoutout with each [Release note](https://github.com/D4Vinci/Scrapling/release).
+- A Shoutout with each [Release note](https://github.com/D4Vinci/Scrapling/releases).
 
