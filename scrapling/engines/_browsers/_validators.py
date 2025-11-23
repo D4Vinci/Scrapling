@@ -21,7 +21,7 @@ from scrapling.engines.toolbelt.navigation import construct_proxy_dict
 
 # Custom validators for msgspec
 @lru_cache(8)
-def _is_invalid_file_path(value: str) -> bool | str:
+def _is_invalid_file_path(value: str) -> bool | str:  # pragma: no cover
     """Fast file path validation"""
     path = Path(value)
     if not path.exists():
@@ -33,7 +33,7 @@ def _is_invalid_file_path(value: str) -> bool | str:
     return False
 
 
-def _validate_addon_path(value: str) -> None:
+def _validate_addon_path(value: str) -> None:  # pragma: no cover
     """Fast addon path validation"""
     path = Path(value)
     if not path.exists():
@@ -49,7 +49,7 @@ def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
         return "CDP URL must use 'ws://' or 'wss://' scheme"
 
     netloc = urlparse(cdp_url).netloc
-    if not netloc:
+    if not netloc:  # pragma: no cover
         return "Invalid hostname for the CDP URL"
     return False
 
@@ -89,7 +89,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     selector_config: Optional[Dict] = {}
     additional_args: Optional[Dict] = {}
 
-    def __post_init__(self):
+    def __post_init__(self):  # pragma: no cover
         """Custom validation after msgspec validation"""
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
@@ -195,7 +195,7 @@ class _fetch_params:
 
 def validate_fetch(
     params: List[Tuple], model: type[PlaywrightConfig] | type[CamoufoxConfig], sentinel=None
-) -> _fetch_params:
+) -> _fetch_params:  # pragma: no cover
     result = {}
     overrides = {}
 

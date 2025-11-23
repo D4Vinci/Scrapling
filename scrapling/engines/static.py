@@ -46,6 +46,24 @@ def _select_random_browser(impersonate: ImpersonateType) -> Optional[BrowserType
 
 class _ConfigurationLogic(ABC):
     # Core Logic Handler (Internal Engine)
+    __slots__ = (
+        "_default_impersonate",
+        "_stealth",
+        "_default_proxies",
+        "_default_proxy",
+        "_default_proxy_auth",
+        "_default_timeout",
+        "_default_headers",
+        "_default_retries",
+        "_default_retry_delay",
+        "_default_follow_redirects",
+        "_default_max_redirects",
+        "_default_verify",
+        "_default_cert",
+        "_default_http3",
+        "selector_config",
+    )
+
     def __init__(self, **kwargs: Unpack[RequestsSession]):
         self._default_impersonate = kwargs.get("impersonate", "chrome")
         self._stealth = kwargs.get("stealthy_headers", True)
@@ -157,6 +175,8 @@ class _ConfigurationLogic(ABC):
 
 
 class _SyncSessionLogic(_ConfigurationLogic):
+    __slots__ = ("_curl_session",)
+
     def __init__(self, **kwargs: Unpack[RequestsSession]):
         super().__init__(**kwargs)
         self._curl_session: Optional[CurlSession] = None
@@ -343,6 +363,8 @@ class _SyncSessionLogic(_ConfigurationLogic):
 
 
 class _ASyncSessionLogic(_ConfigurationLogic):
+    __slots__ = ("_async_curl_session",)
+
     def __init__(self, **kwargs: Unpack[RequestsSession]):
         super().__init__(**kwargs)
         self._async_curl_session: Optional[AsyncCurlSession] = None
@@ -549,6 +571,25 @@ class FetcherSession:
     same manager instance while a session is already active is disallowed.
     """
 
+    __slots__ = (
+        "_default_impersonate",
+        "_stealth",
+        "_default_proxies",
+        "_default_proxy",
+        "_default_proxy_auth",
+        "_default_timeout",
+        "_default_headers",
+        "_default_retries",
+        "_default_retry_delay",
+        "_default_follow_redirects",
+        "_default_max_redirects",
+        "_default_verify",
+        "_default_cert",
+        "_default_http3",
+        "selector_config",
+        "_client",
+    )
+
     def __init__(
         self,
         impersonate: ImpersonateType = "chrome",
@@ -640,6 +681,8 @@ class FetcherSession:
 
 
 class FetcherClient(_SyncSessionLogic):
+    __slots__ = ("__enter__", "__exit__")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__enter__: Any = None
@@ -648,6 +691,8 @@ class FetcherClient(_SyncSessionLogic):
 
 
 class AsyncFetcherClient(_ASyncSessionLogic):
+    __slots__ = ("__aenter__", "__aexit__")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__aenter__: Any = None
