@@ -6,8 +6,6 @@ from asyncio import sleep as asyncio_sleep
 from curl_cffi.curl import CurlError
 from curl_cffi import CurlHttpVersion
 from curl_cffi.requests import (
-    ProxySpec,
-    CookieTypes,
     BrowserTypeLiteral,
     Session as CurlSession,
     AsyncSession as AsyncCurlSession,
@@ -15,25 +13,21 @@ from curl_cffi.requests import (
 
 from scrapling.core.utils import log
 from scrapling.core._types import (
-    Dict,
-    Optional,
-    Tuple,
-    Mapping,
-    SUPPORTED_HTTP_METHODS,
-    Awaitable,
-    List,
     Any,
+    Dict,
+    Tuple,
+    Unpack,
+    Optional,
+    Awaitable,
+    SUPPORTED_HTTP_METHODS,
 )
 
+from ._browsers._types import RequestsSession, GetRequestParams, DataRequestParams, ImpersonateType
 from .toolbelt.custom import Response
 from .toolbelt.convertor import ResponseFactory
 from .toolbelt.fingerprints import generate_convincing_referer, generate_headers, __default_useragent__
 
-_UNSET: Any = object()
 _NO_SESSION: Any = object()
-
-# Type alias for `impersonate` parameter - accepts a single browser or list of browsers
-ImpersonateType = BrowserTypeLiteral | List[BrowserTypeLiteral] | None
 
 
 def _select_random_browser(impersonate: ImpersonateType) -> Optional[BrowserTypeLiteral]:
@@ -52,82 +46,81 @@ def _select_random_browser(impersonate: ImpersonateType) -> Optional[BrowserType
 
 class _ConfigurationLogic(ABC):
     # Core Logic Handler (Internal Engine)
-    def __init__(
-        self,
-        impersonate: ImpersonateType = "chrome",
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
-        proxies: Optional[Dict[str, str]] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
-        timeout: Optional[int | float] = 30,
-        headers: Optional[Dict[str, str]] = None,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        follow_redirects: bool = True,
-        max_redirects: int = 30,
-        verify: bool = True,
-        cert: Optional[str | Tuple[str, str]] = None,
-        selector_config: Optional[Dict] = None,
-    ):
-        self._default_impersonate = impersonate
-        self._stealth = stealthy_headers
-        self._default_proxies = proxies or {}
-        self._default_proxy = proxy or None
-        self._default_proxy_auth = proxy_auth or None
-        self._default_timeout = timeout
-        self._default_headers = headers or {}
-        self._default_retries = retries
-        self._default_retry_delay = retry_delay
-        self._default_follow_redirects = follow_redirects
-        self._default_max_redirects = max_redirects
-        self._default_verify = verify
-        self._default_cert = cert
-        self._default_http3 = http3
-        self.selector_config = selector_config or {}
+    def __init__(self, **kwargs: Unpack[RequestsSession]):
+        self._default_impersonate = kwargs.get("impersonate", "chrome")
+        self._stealth = kwargs.get("stealthy_headers", True)
+        self._default_proxies = kwargs.get("proxies") or {}
+        self._default_proxy = kwargs.get("proxy") or None
+        self._default_proxy_auth = kwargs.get("proxy_auth") or None
+        self._default_timeout = kwargs.get("timeout", 30)
+        self._default_headers = kwargs.get("headers") or {}
+        self._default_retries = kwargs.get("retries", 3)
+        self._default_retry_delay = kwargs.get("retry_delay", 1)
+        self._default_follow_redirects = kwargs.get("follow_redirects", True)
+        self._default_max_redirects = kwargs.get("max_redirects", 30)
+        self._default_verify = kwargs.get("verify", True)
+        self._default_cert = kwargs.get("cert") or None
+        self._default_http3 = kwargs.get("http3", False)
+        self.selector_config = kwargs.get("selector_config") or {}
 
     @staticmethod
-    def _get_with_precedence(request_val: Any, default_val: Any) -> Any:
-        """Get value with request-level priority over session-level"""
-        return request_val if request_val is not _UNSET else default_val
+    def _get_param(kwargs: Dict, key: str, default: Any) -> Any:
+        """Get parameter from kwargs if present, otherwise return default."""
+        return kwargs[key] if key in kwargs else default
 
     def _merge_request_args(self, **method_kwargs) -> Dict[str, Any]:
         """Merge request-specific arguments with default session arguments."""
         url = method_kwargs.pop("url")
-        impersonate = _select_random_browser(
-            self._get_with_precedence(method_kwargs.pop("impersonate"), self._default_impersonate)
-        )
-        http3_enabled = self._get_with_precedence(method_kwargs.pop("http3"), self._default_http3)
+
+        # Get parameters from kwargs or use defaults
+        impersonate = self._get_param(method_kwargs, "impersonate", self._default_impersonate)
+        impersonate = _select_random_browser(impersonate)
+        http3_enabled = self._get_param(method_kwargs, "http3", self._default_http3)
+        stealth = self._get_param(method_kwargs, "stealth", self._stealth)
+
         final_args = {
             "url": url,
             # Curl automatically generates the suitable browser headers when you use `impersonate`
             "headers": self._headers_job(
                 url,
-                self._get_with_precedence(method_kwargs.pop("headers"), self._default_headers),
-                self._get_with_precedence(method_kwargs.pop("stealth"), self._stealth),
+                self._get_param(method_kwargs, "headers", self._default_headers),
+                stealth,
                 bool(impersonate),
             ),
-            "proxies": self._get_with_precedence(method_kwargs.pop("proxies"), self._default_proxies),
-            "proxy": self._get_with_precedence(method_kwargs.pop("proxy"), self._default_proxy),
-            "proxy_auth": self._get_with_precedence(method_kwargs.pop("proxy_auth"), self._default_proxy_auth),
-            "timeout": self._get_with_precedence(method_kwargs.pop("timeout"), self._default_timeout),
-            "allow_redirects": self._get_with_precedence(
-                method_kwargs.pop("follow_redirects"), self._default_follow_redirects
-            ),
-            "max_redirects": self._get_with_precedence(method_kwargs.pop("max_redirects"), self._default_max_redirects),
-            "verify": self._get_with_precedence(method_kwargs.pop("verify"), self._default_verify),
-            "cert": self._get_with_precedence(method_kwargs.pop("cert"), self._default_cert),
+            "proxies": self._get_param(method_kwargs, "proxies", self._default_proxies),
+            "proxy": self._get_param(method_kwargs, "proxy", self._default_proxy),
+            "proxy_auth": self._get_param(method_kwargs, "proxy_auth", self._default_proxy_auth),
+            "timeout": self._get_param(method_kwargs, "timeout", self._default_timeout),
+            "allow_redirects": self._get_param(method_kwargs, "follow_redirects", self._default_follow_redirects),
+            "max_redirects": self._get_param(method_kwargs, "max_redirects", self._default_max_redirects),
+            "verify": self._get_param(method_kwargs, "verify", self._default_verify),
+            "cert": self._get_param(method_kwargs, "cert", self._default_cert),
             "impersonate": impersonate,
-            **{
-                k: v
-                for k, v in method_kwargs.items()
-                if v
-                not in (
-                    _UNSET,
-                    None,
-                )
-            },  # Add any remaining parameters (after all known ones are popped)
         }
+
+        # Add any remaining parameters that weren't explicitly handled above
+        # Skip the ones we already processed plus internal params
+        skip_keys = {
+            "impersonate",
+            "http3",
+            "stealth",
+            "headers",
+            "proxies",
+            "proxy",
+            "proxy_auth",
+            "timeout",
+            "follow_redirects",
+            "max_redirects",
+            "verify",
+            "cert",
+            "retries",
+            "retry_delay",
+            "selector_config",
+        }
+        for k, v in method_kwargs.items():
+            if k not in skip_keys and v is not None:
+                final_args[k] = v
+
         if http3_enabled:  # pragma: no cover
             final_args["http_version"] = CurlHttpVersion.V3ONLY
             if impersonate:
@@ -144,7 +137,7 @@ class _ConfigurationLogic(ABC):
         3. Generates a referer header that looks like as if this request came from a Google's search of the current URL's domain.
         """
         # Merge session headers with request headers, request takes precedence (if it was set)
-        final_headers = {**self._default_headers, **(headers if headers and headers is not _UNSET else {})}
+        final_headers = {**self._default_headers, **(headers if headers else {})}
         headers_keys = {k.lower() for k in final_headers}
         if stealth:
             if "referer" not in headers_keys:
@@ -156,7 +149,7 @@ class _ConfigurationLogic(ABC):
                     {k: v for k, v in extra_headers.items() if k.lower() not in headers_keys}
                 )  # Don't overwrite user-supplied headers
 
-        elif "user-agent" not in headers_keys and not impersonate_enabled:
+        elif "user-agent" not in headers_keys and not impersonate_enabled:  # pragma: no cover
             final_headers["User-Agent"] = __default_useragent__
             log.debug(f"Can't find useragent in headers so '{final_headers['User-Agent']}' was used.")
 
@@ -164,41 +157,8 @@ class _ConfigurationLogic(ABC):
 
 
 class _SyncSessionLogic(_ConfigurationLogic):
-    def __init__(
-        self,
-        impersonate: ImpersonateType = "chrome",
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
-        proxies: Optional[Dict[str, str]] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
-        timeout: Optional[int | float] = 30,
-        headers: Optional[Dict[str, str]] = None,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        follow_redirects: bool = True,
-        max_redirects: int = 30,
-        verify: bool = True,
-        cert: Optional[str | Tuple[str, str]] = None,
-        selector_config: Optional[Dict] = None,
-    ):
-        super().__init__(
-            impersonate,
-            http3,
-            stealthy_headers,
-            proxies,
-            proxy,
-            proxy_auth,
-            timeout,
-            headers,
-            retries,
-            retry_delay,
-            follow_redirects,
-            max_redirects,
-            verify,
-            cert,
-            selector_config,
-        )
+    def __init__(self, **kwargs: Unpack[RequestsSession]):
+        super().__init__(**kwargs)
         self._curl_session: Optional[CurlSession] = None
 
     def __enter__(self):
@@ -221,20 +181,15 @@ class _SyncSessionLogic(_ConfigurationLogic):
             self._curl_session.close()
             self._curl_session = None
 
-    def __make_request(
-        self,
-        method: SUPPORTED_HTTP_METHODS,
-        stealth: Optional[bool] = None,
-        **kwargs,
-    ) -> Response:
+    def __make_request(self, method: SUPPORTED_HTTP_METHODS, stealth: Optional[bool] = None, **kwargs) -> Response:
         """
         Perform an HTTP request using the configured session.
         """
         stealth = self._stealth if stealth is None else stealth
 
-        selector_config = kwargs.pop("selector_config", {}) or self.selector_config
-        max_retries = self._get_with_precedence(kwargs.pop("retries"), self._default_retries)
-        retry_delay = self._get_with_precedence(kwargs.pop("retry_delay"), self._default_retry_delay)
+        selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
+        max_retries = self._get_param(kwargs, "retries", self._default_retries)
+        retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
         request_args = self._merge_request_args(stealth=stealth, **kwargs)
 
         session = self._curl_session
@@ -264,350 +219,135 @@ class _SyncSessionLogic(_ConfigurationLogic):
 
         raise RuntimeError("No active session available.")  # pragma: no cover
 
-    def get(
-        self,
-        url: str,
-        params: Optional[Dict | List | Tuple] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        cookies: Optional[CookieTypes] = None,
-        timeout: Optional[int | float] = _UNSET,
-        follow_redirects: Optional[bool] = _UNSET,
-        max_redirects: Optional[int] = _UNSET,
-        retries: Optional[int] = _UNSET,
-        retry_delay: Optional[int] = _UNSET,
-        proxies: Optional[ProxySpec] = _UNSET,
-        proxy: Optional[str] = _UNSET,
-        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
-        auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = _UNSET,
-        cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: ImpersonateType = _UNSET,
-        http3: Optional[bool] = _UNSET,
-        stealthy_headers: Optional[bool] = _UNSET,
-        **kwargs,
-    ) -> Response:
+    def get(self, url: str, **kwargs: Unpack[GetRequestParams]) -> Response:
         """
         Perform a GET request.
 
+        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+
         :param url: Target URL for the request.
-        :param params: Query string parameters for the request.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to True.
-        :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :param retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
-        :param proxies: Dict of proxies to use.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
-        :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
-        :param verify: Whether to verify HTTPS certificates.
-        :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
-        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
-        :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        :param kwargs: Additional keyword arguments including:
+            - params: Query string parameters for the request.
+            - headers: Headers to include in the request.
+            - cookies: Cookies to use in the request.
+            - timeout: Number of seconds to wait before timing out.
+            - follow_redirects: Whether to follow redirects. Defaults to True.
+            - max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
+            - retries: Number of retry attempts. Defaults to 3.
+            - retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
+            - proxies: Dict of proxies to use.
+            - proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
+            - proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
+            - auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
+            - verify: Whether to verify HTTPS certificates.
+            - cert: Tuple of (cert, key) filenames for the client certificate.
+            - impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+            - http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+            - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        method_args = {k: v for k, v in locals().items() if k not in ("self", "stealthy_headers", "kwargs")}
-        method_args.update(kwargs)
-        # For type checking (not accessed error)
-        _ = (
-            url,
-            params,
-            headers,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-        )
-        return self.__make_request("GET", stealth=stealthy_headers, **method_args)
+        stealthy_headers = kwargs.pop("stealthy_headers", None)
+        return self.__make_request("GET", stealth=stealthy_headers, url=url, **kwargs)
 
-    def post(
-        self,
-        url: str,
-        data: Optional[Dict | str] = None,
-        json: Optional[Dict | List] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        params: Optional[Dict | List | Tuple] = None,
-        cookies: Optional[CookieTypes] = None,
-        timeout: Optional[int | float] = _UNSET,
-        follow_redirects: Optional[bool] = _UNSET,
-        max_redirects: Optional[int] = _UNSET,
-        retries: Optional[int] = _UNSET,
-        retry_delay: Optional[int] = _UNSET,
-        proxies: Optional[ProxySpec] = _UNSET,
-        proxy: Optional[str] = _UNSET,
-        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
-        auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = _UNSET,
-        cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: ImpersonateType = _UNSET,
-        http3: Optional[bool] = _UNSET,
-        stealthy_headers: Optional[bool] = _UNSET,
-        **kwargs,
-    ) -> Response:
+    def post(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
         Perform a POST request.
 
         :param url: Target URL for the request.
-        :param data: Form data to include in the request body.
-        :param json: A JSON serializable object to include in the body of the request.
-        :param params: Query string parameters for the request.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to True.
-        :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :param retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
-        :param proxies: Dict of proxies to use.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
-        :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
-        :param verify: Whether to verify HTTPS certificates.
-        :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
-        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
-        :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        :param kwargs: Additional keyword arguments including:
+            - data: Form data to include in the request body.
+            - json: A JSON serializable object to include in the body of the request.
+            - params: Query string parameters for the request.
+            - headers: Headers to include in the request.
+            - cookies: Cookies to use in the request.
+            - timeout: Number of seconds to wait before timing out.
+            - follow_redirects: Whether to follow redirects. Defaults to True.
+            - max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
+            - retries: Number of retry attempts. Defaults to 3.
+            - retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
+            - proxies: Dict of proxies to use.
+            - proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
+            - proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
+            - auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
+            - verify: Whether to verify HTTPS certificates.
+            - cert: Tuple of (cert, key) filenames for the client certificate.
+            - impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+            - http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+            - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        method_args = {k: v for k, v in locals().items() if k not in ("self", "stealthy_headers", "kwargs")}
-        method_args.update(kwargs)
-        # For type checking (not accessed error)
-        _ = (
-            url,
-            params,
-            headers,
-            data,
-            json,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-        )
-        return self.__make_request("POST", stealth=stealthy_headers, **method_args)
+        stealthy_headers = kwargs.pop("stealthy_headers", None)
+        return self.__make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
 
-    def put(
-        self,
-        url: str,
-        data: Optional[Dict | str] = None,
-        json: Optional[Dict | List] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        params: Optional[Dict | List | Tuple] = None,
-        cookies: Optional[CookieTypes] = None,
-        timeout: Optional[int | float] = _UNSET,
-        follow_redirects: Optional[bool] = _UNSET,
-        max_redirects: Optional[int] = _UNSET,
-        retries: Optional[int] = _UNSET,
-        retry_delay: Optional[int] = _UNSET,
-        proxies: Optional[ProxySpec] = _UNSET,
-        proxy: Optional[str] = _UNSET,
-        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
-        auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = _UNSET,
-        cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: ImpersonateType = _UNSET,
-        http3: Optional[bool] = _UNSET,
-        stealthy_headers: Optional[bool] = _UNSET,
-        **kwargs,
-    ) -> Response:
+    def put(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
         Perform a PUT request.
 
         :param url: Target URL for the request.
-        :param data: Form data to include in the request body.
-        :param json: A JSON serializable object to include in the body of the request.
-        :param params: Query string parameters for the request.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to True.
-        :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :param retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
-        :param proxies: Dict of proxies to use.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
-        :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
-        :param verify: Whether to verify HTTPS certificates.
-        :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
-        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
-        :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        :param kwargs: Additional keyword arguments including:
+            - data: Form data to include in the request body.
+            - json: A JSON serializable object to include in the body of the request.
+            - params: Query string parameters for the request.
+            - headers: Headers to include in the request.
+            - cookies: Cookies to use in the request.
+            - timeout: Number of seconds to wait before timing out.
+            - follow_redirects: Whether to follow redirects. Defaults to True.
+            - max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
+            - retries: Number of retry attempts. Defaults to 3.
+            - retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
+            - proxies: Dict of proxies to use.
+            - proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
+            - proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
+            - auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
+            - verify: Whether to verify HTTPS certificates.
+            - cert: Tuple of (cert, key) filenames for the client certificate.
+            - impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+            - http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+            - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        method_args = {k: v for k, v in locals().items() if k not in ("self", "stealthy_headers", "kwargs")}
-        method_args.update(kwargs)
-        # For type checking (not accessed error)
-        _ = (
-            url,
-            params,
-            headers,
-            data,
-            json,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-        )
-        return self.__make_request("PUT", stealth=stealthy_headers, **method_args)
+        stealthy_headers = kwargs.pop("stealthy_headers", None)
+        return self.__make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
 
-    def delete(
-        self,
-        url: str,
-        data: Optional[Dict | str] = None,
-        json: Optional[Dict | List] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        params: Optional[Dict | List | Tuple] = None,
-        cookies: Optional[CookieTypes] = None,
-        timeout: Optional[int | float] = _UNSET,
-        follow_redirects: Optional[bool] = _UNSET,
-        max_redirects: Optional[int] = _UNSET,
-        retries: Optional[int] = _UNSET,
-        retry_delay: Optional[int] = _UNSET,
-        proxies: Optional[ProxySpec] = _UNSET,
-        proxy: Optional[str] = _UNSET,
-        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
-        auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = _UNSET,
-        cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: ImpersonateType = _UNSET,
-        http3: Optional[bool] = _UNSET,
-        stealthy_headers: Optional[bool] = _UNSET,
-        **kwargs,
-    ) -> Response:
+    def delete(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
         Perform a DELETE request.
 
         :param url: Target URL for the request.
-        :param data: Form data to include in the request body.
-        :param json: A JSON serializable object to include in the body of the request.
-        :param params: Query string parameters for the request.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to True.
-        :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :param retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
-        :param proxies: Dict of proxies to use.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
-        :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
-        :param verify: Whether to verify HTTPS certificates.
-        :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
-        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
-        :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        :param kwargs: Additional keyword arguments including:
+            - data: Form data to include in the request body.
+            - json: A JSON serializable object to include in the body of the request.
+            - params: Query string parameters for the request.
+            - headers: Headers to include in the request.
+            - cookies: Cookies to use in the request.
+            - timeout: Number of seconds to wait before timing out.
+            - follow_redirects: Whether to follow redirects. Defaults to True.
+            - max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
+            - retries: Number of retry attempts. Defaults to 3.
+            - retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
+            - proxies: Dict of proxies to use.
+            - proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
+            - proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
+            - auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
+            - verify: Whether to verify HTTPS certificates.
+            - cert: Tuple of (cert, key) filenames for the client certificate.
+            - impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+            - http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+            - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
         # Careful of sending a body in a DELETE request, it might cause some websites to reject the request as per https://www.rfc-editor.org/rfc/rfc7231#section-4.3.5,
         # But some websites accept it, it depends on the implementation used.
-        method_args = {k: v for k, v in locals().items() if k not in ("self", "stealthy_headers", "kwargs")}
-        method_args.update(kwargs)
-        # For type checking (not accessed error)
-        _ = (
-            url,
-            params,
-            headers,
-            data,
-            json,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-        )
-        return self.__make_request("DELETE", stealth=stealthy_headers, **method_args)
+        stealthy_headers = kwargs.pop("stealthy_headers", None)
+        return self.__make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
 
 
 class _ASyncSessionLogic(_ConfigurationLogic):
-    def __init__(
-        self,
-        impersonate: ImpersonateType = "chrome",
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
-        proxies: Optional[Dict[str, str]] = None,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
-        timeout: Optional[int | float] = 30,
-        headers: Optional[Dict[str, str]] = None,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        follow_redirects: bool = True,
-        max_redirects: int = 30,
-        verify: bool = True,
-        cert: Optional[str | Tuple[str, str]] = None,
-        selector_config: Optional[Dict] = None,
-    ):
-        super().__init__(
-            impersonate,
-            http3,
-            stealthy_headers,
-            proxies,
-            proxy,
-            proxy_auth,
-            timeout,
-            headers,
-            retries,
-            retry_delay,
-            follow_redirects,
-            max_redirects,
-            verify,
-            cert,
-            selector_config,
-        )
+    def __init__(self, **kwargs: Unpack[RequestsSession]):
+        super().__init__(**kwargs)
         self._async_curl_session: Optional[AsyncCurlSession] = None
 
-    async def __aenter__(self):
+    async def __aenter__(self):  # pragma: no cover
         """Creates and returns a new asynchronous Session."""
         if self._async_curl_session:
             raise RuntimeError("This FetcherSession instance already has an active asynchronous session.")
@@ -628,19 +368,16 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             self._async_curl_session = None
 
     async def __make_request(
-        self,
-        method: SUPPORTED_HTTP_METHODS,
-        stealth: Optional[bool] = None,
-        **kwargs,
+        self, method: SUPPORTED_HTTP_METHODS, stealth: Optional[bool] = None, **kwargs
     ) -> Response:
         """
         Perform an HTTP request using the configured session.
         """
         stealth = self._stealth if stealth is None else stealth
 
-        selector_config = kwargs.pop("selector_config", {}) or self.selector_config
-        max_retries = self._get_with_precedence(kwargs.pop("retries"), self._default_retries)
-        retry_delay = self._get_with_precedence(kwargs.pop("retry_delay"), self._default_retry_delay)
+        selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
+        max_retries = self._get_param(kwargs, "retries", self._default_retries)
+        retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
         request_args = self._merge_request_args(stealth=stealth, **kwargs)
 
         session = self._async_curl_session
@@ -672,309 +409,133 @@ class _ASyncSessionLogic(_ConfigurationLogic):
 
         raise RuntimeError("No active session available.")  # pragma: no cover
 
-    def get(
-        self,
-        url: str,
-        params: Optional[Dict | List | Tuple] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        cookies: Optional[CookieTypes] = None,
-        timeout: Optional[int | float] = _UNSET,
-        follow_redirects: Optional[bool] = _UNSET,
-        max_redirects: Optional[int] = _UNSET,
-        retries: Optional[int] = _UNSET,
-        retry_delay: Optional[int] = _UNSET,
-        proxies: Optional[ProxySpec] = _UNSET,
-        proxy: Optional[str] = _UNSET,
-        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
-        auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = _UNSET,
-        cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: ImpersonateType = _UNSET,
-        http3: Optional[bool] = _UNSET,
-        stealthy_headers: Optional[bool] = _UNSET,
-        **kwargs,
-    ) -> Awaitable[Response]:
+    def get(self, url: str, **kwargs: Unpack[GetRequestParams]) -> Awaitable[Response]:
         """
         Perform a GET request.
 
+        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+
         :param url: Target URL for the request.
-        :param params: Query string parameters for the request.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to True.
-        :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :param retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
-        :param proxies: Dict of proxies to use.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
-        :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
-        :param verify: Whether to verify HTTPS certificates.
-        :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
-        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
-        :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        :param kwargs: Additional keyword arguments including:
+            - params: Query string parameters for the request.
+            - headers: Headers to include in the request.
+            - cookies: Cookies to use in the request.
+            - timeout: Number of seconds to wait before timing out.
+            - follow_redirects: Whether to follow redirects. Defaults to True.
+            - max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
+            - retries: Number of retry attempts. Defaults to 3.
+            - retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
+            - proxies: Dict of proxies to use.
+            - proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
+            - proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
+            - auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
+            - verify: Whether to verify HTTPS certificates.
+            - cert: Tuple of (cert, key) filenames for the client certificate.
+            - impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+            - http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+            - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        method_args = {k: v for k, v in locals().items() if k not in ("self", "stealthy_headers", "kwargs")}
-        method_args.update(kwargs)
-        # For type checking (not accessed error)
-        _ = (
-            url,
-            params,
-            headers,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-        )
-        return self.__make_request("GET", stealth=stealthy_headers, **method_args)
+        stealthy_headers = kwargs.pop("stealthy_headers", None)
+        return self.__make_request("GET", stealth=stealthy_headers, url=url, **kwargs)
 
-    def post(
-        self,
-        url: str,
-        data: Optional[Dict | str] = None,
-        json: Optional[Dict | List] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        params: Optional[Dict | List | Tuple] = None,
-        cookies: Optional[CookieTypes] = None,
-        timeout: Optional[int | float] = _UNSET,
-        follow_redirects: Optional[bool] = _UNSET,
-        max_redirects: Optional[int] = _UNSET,
-        retries: Optional[int] = _UNSET,
-        retry_delay: Optional[int] = _UNSET,
-        proxies: Optional[ProxySpec] = _UNSET,
-        proxy: Optional[str] = _UNSET,
-        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
-        auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = _UNSET,
-        cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: ImpersonateType = _UNSET,
-        http3: Optional[bool] = _UNSET,
-        stealthy_headers: Optional[bool] = _UNSET,
-        **kwargs,
-    ) -> Awaitable[Response]:
+    def post(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
         Perform a POST request.
 
+        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+
         :param url: Target URL for the request.
-        :param data: Form data to include in the request body.
-        :param json: A JSON serializable object to include in the body of the request.
-        :param params: Query string parameters for the request.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to True.
-        :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :param retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
-        :param proxies: Dict of proxies to use.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
-        :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
-        :param verify: Whether to verify HTTPS certificates.
-        :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
-        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
-        :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        :param kwargs: Additional keyword arguments including:
+            - data: Form data to include in the request body.
+            - json: A JSON serializable object to include in the body of the request.
+            - params: Query string parameters for the request.
+            - headers: Headers to include in the request.
+            - cookies: Cookies to use in the request.
+            - timeout: Number of seconds to wait before timing out.
+            - follow_redirects: Whether to follow redirects. Defaults to True.
+            - max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
+            - retries: Number of retry attempts. Defaults to 3.
+            - retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
+            - proxies: Dict of proxies to use.
+            - proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
+            - proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
+            - auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
+            - verify: Whether to verify HTTPS certificates.
+            - cert: Tuple of (cert, key) filenames for the client certificate.
+            - impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+            - http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+            - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        method_args = {k: v for k, v in locals().items() if k not in ("self", "stealthy_headers", "kwargs")}
-        method_args.update(kwargs)
-        # For type checking (not accessed error)
-        _ = (
-            url,
-            params,
-            headers,
-            data,
-            json,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-        )
-        return self.__make_request("POST", stealth=stealthy_headers, **method_args)
+        stealthy_headers = kwargs.pop("stealthy_headers", None)
+        return self.__make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
 
-    def put(
-        self,
-        url: str,
-        data: Optional[Dict | str] = None,
-        json: Optional[Dict | List] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        params: Optional[Dict | List | Tuple] = None,
-        cookies: Optional[CookieTypes] = None,
-        timeout: Optional[int | float] = _UNSET,
-        follow_redirects: Optional[bool] = _UNSET,
-        max_redirects: Optional[int] = _UNSET,
-        retries: Optional[int] = _UNSET,
-        retry_delay: Optional[int] = _UNSET,
-        proxies: Optional[ProxySpec] = _UNSET,
-        proxy: Optional[str] = _UNSET,
-        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
-        auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = _UNSET,
-        cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: ImpersonateType = _UNSET,
-        http3: Optional[bool] = _UNSET,
-        stealthy_headers: Optional[bool] = _UNSET,
-        **kwargs,
-    ) -> Awaitable[Response]:
+    def put(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
         Perform a PUT request.
 
+        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+
         :param url: Target URL for the request.
-        :param data: Form data to include in the request body.
-        :param json: A JSON serializable object to include in the body of the request.
-        :param params: Query string parameters for the request.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to True.
-        :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :param retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
-        :param proxies: Dict of proxies to use.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
-        :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
-        :param verify: Whether to verify HTTPS certificates.
-        :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
-        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
-        :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        :param kwargs: Additional keyword arguments including:
+            - data: Form data to include in the request body.
+            - json: A JSON serializable object to include in the body of the request.
+            - params: Query string parameters for the request.
+            - headers: Headers to include in the request.
+            - cookies: Cookies to use in the request.
+            - timeout: Number of seconds to wait before timing out.
+            - follow_redirects: Whether to follow redirects. Defaults to True.
+            - max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
+            - retries: Number of retry attempts. Defaults to 3.
+            - retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
+            - proxies: Dict of proxies to use.
+            - proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
+            - proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
+            - auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
+            - verify: Whether to verify HTTPS certificates.
+            - cert: Tuple of (cert, key) filenames for the client certificate.
+            - impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+            - http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+            - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
-        method_args = {k: v for k, v in locals().items() if k not in ("self", "stealthy_headers", "kwargs")}
-        method_args.update(kwargs)
-        # For type checking (not accessed error)
-        _ = (
-            url,
-            params,
-            headers,
-            data,
-            json,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-        )
-        return self.__make_request("PUT", stealth=stealthy_headers, **method_args)
+        stealthy_headers = kwargs.pop("stealthy_headers", None)
+        return self.__make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
 
-    def delete(
-        self,
-        url: str,
-        data: Optional[Dict | str] = None,
-        json: Optional[Dict | List] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = _UNSET,
-        params: Optional[Dict | List | Tuple] = None,
-        cookies: Optional[CookieTypes] = None,
-        timeout: Optional[int | float] = _UNSET,
-        follow_redirects: Optional[bool] = _UNSET,
-        max_redirects: Optional[int] = _UNSET,
-        retries: Optional[int] = _UNSET,
-        retry_delay: Optional[int] = _UNSET,
-        proxies: Optional[ProxySpec] = _UNSET,
-        proxy: Optional[str] = _UNSET,
-        proxy_auth: Optional[Tuple[str, str]] = _UNSET,
-        auth: Optional[Tuple[str, str]] = None,
-        verify: Optional[bool] = _UNSET,
-        cert: Optional[str | Tuple[str, str]] = _UNSET,
-        impersonate: ImpersonateType = _UNSET,
-        http3: Optional[bool] = _UNSET,
-        stealthy_headers: Optional[bool] = _UNSET,
-        **kwargs,
-    ) -> Awaitable[Response]:
+    def delete(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
         Perform a DELETE request.
 
+        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+
         :param url: Target URL for the request.
-        :param data: Form data to include in the request body.
-        :param json: A JSON serializable object to include in the body of the request.
-        :param params: Query string parameters for the request.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to True.
-        :param max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
-        :param retries: Number of retry attempts. Defaults to 3.
-        :param retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
-        :param proxies: Dict of proxies to use.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
-        :param auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
-        :param verify: Whether to verify HTTPS certificates.
-        :param cert: Tuple of (cert, key) filenames for the client certificate.
-        :param impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
-        :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
-        :param kwargs: Additional keyword arguments to pass to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        :param kwargs: Additional keyword arguments including:
+            - data: Form data to include in the request body.
+            - json: A JSON serializable object to include in the body of the request.
+            - params: Query string parameters for the request.
+            - headers: Headers to include in the request.
+            - cookies: Cookies to use in the request.
+            - timeout: Number of seconds to wait before timing out.
+            - follow_redirects: Whether to follow redirects. Defaults to True.
+            - max_redirects: Maximum number of redirects. Default 30, use -1 for unlimited.
+            - retries: Number of retry attempts. Defaults to 3.
+            - retry_delay: Number of seconds to wait between retry attempts. Defaults to 1 second.
+            - proxies: Dict of proxies to use.
+            - proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
+            - proxy_auth: HTTP basic auth for proxy, tuple of (username, password).
+            - auth: HTTP basic auth tuple of (username, password). Only basic auth is supported.
+            - verify: Whether to verify HTTPS certificates.
+            - cert: Tuple of (cert, key) filenames for the client certificate.
+            - impersonate: Browser version to impersonate. Automatically defaults to the latest available Chrome version.
+            - http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
+            - stealthy_headers: If enabled (default), it creates and adds real browser headers.
         :return: A `Response` object.
         """
         # Careful of sending a body in a DELETE request, it might cause some websites to reject the request as per https://www.rfc-editor.org/rfc/rfc7231#section-4.3.5,
         # But some websites accept it, it depends on the implementation used.
-        method_args = {k: v for k, v in locals().items() if k not in ("self", "stealthy_headers", "kwargs")}
-        method_args.update(kwargs)
-        # For type checking (not accessed error)
-        _ = (
-            url,
-            params,
-            headers,
-            data,
-            json,
-            cookies,
-            timeout,
-            follow_redirects,
-            max_redirects,
-            retries,
-            retry_delay,
-            proxies,
-            proxy,
-            proxy_auth,
-            auth,
-            verify,
-            cert,
-            impersonate,
-            http3,
-        )
-        return self.__make_request("DELETE", stealth=stealthy_headers, **method_args)
+        stealthy_headers = kwargs.pop("stealthy_headers", None)
+        return self.__make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
 
 
 class FetcherSession:

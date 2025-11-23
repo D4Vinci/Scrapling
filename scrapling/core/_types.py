@@ -4,6 +4,8 @@ Type definitions for type checking purposes.
 
 from typing import (
     TYPE_CHECKING,
+    TypedDict,
+    TypeAlias,
     cast,
     overload,
     Any,
@@ -33,6 +35,17 @@ SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
 PageLoadStates = Literal["commit", "domcontentloaded", "load", "networkidle"]
 extraction_types = Literal["text", "html", "markdown"]
 StrOrBytes = Union[str, bytes]
+
+if TYPE_CHECKING:  # pragma: no cover
+    from typing_extensions import Unpack
+else:  # pragma: no cover
+
+    class _Unpack:
+        @staticmethod
+        def __getitem__(*args, **kwargs):
+            pass
+
+    Unpack = _Unpack()
 
 
 try:
