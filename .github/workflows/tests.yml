@@ -116,7 +116,7 @@ jobs:
       with:
         path: .tox
         # Include python version and os in the cache key
-        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles(/Users/runner/work/Scrapling/pyproject.toml') }}
+        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('/Users/runner/work/Scrapling/pyproject.toml') }}
         restore-keys: |
           tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-
           tox-v1-${{ runner.os }}-
