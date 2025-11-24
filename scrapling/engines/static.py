@@ -647,7 +647,7 @@ class FetcherSession:
         """Creates and returns a new synchronous Fetcher Session"""
         if self._client is None:
             # Use **vars(self) to avoid repeating all parameters
-            config = {k.replace("_default_", ""): v for k, v in vars(self).items() if k.startswith("_default")}
+            config = {k.replace("_default_", ""): getattr(self, k) for k in self.__slots__ if k.startswith("_default")}
             config["stealthy_headers"] = self._stealth
             config["selector_config"] = self.selector_config
             self._client = _SyncSessionLogic(**config)
@@ -665,7 +665,7 @@ class FetcherSession:
         """Creates and returns a new asynchronous Session."""
         if self._client is None:
             # Use **vars(self) to avoid repeating all parameters
-            config = {k.replace("_default_", ""): v for k, v in vars(self).items() if k.startswith("_default")}
+            config = {k.replace("_default_", ""): getattr(self, k) for k in self.__slots__ if k.startswith("_default")}
             config["stealthy_headers"] = self._stealth
             config["selector_config"] = self.selector_config
             self._client = _ASyncSessionLogic(**config)
