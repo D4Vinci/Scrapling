@@ -71,7 +71,7 @@ fetchers = [
     "patchright>=1.56.0",
     "camoufox>=0.4.11",
     "geoip2>=5.2.0",
-    "msgspec>=0.19.0",
+    "msgspec>=0.20.0",
 ]
 ai = [
     "mcp>=1.19.0",
