@@ -7,6 +7,7 @@ from dataclasses import dataclass, fields
 from msgspec import Struct, Meta, convert, ValidationError
 
 from scrapling.core._types import (
+    Any,
     Dict,
     List,
     Tuple,
@@ -17,6 +18,7 @@ from scrapling.core._types import (
     overload,
 )
 from scrapling.engines.toolbelt.navigation import construct_proxy_dict
+from scrapling.engines._browsers._types import PlaywrightFetchParams, CamoufoxFetchParams
 
 
 # Custom validators for msgspec
@@ -194,16 +196,24 @@ class _fetch_params:
 
 
 def validate_fetch(
-    params: List[Tuple], model: type[PlaywrightConfig] | type[CamoufoxConfig], sentinel=None
+    method_kwargs: Dict | PlaywrightFetchParams | CamoufoxFetchParams,
+    session: Any,
+    model: type[PlaywrightConfig] | type[CamoufoxConfig],
 ) -> _fetch_params:  # pragma: no cover
     result = {}
     overrides = {}
 
-    for arg, request_value, session_value in params:
-        if request_value is not sentinel:
-            overrides[arg] = request_value
+    # Get all field names that _fetch_params needs
+    fetch_param_fields = {f.name for f in fields(_fetch_params)}
+
+    for key in fetch_param_fields:
+        if key in method_kwargs:
+            overrides[key] = method_kwargs[key]
         else:
-            result[arg] = session_value
+            # Check for underscore-prefixed attribute (private)
+            attr_name = f"_{key}"
+            if hasattr(session, attr_name):
+                result[key] = getattr(session, attr_name)
 
     if overrides:
         validated_config = validate(overrides, model)

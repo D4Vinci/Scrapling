@@ -2,15 +2,15 @@ from time import time
 from asyncio import sleep as asyncio_sleep, Lock
 
 from camoufox import DefaultAddons
+from playwright.sync_api._generated import Page
 from playwright.sync_api import (
-    Page,
     Frame,
     BrowserContext,
     Playwright,
     Response as SyncPlaywrightResponse,
 )
+from playwright.async_api._generated import Page as AsyncPage
 from playwright.async_api import (
-    Page as AsyncPage,
     Frame as AsyncFrame,
     Playwright as AsyncPlaywright,
     Response as AsyncPlaywrightResponse,
@@ -70,7 +70,7 @@ class SyncSession:
         timeout: int | float,
         extra_headers: Optional[Dict[str, str]],
         disable_resources: bool,
-    ) -> PageInfo:  # pragma: no cover
+    ) -> PageInfo[Page]:  # pragma: no cover
         """Get a new page to use"""
 
         # No need to check if a page is available or not in sync code because the code blocked before reaching here till the page closed, ofc.
@@ -116,7 +116,7 @@ class SyncSession:
             self._wait_for_networkidle(page)
 
     @staticmethod
-    def _create_response_handler(page_info: PageInfo, response_container: List) -> Callable:
+    def _create_response_handler(page_info: PageInfo[Page], response_container: List) -> Callable:
         """Create a response handler that captures the final navigation response.
 
         :param page_info: The PageInfo object containing the page
@@ -175,7 +175,7 @@ class AsyncSession:
         timeout: int | float,
         extra_headers: Optional[Dict[str, str]],
         disable_resources: bool,
-    ) -> PageInfo:  # pragma: no cover
+    ) -> PageInfo[AsyncPage]:  # pragma: no cover
         """Get a new page to use"""
         if TYPE_CHECKING:
             assert self.context is not None, "Browser context not initialized"
@@ -232,7 +232,7 @@ class AsyncSession:
             await self._wait_for_networkidle(page)
 
     @staticmethod
-    def _create_response_handler(page_info: PageInfo, response_container: List) -> Callable:
+    def _create_response_handler(page_info: PageInfo[AsyncPage], response_container: List) -> Callable:
         """Create an async response handler that captures the final navigation response.
 
         :param page_info: The PageInfo object containing the page
@@ -253,130 +253,135 @@ class AsyncSession:
 
 class DynamicSessionMixin:
     def __validate__(self, **params):
+        if "__max_pages" in params:
+            params["max_pages"] = params.pop("__max_pages")
+
         config = validate(params, model=PlaywrightConfig)
 
-        self.max_pages = config.max_pages
-        self.headless = config.headless
-        self.hide_canvas = config.hide_canvas
-        self.disable_webgl = config.disable_webgl
-        self.real_chrome = config.real_chrome
-        self.stealth = config.stealth
-        self.google_search = config.google_search
-        self.wait = config.wait
-        self.proxy = config.proxy
-        self.locale = config.locale
-        self.extra_headers = config.extra_headers
-        self.useragent = config.useragent
-        self.timeout = config.timeout
-        self.cookies = config.cookies
-        self.disable_resources = config.disable_resources
-        self.cdp_url = config.cdp_url
-        self.network_idle = config.network_idle
-        self.load_dom = config.load_dom
-        self.wait_selector = config.wait_selector
-        self.init_script = config.init_script
-        self.wait_selector_state = config.wait_selector_state
-        self.extra_flags = config.extra_flags
-        self.selector_config = config.selector_config
-        self.additional_args = config.additional_args
-        self.page_action = config.page_action
-        self.user_data_dir = config.user_data_dir
-        self._headers_keys = {header.lower() for header in self.extra_headers.keys()} if self.extra_headers else set()
+        self._max_pages = config.max_pages
+        self._headless = config.headless
+        self._hide_canvas = config.hide_canvas
+        self._disable_webgl = config.disable_webgl
+        self._real_chrome = config.real_chrome
+        self._stealth = config.stealth
+        self._google_search = config.google_search
+        self._wait = config.wait
+        self._proxy = config.proxy
+        self._locale = config.locale
+        self._extra_headers = config.extra_headers
+        self._useragent = config.useragent
+        self._timeout = config.timeout
+        self._cookies = config.cookies
+        self._disable_resources = config.disable_resources
+        self._cdp_url = config.cdp_url
+        self._network_idle = config.network_idle
+        self._load_dom = config.load_dom
+        self._wait_selector = config.wait_selector
+        self._init_script = config.init_script
+        self._wait_selector_state = config.wait_selector_state
+        self._extra_flags = config.extra_flags
+        self._selector_config = config.selector_config
+        self._additional_args = config.additional_args
+        self._page_action = config.page_action
+        self._user_data_dir = config.user_data_dir
+        self._headers_keys = {header.lower() for header in self._extra_headers.keys()} if self._extra_headers else set()
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
         if TYPE_CHECKING:
-            assert isinstance(self.proxy, tuple)
+            assert isinstance(self._proxy, tuple)
 
-        if not self.cdp_url:
+        if not self._cdp_url:
             # `launch_options` is used with persistent context
             self.launch_options = dict(
                 _launch_kwargs(
-                    self.headless,
-                    self.proxy,
-                    self.locale,
-                    tuple(self.extra_headers.items()) if self.extra_headers else tuple(),
-                    self.useragent,
-                    self.real_chrome,
-                    self.stealth,
-                    self.hide_canvas,
-                    self.disable_webgl,
-                    tuple(self.extra_flags) if self.extra_flags else tuple(),
+                    self._headless,
+                    self._proxy,
+                    self._locale,
+                    tuple(self._extra_headers.items()) if self._extra_headers else tuple(),
+                    self._useragent,
+                    self._real_chrome,
+                    self._stealth,
+                    self._hide_canvas,
+                    self._disable_webgl,
+                    tuple(self._extra_flags) if self._extra_flags else tuple(),
                 )
             )
             self.launch_options["extra_http_headers"] = dict(self.launch_options["extra_http_headers"])
             self.launch_options["proxy"] = dict(self.launch_options["proxy"]) or None
-            self.launch_options["user_data_dir"] = self.user_data_dir
-            self.launch_options.update(cast(Dict, self.additional_args))
+            self.launch_options["user_data_dir"] = self._user_data_dir
+            self.launch_options.update(cast(Dict, self._additional_args))
             self.context_options = dict()
         else:
             # while `context_options` is left to be used when cdp mode is enabled
             self.launch_options = dict()
             self.context_options = dict(
                 _context_kwargs(
-                    self.proxy,
-                    self.locale,
-                    tuple(self.extra_headers.items()) if self.extra_headers else tuple(),
-                    self.useragent,
-                    self.stealth,
+                    self._proxy,
+                    self._locale,
+                    tuple(self._extra_headers.items()) if self._extra_headers else tuple(),
+                    self._useragent,
+                    self._stealth,
                 )
             )
             self.context_options["extra_http_headers"] = dict(self.context_options["extra_http_headers"])
             self.context_options["proxy"] = dict(self.context_options["proxy"]) or None
-            self.context_options.update(cast(Dict, self.additional_args))
+            self.context_options.update(cast(Dict, self._additional_args))
 
 
 class StealthySessionMixin:
     def __validate__(self, **params):
+        if "__max_pages" in params:
+            params["max_pages"] = params.pop("__max_pages")
+
         config: CamoufoxConfig = validate(params, model=CamoufoxConfig)
 
-        self.max_pages = config.max_pages
-        self.headless = config.headless
-        self.block_images = config.block_images
-        self.disable_resources = config.disable_resources
-        self.block_webrtc = config.block_webrtc
-        self.allow_webgl = config.allow_webgl
-        self.network_idle = config.network_idle
-        self.load_dom = config.load_dom
-        self.humanize = config.humanize
-        self.solve_cloudflare = config.solve_cloudflare
-        self.wait = config.wait
-        self.timeout = config.timeout
-        self.page_action = config.page_action
-        self.wait_selector = config.wait_selector
-        self.init_script = config.init_script
-        self.addons = config.addons
-        self.wait_selector_state = config.wait_selector_state
-        self.cookies = config.cookies
-        self.google_search = config.google_search
-        self.extra_headers = config.extra_headers
-        self.proxy = config.proxy
-        self.os_randomize = config.os_randomize
-        self.disable_ads = config.disable_ads
-        self.geoip = config.geoip
-        self.selector_config = config.selector_config
-        self.additional_args = config.additional_args
-        self.page_action = config.page_action
-        self.user_data_dir = config.user_data_dir
-        self._headers_keys = {header.lower() for header in self.extra_headers.keys()} if self.extra_headers else set()
+        self._max_pages = config.max_pages
+        self._headless = config.headless
+        self._block_images = config.block_images
+        self._disable_resources = config.disable_resources
+        self._block_webrtc = config.block_webrtc
+        self._allow_webgl = config.allow_webgl
+        self._network_idle = config.network_idle
+        self._load_dom = config.load_dom
+        self._humanize = config.humanize
+        self._solve_cloudflare = config.solve_cloudflare
+        self._wait = config.wait
+        self._timeout = config.timeout
+        self._page_action = config.page_action
+        self._wait_selector = config.wait_selector
+        self._init_script = config.init_script
+        self._addons = config.addons
+        self._wait_selector_state = config.wait_selector_state
+        self._cookies = config.cookies
+        self._google_search = config.google_search
+        self._extra_headers = config.extra_headers
+        self._proxy = config.proxy
+        self._os_randomize = config.os_randomize
+        self._disable_ads = config.disable_ads
+        self._geoip = config.geoip
+        self._selector_config = config.selector_config
+        self._additional_args = config.additional_args
+        self._user_data_dir = config.user_data_dir
+        self._headers_keys = {header.lower() for header in self._extra_headers.keys()} if self._extra_headers else set()
         self.__initiate_browser_options__()
 
     def __initiate_browser_options__(self):
         """Initiate browser options."""
         self.launch_options: Dict[str, Any] = generate_launch_options(
             **{
-                "geoip": self.geoip,
-                "proxy": dict(self.proxy) if self.proxy and isinstance(self.proxy, tuple) else self.proxy,
-                "addons": self.addons,
-                "exclude_addons": [] if self.disable_ads else [DefaultAddons.UBO],
-                "headless": self.headless,
-                "humanize": True if self.solve_cloudflare else self.humanize,
+                "geoip": self._geoip,
+                "proxy": dict(self._proxy) if self._proxy and isinstance(self._proxy, tuple) else self._proxy,
+                "addons": self._addons,
+                "exclude_addons": [] if self._disable_ads else [DefaultAddons.UBO],
+                "headless": self._headless,
+                "humanize": True if self._solve_cloudflare else self._humanize,
                 "i_know_what_im_doing": True,  # To turn warnings off with the user configurations
-                "allow_webgl": self.allow_webgl,
-                "block_webrtc": self.block_webrtc,
-                "block_images": self.block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
-                "os": None if self.os_randomize else get_os_name(),
-                "user_data_dir": self.user_data_dir,
+                "allow_webgl": self._allow_webgl,
+                "block_webrtc": self._block_webrtc,
+                "block_images": self._block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
+                "os": None if self._os_randomize else get_os_name(),
+                "user_data_dir": self._user_data_dir,
                 "ff_version": __ff_version_str__,
                 "firefox_user_prefs": {
                     # This is what enabling `enable_cache` does internally, so we do it from here instead
@@ -386,7 +391,7 @@ class StealthySessionMixin:
                     "browser.cache.disk_cache_ssl": True,
                     "browser.cache.disk.smart_size.enabled": True,
                 },
-                **cast(Dict, self.additional_args),
+                **cast(Dict, self._additional_args),
             }
         )
 

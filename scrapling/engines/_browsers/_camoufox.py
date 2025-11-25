@@ -14,58 +14,47 @@ from playwright.async_api import (
     BrowserContext as AsyncBrowserContext,
 )
 
-from ._validators import validate_fetch as _validate, CamoufoxConfig
-from ._base import SyncSession, AsyncSession, StealthySessionMixin
 from scrapling.core.utils import log
-from scrapling.core._types import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Callable,
-    TYPE_CHECKING,
-    SelectorWaitStates,
-)
-from scrapling.engines.toolbelt.convertor import (
-    Response,
-    ResponseFactory,
-)
+from ._types import CamoufoxSession, CamoufoxFetchParams
+from scrapling.core._types import Any, Unpack, TYPE_CHECKING
+from ._base import SyncSession, AsyncSession, StealthySessionMixin
+from ._validators import validate_fetch as _validate, CamoufoxConfig
+from scrapling.engines.toolbelt.convertor import Response, ResponseFactory
 from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
 
 __CF_PATTERN__ = re_compile("challenges.cloudflare.com/cdn-cgi/challenge-platform/.*")
-_UNSET: Any = object()
 
 
 class StealthySession(StealthySessionMixin, SyncSession):
     """A Stealthy session manager with page pooling."""
 
     __slots__ = (
-        "max_pages",
-        "headless",
-        "block_images",
-        "disable_resources",
-        "block_webrtc",
-        "allow_webgl",
-        "network_idle",
-        "load_dom",
-        "humanize",
-        "solve_cloudflare",
-        "wait",
-        "timeout",
-        "page_action",
-        "wait_selector",
-        "init_script",
-        "addons",
-        "wait_selector_state",
-        "cookies",
-        "google_search",
-        "extra_headers",
-        "proxy",
-        "os_randomize",
-        "disable_ads",
-        "geoip",
-        "selector_config",
-        "additional_args",
+        "_max_pages",
+        "_headless",
+        "_block_images",
+        "_disable_resources",
+        "_block_webrtc",
+        "_allow_webgl",
+        "_network_idle",
+        "_load_dom",
+        "_humanize",
+        "_solve_cloudflare",
+        "_wait",
+        "_timeout",
+        "_page_action",
+        "_wait_selector",
+        "_init_script",
+        "_addons",
+        "_wait_selector_state",
+        "_cookies",
+        "_google_search",
+        "_extra_headers",
+        "_proxy",
+        "_os_randomize",
+        "_disable_ads",
+        "_geoip",
+        "_selector_config",
+        "_additional_args",
         "playwright",
         "browser",
         "context",
@@ -73,38 +62,10 @@ class StealthySession(StealthySessionMixin, SyncSession):
         "_closed",
         "launch_options",
         "_headers_keys",
+        "_user_data_dir",
     )
 
-    def __init__(
-        self,
-        __max_pages: int = 1,
-        headless: bool = True,  # noqa: F821
-        block_images: bool = False,
-        disable_resources: bool = False,
-        block_webrtc: bool = False,
-        allow_webgl: bool = True,
-        network_idle: bool = False,
-        load_dom: bool = True,
-        humanize: bool | float = True,
-        solve_cloudflare: bool = False,
-        wait: int | float = 0,
-        timeout: int | float = 30000,
-        page_action: Optional[Callable] = None,
-        wait_selector: Optional[str] = None,
-        init_script: Optional[str] = None,
-        addons: Optional[List[str]] = None,
-        wait_selector_state: SelectorWaitStates = "attached",
-        cookies: Optional[List[Dict]] = None,
-        google_search: bool = True,
-        extra_headers: Optional[Dict[str, str]] = None,
-        proxy: Optional[str | Dict[str, str]] = None,
-        os_randomize: bool = False,
-        disable_ads: bool = False,
-        geoip: bool = False,
-        user_data_dir: str = "",
-        selector_config: Optional[Dict] = None,
-        additional_args: Optional[Dict] = None,
-    ):
+    def __init__(self, **kwargs: Unpack[CamoufoxSession]):
         """A Browser session manager with page pooling
 
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
@@ -138,50 +99,21 @@ class StealthySession(StealthySessionMixin, SyncSession):
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
-
-        self.__validate__(
-            wait=wait,
-            proxy=proxy,
-            geoip=geoip,
-            addons=addons,
-            timeout=timeout,
-            cookies=cookies,
-            headless=headless,
-            humanize=humanize,
-            load_dom=load_dom,
-            max_pages=__max_pages,
-            disable_ads=disable_ads,
-            allow_webgl=allow_webgl,
-            page_action=page_action,
-            init_script=init_script,
-            network_idle=network_idle,
-            block_images=block_images,
-            block_webrtc=block_webrtc,
-            os_randomize=os_randomize,
-            user_data_dir=user_data_dir,
-            wait_selector=wait_selector,
-            google_search=google_search,
-            extra_headers=extra_headers,
-            additional_args=additional_args,
-            selector_config=selector_config,
-            solve_cloudflare=solve_cloudflare,
-            disable_resources=disable_resources,
-            wait_selector_state=wait_selector_state,
-        )
-        super().__init__(max_pages=self.max_pages)
+        self.__validate__(**kwargs)
+        super().__init__(max_pages=self._max_pages)
 
     def __create__(self):
         """Create a browser for this instance and context."""
         self.playwright = sync_playwright().start()
         self.context = self.playwright.firefox.launch_persistent_context(**self.launch_options)
 
-        if self.init_script:  # pragma: no cover
-            self.context.add_init_script(path=self.init_script)
+        if self._init_script:  # pragma: no cover
+            self.context.add_init_script(path=self._init_script)
 
-        if self.cookies:  # pragma: no cover
-            self.context.add_cookies(self.cookies)
+        if self._cookies:  # pragma: no cover
+            self.context.add_cookies(self._cookies)
 
-    def _solve_cloudflare(self, page: Page) -> None:  # pragma: no cover
+    def _cloudflare_solver(self, page: Page) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
 
         :param page: The targeted page
@@ -247,59 +179,28 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 log.info("Cloudflare captcha is solved")
                 return
 
-    def fetch(
-        self,
-        url: str,
-        google_search: bool = _UNSET,
-        timeout: int | float = _UNSET,
-        wait: int | float = _UNSET,
-        page_action: Optional[Callable] = _UNSET,
-        extra_headers: Optional[Dict[str, str]] = _UNSET,
-        disable_resources: bool = _UNSET,
-        wait_selector: Optional[str] = _UNSET,
-        wait_selector_state: SelectorWaitStates = _UNSET,
-        network_idle: bool = _UNSET,
-        load_dom: bool = _UNSET,
-        solve_cloudflare: bool = _UNSET,
-        selector_config: Optional[Dict] = _UNSET,
-    ) -> Response:
+    def fetch(self, url: str, **kwargs: Unpack[CamoufoxFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
-        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
-            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
-        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
-        :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
-        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param kwargs: Additional keyword arguments including:
+            - google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+            - timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
+            - wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
+            - page_action: Added for automation. A function that takes the `page` object and does the automation you need.
+            - extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+            - disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+                Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+                This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
+            - wait_selector: Wait for a specific CSS selector to be in a specific state.
+            - wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
+            - network_idle: Wait for the page until there are no network connections for at least 500 ms.
+            - load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+            - solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
+            - selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
-        params = _validate(
-            [
-                ("google_search", google_search, self.google_search),
-                ("timeout", timeout, self.timeout),
-                ("wait", wait, self.wait),
-                ("page_action", page_action, self.page_action),
-                ("extra_headers", extra_headers, self.extra_headers),
-                ("disable_resources", disable_resources, self.disable_resources),
-                ("wait_selector", wait_selector, self.wait_selector),
-                ("wait_selector_state", wait_selector_state, self.wait_selector_state),
-                ("network_idle", network_idle, self.network_idle),
-                ("load_dom", load_dom, self.load_dom),
-                ("solve_cloudflare", solve_cloudflare, self.solve_cloudflare),
-                ("selector_config", selector_config, self.selector_config),
-            ],
-            CamoufoxConfig,
-            _UNSET,
-        )
+        params = _validate(kwargs, self, CamoufoxConfig)
 
         if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
@@ -322,7 +223,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
                 raise RuntimeError(f"Failed to get response for {url}")
 
             if params.solve_cloudflare:
-                self._solve_cloudflare(page_info.page)
+                self._cloudflare_solver(page_info.page)
                 # Make sure the page is fully loaded after the captcha
                 self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
 
@@ -360,36 +261,7 @@ class StealthySession(StealthySessionMixin, SyncSession):
 class AsyncStealthySession(StealthySessionMixin, AsyncSession):
     """A Stealthy session manager with page pooling."""
 
-    def __init__(
-        self,
-        max_pages: int = 1,
-        headless: bool = True,  # noqa: F821
-        block_images: bool = False,
-        disable_resources: bool = False,
-        block_webrtc: bool = False,
-        allow_webgl: bool = True,
-        network_idle: bool = False,
-        load_dom: bool = True,
-        humanize: bool | float = True,
-        solve_cloudflare: bool = False,
-        wait: int | float = 0,
-        timeout: int | float = 30000,
-        page_action: Optional[Callable] = None,
-        wait_selector: Optional[str] = None,
-        init_script: Optional[str] = None,
-        addons: Optional[List[str]] = None,
-        wait_selector_state: SelectorWaitStates = "attached",
-        cookies: Optional[List[Dict]] = None,
-        google_search: bool = True,
-        extra_headers: Optional[Dict[str, str]] = None,
-        proxy: Optional[str | Dict[str, str]] = None,
-        os_randomize: bool = False,
-        disable_ads: bool = False,
-        geoip: bool = False,
-        user_data_dir: str = "",
-        selector_config: Optional[Dict] = None,
-        additional_args: Optional[Dict] = None,
-    ):
+    def __init__(self, **kwargs: Unpack[CamoufoxSession]):
         """A Browser session manager with page pooling
 
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
@@ -424,36 +296,8 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Camoufox as additional settings, and it takes higher priority than Scrapling's settings.
         """
-        self.__validate__(
-            wait=wait,
-            proxy=proxy,
-            geoip=geoip,
-            addons=addons,
-            timeout=timeout,
-            cookies=cookies,
-            headless=headless,
-            load_dom=load_dom,
-            humanize=humanize,
-            max_pages=max_pages,
-            disable_ads=disable_ads,
-            allow_webgl=allow_webgl,
-            page_action=page_action,
-            init_script=init_script,
-            network_idle=network_idle,
-            block_images=block_images,
-            block_webrtc=block_webrtc,
-            os_randomize=os_randomize,
-            wait_selector=wait_selector,
-            google_search=google_search,
-            extra_headers=extra_headers,
-            user_data_dir=user_data_dir,
-            additional_args=additional_args,
-            selector_config=selector_config,
-            solve_cloudflare=solve_cloudflare,
-            disable_resources=disable_resources,
-            wait_selector_state=wait_selector_state,
-        )
-        super().__init__(max_pages=self.max_pages)
+        self.__validate__(**kwargs)
+        super().__init__(max_pages=self._max_pages)
 
     async def __create__(self):
         """Create a browser for this instance and context."""
@@ -462,13 +306,13 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
             **self.launch_options
         )
 
-        if self.init_script:  # pragma: no cover
-            await self.context.add_init_script(path=self.init_script)
+        if self._init_script:  # pragma: no cover
+            await self.context.add_init_script(path=self._init_script)
 
-        if self.cookies:
-            await self.context.add_cookies(self.cookies)  # pyright: ignore [reportArgumentType]
+        if self._cookies:
+            await self.context.add_cookies(self._cookies)  # pyright: ignore [reportArgumentType]
 
-    async def _solve_cloudflare(self, page: async_Page):  # pragma: no cover
+    async def _cloudflare_solver(self, page: async_Page):  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed. The async version
 
         :param page: The async targeted page
@@ -534,59 +378,28 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 log.info("Cloudflare captcha is solved")
                 return
 
-    async def fetch(
-        self,
-        url: str,
-        google_search: bool = _UNSET,
-        timeout: int | float = _UNSET,
-        wait: int | float = _UNSET,
-        page_action: Optional[Callable] = _UNSET,
-        extra_headers: Optional[Dict[str, str]] = _UNSET,
-        disable_resources: bool = _UNSET,
-        wait_selector: Optional[str] = _UNSET,
-        wait_selector_state: SelectorWaitStates = _UNSET,
-        network_idle: bool = _UNSET,
-        load_dom: bool = _UNSET,
-        solve_cloudflare: bool = _UNSET,
-        selector_config: Optional[Dict] = _UNSET,
-    ) -> Response:
+    async def fetch(self, url: str, **kwargs: Unpack[CamoufoxFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
-        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
-            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
-        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
-        :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
-        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param kwargs: Additional keyword arguments including:
+            - google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+            - timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
+            - wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
+            - page_action: Added for automation. A function that takes the `page` object and does the automation you need.
+            - extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+            - disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+                Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+                This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
+            - wait_selector: Wait for a specific CSS selector to be in a specific state.
+            - wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
+            - network_idle: Wait for the page until there are no network connections for at least 500 ms.
+            - load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+            - solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
+            - selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
-        params = _validate(
-            [
-                ("google_search", google_search, self.google_search),
-                ("timeout", timeout, self.timeout),
-                ("wait", wait, self.wait),
-                ("page_action", page_action, self.page_action),
-                ("extra_headers", extra_headers, self.extra_headers),
-                ("disable_resources", disable_resources, self.disable_resources),
-                ("wait_selector", wait_selector, self.wait_selector),
-                ("wait_selector_state", wait_selector_state, self.wait_selector_state),
-                ("network_idle", network_idle, self.network_idle),
-                ("load_dom", load_dom, self.load_dom),
-                ("solve_cloudflare", solve_cloudflare, self.solve_cloudflare),
-                ("selector_config", selector_config, self.selector_config),
-            ],
-            CamoufoxConfig,
-            _UNSET,
-        )
+        params = _validate(kwargs, self, CamoufoxConfig)
 
         if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
@@ -613,7 +426,7 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
                 raise RuntimeError(f"Failed to get response for {url}")
 
             if params.solve_cloudflare:
-                await self._solve_cloudflare(page_info.page)
+                await self._cloudflare_solver(page_info.page)
                 # Make sure the page is fully loaded after the captcha
                 await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
 
