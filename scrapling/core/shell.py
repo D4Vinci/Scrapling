@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-from re import sub as re_sub
 from sys import stderr
 from functools import wraps
+from re import sub as re_sub
 from collections import namedtuple
 from shlex import split as shlex_split
+from inspect import signature, Parameter
 from tempfile import mkstemp as make_temp_file
-from urllib.parse import urlparse, urlunparse, parse_qsl
 from argparse import ArgumentParser, SUPPRESS
 from webbrowser import open as open_in_browser
+from urllib.parse import urlparse, urlunparse, parse_qsl
 from logging import (
     DEBUG,
     INFO,
@@ -21,6 +22,7 @@ from logging import (
 
 from orjson import loads as json_loads, JSONDecodeError
 
+from ._shell_signatures import Signatures_map
 from scrapling import __version__
 from scrapling.core.utils import log
 from scrapling.parser import Selector, Selectors
@@ -28,12 +30,12 @@ from scrapling.core.custom_types import TextHandler
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.core.utils._shell import _ParseHeaders, _CookieParser
 from scrapling.core._types import (
-    Optional,
     Dict,
     Any,
     cast,
-    extraction_types,
+    Optional,
     Generator,
+    extraction_types,
 )
 
 
@@ -312,6 +314,40 @@ class CurlParser:
             return None
 
 
+def _unpack_signature(func):
+    """
+    Unpack TypedDict from Unpack[TypedDict] annotations in **kwargs and reconstruct the signature.
+
+    This allows the interactive shell to show individual parameters instead of just **kwargs, similar to how IDEs display them.
+    """
+    try:
+        sig = signature(func)
+        func_name = getattr(func, "__name__", None)
+
+        # Check if this function has known parameters
+        if func_name not in Signatures_map:
+            return sig
+
+        new_params = []
+        for param in sig.parameters.values():
+            if param.kind == Parameter.VAR_KEYWORD:
+                # Replace **kwargs with individual keyword-only parameters
+                for field_name, field_type in Signatures_map[func_name].items():
+                    new_params.append(
+                        Parameter(field_name, Parameter.KEYWORD_ONLY, default=Parameter.empty, annotation=field_type)
+                    )
+            else:
+                new_params.append(param)
+
+        # Reconstruct signature with unpacked parameters
+        if len(new_params) != len(sig.parameters):
+            return sig.replace(parameters=new_params)
+        return sig
+
+    except Exception:  # pragma: no cover
+        return signature(func)
+
+
 def show_page_in_browser(page: Selector):  # pragma: no cover
     if not page or not isinstance(page, Selector):
         log.error("Input must be of type `Selector`")
@@ -431,13 +467,19 @@ Type 'exit' or press Ctrl+D to exit.
 
         return result
 
-    def create_wrapper(self, func):
+    def create_wrapper(self, func, get_signature=True):
         """Create a wrapper that preserves function signature but updates page"""
 
         @wraps(func)
         def wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
             return self.update_page(result)
+
+        if get_signature:
+            # Explicitly preserve and unpack signature for IPython introspection and autocompletion
+            wrapper.__signature__ = _unpack_signature(func)  # pyright: ignore
+        else:
+            wrapper.__signature__ = signature(func)  # pyright: ignore
 
         return wrapper
 
@@ -451,7 +493,7 @@ Type 'exit' or press Ctrl+D to exit.
         delete = self.create_wrapper(self.__Fetcher.delete)
         dynamic_fetch = self.create_wrapper(self.__DynamicFetcher.fetch)
         stealthy_fetch = self.create_wrapper(self.__StealthyFetcher.fetch)
-        curl2fetcher = self.create_wrapper(self._curl_parser.convert2fetcher)
+        curl2fetcher = self.create_wrapper(self._curl_parser.convert2fetcher, get_signature=False)
 
         # Create the namespace dictionary
         return {
