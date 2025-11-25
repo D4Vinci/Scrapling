@@ -683,8 +683,8 @@ class FetcherSession:
 class FetcherClient(_SyncSessionLogic):
     __slots__ = ("__enter__", "__exit__")
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.__enter__: Any = None
         self.__exit__: Any = None
         self._curl_session: Any = _NO_SESSION
@@ -693,8 +693,8 @@ class FetcherClient(_SyncSessionLogic):
 class AsyncFetcherClient(_ASyncSessionLogic):
     __slots__ = ("__aenter__", "__aexit__")
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.__aenter__: Any = None
         self.__aexit__: Any = None
         self._async_curl_session: Any = _NO_SESSION

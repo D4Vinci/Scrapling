@@ -421,7 +421,7 @@ Type 'exit' or press Ctrl+D to exit.
         if isinstance(result, (Response, Selector)):
             self.pages.append(result)
             if len(self.pages) > 5:
-                self.pages.pop(0)  # Remove oldest item
+                self.pages.pop(0)  # Remove the oldest item
 
             # Update in IPython namespace too
             if self.shell:
