@@ -213,12 +213,12 @@ def validate_fetch(
             for f in fields(_fetch_params)
             if hasattr(validated_config, f.name)
         }
-        # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
         validated_dict.setdefault("solve_cloudflare", False)
 
-        validated_dict.update(result)
-        return _fetch_params(**validated_dict)
+        # Start with session defaults, then overwrite with validated overrides
+        result.update(validated_dict)
 
+    # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
     result.setdefault("solve_cloudflare", False)
 
     return _fetch_params(**result)
