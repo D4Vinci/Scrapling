@@ -243,7 +243,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         """
         Perform a GET request.
 
-        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        Any additional keyword arguments are passed to the `curl_cffi.requests.Session().request()` method.
 
         :param url: Target URL for the request.
         :param kwargs: Additional keyword arguments including:
@@ -272,6 +272,8 @@ class _SyncSessionLogic(_ConfigurationLogic):
     def post(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
         Perform a POST request.
+
+        Any additional keyword arguments are passed to the `curl_cffi.requests.Session().request()` method.
 
         :param url: Target URL for the request.
         :param kwargs: Additional keyword arguments including:
@@ -303,6 +305,8 @@ class _SyncSessionLogic(_ConfigurationLogic):
         """
         Perform a PUT request.
 
+        Any additional keyword arguments are passed to the `curl_cffi.requests.Session().request()` method.
+
         :param url: Target URL for the request.
         :param kwargs: Additional keyword arguments including:
             - data: Form data to include in the request body.
@@ -332,6 +336,8 @@ class _SyncSessionLogic(_ConfigurationLogic):
     def delete(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
         Perform a DELETE request.
+
+        Any additional keyword arguments are passed to the `curl_cffi.requests.Session().request()` method.
 
         :param url: Target URL for the request.
         :param kwargs: Additional keyword arguments including:
@@ -435,7 +441,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         """
         Perform a GET request.
 
-        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        Any additional keyword arguments are passed to the `curl_cffi.requests.AsyncSession().request()` method.
 
         :param url: Target URL for the request.
         :param kwargs: Additional keyword arguments including:
@@ -465,7 +471,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         """
         Perform a POST request.
 
-        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        Any additional keyword arguments are passed to the `curl_cffi.requests.AsyncSession().request()` method.
 
         :param url: Target URL for the request.
         :param kwargs: Additional keyword arguments including:
@@ -497,7 +503,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         """
         Perform a PUT request.
 
-        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        Any additional keyword arguments are passed to the `curl_cffi.requests.AsyncSession().request()` method.
 
         :param url: Target URL for the request.
         :param kwargs: Additional keyword arguments including:
@@ -529,7 +535,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         """
         Perform a DELETE request.
 
-        Any additional keyword arguments are passed to the [`curl_cffi.requests.Session().request()`, `curl_cffi.requests.AsyncSession().request()`] method.
+        Any additional keyword arguments are passed to the `curl_cffi.requests.AsyncSession().request()` method.
 
         :param url: Target URL for the request.
         :param kwargs: Additional keyword arguments including:
