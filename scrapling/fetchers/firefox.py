@@ -45,12 +45,12 @@ class StealthyFetcher(BaseFetcher):
             - additional_args: Additional arguments to be passed to Camoufox as additional settings.
         :return: A `Response` object.
         """
-        # Get selector_config from kwargs if provided, otherwise use empty dict
-        selector_config = kwargs.get("selector_config", {})
+        selector_config = kwargs.get("selector_config", {}) or kwargs.get(
+            "custom_config", {}
+        )  # Checking `custom_config` for backward compatibility
         if not isinstance(selector_config, dict):
             raise TypeError("Argument `selector_config` must be a dictionary.")
 
-        # Merge selector_config with class defaults
         kwargs["selector_config"] = {**cls._generate_parser_arguments(), **selector_config}
 
         with StealthySession(**kwargs) as engine:
@@ -90,12 +90,12 @@ class StealthyFetcher(BaseFetcher):
             - additional_args: Additional arguments to be passed to Camoufox as additional settings.
         :return: A `Response` object.
         """
-        # Get selector_config from kwargs if provided, otherwise use empty dict
-        selector_config = kwargs.get("selector_config", {})
+        selector_config = kwargs.get("selector_config", {}) or kwargs.get(
+            "custom_config", {}
+        )  # Checking `custom_config` for backward compatibility
         if not isinstance(selector_config, dict):
             raise TypeError("Argument `selector_config` must be a dictionary.")
 
-        # Merge selector_config with class defaults
         kwargs["selector_config"] = {**cls._generate_parser_arguments(), **selector_config}
 
         async with AsyncStealthySession(**kwargs) as engine:
