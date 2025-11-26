@@ -53,7 +53,7 @@ _FETCH_PARAMS = {
     "wait_selector_state": Any,
     "extra_flags": Optional[List[str]],
     "additional_args": Optional[Dict],
-    "custom_config": Optional[Dict],
+    "selector_config": Optional[Dict],
 }
 
 _STEALTHY_FETCH_PARAMS = {
@@ -80,7 +80,7 @@ _STEALTHY_FETCH_PARAMS = {
     "os_randomize": bool,
     "disable_ads": bool,
     "geoip": bool,
-    "custom_config": Optional[Dict],
+    "selector_config": Optional[Dict],
     "additional_args": Optional[Dict],
 }
 
