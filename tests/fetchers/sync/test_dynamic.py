@@ -66,7 +66,7 @@ class TestDynamicFetcher:
                 "useragent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0",
                 "cookies": [{"name": "test", "value": "123", "domain": "example.com", "path": "/"}],
                 "network_idle": True,
-                "custom_config": {"keep_comments": False, "keep_cdata": False},
+                "selector_config": {"keep_comments": False, "keep_cdata": False},
             },
         ],
     )
