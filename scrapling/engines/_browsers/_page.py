@@ -1,20 +1,21 @@
 from threading import RLock
 from dataclasses import dataclass
 
-from playwright.sync_api import Page as SyncPage
-from playwright.async_api import Page as AsyncPage
+from playwright.sync_api._generated import Page as SyncPage
+from playwright.async_api._generated import Page as AsyncPage
 
-from scrapling.core._types import Optional, List, Literal
+from scrapling.core._types import Optional, List, Literal, overload, TypeVar, Generic, cast
 
 PageState = Literal["ready", "busy", "error"]  # States that a page can be in
+PageType = TypeVar("PageType", SyncPage, AsyncPage)
 
 
 @dataclass
-class PageInfo:
+class PageInfo(Generic[PageType]):
     """Information about the page and its current state"""
 
     __slots__ = ("page", "state", "url")
-    page: SyncPage | AsyncPage
+    page: PageType
     state: PageState
     url: Optional[str]
 
@@ -44,16 +45,26 @@ class PagePool:
 
     def __init__(self, max_pages: int = 5):
         self.max_pages = max_pages
-        self.pages: List[PageInfo] = []
+        self.pages: List[PageInfo[SyncPage] | PageInfo[AsyncPage]] = []
         self._lock = RLock()
 
-    def add_page(self, page: SyncPage | AsyncPage) -> PageInfo:
+    @overload
+    def add_page(self, page: SyncPage) -> PageInfo[SyncPage]: ...
+
+    @overload
+    def add_page(self, page: AsyncPage) -> PageInfo[AsyncPage]: ...
+
+    def add_page(self, page: SyncPage | AsyncPage) -> PageInfo[SyncPage] | PageInfo[AsyncPage]:
         """Add a new page to the pool"""
         with self._lock:
             if len(self.pages) >= self.max_pages:
                 raise RuntimeError(f"Maximum page limit ({self.max_pages}) reached")
 
-            page_info = PageInfo(page, "ready", "")
+            if isinstance(page, AsyncPage):
+                page_info = cast(PageInfo[AsyncPage], PageInfo(page, "ready", ""))
+            else:
+                page_info = cast(PageInfo[SyncPage], PageInfo(page, "ready", ""))
+
             self.pages.append(page_info)
             return page_info
 

@@ -63,12 +63,12 @@ class TestStealthySession:
         ) as session:
 
             assert session.max_pages == 1
-            assert session.headless is True
-            assert session.block_images is True
-            assert session.disable_resources is True
-            assert session.solve_cloudflare is True
-            assert session.wait == 1000
-            assert session.timeout == 60000
+            assert session._headless is True
+            assert session._block_images is True
+            assert session._disable_resources is True
+            assert session._solve_cloudflare is True
+            assert session._wait == 1000
+            assert session._timeout == 60000
             assert session.context is not None
 
             # Test Cloudflare detection

@@ -57,7 +57,7 @@ The available configuration arguments are: `adaptive`, `huge_tree`, `keep_commen
 ### Set parser config per request
 As you probably understand, the logic above for setting the parser config will apply globally to all requests/fetches made through that class, and it's intended for simplicity.
 
-If your use case requires a different configuration for each request/fetch, you can pass a dictionary to the request method (`fetch`/`get`/`post`/...) to an argument named `custom_config`.
+If your use case requires a different configuration for each request/fetch, you can pass a dictionary to the request method (`fetch`/`get`/`post`/...) to an argument named `selector_config`.
 
 ## Response Object
 The `Response` object is the same as the [Selector](../parsing/main_classes.md#selector) class, but it has additional details about the response, like response headers, status, cookies, etc., as shown below:

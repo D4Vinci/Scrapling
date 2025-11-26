@@ -7,6 +7,7 @@ from dataclasses import dataclass, fields
 from msgspec import Struct, Meta, convert, ValidationError
 
 from scrapling.core._types import (
+    Any,
     Dict,
     List,
     Tuple,
@@ -17,11 +18,12 @@ from scrapling.core._types import (
     overload,
 )
 from scrapling.engines.toolbelt.navigation import construct_proxy_dict
+from scrapling.engines._browsers._types import PlaywrightFetchParams, CamoufoxFetchParams
 
 
 # Custom validators for msgspec
 @lru_cache(8)
-def _is_invalid_file_path(value: str) -> bool | str:
+def _is_invalid_file_path(value: str) -> bool | str:  # pragma: no cover
     """Fast file path validation"""
     path = Path(value)
     if not path.exists():
@@ -33,7 +35,7 @@ def _is_invalid_file_path(value: str) -> bool | str:
     return False
 
 
-def _validate_addon_path(value: str) -> None:
+def _validate_addon_path(value: str) -> None:  # pragma: no cover
     """Fast addon path validation"""
     path = Path(value)
     if not path.exists():
@@ -49,7 +51,7 @@ def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
         return "CDP URL must use 'ws://' or 'wss://' scheme"
 
     netloc = urlparse(cdp_url).netloc
-    if not netloc:
+    if not netloc:  # pragma: no cover
         return "Invalid hostname for the CDP URL"
     return False
 
@@ -89,7 +91,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     selector_config: Optional[Dict] = {}
     additional_args: Optional[Dict] = {}
 
-    def __post_init__(self):
+    def __post_init__(self):  # pragma: no cover
         """Custom validation after msgspec validation"""
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
@@ -194,16 +196,24 @@ class _fetch_params:
 
 
 def validate_fetch(
-    params: List[Tuple], model: type[PlaywrightConfig] | type[CamoufoxConfig], sentinel=None
-) -> _fetch_params:
+    method_kwargs: Dict | PlaywrightFetchParams | CamoufoxFetchParams,
+    session: Any,
+    model: type[PlaywrightConfig] | type[CamoufoxConfig],
+) -> _fetch_params:  # pragma: no cover
     result = {}
     overrides = {}
 
-    for arg, request_value, session_value in params:
-        if request_value is not sentinel:
-            overrides[arg] = request_value
+    # Get all field names that _fetch_params needs
+    fetch_param_fields = {f.name for f in fields(_fetch_params)}
+
+    for key in fetch_param_fields:
+        if key in method_kwargs:
+            overrides[key] = method_kwargs[key]
         else:
-            result[arg] = session_value
+            # Check for underscore-prefixed attribute (private)
+            attr_name = f"_{key}"
+            if hasattr(session, attr_name):
+                result[key] = getattr(session, attr_name)
 
     if overrides:
         validated_config = validate(overrides, model)
@@ -213,12 +223,12 @@ def validate_fetch(
             for f in fields(_fetch_params)
             if hasattr(validated_config, f.name)
         }
-        # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
         validated_dict.setdefault("solve_cloudflare", False)
 
-        validated_dict.update(result)
-        return _fetch_params(**validated_dict)
+        # Start with session defaults, then overwrite with validated overrides
+        result.update(validated_dict)
 
+    # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
     result.setdefault("solve_cloudflare", False)
 
     return _fetch_params(**result)

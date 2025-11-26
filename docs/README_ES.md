@@ -232,25 +232,26 @@ Scrapling no solo es poderoso, también es increíblemente rápido, y las actual
 
 ### Prueba de Velocidad de Extracción de Texto (5000 elementos anidados)
 
-| # |      Biblioteca      | Tiempo (ms) | vs Scrapling | 
-|---|:--------------------:|:-----------:|:------------:|
-| 1 |      Scrapling       |    1.92     |     1.0x     |
-| 2 |    Parsel/Scrapy     |    1.99     |    1.036x    |
-| 3 |      Raw Lxml        |    2.33     |    1.214x    |
-| 4 |       PyQuery        |    20.61    |     ~11x     |
-| 5 |      Selectolax      |    80.65    |     ~42x     |
-| 6 |    BS4 con Lxml      |   1283.21   |    ~698x     |
-| 7 |   MechanicalSoup     |   1304.57   |    ~679x     |
-| 8 | BS4 con html5lib     |   3331.96   |    ~1735x    |
+| # |    Biblioteca     | Tiempo (ms) | vs Scrapling | 
+|---|:-----------------:|:-----------:|:------------:|
+| 1 |     Scrapling     |    1.99     |     1.0x     |
+| 2 |   Parsel/Scrapy   |    2.01     |    1.01x     |
+| 3 |     Raw Lxml      |     2.5     |    1.256x    |
+| 4 |      PyQuery      |    22.93    |    ~11.5x    |
+| 5 |    Selectolax     |    80.57    |    ~40.5x    |
+| 6 |   BS4 with Lxml   |   1541.37   |   ~774.6x    |
+| 7 |  MechanicalSoup   |   1547.35   |   ~777.6x    |
+| 8 | BS4 with html5lib |   3410.58   |   ~1713.9x   |
+
 
 ### Rendimiento de Similitud de Elementos y Búsqueda de Texto
 
 Las capacidades de búsqueda adaptativa de elementos de Scrapling superan significativamente a las alternativas:
 
-|  Biblioteca  | Tiempo (ms) | vs Scrapling |
-|--------------|:-----------:|:------------:|
-|   Scrapling  |    1.87     |     1.0x     |
-| AutoScraper  |    10.24    |    5.476x    |
+| Biblioteca  | Tiempo (ms) | vs Scrapling |
+|-------------|:-----------:|:------------:|
+| Scrapling   |    2.46     |     1.0x     |
+| AutoScraper |    13.3     |    5.407x    |
 
 
 > Todos los benchmarks representan promedios de más de 100 ejecuciones. Ver [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) para la metodología.

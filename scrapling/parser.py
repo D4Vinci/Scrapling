@@ -121,7 +121,7 @@ class Selector(SelectorsGeneration):
         self.__text = None
         if root is None:
             if isinstance(content, str):
-                body = content.strip().replace("\x00", "").encode(encoding) or b"<html/>"
+                body = content.strip().replace("\x00", "") or "<html/>"
             elif isinstance(content, bytes):
                 body = content.replace(b"\x00", b"")
             else:
