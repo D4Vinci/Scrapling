@@ -314,7 +314,7 @@ class CurlParser:
             return None
 
 
-def _unpack_signature(func):
+def _unpack_signature(func, signature_name=None):
     """
     Unpack TypedDict from Unpack[TypedDict] annotations in **kwargs and reconstruct the signature.
 
@@ -322,7 +322,7 @@ def _unpack_signature(func):
     """
     try:
         sig = signature(func)
-        func_name = getattr(func, "__name__", None)
+        func_name = signature_name or getattr(func, "__name__", None)
 
         # Check if this function has known parameters
         if func_name not in Signatures_map:
@@ -467,7 +467,7 @@ Type 'exit' or press Ctrl+D to exit.
 
         return result
 
-    def create_wrapper(self, func, get_signature=True):
+    def create_wrapper(self, func, get_signature=True, signature_name=None):
         """Create a wrapper that preserves function signature but updates page"""
 
         @wraps(func)
@@ -477,7 +477,7 @@ Type 'exit' or press Ctrl+D to exit.
 
         if get_signature:
             # Explicitly preserve and unpack signature for IPython introspection and autocompletion
-            wrapper.__signature__ = _unpack_signature(func)  # pyright: ignore
+            wrapper.__signature__ = _unpack_signature(func, signature_name)  # pyright: ignore
         else:
             wrapper.__signature__ = signature(func)  # pyright: ignore
 
@@ -492,7 +492,7 @@ Type 'exit' or press Ctrl+D to exit.
         put = self.create_wrapper(self.__Fetcher.put)
         delete = self.create_wrapper(self.__Fetcher.delete)
         dynamic_fetch = self.create_wrapper(self.__DynamicFetcher.fetch)
-        stealthy_fetch = self.create_wrapper(self.__StealthyFetcher.fetch)
+        stealthy_fetch = self.create_wrapper(self.__StealthyFetcher.fetch, signature_name="stealthy_fetch")
         curl2fetcher = self.create_wrapper(self._curl_parser.convert2fetcher, get_signature=False)
 
         # Create the namespace dictionary
