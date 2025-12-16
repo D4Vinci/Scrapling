@@ -939,8 +939,13 @@ class Selector(SelectorsGeneration):
     # Operations on text functions
     def json(self) -> Dict:
         """Return JSON response if the response is jsonable otherwise throws error"""
-        if self._raw_body and isinstance(self._raw_body, str):
-            return TextHandler(self._raw_body).json()
+        if self._raw_body and isinstance(self._raw_body, (str, bytes)):
+            if isinstance(self._raw_body, str):
+                return TextHandler(self._raw_body).json()
+            else:
+                if TYPE_CHECKING:
+                    assert isinstance(self._raw_body, bytes)
+                return TextHandler(self._raw_body.decode()).json()
         elif self.text:
             return self.text.json()
         else:
