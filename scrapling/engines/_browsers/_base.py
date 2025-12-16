@@ -40,7 +40,7 @@ class SyncSession:
         self.context: BrowserContext | Any = None
         self._closed = False
 
-    def __create__(self):
+    def start(self):
         pass
 
     def close(self):  # pragma: no cover
@@ -59,7 +59,7 @@ class SyncSession:
         self._closed = True
 
     def __enter__(self):
-        self.__create__()
+        self.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -145,7 +145,7 @@ class AsyncSession:
         self._closed = False
         self._lock = Lock()
 
-    async def __create__(self):
+    async def start(self):
         pass
 
     async def close(self):
@@ -164,7 +164,7 @@ class AsyncSession:
         self._closed = True
 
     async def __aenter__(self):
-        await self.__create__()
+        await self.start()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

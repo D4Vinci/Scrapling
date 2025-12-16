@@ -95,24 +95,27 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         self.__validate__(**kwargs)
         super().__init__(max_pages=self._max_pages)
 
-    def __create__(self):
+    def start(self):
         """Create a browser for this instance and context."""
-        sync_context = sync_patchright if self._stealth else sync_playwright
+        if not self.playwright:
+            sync_context = sync_patchright if self._stealth else sync_playwright
 
-        self.playwright: Playwright = sync_context().start()  # pyright: ignore [reportAttributeAccessIssue]
+            self.playwright: Playwright = sync_context().start()  # pyright: ignore [reportAttributeAccessIssue]
 
-        if self._cdp_url:  # pragma: no cover
-            self.context = self.playwright.chromium.connect_over_cdp(endpoint_url=self._cdp_url).new_context(
-                **self.context_options
-            )
+            if self._cdp_url:  # pragma: no cover
+                self.context = self.playwright.chromium.connect_over_cdp(endpoint_url=self._cdp_url).new_context(
+                    **self.context_options
+                )
+            else:
+                self.context = self.playwright.chromium.launch_persistent_context(**self.launch_options)
+
+            if self._init_script:  # pragma: no cover
+                self.context.add_init_script(path=self._init_script)
+
+            if self._cookies:  # pragma: no cover
+                self.context.add_cookies(self._cookies)
         else:
-            self.context = self.playwright.chromium.launch_persistent_context(**self.launch_options)
-
-        if self._init_script:  # pragma: no cover
-            self.context.add_init_script(path=self._init_script)
-
-        if self._cookies:  # pragma: no cover
-            self.context.add_cookies(self._cookies)
+            raise RuntimeError("Session has been already started")
 
     def fetch(self, url: str, **kwargs: Unpack[PlaywrightFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -227,25 +230,28 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         self.__validate__(**kwargs)
         super().__init__(max_pages=self._max_pages)
 
-    async def __create__(self):
+    async def start(self):
         """Create a browser for this instance and context."""
-        async_context = async_patchright if self._stealth else async_playwright
+        if not self.playwright:
+            async_context = async_patchright if self._stealth else async_playwright
 
-        self.playwright: AsyncPlaywright = await async_context().start()  # pyright: ignore [reportAttributeAccessIssue]
+            self.playwright: AsyncPlaywright = await async_context().start()  # pyright: ignore [reportAttributeAccessIssue]
 
-        if self._cdp_url:
-            browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._cdp_url)
-            self.context: AsyncBrowserContext = await browser.new_context(**self.context_options)
+            if self._cdp_url:
+                browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._cdp_url)
+                self.context: AsyncBrowserContext = await browser.new_context(**self.context_options)
+            else:
+                self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
+                    **self.launch_options
+                )
+
+            if self._init_script:  # pragma: no cover
+                await self.context.add_init_script(path=self._init_script)
+
+            if self._cookies:
+                await self.context.add_cookies(self._cookies)  # pyright: ignore
         else:
-            self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
-                **self.launch_options
-            )
-
-        if self._init_script:  # pragma: no cover
-            await self.context.add_init_script(path=self._init_script)
-
-        if self._cookies:
-            await self.context.add_cookies(self._cookies)  # pyright: ignore
+            raise RuntimeError("Session has been already started")
 
     async def fetch(self, url: str, **kwargs: Unpack[PlaywrightFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
