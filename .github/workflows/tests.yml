@@ -108,7 +108,11 @@ jobs:
     - name: Install Camoufox browser
       run: |
         echo "Cache hit: ${{ steps.camoufox-cache.outputs.cache-hit }}"
-        python3 -m camoufox fetch --browserforge
+        if [ "${{ steps.camoufox-cache.outputs.cache-hit }}" != "true" ]; then
+          python3 -m camoufox fetch --browserforge
+        else
+          echo "Skipping fetch - using cached Camoufox browser"
+        fi
 
     # Cache tox environments
     - name: Cache tox environments
