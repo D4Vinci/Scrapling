@@ -67,8 +67,8 @@ dependencies = [
 fetchers = [
     "click>=8.3.0",
     "curl_cffi>=0.14.0",
-    "playwright>=1.56.0",
-    "patchright>=1.56.0",
+    "playwright==1.56.0",
+    "patchright==1.56.0",
     "camoufox>=0.4.11",
     "geoip2>=5.2.0",
     "msgspec>=0.20.0",
