@@ -58,7 +58,7 @@ jobs:
     - name: Install all browsers dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install playwright>=1.55.0 patchright>=1.55.0 camoufox
+        python3 -m pip install playwright==1.56.0 patchright==1.56.0 camoufox>=0.4.11
 
     - name: Get Playwright version
       id: playwright-version
@@ -83,7 +83,10 @@ jobs:
     - name: Install Playwright browsers
       run: |
         echo "Cache hit: ${{ steps.playwright-cache.outputs.cache-hit }}"
-        python3 -m playwright install chromium
+        if [ "${{ steps.playwright-cache.outputs.cache-hit }}" != "true" ]; then
+          python3 -m playwright install chromium
+        else
+          echo "Skipping install - using cached Playwright browsers"
         python3 -m playwright install-deps chromium firefox
 
     - name: Get Camoufox version
