@@ -87,6 +87,7 @@ jobs:
           python3 -m playwright install chromium
         else
           echo "Skipping install - using cached Playwright browsers"
+        fi
         python3 -m playwright install-deps chromium firefox
 
     - name: Get Camoufox version
