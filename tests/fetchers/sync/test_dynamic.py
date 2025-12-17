@@ -62,6 +62,7 @@ class TestDynamicFetcher:
                 "real_chrome": True,
                 "wait": 10,
                 "locale": "en-US",
+                "timezone_id": "America/New_York",
                 "extra_headers": {"ayo": ""},
                 "useragent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:131.0) Gecko/20100101 Firefox/131.0",
                 "cookies": [{"name": "test", "value": "123", "domain": "example.com", "path": "/"}],
