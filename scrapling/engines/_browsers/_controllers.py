@@ -77,6 +77,7 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
+        :param timezone_id: Set the timezone for the browser if wanted.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
@@ -212,6 +213,7 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
+        :param timezone_id: Set the timezone for the browser if wanted.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
