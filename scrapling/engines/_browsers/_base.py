@@ -281,6 +281,7 @@ class DynamicSessionMixin:
         self._wait_selector_state = config.wait_selector_state
         self._extra_flags = config.extra_flags
         self._selector_config = config.selector_config
+        self._timezone_id = config.timezone_id
         self._additional_args = config.additional_args
         self._page_action = config.page_action
         self._user_data_dir = config.user_data_dir
@@ -304,6 +305,7 @@ class DynamicSessionMixin:
                     self._stealth,
                     self._hide_canvas,
                     self._disable_webgl,
+                    self._timezone_id,
                     tuple(self._extra_flags) if self._extra_flags else tuple(),
                 )
             )
