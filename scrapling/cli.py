@@ -2,8 +2,6 @@ from pathlib import Path
 from subprocess import check_output
 from sys import executable as python_executable
 
-from curl_cffi.requests import impersonate
-
 from scrapling.core.utils import log
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.core.utils._shell import _CookieParser, _ParseHeaders

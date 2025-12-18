@@ -87,6 +87,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     load_dom: bool = True
     wait_selector_state: SelectorWaitStates = "attached"
     user_data_dir: str = ""
+    timezone_id: str = ""
     extra_flags: Optional[List[str]] = None
     selector_config: Optional[Dict] = {}
     additional_args: Optional[Dict] = {}

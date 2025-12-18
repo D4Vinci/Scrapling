@@ -102,16 +102,19 @@ class StealthySession(StealthySessionMixin, SyncSession):
         self.__validate__(**kwargs)
         super().__init__(max_pages=self._max_pages)
 
-    def __create__(self):
+    def start(self):
         """Create a browser for this instance and context."""
-        self.playwright = sync_playwright().start()
-        self.context = self.playwright.firefox.launch_persistent_context(**self.launch_options)
+        if not self.playwright:
+            self.playwright = sync_playwright().start()
+            self.context = self.playwright.firefox.launch_persistent_context(**self.launch_options)
 
-        if self._init_script:  # pragma: no cover
-            self.context.add_init_script(path=self._init_script)
+            if self._init_script:  # pragma: no cover
+                self.context.add_init_script(path=self._init_script)
 
-        if self._cookies:  # pragma: no cover
-            self.context.add_cookies(self._cookies)
+            if self._cookies:  # pragma: no cover
+                self.context.add_cookies(self._cookies)
+        else:
+            raise RuntimeError("Session has been already started")
 
     def _cloudflare_solver(self, page: Page) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
@@ -299,18 +302,21 @@ class AsyncStealthySession(StealthySessionMixin, AsyncSession):
         self.__validate__(**kwargs)
         super().__init__(max_pages=self._max_pages)
 
-    async def __create__(self):
+    async def start(self):
         """Create a browser for this instance and context."""
-        self.playwright: AsyncPlaywright = await async_playwright().start()
-        self.context: AsyncBrowserContext = await self.playwright.firefox.launch_persistent_context(
-            **self.launch_options
-        )
+        if not self.playwright:
+            self.playwright: AsyncPlaywright = await async_playwright().start()
+            self.context: AsyncBrowserContext = await self.playwright.firefox.launch_persistent_context(
+                **self.launch_options
+            )
 
-        if self._init_script:  # pragma: no cover
-            await self.context.add_init_script(path=self._init_script)
+            if self._init_script:  # pragma: no cover
+                await self.context.add_init_script(path=self._init_script)
 
-        if self._cookies:
-            await self.context.add_cookies(self._cookies)  # pyright: ignore [reportArgumentType]
+            if self._cookies:
+                await self.context.add_cookies(self._cookies)  # pyright: ignore [reportArgumentType]
+        else:
+            raise RuntimeError("Session has been already started")
 
     async def _cloudflare_solver(self, page: async_Page):  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed. The async version

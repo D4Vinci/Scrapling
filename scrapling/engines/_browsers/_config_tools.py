@@ -70,6 +70,7 @@ def _launch_kwargs(
     stealth,
     hide_canvas,
     disable_webgl,
+    timezone_id,
     extra_flags: Tuple,
 ) -> Tuple:
     """Creates the arguments we will use while launching playwright's browser"""
@@ -79,6 +80,7 @@ def _launch_kwargs(
 
     launch_kwargs = {
         "locale": locale,
+        "timezone_id": timezone_id or None,
         "headless": headless,
         "args": base_args,
         "color_scheme": "dark",  # Bypasses the 'prefersLightColor' check in creepjs
