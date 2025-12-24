@@ -10,6 +10,7 @@ from scrapling.engines.toolbelt.navigation import js_bypass_path
 from scrapling.engines.toolbelt.fingerprints import generate_headers
 
 __default_useragent__ = generate_headers(browser_mode=True).get("User-Agent")
+__default_chrome_useragent__ = generate_headers(browser_mode="chrome").get("User-Agent")
 
 
 @lru_cache(1)
@@ -89,8 +90,13 @@ def _launch_kwargs(
         "ignore_default_args": HARMFUL_DEFAULT_ARGS,
         "channel": "chrome" if real_chrome else "chromium",
         "extra_http_headers": extra_headers or tuple(),
-        "user_agent": useragent or __default_useragent__,
     }
+    # The default useragent in the headful is always correct now in the current versions of Playwright
+    if useragent:
+        launch_kwargs["user_agent"] = useragent
+    elif not useragent and headless:
+        launch_kwargs["user_agent"] = __default_chrome_useragent__ if real_chrome else __default_useragent__
+
     if stealth:
         stealth_args = base_args + _set_flags(hide_canvas, disable_webgl)
         launch_kwargs.update(

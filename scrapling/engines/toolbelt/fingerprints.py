@@ -13,6 +13,9 @@ from scrapling.core._types import Dict, Literal, Tuple
 
 __OS_NAME__ = platform_system()
 OSName = Literal["linux", "macos", "windows"]
+# Current versions hardcoded for now (Playwright doesn't allow to know the version of a browser without launching it)
+chromium_version = 141
+chrome_version = 143
 
 
 @lru_cache(10, typed=True)
@@ -46,7 +49,7 @@ def get_os_name() -> OSName | Tuple:
             return SUPPORTED_OPERATING_SYSTEMS
 
 
-def generate_headers(browser_mode: bool = False) -> Dict:
+def generate_headers(browser_mode: bool | str = False) -> Dict:
     """Generate real browser-like headers using browserforge's generator
 
     :param browser_mode: If enabled, the headers created are used for playwright, so it has to match everything
@@ -55,7 +58,8 @@ def generate_headers(browser_mode: bool = False) -> Dict:
     # In the browser mode, we don't care about anything other than matching the OS and the browser type with the browser we are using,
     # So we don't raise any inconsistency red flags while websites fingerprinting us
     os_name = get_os_name()
-    browsers = [Browser(name="chrome", min_version=141, max_version=141)]
+    ver = chrome_version if browser_mode and browser_mode == "chrome" else chromium_version
+    browsers = [Browser(name="chrome", min_version=ver, max_version=ver)]
     if not browser_mode:
         os_name = ("windows", "macos", "linux")
         browsers.extend(
