@@ -55,13 +55,13 @@ def generate_headers(browser_mode: bool = False) -> Dict:
     # In the browser mode, we don't care about anything other than matching the OS and the browser type with the browser we are using,
     # So we don't raise any inconsistency red flags while websites fingerprinting us
     os_name = get_os_name()
-    browsers = [Browser(name="chrome", min_version=130)]
+    browsers = [Browser(name="chrome", min_version=141, max_version=141)]
     if not browser_mode:
         os_name = ("windows", "macos", "linux")
         browsers.extend(
             [
-                Browser(name="firefox", min_version=130),
-                Browser(name="edge", min_version=130),
+                Browser(name="firefox", min_version=140),
+                Browser(name="edge", min_version=140),
             ]
         )
     return HeaderGenerator(browser=browsers, os=os_name, device="desktop").generate()
