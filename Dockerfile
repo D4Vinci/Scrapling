@@ -23,9 +23,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
     apt-get update && \
-    uv run playwright install-deps chromium firefox && \
+    uv run playwright install-deps chromium && \
     uv run playwright install chromium && \
-    uv run camoufox fetch --browserforge && \
     uv sync --all-extras --compile-bytecode && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
