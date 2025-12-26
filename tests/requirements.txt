@@ -1,7 +1,6 @@
 pytest>=2.8.0,<9
 pytest-cov
 playwright
-camoufox
 werkzeug<3.0.0
 pytest-httpbin==2.1.0
 pytest-asyncio

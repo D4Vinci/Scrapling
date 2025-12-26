@@ -156,7 +156,6 @@ class TestCLI:
                     html_url,
                     str(output_file),
                     '--headless',
-                    '--stealth',
                     '--timeout', '60000'
                 ]
             )

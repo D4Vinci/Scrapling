@@ -1,8 +1,8 @@
 import pytest
 from scrapling.engines._browsers._validators import (
     validate,
+    StealthConfig,
     PlaywrightConfig,
-    CamoufoxConfig
 )
 
 
@@ -51,8 +51,8 @@ class TestValidators:
         with pytest.raises(TypeError):
             validate(params, PlaywrightConfig)
 
-    def test_camoufox_config_valid(self):
-        """Test valid CamoufoxConfig"""
+    def test_stealth_config_valid(self):
+        """Test valid StealthConfig"""
         params = {
             "max_pages": 1,
             "headless": True,
@@ -60,20 +60,20 @@ class TestValidators:
             "timeout": 30000
         }
 
-        config = validate(params, CamoufoxConfig)
+        config = validate(params, StealthConfig)
 
         assert config.max_pages == 1
         assert config.headless is True
         assert config.solve_cloudflare is False
         assert config.timeout == 30000
 
-    def test_camoufox_config_cloudflare_timeout(self):
-        """Test CamoufoxConfig timeout adjustment for Cloudflare"""
+    def test_stealth_config_cloudflare_timeout(self):
+        """Test StealthConfig timeout adjustment for Cloudflare"""
         params = {
             "solve_cloudflare": True,
             "timeout": 10000  # Less than the required 60,000
         }
 
-        config = validate(params, CamoufoxConfig)
+        config = validate(params, StealthConfig)
 
         assert config.timeout == 60000  # Should be increased
