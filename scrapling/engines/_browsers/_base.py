@@ -1,7 +1,6 @@
 from time import time
 from asyncio import sleep as asyncio_sleep, Lock
 
-from camoufox import DefaultAddons
 from playwright.sync_api._generated import Page
 from playwright.sync_api import (
     Frame,
@@ -17,18 +16,18 @@ from playwright.async_api import (
     BrowserContext as AsyncBrowserContext,
 )
 from playwright._impl._errors import Error as PlaywrightError
-from camoufox.pkgman import installed_verstr as camoufox_version
-from camoufox.utils import launch_options as generate_launch_options
 
 from ._page import PageInfo, PagePool
 from scrapling.parser import Selector
-from scrapling.core._types import Any, cast, Dict, List, Optional, Callable, TYPE_CHECKING
-from scrapling.engines.toolbelt.fingerprints import get_os_name
-from ._validators import validate, PlaywrightConfig, CamoufoxConfig
-from ._config_tools import _compiled_stealth_scripts, _launch_kwargs, _context_kwargs
+from ._validators import validate, PlaywrightConfig, StealthConfig
+from ._config_tools import __default_chrome_useragent__, __default_useragent__
 from scrapling.engines.toolbelt.navigation import intercept_route, async_intercept_route
-
-__ff_version_str__ = camoufox_version().split(".", 1)[0]
+from scrapling.core._types import Any, cast, Dict, List, Optional, Callable, TYPE_CHECKING, overload, Tuple
+from scrapling.engines.constants import (
+    DEFAULT_STEALTH_FLAGS,
+    HARMFUL_DEFAULT_ARGS,
+    DEFAULT_FLAGS,
+)
 
 
 class SyncSession:
@@ -83,10 +82,6 @@ class SyncSession:
 
         if disable_resources:
             page.route("**/*", intercept_route)
-
-        if getattr(self, "stealth", False):
-            for script in _compiled_stealth_scripts():
-                page.add_init_script(script=script)
 
         page_info = self.page_pool.add_page(page)
         page_info.mark_busy()
@@ -202,10 +197,6 @@ class AsyncSession:
             if disable_resources:
                 await page.route("**/*", async_intercept_route)
 
-            if getattr(self, "stealth", False):
-                for script in _compiled_stealth_scripts():
-                    await page.add_init_script(script=script)
-
             return self.page_pool.add_page(page)
 
     def get_pool_stats(self) -> Dict[str, int]:
@@ -251,151 +242,118 @@ class AsyncSession:
         return handle_response
 
 
-class DynamicSessionMixin:
-    def __validate__(self, **params):
+class BaseSessionMixin:
+    @overload
+    def __validate_routine__(self, params: Dict, model: type[StealthConfig]) -> StealthConfig: ...
+
+    @overload
+    def __validate_routine__(self, params: Dict, model: type[PlaywrightConfig]) -> PlaywrightConfig: ...
+
+    def __validate_routine__(
+        self, params: Dict, model: type[PlaywrightConfig] | type[StealthConfig]
+    ) -> PlaywrightConfig | StealthConfig:
+        # Dark color scheme bypasses the 'prefersLightColor' check in creepjs
+        self._context_options: Dict[str, Any] = {"color_scheme": "dark", "device_scale_factor": 2}
+        self._launch_options: Dict[str, Any] = self._context_options | {
+            "args": DEFAULT_FLAGS,
+            "ignore_default_args": HARMFUL_DEFAULT_ARGS,
+        }
         if "__max_pages" in params:
             params["max_pages"] = params.pop("__max_pages")
 
-        config = validate(params, model=PlaywrightConfig)
+        config = validate(params, model=model)
+        self._headers_keys = (
+            {header.lower() for header in config.extra_headers.keys()} if config.extra_headers else set()
+        )
 
-        self._max_pages = config.max_pages
-        self._headless = config.headless
-        self._hide_canvas = config.hide_canvas
-        self._disable_webgl = config.disable_webgl
-        self._real_chrome = config.real_chrome
-        self._stealth = config.stealth
-        self._google_search = config.google_search
-        self._wait = config.wait
-        self._proxy = config.proxy
-        self._locale = config.locale
-        self._extra_headers = config.extra_headers
-        self._useragent = config.useragent
-        self._timeout = config.timeout
-        self._cookies = config.cookies
-        self._disable_resources = config.disable_resources
-        self._cdp_url = config.cdp_url
-        self._network_idle = config.network_idle
-        self._load_dom = config.load_dom
-        self._wait_selector = config.wait_selector
-        self._init_script = config.init_script
-        self._wait_selector_state = config.wait_selector_state
-        self._extra_flags = config.extra_flags
-        self._selector_config = config.selector_config
-        self._timezone_id = config.timezone_id
-        self._additional_args = config.additional_args
-        self._page_action = config.page_action
-        self._user_data_dir = config.user_data_dir
-        self._headers_keys = {header.lower() for header in self._extra_headers.keys()} if self._extra_headers else set()
-        self.__initiate_browser_options__()
+        return config
 
-    def __initiate_browser_options__(self):
-        if TYPE_CHECKING:
-            assert isinstance(self._proxy, tuple)
-
-        if not self._cdp_url:
-            # `launch_options` is used with persistent context
-            self.launch_options = dict(
-                _launch_kwargs(
-                    self._headless,
-                    self._proxy,
-                    self._locale,
-                    tuple(self._extra_headers.items()) if self._extra_headers else tuple(),
-                    self._useragent,
-                    self._real_chrome,
-                    self._stealth,
-                    self._hide_canvas,
-                    self._disable_webgl,
-                    self._timezone_id,
-                    tuple(self._extra_flags) if self._extra_flags else tuple(),
-                )
-            )
-            self.launch_options["extra_http_headers"] = dict(self.launch_options["extra_http_headers"])
-            self.launch_options["proxy"] = dict(self.launch_options["proxy"]) or None
-            self.launch_options["user_data_dir"] = self._user_data_dir
-            self.launch_options.update(cast(Dict, self._additional_args))
-            self.context_options = dict()
-        else:
-            # while `context_options` is left to be used when cdp mode is enabled
-            self.launch_options = dict()
-            self.context_options = dict(
-                _context_kwargs(
-                    self._proxy,
-                    self._locale,
-                    tuple(self._extra_headers.items()) if self._extra_headers else tuple(),
-                    self._useragent,
-                    self._stealth,
-                )
-            )
-            self.context_options["extra_http_headers"] = dict(self.context_options["extra_http_headers"])
-            self.context_options["proxy"] = dict(self.context_options["proxy"]) or None
-            self.context_options.update(cast(Dict, self._additional_args))
-
-
-class StealthySessionMixin:
-    def __validate__(self, **params):
-        if "__max_pages" in params:
-            params["max_pages"] = params.pop("__max_pages")
-
-        config: CamoufoxConfig = validate(params, model=CamoufoxConfig)
-
-        self._max_pages = config.max_pages
-        self._headless = config.headless
-        self._block_images = config.block_images
-        self._disable_resources = config.disable_resources
-        self._block_webrtc = config.block_webrtc
-        self._allow_webgl = config.allow_webgl
-        self._network_idle = config.network_idle
-        self._load_dom = config.load_dom
-        self._humanize = config.humanize
-        self._solve_cloudflare = config.solve_cloudflare
-        self._wait = config.wait
-        self._timeout = config.timeout
-        self._page_action = config.page_action
-        self._wait_selector = config.wait_selector
-        self._init_script = config.init_script
-        self._addons = config.addons
-        self._wait_selector_state = config.wait_selector_state
-        self._cookies = config.cookies
-        self._google_search = config.google_search
-        self._extra_headers = config.extra_headers
-        self._proxy = config.proxy
-        self._os_randomize = config.os_randomize
-        self._disable_ads = config.disable_ads
-        self._geoip = config.geoip
-        self._selector_config = config.selector_config
-        self._additional_args = config.additional_args
-        self._user_data_dir = config.user_data_dir
-        self._headers_keys = {header.lower() for header in self._extra_headers.keys()} if self._extra_headers else set()
-        self.__initiate_browser_options__()
-
-    def __initiate_browser_options__(self):
-        """Initiate browser options."""
-        self.launch_options: Dict[str, Any] = generate_launch_options(
-            **{
-                "geoip": self._geoip,
-                "proxy": dict(self._proxy) if self._proxy and isinstance(self._proxy, tuple) else self._proxy,
-                "addons": self._addons,
-                "exclude_addons": [] if self._disable_ads else [DefaultAddons.UBO],
-                "headless": self._headless,
-                "humanize": True if self._solve_cloudflare else self._humanize,
-                "i_know_what_im_doing": True,  # To turn warnings off with the user configurations
-                "allow_webgl": self._allow_webgl,
-                "block_webrtc": self._block_webrtc,
-                "block_images": self._block_images,  # Careful! it makes some websites don't finish loading at all like stackoverflow even in headful mode.
-                "os": None if self._os_randomize else get_os_name(),
-                "user_data_dir": self._user_data_dir,
-                "ff_version": __ff_version_str__,
-                "firefox_user_prefs": {
-                    # This is what enabling `enable_cache` does internally, so we do it from here instead
-                    "browser.sessionhistory.max_entries": 10,
-                    "browser.sessionhistory.max_total_viewers": -1,
-                    "browser.cache.memory.enable": True,
-                    "browser.cache.disk_cache_ssl": True,
-                    "browser.cache.disk.smart_size.enabled": True,
-                },
-                **cast(Dict, self._additional_args),
+    def __generate_options__(self, extra_flags: Tuple | None = None) -> None:
+        config = cast(PlaywrightConfig, getattr(self, "_config", None))
+        self._context_options.update(
+            {
+                "proxy": config.proxy,
+                "locale": config.locale,
+                "timezone_id": config.timezone_id,
+                "extra_http_headers": config.extra_headers,
             }
         )
+        # The default useragent in the headful is always correct now in the current versions of Playwright
+        if config.useragent:
+            self._context_options["user_agent"] = config.useragent
+        elif not config.useragent and config.headless:
+            self._context_options["user_agent"] = (
+                __default_chrome_useragent__ if config.real_chrome else __default_useragent__
+            )
+
+        if not config.cdp_url:
+            self._launch_options |= self._context_options
+            self._context_options = {}
+            flags = self._launch_options["args"]
+            if config.extra_flags or extra_flags:
+                flags = list(set(flags + (config.extra_flags or extra_flags)))
+
+            self._launch_options.update(
+                {
+                    "args": flags,
+                    "headless": config.headless,
+                    "user_data_dir": config.user_data_dir,
+                    "channel": "chrome" if config.real_chrome else "chromium",
+                }
+            )
+
+            if config.additional_args:
+                self._launch_options.update(config.additional_args)
+        else:
+            # while `context_options` is left to be used when cdp mode is enabled
+            self._launch_options = dict()
+            if config.additional_args:
+                self._context_options.update(config.additional_args)
+
+
+class DynamicSessionMixin(BaseSessionMixin):
+    def __validate__(self, **params):
+        self._config = self.__validate_routine__(params, model=PlaywrightConfig)
+        self.__generate_options__()
+
+
+class StealthySessionMixin(BaseSessionMixin):
+    def __validate__(self, **params):
+        self._config: StealthConfig = self.__validate_routine__(params, model=StealthConfig)
+        self._context_options.update(
+            {
+                "is_mobile": False,
+                "has_touch": False,
+                # I'm thinking about disabling it to rest from all Service Workers' headache, but let's keep it as it is for now
+                "service_workers": "allow",
+                "ignore_https_errors": True,
+                "screen": {"width": 1920, "height": 1080},
+                "viewport": {"width": 1920, "height": 1080},
+                "permissions": ["geolocation", "notifications"],
+            }
+        )
+        self.__generate_stealth_options()
+
+    def __generate_stealth_options(self) -> None:
+        flags = tuple()
+        if not self._config.cdp_url:
+            flags = DEFAULT_FLAGS + DEFAULT_STEALTH_FLAGS
+
+            if self._config.block_webrtc:
+                flags += (
+                    "--webrtc-ip-handling-policy=disable_non_proxied_udp",
+                    "--force-webrtc-ip-handling-policy",  # Ensures the policy is enforced
+                )
+            if not self._config.allow_webgl:
+                flags += (
+                    "--disable-webgl",
+                    "--disable-webgl-image-chromium",
+                    "--disable-webgl2",
+                )
+            if self._config.hide_canvas:
+                flags += ("--fingerprinting-canvas-image-data-noise",)
+
+        super(StealthySessionMixin, self).__generate_options__(flags)
 
     @staticmethod
     def _detect_cloudflare(page_content: str) -> str | None:

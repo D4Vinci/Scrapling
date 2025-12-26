@@ -57,3 +57,17 @@ except ImportError:  # pragma: no cover
         from typing_extensions import Self  # Backport
     except ImportError:
         Self = object
+
+
+# Copied from `playwright._impl._api_structures.SetCookieParam`
+class SetCookieParam(TypedDict, total=False):
+    name: str
+    value: str
+    url: Optional[str]
+    domain: Optional[str]
+    path: Optional[str]
+    expires: Optional[float]
+    httpOnly: Optional[bool]
+    secure: Optional[bool]
+    sameSite: Optional[Literal["Lax", "None", "Strict"]]
+    partitionKey: Optional[str]

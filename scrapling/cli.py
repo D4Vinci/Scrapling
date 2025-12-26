@@ -125,13 +125,8 @@ def install(force):  # pragma: no cover
                 "playwright",
                 "install-deps",
                 "chromium",
-                "firefox",
             ],
             "Playwright dependencies",
-        )
-        __Execute(
-            [python_executable, "-m", "camoufox", "fetch", "--browserforge"],
-            "Camoufox browser and databases",
         )
         # if no errors raised by the above commands, then we add the below file
         __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").touch()
@@ -611,16 +606,10 @@ def delete(
 )
 @option("--wait-selector", help="CSS selector to wait for before proceeding")
 @option("--locale", default="en-US", help="Browser locale (default: en-US)")
-@option("--stealth/--no-stealth", default=False, help="Enable stealth mode (default: False)")
 @option(
-    "--hide-canvas/--show-canvas",
+    "--real-chrome/--no-real-chrome",
     default=False,
-    help="Add noise to canvas operations (default: False)",
-)
-@option(
-    "--disable-webgl/--enable-webgl",
-    default=False,
-    help="Disable WebGL support (default: False)",
+    help="If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)",
 )
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
@@ -640,9 +629,7 @@ def fetch(
     css_selector,
     wait_selector,
     locale,
-    stealth,
-    hide_canvas,
-    disable_webgl,
+    real_chrome,
     proxy,
     extra_headers,
 ):
@@ -659,9 +646,7 @@ def fetch(
     :param css_selector: CSS selector to extract specific content.
     :param wait_selector: Wait for a specific CSS selector to be in a specific state.
     :param locale: Set the locale for the browser.
-    :param stealth: Enables stealth mode.
-    :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
-    :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
+    :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
     :param proxy: The proxy to be used with requests.
     :param extra_headers: Extra headers to add to the request.
     """
@@ -676,9 +661,7 @@ def fetch(
         "network_idle": network_idle,
         "timeout": timeout,
         "locale": locale,
-        "stealth": stealth,
-        "hide_canvas": hide_canvas,
-        "disable_webgl": disable_webgl,
+        "real_chrome": real_chrome,
     }
 
     if wait > 0:
@@ -704,11 +687,6 @@ def fetch(
     help="Run browser in headless mode (default: True)",
 )
 @option(
-    "--block-images/--allow-images",
-    default=False,
-    help="Block image loading (default: False)",
-)
-@option(
     "--disable-resources/--enable-resources",
     default=False,
     help="Drop unnecessary resources for speed boost (default: False)",
@@ -717,11 +695,6 @@ def fetch(
     "--block-webrtc/--allow-webrtc",
     default=False,
     help="Block WebRTC entirely (default: False)",
-)
-@option(
-    "--humanize/--no-humanize",
-    default=False,
-    help="Humanize cursor movement (default: False)",
 )
 @option(
     "--solve-cloudflare/--no-solve-cloudflare",
@@ -735,9 +708,14 @@ def fetch(
     help="Wait for network idle (default: False)",
 )
 @option(
-    "--disable-ads/--allow-ads",
+    "--real-chrome/--no-real-chrome",
     default=False,
-    help="Install uBlock Origin addon (default: False)",
+    help="If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)",
+)
+@option(
+    "--hide-canvas/--show-canvas",
+    default=False,
+    help="Add noise to canvas operations (default: False)",
 )
 @option(
     "--timeout",
@@ -757,11 +735,6 @@ def fetch(
     help="CSS selector to extract specific content from the page. It returns all matches.",
 )
 @option("--wait-selector", help="CSS selector to wait for before proceeding")
-@option(
-    "--geoip/--no-geoip",
-    default=False,
-    help="Use IP geolocation for timezone/locale (default: False)",
-)
 @option("--proxy", help='Proxy URL in format "http://username:password@host:port"')
 @option(
     "--extra-headers",
@@ -773,19 +746,17 @@ def stealthy_fetch(
     url,
     output_file,
     headless,
-    block_images,
     disable_resources,
     block_webrtc,
-    humanize,
     solve_cloudflare,
     allow_webgl,
     network_idle,
-    disable_ads,
+    real_chrome,
+    hide_canvas,
     timeout,
     wait,
     css_selector,
     wait_selector,
-    geoip,
     proxy,
     extra_headers,
 ):
@@ -795,19 +766,17 @@ def stealthy_fetch(
     :param url: Target url.
     :param output_file: Output file path (.md for Markdown, .html for HTML).
     :param headless: Run the browser in headless/hidden, or headful/visible mode.
-    :param block_images: Prevent the loading of images through Firefox preferences.
     :param disable_resources: Drop requests of unnecessary resources for a speed boost.
     :param block_webrtc: Blocks WebRTC entirely.
-    :param humanize: Humanize the cursor movement.
     :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges.
     :param allow_webgl: Allow WebGL (recommended to keep enabled).
     :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-    :param disable_ads: Install the uBlock Origin addon on the browser.
+    :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
+    :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
     :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
     :param wait: The time (milliseconds) the fetcher will wait after everything finishes before returning.
     :param css_selector: CSS selector to extract specific content.
     :param wait_selector: Wait for a specific CSS selector to be in a specific state.
-    :param geoip: Automatically use IP's longitude, latitude, timezone, country, locale.
     :param proxy: The proxy to be used with requests.
     :param extra_headers: Extra headers to add to the request.
     """
@@ -818,16 +787,14 @@ def stealthy_fetch(
     # Build request arguments
     kwargs = {
         "headless": headless,
-        "block_images": block_images,
         "disable_resources": disable_resources,
         "block_webrtc": block_webrtc,
-        "humanize": humanize,
         "solve_cloudflare": solve_cloudflare,
         "allow_webgl": allow_webgl,
         "network_idle": network_idle,
-        "disable_ads": disable_ads,
+        "real_chrome": real_chrome,
+        "hide_canvas": hide_canvas,
         "timeout": timeout,
-        "geoip": geoip,
     }
 
     if wait > 0:

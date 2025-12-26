@@ -74,7 +74,6 @@ DEFAULT_STEALTH_FLAGS = (
     "--disable-domain-reliability",
     "--disable-threaded-animation",
     "--disable-threaded-scrolling",
-    # '--disable-reading-from-canvas', # For Firefox
     "--enable-simple-cache-backend",
     "--disable-background-networking",
     "--enable-surface-synchronization",
