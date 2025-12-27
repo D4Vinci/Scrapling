@@ -62,7 +62,7 @@ if TYPE_CHECKING:  # pragma: no cover
         load_dom: bool
         wait_selector: Optional[str]
         wait_selector_state: SelectorWaitStates
-        cookies: Sequence[SetCookieParam]
+        cookies: Sequence[SetCookieParam] | None
         google_search: bool
         wait: int | float
         timezone_id: str | None

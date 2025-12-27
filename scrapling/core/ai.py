@@ -17,13 +17,15 @@ from scrapling.fetchers import (
 from scrapling.core._types import (
     Optional,
     Tuple,
-    extraction_types,
     Mapping,
     Dict,
     List,
     Any,
-    SelectorWaitStates,
     Generator,
+    Sequence,
+    SetCookieParam,
+    extraction_types,
+    SelectorWaitStates,
 )
 
 
@@ -224,7 +226,7 @@ class ScraplingMCPServer:
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
-        cookies: Optional[List[Dict]] = None,
+        cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
     ) -> ResponseModel:
@@ -307,7 +309,7 @@ class ScraplingMCPServer:
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
-        cookies: Optional[List[Dict]] = None,
+        cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
     ) -> List[ResponseModel]:
@@ -396,7 +398,7 @@ class ScraplingMCPServer:
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
-        cookies: Optional[List[Dict]] = None,
+        cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
         block_webrtc: bool = False,
@@ -494,7 +496,7 @@ class ScraplingMCPServer:
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
-        cookies: Optional[List[Dict]] = None,
+        cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
         block_webrtc: bool = False,
