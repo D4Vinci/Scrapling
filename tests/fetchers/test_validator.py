@@ -23,7 +23,7 @@ class TestValidators:
         assert config.max_pages == 2
         assert config.headless is True
         assert config.timeout == 30000
-        assert isinstance(config.proxy, tuple)  # Should be converted to tuple
+        assert isinstance(config.proxy, dict)
 
     def test_playwright_config_invalid_max_pages(self):
         """Test PlaywrightConfig with invalid max_pages"""
