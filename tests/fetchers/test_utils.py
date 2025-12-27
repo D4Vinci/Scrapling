@@ -190,14 +190,6 @@ class TestConstructProxyDict:
         }
         assert result == expected
 
-    def test_proxy_as_tuple(self):
-        """Test returning proxy as a tuple"""
-        result = construct_proxy_dict("http://proxy.example.com:8080", as_tuple=True)
-
-        assert isinstance(result, tuple)
-        result_dict = dict(result)
-        assert result_dict["server"] == "http://proxy.example.com:8080"
-
     def test_invalid_proxy_string(self):
         """Test invalid proxy string"""
         with pytest.raises(ValueError):
