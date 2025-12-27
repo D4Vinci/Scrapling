@@ -67,32 +67,29 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     """Configuration struct for validation"""
 
     max_pages: PagesCount = 1
-    cdp_url: Optional[str] = None
     headless: bool = True
-    google_search: bool = True
-    # hide_canvas: bool = False
-    # disable_webgl: bool = False
-    real_chrome: bool = False
-    # stealth: bool = False
-    wait: Seconds = 0
-    page_action: Optional[Callable] = None
-    proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
-    locale: str | None = None
-    extra_headers: Optional[Dict[str, str]] = None
-    useragent: Optional[str] = None
-    timeout: Seconds = 30000
-    init_script: Optional[str] = None
     disable_resources: bool = False
-    wait_selector: Optional[str] = None
-    cookies: Sequence[SetCookieParam] | None = []
     network_idle: bool = False
     load_dom: bool = True
+    wait_selector: Optional[str] = None
     wait_selector_state: SelectorWaitStates = "attached"
-    user_data_dir: str = ""
+    cookies: Sequence[SetCookieParam] | None = []
+    google_search: bool = True
+    wait: Seconds = 0
     timezone_id: str | None = ""
-    extra_flags: Optional[List[str]] = None
+    page_action: Optional[Callable] = None
+    proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
+    extra_headers: Optional[Dict[str, str]] = None
+    timeout: Seconds = 30000
+    init_script: Optional[str] = None
+    user_data_dir: str = ""
     selector_config: Optional[Dict] = {}
     additional_args: Optional[Dict] = {}
+    locale: str | None = None
+    real_chrome: bool = False
+    cdp_url: Optional[str] = None
+    useragent: Optional[str] = None
+    extra_flags: Optional[List[str]] = None
 
     def __post_init__(self):  # pragma: no cover
         """Custom validation after msgspec validation"""

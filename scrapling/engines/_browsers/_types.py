@@ -11,9 +11,10 @@ from scrapling.core._types import (
     Mapping,
     Optional,
     Callable,
-    Iterable,
+    Sequence,
     TypedDict,
     TypeAlias,
+    SetCookieParam,
     SelectorWaitStates,
     TYPE_CHECKING,
 )
@@ -61,7 +62,7 @@ if TYPE_CHECKING:  # pragma: no cover
         load_dom: bool
         wait_selector: Optional[str]
         wait_selector_state: SelectorWaitStates
-        cookies: Optional[Iterable[Dict]]
+        cookies: Sequence[SetCookieParam]
         google_search: bool
         wait: int | float
         timezone_id: str | None
