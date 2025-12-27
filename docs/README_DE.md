@@ -87,8 +87,8 @@ Für das moderne Web entwickelt, bietet Scrapling **seine eigene schnelle Parsin
 
 ### Erweiterte Website-Abruf mit Sitzungsunterstützung
 - **HTTP-Anfragen**: Schnelle und heimliche HTTP-Anfragen mit der `Fetcher`-Klasse. Kann Browser-TLS-Fingerabdrücke, Header imitieren und HTTP3 verwenden.
-- **Dynamisches Laden**: Abrufen dynamischer Websites mit vollständiger Browser-Automatisierung über die `DynamicFetcher`-Klasse, die Playwrights Chromium, echtes Chrome und benutzerdefinierten Stealth-Modus unterstützt.
-- **Anti-Bot-Umgehung**: Erweiterte Stealth-Fähigkeiten mit `StealthyFetcher` unter Verwendung einer modifizierten Firefox-Version und Fingerabdruck-Spoofing. Kann alle Arten von Cloudflares Turnstile und Interstitial einfach mit Automatisierung umgehen.
+- **Dynamisches Laden**: Abrufen dynamischer Websites mit vollständiger Browser-Automatisierung über die `DynamicFetcher`-Klasse, die Playwrights Chromium und Google Chrome unterstützt.
+- **Anti-Bot-Umgehung**: Erweiterte Stealth-Fähigkeiten mit `StealthyFetcher` und Fingerabdruck-Spoofing. Kann alle Arten von Cloudflares Turnstile/Interstitial einfach mit Automatisierung umgehen.
 - **Sitzungsverwaltung**: Persistente Sitzungsunterstützung mit den Klassen `FetcherSession`, `StealthySession` und `DynamicSession` für Cookie- und Zustandsverwaltung über Anfragen hinweg.
 - **Async-Unterstützung**: Vollständige Async-Unterstützung über alle Fetcher und dedizierte Async-Sitzungsklassen hinweg.
 
@@ -96,7 +96,7 @@ Für das moderne Web entwickelt, bietet Scrapling **seine eigene schnelle Parsin
 - 🔄 **Intelligente Element-Verfolgung**: Elemente nach Website-Änderungen mit intelligenten Ähnlichkeitsalgorithmen neu lokalisieren.
 - 🎯 **Intelligente flexible Auswahl**: CSS-Selektoren, XPath-Selektoren, filterbasierte Suche, Textsuche, Regex-Suche und mehr.
 - 🔍 **Ähnliche Elemente finden**: Elemente, die gefundenen Elementen ähnlich sind, automatisch lokalisieren.
-- 🤖 **MCP-Server für die Verwendung mit KI**: Integrierter MCP-Server für KI-unterstütztes Web Scraping und Datenextraktion. Der MCP-Server verfügt über benutzerdefinierte, leistungsstarke Funktionen, die Scrapling nutzen, um gezielten Inhalt zu extrahieren, bevor er an die KI (Claude/Cursor/etc.) übergeben wird, wodurch Vorgänge beschleunigt und Kosten durch Minimierung der Token-Nutzung gesenkt werden. ([Demo-Video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **MCP-Server für die Verwendung mit KI**: Integrierter MCP-Server für KI-unterstütztes Web Scraping und Datenextraktion. Der MCP-Server verfügt über leistungsstarke, benutzerdefinierte Funktionen, die Scrapling nutzen, um gezielten Inhalt zu extrahieren, bevor er an die KI (Claude/Cursor/etc.) übergeben wird, wodurch Vorgänge beschleunigt und Kosten durch Minimierung der Token-Nutzung gesenkt werden. ([Demo-Video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 
 ### Hochleistungs- und praxiserprobte Architektur
 - 🚀 **Blitzschnell**: Optimierte Leistung, die die meisten Python-Scraping-Bibliotheken übertrifft.
@@ -230,7 +230,7 @@ scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.
 
 ## Leistungsbenchmarks
 
-Scrapling ist nicht nur leistungsstark – es ist auch blitzschnell, und die Updates seit Version 0.3 haben außergewöhnliche Leistungsverbesserungen bei allen Operationen gebracht.
+Scrapling ist nicht nur leistungsstark – es ist auch blitzschnell, und die Updates seit Version 0.3 haben außergewöhnliche Leistungsverbesserungen bei allen Operationen gebracht. Die folgenden Benchmarks vergleichen den Parser von Scrapling mit anderen beliebten Bibliotheken.
 
 ### Textextraktions-Geschwindigkeitstest (5000 verschachtelte Elemente)
 
@@ -270,14 +270,14 @@ Ab v0.3.2 enthält diese Installation nur die Parser-Engine und ihre Abhängigke
 
 ### Optionale Abhängigkeiten
 
-1. Wenn Sie eine der folgenden zusätzlichen Funktionen, die Fetcher oder ihre Klassen verwenden möchten, müssen Sie die Abhängigkeiten der Fetcher installieren und dann ihre Browser-Abhängigkeiten mit
+1. Wenn Sie eine der folgenden zusätzlichen Funktionen, die Fetcher oder ihre Klassen verwenden möchten, müssen Sie die Abhängigkeiten der Fetcher und ihre Browser-Abhängigkeiten wie folgt installieren:
     ```bash
     pip install "scrapling[fetchers]"
     
     scrapling install
     ```
 
-    Dies lädt alle Browser mit ihren Systemabhängigkeiten und Fingerabdruck-Manipulationsabhängigkeiten herunter.
+    Dies lädt alle Browser zusammen mit ihren Systemabhängigkeiten und Fingerabdruck-Manipulationsabhängigkeiten herunter.
 
 2. Zusätzliche Funktionen:
    - MCP-Server-Funktion installieren:
@@ -303,7 +303,7 @@ Oder laden Sie es aus der GitHub-Registry herunter:
 ```bash
 docker pull ghcr.io/d4vinci/scrapling:latest
 ```
-Dieses Image wird automatisch über GitHub Actions im Hauptzweig des Repositorys erstellt und gepusht.
+Dieses Image wird automatisch mit GitHub Actions und dem Hauptzweig des Repositorys erstellt und gepusht.
 
 ## Beitragen
 

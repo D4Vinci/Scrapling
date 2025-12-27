@@ -90,8 +90,8 @@ Built for the modern Web, Scrapling features **its own rapid parsing engine** an
 
 ### Advanced Websites Fetching with Session Support
 - **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP3.
-- **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium, real Chrome, and custom stealth mode.
-- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` using a modified version of Firefox and fingerprint spoofing. Can bypass all types of Cloudflare's Turnstile and Interstitial with automation easily.
+- **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium and Google's Chrome.
+- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` and fingerprint spoofing. Can easily bypass all types of Cloudflare's Turnstile/Interstitial with automation.
 - **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
 - **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 
@@ -99,7 +99,7 @@ Built for the modern Web, Scrapling features **its own rapid parsing engine** an
 - 🔄 **Smart Element Tracking**: Relocate elements after website changes using intelligent similarity algorithms.
 - 🎯 **Smart Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more. 
 - 🔍 **Find Similar Elements**: Automatically locate elements similar to found elements.
-- 🤖 **MCP Server to be used with AI**: Built-in MCP server for AI-assisted Web Scraping and data extraction. The MCP server features custom, powerful capabilities that utilize Scrapling to extract targeted content before passing it to the AI (Claude/Cursor/etc), thereby speeding up operations and reducing costs by minimizing token usage. ([demo video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **MCP Server to be used with AI**: Built-in MCP server for AI-assisted Web Scraping and data extraction. The MCP server features powerful, custom capabilities that leverage Scrapling to extract targeted content before passing it to the AI (Claude/Cursor/etc), thereby speeding up operations and reducing costs by minimizing token usage. ([demo video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 
 ### High-Performance & battle-tested Architecture
 - 🚀 **Lightning Fast**: Optimized performance outperforming most Python scraping libraries.
@@ -153,7 +153,7 @@ data = page.css('.quote .text::text')
 ```
 
 > [!NOTE]
-> There's a wonderful guide to get you started quickly with Scraping [here](https://substack.thewebscraping.club/p/scrapling-hands-on-guide) written by The Web Scraping Club. In case you find it easier to get you started than the [documentation website](https://scrapling.readthedocs.io/en/latest/).
+> There's a wonderful guide to get you started quickly with Scrapling [here](https://substack.thewebscraping.club/p/scrapling-hands-on-guide) written by The Web Scraping Club. In case you find it easier to get you started than the [documentation website](https://scrapling.readthedocs.io/en/latest/).
 
 ### Advanced Parsing & Navigation
 ```python
@@ -240,7 +240,7 @@ scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.
 
 ## Performance Benchmarks
 
-Scrapling isn't just powerful—it's also blazing fast, and the updates since version 0.3 have delivered exceptional performance improvements across all operations.
+Scrapling isn't just powerful—it's also blazing fast, and the updates since version 0.3 have delivered exceptional performance improvements across all operations. The following benchmarks compare Scrapling's parser with other popular libraries.
 
 ### Text Extraction Speed Test (5000 nested elements)
 
@@ -280,14 +280,14 @@ Starting with v0.3.2, this installation only includes the parser engine and its 
 
 ### Optional Dependencies
 
-1. If you are going to use any of the extra features below, the fetchers, or their classes, then you need to install fetchers' dependencies and then install their browser dependencies with
+1. If you are going to use any of the extra features below, the fetchers, or their classes, you will need to install fetchers' dependencies and their browser dependencies as follows:
     ```bash
     pip install "scrapling[fetchers]"
     
     scrapling install
     ```
 
-    This downloads all browsers with their system dependencies and fingerprint manipulation dependencies.
+    This downloads all browsers, along with their system dependencies and fingerprint manipulation dependencies.
 
 2. Extra features:
    - Install the MCP server feature:
@@ -313,7 +313,7 @@ Or download it from the GitHub registry:
 ```bash
 docker pull ghcr.io/d4vinci/scrapling:latest
 ```
-This image is automatically built and pushed through GitHub actions on the repository's main branch.
+This image is automatically built and pushed using GitHub Actions and the repository's main branch.
 
 ## Contributing
 
