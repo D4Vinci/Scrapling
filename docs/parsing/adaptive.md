@@ -65,7 +65,7 @@ if not element:  # One day website changes?
     element = page.css('#p1', adaptive=True)  # Scrapling still finds it!
 # the rest of your code...
 ```
-Below, I will show you one usage example for this feature. Then, we will dive deep into how to use it and provide details about this feature. Note that it works with all selection methods, not just CSS/XPATH selection.
+Below, I will show you an example of how to use this feature. Then, we will dive deep into how to use it and provide details about this feature. Note that it works with all selection methods, not just CSS/XPATH selection.
 
 ## Real-World Scenario
 Let's use a real website as an example and use one of the fetchers to fetch its source. To achieve this, we need to identify a website that is about to update its design/structure, copy its source, and then wait for the website to change. Of course, that's nearly impossible to know unless I know the website's owner, but that will make it a staged test, haha.
@@ -98,7 +98,7 @@ Note that I introduced a new argument called `adaptive_domain`. This is because,
 
 The code will be the same in a real-world scenario, except it will use the same URL for both requests, so you won't need to use the `adaptive_domain` argument. This is the closest example I can give to real-world cases, so I hope it didn't confuse you :)
 
-Hence, in the two examples above, I used both the `Selector` class and the `Fetcher` class to show you that the logic for adaptive is the same.
+Hence, in the two examples above, I used both the `Selector` and `Fetcher` classes to show that the adaptive logic is the same.
 
 ## How the adaptive scraping feature works
 Adaptive scraping works in two phases:
@@ -106,19 +106,19 @@ Adaptive scraping works in two phases:
 1. **Save Phase**: Store unique properties of elements
 2. **Match Phase**: Find elements with similar properties later
 
-Let's say you've got an element through selection or any method and want the library to find it the next time you scrape this website, even if it undergoes structural/design changes. 
+Let's say you've selected an element through any method and want the library to find it the next time you scrape this website, even if it undergoes structural/design changes. 
 
 With as few technical details as possible, the general logic goes as follows:
 
   1. You tell Scrapling to save that element's unique properties in one of the ways we will show below.
   2. Scrapling uses its configured database (SQLite by default) and saves each element's unique properties.
-  3. Now, because everything about the element can be changed or removed from the website's owner(s), nothing from the element can be used as a unique identifier for the database. To solve this issue, I made the storage system rely on two things:
-     1. The domain of the current website. If you are using the `Selector` class, you should pass it while initializing the class, or if you are using one of the fetchers, the domain will be taken from the URL automatically.
-     2. An `identifier` to query that element's properties from the database. You don't always have to set the identifier yourself, as you will see later when we discuss this.
+  3. Now, because everything about the element can be changed or removed by the website's owner(s), nothing from the element can be used as a unique identifier for the database. To solve this issue, I made the storage system rely on two things:
+     1. The domain of the current website. If you are using the `Selector` class, pass it when initializing the class; if you are using one of the fetchers, the domain will be taken from the URL automatically.
+     2. An `identifier` to query that element's properties from the database. You don't always have to set the identifier yourself; we'll discuss this later.
 
-     Together, they will be used to retrieve the element's unique properties from the database later.
+     Together, they will later be used to retrieve the element's unique properties from the database.
 
-  4. Later, when the website's structure changes, you tell Scrapling to find the element by enabling `adaptive`. Scrapling retrieves the element's unique properties and matches all elements on the page against the unique properties we already have for this element. A score is calculated for their similarity with the desired element. In that comparison, everything is taken into consideration, as you will see later 
+  4. Later, when the website's structure changes, you tell Scrapling to find the element by enabling `adaptive`. Scrapling retrieves the element's unique properties and matches all elements on the page against the unique properties we already have for this element. A score is calculated based on their similarity to the desired element. In that comparison, everything is taken into consideration, as you will see later 
   5. The element(s) with the highest similarity score to the wanted element are returned.
 
 ### The unique properties
@@ -129,7 +129,7 @@ For Scrapling, the unique elements we are relying on are:
 - Element tag name, text, attributes (names and values), siblings (tag names only), and path (tag names only).
 - Element's parent tag name, attributes (names and values), and text.
 
-But you need to understand that the comparison between elements is not exact; it's more about finding how similar these values are. So everything is considered, even the values' order, like the order in which the element class names were written before and the order in which the same element class names are written now.
+But you need to understand that the comparison between elements isn't exact; it's more about how similar these values are. So everything is considered, even the values' order, like the order in which the element class names were written before and the order in which the same element class names are written now.
 
 ## How to use adaptive feature
 The adaptive feature can be applied to any found element, and it's added as arguments to CSS/XPath Selection methods, as you saw above, but we will get back to that later.
@@ -146,11 +146,11 @@ Examples:
 ```
 If you are using the [Selector](main_classes.md#selector) class, you need to pass the url of the website you are using with the argument `url` so Scrapling can separate the properties saved for each element by domain.
 
-If you didn't pass a URL, the word `default` will be used in place of the URL field while saving the element's unique properties. So, this will only be an issue if you used the same identifier later for a different website and didn't pass the URL parameter while initializing it. The save process will overwrite the previous data, and the `adaptive` feature only uses the latest saved properties.
+If you didn't pass a URL, the word `default` will be used in place of the URL field while saving the element's unique properties. So, this will only be an issue if you use the same identifier later for a different website and don't pass the URL parameter when initializing it. The save process overwrites previous data, and the `adaptive` feature uses only the latest saved properties.
 
-Besides those arguments, we have `storage` and `storage_args`. Both are for the class to be used to connect to the database; by default, it's set to the SQLite class that the library is using. Those arguments shouldn't matter unless you want to write your own storage system, which we will cover on a [separate page in the development section](../development/adaptive_storage_system.md).
+Besides those arguments, we have `storage` and `storage_args`. Both are for the class to connect to the database; by default, it's set to the SQLite class the library uses. Those arguments shouldn't matter unless you want to write your own storage system, which we will cover on a [separate page in the development section](../development/adaptive_storage_system.md).
 
-Now, after enabling the `adaptive` feature globally, you have two main ways to use it.
+Now that you've enabled the `adaptive` feature globally, you have two main ways to use it.
 
 ### The CSS/XPath Selection way
 As you have seen in the example above, first, you have to use the `auto_save` argument while selecting an element that exists on the page, like below
@@ -163,7 +163,7 @@ element = page.css('#p1', adaptive=True)
 ```
 Pretty simple, eh?
 
-Well, a lot happened under the hood here. Remember the identifier part we mentioned before that you need to set so you can retrieve the element you want? Here, with the `css`/`css_first`/`xpath`/`xpath_first` methods, the identifier is set automatically as the selector you passed here to make things easier :)
+Well, a lot happened under the hood here. Remember the identifier we mentioned before that you need to set to retrieve the element you want? Here, with the `css`/`css_first`/`xpath`/`xpath_first` methods, the identifier is set automatically as the selector you passed here to make things easier :)
 
 Additionally, for all these methods, you can pass the `identifier` argument to set it yourself. This is useful in some instances, or you can use it to save properties with the `auto_save` argument.
 
@@ -174,7 +174,7 @@ First, let's say you got an element like this by text:
 ```python
 >>> element = page.find_by_text('Tipping the Velvet', first_match=True)
 ```
-You can save its unique properties with the `save` method, like below, but you must set the identifier yourself. For this example, I chose `my_special_element` as an identifier, but it's best to use a meaningful identifier in your code for the same reason you use meaningful variable names :)
+You can save its unique properties using the `save` method, as shown below, but you must set the identifier yourself. For this example, I chose `my_special_element` as an identifier, but it's best to use a meaningful identifier in your code for the same reason you use meaningful variable names :)
 ```python
 >>> page.save(element, 'my_special_element')
 ```
@@ -221,7 +221,7 @@ page.save(product, 'specific_product')
 ```
 
 ## Known Issues
-In the `adaptive` save process, the unique properties of the first element from the selection results are the only ones that get saved. So if the selector you are using selects different elements on the page in other locations, `adaptive` will return the first element to you only when you relocate it later. This doesn't include combined CSS selectors (Using commas to combine more than one selector, for example), as these selectors get separated, and each selector gets executed alone.
+In the `adaptive` save process, only the unique properties of the first element in the selection results are saved. So if the selector you are using selects different elements on the page in other locations, `adaptive` will return the first element to you only when you relocate it later. This doesn't include combined CSS selectors (Using commas to combine more than one selector, for example), as these selectors are separated and each is executed alone.
 
 ## Final thoughts
 Explaining this feature in detail without complications turned out to be challenging. However, still, if there's something left unclear, you can head out to the [discussions section](https://github.com/D4Vinci/Scrapling/discussions), and I will reply to you ASAP, or the Discord server, or reach out to me privately and have a chat :)
