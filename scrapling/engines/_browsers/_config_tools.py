@@ -1,11 +1,5 @@
 from functools import lru_cache
 
-from scrapling.core._types import Tuple
-from scrapling.engines.constants import (
-    DEFAULT_STEALTH_FLAGS,
-    HARMFUL_DEFAULT_ARGS,
-    DEFAULT_FLAGS,
-)
 from scrapling.engines.toolbelt.navigation import js_bypass_path
 from scrapling.engines.toolbelt.fingerprints import generate_headers
 
@@ -42,19 +36,3 @@ def _compiled_stealth_scripts():
         with open(script_path, "r") as f:
             scripts.append(f.read())
     return tuple(scripts)
-
-
-@lru_cache(2, typed=True)
-def _set_flags(hide_canvas, disable_webgl):  # pragma: no cover
-    """Returns the flags that will be used while launching the browser if stealth mode is enabled"""
-    flags = DEFAULT_STEALTH_FLAGS
-    if hide_canvas:
-        flags += ("--fingerprinting-canvas-image-data-noise",)
-    if disable_webgl:
-        flags += (
-            "--disable-webgl",
-            "--disable-webgl-image-chromium",
-            "--disable-webgl2",
-        )
-
-    return flags

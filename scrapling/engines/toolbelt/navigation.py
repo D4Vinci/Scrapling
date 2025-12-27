@@ -11,7 +11,7 @@ from msgspec import Struct, structs, convert, ValidationError
 from playwright.sync_api import Route
 
 from scrapling.core.utils import log
-from scrapling.core._types import Dict, Tuple, overload, Literal
+from scrapling.core._types import Dict, Tuple
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
 __BYPASSES_DIR__ = Path(__file__).parent / "bypasses"

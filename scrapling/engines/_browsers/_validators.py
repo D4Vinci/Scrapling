@@ -13,7 +13,6 @@ from scrapling.core._types import (
     Tuple,
     Optional,
     Callable,
-    Iterable,
     Sequence,
     overload,
     SetCookieParam,
@@ -35,15 +34,6 @@ def _is_invalid_file_path(value: str) -> bool | str:  # pragma: no cover
     if not path.is_absolute():
         return f"Init script is not a absolute path: {value}"
     return False
-
-
-def _validate_addon_path(value: str) -> None:  # pragma: no cover
-    """Fast addon path validation"""
-    path = Path(value)
-    if not path.exists():
-        raise FileNotFoundError(f"Addon path not found: {value}")
-    if not path.is_dir():
-        raise ValueError(f"Addon path must be a directory of the extracted addon: {value}")
 
 
 @lru_cache(2)
