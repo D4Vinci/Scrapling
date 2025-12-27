@@ -1,6 +1,6 @@
 # Performance Benchmarks
 
-Scrapling isn't just powerful—it's also blazing fast, and the updates since version 0.3 deliver exceptional performance improvements across all operations!
+Scrapling isn't just powerful—it's also blazing fast, and the updates since version 0.3 have delivered exceptional performance improvements across all operations. The following benchmarks compare Scrapling's parser with other popular libraries.
 
 ## Benchmark Results
 
