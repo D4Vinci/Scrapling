@@ -5,20 +5,7 @@ from scrapling.engines._browsers._controllers import DynamicSession, AsyncDynami
 
 
 class DynamicFetcher(BaseFetcher):
-    """A `Fetcher` class type that provide many options, all of them are based on PlayWright.
-
-     Using this Fetcher class, you can do requests with:
-        - Vanilla Playwright without any modifications other than the ones you chose.
-        - Stealthy Playwright with the stealth mode I wrote for it. It's still a work in progress, but it bypasses many online tests like bot.sannysoft.com
-            Some of the things stealth mode does include:
-                1) Patches the CDP runtime fingerprint.
-                2) Mimics some of the real browsers' properties by injecting several JS files and using custom options.
-                3) Using custom flags on launch to hide Playwright even more and make it faster.
-                4) Generates real browser's headers of the same type and same user OS, then append it to the request.
-        - Real browsers by passing the `real_chrome` argument or the CDP URL of your browser to be controlled by the Fetcher, and most of the options can be enabled on it.
-
-    > Note that these are the main options with PlayWright, but it can be mixed.
-    """
+    """A `Fetcher` that provide many options to fetch/load websites' pages through chromium-based browsers."""
 
     @classmethod
     def fetch(cls, url: str, **kwargs: Unpack[PlaywrightSession]) -> Response:
