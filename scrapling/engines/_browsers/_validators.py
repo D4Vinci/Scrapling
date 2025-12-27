@@ -96,7 +96,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
         if self.proxy:
-            self.proxy = construct_proxy_dict(self.proxy, as_tuple=True)
+            self.proxy = construct_proxy_dict(self.proxy)
         if self.cdp_url:
             cdp_msg = _is_invalid_cdp_url(self.cdp_url)
             if cdp_msg:
