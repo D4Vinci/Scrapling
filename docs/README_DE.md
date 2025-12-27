@@ -212,13 +212,12 @@ Scrapling v0.3 enthält eine leistungsstarke Befehlszeilenschnittstelle:
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
+Interaktive Web-Scraping-Shell starten
 ```bash
-# Interaktive Web-Scraping-Shell starten
 scrapling shell
-
-# Seiten direkt ohne Programmierung in eine Datei extrahieren (Extrahiert standardmäßig den Inhalt im `body`-Tag)
-# Wenn die Ausgabedatei mit `.txt` endet, wird der Textinhalt des Ziels extrahiert.
-# Wenn sie mit `.md` endet, ist es eine Markdown-Darstellung des HTML-Inhalts, und `.html` ist direkt der HTML-Inhalt.
+```
+Seiten direkt ohne Programmierung in eine Datei extrahieren (Extrahiert standardmäßig den Inhalt im `body`-Tag). Wenn die Ausgabedatei mit `.txt` endet, wird der Textinhalt des Ziels extrahiert. Wenn sie mit `.md` endet, ist es eine Markdown-Darstellung des HTML-Inhalts; wenn sie mit `.html` endet, ist es der HTML-Inhalt selbst.
+```bash
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # Alle Elemente, die dem CSS-Selektor '#fromSkipToProducts' entsprechen
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless

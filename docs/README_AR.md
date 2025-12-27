@@ -212,13 +212,12 @@ async with AsyncStealthySession(max_pages=2) as session:
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
+تشغيل غلاف استخراج الويب التفاعلي
 ```bash
-# تشغيل غلاف استخراج الويب التفاعلي
 scrapling shell
-
-# استخراج الصفحات إلى ملف مباشرة دون برمجة (يستخرج المحتوى داخل وسم `body` افتراضياً)
-# إذا انتهى ملف الإخراج بـ `.txt`، فسيتم استخراج محتوى النص للهدف.
-# إذا انتهى بـ `.md`، فسيكون تمثيل markdown لمحتوى HTML، و`.html` سيكون محتوى HTML مباشرة.
+```
+استخراج الصفحات إلى ملف مباشرة دون برمجة (يستخرج المحتوى داخل وسم `body` افتراضياً). إذا انتهى ملف الإخراج بـ `.txt`، فسيتم استخراج محتوى النص للهدف. إذا انتهى بـ `.md`، فسيكون تمثيل Markdown لمحتوى HTML؛ إذا انتهى بـ `.html`، فسيكون محتوى HTML نفسه.
+```bash
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # جميع العناصر المطابقة لمحدد CSS '#fromSkipToProducts'
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless

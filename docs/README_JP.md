@@ -212,13 +212,12 @@ Scrapling v0.3には強力なコマンドラインインターフェースが含
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
+インタラクティブウェブスクレイピングシェルを起動
 ```bash
-# インタラクティブウェブスクレイピングシェルを起動
 scrapling shell
-
-# プログラミングせずに直接ページをファイルに抽出（デフォルトで`body`タグ内のコンテンツを抽出）
-# 出力ファイルが`.txt`で終わる場合、ターゲットのテキストコンテンツが抽出されます。
-# `.md`で終わる場合、HTMLコンテンツのMarkdown表現になり、`.html`は直接HTMLコンテンツになります。
+```
+プログラミングせずに直接ページをファイルに抽出（デフォルトで`body`タグ内のコンテンツを抽出）。出力ファイルが`.txt`で終わる場合、ターゲットのテキストコンテンツが抽出されます。`.md`で終わる場合、HTMLコンテンツのMarkdown表現になります；`.html`で終わる場合、HTMLコンテンツそのものになります。
+```bash
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # CSSセレクタ'#fromSkipToProducts'に一致するすべての要素
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless

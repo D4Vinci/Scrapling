@@ -222,13 +222,12 @@ Scrapling v0.3 includes a powerful command-line interface:
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
+Launch the interactive Web Scraping shell
 ```bash
-# Launch interactive Web Scraping shell
 scrapling shell
-
-# Extract pages to a file directly without programming (Extracts the content inside `body` tag by default)
-# If the output file ends with `.txt`, then the text content of the target will be extracted.
-# If ended with `.md`, it will be a markdown representation of the HTML content, and `.html` will be the HTML content right away.
+```
+Extract pages to a file directly without programming (Extracts the content inside the `body` tag by default). If the output file ends with `.txt`, then the text content of the target will be extracted. If it ends in `.md`, it will be a Markdown representation of the HTML content; if it ends in `.html`, it will be the HTML content itself.
+```bash
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # All elements matching the CSS selector '#fromSkipToProducts'
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless

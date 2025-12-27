@@ -212,13 +212,12 @@ Scrapling v0.3包含强大的命令行界面：
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
+启动交互式网页抓取shell
 ```bash
-# 启动交互式网页抓取shell
 scrapling shell
-
-# 直接将页面提取到文件而无需编程（默认提取`body`标签内的内容）
-# 如果输出文件以`.txt`结尾，则将提取目标的文本内容。
-# 如果以`.md`结尾，它将是HTML内容的markdown表示，`.html`将直接是HTML内容。
+```
+直接将页面提取到文件而无需编程（默认提取`body`标签内的内容）。如果输出文件以`.txt`结尾，则将提取目标的文本内容。如果以`.md`结尾，它将是HTML内容的Markdown表示；如果以`.html`结尾，它将是HTML内容本身。
+```bash
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # 所有匹配CSS选择器'#fromSkipToProducts'的元素
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless

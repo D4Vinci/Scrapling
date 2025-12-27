@@ -212,13 +212,12 @@ Scrapling v0.3 включает мощный интерфейс командно
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
+Запустить интерактивную оболочку веб-скрапинга
 ```bash
-# Запустить интерактивную оболочку веб-скрапинга
 scrapling shell
-
-# Извлечь страницы в файл напрямую без программирования (Извлекает содержимое внутри тега `body` по умолчанию)
-# Если выходной файл заканчивается на `.txt`, то будет извлечено текстовое содержимое цели.
-# Если заканчивается на `.md`, это будет markdown-представление HTML-содержимого, а `.html` будет непосредственно HTML-содержимым.
+```
+Извлечь страницы в файл напрямую без программирования (Извлекает содержимое внутри тега `body` по умолчанию). Если выходной файл заканчивается на `.txt`, то будет извлечено текстовое содержимое цели. Если заканчивается на `.md`, это будет Markdown-представление HTML-содержимого; если заканчивается на `.html`, это будет само HTML-содержимое.
+```bash
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # Все элементы, соответствующие CSS-селектору '#fromSkipToProducts'
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
