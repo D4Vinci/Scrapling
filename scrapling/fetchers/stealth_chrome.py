@@ -18,9 +18,8 @@ class StealthyFetcher(BaseFetcher):
         :param url: Target url.
         :param kwargs: Browser session configuration options including:
             - headless: Run the browser in headless/hidden (default), or headful/visible mode.
-            - disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+            - disable_resources: Drop requests for unnecessary resources for a speed boost.
                 Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-                This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
             - useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
             - cookies: Set cookies for the next request.
             - network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -68,9 +67,8 @@ class StealthyFetcher(BaseFetcher):
         :param url: Target url.
         :param kwargs: Browser session configuration options including:
             - headless: Run the browser in headless/hidden (default), or headful/visible mode.
-            - disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+            - disable_resources: Drop requests for unnecessary resources for a speed boost.
                 Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-                This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
             - useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
             - cookies: Set cookies for the next request.
             - network_idle: Wait for the page until there are no network connections for at least 500 ms.

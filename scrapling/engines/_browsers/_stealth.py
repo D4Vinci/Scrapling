@@ -46,9 +46,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -182,9 +181,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
             - wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
             - page_action: Added for automation. A function that takes the `page` object and does the automation you need.
             - extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
-            - disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+            - disable_resources: Drop requests for unnecessary resources for a speed boost.
                 Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-                This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
             - wait_selector: Wait for a specific CSS selector to be in a specific state.
             - wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
             - network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -259,9 +257,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -397,9 +394,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
             - wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
             - page_action: Added for automation. A function that takes the `page` object and does the automation you need.
             - extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
-            - disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+            - disable_resources: Drop requests for unnecessary resources for a speed boost.
                 Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-                This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
             - wait_selector: Wait for a specific CSS selector to be in a specific state.
             - wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
             - network_idle: Wait for the page until there are no network connections for at least 500 ms.

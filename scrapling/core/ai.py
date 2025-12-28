@@ -242,9 +242,8 @@ class ScraplingMCPServer:
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request. It should be in a dictionary format that Playwright accepts.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -325,9 +324,8 @@ class ScraplingMCPServer:
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request. It should be in a dictionary format that Playwright accepts.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -418,9 +416,8 @@ class ScraplingMCPServer:
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
@@ -516,9 +513,8 @@ class ScraplingMCPServer:
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
