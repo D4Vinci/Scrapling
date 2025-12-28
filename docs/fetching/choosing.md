@@ -3,7 +3,7 @@ Fetchers are classes that can do requests or fetch pages for you easily in a sin
 
 This feature was introduced because, before v0.2, Scrapling was only a parsing engine. The target here is to gradually become the one-stop shop for all Web Scraping needs.
 
-> Fetchers are not wrappers built on top of other libraries. However, they utilize these libraries as an engine to request/fetch pages easily for you, while fully leveraging that engine and adding features for you. Some fetchers don't even use the official library for requests; instead, they use their own custom version. For example, `StealthyFetcher` utilizes `Camoufox` browser directly, without relying on its Python library for anything except launch options. This last part might change soon as well.
+> Fetchers are not wrappers built on top of other libraries. However, they only use these libraries as an engine to request/fetch pages. To further clarify this, all fetchers have features that the underlying engines don't, while still fully leveraging those engines and optimizing them for Web Scraping.
 
 ## Fetchers Overview
 
@@ -12,17 +12,17 @@ Scrapling provides three different fetcher classes with their session classes; e
 The following table compares them and can be quickly used for guidance.
 
 
-| Feature            | Fetcher                                           | DynamicFetcher                                                                 | StealthyFetcher                                                                      |
-|--------------------|---------------------------------------------------|--------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| Relative speed     | 🐇🐇🐇🐇🐇                                        | 🐇🐇🐇                                                                         | 🐇🐇                                                                                 |
-| Stealth            | ⭐⭐                                                | ⭐⭐⭐                                                                            | ⭐⭐⭐⭐⭐                                                                                |
-| Anti-Bot options   | ⭐⭐                                                | ⭐⭐⭐                                                                            | ⭐⭐⭐⭐⭐                                                                                |
-| JavaScript loading | ❌                                                 | ✅                                                                              | ✅                                                                                    |
-| Memory Usage       | ⭐                                                 | ⭐⭐⭐                                                                            | ⭐⭐⭐                                                                                  |
-| Best used for      | Basic scraping when HTTP requests alone can do it | - Dynamically loaded websites <br/>- Small automation<br/>- Slight protections | - Dynamically loaded websites <br/>- Small automation <br/>- Complicated protections |
-| Browser(s)         | ❌                                                 | Chromium and Google Chrome                                                     | Modified Firefox                                                                     |
-| Browser API used   | ❌                                                 | PlayWright                                                                     | PlayWright                                                                           |
-| Setup Complexity   | Simple                                            | Simple                                                                         | Simple                                                                               |
+| Feature            | Fetcher                                           | DynamicFetcher                                                                    | StealthyFetcher                                                                            |
+|--------------------|---------------------------------------------------|-----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| Relative speed     | 🐇🐇🐇🐇🐇                                        | 🐇🐇🐇                                                                            | 🐇🐇🐇                                                                                     |
+| Stealth            | ⭐⭐                                                | ⭐⭐⭐                                                                               | ⭐⭐⭐⭐⭐                                                                                      |
+| Anti-Bot options   | ⭐⭐                                                | ⭐⭐⭐                                                                               | ⭐⭐⭐⭐⭐                                                                                      |
+| JavaScript loading | ❌                                                 | ✅                                                                                 | ✅                                                                                          |
+| Memory Usage       | ⭐                                                 | ⭐⭐⭐                                                                               | ⭐⭐⭐                                                                                        |
+| Best used for      | Basic scraping when HTTP requests alone can do it | - Dynamically loaded websites <br/>- Small automation<br/>- Small-Mid protections | - Dynamically loaded websites <br/>- Small automation <br/>- Small-Complicated protections |
+| Browser(s)         | ❌                                                 | Chromium and Google Chrome                                                        | Chromium and Google Chrome                                                                 |
+| Browser API used   | ❌                                                 | PlayWright                                                                        | PlayWright                                                                                 |
+| Setup Complexity   | Simple                                            | Simple                                                                            | Simple                                                                                     |
 
 In the following pages, we will talk about each one in detail.
 
