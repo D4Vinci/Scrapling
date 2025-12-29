@@ -52,10 +52,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
             rules. Defaults to the system default locale.
         :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-        :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
-        :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
-        :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
@@ -183,10 +180,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
             rules. Defaults to the system default locale.
         :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-        :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
-        :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
-        :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
