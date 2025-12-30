@@ -72,9 +72,8 @@ class TestAsyncStealthySession:
         """Test AsyncStealthySession with various options"""
         async with AsyncStealthySession(
                 max_pages=1,
-                block_images=True,
-                disable_ads=True,
-                humanize=True
+                block_webrtc=True,
+                allow_webgl=True
         ) as session:
             response = await session.fetch(urls["html"])
             assert response.status == 200

@@ -1,4 +1,3 @@
-from playwright._impl._errors import TimeoutError
 import pytest
 import pytest_httpbin
 
@@ -55,10 +54,9 @@ class TestStealthyFetcher:
     @pytest.mark.parametrize(
         "kwargs",
         [
-            {"block_webrtc": True, "allow_webgl": True, "disable_ads": False},
-            {"block_webrtc": False, "allow_webgl": True, "block_images": True},
+            {"block_webrtc": True, "allow_webgl": True},
+            {"block_webrtc": False, "allow_webgl": True},
             {"block_webrtc": True, "allow_webgl": False, "disable_resources": True},
-            {"block_images": True, "disable_resources": True, },
             {"wait_selector": "h1", "wait_selector_state": "attached"},
             {"wait_selector": "h1", "wait_selector_state": "visible"},
             {
@@ -67,9 +65,6 @@ class TestStealthyFetcher:
                 "cookies": [{"name": "test", "value": "123", "domain": "example.com", "path": "/"}],
                 "google_search": True,
                 "extra_headers": {"ayo": ""},
-                "os_randomize": True,
-                "disable_ads": True,
-                # "geoip": True,
                 "selector_config": {"keep_comments": False, "keep_cdata": False},
                 "additional_args": {},
             },
