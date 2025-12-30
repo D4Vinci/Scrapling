@@ -115,7 +115,7 @@ page = DynamicFetcher.fetch('https://example.com', network_idle=True)
 # Custom timeout (in milliseconds)
 page = DynamicFetcher.fetch('https://example.com', timeout=30000)  # 30 seconds
 
-# Proxy support (It can also be a dictionary with the keys 'server', 'username', and 'password' only)
+# Proxy support (It can also be a dictionary with only the keys 'server', 'username', and 'password'.)
 page = DynamicFetcher.fetch('https://example.com', proxy='http://username:password@host:port')
 ```
 
