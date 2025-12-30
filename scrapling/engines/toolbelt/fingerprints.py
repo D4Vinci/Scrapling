@@ -19,16 +19,26 @@ chrome_version = 143
 
 
 @lru_cache(10, typed=True)
-def generate_convincing_referer(url: str) -> str:
+def generate_convincing_referer(url: str) -> str | None:
     """Takes the domain from the URL without the subdomain/suffix and make it look like you were searching Google for this website
 
     >>> generate_convincing_referer('https://www.somewebsite.com/blah')
     'https://www.google.com/search?q=somewebsite'
 
     :param url: The URL you are about to fetch.
-    :return: Google's search URL of the domain name
+    :return: Google's search URL of the domain name, or None for localhost/IP addresses
     """
-    website_name = extract(url).domain
+    extracted = extract(url)
+    website_name = extracted.domain
+
+    # Skip generating referer for localhost, IP addresses, or when there's no valid domain
+    if not website_name or not extracted.suffix or website_name in ("localhost", "127.0.0.1", "::1"):
+        return None
+
+    # Check if it's an IP address (simple check for IPv4)
+    if all(part.isdigit() for part in website_name.split(".") if part):
+        return None
+
     return f"https://www.google.com/search?q={website_name}"
 
 
@@ -64,7 +74,7 @@ def generate_headers(browser_mode: bool | str = False) -> Dict:
         os_name = ("windows", "macos", "linux")
         browsers.extend(
             [
-                Browser(name="firefox", min_version=140),
+                Browser(name="firefox", min_version=142),
                 Browser(name="edge", min_version=140),
             ]
         )
