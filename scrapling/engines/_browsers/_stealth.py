@@ -352,7 +352,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                             # Double-checking that the iframe is loaded
                             await page.wait_for_timeout(500)
 
-                    outer_box: Any = (await iframe.frame_element()).bounding_box()
+                    outer_box: Any = await (await iframe.frame_element()).bounding_box()
 
                 if not iframe or not outer_box:
                     if "<title>Just a moment...</title>" not in (await ResponseFactory._get_async_page_content(page)):
