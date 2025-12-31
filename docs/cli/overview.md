@@ -27,4 +27,4 @@ and the installation of the fetchers' dependencies with the following command
 ```bash
 scrapling install
 ```
-This downloads all browsers with their system dependencies and fingerprint manipulation dependencies.
+This downloads all browsers, along with their system dependencies and fingerprint manipulation dependencies.
