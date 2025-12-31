@@ -26,13 +26,13 @@ How will you solve that manually? I'm referring to generic web scraping of vario
 
 ## AI to the rescue, but at a high cost
 
-Of course, the AI can easily solve most of these issues because it can understand the page source and identify the fields you want or create selectors for them. That's, of course, if you already solved the anti-bot measures through other tools :)
+Of course, AI can easily solve most of these issues because it can understand the page source and identify the fields you want or create selectors for them. That's, of course, if you already solved the anti-bot measures through other tools :)
 
 This approach is, of course, beautiful. I love AI and find it very fascinating, especially Generative AI. You will probably spend a lot of time on prompt engineering and tweaking the prompts, but if that's cool with you, you will soon hit the real issue with using AI here.
 
 Most websites have vast amounts of content per page, which you will need to pass to the AI somehow so it can do its magic. This will burn through tokens like fire in a haystack, quickly accumulating high costs.
 
-Unless money is irrelevant to you, you will try to find less expensive approaches, and that's why I made Scrapling :smile:
+Unless money is irrelevant to you, you will try to find less expensive approaches, and that's where Scrapling comes into play :smile:
 
 ## Scrapling got you covered
 
@@ -41,11 +41,11 @@ Scrapling can handle almost all issues you will face during Web Scraping, and th
 ### Solving issue T1: Rapidly changing website structures
 That's why the [adaptive](https://scrapling.readthedocs.io/en/latest/parsing/adaptive/) feature was made. You knew I would talk about it, and here we are :)
 
-While Web Scraping, if you have the `adaptive` feature enabled, you can save any element's unique properties to find it again later when the website's structure changes. The most frustrating thing about changes is that anything about an element can change, so there's nothing to rely on. 
+While Web Scraping, if you have the `adaptive` feature enabled, you can save any element's unique properties so you can find it again later when the website's structure changes. The most frustrating thing about changes is that anything about an element can change, so there's nothing to rely on. 
 
 That's how the adaptive feature works: it stores everything unique about an element. When the website structure changes, it returns the element with the highest similarity score of the previous element.
 
-I have already explained that in more detail and with many examples. Read more from [here](https://scrapling.readthedocs.io/en/latest/parsing/adaptive/#how-the-adaptive-feature-works).
+I have already explained this in more detail, with many examples. Read more from [here](https://scrapling.readthedocs.io/en/latest/parsing/adaptive/#how-the-adaptive-feature-works).
 
 ### Solving issue T2: Unstable selectors
 If you have been doing Web scraping for a long enough time, you have likely experienced this once. I'm referring to a website that employs poor design patterns, built on raw HTML without any IDs/classes, or uses random class names with nothing else to rely on, etc...
@@ -59,16 +59,16 @@ In these cases, standard selection methods with CSS/XPath selectors won't be opt
 There is no need to explain any of these; click on the links, and it will be clear how Scrapling solves this.
 
 ### Solving issue T3: Increasingly complex anti-bot measures
-It's known that making an undetectable spider takes more than residential/mobile proxies and human-like behavior. It also needs a hard-to-detect browser, which Scrapling provides two main options to solve:
+It's well known that creating an undetectable spider requires more than residential/mobile proxies and human-like behavior. It also needs a hard-to-detect browser, which Scrapling provides two main options to solve:
 
-1. [DynamicFetcher](https://scrapling.readthedocs.io/en/latest/fetching/dynamic/) — This fetcher provides many flexible options, like stealth mode suitable for small to medium protections and using your real browser.
-2. [StealthyFetcher](https://scrapling.readthedocs.io/en/latest/fetching/stealthy/) — Because we live in a harsh world and you need to take [full measure instead of half-measures](https://www.youtube.com/watch?v=7BE4QcwX4dU), `StealthyFetcher` was born. This fetcher utilizes our version of a modified Firefox browser, called [Camoufox](https://camoufox.com/stealth/), which nearly passes all known tests and incorporates additional tricks. **With v0.3, this fetcher can bypass Cloudflare for you automatically as well!**
+1. [DynamicFetcher](https://scrapling.readthedocs.io/en/latest/fetching/dynamic/) — This fetcher provides flexible browser automation with multiple configuration options and little under-the-hood stealth improvements.
+2. [StealthyFetcher](https://scrapling.readthedocs.io/en/latest/fetching/stealthy/) — Because we live in a harsh world and you need to take [full measure instead of half-measures](https://www.youtube.com/watch?v=7BE4QcwX4dU), `StealthyFetcher` was born. This fetcher uses our stealthy browser -- a version of [DynamicFetcher](https://scrapling.readthedocs.io/en/latest/fetching/dynamic/) that nearly bypasses all annoying anti-protections, provides tools to handle the rest, and automatically bypasses all types of Cloudflare's Turnstile/Interstitial!
 
-These two will be improved a lot with the upcoming updates, so stay tuned :)
+We keep improving these two with each update, so stay tuned :)
 
 ### Solving issues B1 & B2: Extreme Website Diversity / Identifying Relevant Data
 
-This one is tough to handle, but it's possible with Scrapling's flexibility. 
+This one is tough to handle, but Scrapling's flexibility makes it possible. 
 
 I talked with someone who uses AI to extract prices from different websites. He is only interested in prices and titles, so he uses AI to find the price for him.
 
@@ -94,7 +94,7 @@ It will be a bit boring, but it's definitely less expensive than AI.
 This example illustrates the point I aim to convey here. Not every challenge will need AI to be solved, but sometimes you need to be creative, and that might save you a lot of money.
 
 ### Solving issue B3: Pagination variations
-This issue, Scrapling currently doesn't have a direct method to automatically extract pagination's URLs for you, but it will be added with the following updates :)
+This issue, Scrapling currently doesn't have a direct method to automatically extract pagination's URLs for you, but it will be added with the upcoming updates :)
 
 But you can handle most websites if you search for the most common patterns with `page.find_by_text('Next')['href']` or `page.find_by_text('load more')['href']` or selectors like `'a[href*="?page="]'` or `'a[href*="/page/"]'`—you get the idea.
 
@@ -112,6 +112,6 @@ For a quick comparison.
 This table is based on pricing from [Browse AI Pricing](https://www.browse.ai/pricing) and [Oxylabs Web Scraper API Pricing](https://oxylabs.io/products/scraper-api/web/pricing)
 
 ## Conclusion
-While AI offers powerful capabilities, its cost can be prohibitive for many Web scraping tasks. Scrapling provides a robust, flexible, and cost-effective toolkit designed to tackle the real-world challenges of both targeted and broad scraping, often eliminating the need for expensive AI solutions. You can build resilient scrapers more efficiently by leveraging features like `adaptive`, diverse selection methods, and advanced fetchers.
+While AI offers powerful capabilities, its cost can be prohibitive for many Web scraping tasks. Scrapling provides a robust, flexible, and cost-effective toolkit for tackling the real-world challenges of both targeted and broad scraping, often eliminating the need for expensive AI solutions. You can build resilient scrapers more efficiently by leveraging features like `adaptive`, diverse selection methods, and advanced fetchers.
 
 Explore the documentation further and see how Scrapling can simplify your future Web Scraping projects!
