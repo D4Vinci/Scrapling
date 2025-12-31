@@ -50,7 +50,7 @@ When website owners implement structural changes like
 ```
 The selector will no longer function, and your code needs maintenance. That's where Scrapling's `adaptive` feature comes into play.
 
-With Scrapling, you can enable the `adaptive` feature the first time you select an element, and the next time you select that element and it doesn't exist, Scrapling will remember its properties and search on the website for the element with the highest percentage of similarity to that element and without AI :)
+With Scrapling, you can enable the `adaptive` feature the first time you select an element, and the next time you select that element and it doesn't exist, Scrapling will remember its properties and search on the website for the element with the highest percentage of similarity to that element, and without AI :)
 
 ```python
 from scrapling import Selector, Fetcher
@@ -100,6 +100,8 @@ The code will be the same in a real-world scenario, except it will use the same 
 
 Hence, in the two examples above, I used both the `Selector` and `Fetcher` classes to show that the adaptive logic is the same.
 
+> Note: the main reason for creating the `adaptive_domain` argument was to handle if the website changed its URL while changing the design/structure. In that case, you can use it to continue using the previously stored adaptive data for the new URL. Otherwise, scrapling will consider it a new website and discard the old data.
+
 ## How the adaptive scraping feature works
 Adaptive scraping works in two phases:
 
@@ -113,7 +115,7 @@ With as few technical details as possible, the general logic goes as follows:
   1. You tell Scrapling to save that element's unique properties in one of the ways we will show below.
   2. Scrapling uses its configured database (SQLite by default) and saves each element's unique properties.
   3. Now, because everything about the element can be changed or removed by the website's owner(s), nothing from the element can be used as a unique identifier for the database. To solve this issue, I made the storage system rely on two things:
-     1. The domain of the current website. If you are using the `Selector` class, pass it when initializing the class; if you are using one of the fetchers, the domain will be taken from the URL automatically.
+     1. The domain of the current website. If you are using the `Selector` class, pass it when initializing; if you are using a fetcher, the domain will be automatically taken from the URL.
      2. An `identifier` to query that element's properties from the database. You don't always have to set the identifier yourself; we'll discuss this later.
 
      Together, they will later be used to retrieve the element's unique properties from the database.
@@ -148,7 +150,7 @@ If you are using the [Selector](main_classes.md#selector) class, you need to pas
 
 If you didn't pass a URL, the word `default` will be used in place of the URL field while saving the element's unique properties. So, this will only be an issue if you use the same identifier later for a different website and don't pass the URL parameter when initializing it. The save process overwrites previous data, and the `adaptive` feature uses only the latest saved properties.
 
-Besides those arguments, we have `storage` and `storage_args`. Both are for the class to connect to the database; by default, it's set to the SQLite class the library uses. Those arguments shouldn't matter unless you want to write your own storage system, which we will cover on a [separate page in the development section](../development/adaptive_storage_system.md).
+Besides those arguments, we have `storage` and `storage_args`. Both are for the class to connect to the database; by default, it uses the SQLite class provided by the library. Those arguments shouldn't matter unless you want to write your own storage system, which we will cover on a [separate page in the development section](../development/adaptive_storage_system.md).
 
 Now that you've enabled the `adaptive` feature globally, you have two main ways to use it.
 
