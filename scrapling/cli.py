@@ -605,7 +605,7 @@ def delete(
     help="CSS selector to extract specific content from the page. It returns all matches.",
 )
 @option("--wait-selector", help="CSS selector to wait for before proceeding")
-@option("--locale", default="en-US", help="Browser locale (default: en-US)")
+@option("--locale", default=None, help="Specify user locale. Defaults to the system default locale.")
 @option(
     "--real-chrome/--no-real-chrome",
     default=False,
