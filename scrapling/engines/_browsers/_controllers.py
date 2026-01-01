@@ -89,19 +89,18 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
-        :param kwargs: Additional keyword arguments including:
-            - google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-            - timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-            - wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-            - page_action: Added for automation. A function that takes the `page` object and does the automation you need.
-            - extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
-            - disable_resources: Drop requests for unnecessary resources for a speed boost.
-                Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            - wait_selector: Wait for a specific CSS selector to be in a specific state.
-            - wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-            - network_idle: Wait for the page until there are no network connections for at least 500 ms.
-            - load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
-            - selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
         params = _validate(kwargs, self, PlaywrightConfig)
@@ -219,19 +218,18 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
-        :param kwargs: Additional keyword arguments including:
-            - google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-            - timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-            - wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-            - page_action: Added for automation. A function that takes the `page` object and does the automation you need.
-            - extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
-            - disable_resources: Drop requests for unnecessary resources for a speed boost.
-                Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            - wait_selector: Wait for a specific CSS selector to be in a specific state.
-            - wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-            - network_idle: Wait for the page until there are no network connections for at least 500 ms.
-            - load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
-            - selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
         params = _validate(kwargs, self, PlaywrightConfig)
