@@ -1,6 +1,6 @@
-Scrapling uses SQLite by default, but this tutorial covers writing your storage system to store element properties there for `adaptive` feature.
+Scrapling uses SQLite by default, but this tutorial shows how to write your own storage system to store element properties for the `adaptive` feature.
 
-You might want to use FireBase, for example, and share the database between multiple spiders on different machines. It's a great idea to use an online database like that because the spiders will share with each other.
+You might want to use Firebase, for example, and share the database between multiple spiders on different machines. It's a great idea to use an online database like that because spiders can share adaptive data with each other.
 
 So first, to make your storage class work, it must do the big 3:
 
@@ -8,7 +8,7 @@ So first, to make your storage class work, it must do the big 3:
 2. Use the decorator `functools.lru_cache` on top of the class to follow the Singleton design pattern as other classes.
 3. Implement methods `save` and `retrieve`, as you see from the type hints:
     - The method `save` returns nothing and will get two arguments from the library
-        * The first one is of type `lxml.html.HtmlElement`, which is the element itself. It must be converted to a dictionary using the function `element_to_dict` in submodule `scrapling.core.utils._StorageTools` to keep the same format and save it to your database as you wish.
+        * The first one is of type `lxml.html.HtmlElement`, which is the element itself. It must be converted to a dictionary using the `element_to_dict` function in the submodule `scrapling.core.utils._StorageTools` to maintain the same format, and then saved to your database as you wish.
         * The second one is a string, the identifier used for retrieval. The combination result of this identifier and the `url` argument from initialization must be unique for each row, or the `adaptive` data will be messed up.
     - The method `retrieve` takes a string, which is the identifier; using it with the `url` passed on initialization, the element's dictionary is retrieved from the database and returned if it exists; otherwise, it returns `None`.
 
