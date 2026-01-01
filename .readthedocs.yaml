@@ -9,6 +9,10 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.13"
+  commands:
+    - python -m pip install --exists-action=w --no-cache-dir -r docs/requirements.txt
+    - sudo apt-get install pngquant
+    - python -m mkdocs build --clean --site-dir $READTHEDOCS_OUTPUT/html --config-file mkdocs.yml
 
 # Build documentation with Mkdocs
 mkdocs:
