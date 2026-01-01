@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Scrapling!
 
 Everybody is invited and welcome to contribute to Scrapling. 
 
-Minor changes have a better chance of being included promptly. Adding unit tests for new features or test cases for bugs you've fixed helps us ensure that the Pull Request (PR) is acceptable.
+Minor changes are more likely to be included promptly. Adding unit tests for new features or test cases for bugs you've fixed helps us ensure that the Pull Request (PR) is acceptable.
 
 There are many ways to contribute to Scrapling. Here are some of them:
 
@@ -18,7 +18,7 @@ There are many ways to contribute to Scrapling. Here are some of them:
 
 If you have decided to make a contribution to Scrapling, but you do not know what to contribute, here are some ways to find pending work:
 
-- Check out the [contribution](https://github.com/D4Vinci/Scrapling/contribute) GitHub page, which lists open issues tagged as good first issue. These issues provide a good starting point.
+- Check out the [contribution](https://github.com/D4Vinci/Scrapling/contribute) GitHub page, which lists open issues tagged as `good first issue`. These issues provide a good starting point.
 - There are also the [help wanted](https://github.com/D4Vinci/Scrapling/issues?q=is%3Aissue%20label%3A%22help%20wanted%22%20state%3Aopen) issues, but know that some may require familiarity with the Scrapling code base first. You can also target any other issue, provided it is not tagged as `invalid`, `wontfix`, or similar tags.
 - If you enjoy writing automated tests, you can work on increasing our test coverage. Currently, the test coverage is around 90–92%.
 - Join the [Discord community](https://discord.gg/EMgGbDceNQ) and ask questions in the `#help` channel.
@@ -38,7 +38,7 @@ Please follow these coding conventions as we do when writing code for Scrapling:
    | `refactor:` | Code refactoring         |
    | `chore:`    | Maintenance tasks        |
     
-    Then include the details of the change in the body/description of the commit message.
+    Then include the details of the change in the commit message body/description.
 
    Example:
    ```
@@ -99,7 +99,7 @@ pytest --cov=scrapling tests/
 To ensure that your PR gets accepted, please make sure that your PR is based on the latest changes from the dev branch and that it satisfies the following requirements:
 
 - The PR should be made against the [**dev**](https://github.com/D4Vinci/Scrapling/tree/dev) branch of Scrapling. Any PR made against the main branch will be rejected.
-- The code should be passing all available tests. We are using tox with GitHub's CI to run the current tests on all supported Python versions with every commit.
+- The code should be passing all available tests. We use tox with GitHub's CI to run the current tests on all supported Python versions for every code-related commit.
 - The code should be passing all code quality checks we mentioned above. We are using GitHub's CI to enforce the code style checks performed by pre-commit. If you were using the pre-commit hooks we discussed above, you should not see any issues when committing your changes.
 - Make your changes, keep the code clean with an explanation of any part that might be vague, and remember to create a separate virtual environment for this project.
 - If you are adding a new feature, please add tests for it.
