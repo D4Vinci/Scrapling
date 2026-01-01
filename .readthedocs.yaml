@@ -7,12 +7,10 @@ version: 2
 # Set the OS, Python version, and other tools you might need
 build:
   os: ubuntu-24.04
+  apt_packages:
+    - pngquant
   tools:
     python: "3.13"
-  commands:
-    - python -m pip install --exists-action=w --no-cache-dir -r docs/requirements.txt
-    - apt-get install pngquant
-    - python -m mkdocs build --clean --site-dir $READTHEDOCS_OUTPUT/html --config-file mkdocs.yml
 
 # Build documentation with Mkdocs
 mkdocs:
