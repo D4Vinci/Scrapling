@@ -127,11 +127,19 @@ plugins:
             unwrap_annotated: true
             filters:
               - '!^_'
+              - "^__"
             merge_init_into_class: true
             docstring_section_style: spacy
             signature_crossrefs: true
             show_symbol_type_heading: true
             show_symbol_type_toc: true
+            show_inheritance_diagram: true
+            modernize_annotations: true
+            extensions:
+              - griffe_runtime_objects
+              - griffe_sphinx
+              - griffe_inherited_docstrings:
+                  merge: true
 
 extra:
   homepage: https://scrapling.readthedocs.io/en/latest/

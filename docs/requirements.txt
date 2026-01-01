@@ -1,5 +1,8 @@
 mkdocstrings>=1.0.0
 mkdocstrings-python>=2.0.1
+griffe-inherited-docstrings
+griffe-runtime-objects
+griffe-sphinx
 mkdocs-material[imaging]>=9.7.1
 black>=25.12.0
 pngquant
