@@ -87,8 +87,8 @@ Construido para la Web moderna, Scrapling presenta **su propio motor de análisi
 
 ### Obtención Avanzada de Sitios Web con Soporte de Sesión
 - **Solicitudes HTTP**: Solicitudes HTTP rápidas y sigilosas con la clase `Fetcher`. Puede imitar la huella TLS de los navegadores, encabezados y usar HTTP3.
-- **Carga Dinámica**: Obtén sitios web dinámicos con automatización completa del navegador a través de la clase `DynamicFetcher` compatible con Chromium de Playwright, Chrome real y modo sigiloso personalizado.
-- **Evasión Anti-bot**: Capacidades de sigilo avanzadas con `StealthyFetcher` usando una versión modificada de Firefox y falsificación de huellas digitales. Puede evadir todos los tipos de Turnstile e Interstitial de Cloudflare con automatización fácilmente.
+- **Carga Dinámica**: Obtén sitios web dinámicos con automatización completa del navegador a través de la clase `DynamicFetcher` compatible con Chromium de Playwright y Google Chrome.
+- **Evasión Anti-bot**: Capacidades de sigilo avanzadas con `StealthyFetcher` y falsificación de huellas digitales. Puede evadir fácilmente todos los tipos de Turnstile/Interstitial de Cloudflare con automatización.
 - **Gestión de Sesión**: Soporte de sesión persistente con las clases `FetcherSession`, `StealthySession` y `DynamicSession` para la gestión de cookies y estado entre solicitudes.
 - **Soporte Async**: Soporte async completo en todos los fetchers y clases de sesión async dedicadas.
 
@@ -96,7 +96,7 @@ Construido para la Web moderna, Scrapling presenta **su propio motor de análisi
 - 🔄 **Seguimiento Inteligente de Elementos**: Relocaliza elementos después de cambios en el sitio web usando algoritmos inteligentes de similitud.
 - 🎯 **Selección Flexible Inteligente**: Selectores CSS, selectores XPath, búsqueda basada en filtros, búsqueda de texto, búsqueda regex y más.
 - 🔍 **Encontrar Elementos Similares**: Localiza automáticamente elementos similares a los elementos encontrados.
-- 🤖 **Servidor MCP para usar con IA**: Servidor MCP integrado para Web Scraping asistido por IA y extracción de datos. El servidor MCP presenta capacidades personalizadas y poderosas que utilizan Scrapling para extraer contenido específico antes de pasarlo a la IA (Claude/Cursor/etc), acelerando así las operaciones y reduciendo costos al minimizar el uso de tokens. ([video demo](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **Servidor MCP para usar con IA**: Servidor MCP integrado para Web Scraping asistido por IA y extracción de datos. El servidor MCP presenta capacidades poderosas y personalizadas que aprovechan Scrapling para extraer contenido específico antes de pasarlo a la IA (Claude/Cursor/etc), acelerando así las operaciones y reduciendo costos al minimizar el uso de tokens. ([video demo](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 
 ### Arquitectura de Alto Rendimiento y Probada en Batalla
 - 🚀 **Ultrarrápido**: Rendimiento optimizado que supera a la mayoría de las bibliotecas de scraping de Python.
@@ -212,13 +212,12 @@ Scrapling v0.3 incluye una poderosa interfaz de línea de comandos:
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
+Lanzar shell interactivo de Web Scraping
 ```bash
-# Lanzar shell interactivo de Web Scraping
 scrapling shell
-
-# Extraer páginas a un archivo directamente sin programar (Extrae el contenido dentro de la etiqueta `body` por defecto)
-# Si el archivo de salida termina con `.txt`, entonces se extraerá el contenido de texto del objetivo.
-# Si termina con `.md`, será una representación markdown del contenido HTML, y `.html` será el contenido HTML directamente.
+```
+Extraer páginas a un archivo directamente sin programar (Extrae el contenido dentro de la etiqueta `body` por defecto). Si el archivo de salida termina con `.txt`, entonces se extraerá el contenido de texto del objetivo. Si termina con `.md`, será una representación Markdown del contenido HTML; si termina con `.html`, será el contenido HTML en sí mismo.
+```bash
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # Todos los elementos que coinciden con el selector CSS '#fromSkipToProducts'
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
@@ -230,7 +229,7 @@ scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.
 
 ## Benchmarks de Rendimiento
 
-Scrapling no solo es poderoso, también es increíblemente rápido, y las actualizaciones desde la versión 0.3 han brindado mejoras de rendimiento excepcionales en todas las operaciones.
+Scrapling no solo es poderoso, también es increíblemente rápido, y las actualizaciones desde la versión 0.3 han brindado mejoras de rendimiento excepcionales en todas las operaciones. Los siguientes benchmarks comparan el analizador de Scrapling con otras bibliotecas populares.
 
 ### Prueba de Velocidad de Extracción de Texto (5000 elementos anidados)
 
@@ -270,14 +269,14 @@ A partir de v0.3.2, esta instalación solo incluye el motor de análisis y sus d
 
 ### Dependencias Opcionales
 
-1. Si vas a usar alguna de las características adicionales a continuación, los fetchers, o sus clases, entonces necesitas instalar las dependencias de los fetchers y luego instalar sus dependencias del navegador con
+1. Si vas a usar alguna de las características adicionales a continuación, los fetchers, o sus clases, necesitarás instalar las dependencias de los fetchers y sus dependencias del navegador de la siguiente manera:
     ```bash
     pip install "scrapling[fetchers]"
     
     scrapling install
     ```
 
-    Esto descarga todos los navegadores con sus dependencias del sistema y dependencias de manipulación de huellas digitales.
+    Esto descarga todos los navegadores, junto con sus dependencias del sistema y dependencias de manipulación de huellas digitales.
 
 2. Características adicionales:
    - Instalar la característica del servidor MCP:
@@ -303,7 +302,7 @@ O descárgala desde el registro de GitHub:
 ```bash
 docker pull ghcr.io/d4vinci/scrapling:latest
 ```
-Esta imagen se construye y publica automáticamente a través de GitHub actions en la rama principal del repositorio.
+Esta imagen se construye y publica automáticamente usando GitHub Actions y la rama principal del repositorio.
 
 ## Contribuir
 

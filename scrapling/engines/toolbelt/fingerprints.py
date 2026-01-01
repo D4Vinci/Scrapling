@@ -13,19 +13,32 @@ from scrapling.core._types import Dict, Literal, Tuple
 
 __OS_NAME__ = platform_system()
 OSName = Literal["linux", "macos", "windows"]
+# Current versions hardcoded for now (Playwright doesn't allow to know the version of a browser without launching it)
+chromium_version = 141
+chrome_version = 143
 
 
 @lru_cache(10, typed=True)
-def generate_convincing_referer(url: str) -> str:
+def generate_convincing_referer(url: str) -> str | None:
     """Takes the domain from the URL without the subdomain/suffix and make it look like you were searching Google for this website
 
     >>> generate_convincing_referer('https://www.somewebsite.com/blah')
     'https://www.google.com/search?q=somewebsite'
 
     :param url: The URL you are about to fetch.
-    :return: Google's search URL of the domain name
+    :return: Google's search URL of the domain name, or None for localhost/IP addresses
     """
-    website_name = extract(url).domain
+    extracted = extract(url)
+    website_name = extracted.domain
+
+    # Skip generating referer for localhost, IP addresses, or when there's no valid domain
+    if not website_name or not extracted.suffix or website_name in ("localhost", "127.0.0.1", "::1"):
+        return None
+
+    # Check if it's an IP address (simple check for IPv4)
+    if all(part.isdigit() for part in website_name.split(".") if part):
+        return None
+
     return f"https://www.google.com/search?q={website_name}"
 
 
@@ -46,7 +59,7 @@ def get_os_name() -> OSName | Tuple:
             return SUPPORTED_OPERATING_SYSTEMS
 
 
-def generate_headers(browser_mode: bool = False) -> Dict:
+def generate_headers(browser_mode: bool | str = False) -> Dict:
     """Generate real browser-like headers using browserforge's generator
 
     :param browser_mode: If enabled, the headers created are used for playwright, so it has to match everything
@@ -55,13 +68,14 @@ def generate_headers(browser_mode: bool = False) -> Dict:
     # In the browser mode, we don't care about anything other than matching the OS and the browser type with the browser we are using,
     # So we don't raise any inconsistency red flags while websites fingerprinting us
     os_name = get_os_name()
-    browsers = [Browser(name="chrome", min_version=130)]
+    ver = chrome_version if browser_mode and browser_mode == "chrome" else chromium_version
+    browsers = [Browser(name="chrome", min_version=ver, max_version=ver)]
     if not browser_mode:
         os_name = ("windows", "macos", "linux")
         browsers.extend(
             [
-                Browser(name="firefox", min_version=130),
-                Browser(name="edge", min_version=130),
+                Browser(name="firefox", min_version=142),
+                Browser(name="edge", min_version=140),
             ]
         )
     return HeaderGenerator(browser=browsers, os=os_name, device="desktop").generate()

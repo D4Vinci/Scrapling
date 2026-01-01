@@ -58,7 +58,7 @@ jobs:
     - name: Install all browsers dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install playwright==1.56.0 patchright==1.56.0 camoufox>=0.4.11
+        python3 -m pip install playwright==1.56.0 patchright==1.56.0
 
     - name: Get Playwright version
       id: playwright-version
@@ -88,35 +88,7 @@ jobs:
         else
           echo "Skipping install - using cached Playwright browsers"
         fi
-        python3 -m playwright install-deps chromium firefox
-
-    - name: Get Camoufox version
-      id: camoufox-version
-      run: |
-        CAMOUFOX_VERSION=$(python3 -c "import importlib.metadata; print(importlib.metadata.version('camoufox'))")
-        echo "version=$CAMOUFOX_VERSION" >> $GITHUB_OUTPUT
-        echo "Camoufox version: $CAMOUFOX_VERSION"
-
-    - name: Retrieve Camoufox browser from cache if any
-      id: camoufox-cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/camoufox
-          ~/Library/Caches/camoufox
-        key: ${{ runner.os }}-camoufox-${{ steps.camoufox-version.outputs.version }}-v1
-        restore-keys: |
-          ${{ runner.os }}-camoufox-${{ steps.camoufox-version.outputs.version }}-
-          ${{ runner.os }}-camoufox-
-
-    - name: Install Camoufox browser
-      run: |
-        echo "Cache hit: ${{ steps.camoufox-cache.outputs.cache-hit }}"
-        if [ "${{ steps.camoufox-cache.outputs.cache-hit }}" != "true" ]; then
-          python3 -m camoufox fetch --browserforge
-        else
-          echo "Skipping fetch - using cached Camoufox browser"
-        fi
+        python3 -m playwright install-deps chromium
 
     # Cache tox environments
     - name: Cache tox environments

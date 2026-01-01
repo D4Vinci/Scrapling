@@ -1,4 +1,3 @@
-import pytest
 
 
 from scrapling.engines.static import AsyncFetcherClient

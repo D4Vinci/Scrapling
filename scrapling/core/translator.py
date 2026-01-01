@@ -130,5 +130,5 @@ translator = HTMLTranslator()
 
 @lru_cache(maxsize=256)
 def css_to_xpath(query: str) -> str:
-    """Return translated XPath version of a given CSS query"""
+    """Return the translated XPath version of a given CSS query"""
     return translator.css_to_xpath(query)

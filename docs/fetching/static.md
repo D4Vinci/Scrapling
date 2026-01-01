@@ -25,7 +25,7 @@ All methods for making requests here share some arguments, so let's discuss them
 - **timeout**: The number of seconds to wait for each request to be finished. **Defaults to 30 seconds**.
 - **retries**: The number of retries that the fetcher will do for failed requests. **Defaults to three retries**.
 - **retry_delay**: Number of seconds to wait between retry attempts. **Defaults to 1 second**.
-- **impersonate**: Impersonate specific browsers' TLS fingerprints. Accepts browser strings like `"chrome110"`, `"firefox102"`, `"safari15_5"` to use specific versions or `"chrome"`, `"firefox"`, `"safari"`, `"edge"` to automatically use the latest version available. This makes your requests appear as if they're coming from real browsers at the TLS level. **Defaults to the latest available Chrome version.**
+- **impersonate**: Impersonate specific browsers' TLS fingerprints. Accepts browser strings or a list of them like `"chrome110"`, `"firefox102"`, `"safari15_5"` to use specific versions or `"chrome"`, `"firefox"`, `"safari"`, `"edge"` to automatically use the latest version available. This makes your requests appear to come from real browsers at the TLS level. If you pass it a list of strings, it will choose a random one with each request. **Defaults to the latest available Chrome version.**
 - **http3**: Use HTTP/3 protocol for requests. **Defaults to False**. It might be problematic if used with `impersonate`.
 - **cookies**: Cookies to use in the request. Can be a dictionary of `name→value` or a list of dictionaries.
 - **proxy**: As the name implies, the proxy for this request is used to route all traffic (HTTP and HTTPS). The format accepted here is `http://username:password@localhost:8030`.
@@ -39,14 +39,15 @@ All methods for making requests here share some arguments, so let's discuss them
 
 > Note: <br/>
 > 1. The currently available browsers to impersonate are (`"edge"`, `"chrome"`, `"chrome_android"`, `"safari"`, `"safari_beta"`, `"safari_ios"`, `"safari_ios_beta"`, `"firefox"`, `"tor"`)<br/>
-> 2. The available browsers to impersonate and their corresponding versions are automatically displayed in the argument autocompletion and updated automatically with each `curl_cffi` update.
+> 2. The available browsers to impersonate, along with their corresponding versions, are automatically displayed in the argument autocompletion and updated with each `curl_cffi` update.<br/>
+> 3. If any of the arguments `impersonate` or `stealthy_headers` are enabled, the fetchers will automatically generate real browser headers that match the browser version used.
 
 Other than this, for further customization, you can pass any arguments that `curl_cffi` supports for any method if that method doesn't already support it.
 
 ### HTTP Methods
 There are additional arguments for each method, depending on the method, such as `params` for GET requests and `data`/`json` for POST/PUT/DELETE requests.
 
-Examples are the best way to explain this, as follows.
+Examples are the best way to explain this:
 
 > Hence: `OPTIONS` and `HEAD` methods are not supported.
 #### GET
@@ -166,7 +167,7 @@ And for asynchronous requests, it's a small adjustment
 
 ## Session Management
 
-For making multiple requests with the same configuration, use the `FetcherSession` class. It can be used in both synchronous and asynchronous code without issue; the class detects and changes the session type automatically without requiring a different import.
+For making multiple requests with the same configuration, use the `FetcherSession` class. It can be used in both synchronous and asynchronous code without issue; the class automatically detects and changes the session type, without requiring a different import.
 
 The `FetcherSession` class can accept nearly all the arguments that the methods can take, which enables you to specify a config for the entire session and later choose a different config for one of the requests effortlessly, as you will see in the following examples.
 
@@ -181,7 +182,7 @@ with FetcherSession(
     timeout=30,
     retries=3
 ) as session:
-    # Make multiple requests with the same settings
+    # Make multiple requests with the same settings and the same cookies
     page1 = session.get('https://scrapling.requestcatcher.com/get')
     page2 = session.post('https://scrapling.requestcatcher.com/post', data={'key': 'value'})
     page3 = session.get('https://api.github.com/events')

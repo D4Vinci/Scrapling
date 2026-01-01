@@ -9,8 +9,6 @@ from playwright.async_api import (
     Playwright as AsyncPlaywright,
     BrowserContext as AsyncBrowserContext,
 )
-from patchright.sync_api import sync_playwright as sync_patchright
-from patchright.async_api import async_playwright as async_patchright
 
 from scrapling.core.utils import log
 from scrapling.core._types import Unpack, TYPE_CHECKING
@@ -21,53 +19,27 @@ from scrapling.engines.toolbelt.convertor import Response, ResponseFactory
 from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
 
 
-class DynamicSession(DynamicSessionMixin, SyncSession):
+class DynamicSession(SyncSession, DynamicSessionMixin):
     """A Browser session manager with page pooling."""
 
     __slots__ = (
-        "_max_pages",
-        "_headless",
-        "_hide_canvas",
-        "_disable_webgl",
-        "_real_chrome",
-        "_stealth",
-        "_google_search",
-        "_proxy",
-        "_locale",
-        "_extra_headers",
-        "_useragent",
-        "_timeout",
-        "_cookies",
-        "_disable_resources",
-        "_network_idle",
-        "_load_dom",
-        "_wait_selector",
-        "_init_script",
-        "_wait_selector_state",
-        "_wait",
-        "playwright",
-        "browser",
-        "context",
+        "_config",
+        "_context_options",
+        "_launch_options",
+        "max_pages",
         "page_pool",
+        "_max_wait_for_page",
+        "playwright",
+        "context",
         "_closed",
-        "_selector_config",
-        "_page_action",
-        "launch_options",
-        "context_options",
-        "_cdp_url",
-        "_headers_keys",
-        "_extra_flags",
-        "_additional_args",
-        "_user_data_dir",
     )
 
     def __init__(self, **kwargs: Unpack[PlaywrightSession]):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -76,13 +48,11 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
-        :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
-        :param timezone_id: Set the timezone for the browser if wanted.
+        :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
+            rules. Defaults to the system default locale.
+        :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-        :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
-        :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
-        :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
@@ -94,27 +64,24 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
         self.__validate__(**kwargs)
-        super().__init__(max_pages=self._max_pages)
+        super().__init__()
 
     def start(self):
         """Create a browser for this instance and context."""
         if not self.playwright:
-            sync_context = sync_patchright if self._stealth else sync_playwright
+            self.playwright: Playwright = sync_playwright().start()  # pyright: ignore [reportAttributeAccessIssue]
 
-            self.playwright: Playwright = sync_context().start()  # pyright: ignore [reportAttributeAccessIssue]
-
-            if self._cdp_url:  # pragma: no cover
-                self.context = self.playwright.chromium.connect_over_cdp(endpoint_url=self._cdp_url).new_context(
-                    **self.context_options
-                )
+            if self._config.cdp_url:  # pragma: no cover
+                browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
+                self.context = browser.new_context(**self._context_options)
             else:
-                self.context = self.playwright.chromium.launch_persistent_context(**self.launch_options)
+                self.context = self.playwright.chromium.launch_persistent_context(**self._launch_options)
 
-            if self._init_script:  # pragma: no cover
-                self.context.add_init_script(path=self._init_script)
+            if self._config.init_script:  # pragma: no cover
+                self.context.add_init_script(path=self._config.init_script)
 
-            if self._cookies:  # pragma: no cover
-                self.context.add_cookies(self._cookies)
+            if self._config.cookies:  # pragma: no cover
+                self.context.add_cookies(self._config.cookies)
         else:
             raise RuntimeError("Session has been already started")
 
@@ -122,24 +89,21 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
-        :param kwargs: Additional keyword arguments including:
-            - google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-            - timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-            - wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-            - page_action: Added for automation. A function that takes the `page` object and does the automation you need.
-            - extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
-            - disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
-                Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-                This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-            - wait_selector: Wait for a specific CSS selector to be in a specific state.
-            - wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-            - network_idle: Wait for the page until there are no network connections for at least 500 ms.
-            - load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
-            - selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
         params = _validate(kwargs, self, PlaywrightConfig)
-
         if self._closed:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
@@ -193,16 +157,15 @@ class DynamicSession(DynamicSessionMixin, SyncSession):
             raise e
 
 
-class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
+class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
     """An async Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory."""
 
     def __init__(self, **kwargs: Unpack[PlaywrightSession]):
         """A Browser session manager with page pooling
 
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-            This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
@@ -212,13 +175,11 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
-        :param locale: Set the locale for the browser if wanted. The default value is `en-US`.
-        :param timezone_id: Set the timezone for the browser if wanted.
+        :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
+            rules. Defaults to the system default locale.
+        :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-        :param stealth: Enables stealth mode, check the documentation to see what stealth mode does currently.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
-        :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
-        :param disable_webgl: Disables WebGL and WebGL 2.0 support entirely.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
@@ -230,28 +191,26 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
         self.__validate__(**kwargs)
-        super().__init__(max_pages=self._max_pages)
+        super().__init__(max_pages=self._config.max_pages)
 
     async def start(self):
         """Create a browser for this instance and context."""
         if not self.playwright:
-            async_context = async_patchright if self._stealth else async_playwright
+            self.playwright: AsyncPlaywright = await async_playwright().start()  # pyright: ignore [reportAttributeAccessIssue]
 
-            self.playwright: AsyncPlaywright = await async_context().start()  # pyright: ignore [reportAttributeAccessIssue]
-
-            if self._cdp_url:
-                browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._cdp_url)
-                self.context: AsyncBrowserContext = await browser.new_context(**self.context_options)
+            if self._config.cdp_url:
+                browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
+                self.context: AsyncBrowserContext = await browser.new_context(**self._context_options)
             else:
                 self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
-                    **self.launch_options
+                    **self._launch_options
                 )
 
-            if self._init_script:  # pragma: no cover
-                await self.context.add_init_script(path=self._init_script)
+            if self._config.init_script:  # pragma: no cover
+                await self.context.add_init_script(path=self._config.init_script)
 
-            if self._cookies:
-                await self.context.add_cookies(self._cookies)  # pyright: ignore
+            if self._config.cookies:
+                await self.context.add_cookies(self._config.cookies)  # pyright: ignore
         else:
             raise RuntimeError("Session has been already started")
 
@@ -259,20 +218,18 @@ class AsyncDynamicSession(DynamicSessionMixin, AsyncSession):
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
-        :param kwargs: Additional keyword arguments including:
-            - google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-            - timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
-            - wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-            - page_action: Added for automation. A function that takes the `page` object and does the automation you need.
-            - extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
-            - disable_resources: Drop requests of unnecessary resources for a speed boost. It depends, but it made requests ~25% faster in my tests for some websites.
-                Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-                This can help save your proxy usage but be careful with this option as it makes some websites never finish loading.
-            - wait_selector: Wait for a specific CSS selector to be in a specific state.
-            - wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
-            - network_idle: Wait for the page until there are no network connections for at least 500 ms.
-            - load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
-            - selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
+        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
+        :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
+            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
+        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
+        :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :return: A `Response` object.
         """
         params = _validate(kwargs, self, PlaywrightConfig)

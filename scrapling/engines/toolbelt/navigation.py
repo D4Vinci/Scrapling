@@ -11,7 +11,7 @@ from msgspec import Struct, structs, convert, ValidationError
 from playwright.sync_api import Route
 
 from scrapling.core.utils import log
-from scrapling.core._types import Dict, Tuple, overload, Literal
+from scrapling.core._types import Dict, Tuple
 from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 
 __BYPASSES_DIR__ = Path(__file__).parent / "bypasses"
@@ -49,20 +49,11 @@ async def async_intercept_route(route: async_Route):
         await route.continue_()
 
 
-@overload
-def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple, as_tuple: Literal[True]) -> Tuple: ...
-
-
-@overload
-def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple, as_tuple: Literal[False] = False) -> Dict: ...
-
-
-def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple, as_tuple: bool = False) -> Dict | Tuple:
+def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple) -> Dict:
     """Validate a proxy and return it in the acceptable format for Playwright
     Reference: https://playwright.dev/python/docs/network#http-proxy
 
     :param proxy_string: A string or a dictionary representation of the proxy.
-    :param as_tuple: Return the proxy dictionary as a tuple to be cachable
     :return:
     """
     if isinstance(proxy_string, str):
@@ -78,7 +69,7 @@ def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple, as_tuple: b
             }
             if proxy.port:
                 result["server"] += f":{proxy.port}"
-            return tuple(result.items()) if as_tuple else result
+            return result
         except ValueError:
             # Urllib will say that one of the parameters above can't be casted to the correct type like `int` for port etc...
             raise ValueError("The proxy argument's string is in invalid format!")
@@ -87,7 +78,7 @@ def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple, as_tuple: b
         try:
             validated = convert(proxy_string, ProxyDict)
             result_dict = structs.asdict(validated)
-            return tuple(result_dict.items()) if as_tuple else result_dict
+            return result_dict
         except ValidationError as e:
             raise TypeError(f"Invalid proxy dictionary: {e}")
 

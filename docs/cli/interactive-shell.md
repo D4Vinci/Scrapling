@@ -4,7 +4,7 @@
 
 **Powerful Web Scraping REPL for Developers and Data Scientists**
 
-The Scrapling Interactive Shell is an enhanced IPython-based environment designed specifically for Web Scraping tasks. It provides instant access to all Scrapling features, clever shortcuts, automatic page management, and advanced tools like curl command conversion.
+The Scrapling Interactive Shell is an enhanced IPython-based environment designed specifically for Web Scraping tasks. It provides instant access to all Scrapling features, clever shortcuts, automatic page management, and advanced tools, such as conversion of the curl command.
 
 > 💡 **Prerequisites:**
 > 
@@ -129,7 +129,9 @@ View scraped pages in your browser:
 
 ### Curl Command Integration
 
-The shell provides a few functions to help you convert curl commands from the browser DevTools to `Fetcher` requests, which are `uncurl` and `curl2fetcher`. First, you need to copy a request as a curl command like the following:
+The shell provides a few functions to help you convert curl commands from the browser DevTools to `Fetcher` requests: `uncurl` and `curl2fetcher`.
+
+First, you need to copy a request as a curl command like the following:
 
 <img src="../../assets/scrapling_shell_curl.png" title="Copying a request as a curl command from Chrome" alt="Copying a request as a curl command from Chrome" style="width: 70%;"/>
 

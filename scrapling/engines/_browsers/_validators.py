@@ -13,12 +13,13 @@ from scrapling.core._types import (
     Tuple,
     Optional,
     Callable,
-    Iterable,
-    SelectorWaitStates,
+    Sequence,
     overload,
+    SetCookieParam,
+    SelectorWaitStates,
 )
 from scrapling.engines.toolbelt.navigation import construct_proxy_dict
-from scrapling.engines._browsers._types import PlaywrightFetchParams, CamoufoxFetchParams
+from scrapling.engines._browsers._types import PlaywrightFetchParams, StealthFetchParams
 
 
 # Custom validators for msgspec
@@ -33,15 +34,6 @@ def _is_invalid_file_path(value: str) -> bool | str:  # pragma: no cover
     if not path.is_absolute():
         return f"Init script is not a absolute path: {value}"
     return False
-
-
-def _validate_addon_path(value: str) -> None:  # pragma: no cover
-    """Fast addon path validation"""
-    path = Path(value)
-    if not path.exists():
-        raise FileNotFoundError(f"Addon path not found: {value}")
-    if not path.is_dir():
-        raise ValueError(f"Addon path must be a directory of the extracted addon: {value}")
 
 
 @lru_cache(2)
@@ -65,39 +57,36 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     """Configuration struct for validation"""
 
     max_pages: PagesCount = 1
-    cdp_url: Optional[str] = None
     headless: bool = True
-    google_search: bool = True
-    hide_canvas: bool = False
-    disable_webgl: bool = False
-    real_chrome: bool = False
-    stealth: bool = False
-    wait: Seconds = 0
-    page_action: Optional[Callable] = None
-    proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
-    locale: str = "en-US"
-    extra_headers: Optional[Dict[str, str]] = None
-    useragent: Optional[str] = None
-    timeout: Seconds = 30000
-    init_script: Optional[str] = None
     disable_resources: bool = False
-    wait_selector: Optional[str] = None
-    cookies: Optional[Iterable[Dict]] = None
     network_idle: bool = False
     load_dom: bool = True
+    wait_selector: Optional[str] = None
     wait_selector_state: SelectorWaitStates = "attached"
+    cookies: Sequence[SetCookieParam] | None = []
+    google_search: bool = True
+    wait: Seconds = 0
+    timezone_id: str | None = ""
+    page_action: Optional[Callable] = None
+    proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
+    extra_headers: Optional[Dict[str, str]] = None
+    timeout: Seconds = 30000
+    init_script: Optional[str] = None
     user_data_dir: str = ""
-    timezone_id: str = ""
-    extra_flags: Optional[List[str]] = None
     selector_config: Optional[Dict] = {}
     additional_args: Optional[Dict] = {}
+    locale: str | None = None
+    real_chrome: bool = False
+    cdp_url: Optional[str] = None
+    useragent: Optional[str] = None
+    extra_flags: Optional[List[str]] = None
 
     def __post_init__(self):  # pragma: no cover
         """Custom validation after msgspec validation"""
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
         if self.proxy:
-            self.proxy = construct_proxy_dict(self.proxy, as_tuple=True)
+            self.proxy = construct_proxy_dict(self.proxy)
         if self.cdp_url:
             cdp_msg = _is_invalid_cdp_url(self.cdp_url)
             if cdp_msg:
@@ -118,64 +107,18 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
                 raise ValueError(validation_msg)
 
 
-class CamoufoxConfig(Struct, kw_only=True, frozen=False, weakref=True):
-    """Configuration struct for validation"""
-
-    max_pages: PagesCount = 1
-    headless: bool = True  # noqa: F821
-    block_images: bool = False
-    disable_resources: bool = False
-    block_webrtc: bool = False
+class StealthConfig(PlaywrightConfig, kw_only=True, frozen=False, weakref=True):
     allow_webgl: bool = True
-    network_idle: bool = False
-    load_dom: bool = True
-    humanize: bool | float = True
+    hide_canvas: bool = False
+    block_webrtc: bool = False
     solve_cloudflare: bool = False
-    wait: Seconds = 0
-    timeout: Seconds = 30000
-    init_script: Optional[str] = None
-    page_action: Optional[Callable] = None
-    wait_selector: Optional[str] = None
-    addons: Optional[List[str]] = None
-    wait_selector_state: SelectorWaitStates = "attached"
-    cookies: Optional[Iterable[Dict]] = None
-    google_search: bool = True
-    extra_headers: Optional[Dict[str, str]] = None
-    proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
-    os_randomize: bool = False
-    disable_ads: bool = False
-    geoip: bool = False
-    user_data_dir: str = ""
-    selector_config: Optional[Dict] = {}
-    additional_args: Optional[Dict] = {}
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
-        if self.page_action and not callable(self.page_action):
-            raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
-        if self.proxy:
-            self.proxy = construct_proxy_dict(self.proxy, as_tuple=True)
-
-        if self.addons:
-            for addon in self.addons:
-                _validate_addon_path(addon)
-        else:
-            self.addons = []
-
-        if self.init_script is not None:
-            validation_msg = _is_invalid_file_path(self.init_script)
-            if validation_msg:
-                raise ValueError(validation_msg)
-
-        if not self.cookies:
-            self.cookies = []
+        super(StealthConfig, self).__post_init__()
         # Cloudflare timeout adjustment
         if self.solve_cloudflare and self.timeout < 60_000:
             self.timeout = 60_000
-        if not self.selector_config:
-            self.selector_config = {}
-        if not self.additional_args:
-            self.additional_args = {}
 
 
 @dataclass
@@ -197,9 +140,9 @@ class _fetch_params:
 
 
 def validate_fetch(
-    method_kwargs: Dict | PlaywrightFetchParams | CamoufoxFetchParams,
+    method_kwargs: Dict | PlaywrightFetchParams | StealthFetchParams,
     session: Any,
-    model: type[PlaywrightConfig] | type[CamoufoxConfig],
+    model: type[PlaywrightConfig] | type[StealthConfig],
 ) -> _fetch_params:  # pragma: no cover
     result = {}
     overrides = {}
@@ -210,21 +153,20 @@ def validate_fetch(
     for key in fetch_param_fields:
         if key in method_kwargs:
             overrides[key] = method_kwargs[key]
-        else:
-            # Check for underscore-prefixed attribute (private)
-            attr_name = f"_{key}"
-            if hasattr(session, attr_name):
-                result[key] = getattr(session, attr_name)
+        elif hasattr(session, "_config") and hasattr(session._config, key):
+            result[key] = getattr(session._config, key)
 
     if overrides:
         validated_config = validate(overrides, model)
-        # Extract only the fields that _fetch_params needs from validated_config
+        # Extract ONLY the fields that were actually overridden (not all fields)
+        # This prevents validated defaults from overwriting session config values
         validated_dict = {
-            f.name: getattr(validated_config, f.name)
-            for f in fields(_fetch_params)
-            if hasattr(validated_config, f.name)
+            field: getattr(validated_config, field) for field in overrides.keys() if hasattr(validated_config, field)
         }
-        validated_dict.setdefault("solve_cloudflare", False)
+
+        # Preserve solve_cloudflare if the user explicitly provided it, even if the model doesn't have it
+        if "solve_cloudflare" in overrides:
+            validated_dict["solve_cloudflare"] = overrides["solve_cloudflare"]
 
         # Start with session defaults, then overwrite with validated overrides
         result.update(validated_dict)
@@ -238,7 +180,7 @@ def validate_fetch(
 # Cache default values for each model to reduce validation overhead
 models_default_values = {}
 
-for _model in (CamoufoxConfig, PlaywrightConfig):
+for _model in (StealthConfig, PlaywrightConfig):
     _defaults = {}
     if hasattr(_model, "__struct_defaults__") and hasattr(_model, "__struct_fields__"):
         for field_name, default_value in zip(_model.__struct_fields__, _model.__struct_defaults__):  # type: ignore
@@ -256,14 +198,14 @@ def _filter_defaults(params: Dict, model: str) -> Dict:
 
 
 @overload
-def validate(params: Dict, model: type[PlaywrightConfig]) -> PlaywrightConfig: ...
+def validate(params: Dict, model: type[StealthConfig]) -> StealthConfig: ...
 
 
 @overload
-def validate(params: Dict, model: type[CamoufoxConfig]) -> CamoufoxConfig: ...
+def validate(params: Dict, model: type[PlaywrightConfig]) -> PlaywrightConfig: ...
 
 
-def validate(params: Dict, model: type[PlaywrightConfig] | type[CamoufoxConfig]) -> PlaywrightConfig | CamoufoxConfig:
+def validate(params: Dict, model: type[PlaywrightConfig] | type[StealthConfig]) -> PlaywrightConfig | StealthConfig:
     try:
         # Filter out params with the default values (no need to validate them) to speed up validation
         filtered = _filter_defaults(params, model.__name__)

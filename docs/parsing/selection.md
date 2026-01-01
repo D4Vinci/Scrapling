@@ -22,7 +22,7 @@ Scrapling implements CSS3 selectors as described in the [W3C specification](http
 
 Also, Scrapling implements some non-standard pseudo-elements like:
 
-* To select text nodes, use ``::text``
+* To select text nodes, use ``::text``.
 * To select attribute values, use ``::attr(name)`` where name is the name of the attribute that you want the value of
 
 In short, if you come from Scrapy/Parsel, you will find the same logic for selectors here to make it easier. No need to implement a stranger logic to the one that most of us are used to :)
@@ -36,19 +36,19 @@ In short, it is the same situation as CSS Selectors; if you come from Scrapy/Par
 
 To select elements with XPath selectors, you have the `xpath` and `xpath_first` methods. Again, these methods follow the same logic as the CSS selectors methods above, and `xpath_first` is faster.
 
-> Note that each method of `css`, `css_first`, `xpath`, and `xpath_first` has additional arguments, but we didn't explain them here as they are all about the adaptive feature. The adaptive feature will have its own page later to be described in detail.
+> Note that each method of `css`, `css_first`, `xpath`, and `xpath_first` has additional arguments, but we didn't explain them here, as they are all about the adaptive feature. The adaptive feature will have its own page later to be described in detail.
 
 ### Selectors examples
 Let's see some shared examples of using CSS and XPath Selectors.
 
-Select all elements with the class `product`
+Select all elements with the class `product`.
 ```python
 products = page.css('.product')
 products = page.xpath('//*[@class="product"]')
 ```
 Note: The XPath one won't be accurate if there's another class; **it's always better to rely on CSS for selecting by class**
 
-Select the first element with the class `product`
+Select the first element with the class `product`.
 ```python
 product = page.css_first('.product')
 product = page.xpath_first('//*[@class="product"]')
@@ -73,12 +73,12 @@ Get the `href` attribute of the first element with the `a` tag name
 link = page.css_first('a::attr(href)')
 link = page.xpath_first('//a/@href')
 ```
-Select the text of the first element with the `h1` tag name, which contains 'Phone', and under an element with class 'product'
+Select the text of the first element with the `h1` tag name, which contains `Phone`, and under an element with class `product`.
 ```python
 title = page.css_first('.product h1:contains("Phone")::text')
 title = page.page.xpath_first('//*[@class="product"]//h1[contains(text(),"Phone")]/text()')
 ```
-You can nest and chain selectors as you want, given that it returns results
+You can nest and chain selectors as you want, given that they return results
 ```python
 page.css_first('.product').css_first('h1:contains("Phone")::text')
 page.xpath_first('//*[@class="product"]').xpath_first('//h1[contains(text(),"Phone")]/text()')
@@ -104,7 +104,7 @@ Scrapling provides the ability to select elements based on their direct text con
 
 What you can do with `find_by_text` can be done with `find_by_regex` if you are good enough with regular expressions (regex), but we are providing more options to make them easier for all users to access.
 
-With `find_by_text`, you will pass the text as the first argument; with the `find_by_regex` method, the regex pattern is the first argument. Both methods share the following arguments:
+With `find_by_text`, you pass the text as the first argument; with `find_by_regex`, the regex pattern is the first argument. Both methods share the following arguments:
 
 * **first_match**: If `True` (the default), the method used will return the first result it finds.
 * **case_sensitive**: If `True`, the case of the letters will be considered.
@@ -117,7 +117,7 @@ By default, Scrapling searches for the exact matching of the text/pattern you pa
 Note: The method `find_by_regex` can accept both regular strings and a compiled regex pattern as its first argument, as you will see in the upcoming examples.
 
 ### Finding Similar Elements
-One of the most remarkable new features that Scrapling puts on the table is the feature that allows the user to tell Scrapling to find elements similar to the element at hand. This feature's inspiration came from the AutoScraper library, but in Scrapling, it can be used on elements found by any method. Most of its usage would likely occur after finding elements through text content, similar to how AutoScraper works, making it convenient to explain here.
+One of the most remarkable new features Scrapling puts on the table is the ability to tell Scrapling to find elements similar to the element at hand. This feature's inspiration came from the AutoScraper library, but in Scrapling, it can be used on elements found by any method. Most of its usage would likely occur after finding elements through text content, similar to how AutoScraper works, making it convenient to explain here.
 
 So, how does it work?
 
@@ -129,8 +129,8 @@ Imagine a scenario where you found a product by its title, for example, and you 
 
 That's a lot of talking, I know, but I had to go deep. I will give examples of using this method in the next section, but first, these are the arguments that can be passed to this method:
 
-* **similarity_threshold**: This is the percentage we discussed in step 3 for comparing elements' attributes. The default value is 0.2. In Simpler words, the values of the attributes of both elements should be at least 20% similar. If you want to turn off this check (Step 3, basically), you can set this attribute to 0, but I recommend you read what the other arguments do first.
-* **ignore_attributes**: The attribute names passed will be ignored while matching the attributes in the last step. The default value is `('href', 'src',)` because URLs can change a lot between elements, making them unreliable.
+* **similarity_threshold**: This is the percentage we discussed in step 3 for comparing elements' attributes. The default value is 0.2. In Simpler words, the tag attributes of both elements should be at least 20% similar. If you want to turn off this check (basically Step 3), you can set this attribute to 0, but I recommend you read what the other arguments do first.
+* **ignore_attributes**: The attribute names passed will be ignored while matching the attributes in the last step. The default value is `('href', 'src',)` because URLs can change significantly across elements, making them unreliable.
 * **match_text**: If `True`, the element's text content will be considered when matching (Step 3). Using this argument in typical cases is not recommended, but it depends.
 
 Now, let's check out the examples below.
@@ -148,7 +148,7 @@ Find the first element whose text fully matches this text
 >>> page.find_by_text('Tipping the Velvet')
 <data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>
 ```
-Combining it with `page.urljoin` to return the full URL from the relative `href`
+Combining it with `page.urljoin` to return the full URL from the relative `href`.
 ```python
 >>> page.find_by_text('Tipping the Velvet').attrib['href']
 'catalogue/tipping-the-velvet_999/index.html'
@@ -174,7 +174,7 @@ Get all elements that contain the word `the` (Partial matching)
  'Mesaerion: The Best Science ...',
  "It's Only the Himalayas"]
 ```
-The search is case-insensitive, so those results have `The`, not only the lowercase one `the`; let's limit the search to the elements with `the` only.
+The search is case-insensitive, so those results include `The`, not just the lowercase `the`; let's limit the search to elements with `the` only.
 ```python
 >>> results = page.find_by_text('the', partial=True, first_match=False, case_sensitive=True)
 >>> [i.text for i in results]
@@ -332,14 +332,14 @@ def extract_reviews(page):
     ]
 ```
 ## Filters-based searching
-This search method is arguably the best way to find elements in Scrapling, as it is powerful and easier to learn for newcomers to Web Scraping than writing selectors. 
+This search method is arguably the best way to find elements in Scrapling, as it is powerful and easier for newcomers to Web Scraping to learn than writing selectors. 
 
-Inspired by BeautifulSoup's `find_all` function, you can find elements using the `find_all` and `find` methods. Both methods can take multiple types of filters and return all elements in the pages that all these filters apply to.
+Inspired by BeautifulSoup's `find_all` function, you can find elements using the `find_all` and `find` methods. Both methods can accept multiple filters and return all elements on the pages where all these filters apply.
 
 To be more specific:
 
 * Any string passed is considered a tag name.
-* Any iterable passed, like List/Tuple/Set, is considered an iterable of tag names.
+* Any iterable passed, like List/Tuple/Set, will be considered as an iterable of tag names.
 * Any dictionary is considered a mapping of HTML element(s), attribute names, and attribute values.
 * Any regex patterns passed are used to filter elements by content, like the `find_by_regex` method
 * Any functions passed are used to filter elements
@@ -357,7 +357,7 @@ It filters all elements in the current page/element in the following order:
 Notes:
 
 1. As you probably understood, the filtering process always starts from the first filter it finds in the filtering order above. So, if no tag name(s) are passed but attributes are passed, the process starts from that step (number 2), and so on.
-2. The order in which you pass the arguments doesn't matter. The only order taken into consideration is the order explained above.
+2. The order in which you pass the arguments doesn't matter. The only order considered is the one explained above.
 
 Check examples to clear any confusion :)
 
@@ -509,4 +509,4 @@ We will have a deep look at it while explaining the [TextHandler](main_classes.m
 >>> page.find_by_text('Tipping the Velvet').attrib['href'].re(r'catalogue/(.*)/index.html')
 ['tipping-the-velvet_999']
 ```
-And so on. You get the idea. We will explain this in more detail on the next page while explaining the [TextHandler](main_classes.md#texthandler) class.
+And so on. You get the idea. We will explain this in more detail on the next page, along with the [TextHandler](main_classes.md#texthandler) class.

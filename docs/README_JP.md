@@ -87,8 +87,8 @@ Scraplingは単なるウェブスクレイピングライブラリではあり�
 
 ### セッションサポート付き高度なウェブサイト取得
 - **HTTPリクエスト**：`Fetcher`クラスで高速でステルスなHTTPリクエスト。ブラウザのTLSフィンガープリント、ヘッダーを模倣し、HTTP3を使用できます。
-- **動的読み込み**：Playwright's Chromium、実際のChrome、カスタムステルスモードをサポートする`DynamicFetcher`クラスを通じた完全なブラウザ自動化で動的ウェブサイトを取得。
-- **アンチボット回避**：修正されたFirefoxとフィンガープリント偽装を使用した`StealthyFetcher`による高度なステルス機能。自動化でCloudflareのTurnstileとInterstitialのすべてのタイプを簡単に回避できます。
+- **動的読み込み**：Playwright's ChromiumとGoogle Chromeをサポートする`DynamicFetcher`クラスを通じた完全なブラウザ自動化で動的ウェブサイトを取得。
+- **アンチボット回避**：`StealthyFetcher`とフィンガープリント偽装による高度なステルス機能。自動化でCloudflareのTurnstile/Interstitialのすべてのタイプを簡単に回避できます。
 - **セッション管理**：リクエスト間でCookieと状態を管理するための`FetcherSession`、`StealthySession`、`DynamicSession`クラスによる永続的なセッションサポート。
 - **非同期サポート**：すべてのフェッチャーと専用非同期セッションクラス全体での完全な非同期サポート。
 
@@ -96,7 +96,7 @@ Scraplingは単なるウェブスクレイピングライブラリではあり�
 - 🔄 **スマート要素追跡**：インテリジェントな類似性アルゴリズムを使用してウェブサイトの変更後に要素を再配置。
 - 🎯 **スマート柔軟選択**：CSSセレクタ、XPathセレクタ、フィルタベース検索、テキスト検索、正規表現検索など。
 - 🔍 **類似要素を見つける**：見つかった要素に類似した要素を自動的に特定。
-- 🤖 **AIと使用するMCPサーバー**：AI支援ウェブスクレイピングとデータ抽出のための組み込みMCPサーバー。MCPサーバーは、AI（Claude/Cursorなど）に渡す前にScraplingを利用してターゲットコンテンツを抽出するカスタムで強力な機能を備えており、操作を高速化し、トークン使用量を最小限に抑えることでコストを削減します。（[デモビデオ](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
+- 🤖 **AIと使用するMCPサーバー**：AI支援ウェブスクレイピングとデータ抽出のための組み込みMCPサーバー。MCPサーバーは、AI（Claude/Cursorなど）に渡す前にScraplingを活用してターゲットコンテンツを抽出する強力でカスタムな機能を備えており、操作を高速化し、トークン使用量を最小限に抑えることでコストを削減します。（[デモビデオ](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
 
 ### 高性能で実戦テスト済みのアーキテクチャ
 - 🚀 **高速**：ほとんどのPythonスクレイピングライブラリを上回る最適化されたパフォーマンス。
@@ -212,13 +212,12 @@ Scrapling v0.3には強力なコマンドラインインターフェースが含
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
+インタラクティブウェブスクレイピングシェルを起動
 ```bash
-# インタラクティブウェブスクレイピングシェルを起動
 scrapling shell
-
-# プログラミングせずに直接ページをファイルに抽出（デフォルトで`body`タグ内のコンテンツを抽出）
-# 出力ファイルが`.txt`で終わる場合、ターゲットのテキストコンテンツが抽出されます。
-# `.md`で終わる場合、HTMLコンテンツのMarkdown表現になり、`.html`は直接HTMLコンテンツになります。
+```
+プログラミングせずに直接ページをファイルに抽出（デフォルトで`body`タグ内のコンテンツを抽出）。出力ファイルが`.txt`で終わる場合、ターゲットのテキストコンテンツが抽出されます。`.md`で終わる場合、HTMLコンテンツのMarkdown表現になります；`.html`で終わる場合、HTMLコンテンツそのものになります。
+```bash
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # CSSセレクタ'#fromSkipToProducts'に一致するすべての要素
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
@@ -230,7 +229,7 @@ scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.
 
 ## パフォーマンスベンチマーク
 
-Scraplingは強力であるだけでなく、驚くほど高速で、バージョン0.3以降のアップデートはすべての操作で優れたパフォーマンス向上を実現しています。
+Scraplingは強力であるだけでなく、驚くほど高速で、バージョン0.3以降のアップデートはすべての操作で優れたパフォーマンス向上を実現しています。以下のベンチマークは、Scraplingのパーサーを他の人気のあるライブラリと比較しています。
 
 ### テキスト抽出速度テスト（5000個のネストされた要素）
 
@@ -270,14 +269,14 @@ v0.3.2以降、このインストールにはパーサーエンジンとその�
 
 ### オプションの依存関係
 
-1. 以下の追加機能、フェッチャー、またはそれらのクラスのいずれかを使用する場合は、フェッチャーの依存関係をインストールしてから、次のコマンドでブラウザの依存関係をインストールする必要があります
+1. 以下の追加機能、フェッチャー、またはそれらのクラスのいずれかを使用する場合は、フェッチャーの依存関係とブラウザの依存関係を次のようにインストールする必要があります：
     ```bash
     pip install "scrapling[fetchers]"
     
     scrapling install
     ```
 
-    これにより、すべてのブラウザとそのシステム依存関係およびフィンガープリント操作依存関係がダウンロードされます。
+    これにより、すべてのブラウザ、およびそれらのシステム依存関係とフィンガープリント操作依存関係がダウンロードされます。
 
 2. 追加機能：
    - MCPサーバー機能をインストール：
@@ -303,7 +302,7 @@ docker pull pyd4vinci/scrapling
 ```bash
 docker pull ghcr.io/d4vinci/scrapling:latest
 ```
-このイメージは、リポジトリのメインブランチでGitHub actionsを通じて自動的にビルドおよびプッシュされます。
+このイメージは、GitHub Actionsとリポジトリのメインブランチを使用して自動的にビルドおよびプッシュされます。
 
 ## 貢献
 

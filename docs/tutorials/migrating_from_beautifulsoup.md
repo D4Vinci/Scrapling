@@ -1,10 +1,10 @@
 # Migrating from BeautifulSoup to Scrapling
 
-If you're already familiar with BeautifulSoup, you're in for a treat. Scrapling is incredibly faster, provides the same parsing capabilities, adds more parsing capabilities not found in BS, and introduces powerful new features for fetching and handling modern web pages. This guide will help you quickly adapt your existing BeautifulSoup code to leverage Scrapling's capabilities.
+If you're already familiar with BeautifulSoup, you're in for a treat. Scrapling is much faster, provides the same parsing capabilities as BS, adds additional parsing capabilities not found in BS, and introduces powerful new features for fetching and handling modern web pages. This guide will help you quickly adapt your existing BeautifulSoup code to leverage Scrapling's capabilities.
 
-Below is a table that covers the most common operations you'll perform when scraping web pages. Each row illustrates how to accomplish a specific task using BeautifulSoup and the corresponding method in Scrapling.
+Below is a table that covers the most common operations you'll perform when scraping web pages. Each row illustrates how to achieve a specific task using BeautifulSoup and the corresponding method in Scrapling.
 
-You will notice that some shortcuts in BeautifulSoup are missing in Scrapling, but that's one of the reasons why BeautifulSoup is slower than Scrapling. The point is: If the same feature can be used in a short oneliner, there is no need to sacrifice performance to shorten that short line :)
+You will notice that some shortcuts in BeautifulSoup are missing in Scrapling, which is one of the reasons BeautifulSoup is slower than Scrapling. The point is: If the same feature can be used in a short one-liner, there is no need to sacrifice performance to shorten that short line :)
 
 
 | Task                                                            | BeautifulSoup Code                                                                                            | Scrapling Code                                                                    |
@@ -56,7 +56,7 @@ Here's a simple example of scraping a web page to extract all the links using Be
 import requests
 from bs4 import BeautifulSoup
 
-url = 'http://example.com'
+url = 'https://example.com'
 response = requests.get(url)
 soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -70,7 +70,7 @@ for link in links:
 ```python
 from scrapling import Fetcher
 
-url = 'http://example.com'
+url = 'https://example.com'
 page = Fetcher.get(url)
 
 links = page.css('a::attr(href)')
@@ -78,12 +78,12 @@ for link in links:
     print(link)
 ```
 
-As you can see, Scrapling simplifies the process by handling the fetching and parsing in a single step, making your code cleaner and more efficient.
+As you can see, Scrapling simplifies the process by combining fetching and parsing into a single step, making your code cleaner and more efficient.
 
 **Additional Notes:**
 
 - **Different parsers**: BeautifulSoup allows you to set the parser engine to use, and one of them is `lxml`. Scrapling doesn't do that and uses the `lxml` library by default for performance reasons.
-- **Element Types**: In BeautifulSoup, elements are `Tag` objects, while in Scrapling, they are `Selector` objects. However, they provide similar methods and properties for navigation and data extraction.
+- **Element Types**: In BeautifulSoup, elements are `Tag` objects; in Scrapling, they are `Selector` objects. However, they provide similar methods and properties for navigation and data extraction.
 - **Error Handling**: Both libraries return `None` when an element is not found (e.g., `soup.find()` or `page.css_first()`). To avoid errors, check for `None` before accessing properties.
 - **Text Extraction**: Scrapling provides additional methods for handling text through `TextHandler`, such as `clean()`, which can help remove extra whitespace, consecutive spaces, or unwanted characters. Please check out the documentation for the complete list.
 

@@ -1,6 +1,6 @@
-I've been working on Scrapling and other public projects in my spare time and have invested considerable resources and effort to provide these projects for free to the community. By becoming a sponsor, you would directly fund my coffee reserves, helping me continuously update existing projects and create new ones.
+I've been working on Scrapling and other public projects in my spare time and have invested considerable resources and effort to make them available to the community for free. By becoming a sponsor, you would directly fund my coffee reserves, helping me continuously update existing projects and create new ones.
 
-You can sponsor me directly through [GitHub sponsors program](https://github.com/sponsors/D4Vinci) or [Buy Me A Coffe](https://buymeacoffee.com/d4vinci).
+You can sponsor me directly through the [GitHub Sponsors program](https://github.com/sponsors/D4Vinci) or [Buy Me a Coffee](https://buymeacoffee.com/d4vinci).
 
 Thank you, stay curious, and hack the planet! ❤️
 
@@ -22,4 +22,3 @@ Perks:
 - The same logo will be featured at [the top of Docker's image page](https://hub.docker.com/r/pyd4vinci/scrapling).
 - Your logo will be featured as a top sponsor on [Scrapling's website](https://scrapling.readthedocs.io/en/latest/) main page.
 - A Shoutout with each [Release note](https://github.com/D4Vinci/Scrapling/releases).
-

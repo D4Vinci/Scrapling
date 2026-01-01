@@ -11,9 +11,10 @@ from scrapling.core._types import (
     Mapping,
     Optional,
     Callable,
-    Iterable,
+    Sequence,
     TypedDict,
     TypeAlias,
+    SetCookieParam,
     SelectorWaitStates,
     TYPE_CHECKING,
 )
@@ -53,7 +54,7 @@ if TYPE_CHECKING:  # pragma: no cover
         json: Optional[Dict | List]
 
     # Types for browser session
-    class BrowserSession(TypedDict, total=False):
+    class PlaywrightSession(TypedDict, total=False):
         max_pages: int
         headless: bool
         disable_resources: bool
@@ -61,9 +62,10 @@ if TYPE_CHECKING:  # pragma: no cover
         load_dom: bool
         wait_selector: Optional[str]
         wait_selector_state: SelectorWaitStates
-        cookies: Optional[Iterable[Dict]]
+        cookies: Sequence[SetCookieParam] | None
         google_search: bool
         wait: int | float
+        timezone_id: str | None
         page_action: Optional[Callable]
         proxy: Optional[str | Dict[str, str] | Tuple]
         extra_headers: Optional[Dict[str, str]]
@@ -72,42 +74,32 @@ if TYPE_CHECKING:  # pragma: no cover
         user_data_dir: str
         selector_config: Optional[Dict]
         additional_args: Optional[Dict]
-
-    class PlaywrightSession(BrowserSession, total=False):
-        cdp_url: Optional[str]
-        hide_canvas: bool
-        disable_webgl: bool
+        locale: Optional[str]
         real_chrome: bool
-        stealth: bool
-        locale: str
+        cdp_url: Optional[str]
         useragent: Optional[str]
         extra_flags: Optional[List[str]]
 
     class PlaywrightFetchParams(TypedDict, total=False):
+        load_dom: bool
+        wait: int | float
+        network_idle: bool
         google_search: bool
         timeout: int | float
-        wait: int | float
-        page_action: Optional[Callable]
-        extra_headers: Optional[Dict[str, str]]
         disable_resources: bool
         wait_selector: Optional[str]
-        wait_selector_state: SelectorWaitStates
-        network_idle: bool
-        load_dom: bool
+        page_action: Optional[Callable]
         selector_config: Optional[Dict]
+        extra_headers: Optional[Dict[str, str]]
+        wait_selector_state: SelectorWaitStates
 
-    class CamoufoxSession(BrowserSession, total=False):
-        block_images: bool
-        block_webrtc: bool
+    class StealthSession(PlaywrightSession, total=False):
         allow_webgl: bool
-        humanize: bool | float
+        hide_canvas: bool
+        block_webrtc: bool
         solve_cloudflare: bool
-        addons: Optional[List[str]]
-        os_randomize: bool
-        disable_ads: bool
-        geoip: bool
 
-    class CamoufoxFetchParams(PlaywrightFetchParams, total=False):
+    class StealthFetchParams(PlaywrightFetchParams, total=False):
         solve_cloudflare: bool
 
 else:  # pragma: no cover
@@ -116,5 +108,5 @@ else:  # pragma: no cover
     DataRequestParams = TypedDict
     PlaywrightSession = TypedDict
     PlaywrightFetchParams = TypedDict
-    CamoufoxSession = TypedDict
-    CamoufoxFetchParams = TypedDict
+    StealthSession = TypedDict
+    StealthFetchParams = TypedDict

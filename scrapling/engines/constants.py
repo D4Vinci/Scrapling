@@ -74,7 +74,6 @@ DEFAULT_STEALTH_FLAGS = (
     "--disable-domain-reliability",
     "--disable-threaded-animation",
     "--disable-threaded-scrolling",
-    # '--disable-reading-from-canvas', # For Firefox
     "--enable-simple-cache-backend",
     "--disable-background-networking",
     "--enable-surface-synchronization",
@@ -94,9 +93,7 @@ DEFAULT_STEALTH_FLAGS = (
     "--autoplay-policy=no-user-gesture-required",
     "--disable-offer-store-unmasked-wallet-cards",
     "--disable-blink-features=AutomationControlled",
-    "--webrtc-ip-handling-policy=disable_non_proxied_udp",
     "--disable-component-extensions-with-background-pages",
-    "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
     "--enable-features=NetworkService,NetworkServiceInProcess,TrustTokens,TrustTokensAlwaysAllowIssuance",
     "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
     "--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process,TranslateUI,BlinkGenPropertyTrees",

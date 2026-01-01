@@ -18,7 +18,7 @@
 
 Scrapling isn't just another Web Scraping library. It's the first **adaptive** scraping library that learns from website changes and evolves with them. While other libraries break when websites update their structure, Scrapling automatically relocates your elements and keeps your scrapers running.
 
-Built for the modern Web, Scrapling features its own rapid parsing engine and fetchers to handle all Web Scraping challenges you face or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
+Built for the modern Web, Scrapling features **its own rapid parsing engine** and fetchers to handle all Web Scraping challenges you face or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
 >> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
@@ -51,8 +51,8 @@ Built for the modern Web, Scrapling features its own rapid parsing engine and fe
 
 ### Advanced Websites Fetching with Session Support
 - **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP/3.
-- **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium, real Chrome, and custom stealth mode.
-- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` using a modified version of Firefox and fingerprint spoofing. Can bypass all types of Cloudflare's Turnstile/Interstitial with automation easily.
+- **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium, and Google's Chrome.
+- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` and fingerprint spoofing. Can bypass all types of Cloudflare's Turnstile/Interstitial with automation easily.
 - **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
 - **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 
@@ -60,7 +60,7 @@ Built for the modern Web, Scrapling features its own rapid parsing engine and fe
 - 🔄 **Smart Element Tracking**: Relocate elements after website changes using intelligent similarity algorithms.
 - 🎯 **Smart Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more. 
 - 🔍 **Find Similar Elements**: Automatically locate elements similar to found elements.
-- 🤖 **MCP Server to be used with AI**: Built-in MCP server for AI-assisted Web Scraping and data extraction. The MCP server features custom, powerful capabilities that utilize Scrapling to extract targeted content before passing it to the AI (Claude/Cursor/etc), thereby speeding up operations and reducing costs by minimizing token usage.
+- 🤖 **MCP Server to be used with AI**: Built-in MCP server for AI-assisted Web Scraping and data extraction. The MCP server features powerful, custom capabilities that leverage Scrapling to extract targeted content before passing it to the AI (Claude/Cursor/etc), thereby speeding up operations and reducing costs by minimizing token usage. ([demo video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 
 ### High-Performance & battle-tested Architecture
 - 🚀 **Lightning Fast**: Optimized performance outperforming most Python scraping libraries.
@@ -100,14 +100,14 @@ Starting with v0.3.2, this installation only includes the parser engine and its 
 
 ### Optional Dependencies
 
-1. If you are going to use any of the extra features below, the fetchers, or their classes, then you need to install fetchers' dependencies, and then install their browser dependencies with
+1. If you are going to use any of the extra features below, the fetchers, or their classes, you will need to install fetchers' dependencies and their browser dependencies as follows:
     ```bash
     pip install "scrapling[fetchers]"
     
     scrapling install
     ```
 
-    This downloads all browsers with their system dependencies and fingerprint manipulation dependencies.
+    This downloads all browsers, along with their system dependencies and fingerprint manipulation dependencies.
 
 2. Extra features:
 
@@ -135,10 +135,10 @@ Or download it from the GitHub registry:
 ```bash
 docker pull ghcr.io/d4vinci/scrapling:latest
 ```
-This image is automatically built and pushed through GitHub actions on the repository's main branch.
+This image is automatically built and pushed using GitHub Actions and the repository's main branch.
 
 ## How the documentation is organized
-Scrapling has a lot of documentation, so we try to follow a guideline called the [Diátaxis documentation framework](https://diataxis.fr/).
+Scrapling has extensive documentation, so we try to follow the [Diátaxis documentation framework](https://diataxis.fr/).
 
 ## Support
 

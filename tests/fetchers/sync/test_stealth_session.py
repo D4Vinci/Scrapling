@@ -2,11 +2,11 @@ import re
 import pytest
 import pytest_httpbin
 
-from scrapling.engines._browsers._camoufox import StealthySession, __CF_PATTERN__
+from scrapling.engines._browsers._stealth import StealthySession, __CF_PATTERN__
 
 
-class TestCamoufoxConstants:
-    """Test Camoufox constants and patterns"""
+class TestStealthConstants:
+    """Test Stealth constants and patterns"""
 
     def test_cf_pattern_regex(self):
         """Test __CF_PATTERN__ regex compilation"""
@@ -54,7 +54,6 @@ class TestStealthySession:
 
         with StealthySession(
             headless=True,
-            block_images=True,
             disable_resources=True,
             solve_cloudflare=True,
             wait=1000,
@@ -63,12 +62,11 @@ class TestStealthySession:
         ) as session:
 
             assert session.max_pages == 1
-            assert session._headless is True
-            assert session._block_images is True
-            assert session._disable_resources is True
-            assert session._solve_cloudflare is True
-            assert session._wait == 1000
-            assert session._timeout == 60000
+            assert session._config.headless is True
+            assert session._config.disable_resources is True
+            assert session._config.solve_cloudflare is True
+            assert session._config.wait == 1000
+            assert session._config.timeout == 60000
             assert session.context is not None
 
             # Test Cloudflare detection

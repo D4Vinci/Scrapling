@@ -2,7 +2,7 @@
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful Web Scraping capabilities directly to your favorite AI chatbot or AI agent. This integration allows you to scrape websites, extract data, and bypass anti-bot protections conversationally through Claude's AI interface or any other chatbot that supports MCP.
+The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful Web Scraping capabilities directly to your favorite AI chatbot or AI agent. This integration allows you to scrape websites, extract data, and bypass anti-bot protections conversationally through Claude's AI interface or any interface that supports MCP.
 
 ## Features
 
@@ -13,11 +13,11 @@ The Scrapling MCP Server provides six powerful tools for web scraping:
 - **`bulk_get`**: An async version of the above tool that allows scraping of multiple URLs at the same time!
 
 ### 🌐 Dynamic Content Scraping  
-- **`fetch`**: Rapidly fetch dynamic content with Chromium/Chrome browser with complete control over the request/browser, stealth mode, and more!
+- **`fetch`**: Rapidly fetch dynamic content with Chromium/Chrome browser with complete control over the request/browser, and more!
 - **`bulk_fetch`**: An async version of the above tool that allows scraping of multiple URLs in different browser tabs at the same time!
 
 ### 🔒 Stealth Scraping
-- **`stealthy_fetch`**: Uses our modified version of Camoufox browser to bypass Cloudflare Turnstile/Interstitial and other anti-bot systems with complete control over the request/browser! 
+- **`stealthy_fetch`**: Uses our Stealthy browser to bypass Cloudflare Turnstile/Interstitial and other anti-bot systems with complete control over the request/browser! 
 - **`bulk_stealthy_fetch`**: An async version of the above tool that allows stealth scraping of multiple URLs in different browser tabs at the same time!
 
 ### Key Capabilities
@@ -30,9 +30,9 @@ The Scrapling MCP Server provides six powerful tools for web scraping:
 
 #### But why use Scrapling MCP Server instead of other available tools?
 
-Aside from its stealth capabilities and ability to bypass Cloudflare Turnstile/Interstitial, Scrapling's server is the only one that allows you to pass a CSS selector in the prompt to extract specific elements before handing the content to the AI.
+Aside from its stealth capabilities and ability to bypass Cloudflare Turnstile/Interstitial, Scrapling's server is the only one that lets you select specific elements to pass to the AI, saving a lot of time and tokens!
 
-The way other servers work is that they extract the content, then pass it all to the AI to extract the fields you want. This causes the AI to consume a lot more tokens that are not needed (from irrelevant content). Scrapling solves this problem by allowing you to pass a CSS selector to narrow down the content you want before passing it to the AI, which makes the whole process much faster and more efficient.
+The way other servers work is that they extract the content, then pass it all to the AI to extract the fields you want. This causes the AI to consume far more tokens than needed (from irrelevant content). Scrapling solves this problem by allowing you to pass a CSS selector to narrow down the content you want before passing it to the AI, which makes the whole process much faster and more efficient.
 
 If you don't know how to write/use CSS selectors, don't worry. You can tell the AI in the prompt to write selectors to match possible fields for you and watch it try different combinations until it finds the right one, as we will show in the examples section.
 
@@ -48,9 +48,13 @@ pip install "scrapling[ai]"
 scrapling install
 ```
 
-Or use the Docker image directly:
+Or use the Docker image directly from the Docker registry:
 ```bash
 docker pull pyd4vinci/scrapling
+```
+Or download it from the GitHub registry:
+```bash
+docker pull ghcr.io/d4vinci/scrapling:latest
 ```
 
 ## Setting up the MCP Server
@@ -83,12 +87,12 @@ If that's the first MCP server you're adding, set the content of the file to thi
   }
 }
 ```
-As per the [official article](https://modelcontextprotocol.io/quickstart/user), this action creates a new configuration file if one doesn’t exist or opens your existing configuration. The file is located at
+As per the [official article](https://modelcontextprotocol.io/quickstart/user), this action either creates a new configuration file if none exists or opens your existing configuration. The file is located at
 
 1. **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 2. **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-To ensure it's working, it's best to use the full path to the `scrapling` executable. Open the terminal and execute the following command:
+To ensure it's working, use the full path to the `scrapling` executable. Open the terminal and execute the following command:
 
 1. **MacOS**: `which scrapling`
 2. **Windows**: `where scrapling`
@@ -150,7 +154,7 @@ Use the following to enable 'Streamable HTTP' transport mode:
 ```bash
 scrapling mcp --http
 ```
-Hence, the default value for the host the server is listening on is '0.0.0.0' and the port is 8000, which both can be configured as below:
+Hence, the default value for the host the server is listening to is '0.0.0.0' and the port is 8000, which both can be configured as below:
 ```bash
 scrapling mcp --http --host '127.0.0.1' --port 8000
 ```
@@ -169,13 +173,13 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
     Scrape the main content from https://example.com and convert it to markdown format.
     ```
     
-    Claude will use the `get` tool to fetch the page and return clean, readable content. If it fails, it will continue retrying every second for three attempts, unless you instruct it to do otherwise. If it fails to retrieve content for any reason, such as protection or if it's a dynamic website, it will automatically try the other tools. If Claude didn't do that automatically for some reason, you can add that to the prompt.
+    Claude will use the `get` tool to fetch the page and return clean, readable content. If it fails, it will continue retrying every second for 3 attempts, unless you instruct it otherwise. If it fails to retrieve content for any reason, such as protection or if it's a dynamic website, it will automatically try the other tools. If Claude didn't do that automatically for some reason, you can add that to the prompt.
     
     A more optimized version of the same prompt would be:
     ```
     Use regular requests to scrape the main content from https://example.com and convert it to markdown format.
     ```
-    This tells Claude about the right tool to use here, so it doesn't have to guess. Sometimes it will start using normal requests on its own, and at other times, it will assume browsers are better suited for this website without any apparent reason. As a general rule of thumb, you should always tell Claude what tool to use if you want to save time, money, and get consistent results.
+    This tells Claude which tool to use here, so it doesn't have to guess. Sometimes it will start using normal requests on its own, and at other times, it will assume browsers are better suited for this website without any apparent reason. As a general rule of thumb, you should always tell Claude which tool to use if you want to save time and money and get consistent results.
 
 2. **Targeted Data Extraction**
 
@@ -185,7 +189,7 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
     Get all product titles from https://shop.example.com using the CSS selector '.product-title'. If the request fails, retry up to 5 times every 10 seconds.
     ```
     
-    The server will extract only the elements matching your selector and return them as a structured list. Notice I told it to set the tool to only try three times in case the website has connection issues, but the default setting should be fine for most cases.
+    The server will extract only the elements matching your selector and return them as a structured list. Notice I told it to set the tool to try only 3 times in case the website has connection issues, but the default setting should be fine for most cases.
 
 3. **E-commerce Data Collection**
 
@@ -199,7 +203,7 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
     Get the product names, prices, and descriptions from each page.
     ```
     
-    Claude will use `bulk_fetch` to scrape all URLs concurrently, then analyze the extracted data.
+    Claude will use `bulk_fetch` to concurrently scrape all URLs, then analyze the extracted data.
 
 4. **More advanced workflow**
 
@@ -216,14 +220,14 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
     And if you know how to write CSS selectors, you can instruct Claude to apply the selectors to the elements you want, and it will nearly complete the task immediately.
     ```
     Use normal requests to extract the URLs of all games on the page below, then perform a bulk request to them and return a list of all action games.
-    The selector for games in the first page is `[href*="/concept/"]` and the selector for the genre in the second request is `[data-qa="gameInfo#releaseInformation#genre-value"]`
+    The selector for games in the first page is `[href*="/concept/"]` and the selector for the genre in the second request is `[data-qa="gameInfo#releaseInformation#genre-value"]`.
     
     URL: https://store.playstation.com/en-us/pages/browse
     ```
 
 5. **Get data from a website with Cloudflare protection**
 
-    If you think the website you are targeting has Cloudflare protection, you should tell Claude instead of letting it discover that on its own.
+    If you think the website you are targeting has Cloudflare protection, tell Claude instead of letting it discover it on its own.
     ```
     What's the price of this product? Be cautious, as it utilizes Cloudflare's Turnstile protection. Make the browser visible while you work.
 
@@ -234,7 +238,7 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
 
     You can, for example, use a prompt like this:
     ```
-    Extract all the product URLs in the following category, then return the prices and the details of the first three products.
+    Extract all product URLs for the following category, then return the prices and details for the first 3 products.
     
     https://www.arnotts.ie/furniture/bedroom/bed-frames/
     ```

@@ -71,7 +71,6 @@ class TestAsyncDynamicSession:
         """Test AsyncDynamicSession with various options"""
         async with AsyncDynamicSession(
                 headless=False,
-                stealth=True,
                 disable_resources=True,
                 extra_headers={"X-Test": "value"}
         ) as session:

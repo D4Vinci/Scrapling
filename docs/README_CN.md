@@ -87,8 +87,8 @@ Scrapling不仅仅是另一个网页抓取库。它是第一个**自适应**抓�
 
 ### 支持会话的高级网站获取
 - **HTTP请求**：使用`Fetcher`类进行快速和隐秘的HTTP请求。可以模拟浏览器的TLS指纹、标头并使用HTTP3。
-- **动态加载**：通过`DynamicFetcher`类使用完整的浏览器自动化获取动态网站，支持Playwright的Chromium、真实Chrome和自定义隐秘模式。
-- **反机器人绕过**：使用`StealthyFetcher`的高级隐秘功能，使用修改版Firefox和指纹伪装。可以轻松自动绕过所有类型的Cloudflare的Turnstile和Interstitial。
+- **动态加载**：通过`DynamicFetcher`类使用完整的浏览器自动化获取动态网站，支持Playwright的Chromium和Google Chrome。
+- **反机器人绕过**：使用`StealthyFetcher`的高级隐秘功能和指纹伪装。可以轻松自动绕过所有类型的Cloudflare的Turnstile/Interstitial。
 - **会话管理**：使用`FetcherSession`、`StealthySession`和`DynamicSession`类持久化会话支持，用于跨请求的cookie和状态管理。
 - **异步支持**：所有获取器和专用异步会话类的完整异步支持。
 
@@ -96,7 +96,7 @@ Scrapling不仅仅是另一个网页抓取库。它是第一个**自适应**抓�
 - 🔄 **智能元素跟踪**：使用智能相似性算法在网站更改后重新定位元素。
 - 🎯 **智能灵活选择**：CSS选择器、XPath选择器、基于过滤器的搜索、文本搜索、正则表达式搜索等。
 - 🔍 **查找相似元素**：自动定位与找到的元素相似的元素。
-- 🤖 **与AI一起使用的MCP服务器**：内置MCP服务器用于AI辅助网页抓取和数据提取。MCP服务器具有自定义的强大功能，利用Scrapling在将内容传递给AI（Claude/Cursor等）之前提取目标内容，从而加快操作并通过最小化令牌使用来降低成本。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
+- 🤖 **与AI一起使用的MCP服务器**：内置MCP服务器用于AI辅助网页抓取和数据提取。MCP服务器具有强大的自定义功能，利用Scrapling在将内容传递给AI（Claude/Cursor等）之前提取目标内容，从而加快操作并通过最小化令牌使用来降低成本。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
 
 ### 高性能和经过实战测试的架构
 - 🚀 **闪电般快速**：优化性能超越大多数Python抓取库。
@@ -212,13 +212,12 @@ Scrapling v0.3包含强大的命令行界面：
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
+启动交互式网页抓取shell
 ```bash
-# 启动交互式网页抓取shell
 scrapling shell
-
-# 直接将页面提取到文件而无需编程（默认提取`body`标签内的内容）
-# 如果输出文件以`.txt`结尾，则将提取目标的文本内容。
-# 如果以`.md`结尾，它将是HTML内容的markdown表示，`.html`将直接是HTML内容。
+```
+直接将页面提取到文件而无需编程（默认提取`body`标签内的内容）。如果输出文件以`.txt`结尾，则将提取目标的文本内容。如果以`.md`结尾，它将是HTML内容的Markdown表示；如果以`.html`结尾，它将是HTML内容本身。
+```bash
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # 所有匹配CSS选择器'#fromSkipToProducts'的元素
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
@@ -230,7 +229,7 @@ scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.
 
 ## 性能基准
 
-Scrapling不仅功能强大——它还速度极快，自0.3版本以来的更新在所有操作中都提供了卓越的性能改进。
+Scrapling不仅功能强大——它还速度极快，自0.3版本以来的更新在所有操作中都提供了卓越的性能改进。以下基准测试将Scrapling的解析器与其他流行库进行了比较。
 
 ### 文本提取速度测试（5000个嵌套元素）
 
@@ -270,14 +269,14 @@ pip install scrapling
 
 ### 可选依赖项
 
-1. 如果您要使用以下任何额外功能、获取器或它们的类，那么您需要安装获取器的依赖项，然后使用以下命令安装它们的浏览器依赖项
+1. 如果您要使用以下任何额外功能、获取器或它们的类，您将需要安装获取器的依赖项和它们的浏览器依赖项，如下所示：
     ```bash
     pip install "scrapling[fetchers]"
     
     scrapling install
     ```
 
-    这会下载所有浏览器及其系统依赖项和指纹操作依赖项。
+    这会下载所有浏览器，以及它们的系统依赖项和指纹操作依赖项。
 
 2. 额外功能：
    - 安装MCP服务器功能：
@@ -303,7 +302,7 @@ docker pull pyd4vinci/scrapling
 ```bash
 docker pull ghcr.io/d4vinci/scrapling:latest
 ```
-此镜像通过仓库主分支上的GitHub actions自动构建和推送。
+此镜像使用GitHub Actions和仓库主分支自动构建和推送。
 
 ## 贡献
 

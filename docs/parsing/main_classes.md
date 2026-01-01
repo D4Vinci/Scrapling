@@ -41,7 +41,7 @@ Then you have the arguments for parsing adjustments or adjusting/manipulating th
 I have intended to ignore the arguments `huge_tree` and `root` to avoid making this page more complicated than needed.
 You may notice that I'm doing that a lot because it involves advanced features that you don't need to know to use the library. The development section will cover these missing parts if you are very invested.
 
-After that, for the main page and elements within, most properties are lazily loaded. This means they don't get initialized until you use them like the text content of a page/element, and this is one of the reasons for Scrapling speed :)
+After that, most properties on the main page and its elements are lazily loaded. This means they don't get initialized until you use them like the text content of a page/element, and this is one of the reasons for Scrapling speed :)
 
 ### Properties
 You have already seen much of this on the [overview](../overview.md) page, but don't worry if you didn't. We will review it more thoroughly using more advanced methods/usages. For clarity, the properties for traversal are separated below in the [traversal](#traversal) section.
@@ -111,7 +111,7 @@ But if you try to get the direct text content, it will be empty because it doesn
 ```
 The `get_all_text` method has the following optional arguments:
 
-1. **separator**: All strings collected will be concatenated using this separator. The default is '\n'
+1. **separator**: All strings collected will be concatenated using this separator. The default is '\n'.
 2. **strip**: If enabled, strings will be stripped before concatenation. Disabled by default.
 3. **ignore_tags**: A tuple of all tag names you want to ignore in the final results and ignore any elements nested within them. The default is `('script', 'style',)`.
 4. **valid_values**: If enabled, the method will only collect elements with real values, so all elements with empty text content or only whitespaces will be ignored. It's enabled by default
@@ -132,7 +132,7 @@ If you use it on the page directly, you will find that you are operating on the 
 >>> page.tag
 'html'
 ```
-Now, I think I hammered the (`page`/`element`) idea, so I won't return to it again.
+Now, I think I've hammered the (`page`/`element`) idea, so I won't return to it.
 
 Getting the attributes of the element
 ```python
@@ -196,7 +196,7 @@ Same case with XPath
 ### Traversal
 Using the elements we found above, we will go over the properties/methods for moving on the page in detail.
 
-If you are unfamiliar with the DOM tree or the tree data structure in general, the following traversal part can be confusing. I recommend you look up these concepts online for a better understanding.
+If you are unfamiliar with the DOM tree or the tree data structure in general, the following traversal part can be confusing. I recommend you look up these concepts online to better understand them.
 
 If you are too lazy to search about it, here's a quick explanation to give you a good idea.<br/>
 In simple words, the `html` element is the root of the website's tree, as every page starts with an `html` element.<br/>
@@ -310,7 +310,7 @@ In the [Selector](#selector) class, all methods/properties that should return a 
 
 Let's see what [Selectors](#selectors) class adds to the table with that out of the way.
 ### Properties
-Apart from the normal operations on Python lists, such as iteration and slicing, etc.
+Apart from the standard operations on Python lists, such as iteration and slicing.
 
 You can do the following:
 
@@ -334,7 +334,7 @@ Execute CSS and XPath selectors directly on the [Selector](#selector) instances 
  <data='<a href="catalogue/soumission_998/index....' parent='<h3><a href="catalogue/soumission_998/in...'>,
 ...]
 ```
-Run the `re` and `re_first` methods directly. They take the same arguments passed to the [Selector](#selector) class. I will still leave these methods to be explained in the [TextHandler](#texthandler) section below.
+Run the `re` and `re_first` methods directly. They take the same arguments passed to the [Selector](#selector) class. I will leave the explanation of these methods to the [TextHandler](#texthandler) section below.
 
 However, in this class, the `re_first` behaves differently as it runs `re` on each [Selector](#selector) within and returns the first one with a result. The `re` method will return a [TextHandlers](#texthandlers) object as normal, which combines all the [TextHandler](#texthandler) instances into one [TextHandlers](#texthandlers) instance.
 ```python
@@ -355,7 +355,7 @@ However, in this class, the `re_first` behaves differently as it runs `re` on ea
 ```
 With the `search` method, you can search quickly in the available [Selector](#selector) instances. The function you pass must accept a [Selector](#selector) instance as the first argument and return True/False. The method will return the first [Selector](#selector) instance that satisfies the function; otherwise, it will return `None`.
 ```python
-# Find all the products with price '53.23'
+# Find all the products with price '53.23'.
 >>> search_function = lambda p: float(p.css('.price_color').re_first(r'[\d\.]+')) == 54.23
 >>> page.css('.product_pod').search(search_function)
 <data='<article class="product_pod"><div class=...' parent='<li class="col-xs-6 col-sm-4 col-md-3 co...'>
@@ -374,7 +374,7 @@ If you are too lazy like me and want to know the number of [Selector](#selector)
 ```python
 page.css('.product_pod').length
 ```
-instead of this
+which is equivalent to
 ```python
 len(page.css('.product_pod'))
 ```
@@ -389,15 +389,15 @@ Of course, TextHandler provides extra methods and properties that standard Pytho
 ### Usage
 First, before discussing the added methods, you need to know that all operations on it, like slicing, accessing by index, etc., and methods like `split`, `replace`, `strip`, etc., all return a `TextHandler` again, so you can chain them as you want. If you find a method or property that returns a standard string instead of `TextHandler`, please open an issue, and we will override it as well.
 
-First, we start with the `re` and `re_first` methods. These are the same methods that exist in the other classes ([Selector](#selector), [Selectors](#selectors), and [TextHandlers](#texthandlers)), so they will accept the same arguments as well.
+First, we start with the `re` and `re_first` methods. These are the same methods that exist in the other classes ([Selector](#selector), [Selectors](#selectors), and [TextHandlers](#texthandlers)), so they accept the same arguments.
 
-- The `re` method takes a string/compiled regex pattern as the first argument. It searches the data for all strings matching the regex and returns them as a [TextHandlers](#texthandlers) instance. The `re_first` method takes the same arguments and behaves similarly, but as you probably figured out from the naming, it returns the first result only as a `TextHandler` instance.
+- The `re` method takes a string/compiled regex pattern as the first argument. It searches the data for all strings matching the regex and returns them as a [TextHandlers](#texthandlers) instance. The `re_first` method takes the same arguments and behaves similarly, but, as you probably figured out from the name, it returns only the first result as a `TextHandler` instance.
     
     Also, it takes other helpful arguments, which are:
     
     - **replace_entities**: This is enabled by default. It replaces character entity references with their corresponding characters.
-    - **clean_match**: It's disabled by default. This causes the method to ignore all whitespace and consecutive spaces while matching.
-    - **case_sensitive**: It's enabled by default. As the name implies, disabling it will cause the regex to ignore the case of letters while compiling.
+    - **clean_match**: It's disabled by default. This causes the method to ignore all whitespace, including consecutive spaces, while matching.
+    - **case_sensitive**: It's enabled by default. As the name implies, disabling it causes the regex to ignore letter case during compilation.
   
     You have seen these examples before; the return result is [TextHandlers](#texthandlers) because we used the `re` method.
     ```python
@@ -471,14 +471,14 @@ First, we start with the `re` and `re_first` methods. These are the same methods
   ```python
   >>> page.css_first('div::text').json()
   ```
-  You will get an error because the `div` tag doesn't have direct text content that can be serialized to JSON; it actually doesn't have direct text content at all.<br/><br/>
+  You will get an error because the `div` tag doesn't have any direct text content that can be serialized to JSON; it doesn't have any direct text content at all.<br/><br/>
   In this case, the `get_all_text` method comes to the rescue, so you can do something like that
   ```python
   >>> page.css_first('div').get_all_text(ignore_tags=[]).json()
     {'lastUpdated': '2024-09-22T10:30:00Z', 'totalProducts': 3}
   ```
   I used the `ignore_tags` argument here because the default value of it is `('script', 'style',)`, as you are aware.<br/><br/>
-  Another related behavior to be aware of occurs when using any of the fetchers, which we will explain later. If you have a JSON response like this example:
+  Another related behavior to be aware of occurs when using any fetcher, which we will explain later. If you have a JSON response like this example:
   ```python
   >>> page = Selector("""{"some_key": "some_value"}""")
   ```
@@ -493,14 +493,14 @@ First, we start with the `re` and `re_first` methods. These are the same methods
   {'some_key': 'some_value'}
   ```
   You might wonder how this happened, given that the `html` tag doesn't contain direct text.<br/>
-  Well, for cases like JSON responses, I made the [Selector](#selector) class maintain a raw copy of the content passed to it. This way, when you use the `.json()` method, it checks for that raw copy and then converts it to JSON. If the raw copy is not available like the case with the elements, it checks for the current element text content, or otherwise it used the `get_all_text` method directly.<br/><br/>This might sound hacky a bit but remember, Scrapling is currently optimized to work with HTML pages only so that's the best way till now to handle JSON responses currently without sacrificing speed. This will be changed in the upcoming versions.
+  Well, for cases like JSON responses, I made the [Selector](#selector) class keep a raw copy of the content it receives. This way, when you use the `.json()` method, it checks for that raw copy and then converts it to JSON. If the raw copy is not available like the case with the elements, it checks for the current element text content, or otherwise it uses the `get_all_text` method directly.<br/>
 
 - Another handy method is `.clean()`, which will remove all white spaces and consecutive spaces for you and return a new `TextHandler` instance
 ```python
 >>> TextHandler('\n wonderful  idea, \reh?').clean()
 'wonderful idea, eh?'
 ```
-Also, you can pass `remove_entities` argument to make `clean` replace HTML entities with their corresponding characters.
+Also, you can pass the `remove_entities` argument to make `clean` replace HTML entities with their corresponding characters.
 
 - Another method that might be helpful in some cases is the `.sort()` method to sort the string for you, as you do with lists
 ```python
@@ -518,10 +518,10 @@ Other methods and properties will be added over time, but remember that this cla
 ## TextHandlers
 You probably guessed it: This class is similar to [Selectors](#selectors) and [Selector](#selector), but here it inherits the same logic and method as standard lists, with only `re` and `re_first` as new methods.
 
-The only difference is that the `re_first` method logic here does `re` on each [TextHandler](#texthandler) within and returns the first result it has or `None`. Nothing new needs to be explained here, but new methods will be added over time.
+The only difference is that the `re_first` method logic here runs `re` on each [TextHandler](#texthandler) and returns the first result, or `None`. Nothing new needs to be explained here, but new methods will be added over time.
 
 ## AttributesHandler
-This is a read-only version of Python's standard dictionary, or `dict`, that is used solely to store the attributes of each element or each [Selector](#selector) instance.
+This is a read-only version of Python's standard dictionary, or `dict`, used solely to store the attributes of each element or [Selector](#selector) instance.
 ```python
 >>> print(page.find('script').attrib)
 {'id': 'page-data', 'type': 'application/json'}
@@ -534,7 +534,7 @@ It currently adds two extra simple methods:
 
 - The `search_values` method
 
-    In standard dictionaries, you can do `dict.get("key_name")` to check if a key exists. However, if you want to search by values instead of keys, it will require some additional code lines. This method does that for you. It allows you to search the current attributes by values and returns a dictionary of each matching item.
+    In standard dictionaries, you can do `dict.get("key_name")` to check if a key exists. However, if you want to search by values rather than keys, you will need some additional code lines. This method does that for you. It allows you to search the current attributes by values and returns a dictionary of each matching item.
     
     A simple example would be
     ```python
@@ -555,13 +555,13 @@ It currently adds two extra simple methods:
      <data='<article class="product" data-id="2"><h3...' parent='<div class="product-list"> <article clas...'>,
      <data='<article class="product" data-id="3"><h3...' parent='<div class="product-list"> <article clas...'>]
     ```
-    All these elements have 'product' as a value for the attribute `class`.
+    All these elements have 'product' as the value for the `class` attribute.
     
     Hence, I used the `list` function here because `search_values` returns a generator, so it would be `True` for all elements.
 
 - The `json_string` property
 
-    This property converts current attributes to a JSON string if the attributes are JSON serializable; otherwise, it throws an error
+    This property converts current attributes to a JSON string if the attributes are JSON serializable; otherwise, it throws an error.
   
     ```python
     >>>page.find('script').attrib.json_string
