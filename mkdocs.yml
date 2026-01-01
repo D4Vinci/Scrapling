@@ -29,6 +29,7 @@ theme:
     - navigation.sections
     - navigation.tracking
     - navigation.instant
+    - navigation.instant.prefetch
     - navigation.instant.progress
 #    - navigation.tabs
 #    - navigation.expand
@@ -41,6 +42,7 @@ theme:
     - content.action.view
     - content.action.edit
     - content.code.copy
+    - content.code.select
     - content.code.annotate
     - content.code.annotation
 
@@ -103,10 +105,13 @@ markdown_extensions:
 
 plugins:
   - search
-#  - social:
-#      cards_layout_options:
-#        background_color: "#1f1f1f"
-#        font_family: Roboto
+  - privacy:
+      links: false
+  - optimize
+  - social:
+      cards_layout_options:
+        background_color: "#1f1f1f"
+        font_family: Roboto
   - mkdocstrings:
       handlers:
         python:
