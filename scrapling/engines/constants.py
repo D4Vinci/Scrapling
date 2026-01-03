@@ -38,7 +38,7 @@ DEFAULT_FLAGS = (
 DEFAULT_STEALTH_FLAGS = (
     # Explanation: https://peter.sh/experiments/chromium-command-line-switches/
     # Generally this will make the browser faster and less detectable
-    "--incognito",
+    # "--incognito",
     "--test-type",
     "--lang=en-US",
     "--mute-audio",

@@ -17,12 +17,16 @@ class TestSQLiteStorageSystem:
         """Test SQLite storage with an actual file"""
         with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_file:
             db_path = tmp_file.name
-        
+
+        storage = None
         try:
             storage = SQLiteStorageSystem(storage_file=db_path)
             assert storage is not None
             assert os.path.exists(db_path)
         finally:
+            # Close the database connection before deleting (required on Windows)
+            if storage is not None:
+                storage.close()
             if os.path.exists(db_path):
                 os.unlink(db_path)
     
