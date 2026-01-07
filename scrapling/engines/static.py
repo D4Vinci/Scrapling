@@ -600,6 +600,7 @@ class FetcherSession:
         "_default_http3",
         "selector_config",
         "_client",
+        "_is_alive",
     )
 
     def __init__(
@@ -653,6 +654,7 @@ class FetcherSession:
         self._default_cert = cert
         self._default_http3 = http3
         self.selector_config = selector_config or {}
+        self._is_alive = False
         self._client: _SyncSessionLogic | _ASyncSessionLogic | None = None
 
     def __enter__(self) -> _SyncSessionLogic:
@@ -663,6 +665,7 @@ class FetcherSession:
             config["stealthy_headers"] = self._stealth
             config["selector_config"] = self.selector_config
             self._client = _SyncSessionLogic(**config)
+            self._is_alive = True
             return self._client.__enter__()
         raise RuntimeError("This FetcherSession instance already has an active synchronous session.")
 
@@ -670,6 +673,7 @@ class FetcherSession:
         if self._client is not None and isinstance(self._client, _SyncSessionLogic):
             self._client.__exit__(exc_type, exc_val, exc_tb)
             self._client = None
+            self._is_alive = False
             return
         raise RuntimeError("Cannot exit invalid session")
 
@@ -681,6 +685,7 @@ class FetcherSession:
             config["stealthy_headers"] = self._stealth
             config["selector_config"] = self.selector_config
             self._client = _ASyncSessionLogic(**config)
+            self._is_alive = True
             return await self._client.__aenter__()
         raise RuntimeError("This FetcherSession instance already has an active asynchronous session.")
 
@@ -688,6 +693,7 @@ class FetcherSession:
         if self._client is not None and isinstance(self._client, _ASyncSessionLogic):
             await self._client.__aexit__(exc_type, exc_val, exc_tb)
             self._client = None
+            self._is_alive = False
             return
         raise RuntimeError("Cannot exit invalid session")
 
