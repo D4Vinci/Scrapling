@@ -31,7 +31,6 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         "_max_wait_for_page",
         "playwright",
         "context",
-        "_closed",
     )
 
     def __init__(self, **kwargs: Unpack[PlaywrightSession]):
@@ -82,6 +81,8 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
 
             if self._config.cookies:  # pragma: no cover
                 self.context.add_cookies(self._config.cookies)
+
+            self._is_alive = True
         else:
             raise RuntimeError("Session has been already started")
 
@@ -104,7 +105,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         :return: A `Response` object.
         """
         params = _validate(kwargs, self, PlaywrightConfig)
-        if self._closed:  # pragma: no cover
+        if not self._is_alive:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         referer = (
@@ -211,6 +212,8 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
 
             if self._config.cookies:
                 await self.context.add_cookies(self._config.cookies)  # pyright: ignore
+
+            self._is_alive = True
         else:
             raise RuntimeError("Session has been already started")
 
@@ -234,7 +237,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         """
         params = _validate(kwargs, self, PlaywrightConfig)
 
-        if self._closed:  # pragma: no cover
+        if not self._is_alive:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         referer = (

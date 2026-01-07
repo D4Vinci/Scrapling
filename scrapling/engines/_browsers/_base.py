@@ -37,14 +37,14 @@ class SyncSession:
         self._max_wait_for_page = 60
         self.playwright: Playwright | Any = None
         self.context: BrowserContext | Any = None
-        self._closed = False
+        self._is_alive = False
 
     def start(self):
         pass
 
     def close(self):  # pragma: no cover
         """Close all resources"""
-        if self._closed:
+        if not self._is_alive:
             return
 
         if self.context:
@@ -55,7 +55,7 @@ class SyncSession:
             self.playwright.stop()
             self.playwright = None  # pyright: ignore
 
-        self._closed = True
+        self._is_alive = False
 
     def __enter__(self):
         self.start()
@@ -137,7 +137,7 @@ class AsyncSession:
         self._max_wait_for_page = 60
         self.playwright: AsyncPlaywright | Any = None
         self.context: AsyncBrowserContext | Any = None
-        self._closed = False
+        self._is_alive = False
         self._lock = Lock()
 
     async def start(self):
@@ -145,7 +145,7 @@ class AsyncSession:
 
     async def close(self):
         """Close all resources"""
-        if self._closed:  # pragma: no cover
+        if not self._is_alive:  # pragma: no cover
             return
 
         if self.context:
@@ -156,7 +156,7 @@ class AsyncSession:
             await self.playwright.stop()
             self.playwright = None  # pyright: ignore
 
-        self._closed = True
+        self._is_alive = False
 
     async def __aenter__(self):
         await self.start()

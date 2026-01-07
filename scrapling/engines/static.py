@@ -62,6 +62,7 @@ class _ConfigurationLogic(ABC):
         "_default_cert",
         "_default_http3",
         "selector_config",
+        "_is_alive",
     )
 
     def __init__(self, **kwargs: Unpack[RequestsSession]):
@@ -80,6 +81,7 @@ class _ConfigurationLogic(ABC):
         self._default_cert = kwargs.get("cert") or None
         self._default_http3 = kwargs.get("http3", False)
         self.selector_config = kwargs.get("selector_config") or {}
+        self._is_alive = False
 
     @staticmethod
     def _get_param(kwargs: Dict, key: str, default: Any) -> Any:
@@ -183,10 +185,11 @@ class _SyncSessionLogic(_ConfigurationLogic):
 
     def __enter__(self):
         """Creates and returns a new synchronous Fetcher Session"""
-        if self._curl_session:
+        if self._is_alive:
             raise RuntimeError("This FetcherSession instance already has an active synchronous session.")
 
         self._curl_session = CurlSession()
+        self._is_alive = True
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -201,7 +204,9 @@ class _SyncSessionLogic(_ConfigurationLogic):
             self._curl_session.close()
             self._curl_session = None
 
-    def __make_request(self, method: SUPPORTED_HTTP_METHODS, stealth: Optional[bool] = None, **kwargs) -> Response:
+        self._is_alive = False
+
+    def _make_request(self, method: SUPPORTED_HTTP_METHODS, stealth: Optional[bool] = None, **kwargs) -> Response:
         """
         Perform an HTTP request using the configured session.
         """
@@ -267,7 +272,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         :return: A `Response` object.
         """
         stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self.__make_request("GET", stealth=stealthy_headers, url=url, **kwargs)
+        return self._make_request("GET", stealth=stealthy_headers, url=url, **kwargs)
 
     def post(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
@@ -299,7 +304,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         :return: A `Response` object.
         """
         stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self.__make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
+        return self._make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
 
     def put(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
@@ -331,7 +336,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         :return: A `Response` object.
         """
         stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self.__make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
+        return self._make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
 
     def delete(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Response:
         """
@@ -365,7 +370,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         # Careful of sending a body in a DELETE request, it might cause some websites to reject the request as per https://www.rfc-editor.org/rfc/rfc7231#section-4.3.5,
         # But some websites accept it, it depends on the implementation used.
         stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self.__make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
+        return self._make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
 
 
 class _ASyncSessionLogic(_ConfigurationLogic):
@@ -377,10 +382,11 @@ class _ASyncSessionLogic(_ConfigurationLogic):
 
     async def __aenter__(self):  # pragma: no cover
         """Creates and returns a new asynchronous Session."""
-        if self._async_curl_session:
+        if self._is_alive:
             raise RuntimeError("This FetcherSession instance already has an active asynchronous session.")
 
         self._async_curl_session = AsyncCurlSession()
+        self._is_alive = True
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -395,9 +401,9 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             await self._async_curl_session.close()
             self._async_curl_session = None
 
-    async def __make_request(
-        self, method: SUPPORTED_HTTP_METHODS, stealth: Optional[bool] = None, **kwargs
-    ) -> Response:
+        self._is_alive = False
+
+    async def _make_request(self, method: SUPPORTED_HTTP_METHODS, stealth: Optional[bool] = None, **kwargs) -> Response:
         """
         Perform an HTTP request using the configured session.
         """
@@ -465,7 +471,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         :return: A `Response` object.
         """
         stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self.__make_request("GET", stealth=stealthy_headers, url=url, **kwargs)
+        return self._make_request("GET", stealth=stealthy_headers, url=url, **kwargs)
 
     def post(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
@@ -497,7 +503,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         :return: A `Response` object.
         """
         stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self.__make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
+        return self._make_request("POST", stealth=stealthy_headers, url=url, **kwargs)
 
     def put(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
@@ -529,7 +535,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         :return: A `Response` object.
         """
         stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self.__make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
+        return self._make_request("PUT", stealth=stealthy_headers, url=url, **kwargs)
 
     def delete(self, url: str, **kwargs: Unpack[DataRequestParams]) -> Awaitable[Response]:
         """
@@ -563,7 +569,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         # Careful of sending a body in a DELETE request, it might cause some websites to reject the request as per https://www.rfc-editor.org/rfc/rfc7231#section-4.3.5,
         # But some websites accept it, it depends on the implementation used.
         stealthy_headers = kwargs.pop("stealthy_headers", None)
-        return self.__make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
+        return self._make_request("DELETE", stealth=stealthy_headers, url=url, **kwargs)
 
 
 class FetcherSession:

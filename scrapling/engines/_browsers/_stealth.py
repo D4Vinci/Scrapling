@@ -39,7 +39,6 @@ class StealthySession(SyncSession, StealthySessionMixin):
         "_max_wait_for_page",
         "playwright",
         "context",
-        "_closed",
     )
 
     def __init__(self, **kwargs: Unpack[StealthSession]):
@@ -191,7 +190,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :return: A `Response` object.
         """
         params = _validate(kwargs, self, StealthConfig)
-        if self._closed:  # pragma: no cover
+        if not self._is_alive:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         referer = (
@@ -404,7 +403,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         """
         params = _validate(kwargs, self, StealthConfig)
 
-        if self._closed:  # pragma: no cover
+        if not self._is_alive:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
         referer = (
