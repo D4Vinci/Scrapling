@@ -96,6 +96,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
 
             if self._config.cookies:  # pragma: no cover
                 self.context.add_cookies(self._config.cookies)
+
+            self._is_alive = True
         else:
             raise RuntimeError("Session has been already started")
 
@@ -308,6 +310,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
 
             if self._config.cookies:
                 await self.context.add_cookies(self._config.cookies)  # pyright: ignore
+
+            self._is_alive = True
         else:
             raise RuntimeError("Session has been already started")
 
