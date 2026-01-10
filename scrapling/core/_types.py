@@ -12,6 +12,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    AsyncGenerator,
     Generic,
     Iterable,
     List,

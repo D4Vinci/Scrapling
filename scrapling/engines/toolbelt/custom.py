@@ -10,11 +10,18 @@ from scrapling.core._types import (
     Dict,
     cast,
     List,
-    Optional,
     Tuple,
+    Union,
+    Optional,
+    Callable,
+    TYPE_CHECKING,
+    AsyncGenerator,
 )
 from scrapling.core.custom_types import MappingProxyType
 from scrapling.parser import Selector, SQLiteStorageSystem
+
+if TYPE_CHECKING:
+    from scrapling.spiders import Request
 
 
 class Response(Selector):
@@ -49,6 +56,52 @@ class Response(Selector):
         )
         # For easier debugging while working from a Python shell
         log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
+
+        self.meta: Dict[str, Any] = {}
+        self.request: Optional["Request"] = None  # Will be set by crawler
+
+    def follow(
+        self,
+        url: str,
+        sid: str = "",
+        callback: Callable[["Response"], AsyncGenerator[Union[Dict[str, Any], "Request", None], None]] | None = None,
+        priority: int | None = None,
+        dont_filter: bool = False,
+        meta: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Create a Request to follow a URL.
+
+        This is a helper method for spiders to easily follow links found in pages.
+
+        **IMPORTANT**: The below arguments if left empty, the corresponding value from the previous request will be used. The only exception is `dont_filter`.
+
+        :param url: The URL to follow (can be relative, will be joined with current URL)
+        :param sid: The session id to use
+        :param callback: Spider callback method to use
+        :param priority: The priority number to use, the higher the number, the higher priority to be processed first.
+        :param dont_filter: If this request has been done before, disable the filter to allow it again.
+        :param meta: Additional meta data to included in the request
+        :param kwargs: Additional Request arguments
+        :return: Request object ready to be yielded
+        """
+        from scrapling.spiders import Request
+
+        if not self.request or not isinstance(self.request, Request):
+            raise TypeError("This response has no request set yet.")
+
+        return Request(
+            url=self.urljoin(url),
+            sid=sid or self.request.sid,
+            callback=callback or self.request.callback,
+            priority=priority if priority is not None else self.request.priority,
+            dont_filter=dont_filter,
+            meta={**(self.meta or {}), **(meta or {})},
+            **(kwargs if kwargs else self.request._session_kwargs),
+        )
+
+    def __str__(self) -> str:
+        return f"<{self.status} {self.url}>"
 
 
 class BaseFetcher:
