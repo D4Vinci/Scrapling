@@ -1,3 +1,7 @@
+# AI related files
+.claude/*
+CLAUDE.md
+
 # cached files
 __pycache__/
 *.py[cod]
