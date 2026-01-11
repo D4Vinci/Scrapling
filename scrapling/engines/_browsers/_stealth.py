@@ -1,5 +1,7 @@
 from random import randint
 from re import compile as re_compile
+from time import sleep as time_sleep
+from asyncio import sleep as asyncio_sleep
 
 from playwright.sync_api import (
     Locator,
@@ -202,57 +204,66 @@ class StealthySession(SyncSession, StealthySessionMixin):
             else None
         )
 
-        page_info = self._get_page(params.timeout, params.extra_headers, params.disable_resources)
-        final_response = [None]
-        handle_response = self._create_response_handler(page_info, final_response)
+        for attempt in range(self._config.retries):
+            page_info = self._get_page(params.timeout, params.extra_headers, params.disable_resources)
+            final_response = [None]
+            handle_response = self._create_response_handler(page_info, final_response)
 
-        try:  # pragma: no cover
-            # Navigate to URL and wait for a specified state
-            page_info.page.on("response", handle_response)
-            first_response = page_info.page.goto(url, referer=referer)
-            self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
-
-            if not first_response:
-                raise RuntimeError(f"Failed to get response for {url}")
-
-            if params.solve_cloudflare:
-                self._cloudflare_solver(page_info.page)
-                # Make sure the page is fully loaded after the captcha
+            try:  # pragma: no cover
+                # Navigate to URL and wait for a specified state
+                page_info.page.on("response", handle_response)
+                first_response = page_info.page.goto(url, referer=referer)
                 self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
 
-            if params.page_action:
-                try:
-                    _ = params.page_action(page_info.page)
-                except Exception as e:  # pragma: no cover
-                    log.error(f"Error executing page_action: {e}")
+                if not first_response:
+                    raise RuntimeError(f"Failed to get response for {url}")
 
-            if params.wait_selector:
-                try:
-                    waiter: Locator = page_info.page.locator(params.wait_selector)
-                    waiter.first.wait_for(state=params.wait_selector_state)
-                    # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                if params.solve_cloudflare:
+                    self._cloudflare_solver(page_info.page)
+                    # Make sure the page is fully loaded after the captcha
                     self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
-                except Exception as e:  # pragma: no cover
-                    log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-            page_info.page.wait_for_timeout(params.wait)
+                if params.page_action:
+                    try:
+                        _ = params.page_action(page_info.page)
+                    except Exception as e:  # pragma: no cover
+                        log.error(f"Error executing page_action: {e}")
 
-            # Create response object
-            response = ResponseFactory.from_playwright_response(
-                page_info.page, first_response, final_response[0], params.selector_config
-            )
+                if params.wait_selector:
+                    try:
+                        waiter: Locator = page_info.page.locator(params.wait_selector)
+                        waiter.first.wait_for(state=params.wait_selector_state)
+                        # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                        self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
+                    except Exception as e:  # pragma: no cover
+                        log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-            # Close the page to free up resources
-            page_info.page.close()
-            self.page_pool.pages.remove(page_info)
+                page_info.page.wait_for_timeout(params.wait)
 
-            return response
+                # Create response object
+                response = ResponseFactory.from_playwright_response(
+                    page_info.page, first_response, final_response[0], params.selector_config
+                )
 
-        except Exception as e:
-            page_info.mark_error()
-            page_info.page.close()
-            self.page_pool.pages.remove(page_info)
-            raise e
+                # Close the page to free up resources
+                page_info.page.close()
+                self.page_pool.pages.remove(page_info)
+
+                return response
+
+            except Exception as e:
+                page_info.mark_error()
+                page_info.page.close()
+                self.page_pool.pages.remove(page_info)
+
+                if attempt < self._config.retries - 1 and self._is_retriable(e):
+                    log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s...")
+                    time_sleep(self._config.retry_delay)
+                else:
+                    raise
+
+        # For type checking purposes only
+        raise AssertionError("Unreachable: retry loop must return or raise")  # pragma: no cover
 
 
 class AsyncStealthySession(AsyncSession, StealthySessionMixin):
@@ -422,53 +433,62 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
             else None
         )
 
-        page_info = await self._get_page(params.timeout, params.extra_headers, params.disable_resources)
-        final_response = [None]
-        handle_response = self._create_response_handler(page_info, final_response)
+        for attempt in range(self._config.retries):
+            page_info = await self._get_page(params.timeout, params.extra_headers, params.disable_resources)
+            final_response = [None]
+            handle_response = self._create_response_handler(page_info, final_response)
 
-        try:
-            # Navigate to URL and wait for a specified state
-            page_info.page.on("response", handle_response)
-            first_response = await page_info.page.goto(url, referer=referer)
-            await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
-
-            if not first_response:
-                raise RuntimeError(f"Failed to get response for {url}")
-
-            if params.solve_cloudflare:
-                await self._cloudflare_solver(page_info.page)
-                # Make sure the page is fully loaded after the captcha
+            try:
+                # Navigate to URL and wait for a specified state
+                page_info.page.on("response", handle_response)
+                first_response = await page_info.page.goto(url, referer=referer)
                 await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
 
-            if params.page_action:
-                try:
-                    _ = await params.page_action(page_info.page)
-                except Exception as e:
-                    log.error(f"Error executing page_action: {e}")
+                if not first_response:
+                    raise RuntimeError(f"Failed to get response for {url}")
 
-            if params.wait_selector:
-                try:
-                    waiter: AsyncLocator = page_info.page.locator(params.wait_selector)
-                    await waiter.first.wait_for(state=params.wait_selector_state)
-                    # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                if params.solve_cloudflare:
+                    await self._cloudflare_solver(page_info.page)
+                    # Make sure the page is fully loaded after the captcha
                     await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
-                except Exception as e:
-                    log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-            await page_info.page.wait_for_timeout(params.wait)
+                if params.page_action:
+                    try:
+                        _ = await params.page_action(page_info.page)
+                    except Exception as e:
+                        log.error(f"Error executing page_action: {e}")
 
-            # Create response object
-            response = await ResponseFactory.from_async_playwright_response(
-                page_info.page, first_response, final_response[0], params.selector_config
-            )
+                if params.wait_selector:
+                    try:
+                        waiter: AsyncLocator = page_info.page.locator(params.wait_selector)
+                        await waiter.first.wait_for(state=params.wait_selector_state)
+                        # Wait again after waiting for the selector, helpful with protections like Cloudflare
+                        await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
+                    except Exception as e:
+                        log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-            # Close the page to free up resources
-            await page_info.page.close()
-            self.page_pool.pages.remove(page_info)
-            return response
+                await page_info.page.wait_for_timeout(params.wait)
 
-        except Exception as e:  # pragma: no cover
-            page_info.mark_error()
-            await page_info.page.close()
-            self.page_pool.pages.remove(page_info)
-            raise e
+                # Create response object
+                response = await ResponseFactory.from_async_playwright_response(
+                    page_info.page, first_response, final_response[0], params.selector_config
+                )
+
+                # Close the page to free up resources
+                await page_info.page.close()
+                self.page_pool.pages.remove(page_info)
+                return response
+
+            except Exception as e:  # pragma: no cover
+                page_info.mark_error()
+                await page_info.page.close()
+                self.page_pool.pages.remove(page_info)
+
+                if attempt < self._config.retries - 1 and self._is_retriable(e):
+                    log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s...")
+                    await asyncio_sleep(self._config.retry_delay)
+                else:
+                    raise
+
+        # For type checking purposes only
+        raise AssertionError("Unreachable: retry loop must return or raise")  # pragma: no cover

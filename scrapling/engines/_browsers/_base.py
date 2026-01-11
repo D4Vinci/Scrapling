@@ -310,6 +310,14 @@ class BaseSessionMixin:
             if config.additional_args:
                 self._context_options.update(config.additional_args)
 
+    @staticmethod
+    def _is_retriable(error: Exception) -> bool:
+        """Check if an error is retriable (transient network/timeout issues)."""
+        if isinstance(error, TimeoutError):
+            return True
+        error_msg = str(error).lower()
+        return "net::" in error_msg or "failed to get response" in error_msg
+
 
 class DynamicSessionMixin(BaseSessionMixin):
     def __validate__(self, **params):

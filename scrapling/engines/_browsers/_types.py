@@ -79,6 +79,8 @@ if TYPE_CHECKING:  # pragma: no cover
         cdp_url: Optional[str]
         useragent: Optional[str]
         extra_flags: Optional[List[str]]
+        retries: int
+        retry_delay: int | float
 
     class PlaywrightFetchParams(TypedDict, total=False):
         load_dom: bool

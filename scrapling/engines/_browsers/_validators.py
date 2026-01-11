@@ -50,6 +50,7 @@ def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
 
 # Type aliases for cleaner annotations
 PagesCount = Annotated[int, Meta(ge=1, le=50)]
+RetriesCount = Annotated[int, Meta(ge=1, le=10)]
 Seconds = Annotated[int, float, Meta(ge=0)]
 
 
@@ -80,6 +81,8 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     cdp_url: Optional[str] = None
     useragent: Optional[str] = None
     extra_flags: Optional[List[str]] = None
+    retries: RetriesCount = 3
+    retry_delay: Seconds = 1
 
     def __post_init__(self):  # pragma: no cover
         """Custom validation after msgspec validation"""
