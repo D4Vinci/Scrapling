@@ -5,7 +5,7 @@ from anyio import create_task_group, CapacityLimiter
 
 from scrapling.core.utils import log
 from scrapling.spiders.request import Request
-from scrapling.spiders.result import CrawlStats
+from scrapling.spiders.result import CrawlStats, ItemList
 from scrapling.spiders.scheduler import Scheduler
 from scrapling.spiders.session import SessionManager
 from scrapling.core._types import Dict, TYPE_CHECKING, Any
@@ -33,7 +33,7 @@ class CrawlerEngine:
 
         self._active_tasks: int = 0
         self._running: bool = False
-        self._items: list[dict[str, Any]] = []
+        self._items: ItemList = ItemList()
 
     def _is_domain_allowed(self, request: Request) -> bool:
         """Check if the request's domain is in allowed_domains."""
@@ -161,6 +161,6 @@ class CrawlerEngine:
         return self.stats
 
     @property
-    def items(self) -> list[dict[str, Any]]:
+    def items(self) -> ItemList:
         """Access scraped items."""
         return self._items

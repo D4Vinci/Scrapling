@@ -1,6 +1,42 @@
+from pathlib import Path
 from dataclasses import dataclass, field
 
-from scrapling.core._types import Any, Iterator, Dict, List, Tuple
+import orjson
+
+from scrapling.core.utils import log
+from scrapling.core._types import Any, Iterator, Dict, List, Tuple, Union
+
+
+class ItemList(list):
+    """A list of scraped items with export capabilities."""
+
+    def to_json(self, path: Union[str, Path], *, indent: bool = False):
+        """Export items to a JSON file.
+
+        :param path: Path to the output file
+        :param indent: Pretty-print with 2-space indentation (slightly slower)
+        :return: Number of items written
+        """
+        options = orjson.OPT_SERIALIZE_NUMPY
+        if indent:
+            options |= orjson.OPT_INDENT_2
+
+        file = Path(path)
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_bytes(orjson.dumps(list(self), option=options))
+        log.info("Saved %d items to %s", len(self), path)
+
+    def to_jsonl(self, path: Union[str, Path]):
+        """Export items as JSON Lines (one JSON object per line).
+
+        :param path: Path to the output file
+        """
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "wb") as f:
+            for item in self:
+                f.write(orjson.dumps(item, option=orjson.OPT_SERIALIZE_NUMPY))
+                f.write(b"\n")
+        log.info("Saved %d items to %s", len(self), path)
 
 
 @dataclass
@@ -73,7 +109,7 @@ class CrawlResult:
     """Complete result from a spider run."""
 
     stats: CrawlStats
-    items: list[dict[str, Any]]
+    items: ItemList
 
     def __len__(self) -> int:
         return len(self.items)
