@@ -158,6 +158,8 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
 
         except Exception as e:
             page_info.mark_error()
+            page_info.page.close()
+            self.page_pool.pages.remove(page_info)
             raise e
 
 
@@ -298,4 +300,6 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
 
         except Exception as e:  # pragma: no cover
             page_info.mark_error()
+            await page_info.page.close()
+            self.page_pool.pages.remove(page_info)
             raise e

@@ -1,5 +1,3 @@
-"""Crawler engine that orchestrates the crawling process."""
-
 import json
 
 import anyio

@@ -250,6 +250,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
 
         except Exception as e:
             page_info.mark_error()
+            page_info.page.close()
+            self.page_pool.pages.remove(page_info)
             raise e
 
 
@@ -467,4 +469,6 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
 
         except Exception as e:  # pragma: no cover
             page_info.mark_error()
+            await page_info.page.close()
+            self.page_pool.pages.remove(page_info)
             raise e
