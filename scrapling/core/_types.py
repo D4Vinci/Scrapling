@@ -19,6 +19,7 @@ from typing import (
     Set,
     Literal,
     Optional,
+    Iterator,
     Pattern,
     Sequence,
     Tuple,

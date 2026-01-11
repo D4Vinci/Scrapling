@@ -108,8 +108,11 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         if not self._is_alive:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
+        request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
         referer = (
-            generate_convincing_referer(url) if (params.google_search and "referer" not in self._headers_keys) else None
+            generate_convincing_referer(url)
+            if (params.google_search and "referer" not in request_headers_keys)
+            else None
         )
 
         page_info = self._get_page(params.timeout, params.extra_headers, params.disable_resources)
@@ -240,8 +243,11 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         if not self._is_alive:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
 
+        request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
         referer = (
-            generate_convincing_referer(url) if (params.google_search and "referer" not in self._headers_keys) else None
+            generate_convincing_referer(url)
+            if (params.google_search and "referer" not in request_headers_keys)
+            else None
         )
 
         page_info = await self._get_page(params.timeout, params.extra_headers, params.disable_resources)
