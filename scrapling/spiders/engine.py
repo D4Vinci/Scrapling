@@ -82,7 +82,7 @@ class CrawlerEngine:
                 retry_request._retry_count += 1
                 retry_request.priority -= 1  # Don't retry immediately
                 retry_request.dont_filter = True
-                new_request = await self.spider.retry_blocked_request(retry_request)
+                new_request = await self.spider.retry_blocked_request(retry_request, response)
                 await self.scheduler.enqueue(new_request)
                 log.debug(
                     f"Scheduled blocked request for retry ({retry_request._retry_count}/{self.spider.max_blocked_retries}): {request.url}"

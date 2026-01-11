@@ -162,7 +162,7 @@ class Spider(ABC):
             return True
         return False
 
-    async def retry_blocked_request(self, request: Request) -> Request:
+    async def retry_blocked_request(self, request: Request, response: "Response") -> Request:
         """Users should override this to prepare the blocked request before retrying, if needed."""
         return request
 
