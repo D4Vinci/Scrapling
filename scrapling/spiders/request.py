@@ -13,6 +13,7 @@ class Request:
         priority: int = 0,
         dont_filter: bool = False,
         meta: dict[str, Any] | None = None,
+        _retry_count: int = 0,
         **kwargs: Any,
     ) -> None:
         self.url: str = url
@@ -21,7 +22,21 @@ class Request:
         self.priority: int = priority
         self.dont_filter: bool = dont_filter
         self.meta: dict[str, Any] = meta if meta else {}
+        self._retry_count: int = _retry_count
         self._session_kwargs = kwargs if kwargs else {}
+
+    def copy(self) -> "Request":
+        """Create a copy of this request."""
+        return Request(
+            url=self.url,
+            sid=self.sid,
+            callback=self.callback,
+            priority=self.priority,
+            dont_filter=self.dont_filter,
+            meta=self.meta.copy(),
+            _retry_count=self._retry_count,
+            **self._session_kwargs,
+        )
 
     @property
     def domain(self) -> str:

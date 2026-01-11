@@ -75,7 +75,22 @@ class CrawlerEngine:
                 await self.spider.on_error(request, e)
                 return
 
-        # Process response through callback
+        if await self.spider.is_blocked(response):
+            self.stats.blocked_requests_count += 1
+            if request._retry_count < self.spider.max_blocked_retries:
+                retry_request = request.copy()
+                retry_request._retry_count += 1
+                retry_request.priority -= 1  # Don't retry immediately
+                retry_request.dont_filter = True
+                new_request = await self.spider.retry_blocked_request(retry_request)
+                await self.scheduler.enqueue(new_request)
+                log.debug(
+                    f"Scheduled blocked request for retry ({retry_request._retry_count}/{self.spider.max_blocked_retries}): {request.url}"
+                )
+            else:
+                log.warning(f"Max retries exceeded for blocked request: {request.url}")
+            return
+
         callback = request.callback if request.callback else self.spider.parse
         try:
             async for result in callback(response):

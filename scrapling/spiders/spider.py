@@ -74,6 +74,7 @@ class Spider(ABC):
     concurrent_requests: int = 16
     concurrent_requests_per_domain: int = 0
     download_delay: float = 0.0
+    max_blocked_retries: int = 3
 
     # Logging settings
     logging_level: int = logging.DEBUG
@@ -155,13 +156,15 @@ class Spider(ABC):
         """
         self.logger.error(error, exc_info=error)
 
-    @staticmethod
-    async def is_blocked(response: "Response") -> bool:
-        """Check if the response is blocked."""
-        # TODO
+    async def is_blocked(self, response: "Response") -> bool:
+        """Check if the response is blocked. Users should override this for custom detection logic."""
         if response.status in BLOCKED_CODES:
             return True
         return False
+
+    async def retry_blocked_request(self, request: Request) -> Request:
+        """Users should override this to prepare the blocked request before retrying, if needed."""
+        return request
 
     def __repr__(self) -> str:
         """String representation of the spider."""
