@@ -203,4 +203,7 @@ class Spider(ABC):
 
         :param backend_options: Asyncio backend options to be used with `anyio.run`
         """
+        backend_options = backend_options or {}
+        # By default use the faster uvloop/winloop event loop implementation, if available
+        backend_options.update({"use_uvloop": True})
         return anyio.run(self.__run, backend="asyncio", backend_options=backend_options)
