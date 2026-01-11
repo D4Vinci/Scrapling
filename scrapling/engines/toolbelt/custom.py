@@ -68,6 +68,7 @@ class Response(Selector):
         priority: int | None = None,
         dont_filter: bool = False,
         meta: dict[str, Any] | None = None,
+        referer_flow: bool = True,
         **kwargs: Any,
     ) -> Any:
         """Create a Request to follow a URL.
@@ -82,6 +83,7 @@ class Response(Selector):
         :param priority: The priority number to use, the higher the number, the higher priority to be processed first.
         :param dont_filter: If this request has been done before, disable the filter to allow it again.
         :param meta: Additional meta data to included in the request
+        :param referer_flow: Enabled by default, set the current response url as referer for the new request url.
         :param kwargs: Additional Request arguments
         :return: Request object ready to be yielded
         """
@@ -90,6 +92,22 @@ class Response(Selector):
         if not self.request or not isinstance(self.request, Request):
             raise TypeError("This response has no request set yet.")
 
+        # Merge original session kwargs with new kwargs (new takes precedence)
+        session_kwargs = {**self.request._session_kwargs, **kwargs}
+
+        if referer_flow:
+            # For requests
+            headers = session_kwargs.get("headers", {})
+            headers["referer"] = self.url
+            session_kwargs["headers"] = headers
+
+            # For browsers
+            extra_headers = session_kwargs.get("extra_headers", {})
+            extra_headers["referer"] = self.url
+            session_kwargs["extra_headers"] = extra_headers
+
+            session_kwargs["google_search"] = False
+
         return Request(
             url=self.urljoin(url),
             sid=sid or self.request.sid,
@@ -97,7 +115,7 @@ class Response(Selector):
             priority=priority if priority is not None else self.request.priority,
             dont_filter=dont_filter,
             meta={**(self.meta or {}), **(meta or {})},
-            **(kwargs if kwargs else self.request._session_kwargs),
+            **session_kwargs,
         )
 
     def __str__(self) -> str:
