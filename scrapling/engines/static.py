@@ -136,6 +136,9 @@ class _ConfigurationLogic(ABC):
             "retries",
             "retry_delay",
             "selector_config",
+            # Browser session params (ignored by HTTP sessions)
+            "extra_headers",
+            "google_search",
         }
         for k, v in method_kwargs.items():
             if k not in skip_keys and v is not None:
