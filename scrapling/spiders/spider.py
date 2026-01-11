@@ -195,15 +195,16 @@ class Spider(ABC):
                     if isinstance(handler, logging.FileHandler):
                         handler.close()
 
-    def start(self, backend_options: Dict[str, Any] | None = None) -> CrawlResult:
+    def start(self, use_uvloop: bool = False, **backend_options: Any) -> CrawlResult:
         """Run the spider and return results.
 
         This is the main entry point for running a spider.
         Handles async execution internally via anyio.
 
+        :param use_uvloop: Whether to use the faster uvloop/winloop event loop implementation, if available.
         :param backend_options: Asyncio backend options to be used with `anyio.run`
         """
         backend_options = backend_options or {}
-        # By default use the faster uvloop/winloop event loop implementation, if available
-        backend_options.update({"use_uvloop": True})
+        if use_uvloop:
+            backend_options.update({"use_uvloop": True})
         return anyio.run(self.__run, backend="asyncio", backend_options=backend_options)
