@@ -71,6 +71,7 @@ fetchers = [
     "patchright==1.56.0",
     "browserforge>=1.2.3",
     "msgspec>=0.20.0",
+    "anyio>=4.12.1"
 ]
 ai = [
     "mcp>=1.24.0",
