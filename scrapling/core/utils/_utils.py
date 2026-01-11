@@ -1,6 +1,7 @@
 import logging
 from itertools import chain
 from re import compile as re_compile
+from contextvars import ContextVar, Token
 
 from lxml import html
 
@@ -36,7 +37,25 @@ def setup_logger():
     return logger
 
 
-log = setup_logger()
+_current_logger: ContextVar[logging.Logger] = ContextVar("scrapling_logger", default=setup_logger())
+
+
+class LoggerProxy:
+    def __getattr__(self, name: str):
+        return getattr(_current_logger.get(), name)
+
+
+log = LoggerProxy()
+
+
+def set_logger(logger: logging.Logger) -> Token:
+    """Set the current context logger. Returns token for reset."""
+    return _current_logger.set(logger)
+
+
+def reset_logger(token: Token) -> None:
+    """Reset logger to previous state using token."""
+    _current_logger.reset(token)
 
 
 def flatten(lst: Iterable[Any]) -> List[Any]:
