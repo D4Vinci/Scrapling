@@ -102,17 +102,14 @@ class CrawlerEngine:
                         self.stats.offsite_requests_count += 1
                         log.debug(f"Filtered offsite request to: {result.url}")
                 elif isinstance(result, dict):
-                    await self._handle_item(result)
+                    self.stats.items_scraped += 1
+                    self._items.append(result)
                     if self._item_stream:
                         await self._item_stream.send(result)
+                    await self.spider.on_scraped_item(result)
                     log.debug(f"Scraped from {str(response)}\n{result}")
         except Exception as e:
             await self.spider.on_error(request, e)
-
-    async def _handle_item(self, item: dict[str, Any]) -> None:
-        """Handle a scraped item. Override or extend for item pipelines."""
-        self.stats.items_scraped += 1
-        self._items.append(item)
 
     async def _task_wrapper(self, request: Request) -> None:
         """Wrapper to track active task count."""

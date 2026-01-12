@@ -158,6 +158,10 @@ class Spider(ABC):
         """
         self.logger.error(error, exc_info=error)
 
+    async def on_scraped_item(self, item: dict[str, Any]) -> None:
+        """Handle a scraped item. Override or extend for item pipelines."""
+        pass
+
     async def is_blocked(self, response: "Response") -> bool:
         """Check if the response is blocked. Users should override this for custom detection logic."""
         if response.status in BLOCKED_CODES:
