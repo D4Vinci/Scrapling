@@ -1,7 +1,9 @@
+from asyncio import Lock
+
 from scrapling.spiders.request import Request
 from scrapling.engines.static import _ASyncSessionLogic
 from scrapling.engines.toolbelt.convertor import Response
-from scrapling.core._types import cast, SUPPORTED_HTTP_METHODS
+from scrapling.core._types import Set, cast, SUPPORTED_HTTP_METHODS
 from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, FetcherSession
 
 Session = FetcherSession | AsyncDynamicSession | AsyncStealthySession
@@ -14,13 +16,16 @@ class SessionManager:
         self._sessions: dict[str, Session] = {}
         self._default_session_id: str | None = None
         self._started: bool = False
+        self._lazy_sessions: Set[str] = set()
+        self._lazy_lock = Lock()
 
-    def add(self, session_id: str, session: Session, *, default: bool = False) -> "SessionManager":
+    def add(self, session_id: str, session: Session, *, default: bool = False, lazy: bool = False) -> "SessionManager":
         """Register a session instance.
 
         :param session_id: Name to reference this session in requests
         :param session: Your pre-configured session instance
         :param default: If True, this becomes the default session
+        :param lazy: If True, the session will be started only when a request uses its ID.
         """
         if session_id in self._sessions:
             raise ValueError(f"Session '{session_id}' already registered")
@@ -29,6 +34,9 @@ class SessionManager:
 
         if default or self._default_session_id is None:
             self._default_session_id = session_id
+
+        if lazy:
+            self._lazy_sessions.add(session_id)
 
         return self
 
@@ -48,6 +56,8 @@ class SessionManager:
             raise KeyError(f"Session '{session_id}' not found")
 
         session = self._sessions.pop(session_id)
+        if session_id in self._lazy_sessions:
+            self._lazy_sessions.remove(session_id)
 
         if session and self._default_session_id == session_id:
             self._default_session_id = next(iter(self._sessions), None)
@@ -75,8 +85,8 @@ class SessionManager:
         if self._started:
             return
 
-        for session in self._sessions.values():
-            if not session._is_alive:
+        for sid, session in self._sessions.items():
+            if sid not in self._lazy_sessions and not session._is_alive:
                 await session.__aenter__()
 
         self._started = True
@@ -93,6 +103,11 @@ class SessionManager:
         session = self.get(sid)
 
         if session:
+            if sid in self._lazy_sessions and not session._is_alive:
+                async with self._lazy_lock:
+                    if not session._is_alive:
+                        await session.__aenter__()
+
             if isinstance(session, FetcherSession):
                 session = session._client
 
