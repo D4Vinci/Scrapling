@@ -78,6 +78,8 @@ class Spider(ABC):
 
     # Logging settings
     logging_level: int = logging.DEBUG
+    logging_format: str = "[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"
+    logging_date_format: str = "%Y-%m-%d %H:%M:%S"
     log_file: Optional[str] = None
 
     def __init__(self):
@@ -90,7 +92,7 @@ class Spider(ABC):
         self.logger.propagate = False  # Don't propagate to parent 'scrapling' logger
 
         formatter = logging.Formatter(
-            fmt=f"[%(asctime)s]:({self.name}) %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+            fmt=self.logging_format.format(spider_name=self.name), datefmt=self.logging_date_format
         )
 
         # Add a log counter handler to track log counts by level
