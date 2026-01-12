@@ -1,14 +1,14 @@
 import json
 
 import anyio
-from anyio import create_task_group, CapacityLimiter
+from anyio import create_task_group, CapacityLimiter, create_memory_object_stream, EndOfStream
 
 from scrapling.core.utils import log
 from scrapling.spiders.request import Request
 from scrapling.spiders.result import CrawlStats, ItemList
 from scrapling.spiders.scheduler import Scheduler
 from scrapling.spiders.session import SessionManager
-from scrapling.core._types import Dict, TYPE_CHECKING, Any
+from scrapling.core._types import Dict, TYPE_CHECKING, Any, AsyncGenerator
 
 if TYPE_CHECKING:
     from scrapling.spiders.spider import Spider
@@ -34,6 +34,7 @@ class CrawlerEngine:
         self._active_tasks: int = 0
         self._running: bool = False
         self._items: ItemList = ItemList()
+        self._item_stream: Any = None
 
     def _is_domain_allowed(self, request: Request) -> bool:
         """Check if the request's domain is in allowed_domains."""
@@ -102,6 +103,8 @@ class CrawlerEngine:
                         log.debug(f"Filtered offsite request to: {result.url}")
                 elif isinstance(result, dict):
                     await self._handle_item(result)
+                    if self._item_stream:
+                        await self._item_stream.send(result)
                     log.debug(f"Scraped from {str(response)}\n{result}")
         except Exception as e:
             await self.spider.on_error(request, e)
@@ -164,3 +167,25 @@ class CrawlerEngine:
     def items(self) -> ItemList:
         """Access scraped items."""
         return self._items
+
+    def __aiter__(self) -> AsyncGenerator[dict, None]:
+        return self._stream()
+
+    async def _stream(self) -> AsyncGenerator[dict, None]:
+        """Async generator that runs crawl and yields items."""
+        send, recv = create_memory_object_stream[dict](100)
+        self._item_stream = send
+
+        async def run():
+            try:
+                await self.crawl()
+            finally:
+                await send.aclose()
+
+        async with create_task_group() as tg:
+            tg.start_soon(run)
+            try:
+                async for item in recv:
+                    yield item
+            except EndOfStream:
+                pass

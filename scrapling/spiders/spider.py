@@ -1,14 +1,14 @@
 import logging
-from pathlib import Path
 from abc import ABC
+from pathlib import Path
 
 import anyio
 
 from scrapling.spiders.request import Request
-from scrapling.spiders.result import CrawlResult
 from scrapling.spiders.engine import CrawlerEngine
 from scrapling.spiders.session import SessionManager
 from scrapling.core.utils import set_logger, reset_logger
+from scrapling.spiders.result import CrawlResult, CrawlStats
 from scrapling.core._types import Set, Any, Dict, Optional, TYPE_CHECKING, AsyncGenerator
 
 BLOCKED_CODES = {401, 403, 407, 429, 444, 500, 502, 503, 504}
@@ -108,6 +108,8 @@ class Spider(ABC):
             self.logger.addHandler(file_handler)
 
         self._session_manager = SessionManager()
+        self._stream_engine: CrawlerEngine | None = None
+
         try:
             self.configure_sessions(self._session_manager)
         except Exception as e:
@@ -211,3 +213,29 @@ class Spider(ABC):
         if use_uvloop:
             backend_options.update({"use_uvloop": True})
         return anyio.run(self.__run, backend="asyncio", backend_options=backend_options)
+
+    async def stream(self) -> AsyncGenerator[Dict[str, Any], None]:
+        """Stream items as they're scraped. Ideal for long-running spiders or building applications on top of the spiders.
+
+        Must be called from an async context. Yields items one by one as they are scraped.
+        Access `spider.stats` during iteration for real-time statistics.
+        """
+        token = set_logger(self.logger)
+        try:
+            self._stream_engine = CrawlerEngine(self, self._session_manager)
+            async for item in self._stream_engine:
+                yield item
+        finally:
+            self._stream_engine = None
+            reset_logger(token)
+            if self.log_file:
+                for handler in self.logger.handlers:
+                    if isinstance(handler, logging.FileHandler):
+                        handler.close()
+
+    @property
+    def stats(self) -> CrawlStats:
+        """Access current crawl stats (works during streaming)."""
+        if self._stream_engine:
+            return self._stream_engine.stats
+        raise RuntimeError("No active crawl. Use this property inside `async for item in spider.stream():`")
