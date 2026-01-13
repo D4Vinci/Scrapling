@@ -138,7 +138,7 @@ class Selector(SelectorsGeneration):
                 default_doctype=True,
                 strip_cdata=(not keep_cdata),
             )
-            self._root = cast(HtmlElement, fromstring(body, parser=parser, base_url=url or None))
+            self._root = cast(HtmlElement, fromstring(body or "<html/>", parser=parser, base_url=url or None))
             self._raw_body = content
 
         else:
