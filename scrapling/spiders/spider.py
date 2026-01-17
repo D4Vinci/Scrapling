@@ -1,6 +1,6 @@
 import logging
-from abc import ABC
 from pathlib import Path
+from abc import ABC, abstractmethod
 
 import anyio
 
@@ -139,6 +139,7 @@ class Spider(ABC):
         for url in self.start_urls:
             yield Request(url, sid=self._session_manager.default_session_id)
 
+    @abstractmethod
     async def parse(self, response: "Response") -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
         """Default callback for processing responses"""
         raise NotImplementedError(f"{self.__class__.__name__} must implement parse() method")
