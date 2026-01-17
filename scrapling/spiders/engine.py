@@ -102,12 +102,17 @@ class CrawlerEngine:
                         self.stats.offsite_requests_count += 1
                         log.debug(f"Filtered offsite request to: {result.url}")
                 elif isinstance(result, dict):
-                    self.stats.items_scraped += 1
-                    self._items.append(result)
-                    if self._item_stream:
-                        await self._item_stream.send(result)
-                    await self.spider.on_scraped_item(result)
-                    log.debug(f"Scraped from {str(response)}\n{result}")
+                    processed_result = await self.spider.on_scraped_item(result)
+                    if processed_result:
+                        self.stats.items_scraped += 1
+                        log.debug(f"Scraped from {str(response)}\n{processed_result}")
+                        if self._item_stream:
+                            await self._item_stream.send(processed_result)
+                        else:
+                            self._items.append(processed_result)
+                    else:
+                        self.stats.items_dropped += 1
+                        log.warning(f"Dropped from {str(response)}\n{processed_result}")
                 elif result is not None:
                     log.error(f"Spider must return Request, dict or None, got '{type(result)}' in {request}")
         except Exception as e:

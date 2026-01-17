@@ -50,6 +50,7 @@ class CrawlStats:
     offsite_requests_count: int = 0
     response_bytes: int = 0
     items_scraped: int = 0
+    items_dropped: int = 0
     start_time: float = 0.0
     end_time: float = 0.0
     download_delay: float = 0.0
@@ -85,6 +86,7 @@ class CrawlStats:
     def to_dict(self) -> dict[str, Any]:
         return {
             "items_scraped": self.items_scraped,
+            "items_dropped": self.items_dropped,
             "elapsed_seconds": round(self.elapsed_seconds, 2),
             "download_delay": round(self.download_delay, 2),
             "concurrent_requests": self.concurrent_requests,
