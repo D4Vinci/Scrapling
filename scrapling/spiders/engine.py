@@ -85,7 +85,7 @@ class CrawlerEngine:
                 retry_request.dont_filter = True
                 new_request = await self.spider.retry_blocked_request(retry_request, response)
                 await self.scheduler.enqueue(new_request)
-                log.debug(
+                log.info(
                     f"Scheduled blocked request for retry ({retry_request._retry_count}/{self.spider.max_blocked_retries}): {request.url}"
                 )
             else:
@@ -108,6 +108,8 @@ class CrawlerEngine:
                         await self._item_stream.send(result)
                     await self.spider.on_scraped_item(result)
                     log.debug(f"Scraped from {str(response)}\n{result}")
+                elif result is not None:
+                    log.error(f"Spider must return Request, dict or None, got '{type(result)}' in {request}")
         except Exception as e:
             await self.spider.on_error(request, e)
 
