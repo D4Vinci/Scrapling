@@ -6,12 +6,10 @@ from asyncio import sleep as asyncio_sleep
 from playwright.sync_api import (
     Locator,
     Page,
-    Playwright,
 )
 from playwright.async_api import (
     Page as async_Page,
     Locator as AsyncLocator,
-    Playwright as AsyncPlaywright,
     BrowserContext as AsyncBrowserContext,
 )
 from patchright.sync_api import sync_playwright
@@ -82,24 +80,30 @@ class StealthySession(SyncSession, StealthySessionMixin):
     def start(self):
         """Create a browser for this instance and context."""
         if not self.playwright:
-            self.playwright: Playwright = sync_playwright().start()  # pyright: ignore [reportAttributeAccessIssue]
+            self.playwright = sync_playwright().start()
 
-            if self._config.cdp_url:  # pragma: no cover
-                browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                self.context = browser.new_context(**self._context_options)
-            else:
-                self.context = self.playwright.chromium.launch_persistent_context(**self._launch_options)
+            try:
+                if self._config.cdp_url:  # pragma: no cover
+                    browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
+                    self.context = browser.new_context(**self._context_options)
+                else:
+                    self.context = self.playwright.chromium.launch_persistent_context(**self._launch_options)
 
-            for script in _compiled_stealth_scripts():
-                self.context.add_init_script(script=script)
+                for script in _compiled_stealth_scripts():
+                    self.context.add_init_script(script=script)
 
-            if self._config.init_script:  # pragma: no cover
-                self.context.add_init_script(path=self._config.init_script)
+                if self._config.init_script:  # pragma: no cover
+                    self.context.add_init_script(path=self._config.init_script)
 
-            if self._config.cookies:  # pragma: no cover
-                self.context.add_cookies(self._config.cookies)
+                if self._config.cookies:  # pragma: no cover
+                    self.context.add_cookies(self._config.cookies)
 
-            self._is_alive = True
+                self._is_alive = True
+            except Exception:
+                # Clean up playwright if browser setup fails
+                self.playwright.stop()
+                self.playwright = None
+                raise
         else:
             raise RuntimeError("Session has been already started")
 
@@ -308,26 +312,31 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
     async def start(self):
         """Create a browser for this instance and context."""
         if not self.playwright:
-            self.playwright: AsyncPlaywright = await async_playwright().start()  # pyright: ignore [reportAttributeAccessIssue]
+            self.playwright = await async_playwright().start()
+            try:
+                if self._config.cdp_url:
+                    browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
+                    self.context: AsyncBrowserContext = await browser.new_context(**self._context_options)
+                else:
+                    self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
+                        **self._launch_options
+                    )
 
-            if self._config.cdp_url:
-                browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                self.context: AsyncBrowserContext = await browser.new_context(**self._context_options)
-            else:
-                self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
-                    **self._launch_options
-                )
+                for script in _compiled_stealth_scripts():
+                    await self.context.add_init_script(script=script)
 
-            for script in _compiled_stealth_scripts():
-                await self.context.add_init_script(script=script)
+                if self._config.init_script:  # pragma: no cover
+                    await self.context.add_init_script(path=self._config.init_script)
 
-            if self._config.init_script:  # pragma: no cover
-                await self.context.add_init_script(path=self._config.init_script)
+                if self._config.cookies:
+                    await self.context.add_cookies(self._config.cookies)  # pyright: ignore
 
-            if self._config.cookies:
-                await self.context.add_cookies(self._config.cookies)  # pyright: ignore
-
-            self._is_alive = True
+                self._is_alive = True
+            except Exception:
+                # Clean up playwright if browser setup fails
+                await self.playwright.stop()
+                self.playwright = None
+                raise
         else:
             raise RuntimeError("Session has been already started")
 
