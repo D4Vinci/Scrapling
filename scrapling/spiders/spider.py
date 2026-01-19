@@ -211,7 +211,9 @@ class Spider(ABC):
         manager.add("default", FetcherSession())
 
     def pause(self):
-        """Pause the crawling process if checkpoint system is enabled."""
+        """Pause the crawling process. Requires crawldir to be set for checkpoint system."""
+        if not self.crawldir:
+            raise RuntimeError("Cannot pause without crawldir - checkpoint system not enabled")
         if self._engine:
             self._engine.request_pause()
         else:

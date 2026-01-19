@@ -207,6 +207,7 @@ class CrawlerEngine:
         self._items.clear()
         self.paused = False
         self._pause_requested = False
+        self._force_stop = False
         self.stats = CrawlStats(start_time=anyio.current_time())
 
         # Check for existing checkpoint
