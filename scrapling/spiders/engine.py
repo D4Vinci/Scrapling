@@ -50,6 +50,7 @@ class CrawlerEngine:
         self._checkpoint_manager = CheckpointManager(crawldir or "", interval)
         self._last_checkpoint_time: float = 0.0
         self._pause_requested: bool = False
+        self._force_stop: bool = False
         self.paused: bool = False
 
     def _is_domain_allowed(self, request: Request) -> bool:
@@ -144,10 +145,23 @@ class CrawlerEngine:
             self._active_tasks -= 1
 
     def request_pause(self) -> None:
-        """Request a graceful pause of the crawl."""
-        if not self._pause_requested:
+        """Request a graceful pause of the crawl.
+
+        First call: requests graceful pause (waits for active tasks).
+        Second call: forces immediate stop.
+        """
+        if self._force_stop:
+            return  # Already forcing stop
+
+        if self._pause_requested:
+            # Second Ctrl+C - force stop
+            self._force_stop = True
+            log.warning("Force stop requested, cancelling immediately...")
+        else:
             self._pause_requested = True
-            log.info("Pause requested, waiting for in-flight requests to complete...")
+            log.info(
+                "Pause requested, waiting for in-flight requests to complete (press Ctrl+C again to force stop)..."
+            )
 
     async def _save_checkpoint(self) -> None:
         """Save current state to checkpoint files."""
@@ -215,15 +229,22 @@ class CrawlerEngine:
                 # Process queue
                 async with create_task_group() as tg:
                     while self._running:
-                        # Check for pause request
+                        # Check for pause/stop request
                         if self._checkpoint_system_enabled:
                             if self._pause_requested:
                                 # Wait for active tasks to complete
-                                if self._active_tasks == 0:
+                                if self._active_tasks == 0 or self._force_stop:
+                                    if self._force_stop:
+                                        log.warning(f"Force stopping with {self._active_tasks} active tasks")
+
                                     await self._save_checkpoint()
                                     self.paused = True
                                     self._running = False
-                                    log.info("Spider paused, checkpoint saved")
+
+                                    if not self._force_stop:
+                                        log.info("Spider paused, checkpoint saved")
+                                    else:
+                                        tg.cancel_scope.cancel()
                                     break
                                 # Wait briefly and check again
                                 await anyio.sleep(0.05)
@@ -241,6 +262,12 @@ class CrawlerEngine:
 
                             # Brief wait for callbacks to enqueue new requests
                             await anyio.sleep(0.05)
+                            continue
+
+                        # Only spawn tasks up to concurrent_requests limit
+                        # This prevents spawning thousands of waiting tasks
+                        if self._active_tasks >= self.spider.concurrent_requests:
+                            await anyio.sleep(0.01)
                             continue
 
                         request = await self.scheduler.dequeue()
