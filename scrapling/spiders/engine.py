@@ -230,29 +230,29 @@ class CrawlerEngine:
                 # Process queue
                 async with create_task_group() as tg:
                     while self._running:
-                        # Check for pause/stop request
-                        if self._checkpoint_system_enabled:
-                            if self._pause_requested:
-                                # Wait for active tasks to complete
-                                if self._active_tasks == 0 or self._force_stop:
-                                    if self._force_stop:
-                                        log.warning(f"Force stopping with {self._active_tasks} active tasks")
+                        if self._pause_requested:
+                            if self._active_tasks == 0 or self._force_stop:
+                                if self._force_stop:
+                                    log.warning(f"Force stopping with {self._active_tasks} active tasks")
+                                    tg.cancel_scope.cancel()
 
+                                # Only save checkpoint if checkpoint system is enabled
+                                if self._checkpoint_system_enabled:
                                     await self._save_checkpoint()
                                     self.paused = True
-                                    self._running = False
+                                    log.info("Spider paused, checkpoint saved")
+                                else:
+                                    log.info("Spider stopped gracefully")
 
-                                    if not self._force_stop:
-                                        log.info("Spider paused, checkpoint saved")
-                                    else:
-                                        tg.cancel_scope.cancel()
-                                    break
-                                # Wait briefly and check again
-                                await anyio.sleep(0.05)
-                                continue
+                                self._running = False
+                                break
 
-                            if self._is_checkpoint_time():
-                                await self._save_checkpoint()
+                            # Wait briefly and check again
+                            await anyio.sleep(0.05)
+                            continue
+
+                        if self._checkpoint_system_enabled and self._is_checkpoint_time():
+                            await self._save_checkpoint()
 
                         if self.scheduler.is_empty:
                             # Empty queue + no active tasks = done

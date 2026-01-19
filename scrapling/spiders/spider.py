@@ -211,13 +211,11 @@ class Spider(ABC):
         manager.add("default", FetcherSession())
 
     def pause(self):
-        """Pause the crawling process. Requires crawldir to be set for checkpoint system."""
-        if not self.crawldir:
-            raise RuntimeError("Cannot pause without crawldir - checkpoint system not enabled")
+        """Request graceful shutdown of the crawling process."""
         if self._engine:
             self._engine.request_pause()
         else:
-            raise RuntimeError("Spider doesn't have active crawl to pause, no crawl engine started!")
+            raise RuntimeError("No active crawl to stop")
 
     def _setup_signal_handler(self) -> None:
         """Set up SIGINT handler for graceful pause."""
@@ -264,8 +262,11 @@ class Spider(ABC):
         This is the main entry point for running a spider.
         Handles async execution internally via anyio.
 
-        If crawldir is set, pressing Ctrl+C will pause the spider and save a checkpoint.
-        Running the spider again with the same crawldir will resume from the checkpoint.
+        Pressing Ctrl+C will initiate graceful shutdown (waits for active tasks to complete).
+        Pressing Ctrl+C a second time will force immediate stop.
+
+        If crawldir is set, a checkpoint will also be saved on graceful shutdown,
+        allowing you to resume the crawl later by running the spider again.
 
         :param use_uvloop: Whether to use the faster uvloop/winloop event loop implementation, if available.
         :param backend_options: Asyncio backend options to be used with `anyio.run`
@@ -274,15 +275,12 @@ class Spider(ABC):
         if use_uvloop:
             backend_options.update({"use_uvloop": True})
 
-        # Set up SIGINT handler for graceful pause (only if crawldir is set)
-        if self.crawldir:
-            self._setup_signal_handler()
-
+        # Set up SIGINT handler for graceful shutdown
+        self._setup_signal_handler()
         try:
             return anyio.run(self.__run, backend="asyncio", backend_options=backend_options)
         finally:
-            if self.crawldir:
-                self._restore_signal_handler()
+            self._restore_signal_handler()
 
     async def stream(self) -> AsyncGenerator[Dict[str, Any], None]:
         """Stream items as they're scraped. Ideal for long-running spiders or building applications on top of the spiders.
