@@ -443,12 +443,20 @@ class TestSpiderHooks:
 class TestSpiderPause:
     """Test Spider pause functionality."""
 
-    def test_pause_without_engine_raises(self):
-        """Test that pause without active engine raises RuntimeError."""
+    def test_pause_without_crawldir_raises(self):
+        """Test that pause without crawldir raises RuntimeError."""
         spider = ConcreteSpider()
 
-        with pytest.raises(RuntimeError, match="no crawl engine started"):
+        with pytest.raises(RuntimeError, match="Cannot pause without crawldir"):
             spider.pause()
+
+    def test_pause_without_engine_raises(self):
+        """Test that pause without active engine raises RuntimeError."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            spider = ConcreteSpider(crawldir=tmpdir)
+
+            with pytest.raises(RuntimeError, match="no crawl engine started"):
+                spider.pause()
 
 
 class TestSpiderStats:
