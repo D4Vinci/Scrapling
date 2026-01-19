@@ -1,7 +1,10 @@
 from urllib.parse import urlparse
 
 from scrapling.engines.toolbelt.custom import Response
-from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Union
+from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from scrapling.spiders.spider import Spider
 
 
 class Request:
@@ -72,3 +75,26 @@ class Request:
         if not isinstance(other, Request):
             return NotImplemented
         return self._fp == other._fp
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Prepare state for pickling - store callback as name string for pickle compatibility."""
+        state = self.__dict__.copy()
+        state["_callback_name"] = getattr(self.callback, "__name__", None) if self.callback is not None else None
+        state["callback"] = None  # Don't pickle the actual callable
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        """Restore state from pickle - callback restored later via _restore_callback()."""
+        self._callback_name: str | None = state.pop("_callback_name", None)
+        self.__dict__.update(state)
+
+    def _restore_callback(self, spider: "Spider") -> None:
+        """Restore callback from spider after unpickling.
+
+        :param spider: Spider instance to look up callback method on
+        """
+        if hasattr(self, "_callback_name") and self._callback_name:
+            self.callback = getattr(spider, self._callback_name, None) or spider.parse
+            del self._callback_name
+        elif hasattr(self, "_callback_name"):
+            del self._callback_name

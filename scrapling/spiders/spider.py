@@ -1,15 +1,17 @@
+import signal
 import logging
 from pathlib import Path
 from abc import ABC, abstractmethod
 
 import anyio
+from anyio import Path as AsyncPath
 
 from scrapling.spiders.request import Request
 from scrapling.spiders.engine import CrawlerEngine
 from scrapling.spiders.session import SessionManager
 from scrapling.core.utils import set_logger, reset_logger
 from scrapling.spiders.result import CrawlResult, CrawlStats
-from scrapling.core._types import Set, Any, Dict, Optional, TYPE_CHECKING, AsyncGenerator
+from scrapling.core._types import Set, Any, Dict, Optional, Union, TYPE_CHECKING, AsyncGenerator
 
 BLOCKED_CODES = {401, 403, 407, 429, 444, 500, 502, 503, 504}
 if TYPE_CHECKING:
@@ -82,7 +84,12 @@ class Spider(ABC):
     logging_date_format: str = "%Y-%m-%d %H:%M:%S"
     log_file: Optional[str] = None
 
-    def __init__(self):
+    def __init__(self, crawldir: Optional[Union[str, Path, AsyncPath]] = None, interval: float = 300.0):
+        """Initialize the spider.
+
+        :param crawldir: Directory for checkpoint files. If provided, enables pause/resume.
+        :param interval: Seconds between periodic checkpoint saves (default 5 minutes).
+        """
         if self.name is None:
             raise ValueError(f"{self.__class__.__name__} must have a name.")
 
@@ -109,8 +116,12 @@ class Spider(ABC):
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
 
+        self.crawldir: Optional[Path] = Path(crawldir) if crawldir else None
+        self._interval = interval
+        self._engine: Optional[CrawlerEngine] = None
+        self._original_sigint_handler: Any = None
+
         self._session_manager = SessionManager()
-        self._stream_engine: CrawlerEngine | None = None
 
         try:
             self.configure_sessions(self._session_manager)
@@ -143,11 +154,17 @@ class Spider(ABC):
     async def parse(self, response: "Response") -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
         """Default callback for processing responses"""
         raise NotImplementedError(f"{self.__class__.__name__} must implement parse() method")
-        yield  # Make this a generator
+        yield  # Make this a generator for type checkers
 
-    async def on_start(self) -> None:
-        """Called before crawling starts. Override for setup logic."""
-        self.logger.debug("Starting spider")
+    async def on_start(self, resuming: bool = False) -> None:
+        """Called before crawling starts. Override for setup logic.
+
+        :param resuming: It's enabled if the spider is resuming from a checkpoint, left for the user to use.
+        """
+        if resuming:
+            self.logger.debug("Resuming spider from checkpoint")
+        else:
+            self.logger.debug("Starting spider")
 
     async def on_close(self) -> None:
         """Called after crawling finishes. Override for cleanup logic."""
@@ -159,7 +176,7 @@ class Spider(ABC):
 
         Override for custom error handling.
         """
-        self.logger.error(error, exc_info=error)
+        pass
 
     async def on_scraped_item(self, item: Dict[str, Any]) -> Dict[str, Any] | None:
         """A hook to be overridden by users to do some processing on scraped items, return `None` to drop the item silently."""
@@ -193,13 +210,45 @@ class Spider(ABC):
 
         manager.add("default", FetcherSession())
 
+    def pause(self):
+        """Pause the crawling process if checkpoint system is enabled."""
+        if self._engine:
+            self._engine.request_pause()
+        else:
+            raise RuntimeError("Spider doesn't have active crawl to pause, no crawl engine started!")
+
+    def _setup_signal_handler(self) -> None:
+        """Set up SIGINT handler for graceful pause."""
+
+        def handler(_signum: int, _frame: Any) -> None:
+            if self._engine:
+                self._engine.request_pause()
+            else:
+                # No engine yet, just raise KeyboardInterrupt
+                raise KeyboardInterrupt
+
+        try:
+            self._original_sigint_handler = signal.signal(signal.SIGINT, handler)
+        except ValueError:
+            self._original_sigint_handler = None
+
+    def _restore_signal_handler(self) -> None:
+        """Restore original SIGINT handler."""
+        if self._original_sigint_handler is not None:
+            try:
+                signal.signal(signal.SIGINT, self._original_sigint_handler)
+            except ValueError:
+                pass
+
     async def __run(self) -> CrawlResult:
         token = set_logger(self.logger)
         try:
-            engine = CrawlerEngine(self, session_manager=self._session_manager)
-            stats = await engine.crawl()
-            return CrawlResult(stats=stats, items=engine.items)
+            self._engine = CrawlerEngine(self, self._session_manager, self.crawldir, self._interval)
+            stats = await self._engine.crawl()
+            paused = self._engine.paused
+            return CrawlResult(stats=stats, items=self._engine.items, paused=paused)
         finally:
+            self._engine = None
             reset_logger(token)
             # Close any file handlers to release file resources.
             if self.log_file:
@@ -213,27 +262,41 @@ class Spider(ABC):
         This is the main entry point for running a spider.
         Handles async execution internally via anyio.
 
+        If crawldir is set, pressing Ctrl+C will pause the spider and save a checkpoint.
+        Running the spider again with the same crawldir will resume from the checkpoint.
+
         :param use_uvloop: Whether to use the faster uvloop/winloop event loop implementation, if available.
         :param backend_options: Asyncio backend options to be used with `anyio.run`
         """
         backend_options = backend_options or {}
         if use_uvloop:
             backend_options.update({"use_uvloop": True})
-        return anyio.run(self.__run, backend="asyncio", backend_options=backend_options)
+
+        # Set up SIGINT handler for graceful pause (only if crawldir is set)
+        if self.crawldir:
+            self._setup_signal_handler()
+
+        try:
+            return anyio.run(self.__run, backend="asyncio", backend_options=backend_options)
+        finally:
+            if self.crawldir:
+                self._restore_signal_handler()
 
     async def stream(self) -> AsyncGenerator[Dict[str, Any], None]:
         """Stream items as they're scraped. Ideal for long-running spiders or building applications on top of the spiders.
 
         Must be called from an async context. Yields items one by one as they are scraped.
         Access `spider.stats` during iteration for real-time statistics.
+
+        Note: SIGINT handling for pause/resume is not available in stream mode.
         """
         token = set_logger(self.logger)
         try:
-            self._stream_engine = CrawlerEngine(self, self._session_manager)
-            async for item in self._stream_engine:
+            self._engine = CrawlerEngine(self, self._session_manager, self.crawldir, self._interval)
+            async for item in self._engine:
                 yield item
         finally:
-            self._stream_engine = None
+            self._engine = None
             reset_logger(token)
             if self.log_file:
                 for handler in self.logger.handlers:
@@ -243,6 +306,6 @@ class Spider(ABC):
     @property
     def stats(self) -> CrawlStats:
         """Access current crawl stats (works during streaming)."""
-        if self._stream_engine:
-            return self._stream_engine.stats
+        if self._engine:
+            return self._engine.stats
         raise RuntimeError("No active crawl. Use this property inside `async for item in spider.stream():`")

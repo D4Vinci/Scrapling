@@ -112,6 +112,12 @@ class CrawlResult:
 
     stats: CrawlStats
     items: ItemList
+    paused: bool = False
+
+    @property
+    def completed(self) -> bool:
+        """True if the crawl completed normally (not paused)."""
+        return not self.paused
 
     def __len__(self) -> int:
         return len(self.items)

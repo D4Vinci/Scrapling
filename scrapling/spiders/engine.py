@@ -1,14 +1,18 @@
 import json
+import pprint
+from pathlib import Path
 
 import anyio
+from anyio import Path as AsyncPath
 from anyio import create_task_group, CapacityLimiter, create_memory_object_stream, EndOfStream
 
 from scrapling.core.utils import log
 from scrapling.spiders.request import Request
-from scrapling.spiders.result import CrawlStats, ItemList
 from scrapling.spiders.scheduler import Scheduler
 from scrapling.spiders.session import SessionManager
-from scrapling.core._types import Dict, TYPE_CHECKING, Any, AsyncGenerator
+from scrapling.spiders.result import CrawlStats, ItemList
+from scrapling.spiders.checkpoint import CheckpointManager, CheckpointData
+from scrapling.core._types import Dict, Union, Optional, TYPE_CHECKING, Any, AsyncGenerator
 
 if TYPE_CHECKING:
     from scrapling.spiders.spider import Spider
@@ -21,10 +25,16 @@ def _dump(obj: Dict) -> str:
 class CrawlerEngine:
     """Orchestrates the crawling process."""
 
-    def __init__(self, spider: "Spider", session_manager: SessionManager, scheduler: Scheduler | None = None):
+    def __init__(
+        self,
+        spider: "Spider",
+        session_manager: SessionManager,
+        crawldir: Optional[Union[str, Path, AsyncPath]] = None,
+        interval: float = 300.0,
+    ):
         self.spider = spider
         self.session_manager = session_manager
-        self.scheduler = scheduler or Scheduler()
+        self.scheduler = Scheduler()
         self.stats = CrawlStats()
 
         self._global_limiter = CapacityLimiter(spider.concurrent_requests)
@@ -35,6 +45,12 @@ class CrawlerEngine:
         self._running: bool = False
         self._items: ItemList = ItemList()
         self._item_stream: Any = None
+
+        self._checkpoint_system_enabled = bool(crawldir)
+        self._checkpoint_manager = CheckpointManager(crawldir or "", interval)
+        self._last_checkpoint_time: float = 0.0
+        self._pause_requested: bool = False
+        self.paused: bool = False
 
     def _is_domain_allowed(self, request: Request) -> bool:
         """Check if the request's domain is in allowed_domains."""
@@ -105,7 +121,7 @@ class CrawlerEngine:
                     processed_result = await self.spider.on_scraped_item(result)
                     if processed_result:
                         self.stats.items_scraped += 1
-                        log.debug(f"Scraped from {str(response)}\n{processed_result}")
+                        log.debug(f"Scraped from {str(response)}\n{pprint.pformat(processed_result)}")
                         if self._item_stream:
                             await self._item_stream.send(processed_result)
                         else:
@@ -116,6 +132,8 @@ class CrawlerEngine:
                 elif result is not None:
                     log.error(f"Spider must return Request, dict or None, got '{type(result)}' in {request}")
         except Exception as e:
+            msg = f"Spider error processing {request}:\n {e}"
+            log.error(msg, exc_info=e)
             await self.spider.on_error(request, e)
 
     async def _task_wrapper(self, request: Request) -> None:
@@ -125,25 +143,95 @@ class CrawlerEngine:
         finally:
             self._active_tasks -= 1
 
+    def request_pause(self) -> None:
+        """Request a graceful pause of the crawl."""
+        if not self._pause_requested:
+            self._pause_requested = True
+            log.info("Pause requested, waiting for in-flight requests to complete...")
+
+    async def _save_checkpoint(self) -> None:
+        """Save current state to checkpoint files."""
+        requests, seen = self.scheduler.snapshot()
+        data = CheckpointData(requests=requests, seen=seen)
+        await self._checkpoint_manager.save(data)
+        self._last_checkpoint_time = anyio.current_time()
+
+    def _is_checkpoint_time(self) -> bool:
+        """Check if it's time for the periodic checkpoint."""
+        if not self._checkpoint_system_enabled:
+            return False
+
+        if self._checkpoint_manager.interval == 0:
+            return False
+
+        current_time = anyio.current_time()
+        return (current_time - self._last_checkpoint_time) >= self._checkpoint_manager.interval
+
+    async def _restore_from_checkpoint(self) -> bool:
+        """Attempt to restore state from checkpoint.
+
+        Returns True if successfully restored, False otherwise.
+        """
+        if not self._checkpoint_system_enabled:
+            raise
+
+        data = await self._checkpoint_manager.load()
+        if data is None:
+            return False
+
+        self.scheduler.restore(data)
+
+        # Restore callbacks from spider after scheduler restore
+        for request in data.requests:
+            request._restore_callback(self.spider)
+
+        return True
+
     async def crawl(self) -> CrawlStats:
         """Run the spider and return CrawlStats."""
         self._running = True
         self._items.clear()
+        self.paused = False
+        self._pause_requested = False
         self.stats = CrawlStats(start_time=anyio.current_time())
+
+        # Check for existing checkpoint
+        resuming = (await self._restore_from_checkpoint()) if self._checkpoint_system_enabled else False
+        self._last_checkpoint_time = anyio.current_time()
 
         async with self.session_manager:
             self.stats.concurrent_requests = self.spider.concurrent_requests
             self.stats.concurrent_requests_per_domain = self.spider.concurrent_requests_per_domain
             self.stats.download_delay = self.spider.download_delay
-            await self.spider.on_start()
+            await self.spider.on_start(resuming=resuming)
 
             try:
-                async for request in self.spider.start_requests():
-                    await self.scheduler.enqueue(request)
+                if not resuming:
+                    async for request in self.spider.start_requests():
+                        await self.scheduler.enqueue(request)
+                else:
+                    log.info("Resuming from checkpoint, skipping start_requests()")
 
                 # Process queue
                 async with create_task_group() as tg:
                     while self._running:
+                        # Check for pause request
+                        if self._checkpoint_system_enabled:
+                            if self._pause_requested:
+                                # Wait for active tasks to complete
+                                if self._active_tasks == 0:
+                                    await self._save_checkpoint()
+                                    self.paused = True
+                                    self._running = False
+                                    log.info("Spider paused, checkpoint saved")
+                                    break
+                                # Wait briefly and check again
+                                await anyio.sleep(0.05)
+                                continue
+
+                            if self._is_checkpoint_time():
+                                await self._save_checkpoint()
+
                         if self.scheduler.is_empty:
                             # Empty queue + no active tasks = done
                             if self._active_tasks == 0:
@@ -161,6 +249,9 @@ class CrawlerEngine:
 
             finally:
                 await self.spider.on_close()
+                # Clean up checkpoint files on successful completion (not paused)
+                if not self.paused and self._checkpoint_system_enabled:
+                    await self._checkpoint_manager.cleanup()
 
         self.stats.log_levels_counter = self.spider._log_counter.get_counts()
         self.stats.end_time = anyio.current_time()
