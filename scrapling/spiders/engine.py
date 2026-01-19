@@ -84,7 +84,7 @@ class CrawlerEngine:
                 self.stats.proxies.append(dict(request._session_kwargs["proxies"]))
             try:
                 response = await self.session_manager.fetch(request)
-                self.stats.increment_requests_count(request.sid)
+                self.stats.increment_requests_count(request.sid or self.session_manager.default_session_id)
                 self.stats.increment_response_bytes(request.domain, len(response.body))
                 self.stats.increment_status(response.status)
 
