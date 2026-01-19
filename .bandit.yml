@@ -7,3 +7,4 @@ skips:
 - B602  # subprocess call with shell=True identified
 - B110  # Try, Except, Pass detected.
 - B104  # Possible binding to all interfaces.
+- B301  # Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.
