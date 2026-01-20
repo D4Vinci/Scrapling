@@ -75,12 +75,12 @@ class TestSchedulerEnqueue:
         assert len(scheduler) == 2
 
     @pytest.mark.asyncio
-    async def test_enqueue_different_sessions_not_duplicate(self):
-        """Test that same URL with different sessions are not duplicates."""
+    async def test_enqueue_different_methods_not_duplicate(self):
+        """Test that same URL with different methods are not duplicates."""
         scheduler = Scheduler()
 
-        request1 = Request("https://example.com", sid="session1")
-        request2 = Request("https://example.com", sid="session2")
+        request1 = Request("https://example.com", method="GET")
+        request2 = Request("https://example.com", method="POST")
 
         result1 = await scheduler.enqueue(request1)
         result2 = await scheduler.enqueue(request2)
@@ -195,17 +195,19 @@ class TestSchedulerSnapshot:
 
     @pytest.mark.asyncio
     async def test_snapshot_captures_seen_set(self):
-        """Test snapshot captures seen URLs."""
+        """Test snapshot captures seen fingerprints."""
         scheduler = Scheduler()
 
-        await scheduler.enqueue(Request("https://example.com/1", sid="s1"))
-        await scheduler.enqueue(Request("https://example.com/2", sid="s1"))
+        await scheduler.enqueue(Request("https://example.com/1"))
+        await scheduler.enqueue(Request("https://example.com/2"))
 
         requests, seen = scheduler.snapshot()
 
         assert len(seen) == 2
-        assert "s1:https://example.com/1" in seen
-        assert "s1:https://example.com/2" in seen
+        # Fingerprints are now bytes (SHA1 hashes)
+        for fp in seen:
+            assert isinstance(fp, bytes)
+            assert len(fp) == 20  # SHA1 produces 20 bytes
 
     @pytest.mark.asyncio
     async def test_snapshot_returns_copies(self):
@@ -218,12 +220,12 @@ class TestSchedulerSnapshot:
 
         # Modifying snapshot shouldn't affect scheduler
         requests.append(Request("https://modified.com"))
-        seen.add("new_fingerprint")
+        seen.add(b"new_fingerprint_bytes")
 
         original_requests, original_seen = scheduler.snapshot()
 
         assert len(original_requests) == 1
-        assert "new_fingerprint" not in original_seen
+        assert b"new_fingerprint_bytes" not in original_seen
 
     @pytest.mark.asyncio
     async def test_snapshot_excludes_dequeued_requests(self):
@@ -257,7 +259,7 @@ class TestSchedulerRestore:
             Request("https://example.com/1", priority=10),
             Request("https://example.com/2", priority=5),
         ]
-        checkpoint_seen = {"fp1", "fp2", "fp3"}
+        checkpoint_seen = {b"fp1_bytes_padded!", b"fp2_bytes_padded!", b"fp3_bytes_padded!"}
 
         data = CheckpointData(requests=checkpoint_requests, seen=checkpoint_seen)
 
@@ -272,20 +274,14 @@ class TestSchedulerRestore:
 
         data = CheckpointData(
             requests=[],
-            seen={"fp1", "fp2"},
+            seen={b"fp1_bytes_here_pad", b"fp2_bytes_here_pad"},  # Bytes fingerprints
         )
 
         scheduler.restore(data)
 
-        # Now try to enqueue a request with matching fingerprint
-        request = Request("https://example.com")
-        request.sid = ""  # Empty sid
-        # Manually set fingerprint that matches seen
-        # Since fingerprint is sid:url, we need to create matching ones
-
         # Verify seen set was restored
         _, seen = scheduler.snapshot()
-        assert seen == {"fp1", "fp2"}
+        assert seen == {b"fp1_bytes_here_pad", b"fp2_bytes_here_pad"}
 
     @pytest.mark.asyncio
     async def test_restore_maintains_priority_order(self):

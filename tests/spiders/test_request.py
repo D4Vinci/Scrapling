@@ -80,15 +80,24 @@ class TestRequestProperties:
         request = Request("https://api.v2.example.com/endpoint")
         assert request.domain == "api.v2.example.com"
 
-    def test_fingerprint_includes_session_and_url(self):
-        """Test fingerprint generation."""
-        request = Request("https://example.com", sid="session1")
-        assert request._fp == "session1:https://example.com"
-
-    def test_fingerprint_empty_session(self):
-        """Test fingerprint with empty session ID."""
+    def test_fingerprint_returns_bytes(self):
+        """Test fingerprint generation returns bytes."""
         request = Request("https://example.com")
-        assert request._fp == ":https://example.com"
+        fp = request.update_fingerprint()
+        assert isinstance(fp, bytes)
+        assert len(fp) == 20  # SHA1 produces 20 bytes
+
+    def test_fingerprint_is_deterministic(self):
+        """Test same request produces same fingerprint."""
+        r1 = Request("https://example.com", data={"key": "value"})
+        r2 = Request("https://example.com", data={"key": "value"})
+        assert r1.update_fingerprint() == r2.update_fingerprint()
+
+    def test_fingerprint_different_urls(self):
+        """Test different URLs produce different fingerprints."""
+        r1 = Request("https://example.com/page1")
+        r2 = Request("https://example.com/page2")
+        assert r1.update_fingerprint() != r2.update_fingerprint()
 
 
 class TestRequestCopy:
@@ -160,17 +169,26 @@ class TestRequestComparison:
 
     def test_equality_by_fingerprint(self):
         """Test equality comparison by fingerprint."""
-        r1 = Request("https://example.com", sid="session1")
-        r2 = Request("https://example.com", sid="session1")
-        r3 = Request("https://example.com", sid="session2")
+        r1 = Request("https://example.com")
+        r2 = Request("https://example.com")
+        r3 = Request("https://example.com/other")
+
+        # Generate fingerprints first (required for equality)
+        r1.update_fingerprint()
+        r2.update_fingerprint()
+        r3.update_fingerprint()
 
         assert r1 == r2
         assert r1 != r3
 
     def test_equality_different_priorities_same_fingerprint(self):
         """Test requests with same fingerprint are equal despite different priorities."""
-        r1 = Request("https://example.com", sid="s1", priority=1)
-        r2 = Request("https://example.com", sid="s1", priority=100)
+        r1 = Request("https://example.com", priority=1)
+        r2 = Request("https://example.com", priority=100)
+
+        # Generate fingerprints first
+        r1.update_fingerprint()
+        r2.update_fingerprint()
 
         assert r1 == r2  # Same fingerprint means equal
 
