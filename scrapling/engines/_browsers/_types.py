@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from curl_cffi.requests import (
     ProxySpec,
     CookieTypes,
@@ -50,7 +52,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
     # Types for POST/PUT/DELETE request method parameters
     class DataRequestParams(GetRequestParams, total=False):
-        data: Optional[Dict | str]
+        data: Optional[Dict[str, str] | List[Tuple] | str | BytesIO | bytes]
         json: Optional[Dict | List]
 
     # Types for browser session
