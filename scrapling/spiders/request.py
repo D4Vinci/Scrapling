@@ -71,6 +71,8 @@ class Request:
 
         Caches the result in self._fp after first computation.
         """
+        if self._fp is not None:
+            return self._fp
 
         post_data = self._session_kwargs.get("data", {})
         body = b""
