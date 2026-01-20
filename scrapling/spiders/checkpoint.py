@@ -17,7 +17,7 @@ class CheckpointData:
     """Container for checkpoint state."""
 
     requests: List["Request"] = field(default_factory=list)
-    seen: Set[str] = field(default_factory=set)
+    seen: Set[bytes] = field(default_factory=set)
 
 
 class CheckpointManager:

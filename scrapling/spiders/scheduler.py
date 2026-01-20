@@ -17,16 +17,19 @@ class Scheduler:
     Duplicate URLs are filtered unless dont_filter=True.
     """
 
-    def __init__(self):
+    def __init__(self, include_kwargs: bool = False, include_headers: bool = False, keep_fragments: bool = False):
         self._queue: asyncio.PriorityQueue[tuple[int, int, Request]] = asyncio.PriorityQueue()
-        self._seen: set[str] = set()
+        self._seen: set[bytes] = set()
         self._counter = count()
         # Mirror dict for snapshot without draining queue
         self._pending: dict[int, tuple[int, int, Request]] = {}
+        self._include_kwargs = include_kwargs
+        self._include_headers = include_headers
+        self._keep_fragments = keep_fragments
 
     async def enqueue(self, request: Request) -> bool:
         """Add a request to the queue."""
-        fingerprint = request._fp
+        fingerprint = request.update_fingerprint(self._include_kwargs, self._include_headers, self._keep_fragments)
 
         if not request.dont_filter and fingerprint in self._seen:
             log.debug("Dropped duplicate request: %s", request)
@@ -54,7 +57,7 @@ class Scheduler:
     def is_empty(self) -> bool:
         return self._queue.empty()
 
-    def snapshot(self) -> Tuple[List[Request], Set[str]]:
+    def snapshot(self) -> Tuple[List[Request], Set[bytes]]:
         """Create a snapshot of the current state for checkpoints."""
         sorted_items = sorted(self._pending.values(), key=lambda x: (x[0], x[1]))  # Maintain queue order
         requests = [item[2] for item in sorted_items]

@@ -1,10 +1,25 @@
-from urllib.parse import urlparse
+import hashlib
+from io import BytesIO
+from functools import cached_property
+from urllib.parse import urlparse, urlencode
+
+import orjson
+from w3lib.url import canonicalize_url
 
 from scrapling.engines.toolbelt.custom import Response
-from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Union, TYPE_CHECKING
+from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Union, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scrapling.spiders.spider import Spider
+
+
+def _convert_to_bytes(value: str | bytes) -> bytes:
+    if isinstance(value, bytes):
+        return value
+    if not isinstance(value, str):
+        raise TypeError(f"Can't convert {type(value).__name__} to bytes")
+
+    return value.encode(encoding="utf-8", errors="ignore")
 
 
 class Request:
@@ -27,6 +42,7 @@ class Request:
         self.meta: dict[str, Any] = meta if meta else {}
         self._retry_count: int = _retry_count
         self._session_kwargs = kwargs if kwargs else {}
+        self._fp = None
 
     def copy(self) -> "Request":
         """Create a copy of this request."""
@@ -41,15 +57,60 @@ class Request:
             **self._session_kwargs,
         )
 
-    @property
+    @cached_property
     def domain(self) -> str:
         return urlparse(self.url).netloc
 
-    @property
-    def _fp(self) -> str:
-        """Generate a unique fingerprint for deduplication."""
-        # TODO: Improve fingerprint
-        return f"{self.sid}:{self.url}"
+    def update_fingerprint(
+        self,
+        include_kwargs: bool = False,
+        include_headers: bool = False,
+        keep_fragments: bool = False,
+    ) -> bytes:
+        """Generate a unique fingerprint for deduplication.
+
+        Caches the result in self._fp after first computation.
+        """
+
+        post_data = self._session_kwargs.get("data", {})
+        body = b""
+        if post_data:
+            if isinstance(post_data, dict | list | tuple):
+                body = urlencode(post_data).encode()
+            elif isinstance(post_data, str):
+                body = post_data.encode()
+            elif isinstance(post_data, BytesIO):
+                body = post_data.getvalue()
+            elif isinstance(post_data, bytes):
+                body = post_data
+            elif post_data is None:
+                body = b""
+        else:
+            post_data = self._session_kwargs.get("json", {})
+            body: bytes = orjson.dumps(post_data) if post_data else b""
+
+        data: Dict[str, str | Tuple] = {
+            "sid": self.sid,
+            "body": body.hex(),
+            "method": self._session_kwargs.get("method", "GET"),
+            "url": canonicalize_url(self.url, keep_fragments=keep_fragments),
+        }
+
+        if include_kwargs:
+            kwargs = (key.lower() for key in self._session_kwargs.keys() if key.lower() not in ("data", "json"))
+            data["kwargs"] = "".join(set(_convert_to_bytes(key).hex() for key in kwargs))
+
+        if include_headers:
+            headers = self._session_kwargs.get("headers") or self._session_kwargs.get("extra_headers") or {}
+            processed_headers = {}
+            # Some header normalization
+            for key, value in headers.items():
+                processed_headers[_convert_to_bytes(key.lower()).hex()] = _convert_to_bytes(value.lower()).hex()
+            data["headers"] = tuple(processed_headers.items())
+
+        fp = hashlib.sha1(orjson.dumps(data, option=orjson.OPT_SORT_KEYS), usedforsecurity=False).digest()
+        self._fp = fp
+        return fp
 
     def __repr__(self) -> str:
         callback_name = getattr(self.callback, "__name__", None) or "None"
@@ -74,6 +135,8 @@ class Request:
         """Requests are equal if they have the same fingerprint."""
         if not isinstance(other, Request):
             return NotImplemented
+        if self._fp is None or other._fp is None:
+            raise RuntimeError("Cannot compare requests before generating their fingerprints!")
         return self._fp == other._fp
 
     def __getstate__(self) -> dict[str, Any]:

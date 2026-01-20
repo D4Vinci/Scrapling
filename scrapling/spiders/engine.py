@@ -34,7 +34,11 @@ class CrawlerEngine:
     ):
         self.spider = spider
         self.session_manager = session_manager
-        self.scheduler = Scheduler()
+        self.scheduler = Scheduler(
+            include_kwargs=spider.fp_include_kwargs,
+            include_headers=spider.fp_include_headers,
+            keep_fragments=spider.fp_keep_fragments,
+        )
         self.stats = CrawlStats()
 
         self._global_limiter = CapacityLimiter(spider.concurrent_requests)
@@ -72,6 +76,15 @@ class CrawlerEngine:
             return self._domain_limiters[domain]
         return self._global_limiter
 
+    def _normalize_request(self, request: Request) -> None:
+        """Normalize request fields before enqueueing.
+
+        Resolves empty sid to the session manager's default session ID.
+        This ensures consistent fingerprinting for requests using the same session.
+        """
+        if not request.sid:
+            request.sid = self.session_manager.default_session_id
+
     async def _process_request(self, request: Request) -> None:
         """Download and process a single request."""
         async with self._rate_limiter(request.domain):
@@ -101,6 +114,7 @@ class CrawlerEngine:
                 retry_request.priority -= 1  # Don't retry immediately
                 retry_request.dont_filter = True
                 new_request = await self.spider.retry_blocked_request(retry_request, response)
+                self._normalize_request(new_request)
                 await self.scheduler.enqueue(new_request)
                 log.info(
                     f"Scheduled blocked request for retry ({retry_request._retry_count}/{self.spider.max_blocked_retries}): {request.url}"
@@ -114,6 +128,7 @@ class CrawlerEngine:
             async for result in callback(response):
                 if isinstance(result, Request):
                     if self._is_domain_allowed(result):
+                        self._normalize_request(result)
                         await self.scheduler.enqueue(result)
                     else:
                         self.stats.offsite_requests_count += 1
@@ -223,6 +238,7 @@ class CrawlerEngine:
             try:
                 if not resuming:
                     async for request in self.spider.start_requests():
+                        self._normalize_request(request)
                         await self.scheduler.enqueue(request)
                 else:
                     log.info("Resuming from checkpoint, skipping start_requests()")

@@ -78,6 +78,11 @@ class Spider(ABC):
     download_delay: float = 0.0
     max_blocked_retries: int = 3
 
+    # Fingerprint adjustments
+    fp_include_kwargs = False
+    fp_keep_fragments = False
+    fp_include_headers = False
+
     # Logging settings
     logging_level: int = logging.DEBUG
     logging_format: str = "[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"
