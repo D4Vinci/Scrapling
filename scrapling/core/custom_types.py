@@ -3,6 +3,7 @@ from types import MappingProxyType
 from re import compile as re_compile, UNICODE, IGNORECASE
 
 from orjson import dumps, loads
+from w3lib.html import replace_entities as _replace_entities
 
 from scrapling.core._types import (
     Any,
@@ -19,7 +20,6 @@ from scrapling.core._types import (
     SupportsIndex,
 )
 from scrapling.core.utils import _is_iterable, flatten, __CONSECUTIVE_SPACES_REGEX__
-from scrapling.core._html_utils import _replace_entities
 
 # Define type variable for AttributeHandler value type
 _TextHandlerType = TypeVar("_TextHandlerType", bound="TextHandler")
