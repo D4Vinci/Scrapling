@@ -128,6 +128,9 @@ def install(force):  # pragma: no cover
             ],
             "Playwright dependencies",
         )
+        from tld.utils import update_tld_names
+
+        update_tld_names(fail_silently=True)
         # if no errors raised by the above commands, then we add the below file
         __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").touch()
     else:
