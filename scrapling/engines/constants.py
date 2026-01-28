@@ -30,6 +30,7 @@ DEFAULT_FLAGS = (
     "--no-service-autorun",
     "--homepage=about:blank",
     "--password-store=basic",
+    "--disable-hang-monitor",
     "--no-default-browser-check",
     "--disable-session-crashed-bubble",
     "--disable-search-engine-choice-screen",
@@ -96,5 +97,5 @@ DEFAULT_STEALTH_FLAGS = (
     "--disable-component-extensions-with-background-pages",
     "--enable-features=NetworkService,NetworkServiceInProcess,TrustTokens,TrustTokensAlwaysAllowIssuance",
     "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
-    "--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process,TranslateUI,BlinkGenPropertyTrees",
+    "--disable-features=AudioServiceOutOfProcess,TranslateUI,BlinkGenPropertyTrees",
 )
