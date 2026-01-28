@@ -90,7 +90,7 @@ DEFAULT_STEALTH_FLAGS = (
     "--disable-client-side-phishing-detection",
     "--disable-backgrounding-occluded-windows",
     "--disable-layer-tree-host-memory-pressure",
-    "--autoplay-policy=no-user-gesture-required",
+    "--autoplay-policy=user-gesture-required",
     "--disable-offer-store-unmasked-wallet-cards",
     "--disable-blink-features=AutomationControlled",
     "--disable-component-extensions-with-background-pages",
