@@ -20,6 +20,7 @@ from scrapling.core._types import (
     SelectorWaitStates,
     TYPE_CHECKING,
 )
+from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
 
 # Type alias for `impersonate` parameter - accepts a single browser or list of browsers
 ImpersonateType: TypeAlias = BrowserTypeLiteral | List[BrowserTypeLiteral] | None
@@ -34,6 +35,7 @@ if TYPE_CHECKING:  # pragma: no cover
         proxies: Optional[ProxySpec]
         proxy: Optional[str]
         proxy_auth: Optional[Tuple[str, str]]
+        proxy_rotator: Optional[ProxyRotator]
         timeout: Optional[int | float]
         headers: Optional[Mapping[str, Optional[str]]]
         retries: Optional[int]
@@ -70,6 +72,7 @@ if TYPE_CHECKING:  # pragma: no cover
         timezone_id: str | None
         page_action: Optional[Callable]
         proxy: Optional[str | Dict[str, str] | Tuple]
+        proxy_rotator: Optional[ProxyRotator]
         extra_headers: Optional[Dict[str, str]]
         timeout: int | float
         init_script: Optional[str]

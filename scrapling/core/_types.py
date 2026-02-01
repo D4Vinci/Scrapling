@@ -33,6 +33,8 @@ from typing import (
     SupportsIndex,
 )
 
+# Proxy can be a string URL or a dict (Playwright format: {"server": "...", "username": "...", "password": "..."})
+ProxyType = Union[str, Dict[str, str]]
 SUPPORTED_HTTP_METHODS = Literal["GET", "POST", "PUT", "DELETE"]
 SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
 PageLoadStates = Literal["commit", "domcontentloaded", "load", "networkidle"]

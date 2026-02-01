@@ -22,9 +22,10 @@ from scrapling.core._types import (
     SUPPORTED_HTTP_METHODS,
 )
 
-from ._browsers._types import RequestsSession, GetRequestParams, DataRequestParams, ImpersonateType
 from .toolbelt.custom import Response
 from .toolbelt.convertor import ResponseFactory
+from .toolbelt.proxy_rotation import ProxyRotator, is_proxy_error
+from ._browsers._types import RequestsSession, GetRequestParams, DataRequestParams, ImpersonateType
 from .toolbelt.fingerprints import generate_convincing_referer, generate_headers, __default_useragent__
 
 _NO_SESSION: Any = object()
@@ -63,6 +64,7 @@ class _ConfigurationLogic(ABC):
         "_default_http3",
         "selector_config",
         "_is_alive",
+        "_proxy_rotator",
     )
 
     def __init__(self, **kwargs: Unpack[RequestsSession]):
@@ -82,6 +84,13 @@ class _ConfigurationLogic(ABC):
         self._default_http3 = kwargs.get("http3", False)
         self.selector_config = kwargs.get("selector_config") or {}
         self._is_alive = False
+        self._proxy_rotator: Optional[ProxyRotator] = kwargs.get("proxy_rotator")
+
+        if self._proxy_rotator and (self._default_proxy or self._default_proxies):
+            raise ValueError(
+                "Cannot use 'proxy_rotator' together with 'proxy' or 'proxies'. "
+                "Use either a static proxy or proxy rotation, not both."
+            )
 
     @staticmethod
     def _get_param(kwargs: Dict, key: str, default: Any) -> Any:
@@ -218,7 +227,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
         max_retries = self._get_param(kwargs, "retries", self._default_retries)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
-        request_args = self._merge_request_args(stealth=stealth, **kwargs)
+        static_proxy = kwargs.pop("proxy", None)
 
         session = self._curl_session
         one_off_request = False
@@ -228,22 +237,38 @@ class _SyncSessionLogic(_ConfigurationLogic):
             session = CurlSession()
             one_off_request = True
 
-        if session:
+        if not session:
+            raise RuntimeError("No active session available.")  # pragma: no cover
+
+        try:
             for attempt in range(max_retries):
+                if self._proxy_rotator and static_proxy is None:
+                    proxy = self._proxy_rotator.get_proxy()
+                else:
+                    proxy = static_proxy
+
+                request_args = self._merge_request_args(stealth=stealth, proxy=proxy, **kwargs)
                 try:
                     response = session.request(method, **request_args)
                     result = ResponseFactory.from_http_request(response, selector_config)
                     return result
                 except CurlError as e:  # pragma: no cover
                     if attempt < max_retries - 1:
-                        log.error(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
+                        # Now if the rotator is enabled, we will try again with the new proxy
+                        # If it's not enabled, then we will try again with the same proxy
+                        if is_proxy_error(e):
+                            log.warning(
+                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."
+                            )
+                        else:
+                            log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
                         time_sleep(retry_delay)
                     else:
                         log.error(f"Failed after {max_retries} attempts: {e}")
                         raise  # Raise the exception if all retries fail
-                finally:
-                    if session and one_off_request:
-                        session.close()
+        finally:
+            if session and one_off_request:
+                session.close()
 
         raise RuntimeError("No active session available.")  # pragma: no cover
 
@@ -415,7 +440,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
         max_retries = self._get_param(kwargs, "retries", self._default_retries)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
-        request_args = self._merge_request_args(stealth=stealth, **kwargs)
+        static_proxy = kwargs.pop("proxy", None)
 
         session = self._async_curl_session
         one_off_request = False
@@ -427,22 +452,40 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             session = AsyncCurlSession()
             one_off_request = True
 
-        if session:
+        if not session:
+            raise RuntimeError("No active session available.")  # pragma: no cover
+
+        try:
+            # Determine if we should use proxy rotation
             for attempt in range(max_retries):
+                if self._proxy_rotator and static_proxy is None:
+                    proxy = self._proxy_rotator.get_proxy()
+                else:
+                    proxy = static_proxy
+
+                request_args = self._merge_request_args(stealth=stealth, proxy=proxy, **kwargs)
                 try:
                     response = await session.request(method, **request_args)
                     result = ResponseFactory.from_http_request(response, selector_config)
                     return result
                 except CurlError as e:  # pragma: no cover
                     if attempt < max_retries - 1:
-                        log.error(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
+                        # Now if the rotator is enabled, we will try again with the new proxy
+                        # If it's not enabled, then we will try again with the same proxy
+                        if is_proxy_error(e):
+                            log.warning(
+                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."
+                            )
+                        else:
+                            log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
+
                         await asyncio_sleep(retry_delay)
                     else:
                         log.error(f"Failed after {max_retries} attempts: {e}")
                         raise  # Raise the exception if all retries fail
-                finally:
-                    if session and one_off_request:
-                        await session.close()
+        finally:
+            if session and one_off_request:
+                await session.close()
 
         raise RuntimeError("No active session available.")  # pragma: no cover
 
@@ -604,6 +647,7 @@ class FetcherSession:
         "selector_config",
         "_client",
         "_is_alive",
+        "_proxy_rotator",
     )
 
     def __init__(
@@ -623,6 +667,7 @@ class FetcherSession:
         verify: bool = True,
         cert: Optional[str | Tuple[str, str]] = None,
         selector_config: Optional[Dict] = None,
+        proxy_rotator: Optional[ProxyRotator] = None,
     ):
         """
         :param impersonate: Browser version to impersonate. Can be a single browser string or a list of browser strings for random selection. (Default: latest available Chrome version)
@@ -641,6 +686,7 @@ class FetcherSession:
         :param verify: Whether to verify HTTPS certificates. Defaults to True.
         :param cert: Tuple of (cert, key) filenames for the client certificate.
         :param selector_config: Arguments passed when creating the final Selector class.
+        :param proxy_rotator: A ProxyRotator instance for automatic proxy rotation.
         """
         self._default_impersonate: ImpersonateType = impersonate
         self._stealth = stealthy_headers
@@ -659,6 +705,7 @@ class FetcherSession:
         self.selector_config = selector_config or {}
         self._is_alive = False
         self._client: _SyncSessionLogic | _ASyncSessionLogic | None = None
+        self._proxy_rotator = proxy_rotator
 
     def __enter__(self) -> _SyncSessionLogic:
         """Creates and returns a new synchronous Fetcher Session"""
@@ -667,6 +714,7 @@ class FetcherSession:
             config = {k.replace("_default_", ""): getattr(self, k) for k in self.__slots__ if k.startswith("_default")}
             config["stealthy_headers"] = self._stealth
             config["selector_config"] = self.selector_config
+            config["proxy_rotator"] = self._proxy_rotator
             self._client = _SyncSessionLogic(**config)
             self._is_alive = True
             return self._client.__enter__()
@@ -687,6 +735,7 @@ class FetcherSession:
             config = {k.replace("_default_", ""): getattr(self, k) for k in self.__slots__ if k.startswith("_default")}
             config["stealthy_headers"] = self._stealth
             config["selector_config"] = self.selector_config
+            config["proxy_rotator"] = self._proxy_rotator
             self._client = _ASyncSessionLogic(**config)
             self._is_alive = True
             return await self._client.__aenter__()

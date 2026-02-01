@@ -12,12 +12,13 @@ from playwright.async_api import (
 )
 
 from scrapling.core.utils import log
-from scrapling.core._types import Unpack, TYPE_CHECKING
-from ._types import PlaywrightSession, PlaywrightFetchParams
-from ._base import SyncSession, AsyncSession, DynamicSessionMixin
-from ._validators import validate_fetch as _validate, PlaywrightConfig
+from scrapling.core._types import Unpack
+from scrapling.engines.toolbelt.proxy_rotation import is_proxy_error
 from scrapling.engines.toolbelt.convertor import Response, ResponseFactory
 from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
+from scrapling.engines._browsers._types import PlaywrightSession, PlaywrightFetchParams
+from scrapling.engines._browsers._base import SyncSession, AsyncSession, DynamicSessionMixin
+from scrapling.engines._browsers._validators import validate_fetch as _validate, PlaywrightConfig
 
 
 class DynamicSession(SyncSession, DynamicSessionMixin):
@@ -26,7 +27,9 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
     __slots__ = (
         "_config",
         "_context_options",
-        "_launch_options",
+        "_browser_options",
+        "_user_data_dir",
+        "_headers_keys",
         "max_pages",
         "page_pool",
         "_max_wait_for_page",
@@ -73,16 +76,19 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
 
             try:
                 if self._config.cdp_url:  # pragma: no cover
-                    browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                    self.context = browser.new_context(**self._context_options)
+                    self.browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
+                    if not self._config.proxy_rotator and self.browser:
+                        self.context = self.browser.new_context(**self._context_options)
+                elif self._config.proxy_rotator:
+                    self.browser = self.playwright.chromium.launch(**self._browser_options)
                 else:
-                    self.context = self.playwright.chromium.launch_persistent_context(**self._launch_options)
+                    persistent_options = (
+                        self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
+                    )
+                    self.context = self.playwright.chromium.launch_persistent_context(**persistent_options)
 
-                if self._config.init_script:  # pragma: no cover
-                    self.context.add_init_script(path=self._config.init_script)
-
-                if self._config.cookies:  # pragma: no cover
-                    self.context.add_cookies(self._config.cookies)
+                if self.context:
+                    self.context = self._initialize_context(self._config, self.context)
 
                 self._is_alive = True
             except Exception:
@@ -123,59 +129,72 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         )
 
         for attempt in range(self._config.retries):
-            page_info = self._get_page(params.timeout, params.extra_headers, params.disable_resources)
-            final_response = [None]
-            handle_response = self._create_response_handler(page_info, final_response)
+            proxy = self._config.proxy_rotator.get_proxy() if self._config.proxy_rotator else None
 
-            try:  # pragma: no cover
-                page_info.page.on("response", handle_response)
-                first_response = page_info.page.goto(url, referer=referer)
-                self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
+            with self._page_generator(
+                params.timeout, params.extra_headers, params.disable_resources, proxy
+            ) as page_info:
+                final_response = [None]
+                page = page_info.page
+                page.on("response", self._create_response_handler(page_info, final_response))
 
-                if not first_response:
-                    raise RuntimeError(f"Failed to get response for {url}")
+                try:
+                    first_response = page.goto(url, referer=referer)
+                    self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-                if params.page_action:
-                    try:
-                        _ = params.page_action(page_info.page)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error executing page_action: {e}")
+                    if not first_response:
+                        raise RuntimeError(f"Failed to get response for {url}")
 
-                if params.wait_selector:
-                    try:
-                        waiter: Locator = page_info.page.locator(params.wait_selector)
-                        waiter.first.wait_for(state=params.wait_selector_state)
-                        self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+                    if params.page_action:
+                        try:
+                            _ = params.page_action(page)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error executing page_action: {e}")
 
-                page_info.page.wait_for_timeout(params.wait)
+                    if params.wait_selector:
+                        try:
+                            waiter: Locator = page.locator(params.wait_selector)
+                            waiter.first.wait_for(state=params.wait_selector_state)
+                            self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-                response = ResponseFactory.from_playwright_response(
-                    page_info.page, first_response, final_response[0], params.selector_config
-                )
+                    page.wait_for_timeout(params.wait)
 
-                page_info.page.close()
-                self.page_pool.pages.remove(page_info)
-                return response
+                    response = ResponseFactory.from_playwright_response(
+                        page, first_response, final_response[0], params.selector_config
+                    )
+                    return response
 
-            except Exception as e:
-                page_info.mark_error()
-                page_info.page.close()
-                self.page_pool.pages.remove(page_info)
+                except Exception as e:
+                    page_info.mark_error()
+                    if attempt < self._config.retries - 1:
+                        if is_proxy_error(e):
+                            log.warning(
+                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                            )
+                        else:
+                            log.warning(
+                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
+                            )
+                        time_sleep(self._config.retry_delay)
+                    else:
+                        log.error(f"Failed after {self._config.retries} attempts: {e}")
+                        raise
 
-                if attempt < self._config.retries - 1 and self._is_retriable(e):
-                    log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s...")
-                    time_sleep(self._config.retry_delay)
-                else:
-                    raise
-
-        # For type checking purposes only
-        raise AssertionError("Unreachable: retry loop must return or raise")  # pragma: no cover
+        raise RuntimeError("Request failed")  # pragma: no cover
 
 
 class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
     """An async Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory."""
+
+    __slots__ = (
+        "_config",
+        "_context_options",
+        "_browser_options",
+        "_user_data_dir",
+        "_headers_keys",
+    )
 
     def __init__(self, **kwargs: Unpack[PlaywrightSession]):
         """A Browser session manager with page pooling
@@ -216,18 +235,21 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
             self.playwright = await async_playwright().start()
             try:
                 if self._config.cdp_url:
-                    browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                    self.context: AsyncBrowserContext = await browser.new_context(**self._context_options)
+                    self.browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
+                    if not self._config.proxy_rotator and self.browser:
+                        self.context: AsyncBrowserContext = await self.browser.new_context(**self._context_options)
+                elif self._config.proxy_rotator:
+                    self.browser = await self.playwright.chromium.launch(**self._browser_options)
                 else:
+                    persistent_options = (
+                        self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
+                    )
                     self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
-                        **self._launch_options
+                        **persistent_options
                     )
 
-                if self._config.init_script:  # pragma: no cover
-                    await self.context.add_init_script(path=self._config.init_script)
-
-                if self._config.cookies:
-                    await self.context.add_cookies(self._config.cookies)  # pyright: ignore
+                if self.context:
+                    self.context = await self._initialize_context(self._config, self.context)
 
                 self._is_alive = True
             except Exception:
@@ -269,58 +291,57 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         )
 
         for attempt in range(self._config.retries):
-            page_info = await self._get_page(params.timeout, params.extra_headers, params.disable_resources)
-            final_response = [None]
-            handle_response = self._create_response_handler(page_info, final_response)
+            proxy = self._config.proxy_rotator.get_proxy() if self._config.proxy_rotator else None
 
-            if TYPE_CHECKING:
-                from playwright.async_api import Page as async_Page
+            async with self._page_generator(
+                params.timeout, params.extra_headers, params.disable_resources, proxy
+            ) as page_info:
+                final_response = [None]
+                page = page_info.page
+                page.on("response", self._create_response_handler(page_info, final_response))
 
-                if not isinstance(page_info.page, async_Page):
-                    raise TypeError
+                try:
+                    first_response = await page.goto(url, referer=referer)
+                    await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-            try:
-                page_info.page.on("response", handle_response)
-                first_response = await page_info.page.goto(url, referer=referer)
-                await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
+                    if not first_response:
+                        raise RuntimeError(f"Failed to get response for {url}")
 
-                if not first_response:
-                    raise RuntimeError(f"Failed to get response for {url}")
+                    if params.page_action:
+                        try:
+                            _ = await params.page_action(page)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error executing page_action: {e}")
 
-                if params.page_action:
-                    try:
-                        _ = await params.page_action(page_info.page)
-                    except Exception as e:
-                        log.error(f"Error executing page_action: {e}")
+                    if params.wait_selector:
+                        try:
+                            waiter: AsyncLocator = page.locator(params.wait_selector)
+                            await waiter.first.wait_for(state=params.wait_selector_state)
+                            await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-                if params.wait_selector:
-                    try:
-                        waiter: AsyncLocator = page_info.page.locator(params.wait_selector)
-                        await waiter.first.wait_for(state=params.wait_selector_state)
-                        await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
-                    except Exception as e:
-                        log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+                    await page.wait_for_timeout(params.wait)
 
-                await page_info.page.wait_for_timeout(params.wait)
+                    response = await ResponseFactory.from_async_playwright_response(
+                        page, first_response, final_response[0], params.selector_config
+                    )
+                    return response
 
-                response = await ResponseFactory.from_async_playwright_response(
-                    page_info.page, first_response, final_response[0], params.selector_config
-                )
+                except Exception as e:
+                    page_info.mark_error()
+                    if attempt < self._config.retries - 1:
+                        if is_proxy_error(e):
+                            log.warning(
+                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                            )
+                        else:
+                            log.warning(
+                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
+                            )
+                        await asyncio_sleep(self._config.retry_delay)
+                    else:
+                        log.error(f"Failed after {self._config.retries} attempts: {e}")
+                        raise
 
-                await page_info.page.close()
-                self.page_pool.pages.remove(page_info)
-                return response
-
-            except Exception as e:  # pragma: no cover
-                page_info.mark_error()
-                await page_info.page.close()
-                self.page_pool.pages.remove(page_info)
-
-                if attempt < self._config.retries - 1 and self._is_retriable(e):
-                    log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s...")
-                    await asyncio_sleep(self._config.retry_delay)
-                else:
-                    raise
-
-        # For type checking purposes only
-        raise AssertionError("Unreachable: retry loop must return or raise")  # pragma: no cover
+        raise RuntimeError("Request failed")  # pragma: no cover

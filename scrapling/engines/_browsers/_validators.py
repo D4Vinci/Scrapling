@@ -18,6 +18,7 @@ from scrapling.core._types import (
     SetCookieParam,
     SelectorWaitStates,
 )
+from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
 from scrapling.engines.toolbelt.navigation import construct_proxy_dict
 from scrapling.engines._browsers._types import PlaywrightFetchParams, StealthFetchParams
 
@@ -70,6 +71,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     timezone_id: str | None = ""
     page_action: Optional[Callable] = None
     proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
+    proxy_rotator: Optional[ProxyRotator] = None
     extra_headers: Optional[Dict[str, str]] = None
     timeout: Seconds = 30000
     init_script: Optional[str] = None
@@ -88,6 +90,11 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
         """Custom validation after msgspec validation"""
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
+        if self.proxy and self.proxy_rotator:
+            raise ValueError(
+                "Cannot use 'proxy_rotator' together with 'proxy'. "
+                "Use either a static proxy or proxy rotation, not both."
+            )
         if self.proxy:
             self.proxy = construct_proxy_dict(self.proxy)
         if self.cdp_url:

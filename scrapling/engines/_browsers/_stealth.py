@@ -3,10 +3,7 @@ from re import compile as re_compile
 from time import sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
-from playwright.sync_api import (
-    Locator,
-    Page,
-)
+from playwright.sync_api import Locator, Page, BrowserContext
 from playwright.async_api import (
     Page as async_Page,
     Locator as AsyncLocator,
@@ -17,12 +14,13 @@ from patchright.async_api import async_playwright
 
 from scrapling.core.utils import log
 from scrapling.core._types import Any, Unpack
-from ._config_tools import _compiled_stealth_scripts
-from ._types import StealthSession, StealthFetchParams
-from ._base import SyncSession, AsyncSession, StealthySessionMixin
-from ._validators import validate_fetch as _validate, StealthConfig
+from scrapling.engines.toolbelt.proxy_rotation import is_proxy_error
 from scrapling.engines.toolbelt.convertor import Response, ResponseFactory
 from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
+from scrapling.engines._browsers._config_tools import _compiled_stealth_scripts
+from scrapling.engines._browsers._types import StealthSession, StealthFetchParams
+from scrapling.engines._browsers._base import SyncSession, AsyncSession, StealthySessionMixin
+from scrapling.engines._browsers._validators import validate_fetch as _validate, StealthConfig
 
 __CF_PATTERN__ = re_compile("challenges.cloudflare.com/cdn-cgi/challenge-platform/.*")
 
@@ -33,7 +31,9 @@ class StealthySession(SyncSession, StealthySessionMixin):
     __slots__ = (
         "_config",
         "_context_options",
-        "_launch_options",
+        "_browser_options",
+        "_user_data_dir",
+        "_headers_keys",
         "max_pages",
         "page_pool",
         "_max_wait_for_page",
@@ -84,19 +84,20 @@ class StealthySession(SyncSession, StealthySessionMixin):
 
             try:
                 if self._config.cdp_url:  # pragma: no cover
-                    browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                    self.context = browser.new_context(**self._context_options)
+                    self.browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
+                    if not self._config.proxy_rotator:
+                        assert self.browser is not None
+                        self.context = self.browser.new_context(**self._context_options)
+                elif self._config.proxy_rotator:
+                    self.browser = self.playwright.chromium.launch(**self._browser_options)
                 else:
-                    self.context = self.playwright.chromium.launch_persistent_context(**self._launch_options)
+                    persistent_options = (
+                        self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
+                    )
+                    self.context = self.playwright.chromium.launch_persistent_context(**persistent_options)
 
-                for script in _compiled_stealth_scripts():
-                    self.context.add_init_script(script=script)
-
-                if self._config.init_script:  # pragma: no cover
-                    self.context.add_init_script(path=self._config.init_script)
-
-                if self._config.cookies:  # pragma: no cover
-                    self.context.add_cookies(self._config.cookies)
+                if self.context:
+                    self.context = self._initialize_context(self._config, self.context)
 
                 self._is_alive = True
             except Exception:
@@ -106,6 +107,14 @@ class StealthySession(SyncSession, StealthySessionMixin):
                 raise
         else:
             raise RuntimeError("Session has been already started")
+
+    def _initialize_context(self, config, ctx: BrowserContext) -> BrowserContext:
+        """Initialize the browser context."""
+        for script in _compiled_stealth_scripts():
+            ctx.add_init_script(script=script)
+
+        ctx = super()._initialize_context(config, ctx)
+        return ctx
 
     def _cloudflare_solver(self, page: Page) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
@@ -209,69 +218,77 @@ class StealthySession(SyncSession, StealthySessionMixin):
         )
 
         for attempt in range(self._config.retries):
-            page_info = self._get_page(params.timeout, params.extra_headers, params.disable_resources)
-            final_response = [None]
-            handle_response = self._create_response_handler(page_info, final_response)
+            proxy = self._config.proxy_rotator.get_proxy() if self._config.proxy_rotator else None
 
-            try:  # pragma: no cover
-                # Navigate to URL and wait for a specified state
-                page_info.page.on("response", handle_response)
-                first_response = page_info.page.goto(url, referer=referer)
-                self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
+            with self._page_generator(
+                params.timeout, params.extra_headers, params.disable_resources, proxy
+            ) as page_info:
+                final_response = [None]
+                page = page_info.page
+                page.on("response", self._create_response_handler(page_info, final_response))
 
-                if not first_response:
-                    raise RuntimeError(f"Failed to get response for {url}")
+                try:
+                    first_response = page.goto(url, referer=referer)
+                    self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-                if params.solve_cloudflare:
-                    self._cloudflare_solver(page_info.page)
-                    # Make sure the page is fully loaded after the captcha
-                    self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
+                    if not first_response:
+                        raise RuntimeError(f"Failed to get response for {url}")
 
-                if params.page_action:
-                    try:
-                        _ = params.page_action(page_info.page)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error executing page_action: {e}")
+                    if params.solve_cloudflare:
+                        self._cloudflare_solver(page)
+                        # Make sure the page is fully loaded after the captcha
+                        self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-                if params.wait_selector:
-                    try:
-                        waiter: Locator = page_info.page.locator(params.wait_selector)
-                        waiter.first.wait_for(state=params.wait_selector_state)
-                        # Wait again after waiting for the selector, helpful with protections like Cloudflare
-                        self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+                    if params.page_action:
+                        try:
+                            _ = params.page_action(page)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error executing page_action: {e}")
 
-                page_info.page.wait_for_timeout(params.wait)
+                    if params.wait_selector:
+                        try:
+                            waiter: Locator = page.locator(params.wait_selector)
+                            waiter.first.wait_for(state=params.wait_selector_state)
+                            self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-                # Create response object
-                response = ResponseFactory.from_playwright_response(
-                    page_info.page, first_response, final_response[0], params.selector_config
-                )
+                    page.wait_for_timeout(params.wait)
 
-                # Close the page to free up resources
-                page_info.page.close()
-                self.page_pool.pages.remove(page_info)
+                    response = ResponseFactory.from_playwright_response(
+                        page, first_response, final_response[0], params.selector_config
+                    )
+                    return response
 
-                return response
+                except Exception as e:
+                    page_info.mark_error()
+                    if attempt < self._config.retries - 1:
+                        if is_proxy_error(e):
+                            log.warning(
+                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                            )
+                        else:
+                            log.warning(
+                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
+                            )
+                        time_sleep(self._config.retry_delay)
+                    else:
+                        log.error(f"Failed after {self._config.retries} attempts: {e}")
+                        raise
 
-            except Exception as e:
-                page_info.mark_error()
-                page_info.page.close()
-                self.page_pool.pages.remove(page_info)
-
-                if attempt < self._config.retries - 1 and self._is_retriable(e):
-                    log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s...")
-                    time_sleep(self._config.retry_delay)
-                else:
-                    raise
-
-        # For type checking purposes only
-        raise AssertionError("Unreachable: retry loop must return or raise")  # pragma: no cover
+        raise RuntimeError("Request failed")  # pragma: no cover
 
 
 class AsyncStealthySession(AsyncSession, StealthySessionMixin):
     """An async Stealthy Browser session manager with page pooling."""
+
+    __slots__ = (
+        "_config",
+        "_context_options",
+        "_browser_options",
+        "_user_data_dir",
+        "_headers_keys",
+    )
 
     def __init__(self, **kwargs: Unpack[StealthSession]):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
@@ -315,21 +332,22 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
             self.playwright = await async_playwright().start()
             try:
                 if self._config.cdp_url:
-                    browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                    self.context: AsyncBrowserContext = await browser.new_context(**self._context_options)
+                    self.browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
+                    if not self._config.proxy_rotator:
+                        assert self.browser is not None
+                        self.context: AsyncBrowserContext = await self.browser.new_context(**self._context_options)
+                elif self._config.proxy_rotator:
+                    self.browser = await self.playwright.chromium.launch(**self._browser_options)
                 else:
+                    persistent_options = (
+                        self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
+                    )
                     self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
-                        **self._launch_options
+                        **persistent_options
                     )
 
-                for script in _compiled_stealth_scripts():
-                    await self.context.add_init_script(script=script)
-
-                if self._config.init_script:  # pragma: no cover
-                    await self.context.add_init_script(path=self._config.init_script)
-
-                if self._config.cookies:
-                    await self.context.add_cookies(self._config.cookies)  # pyright: ignore
+                if self.context:
+                    self.context = await self._initialize_context(self._config, self.context)
 
                 self._is_alive = True
             except Exception:
@@ -339,6 +357,14 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                 raise
         else:
             raise RuntimeError("Session has been already started")
+
+    async def _initialize_context(self, config, ctx: AsyncBrowserContext) -> AsyncBrowserContext:
+        """Initialize the browser context."""
+        for script in _compiled_stealth_scripts():
+            await ctx.add_init_script(script=script)
+
+        ctx = await super()._initialize_context(config, ctx)
+        return ctx
 
     async def _cloudflare_solver(self, page: async_Page) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
@@ -443,61 +469,62 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         )
 
         for attempt in range(self._config.retries):
-            page_info = await self._get_page(params.timeout, params.extra_headers, params.disable_resources)
-            final_response = [None]
-            handle_response = self._create_response_handler(page_info, final_response)
+            proxy = self._config.proxy_rotator.get_proxy() if self._config.proxy_rotator else None
 
-            try:
-                # Navigate to URL and wait for a specified state
-                page_info.page.on("response", handle_response)
-                first_response = await page_info.page.goto(url, referer=referer)
-                await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
+            async with self._page_generator(
+                params.timeout, params.extra_headers, params.disable_resources, proxy
+            ) as page_info:
+                final_response = [None]
+                page = page_info.page
+                page.on("response", self._create_response_handler(page_info, final_response))
 
-                if not first_response:
-                    raise RuntimeError(f"Failed to get response for {url}")
+                try:
+                    first_response = await page.goto(url, referer=referer)
+                    await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-                if params.solve_cloudflare:
-                    await self._cloudflare_solver(page_info.page)
-                    # Make sure the page is fully loaded after the captcha
-                    await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
+                    if not first_response:
+                        raise RuntimeError(f"Failed to get response for {url}")
 
-                if params.page_action:
-                    try:
-                        _ = await params.page_action(page_info.page)
-                    except Exception as e:
-                        log.error(f"Error executing page_action: {e}")
+                    if params.solve_cloudflare:
+                        await self._cloudflare_solver(page)
+                        # Make sure the page is fully loaded after the captcha
+                        await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-                if params.wait_selector:
-                    try:
-                        waiter: AsyncLocator = page_info.page.locator(params.wait_selector)
-                        await waiter.first.wait_for(state=params.wait_selector_state)
-                        # Wait again after waiting for the selector, helpful with protections like Cloudflare
-                        await self._wait_for_page_stability(page_info.page, params.load_dom, params.network_idle)
-                    except Exception as e:
-                        log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+                    if params.page_action:
+                        try:
+                            _ = await params.page_action(page)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error executing page_action: {e}")
 
-                await page_info.page.wait_for_timeout(params.wait)
+                    if params.wait_selector:
+                        try:
+                            waiter: AsyncLocator = page.locator(params.wait_selector)
+                            await waiter.first.wait_for(state=params.wait_selector_state)
+                            await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-                # Create response object
-                response = await ResponseFactory.from_async_playwright_response(
-                    page_info.page, first_response, final_response[0], params.selector_config
-                )
+                    await page.wait_for_timeout(params.wait)
 
-                # Close the page to free up resources
-                await page_info.page.close()
-                self.page_pool.pages.remove(page_info)
-                return response
+                    response = await ResponseFactory.from_async_playwright_response(
+                        page, first_response, final_response[0], params.selector_config
+                    )
+                    return response
 
-            except Exception as e:  # pragma: no cover
-                page_info.mark_error()
-                await page_info.page.close()
-                self.page_pool.pages.remove(page_info)
+                except Exception as e:
+                    page_info.mark_error()
+                    if attempt < self._config.retries - 1:
+                        if is_proxy_error(e):
+                            log.warning(
+                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                            )
+                        else:
+                            log.warning(
+                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
+                            )
+                        await asyncio_sleep(self._config.retry_delay)
+                    else:
+                        log.error(f"Failed after {self._config.retries} attempts: {e}")
+                        raise
 
-                if attempt < self._config.retries - 1 and self._is_retriable(e):
-                    log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s...")
-                    await asyncio_sleep(self._config.retry_delay)
-                else:
-                    raise
-
-        # For type checking purposes only
-        raise AssertionError("Unreachable: retry loop must return or raise")  # pragma: no cover
+        raise RuntimeError("Request failed")  # pragma: no cover

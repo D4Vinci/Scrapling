@@ -1,9 +1,11 @@
 from time import time
 from asyncio import sleep as asyncio_sleep, Lock
+from contextlib import contextmanager, asynccontextmanager
 
 from playwright.sync_api._generated import Page
 from playwright.sync_api import (
     Frame,
+    Browser,
     BrowserContext,
     Playwright,
     Response as SyncPlaywrightResponse,
@@ -11,18 +13,31 @@ from playwright.sync_api import (
 from playwright.async_api._generated import Page as AsyncPage
 from playwright.async_api import (
     Frame as AsyncFrame,
+    Browser as AsyncBrowser,
     Playwright as AsyncPlaywright,
     Response as AsyncPlaywrightResponse,
     BrowserContext as AsyncBrowserContext,
 )
 from playwright._impl._errors import Error as PlaywrightError
 
-from ._page import PageInfo, PagePool
 from scrapling.parser import Selector
-from ._validators import validate, PlaywrightConfig, StealthConfig
-from ._config_tools import __default_chrome_useragent__, __default_useragent__
-from scrapling.engines.toolbelt.navigation import intercept_route, async_intercept_route
-from scrapling.core._types import Any, cast, Dict, List, Optional, Callable, TYPE_CHECKING, overload, Tuple
+from scrapling.engines._browsers._page import PageInfo, PagePool
+from scrapling.engines._browsers._validators import validate, PlaywrightConfig, StealthConfig
+from scrapling.engines._browsers._config_tools import __default_chrome_useragent__, __default_useragent__
+from scrapling.engines.toolbelt.navigation import construct_proxy_dict, intercept_route, async_intercept_route
+from scrapling.core._types import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Callable,
+    TYPE_CHECKING,
+    overload,
+    Tuple,
+    ProxyType,
+    Generator,
+    AsyncGenerator,
+)
 from scrapling.engines.constants import (
     DEFAULT_STEALTH_FLAGS,
     HARMFUL_DEFAULT_ARGS,
@@ -31,12 +46,19 @@ from scrapling.engines.constants import (
 
 
 class SyncSession:
+    _config: "PlaywrightConfig | StealthConfig"
+    _context_options: Dict[str, Any]
+
+    def _build_context_with_proxy(self, proxy: Optional[ProxyType] = None) -> Dict[str, Any]:
+        raise NotImplementedError  # pragma: no cover
+
     def __init__(self, max_pages: int = 1):
         self.max_pages = max_pages
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
         self.playwright: Playwright | Any = None
         self.context: BrowserContext | Any = None
+        self.browser: Optional[Browser] = None
         self._is_alive = False
 
     def start(self):
@@ -51,6 +73,10 @@ class SyncSession:
             self.context.close()
             self.context = None
 
+        if self.browser:
+            self.browser.close()
+            self.browser = None
+
         if self.playwright:
             self.playwright.stop()
             self.playwright = None  # pyright: ignore
@@ -64,17 +90,28 @@ class SyncSession:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    def _initialize_context(self, config: PlaywrightConfig | StealthConfig, ctx: BrowserContext) -> BrowserContext:
+        """Initialize the browser context."""
+        if config.init_script:
+            ctx.add_init_script(path=config.init_script)
+
+        if config.cookies:  # pragma: no cover
+            ctx.add_cookies(config.cookies)
+
+        return ctx
+
     def _get_page(
         self,
         timeout: int | float,
         extra_headers: Optional[Dict[str, str]],
         disable_resources: bool,
+        context: Optional[BrowserContext] = None,
     ) -> PageInfo[Page]:  # pragma: no cover
         """Get a new page to use"""
-
         # No need to check if a page is available or not in sync code because the code blocked before reaching here till the page closed, ofc.
-        assert self.context is not None, "Browser context not initialized"
-        page = self.context.new_page()
+        ctx = context if context is not None else self.context
+        assert ctx is not None, "Browser context not initialized"
+        page = ctx.new_page()
         page.set_default_navigation_timeout(timeout)
         page.set_default_timeout(timeout)
         if extra_headers:
@@ -129,14 +166,52 @@ class SyncSession:
 
         return handle_response
 
+    @contextmanager
+    def _page_generator(
+        self,
+        timeout: int | float,
+        extra_headers: Optional[Dict[str, str]],
+        disable_resources: bool,
+        proxy: Optional[ProxyType] = None,
+    ) -> Generator["PageInfo[Page]", None, None]:
+        """Acquire a page - either from persistent context or fresh context with proxy."""
+        if self._config.proxy_rotator:
+            # Rotation mode: create fresh context with the provided proxy
+            if not self.browser:  # pragma: no cover
+                raise RuntimeError("Browser not initialized for proxy rotation mode")
+            context_options = self._build_context_with_proxy(proxy)
+            context: BrowserContext = self.browser.new_context(**context_options)
+
+            try:
+                context = self._initialize_context(self._config, context)
+                page_info = self._get_page(timeout, extra_headers, disable_resources, context=context)
+                yield page_info
+            finally:
+                context.close()
+        else:
+            # Standard mode: use PagePool with persistent context
+            page_info = self._get_page(timeout, extra_headers, disable_resources)
+            try:
+                yield page_info
+            finally:
+                page_info.page.close()
+                self.page_pool.pages.remove(page_info)
+
 
 class AsyncSession:
+    _config: "PlaywrightConfig | StealthConfig"
+    _context_options: Dict[str, Any]
+
+    def _build_context_with_proxy(self, proxy: Optional[ProxyType] = None) -> Dict[str, Any]:
+        raise NotImplementedError  # pragma: no cover
+
     def __init__(self, max_pages: int = 1):
         self.max_pages = max_pages
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
         self.playwright: AsyncPlaywright | Any = None
         self.context: AsyncBrowserContext | Any = None
+        self.browser: Optional[AsyncBrowser] = None
         self._is_alive = False
         self._lock = Lock()
 
@@ -152,6 +227,10 @@ class AsyncSession:
             await self.context.close()
             self.context = None  # pyright: ignore
 
+        if self.browser:
+            await self.browser.close()
+            self.browser = None
+
         if self.playwright:
             await self.playwright.stop()
             self.playwright = None  # pyright: ignore
@@ -165,19 +244,34 @@ class AsyncSession:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
 
+    async def _initialize_context(
+        self, config: PlaywrightConfig | StealthConfig, ctx: AsyncBrowserContext
+    ) -> AsyncBrowserContext:
+        """Initialize the browser context."""
+        if config.init_script:  # pragma: no cover
+            await ctx.add_init_script(path=config.init_script)
+
+        if config.cookies:  # pragma: no cover
+            await ctx.add_cookies(config.cookies)
+
+        return ctx
+
     async def _get_page(
         self,
         timeout: int | float,
         extra_headers: Optional[Dict[str, str]],
         disable_resources: bool,
+        context: Optional[AsyncBrowserContext] = None,
     ) -> PageInfo[AsyncPage]:  # pragma: no cover
         """Get a new page to use"""
+        ctx = context if context is not None else self.context
         if TYPE_CHECKING:
-            assert self.context is not None, "Browser context not initialized"
+            assert ctx is not None, "Browser context not initialized"
 
         async with self._lock:
             # If we're at max capacity after cleanup, wait for busy pages to finish
-            if self.page_pool.pages_count >= self.max_pages:
+            if context is None and self.page_pool.pages_count >= self.max_pages:
+                # Only applies when using persistent context
                 start_time = time()
                 while time() - start_time < self._max_wait_for_page:
                     await asyncio_sleep(0.05)
@@ -188,7 +282,7 @@ class AsyncSession:
                         f"No pages finished to clear place in the pool within the {self._max_wait_for_page}s timeout period"
                     )
 
-            page = await self.context.new_page()
+            page = await ctx.new_page()
             page.set_default_navigation_timeout(timeout)
             page.set_default_timeout(timeout)
             if extra_headers:
@@ -241,6 +335,37 @@ class AsyncSession:
 
         return handle_response
 
+    @asynccontextmanager
+    async def _page_generator(
+        self,
+        timeout: int | float,
+        extra_headers: Optional[Dict[str, str]],
+        disable_resources: bool,
+        proxy: Optional[ProxyType] = None,
+    ) -> AsyncGenerator["PageInfo[AsyncPage]", None]:
+        """Acquire a page - either from persistent context or fresh context with proxy."""
+        if self._config.proxy_rotator:
+            # Rotation mode: create fresh context with the provided proxy
+            if not self.browser:  # pragma: no cover
+                raise RuntimeError("Browser not initialized for proxy rotation mode")
+            context_options = self._build_context_with_proxy(proxy)
+            context: AsyncBrowserContext = await self.browser.new_context(**context_options)
+
+            try:
+                context = await self._initialize_context(self._config, context)
+                page_info = await self._get_page(timeout, extra_headers, disable_resources, context=context)
+                yield page_info
+            finally:
+                await context.close()
+        else:
+            # Standard mode: use PagePool with persistent context
+            page_info = await self._get_page(timeout, extra_headers, disable_resources)
+            try:
+                yield page_info
+            finally:
+                await page_info.page.close()
+                self.page_pool.pages.remove(page_info)
+
 
 class BaseSessionMixin:
     @overload
@@ -254,7 +379,7 @@ class BaseSessionMixin:
     ) -> PlaywrightConfig | StealthConfig:
         # Dark color scheme bypasses the 'prefersLightColor' check in creepjs
         self._context_options: Dict[str, Any] = {"color_scheme": "dark", "device_scale_factor": 2}
-        self._launch_options: Dict[str, Any] = self._context_options | {
+        self._browser_options: Dict[str, Any] = {
             "args": DEFAULT_FLAGS,
             "ignore_default_args": HARMFUL_DEFAULT_ARGS,
         }
@@ -269,7 +394,7 @@ class BaseSessionMixin:
         return config
 
     def __generate_options__(self, extra_flags: Tuple | None = None) -> None:
-        config = cast(PlaywrightConfig, getattr(self, "_config", None))
+        config: PlaywrightConfig | StealthConfig = self._config  # type: ignore[has-type]
         self._context_options.update(
             {
                 "proxy": config.proxy,
@@ -287,36 +412,40 @@ class BaseSessionMixin:
             )
 
         if not config.cdp_url:
-            self._launch_options |= self._context_options
-            self._context_options = {}
-            flags = self._launch_options["args"]
+            flags = self._browser_options["args"]
             if config.extra_flags or extra_flags:
                 flags = list(set(flags + (config.extra_flags or extra_flags)))
 
-            self._launch_options.update(
+            self._browser_options.update(
                 {
                     "args": flags,
                     "headless": config.headless,
-                    "user_data_dir": config.user_data_dir,
                     "channel": "chrome" if config.real_chrome else "chromium",
                 }
             )
 
-            if config.additional_args:
-                self._launch_options.update(config.additional_args)
+            self._user_data_dir = config.user_data_dir
         else:
-            # while `context_options` is left to be used when cdp mode is enabled
-            self._launch_options = dict()
-            if config.additional_args:
-                self._context_options.update(config.additional_args)
+            self._browser_options = {}
 
-    @staticmethod
-    def _is_retriable(error: Exception) -> bool:
-        """Check if an error is retriable (transient network/timeout issues)."""
-        if isinstance(error, TimeoutError):
-            return True
-        error_msg = str(error).lower()
-        return "net::" in error_msg or "failed to get response" in error_msg
+        if config.additional_args:
+            self._context_options.update(config.additional_args)
+
+    def _build_context_with_proxy(self, proxy: Optional[ProxyType] = None) -> Dict[str, Any]:
+        """
+        Build context options with a specific proxy for rotation mode.
+
+        :param proxy: Proxy URL string or Playwright-style proxy dict to use for this context.
+        :return: Dictionary of context options for browser.new_context().
+        """
+
+        context_options = self._context_options.copy()
+
+        # Override proxy if provided
+        if proxy:
+            context_options["proxy"] = construct_proxy_dict(proxy)
+
+        return context_options
 
 
 class DynamicSessionMixin(BaseSessionMixin):
