@@ -99,6 +99,7 @@ if TYPE_CHECKING:  # pragma: no cover
         selector_config: Optional[Dict]
         extra_headers: Optional[Dict[str, str]]
         wait_selector_state: SelectorWaitStates
+        proxy: Optional[str | Dict[str, str]]
 
     class StealthSession(PlaywrightSession, total=False):
         allow_webgl: bool

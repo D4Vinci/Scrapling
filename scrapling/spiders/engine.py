@@ -113,6 +113,9 @@ class CrawlerEngine:
                 retry_request._retry_count += 1
                 retry_request.priority -= 1  # Don't retry immediately
                 retry_request.dont_filter = True
+                retry_request._session_kwargs.pop("proxy", None)
+                retry_request._session_kwargs.pop("proxies", None)
+
                 new_request = await self.spider.retry_blocked_request(retry_request, response)
                 self._normalize_request(new_request)
                 await self.scheduler.enqueue(new_request)

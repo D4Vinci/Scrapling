@@ -175,7 +175,7 @@ class SyncSession:
         proxy: Optional[ProxyType] = None,
     ) -> Generator["PageInfo[Page]", None, None]:
         """Acquire a page - either from persistent context or fresh context with proxy."""
-        if self._config.proxy_rotator:
+        if proxy:
             # Rotation mode: create fresh context with the provided proxy
             if not self.browser:  # pragma: no cover
                 raise RuntimeError("Browser not initialized for proxy rotation mode")
@@ -344,7 +344,7 @@ class AsyncSession:
         proxy: Optional[ProxyType] = None,
     ) -> AsyncGenerator["PageInfo[AsyncPage]", None]:
         """Acquire a page - either from persistent context or fresh context with proxy."""
-        if self._config.proxy_rotator:
+        if proxy:
             # Rotation mode: create fresh context with the provided proxy
             if not self.browser:  # pragma: no cover
                 raise RuntimeError("Browser not initialized for proxy rotation mode")

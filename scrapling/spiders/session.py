@@ -124,7 +124,8 @@ class SessionManager:
                 response = await session.fetch(url=request.url, **request._session_kwargs)
 
             response.request = request
-            response.meta = request.meta
+            # Merge request meta into response meta (response meta takes priority)
+            response.meta = {**request.meta, **response.meta}
             return response
         raise RuntimeError("No session found with the request session id")
 

@@ -115,8 +115,11 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
         :return: A `Response` object.
         """
+        static_proxy = kwargs.pop("proxy", None)
+
         params = _validate(kwargs, self, PlaywrightConfig)
         if not self._is_alive:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
@@ -129,7 +132,10 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         )
 
         for attempt in range(self._config.retries):
-            proxy = self._config.proxy_rotator.get_proxy() if self._config.proxy_rotator else None
+            if self._config.proxy_rotator and static_proxy is None:
+                proxy = self._config.proxy_rotator.get_proxy()
+            else:
+                proxy = static_proxy
 
             with self._page_generator(
                 params.timeout, params.extra_headers, params.disable_resources, proxy
@@ -162,7 +168,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
                     page.wait_for_timeout(params.wait)
 
                     response = ResponseFactory.from_playwright_response(
-                        page, first_response, final_response[0], params.selector_config
+                        page, first_response, final_response[0], params.selector_config, meta={"proxy": proxy}
                     )
                     return response
 
@@ -276,8 +282,11 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
+        :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
         :return: A `Response` object.
         """
+        static_proxy = kwargs.pop("proxy", None)
+
         params = _validate(kwargs, self, PlaywrightConfig)
 
         if not self._is_alive:  # pragma: no cover
@@ -291,7 +300,10 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         )
 
         for attempt in range(self._config.retries):
-            proxy = self._config.proxy_rotator.get_proxy() if self._config.proxy_rotator else None
+            if self._config.proxy_rotator and static_proxy is None:
+                proxy = self._config.proxy_rotator.get_proxy()
+            else:
+                proxy = static_proxy
 
             async with self._page_generator(
                 params.timeout, params.extra_headers, params.disable_resources, proxy
@@ -324,7 +336,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
                     await page.wait_for_timeout(params.wait)
 
                     response = await ResponseFactory.from_async_playwright_response(
-                        page, first_response, final_response[0], params.selector_config
+                        page, first_response, final_response[0], params.selector_config, meta={"proxy": proxy}
                     )
                     return response
 

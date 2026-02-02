@@ -85,6 +85,7 @@ class ResponseFactory:
         first_response: SyncResponse,
         final_response: Optional[SyncResponse],
         parser_arguments: Dict,
+        meta: Optional[Dict] = None,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -134,6 +135,7 @@ class ResponseFactory:
                 "headers": first_response.all_headers(),
                 "request_headers": first_response.request.all_headers(),
                 "history": history,
+                "meta": meta,
                 **parser_arguments,
             }
         )
@@ -220,6 +222,7 @@ class ResponseFactory:
         first_response: AsyncResponse,
         final_response: Optional[AsyncResponse],
         parser_arguments: Dict,
+        meta: Optional[Dict] = None,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -269,16 +272,18 @@ class ResponseFactory:
                 "headers": await first_response.all_headers(),
                 "request_headers": await first_response.request.all_headers(),
                 "history": history,
+                "meta": meta,
                 **parser_arguments,
             }
         )
 
     @staticmethod
-    def from_http_request(response: CurlResponse, parser_arguments: Dict) -> Response:
+    def from_http_request(response: CurlResponse, parser_arguments: Dict, meta: Optional[Dict] = None) -> Response:
         """Takes `curl_cffi` response and generates `Response` object from it.
 
         :param response: `curl_cffi` response object
         :param parser_arguments: Additional arguments to be passed to the `Response` object constructor.
+        :param meta: Optional metadata dictionary to attach to the Response.
         :return: A `Response` object that is the same as `Selector` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         return Response(
@@ -293,6 +298,7 @@ class ResponseFactory:
                 "request_headers": dict(response.request.headers) if response.request else {},
                 "method": response.request.method if response.request else "GET",
                 "history": response.history,  # https://github.com/lexiforest/curl_cffi/issues/82
+                "meta": meta,
                 **parser_arguments,
             }
         )

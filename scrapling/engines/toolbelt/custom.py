@@ -39,6 +39,7 @@ class Response(Selector):
         encoding: str = "utf-8",
         method: str = "GET",
         history: List | None = None,
+        meta: Dict[str, Any] | None = None,
         **selector_config: Any,
     ):
         adaptive_domain: str = cast(str, selector_config.pop("adaptive_domain", ""))
@@ -57,7 +58,10 @@ class Response(Selector):
         # For easier debugging while working from a Python shell
         log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
 
-        self.meta: Dict[str, Any] = {}
+        if meta and not isinstance(meta, dict):
+            raise TypeError(f"Response meta should be dictionary but got {type(meta).__name__} instead!")
+
+        self.meta: Dict[str, Any] = meta or {}
         self.request: Optional["Request"] = None  # Will be set by crawler
 
     def follow(
