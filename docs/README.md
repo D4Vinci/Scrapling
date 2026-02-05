@@ -1,4 +1,4 @@
-Automated translations: [العربيه](README_AR.md) | [Español](README_ES.md) | [Deutsch](README_DE.md) | [简体中文](README_CN.md) | [日本語](README_JP.md) | [Русский](README_RU.md)
+Automated translations: [العربيه](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_AR.md) | [Español](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_ES.md) | [Deutsch](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_DE.md) | [简体中文](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_CN.md) | [日本語](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_JP.md) | [Русский](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_RU.md)
 
 
 <p align=center>
