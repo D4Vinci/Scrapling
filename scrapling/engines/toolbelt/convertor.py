@@ -117,12 +117,12 @@ class ResponseFactory:
         history = cls._process_response_history(first_response, parser_arguments)
         try:
             if "html" in final_response.all_headers().get("content-type", ""):
-                page_content = cls._get_page_content(page)
+                page_content = cls._get_page_content(page).encode("utf-8")
             else:
                 page_content = final_response.body()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content: {e}")
-            page_content = ""
+            page_content = b""
 
         return Response(
             **{
@@ -254,12 +254,12 @@ class ResponseFactory:
         history = await cls._async_process_response_history(first_response, parser_arguments)
         try:
             if "html" in (await final_response.all_headers()).get("content-type", ""):
-                page_content = await cls._get_async_page_content(page)
+                page_content = (await cls._get_async_page_content(page)).encode("utf-8")
             else:
                 page_content = await final_response.body()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content in async: {e}")
-            page_content = ""
+            page_content = b""
 
         return Response(
             **{

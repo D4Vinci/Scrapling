@@ -14,6 +14,7 @@ from scrapling.core._types import (
     Union,
     Optional,
     Callable,
+    Sequence,
     TYPE_CHECKING,
     AsyncGenerator,
 )
@@ -42,6 +43,9 @@ class Response(Selector):
         meta: Dict[str, Any] | None = None,
         **selector_config: Any,
     ):
+        if isinstance(content, str):
+            content = content.encode("utf-8")
+
         adaptive_domain: str = cast(str, selector_config.pop("adaptive_domain", ""))
         self.status = status
         self.reason = reason
@@ -63,6 +67,11 @@ class Response(Selector):
 
         self.meta: Dict[str, Any] = meta or {}
         self.request: Optional["Request"] = None  # Will be set by crawler
+
+    @property
+    def body(self) -> bytes:
+        """Return the raw body of the response as bytes."""
+        return cast(bytes, cast(Sequence, self._raw_body))
 
     def follow(
         self,
