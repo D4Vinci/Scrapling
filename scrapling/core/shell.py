@@ -583,7 +583,7 @@ class Convertor:
             raise ValueError(f"Unknown extraction type: {extraction_type}")
         else:
             if main_content_only:
-                page = cast(Selector, page.css_first("body")) or page
+                page = cast(Selector, page.css("body").first) or page
 
             pages = [page] if not css_selector else cast(Selectors, page.css(css_selector))
             for page in pages:

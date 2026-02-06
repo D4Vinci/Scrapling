@@ -15,6 +15,9 @@ class SelectorsGeneration:
         """Generate a selector for the current element.
         :return: A string of the generated selector.
         """
+        if self._is_text_node(self._root):
+            return ""
+
         selectorPath = []
         target = self
         css = selection.lower() == "css"
