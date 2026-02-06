@@ -24,11 +24,16 @@ from scrapling.parser import Selector
 from scrapling.engines._browsers._page import PageInfo, PagePool
 from scrapling.engines._browsers._validators import validate, PlaywrightConfig, StealthConfig
 from scrapling.engines._browsers._config_tools import __default_chrome_useragent__, __default_useragent__
-from scrapling.engines.toolbelt.navigation import construct_proxy_dict, intercept_route, async_intercept_route
+from scrapling.engines.toolbelt.navigation import (
+    construct_proxy_dict,
+    create_intercept_handler,
+    create_async_intercept_handler,
+)
 from scrapling.core._types import (
     Any,
     Dict,
     List,
+    Set,
     Optional,
     Callable,
     TYPE_CHECKING,
@@ -105,6 +110,7 @@ class SyncSession:
         timeout: int | float,
         extra_headers: Optional[Dict[str, str]],
         disable_resources: bool,
+        blocked_domains: Optional[Set[str]] = None,
         context: Optional[BrowserContext] = None,
     ) -> PageInfo[Page]:  # pragma: no cover
         """Get a new page to use"""
@@ -117,9 +123,8 @@ class SyncSession:
         if extra_headers:
             page.set_extra_http_headers(extra_headers)
 
-        if disable_resources:
-            page.route("**/*", intercept_route)
-
+        if disable_resources or blocked_domains:
+            page.route("**/*", create_intercept_handler(disable_resources, blocked_domains))
         page_info = self.page_pool.add_page(page)
         page_info.mark_busy()
         return page_info
@@ -173,6 +178,7 @@ class SyncSession:
         extra_headers: Optional[Dict[str, str]],
         disable_resources: bool,
         proxy: Optional[ProxyType] = None,
+        blocked_domains: Optional[Set[str]] = None,
     ) -> Generator["PageInfo[Page]", None, None]:
         """Acquire a page - either from persistent context or fresh context with proxy."""
         if proxy:
@@ -184,13 +190,13 @@ class SyncSession:
 
             try:
                 context = self._initialize_context(self._config, context)
-                page_info = self._get_page(timeout, extra_headers, disable_resources, context=context)
+                page_info = self._get_page(timeout, extra_headers, disable_resources, blocked_domains, context=context)
                 yield page_info
             finally:
                 context.close()
         else:
             # Standard mode: use PagePool with persistent context
-            page_info = self._get_page(timeout, extra_headers, disable_resources)
+            page_info = self._get_page(timeout, extra_headers, disable_resources, blocked_domains)
             try:
                 yield page_info
             finally:
@@ -261,6 +267,7 @@ class AsyncSession:
         timeout: int | float,
         extra_headers: Optional[Dict[str, str]],
         disable_resources: bool,
+        blocked_domains: Optional[Set[str]] = None,
         context: Optional[AsyncBrowserContext] = None,
     ) -> PageInfo[AsyncPage]:  # pragma: no cover
         """Get a new page to use"""
@@ -288,8 +295,8 @@ class AsyncSession:
             if extra_headers:
                 await page.set_extra_http_headers(extra_headers)
 
-            if disable_resources:
-                await page.route("**/*", async_intercept_route)
+            if disable_resources or blocked_domains:
+                await page.route("**/*", create_async_intercept_handler(disable_resources, blocked_domains))
 
             return self.page_pool.add_page(page)
 
@@ -342,6 +349,7 @@ class AsyncSession:
         extra_headers: Optional[Dict[str, str]],
         disable_resources: bool,
         proxy: Optional[ProxyType] = None,
+        blocked_domains: Optional[Set[str]] = None,
     ) -> AsyncGenerator["PageInfo[AsyncPage]", None]:
         """Acquire a page - either from persistent context or fresh context with proxy."""
         if proxy:
@@ -353,13 +361,15 @@ class AsyncSession:
 
             try:
                 context = await self._initialize_context(self._config, context)
-                page_info = await self._get_page(timeout, extra_headers, disable_resources, context=context)
+                page_info = await self._get_page(
+                    timeout, extra_headers, disable_resources, blocked_domains, context=context
+                )
                 yield page_info
             finally:
                 await context.close()
         else:
             # Standard mode: use PagePool with persistent context
-            page_info = await self._get_page(timeout, extra_headers, disable_resources)
+            page_info = await self._get_page(timeout, extra_headers, disable_resources, blocked_domains)
             try:
                 yield page_info
             finally:

@@ -10,6 +10,7 @@ from scrapling.core._types import (
     Any,
     Dict,
     List,
+    Set,
     Tuple,
     Optional,
     Callable,
@@ -83,6 +84,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     cdp_url: Optional[str] = None
     useragent: Optional[str] = None
     extra_flags: Optional[List[str]] = None
+    blocked_domains: Optional[Set[str]] = None
     retries: RetriesCount = 3
     retry_delay: Seconds = 1
 
@@ -145,6 +147,7 @@ class _fetch_params:
     wait_selector_state: SelectorWaitStates
     network_idle: bool
     load_dom: bool
+    blocked_domains: Optional[Set[str]]
     solve_cloudflare: bool
     selector_config: Dict
 
@@ -183,6 +186,7 @@ def validate_fetch(
 
     # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
     result.setdefault("solve_cloudflare", False)
+    result.setdefault("blocked_domains", None)
 
     return _fetch_params(**result)
 

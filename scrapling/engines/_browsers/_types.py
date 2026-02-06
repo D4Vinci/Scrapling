@@ -9,6 +9,7 @@ from curl_cffi.requests import (
 from scrapling.core._types import (
     Dict,
     List,
+    Set,
     Tuple,
     Mapping,
     Optional,
@@ -84,6 +85,7 @@ if TYPE_CHECKING:  # pragma: no cover
         cdp_url: Optional[str]
         useragent: Optional[str]
         extra_flags: Optional[List[str]]
+        blocked_domains: Optional[Set[str]]
         retries: int
         retry_delay: int | float
 
@@ -99,6 +101,7 @@ if TYPE_CHECKING:  # pragma: no cover
         selector_config: Optional[Dict]
         extra_headers: Optional[Dict[str, str]]
         wait_selector_state: SelectorWaitStates
+        blocked_domains: Optional[Set[str]]
         proxy: Optional[str | Dict[str, str]]
 
     class StealthSession(PlaywrightSession, total=False):
