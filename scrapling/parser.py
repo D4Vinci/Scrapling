@@ -1074,6 +1074,26 @@ class Selector(SelectorsGeneration):
 
         return Selectors(map(self.__element_convertor, similar_elements))
 
+    @overload
+    def find_by_text(
+        self,
+        text: str,
+        first_match: Literal[True] = ...,
+        partial: bool = ...,
+        case_sensitive: bool = ...,
+        clean_match: bool = ...,
+    ) -> "Selector": ...
+
+    @overload
+    def find_by_text(
+        self,
+        text: str,
+        first_match: Literal[False],
+        partial: bool = ...,
+        case_sensitive: bool = ...,
+        clean_match: bool = ...,
+    ) -> "Selectors": ...
+
     def find_by_text(
         self,
         text: str,
@@ -1121,6 +1141,24 @@ class Selector(SelectorsGeneration):
                 if results:
                     return results[0]
         return results
+
+    @overload
+    def find_by_regex(
+        self,
+        query: str | Pattern[str],
+        first_match: Literal[True] = ...,
+        case_sensitive: bool = ...,
+        clean_match: bool = ...,
+    ) -> "Selector": ...
+
+    @overload
+    def find_by_regex(
+        self,
+        query: str | Pattern[str],
+        first_match: Literal[False],
+        case_sensitive: bool = ...,
+        clean_match: bool = ...,
+    ) -> "Selectors": ...
 
     def find_by_regex(
         self,
