@@ -7,7 +7,7 @@ import orjson
 from w3lib.url import canonicalize_url
 
 from scrapling.engines.toolbelt.custom import Response
-from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Union, Tuple, TYPE_CHECKING
+from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Optional, Union, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scrapling.spiders.spider import Spider
@@ -42,7 +42,7 @@ class Request:
         self.meta: dict[str, Any] = meta if meta else {}
         self._retry_count: int = _retry_count
         self._session_kwargs = kwargs if kwargs else {}
-        self._fp = None
+        self._fp: Optional[bytes] = None
 
     def copy(self) -> "Request":
         """Create a copy of this request."""
@@ -89,7 +89,7 @@ class Request:
                 body = b""
         else:
             post_data = self._session_kwargs.get("json", {})
-            body: bytes = orjson.dumps(post_data) if post_data else b""
+            body = orjson.dumps(post_data) if post_data else b""
 
         data: Dict[str, str | Tuple] = {
             "sid": self.sid,

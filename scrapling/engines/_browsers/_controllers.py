@@ -8,11 +8,10 @@ from playwright.sync_api import (
 from playwright.async_api import (
     async_playwright,
     Locator as AsyncLocator,
-    BrowserContext as AsyncBrowserContext,
 )
 
 from scrapling.core.utils import log
-from scrapling.core._types import Unpack
+from scrapling.core._types import Optional, ProxyType, Unpack
 from scrapling.engines.toolbelt.proxy_rotation import is_proxy_error
 from scrapling.engines.toolbelt.convertor import Response, ResponseFactory
 from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
@@ -134,6 +133,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         )
 
         for attempt in range(self._config.retries):
+            proxy: Optional[ProxyType] = None
             if self._config.proxy_rotator and static_proxy is None:
                 proxy = self._config.proxy_rotator.get_proxy()
             else:
@@ -238,7 +238,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         self.__validate__(**kwargs)
         super().__init__(max_pages=self._config.max_pages)
 
-    async def start(self):
+    async def start(self) -> None:
         """Create a browser for this instance and context."""
         if not self.playwright:
             self.playwright = await async_playwright().start()
@@ -246,16 +246,14 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
                 if self._config.cdp_url:
                     self.browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
                     if not self._config.proxy_rotator and self.browser:
-                        self.context: AsyncBrowserContext = await self.browser.new_context(**self._context_options)
+                        self.context = await self.browser.new_context(**self._context_options)
                 elif self._config.proxy_rotator:
                     self.browser = await self.playwright.chromium.launch(**self._browser_options)
                 else:
                     persistent_options = (
                         self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
                     )
-                    self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
-                        **persistent_options
-                    )
+                    self.context = await self.playwright.chromium.launch_persistent_context(**persistent_options)
 
                 if self.context:
                     self.context = await self._initialize_context(self._config, self.context)
@@ -304,6 +302,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         )
 
         for attempt in range(self._config.retries):
+            proxy: Optional[ProxyType] = None
             if self._config.proxy_rotator and static_proxy is None:
                 proxy = self._config.proxy_rotator.get_proxy()
             else:

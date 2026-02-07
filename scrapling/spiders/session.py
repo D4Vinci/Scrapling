@@ -12,7 +12,7 @@ Session = FetcherSession | AsyncDynamicSession | AsyncStealthySession
 class SessionManager:
     """Manages pre-configured session instances."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._sessions: dict[str, Session] = {}
         self._default_session_id: str | None = None
         self._started: bool = False
@@ -109,17 +109,17 @@ class SessionManager:
                         await session.__aenter__()
 
             if isinstance(session, FetcherSession):
-                session = session._client
+                client = session._client
 
-                if isinstance(session, _ASyncSessionLogic):
-                    response = await session._make_request(
+                if isinstance(client, _ASyncSessionLogic):
+                    response = await client._make_request(
                         method=cast(SUPPORTED_HTTP_METHODS, request._session_kwargs.pop("method", "GET")),
                         url=request.url,
                         **request._session_kwargs,
                     )
                 else:
                     # Sync session or other types - shouldn't happen in async context
-                    raise TypeError(f"Session type {type(session)} not supported for async fetch")
+                    raise TypeError(f"Session type {type(client)} not supported for async fetch")
             else:
                 response = await session.fetch(url=request.url, **request._session_kwargs)
 

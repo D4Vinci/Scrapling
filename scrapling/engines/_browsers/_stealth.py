@@ -13,7 +13,7 @@ from patchright.sync_api import sync_playwright
 from patchright.async_api import async_playwright
 
 from scrapling.core.utils import log
-from scrapling.core._types import Any, Unpack
+from scrapling.core._types import Any, Optional, ProxyType, Unpack
 from scrapling.engines.toolbelt.proxy_rotation import is_proxy_error
 from scrapling.engines.toolbelt.convertor import Response, ResponseFactory
 from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
@@ -78,7 +78,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         self.__validate__(**kwargs)
         super().__init__()
 
-    def start(self):
+    def start(self) -> None:
         """Create a browser for this instance and context."""
         if not self.playwright:
             self.playwright = sync_playwright().start()
@@ -146,7 +146,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                         # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
                         page.wait_for_timeout(500)
 
-                outer_box = {}
+                outer_box: Any = {}
                 iframe = page.frame(url=__CF_PATTERN__)
                 if iframe is not None:
                     self._wait_for_page_stability(iframe, True, False)
@@ -156,14 +156,14 @@ class StealthySession(SyncSession, StealthySessionMixin):
                             # Double-checking that the iframe is loaded
                             page.wait_for_timeout(500)
 
-                    outer_box: Any = iframe.frame_element().bounding_box()
+                    outer_box = iframe.frame_element().bounding_box()
 
                 if not iframe or not outer_box:
                     if "<title>Just a moment...</title>" not in (ResponseFactory._get_page_content(page)):
                         log.info("Cloudflare captcha is solved")
                         return
 
-                    outer_box: Any = page.locator(box_selector).last.bounding_box()
+                    outer_box = page.locator(box_selector).last.bounding_box()
 
                 # Calculate the Captcha coordinates for any viewport
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
@@ -223,6 +223,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         )
 
         for attempt in range(self._config.retries):
+            proxy: Optional[ProxyType] = None
             if self._config.proxy_rotator and static_proxy is None:
                 proxy = self._config.proxy_rotator.get_proxy()
             else:
@@ -335,7 +336,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         self.__validate__(**kwargs)
         super().__init__(max_pages=self._config.max_pages)
 
-    async def start(self):
+    async def start(self) -> None:
         """Create a browser for this instance and context."""
         if not self.playwright:
             self.playwright = await async_playwright().start()
@@ -344,16 +345,14 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     self.browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
                     if not self._config.proxy_rotator:
                         assert self.browser is not None
-                        self.context: AsyncBrowserContext = await self.browser.new_context(**self._context_options)
+                        self.context = await self.browser.new_context(**self._context_options)
                 elif self._config.proxy_rotator:
                     self.browser = await self.playwright.chromium.launch(**self._browser_options)
                 else:
                     persistent_options = (
                         self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
                     )
-                    self.context: AsyncBrowserContext = await self.playwright.chromium.launch_persistent_context(
-                        **persistent_options
-                    )
+                    self.context = await self.playwright.chromium.launch_persistent_context(**persistent_options)
 
                 if self.context:
                     self.context = await self._initialize_context(self._config, self.context)
@@ -367,7 +366,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         else:
             raise RuntimeError("Session has been already started")
 
-    async def _initialize_context(self, config, ctx: AsyncBrowserContext) -> AsyncBrowserContext:
+    async def _initialize_context(self, config: Any, ctx: AsyncBrowserContext) -> AsyncBrowserContext:
         """Initialize the browser context."""
         for script in _compiled_stealth_scripts():
             await ctx.add_init_script(script=script)
@@ -404,7 +403,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
                         await page.wait_for_timeout(500)
 
-                outer_box = {}
+                outer_box: Any = {}
                 iframe = page.frame(url=__CF_PATTERN__)
                 if iframe is not None:
                     await self._wait_for_page_stability(iframe, True, False)
@@ -414,14 +413,14 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                             # Double-checking that the iframe is loaded
                             await page.wait_for_timeout(500)
 
-                    outer_box: Any = await (await iframe.frame_element()).bounding_box()
+                    outer_box = await (await iframe.frame_element()).bounding_box()
 
                 if not iframe or not outer_box:
                     if "<title>Just a moment...</title>" not in (await ResponseFactory._get_async_page_content(page)):
                         log.info("Cloudflare captcha is solved")
                         return
 
-                    outer_box: Any = await page.locator(box_selector).last.bounding_box()
+                    outer_box = await page.locator(box_selector).last.bounding_box()
 
                 # Calculate the Captcha coordinates for any viewport
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
@@ -482,6 +481,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         )
 
         for attempt in range(self._config.retries):
+            proxy: Optional[ProxyType] = None
             if self._config.proxy_rotator and static_proxy is None:
                 proxy = self._config.proxy_rotator.get_proxy()
             else:

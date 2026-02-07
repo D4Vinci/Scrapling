@@ -32,6 +32,7 @@ from typing import (
     Coroutine,
     SupportsIndex,
 )
+from typing_extensions import Self, Unpack
 
 # Proxy can be a string URL or a dict (Playwright format: {"server": "...", "username": "...", "password": "..."})
 ProxyType = Union[str, Dict[str, str]]
@@ -40,27 +41,6 @@ SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
 PageLoadStates = Literal["commit", "domcontentloaded", "load", "networkidle"]
 extraction_types = Literal["text", "html", "markdown"]
 StrOrBytes = Union[str, bytes]
-
-if TYPE_CHECKING:  # pragma: no cover
-    from typing_extensions import Unpack
-else:  # pragma: no cover
-
-    class _Unpack:
-        @staticmethod
-        def __getitem__(*args, **kwargs):
-            pass
-
-    Unpack = _Unpack()
-
-
-try:
-    # Python 3.11+
-    from typing import Self  # novermin
-except ImportError:  # pragma: no cover
-    try:
-        from typing_extensions import Self  # Backport
-    except ImportError:
-        Self = object
 
 
 # Copied from `playwright._impl._api_structures.SetCookieParam`

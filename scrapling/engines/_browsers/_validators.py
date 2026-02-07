@@ -157,15 +157,16 @@ def validate_fetch(
     session: Any,
     model: type[PlaywrightConfig] | type[StealthConfig],
 ) -> _fetch_params:  # pragma: no cover
-    result = {}
-    overrides = {}
+    result: Dict[str, Any] = {}
+    overrides: Dict[str, Any] = {}
+    kwargs_dict: Dict[str, Any] = dict(method_kwargs)
 
     # Get all field names that _fetch_params needs
     fetch_param_fields = {f.name for f in fields(_fetch_params)}
 
     for key in fetch_param_fields:
-        if key in method_kwargs:
-            overrides[key] = method_kwargs[key]
+        if key in kwargs_dict:
+            overrides[key] = kwargs_dict[key]
         elif hasattr(session, "_config") and hasattr(session._config, key):
             result[key] = getattr(session._config, key)
 

@@ -30,6 +30,7 @@ from scrapling.core.custom_types import TextHandler
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.core.utils._shell import _ParseHeaders, _CookieParser
 from scrapling.core._types import (
+    Callable,
     Dict,
     Any,
     cast,
@@ -82,7 +83,7 @@ class NoExitArgumentParser(ArgumentParser):  # pragma: no cover
 class CurlParser:
     """Builds the argument parser for relevant curl flags from DevTools."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         from scrapling.fetchers import Fetcher as __Fetcher
 
         self.__fetcher = __Fetcher
@@ -467,19 +468,21 @@ Type 'exit' or press Ctrl+D to exit.
 
         return result
 
-    def create_wrapper(self, func, get_signature=True, signature_name=None):
+    def create_wrapper(
+        self, func: Callable, get_signature: bool = True, signature_name: Optional[str] = None
+    ) -> Callable:
         """Create a wrapper that preserves function signature but updates page"""
 
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
             return self.update_page(result)
 
         if get_signature:
             # Explicitly preserve and unpack signature for IPython introspection and autocompletion
-            wrapper.__signature__ = _unpack_signature(func, signature_name)  # pyright: ignore
+            setattr(wrapper, "__signature__", _unpack_signature(func, signature_name))
         else:
-            wrapper.__signature__ = signature(func)  # pyright: ignore
+            setattr(wrapper, "__signature__", signature(func))
 
         return wrapper
 
@@ -601,7 +604,7 @@ class Convertor:
                             " ",
                         ):
                             # Remove consecutive white-spaces
-                            txt_content = re_sub(f"[{s}]+", s, txt_content)
+                            txt_content = TextHandler(re_sub(f"[{s}]+", s, txt_content))
                         yield txt_content
             yield ""
 

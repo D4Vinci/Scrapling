@@ -38,7 +38,7 @@ class ResponseFactory:
     @classmethod
     def _process_response_history(cls, first_response: SyncResponse, parser_arguments: Dict) -> list[Response]:
         """Process response history to build a list of `Response` objects"""
-        history = []
+        history: list[Response] = []
         current_request = first_response.request.redirected_from
 
         try:
@@ -101,6 +101,7 @@ class ResponseFactory:
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
+        :param meta: Additional meta data to be saved with the response.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -145,7 +146,7 @@ class ResponseFactory:
         cls, first_response: AsyncResponse, parser_arguments: Dict
     ) -> list[Response]:
         """Process response history to build a list of `Response` objects"""
-        history = []
+        history: list[Response] = []
         current_request = first_response.request.redirected_from
 
         try:
@@ -238,6 +239,7 @@ class ResponseFactory:
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
+        :param meta: Additional meta data to be saved with the response.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response

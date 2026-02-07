@@ -118,8 +118,11 @@ class Selector(SelectorsGeneration):
         if root is None and content is None:
             raise ValueError("Selector class needs HTML content, or root arguments to work")
 
-        self.__text = None
+        self.__text: Optional[TextHandler] = None
+        self.__tag: Optional[str] = None
+        self.__attributes: Optional[AttributesHandler] = None
         if root is None:
+            body: str | bytes
             if isinstance(content, str):
                 body = content.strip().replace("\x00", "") or "<html/>"
             elif isinstance(content, bytes):
@@ -128,17 +131,18 @@ class Selector(SelectorsGeneration):
                 raise TypeError(f"content argument must be str or bytes, got {type(content)}")
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
-            parser = HTMLParser(
+            _parser_kwargs: Dict[str, Any] = dict(
                 recover=True,
                 remove_blank_text=True,
                 remove_comments=(not keep_comments),
                 encoding=encoding,
                 compact=True,
                 huge_tree=huge_tree,
-                default_doctype=True,
+                default_doctype=True,  # Supported by lxml but missing from stubs
                 strip_cdata=(not keep_cdata),
             )
-            self._root = cast(HtmlElement, fromstring(body or "<html/>", parser=parser, base_url=url or None))
+            parser = HTMLParser(**_parser_kwargs)
+            self._root = cast(HtmlElement, fromstring(body or "<html/>", parser=parser, base_url=url or ""))
             self._raw_body = content
 
         else:
@@ -164,7 +168,7 @@ class Selector(SelectorsGeneration):
             self._root = cast(HtmlElement, root)
             self._raw_body = ""
 
-        self.__adaptive_enabled = adaptive
+        self.__adaptive_enabled = bool(adaptive)
 
         if self.__adaptive_enabled:
             if _storage is not None:
@@ -277,8 +281,8 @@ class Selector(SelectorsGeneration):
         if self._is_text_node(self._root):
             return "#text"
         if not self.__tag:
-            self.__tag = self._root.tag
-        return self.__tag
+            self.__tag = str(self._root.tag)
+        return self.__tag or ""
 
     @property
     def text(self) -> TextHandler:
@@ -313,11 +317,11 @@ class Selector(SelectorsGeneration):
         if self._is_text_node(self._root):
             return TextHandler(str(self._root))
 
-        ignored_elements = set()
+        ignored_elements: set[Any] = set()
         if ignore_tags:
             for element in self._root.iter(*ignore_tags):
                 ignored_elements.add(element)
-                ignored_elements.update(set(_find_all_elements(element)))
+                ignored_elements.update(cast(list, _find_all_elements(element)))
 
         _all_strings = []
         for node in self._root.iter():
@@ -395,7 +399,7 @@ class Selector(SelectorsGeneration):
         """Return all elements under the current element in the DOM tree"""
         if self._is_text_node(self._root):
             return Selectors()
-        below = _find_all_elements(self._root)
+        below = cast(List, _find_all_elements(self._root))
         return self.__elements_convertor(below) if below is not None else Selectors()
 
     @property
@@ -533,7 +537,7 @@ class Selector(SelectorsGeneration):
         :param selector_type: If True, the return result will be converted to `Selectors` object
         :return: List of pure HTML elements that got the highest matching score or 'Selectors' object
         """
-        score_table = {}
+        score_table: Dict[float, List[Any]] = {}
         # Note: `element` will most likely always be a dictionary at this point.
         if isinstance(element, self.__class__):
             element = element._root
@@ -541,11 +545,11 @@ class Selector(SelectorsGeneration):
         if issubclass(type(element), HtmlElement):
             element = _StorageTools.element_to_dict(element)
 
-        for node in _find_all_elements(self._root):
+        for node in cast(List, _find_all_elements(self._root)):
             # Collect all elements in the page, then for each element get the matching score of it against the node.
             # Hence: the code doesn't stop even if the score was 100%
             # because there might be another element(s) left in page with the same score
-            score = self.__calculate_similarity_score(element, node)
+            score = self.__calculate_similarity_score(cast(Dict, element), node)
             score_table.setdefault(score, []).append(node)
 
         if score_table:
@@ -710,7 +714,7 @@ class Selector(SelectorsGeneration):
         if not args and not kwargs:
             raise TypeError("You have to pass something to search with, like tag name(s), tag attributes, or both.")
 
-        attributes = dict()
+        attributes: Dict[str, Any] = dict()
         tags: Set[str] = set()
         patterns: Set[Pattern] = set()
         results, functions, selectors = Selectors(), [], []
@@ -809,21 +813,19 @@ class Selector(SelectorsGeneration):
         :param candidate: The element to compare with the original element.
         :return: A percentage score of how similar is the candidate to the original element
         """
-        score, checks = 0, 0
+        score: float = 0
+        checks: int = 0
         data = _StorageTools.element_to_dict(candidate)
 
-        # Possible TODO:
-        # Study the idea of giving weight to each test below so some are more important than others
-        # Current results: With weights some websites had better score while it was worse for others
-        score += 1 if original["tag"] == data["tag"] else 0  # * 0.3  # 30%
+        score += 1 if original["tag"] == data["tag"] else 0
         checks += 1
 
         if original["text"]:
-            score += SequenceMatcher(None, original["text"], data.get("text") or "").ratio()  # * 0.3  # 30%
+            score += SequenceMatcher(None, original["text"], data.get("text") or "").ratio()
             checks += 1
 
         # if both don't have attributes, it still counts for something!
-        score += self.__calculate_dict_diff(original["attributes"], data["attributes"])  # * 0.3  # 30%
+        score += self.__calculate_dict_diff(original["attributes"], data["attributes"])
         checks += 1
 
         # Separate similarity test for class, id, href,... this will help in full structural changes
@@ -838,23 +840,19 @@ class Selector(SelectorsGeneration):
                     None,
                     original["attributes"][attrib],
                     data["attributes"].get(attrib) or "",
-                ).ratio()  # * 0.3  # 30%
+                ).ratio()
                 checks += 1
 
-        score += SequenceMatcher(None, original["path"], data["path"]).ratio()  # * 0.1  # 10%
+        score += SequenceMatcher(None, original["path"], data["path"]).ratio()
         checks += 1
 
         if original.get("parent_name"):
             # Then we start comparing parents' data
             if data.get("parent_name"):
-                score += SequenceMatcher(
-                    None, original["parent_name"], data.get("parent_name") or ""
-                ).ratio()  # * 0.2  # 20%
+                score += SequenceMatcher(None, original["parent_name"], data.get("parent_name") or "").ratio()
                 checks += 1
 
-                score += self.__calculate_dict_diff(
-                    original["parent_attribs"], data.get("parent_attribs") or {}
-                )  # * 0.2  # 20%
+                score += self.__calculate_dict_diff(original["parent_attribs"], data.get("parent_attribs") or {})
                 checks += 1
 
                 if original["parent_text"]:
@@ -862,14 +860,14 @@ class Selector(SelectorsGeneration):
                         None,
                         original["parent_text"],
                         data.get("parent_text") or "",
-                    ).ratio()  # * 0.1  # 10%
+                    ).ratio()
                     checks += 1
             # else:
             #     # The original element has a parent and this one not, this is not a good sign
             #     score -= 0.1
 
         if original.get("siblings"):
-            score += SequenceMatcher(None, original["siblings"], data.get("siblings") or []).ratio()  # * 0.1  # 10%
+            score += SequenceMatcher(None, original["siblings"], data.get("siblings") or []).ratio()
             checks += 1
 
         # How % sure? let's see
@@ -890,14 +888,14 @@ class Selector(SelectorsGeneration):
             the docs for more info.
         """
         if self.__adaptive_enabled:
-            target = element
-            if isinstance(target, self.__class__):
-                target: HtmlElement = target._root
+            target_element: Any = element
+            if isinstance(target_element, self.__class__):
+                target_element = target_element._root
 
-            if self._is_text_node(target):
-                target: HtmlElement = target.getparent()
+            if self._is_text_node(target_element):
+                target_element = target_element.getparent()
 
-            self._storage.save(target, identifier)
+            self._storage.save(target_element, identifier)
         else:
             raise RuntimeError(
                 "Can't use `adaptive` features while it's disabled globally, you have to start a new class instance."
@@ -987,7 +985,8 @@ class Selector(SelectorsGeneration):
         candidate_attributes = (
             self.__get_attributes(candidate, ignore_attributes) if ignore_attributes else candidate.attrib
         )
-        score, checks = 0, 0
+        score: float = 0
+        checks: int = 0
 
         if original_attributes:
             score += sum(
@@ -1116,16 +1115,16 @@ class Selector(SelectorsGeneration):
         if not case_sensitive:
             text = text.lower()
 
-        possible_targets = _find_all_elements_with_spaces(self._root)
+        possible_targets = cast(List, _find_all_elements_with_spaces(self._root))
         if possible_targets:
             for node in self.__elements_convertor(possible_targets):
                 """Check if element matches given text otherwise, traverse the children tree and iterate"""
-                node_text = node.text
+                node_text: TextHandler = node.text
                 if clean_match:
-                    node_text = node_text.clean()
+                    node_text = TextHandler(node_text.clean())
 
                 if not case_sensitive:
-                    node_text = node_text.lower()
+                    node_text = TextHandler(node_text.lower())
 
                 if partial:
                     if text in node_text:
@@ -1178,7 +1177,7 @@ class Selector(SelectorsGeneration):
 
         results = Selectors()
 
-        possible_targets = _find_all_elements_with_spaces(self._root)
+        possible_targets = cast(List, _find_all_elements_with_spaces(self._root))
         if possible_targets:
             for node in self.__elements_convertor(possible_targets):
                 """Check if element matches given regex otherwise, traverse the children tree and iterate"""

@@ -5,16 +5,12 @@ from contextlib import contextmanager, asynccontextmanager
 from playwright.sync_api._generated import Page
 from playwright.sync_api import (
     Frame,
-    Browser,
     BrowserContext,
-    Playwright,
     Response as SyncPlaywrightResponse,
 )
 from playwright.async_api._generated import Page as AsyncPage
 from playwright.async_api import (
     Frame as AsyncFrame,
-    Browser as AsyncBrowser,
-    Playwright as AsyncPlaywright,
     Response as AsyncPlaywrightResponse,
     BrowserContext as AsyncBrowserContext,
 )
@@ -37,6 +33,7 @@ from scrapling.core._types import (
     Optional,
     Callable,
     TYPE_CHECKING,
+    cast,
     overload,
     Tuple,
     ProxyType,
@@ -61,12 +58,12 @@ class SyncSession:
         self.max_pages = max_pages
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
-        self.playwright: Playwright | Any = None
-        self.context: BrowserContext | Any = None
-        self.browser: Optional[Browser] = None
+        self.playwright: Any = None
+        self.context: Any = None
+        self.browser: Any = None
         self._is_alive = False
 
-    def start(self):
+    def start(self) -> None:
         pass
 
     def close(self):  # pragma: no cover
@@ -215,13 +212,13 @@ class AsyncSession:
         self.max_pages = max_pages
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
-        self.playwright: AsyncPlaywright | Any = None
-        self.context: AsyncBrowserContext | Any = None
-        self.browser: Optional[AsyncBrowser] = None
+        self.playwright: Any = None
+        self.context: Any = None
+        self.browser: Any = None
         self._is_alive = False
         self._lock = Lock()
 
-    async def start(self):
+    async def start(self) -> None:
         pass
 
     async def close(self):
@@ -378,6 +375,8 @@ class AsyncSession:
 
 
 class BaseSessionMixin:
+    _config: "PlaywrightConfig | StealthConfig"
+
     @overload
     def __validate_routine__(self, params: Dict, model: type[StealthConfig]) -> StealthConfig: ...
 
@@ -404,7 +403,7 @@ class BaseSessionMixin:
         return config
 
     def __generate_options__(self, extra_flags: Tuple | None = None) -> None:
-        config: PlaywrightConfig | StealthConfig = self._config  # type: ignore[has-type]
+        config: PlaywrightConfig | StealthConfig = self._config
         self._context_options.update(
             {
                 "proxy": config.proxy,
@@ -466,7 +465,7 @@ class DynamicSessionMixin(BaseSessionMixin):
 
 class StealthySessionMixin(BaseSessionMixin):
     def __validate__(self, **params):
-        self._config: StealthConfig = self.__validate_routine__(params, model=StealthConfig)
+        self._config = self.__validate_routine__(params, model=StealthConfig)
         self._context_options.update(
             {
                 "is_mobile": False,
@@ -482,22 +481,23 @@ class StealthySessionMixin(BaseSessionMixin):
         self.__generate_stealth_options()
 
     def __generate_stealth_options(self) -> None:
-        flags = tuple()
-        if not self._config.cdp_url:
+        config = cast(StealthConfig, self._config)
+        flags: Tuple[str, ...] = tuple()
+        if not config.cdp_url:
             flags = DEFAULT_FLAGS + DEFAULT_STEALTH_FLAGS
 
-            if self._config.block_webrtc:
+            if config.block_webrtc:
                 flags += (
                     "--webrtc-ip-handling-policy=disable_non_proxied_udp",
                     "--force-webrtc-ip-handling-policy",  # Ensures the policy is enforced
                 )
-            if not self._config.allow_webgl:
+            if not config.allow_webgl:
                 flags += (
                     "--disable-webgl",
                     "--disable-webgl-image-chromium",
                     "--disable-webgl2",
                 )
-            if self._config.hide_canvas:
+            if config.hide_canvas:
                 flags += ("--fingerprinting-canvas-image-data-noise",)
 
         super(StealthySessionMixin, self).__generate_options__(flags)
