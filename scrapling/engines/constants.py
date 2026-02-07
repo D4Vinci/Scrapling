@@ -1,5 +1,5 @@
 # Disable loading these resources for speed
-DEFAULT_DISABLED_RESOURCES = {
+EXTRA_RESOURCES = {
     "font",
     "image",
     "media",
@@ -12,7 +12,7 @@ DEFAULT_DISABLED_RESOURCES = {
     "stylesheet",
 }
 
-HARMFUL_DEFAULT_ARGS = (
+HARMFUL_ARGS = (
     # This will be ignored to avoid detection more and possibly avoid the popup crashing bug abuse: https://issues.chromium.org/issues/340836884
     "--enable-automation",
     "--disable-popup-blocking",
@@ -21,7 +21,7 @@ HARMFUL_DEFAULT_ARGS = (
     "--disable-extensions",
 )
 
-DEFAULT_FLAGS = (
+DEFAULT_ARGS = (
     # Speed up chromium browsers by default
     "--no-pings",
     "--no-first-run",
@@ -36,7 +36,7 @@ DEFAULT_FLAGS = (
     "--disable-search-engine-choice-screen",
 )
 
-DEFAULT_STEALTH_FLAGS = (
+STEALTH_ARGS = (
     # Explanation: https://peter.sh/experiments/chromium-command-line-switches/
     # Generally this will make the browser faster and less detectable
     # "--incognito",

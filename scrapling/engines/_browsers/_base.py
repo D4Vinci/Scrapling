@@ -40,11 +40,7 @@ from scrapling.core._types import (
     Generator,
     AsyncGenerator,
 )
-from scrapling.engines.constants import (
-    DEFAULT_STEALTH_FLAGS,
-    HARMFUL_DEFAULT_ARGS,
-    DEFAULT_FLAGS,
-)
+from scrapling.engines.constants import STEALTH_ARGS, HARMFUL_ARGS, DEFAULT_ARGS
 
 
 class SyncSession:
@@ -389,8 +385,8 @@ class BaseSessionMixin:
         # Dark color scheme bypasses the 'prefersLightColor' check in creepjs
         self._context_options: Dict[str, Any] = {"color_scheme": "dark", "device_scale_factor": 2}
         self._browser_options: Dict[str, Any] = {
-            "args": DEFAULT_FLAGS,
-            "ignore_default_args": HARMFUL_DEFAULT_ARGS,
+            "args": DEFAULT_ARGS,
+            "ignore_default_args": HARMFUL_ARGS,
         }
         if "__max_pages" in params:
             params["max_pages"] = params.pop("__max_pages")
@@ -484,7 +480,7 @@ class StealthySessionMixin(BaseSessionMixin):
         config = cast(StealthConfig, self._config)
         flags: Tuple[str, ...] = tuple()
         if not config.cdp_url:
-            flags = DEFAULT_FLAGS + DEFAULT_STEALTH_FLAGS
+            flags = DEFAULT_ARGS + STEALTH_ARGS
 
             if config.block_webrtc:
                 flags += (

@@ -12,7 +12,7 @@ from playwright.sync_api import Route
 
 from scrapling.core.utils import log
 from scrapling.core._types import Dict, Set, Tuple, Optional, Callable
-from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
+from scrapling.engines.constants import EXTRA_RESOURCES
 
 __BYPASSES_DIR__ = Path(__file__).parent / "bypasses"
 
@@ -30,7 +30,7 @@ def create_intercept_handler(disable_resources: bool, blocked_domains: Optional[
     :param blocked_domains: Set of domain names to block requests to.
     :return: A sync route handler function.
     """
-    disabled_resources = DEFAULT_DISABLED_RESOURCES if disable_resources else set()
+    disabled_resources = EXTRA_RESOURCES if disable_resources else set()
     domains = blocked_domains or set()
 
     def handler(route: Route):
@@ -57,7 +57,7 @@ def create_async_intercept_handler(disable_resources: bool, blocked_domains: Opt
     :param blocked_domains: Set of domain names to block requests to.
     :return: An async route handler function.
     """
-    disabled_resources = DEFAULT_DISABLED_RESOURCES if disable_resources else set()
+    disabled_resources = EXTRA_RESOURCES if disable_resources else set()
     domains = blocked_domains or set()
 
     async def handler(route: async_Route):

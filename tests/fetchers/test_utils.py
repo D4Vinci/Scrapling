@@ -8,7 +8,6 @@ from scrapling.engines.toolbelt.navigation import (
     create_async_intercept_handler,
     js_bypass_path,
 )
-from scrapling.engines.constants import DEFAULT_DISABLED_RESOURCES
 from scrapling.engines.toolbelt.fingerprints import (
     generate_convincing_referer,
     get_os_name,
