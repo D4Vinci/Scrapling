@@ -106,3 +106,15 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["scrapling*"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_configs = true
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode = "basic"
+include = ["scrapling"]
+ignore = ["tests", "benchmarks.py"]
