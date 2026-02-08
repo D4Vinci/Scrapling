@@ -4,7 +4,9 @@ from pathlib import Path
 from scrapling.engines.toolbelt.custom import StatusText, Response
 from scrapling.engines.toolbelt.navigation import (
     construct_proxy_dict,
-    js_bypass_path
+    create_intercept_handler,
+    create_async_intercept_handler,
+    js_bypass_path,
 )
 from scrapling.engines.toolbelt.fingerprints import (
     generate_convincing_referer,
@@ -300,3 +302,150 @@ class TestResponse:
 
         # Should handle 'bytes' content properly
         assert response.status == 200
+
+
+class _MockRequest:
+    """Minimal mock for Playwright's Request object."""
+    def __init__(self, url: str, resource_type: str = "document"):
+        self.url = url
+        self.resource_type = resource_type
+
+
+class _MockRoute:
+    """Minimal mock for Playwright's sync Route object."""
+    def __init__(self, url: str, resource_type: str = "document"):
+        self.request = _MockRequest(url, resource_type)
+        self.aborted = False
+        self.continued = False
+
+    def abort(self):
+        self.aborted = True
+
+    def continue_(self):
+        self.continued = True
+
+
+class _AsyncMockRoute:
+    """Minimal mock for Playwright's async Route object."""
+    def __init__(self, url: str, resource_type: str = "document"):
+        self.request = _MockRequest(url, resource_type)
+        self.aborted = False
+        self.continued = False
+
+    async def abort(self):
+        self.aborted = True
+
+    async def continue_(self):
+        self.continued = True
+
+
+class TestCreateInterceptHandler:
+    """Test the unified sync route handler factory."""
+
+    def test_blocks_disabled_resource_types(self):
+        handler = create_intercept_handler(disable_resources=True)
+        route = _MockRoute("https://example.com/image.png", resource_type="image")
+        handler(route)
+        assert route.aborted
+
+    def test_continues_allowed_resource_types(self):
+        handler = create_intercept_handler(disable_resources=True)
+        route = _MockRoute("https://example.com/page", resource_type="document")
+        handler(route)
+        assert route.continued
+
+    def test_blocks_exact_domain(self):
+        handler = create_intercept_handler(disable_resources=False, blocked_domains={"ads.example.com"})
+        route = _MockRoute("https://ads.example.com/tracker.js")
+        handler(route)
+        assert route.aborted
+
+    def test_blocks_subdomain(self):
+        handler = create_intercept_handler(disable_resources=False, blocked_domains={"example.com"})
+        route = _MockRoute("https://sub.example.com/page")
+        handler(route)
+        assert route.aborted
+
+    def test_continues_non_blocked_domain(self):
+        handler = create_intercept_handler(disable_resources=False, blocked_domains={"ads.example.com"})
+        route = _MockRoute("https://safe.example.com/page")
+        handler(route)
+        assert route.continued
+
+    def test_resource_blocking_takes_priority_over_domain(self):
+        """When both are active, resource type check comes first."""
+        handler = create_intercept_handler(disable_resources=True, blocked_domains={"example.com"})
+        route = _MockRoute("https://example.com/style.css", resource_type="stylesheet")
+        handler(route)
+        assert route.aborted
+
+    def test_domain_blocking_with_resources_disabled(self):
+        """Non-blocked resource type from a blocked domain should still be aborted."""
+        handler = create_intercept_handler(disable_resources=True, blocked_domains={"tracker.io"})
+        route = _MockRoute("https://tracker.io/api", resource_type="document")
+        handler(route)
+        assert route.aborted
+
+    def test_no_blocking_continues(self):
+        handler = create_intercept_handler(disable_resources=False)
+        route = _MockRoute("https://example.com/page")
+        handler(route)
+        assert route.continued
+
+    def test_does_not_block_partial_domain_match(self):
+        """'example.com' should not block 'notexample.com'."""
+        handler = create_intercept_handler(disable_resources=False, blocked_domains={"example.com"})
+        route = _MockRoute("https://notexample.com/page")
+        handler(route)
+        assert route.continued
+
+    def test_multiple_blocked_domains(self):
+        handler = create_intercept_handler(disable_resources=False, blocked_domains={"ads.com", "tracker.io"})
+        route_ads = _MockRoute("https://ads.com/banner")
+        route_tracker = _MockRoute("https://cdn.tracker.io/script.js")
+        route_safe = _MockRoute("https://example.com/page")
+        handler(route_ads)
+        handler(route_tracker)
+        handler(route_safe)
+        assert route_ads.aborted
+        assert route_tracker.aborted
+        assert route_safe.continued
+
+
+class TestCreateAsyncInterceptHandler:
+    """Test the unified async route handler factory."""
+
+    @pytest.mark.asyncio
+    async def test_blocks_disabled_resource_types(self):
+        handler = create_async_intercept_handler(disable_resources=True)
+        route = _AsyncMockRoute("https://example.com/font.woff", resource_type="font")
+        await handler(route)
+        assert route.aborted
+
+    @pytest.mark.asyncio
+    async def test_blocks_domain(self):
+        handler = create_async_intercept_handler(disable_resources=False, blocked_domains={"ads.example.com"})
+        route = _AsyncMockRoute("https://ads.example.com/track")
+        await handler(route)
+        assert route.aborted
+
+    @pytest.mark.asyncio
+    async def test_continues_non_blocked(self):
+        handler = create_async_intercept_handler(disable_resources=False, blocked_domains={"ads.example.com"})
+        route = _AsyncMockRoute("https://safe.example.com/page")
+        await handler(route)
+        assert route.continued
+
+    @pytest.mark.asyncio
+    async def test_blocks_subdomain(self):
+        handler = create_async_intercept_handler(disable_resources=False, blocked_domains={"tracker.io"})
+        route = _AsyncMockRoute("https://cdn.tracker.io/script.js")
+        await handler(route)
+        assert route.aborted
+
+    @pytest.mark.asyncio
+    async def test_does_not_block_partial_domain_match(self):
+        handler = create_async_intercept_handler(disable_resources=False, blocked_domains={"example.com"})
+        route = _AsyncMockRoute("https://notexample.com/page")
+        await handler(route)
+        assert route.continued

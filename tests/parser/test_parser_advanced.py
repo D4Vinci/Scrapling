@@ -121,11 +121,12 @@ class TestAdvancedSelectors:
         # ::text pseudo-element
         texts = page.css("p::text")
         assert len(texts) == 2
-        assert isinstance(texts[0], TextHandler)
+        assert isinstance(texts[0], Selector)
+        assert isinstance(texts[0].get(), TextHandler)
 
         # ::attr() pseudo-element
         attrs = page.css("div::attr(class)")
-        assert "container" in attrs
+        assert "container" in attrs.getall()
 
     def test_complex_attribute_operations(self, complex_html):
         """Test complex attribute handling"""

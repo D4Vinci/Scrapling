@@ -10,6 +10,7 @@ from scrapling.core._types import (
     Any,
     Dict,
     List,
+    Set,
     Tuple,
     Optional,
     Callable,
@@ -18,6 +19,7 @@ from scrapling.core._types import (
     SetCookieParam,
     SelectorWaitStates,
 )
+from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
 from scrapling.engines.toolbelt.navigation import construct_proxy_dict
 from scrapling.engines._browsers._types import PlaywrightFetchParams, StealthFetchParams
 
@@ -50,6 +52,7 @@ def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
 
 # Type aliases for cleaner annotations
 PagesCount = Annotated[int, Meta(ge=1, le=50)]
+RetriesCount = Annotated[int, Meta(ge=1, le=10)]
 Seconds = Annotated[int, float, Meta(ge=0)]
 
 
@@ -69,6 +72,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     timezone_id: str | None = ""
     page_action: Optional[Callable] = None
     proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
+    proxy_rotator: Optional[ProxyRotator] = None
     extra_headers: Optional[Dict[str, str]] = None
     timeout: Seconds = 30000
     init_script: Optional[str] = None
@@ -80,11 +84,19 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     cdp_url: Optional[str] = None
     useragent: Optional[str] = None
     extra_flags: Optional[List[str]] = None
+    blocked_domains: Optional[Set[str]] = None
+    retries: RetriesCount = 3
+    retry_delay: Seconds = 1
 
     def __post_init__(self):  # pragma: no cover
         """Custom validation after msgspec validation"""
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
+        if self.proxy and self.proxy_rotator:
+            raise ValueError(
+                "Cannot use 'proxy_rotator' together with 'proxy'. "
+                "Use either a static proxy or proxy rotation, not both."
+            )
         if self.proxy:
             self.proxy = construct_proxy_dict(self.proxy)
         if self.cdp_url:
@@ -135,6 +147,7 @@ class _fetch_params:
     wait_selector_state: SelectorWaitStates
     network_idle: bool
     load_dom: bool
+    blocked_domains: Optional[Set[str]]
     solve_cloudflare: bool
     selector_config: Dict
 
@@ -144,15 +157,16 @@ def validate_fetch(
     session: Any,
     model: type[PlaywrightConfig] | type[StealthConfig],
 ) -> _fetch_params:  # pragma: no cover
-    result = {}
-    overrides = {}
+    result: Dict[str, Any] = {}
+    overrides: Dict[str, Any] = {}
+    kwargs_dict: Dict[str, Any] = dict(method_kwargs)
 
     # Get all field names that _fetch_params needs
     fetch_param_fields = {f.name for f in fields(_fetch_params)}
 
     for key in fetch_param_fields:
-        if key in method_kwargs:
-            overrides[key] = method_kwargs[key]
+        if key in kwargs_dict:
+            overrides[key] = kwargs_dict[key]
         elif hasattr(session, "_config") and hasattr(session._config, key):
             result[key] = getattr(session._config, key)
 
@@ -173,6 +187,7 @@ def validate_fetch(
 
     # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
     result.setdefault("solve_cloudflare", False)
+    result.setdefault("blocked_domains", None)
 
     return _fetch_params(**result)
 

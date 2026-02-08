@@ -61,7 +61,9 @@ class PagePool:
                 raise RuntimeError(f"Maximum page limit ({self.max_pages}) reached")
 
             if isinstance(page, AsyncPage):
-                page_info = cast(PageInfo[AsyncPage], PageInfo(page, "ready", ""))
+                page_info: PageInfo[SyncPage] | PageInfo[AsyncPage] = cast(
+                    PageInfo[AsyncPage], PageInfo(page, "ready", "")
+                )
             else:
                 page_info = cast(PageInfo[SyncPage], PageInfo(page, "ready", ""))
 

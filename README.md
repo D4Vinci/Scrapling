@@ -1,13 +1,17 @@
-Automated translations: [العربيه](README_AR.md) | [Español](README_ES.md) | [Deutsch](README_DE.md) | [简体中文](README_CN.md) | [日本語](README_JP.md) | [Русский](README_RU.md)
+<h1 align="center">
+    <a href="https://scrapling.readthedocs.io">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/D4Vinci/Scrapling/v4/docs/assets/cover_dark.svg?sanitize=true">
+          <img alt="Scrapling Poster" src="https://raw.githubusercontent.com/D4Vinci/Scrapling/v4/docs/assets/cover_light.svg?sanitize=true">
+        </picture>
+    </a>
+    <br>
+    <small>Effortless Web Scraping for the Modern Web</small>
+</h1>
 
-
-<p align=center>
-  <br>
-  <a href="https://scrapling.readthedocs.io/en/latest/" target="_blank"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png" style="width: 50%; height: 100%;" alt="main poster"/></a>
-  <br>
-  <i><code>Easy, effortless Web Scraping as it should be!</code></i>
-</p>
 <p align="center">
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_AR.md">العربيه</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_ES.md">Español</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_DE.md">Deutsch</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_CN.md">简体中文</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_JP.md">日本語</a> |  <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_RU.md">Русский</a>
+    <br/>
     <a href="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml" alt="Tests">
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>
     <a href="https://badge.fury.io/py/Scrapling" alt="PyPI version">
@@ -27,44 +31,45 @@ Automated translations: [العربيه](README_AR.md) | [Español](README_ES.md
 </p>
 
 <p align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/parsing/selection/">
-        Selection methods
-    </a>
-    ·
-    <a href="https://scrapling.readthedocs.io/en/latest/fetching/choosing/">
-        Choosing a fetcher
-    </a>
-    ·
-    <a href="https://scrapling.readthedocs.io/en/latest/cli/overview/">
-        CLI
-    </a>
-    ·
-    <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server/">
-        MCP mode
-    </a>
-    ·
-    <a href="https://scrapling.readthedocs.io/en/latest/tutorials/migrating_from_beautifulsoup/">
-        Migrating from Beautifulsoup
-    </a>
+    <a href="https://scrapling.readthedocs.io/en/latest/parsing/selection/"><strong>Selection methods</strong></a>
+    &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/fetching/choosing/"><strong>Choosing a fetcher</strong></a>
+    &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/cli/overview/"><strong>CLI</strong></a>
+    &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server/"><strong>MCP mode</strong></a>
+    &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/tutorials/migrating_from_beautifulsoup/"><strong>Migrating from Beautifulsoup</strong></a>
 </p>
 
-**Stop fighting anti-bot systems. Stop rewriting selectors after every website update.**
+Scrapling is an adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl.
 
-Scrapling isn't just another Web Scraping library. It's the first **adaptive** scraping library that learns from website changes and evolves with them. While other libraries break when websites update their structure, Scrapling automatically relocates your elements and keeps your scrapers running.
+Its parser learns from website changes and automatically relocates your elements when pages update. Its fetchers bypass anti-bot systems like Cloudflare Turnstile out of the box. And its spider framework lets you scale up to concurrent, multi-session crawls with pause/resume and automatic proxy rotation — all in a few lines of Python. One library, zero compromises.
 
-Built for the modern Web, Scrapling features **its own rapid parsing engine** and fetchers to handle all Web Scraping challenges you face or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
+Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
->> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
->> StealthyFetcher.adaptive = True
-# Fetch websites' source under the radar!
->> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
->> print(page.status)
-200
->> products = page.css('.product', auto_save=True)  # Scrape data that survives website design changes!
->> # Later, if the website structure changes, pass `adaptive=True`
->> products = page.css('.product', adaptive=True)  # and Scrapling still finds them!
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+StealthyFetcher.adaptive = True
+page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Fetch website under the radar!
+products = page.css('.product', auto_save=True)                                        # Scrape data that survives website design changes!
+products = page.css('.product', adaptive=True)                                         # Later, if the website structure changes, pass `adaptive=True` to find them!
 ```
+Or scale up to full crawls
+```python
+from scrapling.spiders import Spider, Response
+
+class MySpider(Spider):
+  name = "demo"
+  start_urls = ["https://example.com/"]
+
+  async def parse(self, response: Response):
+      for item in response.css('.product'):
+          yield {"title": item.css('h2::text').get()}
+
+MySpider().start()
+```
+
 
 # Sponsors 
 
@@ -77,6 +82,7 @@ Built for the modern Web, Scrapling features **its own rapid parsing engine** an
 <a href="https://visit.decodo.com/Dy6W0b" target="_blank" title="Try the Most Efficient Residential Proxies for Free"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/decodo.png"></a>
 <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>
 <a href="https://hasdata.com/?utm_source=github&utm_medium=banner&utm_campaign=D4Vinci" target="_blank" title="The web scraping service that actually beats anti-bot systems!"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/hasdata.png"></a>
+<a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png"></a>
 <a href="https://www.swiftproxy.net/" target="_blank" title="Unlock Reliable Proxy Services with Swiftproxy!"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/swiftproxy.png"></a>
 <a href="https://www.rapidproxy.io/?ref=d4v" target="_blank" title="Affordable Access to the Proxy World – bypass CAPTCHAs blocks, and avoid additional costs."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/rapidproxy.jpg"></a>
 <a href="https://browser.cash/?utm_source=D4Vinci&utm_medium=referral" target="_blank" title="Browser Automation & AI Browser Agent Platform"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/browserCash.png"></a>
@@ -89,16 +95,27 @@ Built for the modern Web, Scrapling features **its own rapid parsing engine** an
 
 ## Key Features
 
+### Spiders — A Full Crawling Framework
+- 🕷️ **Scrapy-like Spider API**: Define spiders with `start_urls`, async `parse` callbacks, and `Request`/`Response` objects.
+- ⚡ **Concurrent Crawling**: Configurable concurrency limits, per-domain throttling, and download delays.
+- 🔄 **Multi-Session Support**: Unified interface for HTTP requests, and stealthy headless browsers in a single spider — route requests to different sessions by ID.
+- 💾 **Pause & Resume**: Checkpoint-based crawl persistence. Press Ctrl+C for a graceful shutdown; restart to resume from where you left off.
+- 📡 **Streaming Mode**: Stream scraped items as they arrive via `async for item in spider.stream()` with real-time stats — ideal for UI, pipelines, and long-running crawls.
+- 🛡️ **Blocked Request Detection**: Automatic detection and retry of blocked requests with customizable logic.
+- 📦 **Built-in Export**: Export results through hooks and your own pipeline or the built-in JSON/JSONL with `result.items.to_json()` / `result.items.to_jsonl()` respectively.
+
 ### Advanced Websites Fetching with Session Support
-- **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP3.
+- **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP/3.
 - **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium and Google's Chrome.
 - **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` and fingerprint spoofing. Can easily bypass all types of Cloudflare's Turnstile/Interstitial with automation.
 - **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
+- **Proxy Rotation**: Built-in `ProxyRotator` with round-robin or custom strategies across all session types, plus per-request proxy overrides.
+- **Domain Blocking**: Block requests to specific domains (and their subdomains) in browser-based fetchers.
 - **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 
 ### Adaptive Scraping & AI Integration
 - 🔄 **Smart Element Tracking**: Relocate elements after website changes using intelligent similarity algorithms.
-- 🎯 **Smart Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more. 
+- 🎯 **Smart Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more.
 - 🔍 **Find Similar Elements**: Automatically locate elements similar to found elements.
 - 🤖 **MCP Server to be used with AI**: Built-in MCP server for AI-assisted Web Scraping and data extraction. The MCP server features powerful, custom capabilities that leverage Scrapling to extract targeted content before passing it to the AI (Claude/Cursor/etc), thereby speeding up operations and reducing costs by minimizing token usage. ([demo video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 
@@ -110,51 +127,107 @@ Built for the modern Web, Scrapling features **its own rapid parsing engine** an
 
 ### Developer/Web Scraper Friendly Experience
 - 🎯 **Interactive Web Scraping Shell**: Optional built-in IPython shell with Scrapling integration, shortcuts, and new tools to speed up Web Scraping scripts development, like converting curl requests to Scrapling requests and viewing requests results in your browser.
-- 🚀 **Use it directly from the Terminal**: Optionally, you can use Scrapling to scrape a URL without writing a single code!
+- 🚀 **Use it directly from the Terminal**: Optionally, you can use Scrapling to scrape a URL without writing a single line of code!
 - 🛠️ **Rich Navigation API**: Advanced DOM traversal with parent, sibling, and child navigation methods.
 - 🧬 **Enhanced Text Processing**: Built-in regex, cleaning methods, and optimized string operations.
 - 📝 **Auto Selector Generation**: Generate robust CSS/XPath selectors for any element.
 - 🔌 **Familiar API**: Similar to Scrapy/BeautifulSoup with the same pseudo-elements used in Scrapy/Parsel.
-- 📘 **Complete Type Coverage**: Full type hints for excellent IDE support and code completion.
+- 📘 **Complete Type Coverage**: Full type hints for excellent IDE support and code completion. The entire codebase is automatically scanned with **PyRight** and **MyPy** with each change.
 - 🔋 **Ready Docker image**: With each release, a Docker image containing all browsers is automatically built and pushed.
 
 ## Getting Started
 
-### Basic Usage
-```python
-from scrapling.fetchers import Fetcher, StealthyFetcher, DynamicFetcher
-from scrapling.fetchers import FetcherSession, StealthySession, DynamicSession
+Let's give you a quick glimpse of what Scrapling can do without deep diving.
 
-# HTTP requests with session support
+### Basic Usage
+HTTP requests with session support
+```python
+from scrapling.fetchers import Fetcher, FetcherSession
+
 with FetcherSession(impersonate='chrome') as session:  # Use latest version of Chrome's TLS fingerprint
     page = session.get('https://quotes.toscrape.com/', stealthy_headers=True)
-    quotes = page.css('.quote .text::text')
+    quotes = page.css('.quote .text::text').getall()
 
 # Or use one-off requests
 page = Fetcher.get('https://quotes.toscrape.com/')
-quotes = page.css('.quote .text::text')
+quotes = page.css('.quote .text::text').getall()
+```
+Advanced stealth mode
+```python
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-# Advanced stealth mode (Keep the browser open until you finish)
-with StealthySession(headless=True, solve_cloudflare=True) as session:
+with StealthySession(headless=True, solve_cloudflare=True) as session:  # Keep the browser open until you finish
     page = session.fetch('https://nopecha.com/demo/cloudflare', google_search=False)
-    data = page.css('#padded_content a')
+    data = page.css('#padded_content a').getall()
 
 # Or use one-off request style, it opens the browser for this request, then closes it after finishing
 page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare')
-data = page.css('#padded_content a')
-    
-# Full browser automation (Keep the browser open until you finish)
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:
+data = page.css('#padded_content a').getall()
+```
+Full browser automation
+```python
+from scrapling.fetchers import DynamicFetcher, DynamicSession
+
+with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # Keep the browser open until you finish
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
-    data = page.xpath('//span[@class="text"]/text()')  # XPath selector if you prefer it
+    data = page.xpath('//span[@class="text"]/text()').getall()  # XPath selector if you prefer it
 
 # Or use one-off request style, it opens the browser for this request, then closes it after finishing
 page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
-data = page.css('.quote .text::text')
+data = page.css('.quote .text::text').getall()
 ```
 
-> [!NOTE]
-> There's a wonderful guide to get you started quickly with Scrapling [here](https://substack.thewebscraping.club/p/scrapling-hands-on-guide) written by The Web Scraping Club. In case you find it easier to get you started than the [documentation website](https://scrapling.readthedocs.io/en/latest/).
+### Spiders
+Build full crawlers with concurrent requests, multiple session types, and pause/resume:
+```python
+from scrapling.spiders import Spider, Request, Response
+
+class QuotesSpider(Spider):
+    name = "quotes"
+    start_urls = ["https://quotes.toscrape.com/"]
+    concurrent_requests = 10
+    
+    async def parse(self, response: Response):
+        for quote in response.css('.quote'):
+            yield {
+                "text": quote.css('.text::text').get(),
+                "author": quote.css('.author::text').get(),
+            }
+            
+        next_page = response.css('.next a')
+        if next_page:
+            yield response.follow(next_page[0].attrib['href'])
+
+result = QuotesSpider().start()
+print(f"Scraped {len(result.items)} quotes")
+result.items.to_json("quotes.json")
+```
+Use multiple session types in a single spider:
+```python
+from scrapling.spiders import Spider, Request, Response
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
+
+class MultiSessionSpider(Spider):
+    name = "multi"
+    start_urls = ["https://example.com/"]
+    
+    def configure_sessions(self, manager):
+        manager.add("fast", FetcherSession(impersonate="chrome"))
+        manager.add("stealth", AsyncStealthySession(headless=True), lazy=True)
+    
+    async def parse(self, response: Response):
+        for link in response.css('a::attr(href)').getall():
+            # Route protected pages through the stealth session
+            if "protected" in link:
+                yield Request(link, sid="stealth")
+            else:
+                yield Request(link, sid="fast", callback=self.parse)  # explicit callback
+```
+Pause and resume long crawls with checkpoints by running the spider like this:
+```python
+QuotesSpider(crawldir="./crawl_data").start()
+```
+Press Ctrl+C to pause gracefully — progress is saved automatically. Later, when you start the spider again, pass the same `crawldir`, and it will resume from where it stopped.
 
 ### Advanced Parsing & Navigation
 ```python
@@ -175,10 +248,9 @@ quotes = page.find_all(class_='quote')  # and so on...
 quotes = page.find_by_text('quote', tag='div')
 
 # Advanced navigation
-first_quote = page.css_first('.quote')
-quote_text = first_quote.css('.text::text')
-quote_text = page.css('.quote').css_first('.text::text')  # Chained selectors
-quote_text = page.css_first('.quote .text').text  # Using `css_first` is faster than `css` if you want the first element
+quote_text = page.css('.quote')[0].css('.text::text').get()
+quote_text = page.css('.quote').css('.text::text').getall()  # Chained selectors
+first_quote = page.css('.quote')[0]
 author = first_quote.next_sibling.css('.author::text')
 parent_container = first_quote.parent
 
@@ -219,7 +291,7 @@ async with AsyncStealthySession(max_pages=2) as session:
 
 ## CLI & Interactive Shell
 
-Scrapling v0.3 includes a powerful command-line interface:
+Scrapling includes a powerful command-line interface:
 
 [![asciicast](https://asciinema.org/a/736339.svg)](https://asciinema.org/a/736339)
 
@@ -236,34 +308,34 @@ scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.
 ```
 
 > [!NOTE]
-> There are many additional features, but we want to keep this page concise, such as the MCP server and the interactive Web Scraping Shell. Check out the full documentation [here](https://scrapling.readthedocs.io/en/latest/)
+> There are many additional features, but we want to keep this page concise, including the MCP server and the interactive Web Scraping Shell. Check out the full documentation [here](https://scrapling.readthedocs.io/en/latest/)
 
 ## Performance Benchmarks
 
-Scrapling isn't just powerful—it's also blazing fast, and the updates since version 0.3 have delivered exceptional performance improvements across all operations. The following benchmarks compare Scrapling's parser with other popular libraries.
+Scrapling isn't just powerful—it's also blazing fast. The following benchmarks compare Scrapling's parser with the latest versions of other popular libraries.
 
 ### Text Extraction Speed Test (5000 nested elements)
 
 | # |      Library      | Time (ms) | vs Scrapling | 
 |---|:-----------------:|:---------:|:------------:|
-| 1 |     Scrapling     |   1.99    |     1.0x     |
-| 2 |   Parsel/Scrapy   |   2.01    |    1.01x     |
-| 3 |     Raw Lxml      |    2.5    |    1.256x    |
-| 4 |      PyQuery      |   22.93   |    ~11.5x    |
-| 5 |    Selectolax     |   80.57   |    ~40.5x    |
-| 6 |   BS4 with Lxml   |  1541.37  |   ~774.6x    |
-| 7 |  MechanicalSoup   |  1547.35  |   ~777.6x    |
-| 8 | BS4 with html5lib |  3410.58  |   ~1713.9x   |
+| 1 |     Scrapling     |   2.02    |     1.0x     |
+| 2 |   Parsel/Scrapy   |   2.04    |     1.01     |
+| 3 |     Raw Lxml      |   2.54    |    1.257     |
+| 4 |      PyQuery      |   24.17   |     ~12x     |
+| 5 |    Selectolax     |   82.63   |     ~41x     |
+| 6 |  MechanicalSoup   |  1549.71  |   ~767.1x    |
+| 7 |   BS4 with Lxml   |  1584.31  |   ~784.3x    |
+| 8 | BS4 with html5lib |  3391.91  |   ~1679.1x   |
 
 
 ### Element Similarity & Text Search Performance
 
 Scrapling's adaptive element finding capabilities significantly outperform alternatives:
 
-|   Library   | Time (ms) | vs Scrapling |
+| Library     | Time (ms) | vs Scrapling |
 |-------------|:---------:|:------------:|
-| Scrapling   |   2.46    |     1.0x     |
-| AutoScraper |   13.3    |    5.407x    |
+| Scrapling   |   2.39    |     1.0x     |
+| AutoScraper |   12.45   |    5.209x    |
 
 
 > All benchmarks represent averages of 100+ runs. See [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology.
@@ -276,7 +348,7 @@ Scrapling requires Python 3.10 or higher:
 pip install scrapling
 ```
 
-Starting with v0.3.2, this installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies.
+This installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies.
 
 ### Optional Dependencies
 
@@ -332,13 +404,6 @@ This work is licensed under the BSD-3-Clause License.
 
 This project includes code adapted from:
 - Parsel (BSD License)—Used for [translator](https://github.com/D4Vinci/Scrapling/blob/main/scrapling/core/translator.py) submodule
-
-## Thanks and References
-
-- [Daijro](https://github.com/daijro)'s brilliant work on [BrowserForge](https://github.com/daijro/browserforge) and [Camoufox](https://github.com/daijro/camoufox)
-- [Vinyzu](https://github.com/Vinyzu)'s brilliant work on [Botright](https://github.com/Vinyzu/Botright) and [PatchRight](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright)
-- [brotector](https://github.com/kaliiiiiiiiii/brotector) for browser detection bypass techniques
-- [fakebrowser](https://github.com/kkoooqq/fakebrowser) and [BotBrowser](https://github.com/botswin/BotBrowser) for fingerprinting research
 
 ---
 <div align="center"><small>Designed & crafted with ❤️ by Karim Shoair.</small></div><br>

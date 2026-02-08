@@ -38,7 +38,7 @@ class ResponseFactory:
     @classmethod
     def _process_response_history(cls, first_response: SyncResponse, parser_arguments: Dict) -> list[Response]:
         """Process response history to build a list of `Response` objects"""
-        history = []
+        history: list[Response] = []
         current_request = first_response.request.redirected_from
 
         try:
@@ -85,6 +85,7 @@ class ResponseFactory:
         first_response: SyncResponse,
         final_response: Optional[SyncResponse],
         parser_arguments: Dict,
+        meta: Optional[Dict] = None,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -100,6 +101,7 @@ class ResponseFactory:
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
+        :param meta: Additional meta data to be saved with the response.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -116,12 +118,12 @@ class ResponseFactory:
         history = cls._process_response_history(first_response, parser_arguments)
         try:
             if "html" in final_response.all_headers().get("content-type", ""):
-                page_content = cls._get_page_content(page)
+                page_content = cls._get_page_content(page).encode("utf-8")
             else:
                 page_content = final_response.body()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content: {e}")
-            page_content = ""
+            page_content = b""
 
         return Response(
             **{
@@ -134,6 +136,7 @@ class ResponseFactory:
                 "headers": first_response.all_headers(),
                 "request_headers": first_response.request.all_headers(),
                 "history": history,
+                "meta": meta,
                 **parser_arguments,
             }
         )
@@ -143,7 +146,7 @@ class ResponseFactory:
         cls, first_response: AsyncResponse, parser_arguments: Dict
     ) -> list[Response]:
         """Process response history to build a list of `Response` objects"""
-        history = []
+        history: list[Response] = []
         current_request = first_response.request.redirected_from
 
         try:
@@ -220,6 +223,7 @@ class ResponseFactory:
         first_response: AsyncResponse,
         final_response: Optional[AsyncResponse],
         parser_arguments: Dict,
+        meta: Optional[Dict] = None,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -235,6 +239,7 @@ class ResponseFactory:
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
+        :param meta: Additional meta data to be saved with the response.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -251,12 +256,12 @@ class ResponseFactory:
         history = await cls._async_process_response_history(first_response, parser_arguments)
         try:
             if "html" in (await final_response.all_headers()).get("content-type", ""):
-                page_content = await cls._get_async_page_content(page)
+                page_content = (await cls._get_async_page_content(page)).encode("utf-8")
             else:
                 page_content = await final_response.body()
         except Exception as e:  # pragma: no cover
             log.error(f"Error getting page content in async: {e}")
-            page_content = ""
+            page_content = b""
 
         return Response(
             **{
@@ -269,16 +274,18 @@ class ResponseFactory:
                 "headers": await first_response.all_headers(),
                 "request_headers": await first_response.request.all_headers(),
                 "history": history,
+                "meta": meta,
                 **parser_arguments,
             }
         )
 
     @staticmethod
-    def from_http_request(response: CurlResponse, parser_arguments: Dict) -> Response:
+    def from_http_request(response: CurlResponse, parser_arguments: Dict, meta: Optional[Dict] = None) -> Response:
         """Takes `curl_cffi` response and generates `Response` object from it.
 
         :param response: `curl_cffi` response object
         :param parser_arguments: Additional arguments to be passed to the `Response` object constructor.
+        :param meta: Optional metadata dictionary to attach to the Response.
         :return: A `Response` object that is the same as `Selector` object except it has these added attributes: `status`, `reason`, `cookies`, `headers`, and `request_headers`
         """
         return Response(
@@ -293,6 +300,7 @@ class ResponseFactory:
                 "request_headers": dict(response.request.headers) if response.request else {},
                 "method": response.request.method if response.request else "GET",
                 "history": response.history,  # https://github.com/lexiforest/curl_cffi/issues/82
+                "meta": meta,
                 **parser_arguments,
             }
         )

@@ -8,7 +8,7 @@ from orjson import dumps, loads
 from lxml.html import HtmlElement
 
 from scrapling.core.utils import _StorageTools, log
-from scrapling.core._types import Dict, Optional, Any
+from scrapling.core._types import Dict, Optional, Any, cast
 
 
 class StorageSystemMixin(ABC):  # pragma: no cover
@@ -17,18 +17,24 @@ class StorageSystemMixin(ABC):  # pragma: no cover
         """
         :param url: URL of the website we are working on to separate it from other websites data
         """
-        self.url = url
+        # Make the url in lowercase to handle this edge case until it's updated: https://github.com/barseghyanartur/tld/issues/124
+        self.url = url.lower() if (url and isinstance(url, str)) else None
 
     @lru_cache(64, typed=True)
     def _get_base_url(self, default_value: str = "default") -> str:
-        if not self.url or not isinstance(self.url, str):
+        if not self.url:
             return default_value
 
         try:
-            from tldextract import extract as tld
+            from tld import get_tld, Result
 
-            extracted = tld(self.url)
-            return extracted.top_domain_under_public_suffix or extracted.domain or default_value
+            # Fixing the inaccurate return type hint in `get_tld`
+            extracted: Result | None = cast(
+                Result, get_tld(self.url, as_object=True, fail_silently=True, fix_protocol=True)
+            )
+            if not extracted:
+                return default_value
+            return extracted.fld or extracted.domain or default_value
         except AttributeError:
             return default_value
 
@@ -57,12 +63,11 @@ class StorageSystemMixin(ABC):  # pragma: no cover
     def _get_hash(identifier: str) -> str:
         """If you want to hash identifier in your storage system, use this safer"""
         _identifier = identifier.lower().strip()
-        if isinstance(_identifier, str):
-            # Hash functions have to take bytes
-            _identifier = _identifier.encode("utf-8")
+        # Hash functions have to take bytes
+        _identifier_bytes = _identifier.encode("utf-8")
 
-        hash_value = sha256(_identifier).hexdigest()
-        return f"{hash_value}_{len(_identifier)}"  # Length to reduce collision chance
+        hash_value = sha256(_identifier_bytes).hexdigest()
+        return f"{hash_value}_{len(_identifier_bytes)}"  # Length to reduce collision chance
 
 
 @lru_cache(1, typed=True)

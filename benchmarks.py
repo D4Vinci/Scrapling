@@ -75,7 +75,7 @@ def test_scrapling():
     # No need to do `.extract()` like parsel to extract text
     # Also, this is faster than `[t.text for t in Selector(large_html, adaptive=False).css('.item')]`
     # for obvious reasons, of course.
-    return ScraplingSelector(large_html, adaptive=False).css(".item::text")
+    return ScraplingSelector(large_html, adaptive=False).css(".item::text").getall()
 
 
 @benchmark

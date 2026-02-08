@@ -5,11 +5,11 @@ Functions related to generating headers and fingerprints generally
 from functools import lru_cache
 from platform import system as platform_system
 
-from tldextract import extract
+from tld import get_tld, Result
 from browserforge.headers import Browser, HeaderGenerator
 from browserforge.headers.generator import SUPPORTED_OPERATING_SYSTEMS
 
-from scrapling.core._types import Dict, Literal, Tuple
+from scrapling.core._types import Dict, Literal, Tuple, cast
 
 __OS_NAME__ = platform_system()
 OSName = Literal["linux", "macos", "windows"]
@@ -28,11 +28,15 @@ def generate_convincing_referer(url: str) -> str | None:
     :param url: The URL you are about to fetch.
     :return: Google's search URL of the domain name, or None for localhost/IP addresses
     """
-    extracted = extract(url)
+    # Fixing the inaccurate return type hint in `get_tld`
+    extracted: Result | None = cast(Result, get_tld(url, as_object=True, fail_silently=True))
+    if not extracted:
+        return None
+
     website_name = extracted.domain
 
     # Skip generating referer for localhost, IP addresses, or when there's no valid domain
-    if not website_name or not extracted.suffix or website_name in ("localhost", "127.0.0.1", "::1"):
+    if not website_name or not extracted.tld or website_name in ("localhost", "127.0.0.1", "::1"):
         return None
 
     # Check if it's an IP address (simple check for IPv4)

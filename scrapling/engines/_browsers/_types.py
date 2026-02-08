@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from curl_cffi.requests import (
     ProxySpec,
     CookieTypes,
@@ -7,6 +9,7 @@ from curl_cffi.requests import (
 from scrapling.core._types import (
     Dict,
     List,
+    Set,
     Tuple,
     Mapping,
     Optional,
@@ -18,6 +21,7 @@ from scrapling.core._types import (
     SelectorWaitStates,
     TYPE_CHECKING,
 )
+from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
 
 # Type alias for `impersonate` parameter - accepts a single browser or list of browsers
 ImpersonateType: TypeAlias = BrowserTypeLiteral | List[BrowserTypeLiteral] | None
@@ -32,6 +36,7 @@ if TYPE_CHECKING:  # pragma: no cover
         proxies: Optional[ProxySpec]
         proxy: Optional[str]
         proxy_auth: Optional[Tuple[str, str]]
+        proxy_rotator: Optional[ProxyRotator]
         timeout: Optional[int | float]
         headers: Optional[Mapping[str, Optional[str]]]
         retries: Optional[int]
@@ -50,7 +55,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
     # Types for POST/PUT/DELETE request method parameters
     class DataRequestParams(GetRequestParams, total=False):
-        data: Optional[Dict | str]
+        data: Optional[Dict[str, str] | List[Tuple] | str | BytesIO | bytes]
         json: Optional[Dict | List]
 
     # Types for browser session
@@ -68,6 +73,7 @@ if TYPE_CHECKING:  # pragma: no cover
         timezone_id: str | None
         page_action: Optional[Callable]
         proxy: Optional[str | Dict[str, str] | Tuple]
+        proxy_rotator: Optional[ProxyRotator]
         extra_headers: Optional[Dict[str, str]]
         timeout: int | float
         init_script: Optional[str]
@@ -79,6 +85,9 @@ if TYPE_CHECKING:  # pragma: no cover
         cdp_url: Optional[str]
         useragent: Optional[str]
         extra_flags: Optional[List[str]]
+        blocked_domains: Optional[Set[str]]
+        retries: int
+        retry_delay: int | float
 
     class PlaywrightFetchParams(TypedDict, total=False):
         load_dom: bool
@@ -92,6 +101,8 @@ if TYPE_CHECKING:  # pragma: no cover
         selector_config: Optional[Dict]
         extra_headers: Optional[Dict[str, str]]
         wait_selector_state: SelectorWaitStates
+        blocked_domains: Optional[Set[str]]
+        proxy: Optional[str | Dict[str, str]]
 
     class StealthSession(PlaywrightSession, total=False):
         allow_webgl: bool
