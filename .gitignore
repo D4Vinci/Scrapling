@@ -1,3 +1,5 @@
+site/*
+
 # AI related files
 .claude/*
 CLAUDE.md
