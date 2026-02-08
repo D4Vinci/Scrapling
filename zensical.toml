@@ -1,0 +1,214 @@
+[project]
+site_name = "Scrapling"
+site_description = "Scrapling - Easy, effortless Web Scraping as it should be!"
+site_author = "Karim Shoair"
+repo_url = "https://github.com/D4Vinci/Scrapling"
+site_url = "https://scrapling.readthedocs.io/en/latest/"
+repo_name = "D4Vinci/Scrapling"
+copyright = "Copyright &copy; 2025 Karim Shoair - <a href=\"#__consent\">Change cookie settings</a>"
+docs_dir = "docs"
+use_directory_urls = false
+exclude_docs = """
+README*.md
+"""
+extra_css = ["stylesheets/extra.css"]
+
+nav = [
+    {Introduction = "index.md"},
+    {Overview = "overview.md"},
+    {"What's New in v0.3" = "https://github.com/D4Vinci/Scrapling/releases/tag/v0.3"},
+    {"Performance Benchmarks" = "benchmarks.md"},
+    {"User Guide" = [
+        {Parsing = [
+            {"Querying elements" = "parsing/selection.md"},
+            {"Main classes" = "parsing/main_classes.md"},
+            {"Adaptive scraping" = "parsing/adaptive.md"}
+        ]},
+        {Fetching = [
+            {"Fetchers basics" = "fetching/choosing.md"},
+            {"HTTP requests" = "fetching/static.md"},
+            {"Dynamic websites" = "fetching/dynamic.md"},
+            {"Dynamic websites with hard protections" = "fetching/stealthy.md"}
+        ]},
+        {"Command Line Interface" = [
+            {Overview = "cli/overview.md"},
+            {"Interactive shell" = "cli/interactive-shell.md"},
+            {"Extract commands" = "cli/extract-commands.md"}
+        ]},
+        {Integrations = [
+            {"AI MCP server" = "ai/mcp-server.md"}
+        ]}
+    ]},
+    {Tutorials = [
+        {"A Free Alternative to AI for Robust Web Scraping" = "tutorials/replacing_ai.md"},
+        {"Migrating from BeautifulSoup" = "tutorials/migrating_from_beautifulsoup.md"},
+        {"Using Scrapeless browser" = "tutorials/external.md"}
+    ]},
+    {Development = [
+        {"API Reference" = [
+            {Selector = "api-reference/selector.md"},
+            {Fetchers = "api-reference/fetchers.md"},
+            {"MCP Server" = "api-reference/mcp-server.md"},
+            {"Custom Types" = "api-reference/custom-types.md"}
+        ]},
+        {"Writing your retrieval system" = "development/adaptive_storage_system.md"},
+        {"Using Scrapling's custom types" = "development/scrapling_custom_types.md"}
+    ]},
+    {"Support and Advertisement" = "donate.md"},
+    {Contributing = "https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md"},
+    {Changelog = "https://github.com/D4Vinci/Scrapling/releases"}
+]
+
+[project.theme]
+language = "en"
+logo = "assets/logo.png"
+favicon = "assets/favicon.ico"
+features = [
+    "navigation.path",
+    "announce.dismiss",
+    "navigation.top",
+    "navigation.footer",
+    "navigation.indexes",
+    "navigation.sections",
+    "navigation.tracking",
+    "navigation.instant",
+    "navigation.instant.prefetch",
+    "navigation.instant.progress",
+  #    "navigation.tabs",
+  #    "navigation.expand",
+  #    "toc.integrate",
+    "search.share",
+    "search.suggest",
+    "search.highlight",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+accent = "green"
+primary = "deep purple"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+accent = "light green"
+primary = "deep purple"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+# Uncomment if needed:
+# [project.theme.font]
+# text = "Open Sans"
+# code = "JetBrains Mono"
+
+[project.markdown_extensions.pymdownx.caret]
+[project.markdown_extensions.pymdownx.mark]
+[project.markdown_extensions.pymdownx.tilde]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.abbr]
+#[project.markdown_extensions.mkautodoc]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.snippets]
+[project.markdown_extensions.tables]
+
+[project.markdown_extensions.pymdownx.emoji]
+emoji_index = "zensical.extensions.emoji.twemoji"
+emoji_generator = "zensical.extensions.emoji.to_svg"
+
+[project.markdown_extensions.pymdownx.highlight]
+pygments_lang_class = true
+anchor_linenums = true
+line_spans = "__span"
+
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+
+[project.markdown_extensions.codehilite]
+css_class = "highlight"
+
+[project.markdown_extensions.toc]
+title = "On this page"
+permalink = true
+toc_depth = 3
+
+[project.plugins.mkdocstrings.handlers.python]
+inventories = ["https://docs.python.org/3/objects.inv"]
+paths = ["scrapling"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "sphinx"
+show_source = true
+show_root_heading = true
+show_if_no_docstring = true
+inherited_members = true
+members_order = "source"
+separate_signature = true
+unwrap_annotated = true
+filters = "public"
+merge_init_into_class = true
+docstring_section_style = "spacy"
+signature_crossrefs = true
+show_symbol_type_heading = true
+show_symbol_type_toc = true
+show_inheritance_diagram = true
+modernize_annotations = true
+extensions = [
+    "griffe_runtime_objects",
+    "griffe_sphinx",
+    {griffe_inherited_docstrings = {merge = true}}
+]
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/D4Vinci/Scrapling"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/x-twitter"
+link = "https://x.com/Scrapling_dev"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/discord"
+link = "https://discord.gg/EMgGbDceNQ"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/python"
+link = "https://pypi.org/project/scrapling/"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/docker"
+link = "https://hub.docker.com/r/pyd4vinci/scrapling"
+
+[project.extra.analytics]
+provider = "google"
+property = "G-CS3DKLY73Z"
+
+[project.extra.analytics.feedback]
+title = "Was this page helpful?"
+
+[[project.extra.analytics.feedback.ratings]]
+icon = "material/heart"
+name = "This page was helpful"
+data = 1
+note = "Thanks for your feedback!"
+
+[[project.extra.analytics.feedback.ratings]]
+icon = "material/heart-broken"
+name = "This page could be improved"
+data = 0
+note = """
+Thanks for your feedback! Help us improve this page by
+using our <a href="..." target="_blank" rel="noopener">feedback form</a>.
+"""  # TODO: add a new issue template for the docs
+
+[project.extra.consent]
+title = "Cookie consent"
+description = """
+We use cookies to recognize your repeated visits and preferences, as well
+as to measure the effectiveness of our documentation and whether users
+find what they're searching for. With your consent, you're helping us to
+make our documentation better.
+"""
