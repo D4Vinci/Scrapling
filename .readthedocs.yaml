@@ -14,6 +14,6 @@ build:
       - pip install -r docs/requirements.txt
     build:
       html:
-        - zensical build
         - mkdir -p $READTHEDOCS_OUTPUT/html/
-        - cp --recursive site/* $READTHEDOCS_OUTPUT/html/
+        - rm -rf site && ln -s $READTHEDOCS_OUTPUT/html site
+        - zensical build
