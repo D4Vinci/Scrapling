@@ -14,27 +14,34 @@
     </a>
 </div>
 
-<div align="center">
-    <i><code>Easy, effortless Web Scraping as it should be!</code></i>
-    <br/><br/>
-</div>
+<h2 align="center"><i>Effortless Web Scraping for the Modern Web</i></h2><br>
 
-**Stop fighting anti-bot systems. Stop rewriting selectors after every website update.**
+Scrapling is an adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl.
 
-Scrapling isn't just another Web Scraping library. It's the first **adaptive** scraping library that learns from website changes and evolves with them. While other libraries break when websites update their structure, Scrapling automatically relocates your elements and keeps your scrapers running.
+Its parser learns from website changes and automatically relocates your elements when pages update. Its fetchers bypass anti-bot systems like Cloudflare Turnstile out of the box. And its spider framework lets you scale up to concurrent, multi-session crawls with pause/resume and automatic proxy rotation — all in a few lines of Python. One library, zero compromises.
 
-Built for the modern Web, Scrapling features **its own rapid parsing engine** and fetchers to handle all Web Scraping challenges you face or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
+Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
->> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
->> StealthyFetcher.adaptive = True
-# Fetch websites' source under the radar!
->> page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)
->> print(page.status)
-200
->> products = page.css('.product', auto_save=True)  # Scrape data that survives website design changes!
->> # Later, if the website structure changes, pass `adaptive=True`
->> products = page.css('.product', adaptive=True)  # and Scrapling still finds them!
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+StealthyFetcher.adaptive = True
+page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Fetch website under the radar!
+products = page.css('.product', auto_save=True)                                        # Scrape data that survives website design changes!
+products = page.css('.product', adaptive=True)                                         # Later, if the website structure changes, pass `adaptive=True` to find them!
+```
+Or scale up to full crawls
+```python
+from scrapling.spiders import Spider, Response
+
+class MySpider(Spider):
+  name = "demo"
+  start_urls = ["https://example.com/"]
+
+  async def parse(self, response: Response):
+      for item in response.css('.product'):
+          yield {"title": item.css('h2::text').get()}
+
+MySpider().start()
 ```
 
 ## Top Sponsors 
@@ -56,16 +63,27 @@ Built for the modern Web, Scrapling features **its own rapid parsing engine** an
 
 ## Key Features
 
+### Spiders — A Full Crawling Framework
+- 🕷️ **Scrapy-like Spider API**: Define spiders with `start_urls`, async `parse` callbacks, and `Request`/`Response` objects.
+- ⚡ **Concurrent Crawling**: Configurable concurrency limits, per-domain throttling, and download delays.
+- 🔄 **Multi-Session Support**: Unified interface for HTTP requests, and stealthy headless browsers in a single spider — route requests to different sessions by ID.
+- 💾 **Pause & Resume**: Checkpoint-based crawl persistence. Press Ctrl+C for graceful shutdown; restart to resume from where you left off.
+- 📡 **Streaming Mode**: Stream scraped items as they arrive via `async for item in spider.stream()` with real-time stats — ideal for UI, pipelines, and long-running crawls.
+- 🛡️ **Blocked Request Detection**: Automatic detection and retry of blocked requests with customizable logic.
+- 📦 **Built-in Export**: Export results through hooks and your own pipeline or the built-in JSON/JSONL with `result.items.to_json()` / `result.items.to_jsonl()` respectively.
+
 ### Advanced Websites Fetching with Session Support
 - **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP/3.
-- **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium, and Google's Chrome.
-- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` and fingerprint spoofing. Can bypass all types of Cloudflare's Turnstile/Interstitial with automation easily.
+- **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium and Google's Chrome.
+- **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` and fingerprint spoofing. Can easily bypass all types of Cloudflare's Turnstile/Interstitial with automation.
 - **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
+- **Proxy Rotation**: Built-in `ProxyRotator` with round-robin or custom strategies across all session types, plus per-request proxy overrides.
+- **Domain Blocking**: Block requests to specific domains (and their subdomains) in browser-based fetchers.
 - **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 
 ### Adaptive Scraping & AI Integration
 - 🔄 **Smart Element Tracking**: Relocate elements after website changes using intelligent similarity algorithms.
-- 🎯 **Smart Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more. 
+- 🎯 **Smart Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more.
 - 🔍 **Find Similar Elements**: Automatically locate elements similar to found elements.
 - 🤖 **MCP Server to be used with AI**: Built-in MCP server for AI-assisted Web Scraping and data extraction. The MCP server features powerful, custom capabilities that leverage Scrapling to extract targeted content before passing it to the AI (Claude/Cursor/etc), thereby speeding up operations and reducing costs by minimizing token usage. ([demo video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 
@@ -77,12 +95,12 @@ Built for the modern Web, Scrapling features **its own rapid parsing engine** an
 
 ### Developer/Web Scraper Friendly Experience
 - 🎯 **Interactive Web Scraping Shell**: Optional built-in IPython shell with Scrapling integration, shortcuts, and new tools to speed up Web Scraping scripts development, like converting curl requests to Scrapling requests and viewing requests results in your browser.
-- 🚀 **Use it directly from the Terminal**: Optionally, you can use Scrapling to scrape a URL without writing a single code!
+- 🚀 **Use it directly from the Terminal**: Optionally, you can use Scrapling to scrape a URL without writing a single line of code!
 - 🛠️ **Rich Navigation API**: Advanced DOM traversal with parent, sibling, and child navigation methods.
 - 🧬 **Enhanced Text Processing**: Built-in regex, cleaning methods, and optimized string operations.
 - 📝 **Auto Selector Generation**: Generate robust CSS/XPath selectors for any element.
 - 🔌 **Familiar API**: Similar to Scrapy/BeautifulSoup with the same pseudo-elements used in Scrapy/Parsel.
-- 📘 **Complete Type Coverage**: Full type hints for excellent IDE support and code completion.
+- 📘 **Complete Type Coverage**: Full type hints for excellent IDE support and code completion. The entire codebase is automatically scanned with **PyRight** and **MyPy** with each change.
 - 🔋 **Ready Docker image**: With each release, a Docker image containing all browsers is automatically built and pushed.
 
 
@@ -127,7 +145,7 @@ Scrapling requires Python 3.10 or higher:
 pip install scrapling
 ```
 
-Starting with v0.3.2, this installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies.
+This installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies.
 
 ### Optional Dependencies
 
