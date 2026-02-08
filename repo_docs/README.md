@@ -10,7 +10,7 @@
 </h1>
 
 <p align="center">
-    [العربيه](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_AR.md) | [Español](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_ES.md) | [Deutsch](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_DE.md) | [简体中文](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_CN.md) | [日本語](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_JP.md) | [Русский](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_RU.md)
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_AR.md">العربيه</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_ES.md">Español</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_DE.md">Deutsch</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_CN.md">简体中文</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_JP.md">日本語</a> |  <a href="https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_RU.md">Русский</a>
     <br/>
     <a href="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml" alt="Tests">
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>
