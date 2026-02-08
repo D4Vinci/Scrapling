@@ -6,11 +6,11 @@
         </picture>
     </a>
     <br>
-    <small>Web Scraping have never been easier!</small>
+    <small>Effortless Web Scraping for the Modern Web</small>
 </h1>
 
 <p align="center">
-    <a href="https://github.com/D4Vinci/Scrapling/blob/v4//README_AR.md">العربيه</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/v4//README_ES.md">Español</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/v4//README_DE.md">Deutsch</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/v4//README_CN.md">简体中文</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/v4//README_JP.md">日本語</a> |  <a href="https://github.com/D4Vinci/Scrapling/blob/v4//README_RU.md">Русский</a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/v4/docs/README_AR.md">العربيه</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/v4/docs/README_ES.md">Español</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/v4/docs/README_DE.md">Deutsch</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/v4/docs/README_CN.md">简体中文</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/v4/docs/README_JP.md">日本語</a> |  <a href="https://github.com/D4Vinci/Scrapling/blob/v4/docs/README_RU.md">Русский</a>
     <br/>
     <a href="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml" alt="Tests">
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>
@@ -31,32 +31,20 @@
 </p>
 
 <p align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/parsing/selection/">
-        Selection methods
-    </a>
-    ·
-    <a href="https://scrapling.readthedocs.io/en/latest/fetching/choosing/">
-        Choosing a fetcher
-    </a>
-    ·
-    <a href="https://scrapling.readthedocs.io/en/latest/cli/overview/">
-        CLI
-    </a>
-    ·
-    <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server/">
-        MCP mode
-    </a>
-    ·
-    <a href="https://scrapling.readthedocs.io/en/latest/tutorials/migrating_from_beautifulsoup/">
-        Migrating from Beautifulsoup
-    </a>
+    <a href="https://scrapling.readthedocs.io/en/latest/parsing/selection/"><strong>Selection methods</strong></a>
+    &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/fetching/choosing/"><strong>Choosing a fetcher</strong></a>
+    &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/cli/overview/"><strong>CLI</strong></a>
+    &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server/"><strong>MCP mode</strong></a>
+    &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/tutorials/migrating_from_beautifulsoup/"><strong>Migrating from Beautifulsoup</strong></a>
 </p>
 
-**Stop fighting anti-bot systems. Stop rewriting selectors after every website update.**
+Scrapling is an adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl. Its parser learns from website changes and automatically relocates your elements when pages update. Its fetchers bypass anti-bot systems like Cloudflare Turnstile out of the box. And its spider framework lets you scale up to concurrent, multi-session crawls with pause/resume and automatic proxy rotation — all in a few lines of Python. One library, zero compromises.
 
-Scrapling isn't just another Web Scraping library. It's the first **adaptive** scraping library that learns from website changes and evolves with them. While other libraries break when websites update their structure, Scrapling automatically relocates your elements and keeps your scrapers running.
-
-Built for the modern Web, Scrapling features **its own rapid parsing engine** and fetchers to handle all Web Scraping challenges you face or will face. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
+Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
 >> from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
