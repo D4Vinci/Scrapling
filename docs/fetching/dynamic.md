@@ -122,9 +122,9 @@ page = DynamicFetcher.fetch('https://example.com', proxy='http://username:passwo
 ### Downloading Files
 
 ```python
-page = DynamicFetcher.fetch('https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png')
+page = DynamicFetcher.fetch('https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/main_cover.png')
 
-with open(file='poster.png', mode='wb') as f:
+with open(file='main_cover.png', mode='wb') as f:
     f.write(page.body)
 ```
 
