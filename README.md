@@ -137,7 +137,7 @@ MySpider().start()
 
 ## Getting Started
 
-Let's give you a quick glimpse of what Scrapling can do; the rest is on [the documentation website](https://scrapling.readthedocs.io).
+Let's give you a quick glimpse of what Scrapling can do without deep diving.
 
 ### Basic Usage
 HTTP requests with session support
@@ -221,7 +221,7 @@ class MultiSessionSpider(Spider):
             if "protected" in link:
                 yield Request(link, sid="stealth")
             else:
-                yield Request(link, sid="fast", callback=self.parse)
+                yield Request(link, sid="fast", callback=self.parse)  # explicit callback
 ```
 Pause and resume long crawls with checkpoints by running the spider like this:
 ```python
@@ -250,7 +250,7 @@ quotes = page.find_by_text('quote', tag='div')
 # Advanced navigation
 quote_text = page.css('.quote')[0].css('.text::text').get()
 quote_text = page.css('.quote').css('.text::text').getall()  # Chained selectors
-first_quote = page.css('.quote')
+first_quote = page.css('.quote')[0]
 author = first_quote.next_sibling.css('.author::text')
 parent_container = first_quote.parent
 
