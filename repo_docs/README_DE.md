@@ -1,9 +1,13 @@
-<p align=center>
-  <br>
-  <a href="https://scrapling.readthedocs.io/en/latest/" target="_blank"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png" style="width: 50%; height: 100%;" alt="main poster"/></a>
-  <br>
-  <i><code>Einfaches, müheloses Web Scraping, wie es sein sollte!</code></i>
-</p>
+<h1 align="center">
+    <a href="https://scrapling.readthedocs.io">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/D4Vinci/Scrapling/v4/docs/assets/cover_dark.svg?sanitize=true">
+          <img alt="Scrapling Poster" src="https://raw.githubusercontent.com/D4Vinci/Scrapling/v4/docs/assets/cover_light.svg?sanitize=true">
+        </picture>
+    </a>
+    <br>
+    <small>Web Scraping have never been easier!</small>
+</h1>
 <p align="center">
     <a href="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml" alt="Tests">
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>

@@ -1,13 +1,17 @@
-Automated translations: [العربيه](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_AR.md) | [Español](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_ES.md) | [Deutsch](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_DE.md) | [简体中文](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_CN.md) | [日本語](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_JP.md) | [Русский](https://github.com/D4Vinci/Scrapling/blob/main/docs/README_RU.md)
+<h1 align="center">
+    <a href="https://scrapling.readthedocs.io">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/D4Vinci/Scrapling/v4/docs/assets/cover_dark.svg?sanitize=true">
+          <img alt="Scrapling Poster" src="https://raw.githubusercontent.com/D4Vinci/Scrapling/v4/docs/assets/cover_light.svg?sanitize=true">
+        </picture>
+    </a>
+    <br>
+    <small>Web Scraping have never been easier!</small>
+</h1>
 
-
-<p align=center>
-  <br>
-  <a href="https://scrapling.readthedocs.io/en/latest/" target="_blank"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/poster.png" style="width: 50%; height: 100%;" alt="main poster"/></a>
-  <br>
-  <i><code>Easy, effortless Web Scraping as it should be!</code></i>
-</p>
 <p align="center">
+    [العربيه](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_AR.md) | [Español](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_ES.md) | [Deutsch](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_DE.md) | [简体中文](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_CN.md) | [日本語](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_JP.md) | [Русский](https://github.com/D4Vinci/Scrapling/blob/main/repo_docs/README_RU.md)
+    <br/>
     <a href="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml" alt="Tests">
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>
     <a href="https://badge.fury.io/py/Scrapling" alt="PyPI version">
