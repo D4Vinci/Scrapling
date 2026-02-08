@@ -12,7 +12,7 @@ build:
   jobs:
     install:
       - pip install -r docs/requirements.txt
-      - pip install .
+      - pip install ".[all]"
     build:
       html:
         - zensical build
