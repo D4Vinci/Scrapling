@@ -12,8 +12,10 @@ build:
   jobs:
     install:
       - pip install -r docs/requirements.txt
+      - pip install .
     build:
       html:
-        - mkdir -p $READTHEDOCS_OUTPUT/html/
-        - rm -rf site && ln -s $READTHEDOCS_OUTPUT/html site
         - zensical build
+    post_build:
+      - mkdir -p $READTHEDOCS_OUTPUT/html/
+      - cp --recursive site/* $READTHEDOCS_OUTPUT/html/
