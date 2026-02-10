@@ -27,16 +27,16 @@ Also, Scrapling implements some non-standard pseudo-elements like:
 
 In short, if you come from Scrapy/Parsel, you will find the same logic for selectors here to make it easier. No need to implement a stranger logic to the one that most of us are used to :)
 
-To select elements with CSS selectors, you have the `css` and `css_first` methods. The latter is ~10% faster and more valuable when you are interested in the first element it finds, or if it's just one element, etc. It's beneficial when there's more than one, as it returns `Selectors`.
+To select elements with CSS selectors, you have the `css` method which returns `Selectors`. Use `[0]` to get the first element, or `.get()` / `.getall()` to extract text values from text/attribute pseudo-selectors.
 
 ### What are XPath selectors?
 [XPath](https://en.wikipedia.org/wiki/XPath) is a language for selecting nodes in XML documents, which can also be used with HTML. This [cheatsheet](https://devhints.io/xpath) is a good resource for learning about [XPath](https://en.wikipedia.org/wiki/XPath). Scrapling adds XPath selectors directly through [lxml](https://lxml.de/).
 
 In short, it is the same situation as CSS Selectors; if you come from Scrapy/Parsel, you will find the same logic for selectors here. However, Scrapling doesn't implement the XPath extension function `has-class` as Scrapy/Parsel does. Instead, it provides the `has_class` method, which can be used on elements returned for the same purpose.
 
-To select elements with XPath selectors, you have the `xpath` and `xpath_first` methods. Again, these methods follow the same logic as the CSS selectors methods above, and `xpath_first` is faster.
+To select elements with XPath selectors, you have the `xpath` method. Again, this method follows the same logic as the CSS selectors method above.
 
-> Note that each method of `css`, `css_first`, `xpath`, and `xpath_first` has additional arguments, but we didn't explain them here, as they are all about the adaptive feature. The adaptive feature will have its own page later to be described in detail.
+> Note that each method of `css` and `xpath` has additional arguments, but we didn't explain them here, as they are all about the adaptive feature. The adaptive feature will have its own page later to be described in detail.
 
 ### Selectors examples
 Let's see some shared examples of using CSS and XPath Selectors.
@@ -50,39 +50,34 @@ Note: The XPath one won't be accurate if there's another class; **it's always be
 
 Select the first element with the class `product`.
 ```python
-product = page.css_first('.product')
-product = page.xpath_first('//*[@class="product"]')
-```
-Which would be the same as doing (but a bit slower)
-```python
 product = page.css('.product')[0]
 product = page.xpath('//*[@class="product"]')[0]
 ```
 Get the text of the first element with the `h1` tag name
 ```python
-title = page.css_first('h1::text')
-title = page.xpath_first('//h1//text()')
+title = page.css('h1::text').get()
+title = page.xpath('//h1//text()').get()
 ```
-Which is again the same as doing
+Which is the same as doing
 ```python
-title = page.css_first('h1').text
-title = page.xpath_first('//h1').text
+title = page.css('h1')[0].text
+title = page.xpath('//h1')[0].text
 ```
-Get the `href` attribute of the first element with the `a` tag name 
+Get the `href` attribute of the first element with the `a` tag name
 ```python
-link = page.css_first('a::attr(href)')
-link = page.xpath_first('//a/@href')
+link = page.css('a::attr(href)').get()
+link = page.xpath('//a/@href').get()
 ```
 Select the text of the first element with the `h1` tag name, which contains `Phone`, and under an element with class `product`.
 ```python
-title = page.css_first('.product h1:contains("Phone")::text')
-title = page.page.xpath_first('//*[@class="product"]//h1[contains(text(),"Phone")]/text()')
+title = page.css('.product h1:contains("Phone")::text').get()
+title = page.xpath('//*[@class="product"]//h1[contains(text(),"Phone")]/text()').get()
 ```
 You can nest and chain selectors as you want, given that they return results
 ```python
-page.css_first('.product').css_first('h1:contains("Phone")::text')
-page.xpath_first('//*[@class="product"]').xpath_first('//h1[contains(text(),"Phone")]/text()')
-page.xpath_first('//*[@class="product"]').css_first('h1:contains("Phone")::text')
+page.css('.product')[0].css('h1:contains("Phone")::text').get()
+page.xpath('//*[@class="product"]')[0].xpath('//h1[contains(text(),"Phone")]/text()').get()
+page.xpath('//*[@class="product"]')[0].css('h1:contains("Phone")::text').get()
 ```
 Another example
 
@@ -91,7 +86,7 @@ All links that have 'image' in their 'href' attribute
 links = page.css('a[href*="image"]')
 links = page.xpath('//a[contains(@href, "image")]')
 for index, link in enumerate(links):
-    link_value = link.attrib['href']  # Cleaner than link.css('::attr(href)')
+    link_value = link.attrib['href']  # Cleaner than link.css('::attr(href)').get()
     link_text = link.text
     print(f'Link number {index} points to this url {link_value} with text content as "{link_text}"')
 ```
@@ -239,9 +234,9 @@ To increase the complexity a little bit, let's say we want to get all the books'
 ```python
 >>> for product in element.parent.parent.find_similar():
         print({
-            "name": product.css_first('h3 a::text'),
-            "price": product.css_first('.price_color').re_first(r'[\d\.]+'),
-            "stock": product.css('.availability::text')[-1].clean()
+            "name": product.css('h3 a::text').get(),
+            "price": product.css('.price_color')[0].re_first(r'[\d\.]+'),
+            "stock": product.css('.availability::text').getall()[-1].clean()
         })
 {'name': 'A Light in the ...', 'price': '51.77', 'stock': 'In stock'}
 {'name': 'Soumission', 'price': '50.10', 'stock': 'In stock'}
@@ -264,10 +259,10 @@ def extract_product_grid(page):
 
     return [
         {
-            'name': p.css_first('h3::text'),
-            'price': p.css_first('.price::text').re_first(r'\d+\.\d{2}'),
+            'name': p.css('h3::text').get(),
+            'price': p.css('.price::text').re_first(r'\d+\.\d{2}'),
             'stock': 'In stock' in p.text,
-            'rating': p.css_first('.rating').attrib.get('data-rating')
+            'rating': p.css('.rating')[0].attrib.get('data-rating')
         }
         for p in products
     ]
@@ -276,16 +271,16 @@ Table Row Extraction
 ```python
 def extract_table_data(page):
     # Find the first data row
-    first_row = page.css_first('table tbody tr')
+    first_row = page.css('table tbody tr')[0]
 
     # Find similar rows
     rows = first_row.find_similar()
 
     return [
         {
-            'column1': row.css_first('td:nth-child(1)::text'),
-            'column2': row.css_first('td:nth-child(2)::text'),
-            'column3': row.css_first('td:nth-child(3)::text')
+            'column1': row.css('td:nth-child(1)::text').get(),
+            'column2': row.css('td:nth-child(2)::text').get(),
+            'column3': row.css('td:nth-child(3)::text').get()
         }
         for row in rows
     ]
@@ -294,7 +289,7 @@ Form Field Extraction
 ```python
 def extract_form_fields(page):
     # Find first form field container
-    first_field = page.css_first('input').find_ancestor(
+    first_field = page.css('input')[0].find_ancestor(
         lambda e: e.has_class('form-field')
     )
 
@@ -303,9 +298,9 @@ def extract_form_fields(page):
 
     return [
         {
-            'label': f.css_first('label::text'),
-            'type': f.css_first('input').attrib.get('type'),
-            'required': 'required' in f.css_first('input').attrib
+            'label': f.css('label::text').get(),
+            'type': f.css('input')[0].attrib.get('type'),
+            'required': 'required' in f.css('input')[0].attrib
         }
         for f in fields
     ]
@@ -324,9 +319,9 @@ def extract_reviews(page):
     
     return [
         {
-            'text': r.css_first('.review-text::text'),
+            'text': r.css('.review-text::text').get(),
             'rating': r.attrib.get('data-rating'),
-            'author': r.css_first('.reviewer::text')
+            'author': r.css('.reviewer::text').get()
         }
         for r in all_reviews
     ]
@@ -396,7 +391,7 @@ Find all elements with a class that equals `quote`.
 ```
 Find all div elements with a class that equals `quote` and contains the element `.text`, which contains the word 'world' in its content.
 ```python
->>> page.find_all('div', {'class': 'quote'}, lambda e: "world" in e.css_first('.text::text'))
+>>> page.find_all('div', {'class': 'quote'}, lambda e: "world" in e.css('.text::text').get())
 [<data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>]
 ```
 Find all elements that don't have children.
@@ -427,7 +422,7 @@ Find all div and span elements with class 'quote' (No span elements like that, s
 ```
 Mix things up
 ```python
->>> page.find_all({'itemtype':"http://schema.org/CreativeWork"}, 'div').css('.author::text')
+>>> page.find_all({'itemtype':"http://schema.org/CreativeWork"}, 'div').css('.author::text').getall()
 ['Albert Einstein',
  'J.K. Rowling',
 ...]
@@ -481,7 +476,7 @@ Similar to `parsel`/`scrapy`, `re` and `re_first` methods are available for extr
 
 We will have a deep look at it while explaining the [TextHandler](main_classes.md#texthandler) class, but in general, it works like the examples below:
 ```python
->>> page.css_first('.price_color').re_first(r'[\d\.]+')
+>>> page.css('.price_color')[0].re_first(r'[\d\.]+')
 '51.77'
 
 >>> page.css('.price_color').re_first(r'[\d\.]+')
