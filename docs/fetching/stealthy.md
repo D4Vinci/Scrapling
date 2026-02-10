@@ -6,12 +6,12 @@ As with [DynamicFetcher](dynamic.md#introduction), you will need some knowledge 
 
 **Note:** _This fetcher was using a custom version of [Camoufox](https://github.com/daijro/camoufox) as an engine before version 0.3.13, which was replaced now with [patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright) for many reasons. See [this section](#using-camoufox-as-an-engine) for information if you still need to use [Camoufox](https://github.com/daijro/camoufox). We might switch back to [Camoufox](https://github.com/daijro/camoufox) in the future if its development continues._
 
-> 💡 **Prerequisites:**
-> 
-> 1. You've completed or read the [DynamicFetcher](dynamic.md#introduction) page since this class builds upon it, and we won't repeat the same information here for that reason.
-> 2. You’ve completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
-> 3. You’ve completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
-> 4. You’ve completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
+!!! success "Prerequisites"
+
+    1. You've completed or read the [DynamicFetcher](dynamic.md#introduction) page since this class builds upon it, and we won't repeat the same information here for that reason.
+    2. You've completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
+    3. You've completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
+    4. You've completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
 
 ## Basic Usage
 You have one primary way to import this Fetcher, which is the same for all fetchers.
@@ -69,8 +69,12 @@ Scrapling provides many options with this fetcher and its session classes. Befor
 |     allow_webgl     | Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended, as many WAFs now check if WebGL is enabled.                                                                     |    ✔️    |
 |   additional_args   | Additional arguments to be passed to Playwright's context as additional settings, and they take higher priority than Scrapling's settings.                                                                                          |    ✔️    |
 |   selector_config   | A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.                                                                                                                            |    ✔️    |
+| blocked_domains     | A set of domain names to block requests to. Subdomains are also matched (e.g., `"example.com"` blocks `"sub.example.com"` too).                                                                                                     |    ✔️    |
+|   proxy_rotator     | A `ProxyRotator` instance for automatic proxy rotation. Cannot be combined with `proxy`.                                                                                                                                            |    ✔️    |
+|       retries       | Number of retry attempts for failed requests. Defaults to 3.                                                                                                                                                                        |    ✔️    |
+|     retry_delay     | Seconds to wait between retry attempts. Defaults to 1.                                                                                                                                                                              |    ✔️    |
 
-In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `solve_cloudflare`, and `selector_config`.
+In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `solve_cloudflare`, `blocked_domains`, `proxy`, and `selector_config`.
 
 > 🔍 Notes:
 > 
@@ -172,14 +176,14 @@ def scrape_amazon_product(url):
 
     # Extract product details
     return {
-        'title': page.css_first('#productTitle::text').clean(),
-        'price': page.css_first('.a-price .a-offscreen::text'),
-        'rating': page.css_first('[data-feature-name="averageCustomerReviews"] .a-popover-trigger .a-color-base::text'),
+        'title': page.css('#productTitle::text').get().clean(),
+        'price': page.css('.a-price .a-offscreen::text').get(),
+        'rating': page.css('[data-feature-name="averageCustomerReviews"] .a-popover-trigger .a-color-base::text').get(),
         'reviews_count': page.css('#acrCustomerReviewText::text').re_first(r'[\d,]+'),
         'features': [
             li.clean() for li in page.css('#feature-bullets li span::text')
         ],
-        'availability': page.css_first('#availability').get_all_text(strip=True),
+        'availability': page.css('#availability')[0].get_all_text(strip=True),
         'images': [
             img.attrib['src'] for img in page.css('#altImages img')
         ]
