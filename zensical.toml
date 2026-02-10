@@ -1,6 +1,6 @@
 [project]
 site_name = "Scrapling"
-site_description = "Scrapling - Easy, effortless Web Scraping as it should be!"
+site_description = "Scrapling - Effortless Web Scraping for the Modern Web!"
 site_author = "Karim Shoair"
 repo_url = "https://github.com/D4Vinci/Scrapling"
 site_url = "https://scrapling.readthedocs.io/en/latest/"
