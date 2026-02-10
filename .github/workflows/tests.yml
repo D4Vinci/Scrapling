@@ -4,7 +4,6 @@ on:
     branches:
       - main
       - dev
-      - v4
     paths-ignore:
       - '*.md'
       - '**/*.md'
