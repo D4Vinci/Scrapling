@@ -4,8 +4,6 @@ Here, we will discuss the `StealthyFetcher` class. This class is very similar to
 
 As with [DynamicFetcher](dynamic.md#introduction), you will need some knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) to automate the page, as we will explain later.
 
-**Note:** _This fetcher was using a custom version of [Camoufox](https://github.com/daijro/camoufox) as an engine before version 0.3.13, which was replaced now with [patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright) for many reasons. See [this section](#using-camoufox-as-an-engine) for information if you still need to use [Camoufox](https://github.com/daijro/camoufox). We might switch back to [Camoufox](https://github.com/daijro/camoufox) in the future if its development continues._
-
 !!! success "Prerequisites"
 
     1. You've completed or read the [DynamicFetcher](dynamic.md#introduction) page since this class builds upon it, and we won't repeat the same information here for that reason.
@@ -252,7 +250,8 @@ In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resou
 - **Memory efficiency**: Better resource usage compared to launching new browsers with each fetch.
 
 ## Using Camoufox as an engine
-If you see that Camoufox is stable on your device, has no high memory issues, and want to continue using Camoufox as before v0.3.13. This section is for you.
+
+This fetcher was using a custom version of [Camoufox](https://github.com/daijro/camoufox) as an engine before version 0.3.13, which was replaced now with [patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright) for many reasons. If you see that Camoufox is stable on your device, has no high memory issues, and want to continue using it. This section is for you.
 
 First, you will need to install the Camoufox library, browser, and Firefox system dependencies if you didn't already:
 ```commandline
