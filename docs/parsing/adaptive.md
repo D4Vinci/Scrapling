@@ -1,10 +1,9 @@
 ## Introduction
 
-> 💡 **Prerequisites:**
-> 
-> 1. You’ve completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector) object.
-> 2. You’ve completed or read the [Main classes](../parsing/main_classes.md) page to understand the [Selector](../parsing/main_classes.md#selector) class.
-> <br><br>
+!!! success "Prerequisites"
+
+    1. You've completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector) object.
+    2. You've completed or read the [Main classes](../parsing/main_classes.md) page to understand the [Selector](../parsing/main_classes.md#selector) class.
 
 Adaptive scraping (previously known as automatch) is one of Scrapling's most powerful features. It allows your scraper to survive website changes by intelligently tracking and relocating elements.
 
@@ -84,11 +83,11 @@ Now, let's test the same selector in both versions
 >> Fetcher.configure(adaptive = True, adaptive_domain='stackoverflow.com')
 >> 
 >> page = Fetcher.get(old_url, timeout=30)
->> element1 = page.css_first(selector, auto_save=True)
+>> element1 = page.css(selector, auto_save=True)[0]
 >> 
 >> # Same selector but used in the updated website
 >> page = Fetcher.get(new_url)
->> element2 = page.css_first(selector, adaptive=True)
+>> element2 = page.css(selector, adaptive=True)[0]
 >> 
 >> if element1.text == element2.text:
 ...    print('Scrapling found the same element in the old and new designs!')
@@ -157,7 +156,7 @@ Now that you've enabled the `adaptive` feature globally, you have two main ways 
 ### The CSS/XPath Selection way
 As you have seen in the example above, first, you have to use the `auto_save` argument while selecting an element that exists on the page, like below
 ```python
-element = page.css('#p1' auto_save=True)
+element = page.css('#p1', auto_save=True)
 ```
 And when the element doesn't exist, you can use the same selector and the `adaptive` argument, and the library will find it for you
 ```python
@@ -165,7 +164,7 @@ element = page.css('#p1', adaptive=True)
 ```
 Pretty simple, eh?
 
-Well, a lot happened under the hood here. Remember the identifier we mentioned before that you need to set to retrieve the element you want? Here, with the `css`/`css_first`/`xpath`/`xpath_first` methods, the identifier is set automatically as the selector you passed here to make things easier :)
+Well, a lot happened under the hood here. Remember the identifier we mentioned before that you need to set to retrieve the element you want? Here, with the `css`/`xpath` methods, the identifier is set automatically as the selector you passed here to make things easier :)
 
 Additionally, for all these methods, you can pass the `identifier` argument to set it yourself. This is useful in some instances, or you can use it to save properties with the `auto_save` argument.
 
@@ -185,7 +184,7 @@ Now, later, when you want to retrieve it and relocate it inside the page with `a
 >>> element_dict = page.retrieve('my_special_element')
 >>> page.relocate(element_dict, selector_type=True)
 [<data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>]
->>> page.relocate(element_dict, selector_type=True).css('::text')
+>>> page.relocate(element_dict, selector_type=True).css('::text').getall()
 ['Tipping the Velvet']
 ```
 Hence, the `retrieve` and `relocate` methods are used.
