@@ -4,11 +4,11 @@ Here, we will discuss the `DynamicFetcher` class (formerly `PlayWrightFetcher`).
 
 As we will explain later, to automate the page, you need some knowledge of [Playwright's Page API](https://playwright.dev/python/docs/api/class-page).
 
-> 💡 **Prerequisites:**
-> 
-> 1. You’ve completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
-> 2. You’ve completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
-> 3. You’ve completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
+!!! success "Prerequisites"
+
+    1. You've completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
+    2. You've completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
+    3. You've completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
 
 ## Basic Usage
 You have one primary way to import this Fetcher, which is the same for all fetchers.
@@ -85,8 +85,12 @@ Scrapling provides many options with this fetcher and its session classes. To ma
 |     extra_flags     | A list of additional browser flags to pass to the browser on launch.                                                                                                                                                                |    ✔️    |
 |   additional_args   | Additional arguments to be passed to Playwright's context as additional settings, and they take higher priority than Scrapling's settings.                                                                                          |    ✔️    |
 |   selector_config   | A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.                                                                                                                            |    ✔️    |
+| blocked_domains     | A set of domain names to block requests to. Subdomains are also matched (e.g., `"example.com"` blocks `"sub.example.com"` too).                                                                                                     |    ✔️    |
+|  proxy_rotator      | A `ProxyRotator` instance for automatic proxy rotation. Cannot be combined with `proxy`.                                                                                                                                            |    ✔️    |
+|       retries       | Number of retry attempts for failed requests. Defaults to 3.                                                                                                                                                                        |    ✔️    |
+|    retry_delay      | Seconds to wait between retry attempts. Defaults to 1.                                                                                                                                                                              |    ✔️    |
 
-In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, and `selector_config`.
+In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `blocked_domains`, `proxy`, and `selector_config`.
 
 > 🔍 Notes:
 > 
@@ -106,6 +110,13 @@ It's easier to understand with examples, so let's take a look.
 page = DynamicFetcher.fetch('https://example.com', disable_resources=True)  # Blocks fonts, images, media, etc.
 ```
 
+### Domain Blocking
+
+```python
+# Block requests to specific domains (and their subdomains)
+page = DynamicFetcher.fetch('https://example.com', blocked_domains={"ads.example.com", "tracker.net"})
+```
+
 ### Network Control
 
 ```python
@@ -119,6 +130,27 @@ page = DynamicFetcher.fetch('https://example.com', timeout=30000)  # 30 seconds
 page = DynamicFetcher.fetch('https://example.com', proxy='http://username:password@host:port')
 ```
 
+### Proxy Rotation
+
+```python
+from scrapling.fetchers import ProxyRotator
+
+# Set up proxy rotation
+rotator = ProxyRotator([
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+])
+
+# Use with session - rotates proxy automatically with each request
+with DynamicSession(proxy_rotator=rotator, headless=True) as session:
+    page1 = session.fetch('https://example1.com')
+    page2 = session.fetch('https://example2.com')
+
+    # Override rotator for a specific request
+    page3 = session.fetch('https://example3.com', proxy='http://specific-proxy:8080')
+```
+
 ### Downloading Files
 
 ```python
@@ -128,7 +160,7 @@ with open(file='main_cover.png', mode='wb') as f:
     f.write(page.body)
 ```
 
-The `body` attribute of the `Response` object is a `bytes` object containing the response body in case of non-HTML responses.
+The `body` attribute of the `Response` object always returns `bytes`.
 
 ### Browser Automation
 This is where your knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) comes into play. The function you pass here takes the page object from Playwright's API, performs the desired action, and then the fetcher continues.
@@ -206,7 +238,7 @@ def scrape_dynamic_content():
     content = page.css('.content')
     
     return {
-        'title': content.css_first('h1::text'),
+        'title': content.css('h1::text').get(),
         'items': [
             item.text for item in content.css('.item')
         ]
