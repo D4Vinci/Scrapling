@@ -134,7 +134,7 @@ target_element.find_similar()
 ```
 Find the first element that matches a CSS selector
 ```python
-page.css_first('.product-list [data-id="1"]')
+page.css('.product-list [data-id="1"]')[0]
 # <data='<article class="product" data-id="1"><h3...' parent='<div class="product-list"> <article clas...'>
 ```
 Find all elements that match a CSS selector
@@ -144,7 +144,7 @@ page.css('.product-list article')
 ```
 Find the first element that matches an XPath selector
 ```python
-page.xpath_first("//*[@id='products']/div/article")
+page.xpath("//*[@id='products']/div/article")[0]
 # <data='<article class="product" data-id="1"><h3...' parent='<div class="product-list"> <article clas...'>
 ```
 Find all elements that match an XPath selector
@@ -220,14 +220,14 @@ Using the elements we found above
 [<data='<section id="reviews"><h2>Customer Revie...' parent='<main><section id="products" schema='{"j...'>]
 >>> section_element.next  # gets the next element, the same logic applies to `quote.previous`.
 <data='<section id="reviews"><h2>Customer Revie...' parent='<main><section id="products" schema='{"j...'>
->>> section_element.children.css('h2::text')
+>>> section_element.children.css('h2::text').getall()
 ['Products']
->>> page.css_first('[data-id="1"]').has_class('product')
+>>> page.css('[data-id="1"]')[0].has_class('product')
 True
 ```
 If your case needs more than the element's parent, you can iterate over the whole ancestors' tree of any element, like the one below
 ```python
-for ancestor in quote.iterancestors():
+for ancestor in section_element.iterancestors():
     # do something with it...
 ```
 You can search for a specific ancestor of an element that satisfies a function; all you need to do is pass a function that takes a `Selector` object as an argument and returns `True` if the condition is satisfied or `False` otherwise, like below:
@@ -279,11 +279,11 @@ The `DynamicFetcher` class (formerly `PlayWrightFetcher`) offers many options fo
 ```python
 >>> from scrapling.fetchers import DynamicFetcher
 >>> page = DynamicFetcher.fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)  # Vanilla Playwright option
->>> page.css_first("#search a::attr(href)")
+>>> page.css("#search a::attr(href)").get()
 'https://github.com/D4Vinci/Scrapling'
 >>> # The async version of fetch
 >>> page = await DynamicFetcher.async_fetch('https://www.google.com/search?q=%22Scrapling%22', disable_resources=True)
->>> page.css_first("#search a::attr(href)")
+>>> page.css("#search a::attr(href)").get()
 'https://github.com/D4Vinci/Scrapling'
 ```
 It's built on top of [Playwright](https://playwright.dev/python/), and it's currently providing two main run options that can be mixed as you want:
@@ -324,7 +324,7 @@ True
 True
 ```
 
-Again, this is just the tip of the iceberg with this fetcher. Check out the rest from [here](fetching/dynamic.md) for all details and the complete list of arguments.
+Again, this is just the tip of the iceberg with this fetcher. Check out the rest from [here](fetching/stealthy.md) for all details and the complete list of arguments.
 
 ---
 
