@@ -133,7 +133,7 @@ The shell provides a few functions to help you convert curl commands from the br
 
 First, you need to copy a request as a curl command like the following:
 
-<img src="../../assets/scrapling_shell_curl.png" title="Copying a request as a curl command from Chrome" alt="Copying a request as a curl command from Chrome" style="width: 70%;"/>
+<img src="../assets/scrapling_shell_curl.png" title="Copying a request as a curl command from Chrome" alt="Copying a request as a curl command from Chrome" style="width: 70%;"/>
 
 - **Convert Curl command to Request Object**
 
