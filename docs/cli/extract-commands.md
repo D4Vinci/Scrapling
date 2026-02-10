@@ -4,12 +4,12 @@
 
 The `scrapling extract` command lets you download and extract content from websites directly from your terminal without writing any code. Ideal for beginners, researchers, and anyone requiring rapid web data extraction.
 
-> 💡 **Prerequisites:**
-> 
-> 1. You’ve completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
-> 2. You’ve completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
-> 3. You’ve completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
-> 4. You’ve completed or read at least one page from the fetchers section to use here for requests: [HTTP requests](../fetching/static.md), [Dynamic websites](../fetching/dynamic.md), or [Dynamic websites with hard protections](../fetching/stealthy.md).
+!!! success "Prerequisites"
+
+    1. You've completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
+    2. You've completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
+    3. You've completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
+    4. You've completed or read at least one page from the fetchers section to use here for requests: [HTTP requests](../fetching/static.md), [Dynamic websites](../fetching/dynamic.md), or [Dynamic websites with hard protections](../fetching/stealthy.md).
 
 
 ## What is the Extract Command group?
@@ -320,7 +320,7 @@ We will go through each command in detail below.
       --solve-cloudflare / --no-solve-cloudflare  Solve Cloudflare challenges (default: False)
       --allow-webgl / --block-webgl               Allow WebGL (default: True)
       --network-idle / --no-network-idle          Wait for network idle (default: False)
-      ---real-chrome/--no-real-chrom              If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
+      ---real-chrome/--no-real-chrome             If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
       --hide-canvas/--show-canvas                 Add noise to canvas operations (default: False)
       --timeout INTEGER                           Timeout in milliseconds (default: 30000)
       --wait INTEGER                              Additional wait time in milliseconds after page load (default: 0)
