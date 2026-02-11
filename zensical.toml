@@ -30,6 +30,9 @@ nav = [
             {"Dynamic websites" = "fetching/dynamic.md"},
             {"Dynamic websites with hard protections" = "fetching/stealthy.md"}
         ]},
+        {Spiders = [
+            {"Architecture" = "spiders/architecture.md"},
+        ]},
         {"Command Line Interface" = [
             {Overview = "cli/overview.md"},
             {"Interactive shell" = "cli/interactive-shell.md"},
@@ -111,6 +114,9 @@ toggle.name = "Switch to light mode"
 #[project.markdown_extensions.mkautodoc]
 [project.markdown_extensions.pymdownx.details]
 [project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+    {name = "mermaid", class = "mermaid"}
+]
 [project.markdown_extensions.pymdownx.inlinehilite]
 [project.markdown_extensions.pymdownx.snippets]
 [project.markdown_extensions.tables]
