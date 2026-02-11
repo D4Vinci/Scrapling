@@ -276,7 +276,7 @@ If your case needs more than the element's parent, you can iterate over the whol
 for ancestor in article.iterancestors():
     # do something with it...
 ```
-You can search for a specific ancestor of an element that satisfies a search function; all you need to do is to pass a function that takes a [Selector](#selector) object as an argument and return `True` if the condition satisfies or `False` otherwise, like below:
+You can search for a specific ancestor of an element that satisfies a search function; all you need to do is pass a function that takes a [Selector](#selector) object as an argument and return `True` if the condition satisfies or `False` otherwise, like below:
 ```python
 >>> article.find_ancestor(lambda ancestor: ancestor.has_class('product-list'))
 <data='<div class="product-list"> <article clas...' parent='<body> <div class="product-list"> <artic...'>
@@ -289,7 +289,7 @@ The class `Selectors` is the "List" version of the [Selector](#selector) class. 
 
 In the [Selector](#selector) class, all methods/properties that should return a group of elements return them as a [Selectors](#selectors) class instance.
 
-Starting with v0.4, all selection methods consistently return [Selector](#selector)/[Selectors](#selectors) objects, even for text nodes and attribute values. Text nodes (selected via `::text`, `/text()`, `::attr()`, `/@attr`) are wrapped in [Selector](#selector) objects. These text node selectors have `tag` set to `"#text"`, and their `text` property returns the text value. You can still access the text value directly, and all other properties gracefully return empty/default values.
+Starting with v0.4, all selection methods consistently return [Selector](#selector)/[Selectors](#selectors) objects, even for text nodes and attribute values. Text nodes (selected via `::text`, `/text()`, `::attr()`, `/@attr`) are wrapped in [Selector](#selector) objects. These text node selectors have `tag` set to `"#text"`, and their `text` property returns the text value. You can still access the text value directly, and all other properties return empty/default values gracefully.
 
 ```python
 >>> page.css('a::text')              # -> Selectors (of text node Selectors)
@@ -531,7 +531,7 @@ First, we start with the `re` and `re_first` methods. These are the same methods
   {'some_key': 'some_value'}
   ```
   You might wonder how this happened, given that the `html` tag doesn't contain direct text.<br/>
-  Well, for cases like JSON responses, I made the [Selector](#selector) class keep a raw copy of the content it receives. This way, when you use the `.json()` method, it checks for that raw copy and then converts it to JSON. If the raw copy is not available like the case with the elements, it checks for the current element text content, or otherwise it uses the `get_all_text` method directly.<br/>
+  Well, for cases like JSON responses, I made the [Selector](#selector) class keep a raw copy of the content it receives. This way, when you use the `.json()` method, it checks for that raw copy and then converts it to JSON. If the raw copy is unavailable, as with the elements, it checks the current element's text content; otherwise, it uses the `get_all_text` method directly.<br/>
 
 - Another handy method is `.clean()`, which will remove all white spaces and consecutive spaces for you and return a new `TextHandler` instance
 ```python
@@ -559,7 +559,7 @@ You probably guessed it: This class is similar to [Selectors](#selectors) and [S
 The only difference is that the `re_first` method logic here runs `re` on each [TextHandler](#texthandler) and returns the first result, or `None`. Nothing new needs to be explained here, but new methods will be added over time.
 
 ## AttributesHandler
-This is a read-only version of Python's standard dictionary, or `dict`, used solely to store the attributes of each element or [Selector](#selector) instance.
+This is a read-only version of Python's standard dictionary, or `dict`, used solely to store the attributes of each element/[Selector](#selector) instance.
 ```python
 >>> print(page.find('script').attrib)
 {'id': 'page-data', 'type': 'application/json'}

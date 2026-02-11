@@ -80,12 +80,12 @@ for link in links:
 
 As you can see, Scrapling simplifies the process by combining fetching and parsing into a single step, making your code cleaner and more efficient.
 
-**Additional Notes:**
+!!! abstract "**Additional Notes:**"
 
-- **Different parsers**: BeautifulSoup allows you to set the parser engine to use, and one of them is `lxml`. Scrapling doesn't do that and uses the `lxml` library by default for performance reasons.
-- **Element Types**: In BeautifulSoup, elements are `Tag` objects; in Scrapling, they are `Selector` objects. However, they provide similar methods and properties for navigation and data extraction.
-- **Error Handling**: Both libraries return `None` when an element is not found (e.g., `soup.find()` or `page.find()`). In Scrapling, `page.css()` returns an empty `Selectors` list when no elements match, and you can use `page.css('.foo').first` to safely get the first match or `None`. To avoid errors, check for `None` or empty results before accessing properties.
-- **Text Extraction**: Scrapling provides additional methods for handling text through `TextHandler`, such as `clean()`, which can help remove extra whitespace, consecutive spaces, or unwanted characters. Please check out the documentation for the complete list.
+    - **Different parsers**: BeautifulSoup allows you to set the parser engine to use, and one of them is `lxml`. Scrapling doesn't do that and uses the `lxml` library by default for performance reasons.
+    - **Element Types**: In BeautifulSoup, elements are `Tag` objects; in Scrapling, they are `Selector` objects. However, they provide similar methods and properties for navigation and data extraction.
+    - **Error Handling**: Both libraries return `None` when an element is not found (e.g., `soup.find()` or `page.find()`). In Scrapling, `page.css()` returns an empty `Selectors` list when no elements match, and you can use `page.css('.foo').first` to safely get the first match or `None`. To avoid errors, check for `None` or empty results before accessing properties.
+    - **Text Extraction**: Scrapling provides additional methods for handling text through `TextHandler`, such as `clean()`, which can help remove extra whitespace, consecutive spaces, or unwanted characters. Please check out the documentation for the complete list.
 
 The documentation provides more details on Scrapling's features and the complete list of arguments that can be passed to all methods.
 

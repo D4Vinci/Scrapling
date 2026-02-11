@@ -52,7 +52,9 @@ Then, continue your code as usual.
 
 The available configuration arguments are: `adaptive`, `huge_tree`, `keep_comments`, `keep_cdata`, `storage`, and `storage_args`, which are the same ones you give to the [Selector](../parsing/main_classes.md#selector) class. You can display the current configuration anytime by running `<fetcher_class>.display_config()`.
 
-> Note: The `adaptive` argument is disabled by default; you must enable it to use that feature.
+!!! info
+
+    The `adaptive` argument is disabled by default; you must enable it to use that feature.
 
 ### Set parser config per request
 As you probably understand, the logic above for setting the parser config will apply globally to all requests/fetches made through that class, and it's intended for simplicity.

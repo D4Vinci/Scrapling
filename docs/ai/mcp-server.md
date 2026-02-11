@@ -179,7 +179,7 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
     ```
     Use regular requests to scrape the main content from https://example.com and convert it to markdown format.
     ```
-    This tells Claude which tool to use here, so it doesn't have to guess. Sometimes it will start using normal requests on its own, and at other times, it will assume browsers are better suited for this website without any apparent reason. As a general rule of thumb, you should always tell Claude which tool to use if you want to save time and money and get consistent results.
+    This tells Claude which tool to use here, so it doesn't have to guess. Sometimes it will start using normal requests on its own, and at other times, it will assume browsers are better suited for this website without any apparent reason. As a rule of thumb, you should always tell Claude which tool to use to save time and money and get consistent results.
 
 2. **Targeted Data Extraction**
 

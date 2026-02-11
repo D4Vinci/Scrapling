@@ -27,7 +27,7 @@ Also, Scrapling implements some non-standard pseudo-elements like:
 
 In short, if you come from Scrapy/Parsel, you will find the same logic for selectors here to make it easier. No need to implement a stranger logic to the one that most of us are used to :)
 
-To select elements with CSS selectors, you have the `css` method which returns `Selectors`. Use `[0]` to get the first element, or `.get()` / `.getall()` to extract text values from text/attribute pseudo-selectors.
+To select elements with CSS selectors, use the `css` method, which returns `Selectors`. Use `[0]` to get the first element, or `.get()` / `.getall()` to extract text values from text/attribute pseudo-selectors.
 
 ### What are XPath selectors?
 [XPath](https://en.wikipedia.org/wiki/XPath) is a language for selecting nodes in XML documents, which can also be used with HTML. This [cheatsheet](https://devhints.io/xpath) is a good resource for learning about [XPath](https://en.wikipedia.org/wiki/XPath). Scrapling adds XPath selectors directly through [lxml](https://lxml.de/).
@@ -46,7 +46,9 @@ Select all elements with the class `product`.
 products = page.css('.product')
 products = page.xpath('//*[@class="product"]')
 ```
-Note: The XPath one won't be accurate if there's another class; **it's always better to rely on CSS for selecting by class**
+!!! info "Note:"
+
+    The XPath one won't be accurate if there's another class; **it's always better to rely on CSS for selecting by class**
 
 Select the first element with the class `product`.
 ```python
@@ -109,7 +111,9 @@ By default, Scrapling searches for the exact matching of the text/pattern you pa
 
 * **partial**: If enabled, `find_by_text` will return elements that contain the input text. So it's not an exact match anymore
 
-Note: The method `find_by_regex` can accept both regular strings and a compiled regex pattern as its first argument, as you will see in the upcoming examples.
+!!! abstract "Note:"
+
+    The method `find_by_regex` can accept both regular strings and a compiled regex pattern as its first argument, as you will see in the upcoming examples.
 
 ### Finding Similar Elements
 One of the most remarkable new features Scrapling puts on the table is the ability to tell Scrapling to find elements similar to the element at hand. This feature's inspiration came from the AutoScraper library, but in Scrapling, it can be used on elements found by any method. Most of its usage would likely occur after finding elements through text content, similar to how AutoScraper works, making it convenient to explain here.
@@ -349,10 +353,10 @@ It filters all elements in the current page/element in the following order:
 3. All elements that match all passed regex patterns are collected, or if previous filter(s) are used, then previously collected elements are filtered.
 4. All elements that fulfill all passed function(s) are collected; if a previous filter(s) is used, then previously collected elements are filtered.
 
-Notes:
+!!! note "Notes:"
 
-1. As you probably understood, the filtering process always starts from the first filter it finds in the filtering order above. So, if no tag name(s) are passed but attributes are passed, the process starts from that step (number 2), and so on.
-2. The order in which you pass the arguments doesn't matter. The only order considered is the one explained above.
+    1. As you probably understood, the filtering process always starts from the first filter it finds in the filtering order above. So, if no tag name(s) are passed but attributes are passed, the process starts from that step (number 2), and so on.
+    2. The order in which you pass the arguments doesn't matter. The only order considered is the one explained above.
 
 Check examples to clear any confusion :)
 
@@ -468,8 +472,9 @@ Generate a full XPath selector for the `url_element` element from the start of t
 >>> url_element.generate_full_xpath_selector
 '//body/div/div[2]/div/div/span[2]/a'
 ```
-> Note: <br>
-> When you tell Scrapling to create a short selector, it tries to find a unique element to use in generation as a stop point, like an element with an `id` attribute, but in our case, there wasn't any, so that's why the short and the full selector will be the same.
+!!! abstract "Note:"
+
+    When you tell Scrapling to create a short selector, it tries to find a unique element to use in generation as a stop point, like an element with an `id` attribute, but in our case, there wasn't any, so that's why the short and the full selector will be the same.
 
 ## Using selectors with regular expressions
 Similar to `parsel`/`scrapy`, `re` and `re_first` methods are available for extracting data using regular expressions. However, unlike the former libraries, these methods are in nearly all classes like `Selector`/`Selectors`/`TextHandler` and `TextHandlers`, which means you can use them directly on the element even if you didn't select a text node. 

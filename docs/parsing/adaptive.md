@@ -99,7 +99,9 @@ The code will be the same in a real-world scenario, except it will use the same 
 
 Hence, in the two examples above, I used both the `Selector` and `Fetcher` classes to show that the adaptive logic is the same.
 
-> Note: the main reason for creating the `adaptive_domain` argument was to handle if the website changed its URL while changing the design/structure. In that case, you can use it to continue using the previously stored adaptive data for the new URL. Otherwise, scrapling will consider it a new website and discard the old data.
+!!! info
+
+    The main reason for creating the `adaptive_domain` argument was to handle if the website changed its URL while changing the design/structure. In that case, you can use it to continue using the previously stored adaptive data for the new URL. Otherwise, scrapling will consider it a new website and discard the old data.
 
 ## How the adaptive scraping feature works
 Adaptive scraping works in two phases:

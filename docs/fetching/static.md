@@ -38,12 +38,13 @@ All methods for making requests here share some arguments, so let's discuss them
 - **cert**: Tuple of (cert, key) filenames for the client certificate.
 - **selector_config**: A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.
 
-> Note: <br/>
-> 1. The currently available browsers to impersonate are (`"edge"`, `"chrome"`, `"chrome_android"`, `"safari"`, `"safari_beta"`, `"safari_ios"`, `"safari_ios_beta"`, `"firefox"`, `"tor"`)<br/>
-> 2. The available browsers to impersonate, along with their corresponding versions, are automatically displayed in the argument autocompletion and updated with each `curl_cffi` update.<br/>
-> 3. If any of the arguments `impersonate` or `stealthy_headers` are enabled, the fetchers will automatically generate real browser headers that match the browser version used.
+!!! note "Notes:"
 
-Other than this, for further customization, you can pass any arguments that `curl_cffi` supports for any method if that method doesn't already support it.
+    1. The currently available browsers to impersonate are (`"edge"`, `"chrome"`, `"chrome_android"`, `"safari"`, `"safari_beta"`, `"safari_ios"`, `"safari_ios_beta"`, `"firefox"`, `"tor"`)<br/>
+    2. The available browsers to impersonate, along with their corresponding versions, are automatically displayed in the argument autocompletion and updated with each `curl_cffi` update.<br/>
+    3. If any of the arguments `impersonate` or `stealthy_headers` are enabled, the fetchers will automatically generate real browser headers that match the browser version used.
+
+Other than this, for further customization, you can pass any arguments that `curl_cffi` supports for any method if that method doesn't already support them.
 
 ### HTTP Methods
 There are additional arguments for each method, depending on the method, such as `params` for GET requests and `data`/`json` for POST/PUT/DELETE requests.
