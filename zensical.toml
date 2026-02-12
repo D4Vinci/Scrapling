@@ -32,6 +32,7 @@ nav = [
         ]},
         {Spiders = [
             {"Architecture" = "spiders/architecture.md"},
+            {"Getting started" = "spiders/getting-started.md"},
         ]},
         {"Command Line Interface" = [
             {Overview = "cli/overview.md"},
@@ -115,7 +116,7 @@ toggle.name = "Switch to light mode"
 [project.markdown_extensions.pymdownx.details]
 [project.markdown_extensions.pymdownx.superfences]
 custom_fences = [
-    {name = "mermaid", class = "mermaid"}
+    {name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format"}
 ]
 [project.markdown_extensions.pymdownx.inlinehilite]
 [project.markdown_extensions.pymdownx.snippets]
