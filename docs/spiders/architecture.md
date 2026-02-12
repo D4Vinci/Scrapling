@@ -13,39 +13,7 @@ If you're familiar with Scrapy, you'll feel right at home. If not, don't worry â
 
 The diagram below shows how data flows through the spider system when a crawl is running:
 
-```mermaid
-graph TB
-    Spider["Spider"]
-    Scheduler["Scheduler"]
-    Engine["Crawler Engine"]
-    SessionMgr["Session Manager"]
-    Output["Output"]
-    Checkpoint["Checkpoint"]
-
-    Spider -- "1. Initial Requests" --> Scheduler
-    Scheduler -- "2. Next Request" --> Engine
-    Engine -- "3. Fetch" --> SessionMgr
-    SessionMgr -- "4. Response" --> Engine
-    Engine -- "5. Response to callback" --> Spider
-    Spider -- "6. New Requests" --> Scheduler
-    Spider -- "7. Items" --> Output
-    Engine -. "Save" .-> Checkpoint
-    Checkpoint -. "Resume" .-> Scheduler
-
-    classDef spiderClass fill:#7c4dff,stroke:#333,color:#fff
-    classDef engineClass fill:#00897b,stroke:#333,color:#fff
-    classDef schedulerClass fill:#1565c0,stroke:#333,color:#fff
-    classDef sessionClass fill:#ef6c00,stroke:#333,color:#fff
-    classDef outputClass fill:#2e7d32,stroke:#333,color:#fff
-    classDef checkpointClass fill:#6d4c41,stroke:#333,color:#fff
-
-    class Spider spiderClass
-    class Engine engineClass
-    class Scheduler schedulerClass
-    class SessionMgr sessionClass
-    class Output outputClass
-    class Checkpoint checkpointClass
-```
+<img src="../assets/spider_architecture.png" title="Spider architecture diagram by @TrueSkills" alt="Spider architecture diagram by @TrueSkills" style="width: 70%;"/>
 
 Here's what happens step by step when you run a spider without many details:
 
