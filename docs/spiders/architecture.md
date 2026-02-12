@@ -15,57 +15,23 @@ The diagram below shows how data flows through the spider system when a crawl is
 
 ```mermaid
 graph TB
-    subgraph Spider["🕷️ Spider"]
-        direction TB
-        SR["start_requests()"]
-        Parse["parse() / callbacks"]
-        Hooks["Lifecycle hooks<br/><small>on_start · on_close · on_error<br/>is_blocked · on_scraped_item</small>"]
-    end
+    Spider["Spider"]
+    Scheduler["Scheduler"]
+    Engine["Crawler Engine"]
+    SessionMgr["Session Manager"]
+    Output["Output"]
+    Checkpoint["Checkpoint"]
 
-    subgraph Engine["⚙️ Crawler Engine"]
-        direction TB
-        Loop["Crawl loop"]
-        Conc["Concurrency control<br/><small>Global limiter · Per-domain limiter<br/>Download delay</small>"]
-        BlockDet["Blocked request<br/>detection & retry"]
-    end
-
-    subgraph Scheduler["📋 Scheduler"]
-        PQ["Priority queue"]
-        Dedup["Fingerprint<br/>deduplication"]
-    end
-
-    subgraph SessionMgr["🔌 Session Manager"]
-        direction TB
-        Router["Request router<br/><small>Routes by session ID</small>"]
-        subgraph Sessions["Sessions"]
-            direction LR
-            HTTP["FetcherSession<br/><small>HTTP requests</small>"]
-            Dynamic["AsyncDynamicSession<br/><small>Browser automation</small>"]
-            Stealth["AsyncStealthySession<br/><small>Anti-bot bypass</small>"]
-        end
-    end
-
-    subgraph Output["📦 Output"]
-        Items["ItemList<br/><small>to_json() · to_jsonl()</small>"]
-        Stream["Streaming<br/><small>async for item in spider.stream()</small>"]
-        Stats["CrawlStats"]
-    end
-
-    Checkpoint["💾 Checkpoint<br/><small>Pause/Resume</small>"]
-
-    %% Data flow
-    SR -- "1. Initial<br/>Requests" --> Scheduler
-    Scheduler -- "2. Next<br/>Request" --> Engine
+    Spider -- "1. Initial Requests" --> Scheduler
+    Scheduler -- "2. Next Request" --> Engine
     Engine -- "3. Fetch" --> SessionMgr
-    Router --> Sessions
     SessionMgr -- "4. Response" --> Engine
-    Engine -- "5. Response" --> Parse
-    Parse -- "6a. New Requests" --> Scheduler
-    Parse -- "6b. Items (dict)" --> Output
-    Engine -. "Periodic save" .-> Checkpoint
+    Engine -- "5. Response to callback" --> Spider
+    Spider -- "6. New Requests" --> Scheduler
+    Spider -- "7. Items" --> Output
+    Engine -. "Save" .-> Checkpoint
     Checkpoint -. "Resume" .-> Scheduler
 
-    %% Styling
     classDef spiderClass fill:#7c4dff,stroke:#333,color:#fff
     classDef engineClass fill:#00897b,stroke:#333,color:#fff
     classDef schedulerClass fill:#1565c0,stroke:#333,color:#fff
