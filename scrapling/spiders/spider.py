@@ -73,7 +73,7 @@ class Spider(ABC):
     allowed_domains: Set[str] = set()
 
     # Concurrency settings
-    concurrent_requests: int = 16
+    concurrent_requests: int = 4
     concurrent_requests_per_domain: int = 0
     download_delay: float = 0.0
     max_blocked_retries: int = 3
