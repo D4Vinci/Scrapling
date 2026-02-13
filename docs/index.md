@@ -23,7 +23,7 @@ Its parser learns from website changes and automatically relocates your elements
 Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+from scrapling.fetchers import Fetcher, StealthyFetcher, DynamicFetcher
 StealthyFetcher.adaptive = True
 page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Fetch website under the radar!
 products = page.css('.product', auto_save=True)                                        # Scrape data that survives website design changes!
