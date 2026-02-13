@@ -23,6 +23,7 @@ from scrapling.core._types import (
     List,
     Tuple,
     Union,
+    TypeVar,
     Pattern,
     Callable,
     Literal,
@@ -51,6 +52,7 @@ _whitelisted = {
     "class_": "class",
     "for_": "for",
 }
+_T = TypeVar("_T")
 # Pre-compiled selectors for efficiency
 _find_all_elements = XPath(".//*")
 _find_all_elements_with_spaces = XPath(
@@ -1337,7 +1339,13 @@ class Selectors(List[Selector]):
         """
         return self.__class__([element for element in self if func(element)])
 
-    def get(self, default: Optional[TextHandler] = None) -> Union[TextHandler, None]:
+    @overload
+    def get(self) -> Optional[TextHandler]: ...
+
+    @overload
+    def get(self, default: _T) -> Union[TextHandler, _T]: ...
+
+    def get(self, default=None):
         """Returns the serialized string of the first element, or ``default`` if empty.
         :param default: the default value to return if the current list is empty
         """
