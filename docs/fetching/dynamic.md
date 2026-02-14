@@ -155,7 +155,7 @@ with DynamicSession(proxy_rotator=rotator, headless=True) as session:
 
 !!! warning
 
-    Remember that by default, all browser-based fetchers and sessions use a persistent browser context with a pool of tabs. However, since browsers can't set a proxy per tab, when you use a ProxyRotator, the fetcher will automatically open a separate context for each proxy, with one tab per context. Once the tab's job is done, both the tab and its context are closed.
+    Remember that by default, all browser-based fetchers and sessions use a persistent browser context with a pool of tabs. However, since browsers can't set a proxy per tab, when you use a `ProxyRotator`, the fetcher will automatically open a separate context for each proxy, with one tab per context. Once the tab's job is done, both the tab and its context are closed.
 
 ### Downloading Files
 
