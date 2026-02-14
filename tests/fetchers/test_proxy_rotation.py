@@ -3,34 +3,34 @@ import random
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 
-from scrapling.engines.toolbelt import ProxyRotator, is_proxy_error, round_robin
+from scrapling.engines.toolbelt import ProxyRotator, is_proxy_error, cyclic_rotation
 
 
-class TestRoundRobinStrategy:
-    """Test the default round_robin strategy function"""
+class TestCyclicRotationStrategy:
+    """Test the default cyclic_rotation strategy function"""
 
-    def test_round_robin_cycles_through_proxies(self):
-        """Test that round_robin returns proxies in order"""
+    def test_cyclic_rotation_cycles_through_proxies(self):
+        """Test that cyclic_rotation returns proxies in order"""
         proxies = ["http://p1:8080", "http://p2:8080", "http://p3:8080"]
 
-        proxy, next_idx = round_robin(proxies, 0)
+        proxy, next_idx = cyclic_rotation(proxies, 0)
         assert proxy == "http://p1:8080"
         assert next_idx == 1
 
-        proxy, next_idx = round_robin(proxies, 1)
+        proxy, next_idx = cyclic_rotation(proxies, 1)
         assert proxy == "http://p2:8080"
         assert next_idx == 2
 
-        proxy, next_idx = round_robin(proxies, 2)
+        proxy, next_idx = cyclic_rotation(proxies, 2)
         assert proxy == "http://p3:8080"
         assert next_idx == 0  # Wraps around
 
-    def test_round_robin_wraps_index(self):
-        """Test that round_robin handles index overflow"""
+    def test_cyclic_rotation_wraps_index(self):
+        """Test that cyclic_rotation handles index overflow"""
         proxies = ["http://p1:8080", "http://p2:8080"]
 
         # Index larger than list length should wrap
-        proxy, next_idx = round_robin(proxies, 5)
+        proxy, next_idx = cyclic_rotation(proxies, 5)
         assert proxy == "http://p2:8080"  # 5 % 2 = 1
         assert next_idx == 0
 
@@ -88,7 +88,7 @@ class TestProxyRotatorCreation:
     def test_non_callable_strategy_raises_error(self):
         """Test that non-callable strategy raises TypeError"""
         with pytest.raises(TypeError, match="strategy must be callable"):
-            ProxyRotator(["http://p1:8080"], strategy="round_robin")
+            ProxyRotator(["http://p1:8080"], strategy="cyclic_rotation")
 
         with pytest.raises(TypeError, match="strategy must be callable"):
             ProxyRotator(["http://p1:8080"], strategy=123)
@@ -97,7 +97,7 @@ class TestProxyRotatorCreation:
 class TestProxyRotatorRotation:
     """Test ProxyRotator rotation behavior"""
 
-    def test_get_proxy_round_robin(self):
+    def test_get_proxy_cyclic_rotation(self):
         """Test that get_proxy cycles through proxies in order"""
         proxies = ["http://p1:8080", "http://p2:8080", "http://p3:8080"]
         rotator = ProxyRotator(proxies)
