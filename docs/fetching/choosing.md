@@ -78,3 +78,7 @@ The `Response` object is the same as the [Selector](../parsing/main_classes.md#s
 >>> page.meta            # Response metadata dictionary (e.g., proxy used). Mainly helpful with the spiders system.
 ```
 All fetchers return the `Response` object.
+
+!!! note
+
+    Unlike the [Selector](../parsing/main_classes.md#selector) class, the `Response` class's body is always bytes since v0.4.
