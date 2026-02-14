@@ -54,7 +54,10 @@ nav = [
             {Selector = "api-reference/selector.md"},
             {Fetchers = "api-reference/fetchers.md"},
             {"MCP Server" = "api-reference/mcp-server.md"},
-            {"Custom Types" = "api-reference/custom-types.md"}
+            {"Custom Types" = "api-reference/custom-types.md"},
+            {Response = "api-reference/response.md"},
+            {Spiders = "api-reference/spiders.md"},
+            {"Proxy Rotation" = "api-reference/proxy-rotation.md"}
         ]},
         {"Writing your retrieval system" = "development/adaptive_storage_system.md"},
         {"Using Scrapling's custom types" = "development/scrapling_custom_types.md"}
