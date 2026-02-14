@@ -212,8 +212,8 @@ name = "This page could be improved"
 data = 0
 note = """
 Thanks for your feedback! Help us improve this page by
-using our <a href="..." target="_blank" rel="noopener">feedback form</a>.
-"""  # TODO: add a new issue template for the docs
+<a href="https://github.com/D4Vinci/Scrapling/issues/new?template=04-docs_issue.yml" target="_blank" rel="noopener">opening a documentation issue</a>.
+"""
 
 [project.extra.consent]
 title = "Cookie consent"
