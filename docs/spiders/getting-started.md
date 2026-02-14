@@ -153,5 +153,5 @@ Now that you have the basics, you can explore:
 
 - [Requests & Responses](requests-responses.md) — learn about request priority, deduplication, metadata, and more.
 - [Sessions](sessions.md) — use multiple fetcher types (HTTP, browser, stealth) in a single spider.
-- [Proxy management](proxy-management.md) — rotate proxies across requests.
+- [Proxy management & blocking](proxy-blocking.md) — rotate proxies across requests and how to handle blocking in the spider.
 - [Advanced features](advanced.md) — concurrency control, pause/resume, streaming, lifecycle hooks, and logging.
