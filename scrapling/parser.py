@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 from difflib import SequenceMatcher
 from re import Pattern as re_Pattern
 
-from lxml.html import HtmlElement, HtmlMixin, HTMLParser
+from lxml.html import HtmlElement, HTMLParser
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
 from lxml.etree import (
     XPath,
@@ -76,9 +76,6 @@ class Selector(SelectorsGeneration):
         "_raw_body",
     )
 
-    if TYPE_CHECKING:
-        _storage: StorageSystemMixin
-
     def __init__(
         self,
         content: Optional[str | bytes] = None,
@@ -120,9 +117,17 @@ class Selector(SelectorsGeneration):
         if root is None and content is None:
             raise ValueError("Selector class needs HTML content, or root arguments to work")
 
+        self.url = url
+        self._raw_body: str | bytes = ""
+        self.encoding = encoding
+        self.__keep_cdata = keep_cdata
+        self.__huge_tree_enabled = huge_tree
+        self.__keep_comments = keep_comments
+        # For selector stuff
         self.__text: Optional[TextHandler] = None
-        self.__tag: Optional[str] = None
         self.__attributes: Optional[AttributesHandler] = None
+        self.__tag: Optional[str] = None
+        self._storage: Optional[StorageSystemMixin] = None
         if root is None:
             body: str | bytes
             if isinstance(content, str):
@@ -148,27 +153,11 @@ class Selector(SelectorsGeneration):
             self._raw_body = content
 
         else:
-            if self._is_text_node(root):
-                # Text node (from ::text, /text(), ::attr(), /@attr, etc.)
-                self._root = root
-                self._raw_body = ""
-                self.__adaptive_enabled = False
-                self.__keep_comments = keep_comments
-                self.__keep_cdata = keep_cdata
-                self.__huge_tree_enabled = huge_tree
-                self.encoding = encoding
-                self.url = url
-                self.__attributes = None
-                self.__tag = None
-                return
-            # All HTML types inherit from HtmlMixin so this to check for all at once
-            elif not issubclass(type(root), HtmlMixin):
-                raise TypeError(
-                    f"Root have to be a valid element of `html` module types to work, not of type {type(root)}"
-                )
-
             self._root = cast(HtmlElement, root)
-            self._raw_body = ""
+
+            if self._is_text_node(root):
+                self.__adaptive_enabled = False
+                return
 
         self.__adaptive_enabled = bool(adaptive)
 
@@ -189,36 +178,6 @@ class Selector(SelectorsGeneration):
                     raise ValueError("Storage system must be inherited from class `StorageSystemMixin`")
 
                 self._storage = storage(**storage_args)
-
-        self.__keep_comments = keep_comments
-        self.__keep_cdata = keep_cdata
-        self.__huge_tree_enabled = huge_tree
-        self.encoding = encoding
-        self.url = url
-        # For selector stuff
-        self.__attributes = None
-        self.__tag = None
-
-    @property
-    def __response_data(self):
-        # No need to check if all response attributes exist or not because if `status` exist, then the rest exist (Save some CPU cycles for speed)
-        if not hasattr(self, "_cached_response_data"):
-            self._cached_response_data = (
-                {
-                    key: getattr(self, key)
-                    for key in (
-                        "status",
-                        "reason",
-                        "cookies",
-                        "history",
-                        "headers",
-                        "request_headers",
-                    )
-                }
-                if hasattr(self, "status")
-                else {}
-            )
-        return self._cached_response_data
 
     def __getitem__(self, key: str) -> TextHandler:
         if self._is_text_node(self._root):
@@ -245,21 +204,40 @@ class Selector(SelectorsGeneration):
 
     def __element_convertor(self, element: HtmlElement | _ElementUnicodeResult) -> "Selector":
         """Used internally to convert a single HtmlElement or text node to Selector directly without checks"""
-        db_instance = self._storage if (hasattr(self, "_storage") and self._storage) else None
         return Selector(
             root=element,
             url=self.url,
             encoding=self.encoding,
             adaptive=self.__adaptive_enabled,
-            _storage=db_instance,  # Reuse existing storage if it exists otherwise it won't be checked if `adaptive` is turned off
+            _storage=self._storage,
             keep_comments=self.__keep_comments,
             keep_cdata=self.__keep_cdata,
             huge_tree=self.__huge_tree_enabled,
-            **self.__response_data,
         )
 
     def __elements_convertor(self, elements: List[HtmlElement | _ElementUnicodeResult]) -> "Selectors":
-        return Selectors(map(self.__element_convertor, elements))
+        # Store them for non-repeated call-ups
+        url = self.url
+        encoding = self.encoding
+        adaptive = self.__adaptive_enabled
+        storage = self._storage
+        comments = self.__keep_comments
+        cdata = self.__keep_cdata
+        huge_tree = self.__huge_tree_enabled
+
+        return Selectors(
+            Selector(
+                root=el,
+                url=url,
+                encoding=encoding,
+                adaptive=adaptive,
+                _storage=storage,
+                keep_comments=comments,
+                keep_cdata=cdata,
+                huge_tree=huge_tree,
+            )
+            for el in elements
+        )
 
     def __handle_elements(self, result: List[HtmlElement | _ElementUnicodeResult]) -> "Selectors":
         """Used internally in all functions to convert results to Selectors in bulk"""
@@ -889,7 +867,7 @@ class Selector(SelectorsGeneration):
         :param identifier: This is the identifier that will be used to retrieve the element later from the storage. See
             the docs for more info.
         """
-        if self.__adaptive_enabled:
+        if self.__adaptive_enabled and self._storage:
             target_element: Any = element
             if isinstance(target_element, self.__class__):
                 target_element = target_element._root
@@ -910,7 +888,7 @@ class Selector(SelectorsGeneration):
             the docs for more info.
         :return: A dictionary of the unique properties
         """
-        if self.__adaptive_enabled:
+        if self.__adaptive_enabled and self._storage:
             return self._storage.retrieve(identifier)
 
         raise RuntimeError(
