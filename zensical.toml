@@ -34,6 +34,7 @@ nav = [
             {"Architecture" = "spiders/architecture.md"},
             {"Getting started" = "spiders/getting-started.md"},
             {"Requests & Responses" = "spiders/requests-responses.md"},
+            {"Sessions" = "spiders/sessions.md"},
         ]},
         {"Command Line Interface" = [
             {Overview = "cli/overview.md"},
