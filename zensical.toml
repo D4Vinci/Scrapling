@@ -17,6 +17,7 @@ nav = [
     {Introduction = "index.md"},
     {Overview = "overview.md"},
     {"What's New in v0.3" = "https://github.com/D4Vinci/Scrapling/releases/tag/v0.3"},
+    {"What's New in v0.4" = "https://github.com/D4Vinci/Scrapling/releases/tag/v0.4"},
     {"Performance Benchmarks" = "benchmarks.md"},
     {"User Guide" = [
         {Parsing = [
