@@ -1,3 +1,5 @@
+# Getting started
+
 ## Introduction
 
 !!! success "Prerequisites"

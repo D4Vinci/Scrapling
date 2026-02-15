@@ -203,7 +203,7 @@ class MySpider(Spider):
         yield {"title": response.css("title::text").get("")}
 ```
 
-What happened above is that I left the blocking detection logic unchanged and made the spider mainly use requests until it gets blocked, then it switches to the stealthy browser.
+What happened above is that I left the blocking detection logic unchanged and had the spider mainly use requests until it got blocked, then switch to the stealthy browser.
 
 
 Putting it all together:

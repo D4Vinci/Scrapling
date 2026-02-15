@@ -1,4 +1,4 @@
-## Introduction
+# Querying elements
 Scrapling currently supports parsing HTML pages exclusively, so it doesn't support XML feeds. This decision was made because the adaptive feature won't work with XML, but that might change soon, so stay tuned :)
 
 In Scrapling, there are five main ways to find elements:

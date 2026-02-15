@@ -1,4 +1,4 @@
-## Introduction
+# Spiders architecture
 
 !!! success "Prerequisites"
 

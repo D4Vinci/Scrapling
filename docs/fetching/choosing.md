@@ -1,3 +1,5 @@
+# Fetchers basics
+
 ## Introduction
 Fetchers are classes that can do requests or fetch pages for you easily in a single-line fashion with many features and then return a [Response](#response-object) object. Starting with v0.3, all fetchers have separate classes to keep the session running, so for example, a fetcher that uses a browser will keep the browser open till you finish all your requests through it instead of opening multiple browsers. So it depends on your use case.
 

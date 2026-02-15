@@ -1,3 +1,5 @@
+# Writing your retrieval system
+
 Scrapling uses SQLite by default, but this tutorial shows how to write your own storage system to store element properties for the `adaptive` feature.
 
 You might want to use Firebase, for example, and share the database between multiple spiders on different machines. It's a great idea to use an online database like that because spiders can share adaptive data with each other.

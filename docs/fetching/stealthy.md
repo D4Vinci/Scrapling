@@ -1,4 +1,4 @@
-# Introduction
+# Fetching dynamic websites with hard protections
 
 Here, we will discuss the `StealthyFetcher` class. This class is very similar to the [DynamicFetcher](dynamic.md#introduction) class, including the browsers, the automation, and the use of [Playwright's API](https://playwright.dev/python/docs/intro). The main difference is that this class provides advanced anti-bot protection bypass capabilities; most of them are handled automatically under the hood, and the rest is up to you to enable.
 

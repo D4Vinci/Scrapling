@@ -1,4 +1,4 @@
-# Introduction
+# Fetching dynamic websites
 
 Here, we will discuss the `DynamicFetcher` class (formerly `PlayWrightFetcher`). This class provides flexible browser automation with multiple configuration options and little under-the-hood stealth improvements.
 

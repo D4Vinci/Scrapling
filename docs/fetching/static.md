@@ -1,4 +1,4 @@
-# Introduction
+# HTTP requests
 
 The `Fetcher` class provides rapid and lightweight HTTP requests using the high-performance `curl_cffi` library with a lot of stealth capabilities.
 

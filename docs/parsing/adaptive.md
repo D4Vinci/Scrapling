@@ -1,4 +1,4 @@
-## Introduction
+# Adaptive scraping
 
 !!! success "Prerequisites"
 
