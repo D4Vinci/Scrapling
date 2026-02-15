@@ -56,7 +56,7 @@ class RedisStorage(StorageSystemMixin):
             orjson.dumps(element_dict)
         )
         
-    def retrieve(self, identifier: str) -> dict:
+    def retrieve(self, identifier: str) -> dict | None:
         # Get data
         key = f"scrapling:{self._get_base_url()}:{identifier}"
         data = self.redis.get(key)

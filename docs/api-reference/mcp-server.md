@@ -19,7 +19,7 @@ Or import the server class directly:
 from scrapling.core.ai import ScraplingMCPServer
 
 server = ScraplingMCPServer()
-server.serve()
+server.serve(http=False, host="0.0.0.0", port=8000)
 ```
 
 ## Response Model

@@ -181,7 +181,7 @@ def scrape_amazon_product(url):
         'rating': page.css('[data-feature-name="averageCustomerReviews"] .a-popover-trigger .a-color-base::text').get(),
         'reviews_count': page.css('#acrCustomerReviewText::text').re_first(r'[\d,]+'),
         'features': [
-            li.clean() for li in page.css('#feature-bullets li span::text')
+            li.get().clean() for li in page.css('#feature-bullets li span::text')
         ],
         'availability': page.css('#availability')[0].get_all_text(strip=True),
         'images': [

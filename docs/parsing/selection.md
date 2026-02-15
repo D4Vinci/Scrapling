@@ -398,7 +398,7 @@ Find all div elements with a class that equals `quote` and contains the element 
 >>> page.find_all('div', {'class': 'quote'}, lambda e: "world" in e.css('.text::text').get())
 [<data='<div class="quote" itemscope itemtype="h...' parent='<div class="col-md-8"> <div class="quote...'>]
 ```
-Find all elements that don't have children.
+Find all elements that have children.
 ```python
 >>> page.find_all(lambda element: len(element.children) > 0)
 [<data='<html lang="en"><head><meta charset="UTF...'>,

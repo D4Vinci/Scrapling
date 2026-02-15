@@ -343,7 +343,7 @@ Apart from the standard operations on Python lists, such as iteration and slicin
 
 You can do the following:
 
-Execute CSS and XPath selectors directly on the [Selector](#selector) instances it has, while the arguments and the return types are the same as [Selector](#selector)'s `css` and `xpath` methods. This, of course, makes chaining methods very straightforward.
+Execute CSS and XPath selectors directly on the [Selector](#selector) instances it has, while the return types are the same as [Selector](#selector)'s `css` and `xpath` methods. The arguments are similar, except the `adaptive` argument is not available here. This, of course, makes chaining methods very straightforward.
 ```python
 >>> page.css('.product_pod a')
 [<data='<a href="catalogue/a-light-in-the-attic_...' parent='<div class="image_container"> <a href="c...'>,

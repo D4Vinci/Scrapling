@@ -145,7 +145,7 @@ Examples:
 >>> page = Selector(html_doc, adaptive=True)
 # OR
 >>> Fetcher.adaptive = True
->>> page = Fetcher.fetch('https://example.com')
+>>> page = Fetcher.get('https://example.com')
 ```
 If you are using the [Selector](main_classes.md#selector) class, you need to pass the url of the website you are using with the argument `url` so Scrapling can separate the properties saved for each element by domain.
 

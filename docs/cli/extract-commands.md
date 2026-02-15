@@ -280,7 +280,7 @@ We will go through each command in detail below.
       -s, --css-selector TEXT                     CSS selector to extract specific content from the page. It returns all matches.
       --wait-selector TEXT                        CSS selector to wait for before proceeding
       --locale TEXT                               Specify user locale. Defaults to the system default locale.
-      ---real-chrome/--no-real-chrome             If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
+      --real-chrome/--no-real-chrome              If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
       --proxy TEXT                                Proxy URL in format "http://username:password@host:port"
       -H, --extra-headers TEXT                    Extra headers in format "Key: Value" (can be used multiple times)
       --help                                      Show this message and exit.
@@ -320,8 +320,7 @@ We will go through each command in detail below.
       --solve-cloudflare / --no-solve-cloudflare  Solve Cloudflare challenges (default: False)
       --allow-webgl / --block-webgl               Allow WebGL (default: True)
       --network-idle / --no-network-idle          Wait for network idle (default: False)
-      ---real-chrome/--no-real-chrome             If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
-      --hide-canvas/--show-canvas                 Add noise to canvas operations (default: False)
+      --real-chrome/--no-real-chrome              If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
       --timeout INTEGER                           Timeout in milliseconds (default: 30000)
       --wait INTEGER                              Additional wait time in milliseconds after page load (default: 0)
       -s, --css-selector TEXT                     CSS selector to extract specific content from the page. It returns all matches.
