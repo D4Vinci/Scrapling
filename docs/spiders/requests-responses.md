@@ -157,11 +157,11 @@ yield response.follow("/dashboard", dont_filter=True, callback=self.parse_dashbo
 
 You can fine-tune what goes into the fingerprint using class attributes on your spider:
 
-| Attribute            | Default | Effect                                                                                                         |
-|----------------------|---------|----------------------------------------------------------------------------------------------------------------|
+| Attribute            | Default | Effect                                                                                                          |
+|----------------------|---------|-----------------------------------------------------------------------------------------------------------------|
 | `fp_include_kwargs`  | `False` | Include extra request kwargs (arguments you passed to the session fetch, like headers, etc.) in the fingerprint |
-| `fp_keep_fragments`  | `False` | Keep URL fragments (`#section`) when computing fingerprints                                                    |
-| `fp_include_headers` | `False` | Include request headers in the fingerprint                                                                     |
+| `fp_keep_fragments`  | `False` | Keep URL fragments (`#section`) when computing fingerprints                                                     |
+| `fp_include_headers` | `False` | Include request headers in the fingerprint                                                                      |
 
 For example, if you need to treat `https://example.com/page#section1` and `https://example.com/page#section2` as different URLs:
 

@@ -36,6 +36,7 @@ nav = [
             {"Requests & Responses" = "spiders/requests-responses.md"},
             {"Sessions" = "spiders/sessions.md"},
             {"Proxy management & Blocking" = "spiders/proxy-blocking.md"},
+            {"Advanced features" = "spiders/advanced.md"}
         ]},
         {"Command Line Interface" = [
             {Overview = "cli/overview.md"},
