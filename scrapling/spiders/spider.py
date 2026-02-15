@@ -79,9 +79,9 @@ class Spider(ABC):
     max_blocked_retries: int = 3
 
     # Fingerprint adjustments
-    fp_include_kwargs = False
-    fp_keep_fragments = False
-    fp_include_headers = False
+    fp_include_kwargs: bool = False
+    fp_keep_fragments: bool = False
+    fp_include_headers: bool = False
 
     # Logging settings
     logging_level: int = logging.DEBUG

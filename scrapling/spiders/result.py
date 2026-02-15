@@ -15,7 +15,6 @@ class ItemList(list):
 
         :param path: Path to the output file
         :param indent: Pretty-print with 2-space indentation (slightly slower)
-        :return: Number of items written
         """
         options = orjson.OPT_SERIALIZE_NUMPY
         if indent:
