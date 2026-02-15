@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 from difflib import SequenceMatcher
 from re import Pattern as re_Pattern
 
-from lxml.html import HtmlElement, HtmlMixin, HTMLParser
+from lxml.html import HtmlElement, HTMLParser
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
 from lxml.etree import (
     XPath,
@@ -23,6 +23,7 @@ from scrapling.core._types import (
     List,
     Tuple,
     Union,
+    TypeVar,
     Pattern,
     Callable,
     Literal,
@@ -51,6 +52,7 @@ _whitelisted = {
     "class_": "class",
     "for_": "for",
 }
+_T = TypeVar("_T")
 # Pre-compiled selectors for efficiency
 _find_all_elements = XPath(".//*")
 _find_all_elements_with_spaces = XPath(
@@ -73,9 +75,6 @@ class Selector(SelectorsGeneration):
         "__keep_cdata",
         "_raw_body",
     )
-
-    if TYPE_CHECKING:
-        _storage: StorageSystemMixin
 
     def __init__(
         self,
@@ -118,8 +117,19 @@ class Selector(SelectorsGeneration):
         if root is None and content is None:
             raise ValueError("Selector class needs HTML content, or root arguments to work")
 
-        self.__text = None
+        self.url = url
+        self._raw_body: str | bytes = ""
+        self.encoding = encoding
+        self.__keep_cdata = keep_cdata
+        self.__huge_tree_enabled = huge_tree
+        self.__keep_comments = keep_comments
+        # For selector stuff
+        self.__text: Optional[TextHandler] = None
+        self.__attributes: Optional[AttributesHandler] = None
+        self.__tag: Optional[str] = None
+        self._storage: Optional[StorageSystemMixin] = None
         if root is None:
+            body: str | bytes
             if isinstance(content, str):
                 body = content.strip().replace("\x00", "") or "<html/>"
             elif isinstance(content, bytes):
@@ -128,30 +138,28 @@ class Selector(SelectorsGeneration):
                 raise TypeError(f"content argument must be str or bytes, got {type(content)}")
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
-            parser = HTMLParser(
+            _parser_kwargs: Dict[str, Any] = dict(
                 recover=True,
                 remove_blank_text=True,
                 remove_comments=(not keep_comments),
                 encoding=encoding,
                 compact=True,
                 huge_tree=huge_tree,
-                default_doctype=True,
+                default_doctype=True,  # Supported by lxml but missing from stubs
                 strip_cdata=(not keep_cdata),
             )
-            self._root = cast(HtmlElement, fromstring(body, parser=parser, base_url=url or None))
+            parser = HTMLParser(**_parser_kwargs)
+            self._root = cast(HtmlElement, fromstring(body or "<html/>", parser=parser, base_url=url or ""))
             self._raw_body = content
 
         else:
-            # All HTML types inherit from HtmlMixin so this to check for all at once
-            if not issubclass(type(root), HtmlMixin):
-                raise TypeError(
-                    f"Root have to be a valid element of `html` module types to work, not of type {type(root)}"
-                )
-
             self._root = cast(HtmlElement, root)
-            self._raw_body = ""
 
-        self.__adaptive_enabled = adaptive
+            if self._is_text_node(root):
+                self.__adaptive_enabled = False
+                return
+
+        self.__adaptive_enabled = bool(adaptive)
 
         if self.__adaptive_enabled:
             if _storage is not None:
@@ -171,40 +179,14 @@ class Selector(SelectorsGeneration):
 
                 self._storage = storage(**storage_args)
 
-        self.__keep_comments = keep_comments
-        self.__keep_cdata = keep_cdata
-        self.__huge_tree_enabled = huge_tree
-        self.encoding = encoding
-        self.url = url
-        # For selector stuff
-        self.__attributes = None
-        self.__tag = None
-
-    @property
-    def __response_data(self):
-        # No need to check if all response attributes exist or not because if `status` exist, then the rest exist (Save some CPU cycles for speed)
-        if not hasattr(self, "_cached_response_data"):
-            self._cached_response_data = (
-                {
-                    key: getattr(self, key)
-                    for key in (
-                        "status",
-                        "reason",
-                        "cookies",
-                        "history",
-                        "headers",
-                        "request_headers",
-                    )
-                }
-                if hasattr(self, "status")
-                else {}
-            )
-        return self._cached_response_data
-
     def __getitem__(self, key: str) -> TextHandler:
+        if self._is_text_node(self._root):
+            raise TypeError("Text nodes do not have attributes")
         return self.attrib[key]
 
     def __contains__(self, key: str) -> bool:
+        if self._is_text_node(self._root):
+            return False
         return key in self.attrib
 
     # Node functionalities, I wanted to move to a separate Mixin class, but it had a slight impact on performance
@@ -220,35 +202,47 @@ class Selector(SelectorsGeneration):
         # Faster than checking `element.is_attribute or element.is_text or element.is_tail`
         return issubclass(type(element), _ElementUnicodeResult)
 
-    def __element_convertor(self, element: HtmlElement) -> "Selector":
-        """Used internally to convert a single HtmlElement to Selector directly without checks"""
-        db_instance = self._storage if (hasattr(self, "_storage") and self._storage) else None
+    def __element_convertor(self, element: HtmlElement | _ElementUnicodeResult) -> "Selector":
+        """Used internally to convert a single HtmlElement or text node to Selector directly without checks"""
         return Selector(
             root=element,
             url=self.url,
             encoding=self.encoding,
             adaptive=self.__adaptive_enabled,
-            _storage=db_instance,  # Reuse existing storage if it exists otherwise it won't be checked if `adaptive` is turned off
+            _storage=self._storage,
             keep_comments=self.__keep_comments,
             keep_cdata=self.__keep_cdata,
             huge_tree=self.__huge_tree_enabled,
-            **self.__response_data,
         )
 
-    def __elements_convertor(self, elements: List[HtmlElement]) -> "Selectors":
-        return Selectors(map(self.__element_convertor, elements))
+    def __elements_convertor(self, elements: List[HtmlElement | _ElementUnicodeResult]) -> "Selectors":
+        # Store them for non-repeated call-ups
+        url = self.url
+        encoding = self.encoding
+        adaptive = self.__adaptive_enabled
+        storage = self._storage
+        comments = self.__keep_comments
+        cdata = self.__keep_cdata
+        huge_tree = self.__huge_tree_enabled
 
-    def __handle_elements(
-        self, result: List[HtmlElement | _ElementUnicodeResult]
-    ) -> Union["Selectors", "TextHandlers"]:
-        """Used internally in all functions to convert results to type (Selectors|TextHandlers) in bulk when possible"""
+        return Selectors(
+            Selector(
+                root=el,
+                url=url,
+                encoding=encoding,
+                adaptive=adaptive,
+                _storage=storage,
+                keep_comments=comments,
+                keep_cdata=cdata,
+                huge_tree=huge_tree,
+            )
+            for el in elements
+        )
+
+    def __handle_elements(self, result: List[HtmlElement | _ElementUnicodeResult]) -> "Selectors":
+        """Used internally in all functions to convert results to Selectors in bulk"""
         if not result:
             return Selectors()
-
-        # From within the code, this method will always get a list of the same type,
-        # so we will continue without checks for a slight performance boost
-        if self._is_text_node(result[0]):
-            return TextHandlers(map(TextHandler, result))
 
         return self.__elements_convertor(result)
 
@@ -264,13 +258,17 @@ class Selector(SelectorsGeneration):
     @property
     def tag(self) -> str:
         """Get the tag name of the element"""
+        if self._is_text_node(self._root):
+            return "#text"
         if not self.__tag:
-            self.__tag = self._root.tag
-        return self.__tag
+            self.__tag = str(self._root.tag)
+        return self.__tag or ""
 
     @property
     def text(self) -> TextHandler:
         """Get text content of the element"""
+        if self._is_text_node(self._root):
+            return TextHandler(str(self._root))
         if self.__text is None:
             # If you want to escape lxml default behavior and remove comments like this `<span>CONDITION: <!-- -->Excellent</span>`
             # before extracting text, then keep `keep_comments` set to False while initializing the first class
@@ -296,11 +294,14 @@ class Selector(SelectorsGeneration):
 
         :return: A TextHandler
         """
-        ignored_elements = set()
+        if self._is_text_node(self._root):
+            return TextHandler(str(self._root))
+
+        ignored_elements: set[Any] = set()
         if ignore_tags:
             for element in self._root.iter(*ignore_tags):
                 ignored_elements.add(element)
-                ignored_elements.update(set(_find_all_elements(element)))
+                ignored_elements.update(cast(list, _find_all_elements(element)))
 
         _all_strings = []
         for node in self._root.iter():
@@ -320,6 +321,8 @@ class Selector(SelectorsGeneration):
     @property
     def attrib(self) -> AttributesHandler:
         """Get attributes of the element"""
+        if self._is_text_node(self._root):
+            return AttributesHandler({})
         if not self.__attributes:
             self.__attributes = AttributesHandler(self._root.attrib)
         return self.__attributes
@@ -327,6 +330,8 @@ class Selector(SelectorsGeneration):
     @property
     def html_content(self) -> TextHandler:
         """Return the inner HTML code of the element"""
+        if self._is_text_node(self._root):
+            return TextHandler(str(self._root))
         content = tostring(self._root, encoding=self.encoding, method="html", with_tail=False)
         if isinstance(content, bytes):
             content = content.strip().decode(self.encoding)
@@ -335,10 +340,14 @@ class Selector(SelectorsGeneration):
     @property
     def body(self) -> str | bytes:
         """Return the raw body of the current `Selector` without any processing. Useful for binary and non-HTML requests."""
+        if self._is_text_node(self._root):
+            return ""
         return self._raw_body
 
     def prettify(self) -> TextHandler:
         """Return a prettified version of the element's inner html-code"""
+        if self._is_text_node(self._root):
+            return TextHandler(str(self._root))
         content = tostring(
             self._root,
             encoding=self.encoding,
@@ -355,6 +364,8 @@ class Selector(SelectorsGeneration):
         :param class_name: The class name to check for
         :return: True if element has class with that name otherwise False
         """
+        if self._is_text_node(self._root):
+            return False
         return class_name in self._root.classes
 
     @property
@@ -366,12 +377,16 @@ class Selector(SelectorsGeneration):
     @property
     def below_elements(self) -> "Selectors":
         """Return all elements under the current element in the DOM tree"""
-        below = _find_all_elements(self._root)
+        if self._is_text_node(self._root):
+            return Selectors()
+        below = cast(List, _find_all_elements(self._root))
         return self.__elements_convertor(below) if below is not None else Selectors()
 
     @property
     def children(self) -> "Selectors":
         """Return the children elements of the current element or empty list otherwise"""
+        if self._is_text_node(self._root):
+            return Selectors()
         return Selectors(
             self.__element_convertor(child)
             for child in self._root.iterchildren()
@@ -387,6 +402,8 @@ class Selector(SelectorsGeneration):
 
     def iterancestors(self) -> Generator["Selector", None, None]:
         """Return a generator that loops over all ancestors of the element, starting with the element's parent."""
+        if self._is_text_node(self._root):
+            return
         for ancestor in self._root.iterancestors():
             yield self.__element_convertor(ancestor)
 
@@ -409,6 +426,8 @@ class Selector(SelectorsGeneration):
     @property
     def next(self) -> Optional["Selector"]:
         """Returns the next element of the current element in the children of the parent or ``None`` otherwise."""
+        if self._is_text_node(self._root):
+            return None
         next_element = self._root.getnext()
         while next_element is not None and isinstance(next_element, html_forbidden):
             # Ignore HTML comments and unwanted types
@@ -419,6 +438,8 @@ class Selector(SelectorsGeneration):
     @property
     def previous(self) -> Optional["Selector"]:
         """Returns the previous element of the current element in the children of the parent or ``None`` otherwise."""
+        if self._is_text_node(self._root):
+            return None
         prev_element = self._root.getprevious()
         while prev_element is not None and isinstance(prev_element, html_forbidden):
             # Ignore HTML comments and unwanted types
@@ -426,26 +447,40 @@ class Selector(SelectorsGeneration):
 
         return self.__element_convertor(prev_element) if prev_element is not None else None
 
-    # For easy copy-paste from Scrapy/parsel code when needed :)
-    def get(self, default=None):  # pyright: ignore
-        return self
+    def get(self) -> TextHandler:
+        """
+        Serialize this element to a string.
+        For text nodes, returns the text value. For HTML elements, returns the outer HTML.
+        """
+        if self._is_text_node(self._root):
+            return TextHandler(str(self._root))
+        return self.html_content
 
-    def get_all(self):
-        return self
+    def getall(self) -> TextHandlers:
+        """Return a single-element list containing this element's serialized string."""
+        return TextHandlers([self.get()])
 
-    extract = get_all
+    extract = getall
     extract_first = get
 
     def __str__(self) -> str:
+        if self._is_text_node(self._root):
+            return str(self._root)
         return self.html_content
 
     def __repr__(self) -> str:
         length_limit = 40
-        data = "<"
+
+        if self._is_text_node(self._root):
+            text = str(self._root)
+            if len(text) > length_limit:
+                text = text[:length_limit].strip() + "..."
+            return f"<text='{text}'>"
+
         content = clean_spaces(self.html_content)
         if len(content) > length_limit:
             content = content[:length_limit].strip() + "..."
-        data += f"data='{content}'"
+        data = f"<data='{content}'"
 
         if self.parent:
             parent_content = clean_spaces(self.parent.html_content)
@@ -482,7 +517,7 @@ class Selector(SelectorsGeneration):
         :param selector_type: If True, the return result will be converted to `Selectors` object
         :return: List of pure HTML elements that got the highest matching score or 'Selectors' object
         """
-        score_table = {}
+        score_table: Dict[float, List[Any]] = {}
         # Note: `element` will most likely always be a dictionary at this point.
         if isinstance(element, self.__class__):
             element = element._root
@@ -490,11 +525,11 @@ class Selector(SelectorsGeneration):
         if issubclass(type(element), HtmlElement):
             element = _StorageTools.element_to_dict(element)
 
-        for node in _find_all_elements(self._root):
+        for node in cast(List, _find_all_elements(self._root)):
             # Collect all elements in the page, then for each element get the matching score of it against the node.
             # Hence: the code doesn't stop even if the score was 100%
             # because there might be another element(s) left in page with the same score
-            score = self.__calculate_similarity_score(element, node)
+            score = self.__calculate_similarity_score(cast(Dict, element), node)
             score_table.setdefault(score, []).append(node)
 
         if score_table:
@@ -512,78 +547,6 @@ class Selector(SelectorsGeneration):
                 return self.__elements_convertor(score_table[highest_probability])
         return []
 
-    def css_first(
-        self,
-        selector: str,
-        identifier: str = "",
-        adaptive: bool = False,
-        auto_save: bool = False,
-        percentage: int = 0,
-    ) -> Union["Selector", "TextHandler", None]:
-        """Search the current tree with CSS3 selectors and return the first result if possible, otherwise return `None`
-
-        **Important:
-        It's recommended to use the identifier argument if you plan to use a different selector later
-        and want to relocate the same element(s)**
-
-        :param selector: The CSS3 selector to be used.
-        :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
-        :param identifier: A string that will be used to save/retrieve element's data in adaptive,
-         otherwise the selector will be used.
-        :param auto_save: Automatically save new elements for `adaptive` later
-        :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
-         Be aware that the percentage calculation depends solely on the page structure, so don't play with this
-         number unless you must know what you are doing!
-        """
-        for element in self.css(
-            selector,
-            identifier,
-            adaptive,
-            auto_save,
-            percentage,
-            _scrapling_first_match=True,
-        ):
-            return element
-        return None
-
-    def xpath_first(
-        self,
-        selector: str,
-        identifier: str = "",
-        adaptive: bool = False,
-        auto_save: bool = False,
-        percentage: int = 0,
-        **kwargs: Any,
-    ) -> Union["Selector", "TextHandler", None]:
-        """Search the current tree with XPath selectors and return the first result if possible, otherwise return `None`
-
-        **Important:
-        It's recommended to use the identifier argument if you plan to use a different selector later
-        and want to relocate the same element(s)**
-
-         Note: **Additional keyword arguments will be passed as XPath variables in the XPath expression!**
-
-        :param selector: The XPath selector to be used.
-        :param adaptive: Enabled will make the function try to relocate the element if it was 'saved' before
-        :param identifier: A string that will be used to save/retrieve element's data in adaptive,
-         otherwise the selector will be used.
-        :param auto_save: Automatically save new elements for `adaptive` later
-        :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
-         Be aware that the percentage calculation depends solely on the page structure, so don't play with this
-         number unless you must know what you are doing!
-        """
-        for element in self.xpath(
-            selector,
-            identifier,
-            adaptive,
-            auto_save,
-            percentage,
-            _scrapling_first_match=True,
-            **kwargs,
-        ):
-            return element
-        return None
-
     def css(
         self,
         selector: str,
@@ -591,8 +554,7 @@ class Selector(SelectorsGeneration):
         adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 0,
-        **kwargs: Any,
-    ) -> Union["Selectors", List[Any], "TextHandlers"]:
+    ) -> "Selectors":
         """Search the current tree with CSS3 selectors
 
         **Important:
@@ -610,6 +572,9 @@ class Selector(SelectorsGeneration):
 
         :return: `Selectors` class.
         """
+        if self._is_text_node(self._root):
+            return Selectors()
+
         try:
             if not self.__adaptive_enabled or "," not in selector:
                 # No need to split selectors in this case, let's save some CPU cycles :)
@@ -620,10 +585,9 @@ class Selector(SelectorsGeneration):
                     adaptive,
                     auto_save,
                     percentage,
-                    _scrapling_first_match=kwargs.pop("_scrapling_first_match", False),
                 )
 
-            results = []
+            results = Selectors()
             for single_selector in split_selectors(selector):
                 # I'm doing this only so the `save` function saves data correctly for combined selectors
                 # Like using the ',' to combine two different selectors that point to different elements.
@@ -634,10 +598,9 @@ class Selector(SelectorsGeneration):
                     adaptive,
                     auto_save,
                     percentage,
-                    _scrapling_first_match=kwargs.pop("_scrapling_first_match", False),
                 )
 
-            return results
+            return Selectors(results)
         except (
             SelectorError,
             SelectorSyntaxError,
@@ -652,7 +615,7 @@ class Selector(SelectorsGeneration):
         auto_save: bool = False,
         percentage: int = 0,
         **kwargs: Any,
-    ) -> Union["Selectors", "TextHandlers"]:
+    ) -> "Selectors":
         """Search the current tree with XPath selectors
 
         **Important:
@@ -672,9 +635,9 @@ class Selector(SelectorsGeneration):
 
         :return: `Selectors` class.
         """
-        _first_match = kwargs.pop(
-            "_scrapling_first_match", False
-        )  # Used internally only to speed up `css_first` and `xpath_first`
+        if self._is_text_node(self._root):
+            return Selectors()
+
         try:
             if elements := self._root.xpath(selector, **kwargs):
                 if not self.__adaptive_enabled and auto_save:
@@ -684,7 +647,7 @@ class Selector(SelectorsGeneration):
                 elif self.__adaptive_enabled and auto_save:
                     self.save(elements[0], identifier or selector)
 
-                return self.__handle_elements(elements[0:1] if (_first_match and elements) else elements)
+                return self.__handle_elements(elements)
             elif self.__adaptive_enabled:
                 if adaptive:
                     element_data = self.retrieve(identifier or selector)
@@ -693,7 +656,7 @@ class Selector(SelectorsGeneration):
                         if elements is not None and auto_save:
                             self.save(elements[0], identifier or selector)
 
-                return self.__handle_elements(elements[0:1] if (_first_match and elements) else elements)
+                return self.__handle_elements(elements)
             else:
                 if adaptive:
                     log.warning(
@@ -704,7 +667,7 @@ class Selector(SelectorsGeneration):
                         "Argument `auto_save` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
                     )
 
-                return self.__handle_elements(elements[0:1] if (_first_match and elements) else elements)
+                return self.__handle_elements(elements)
 
         except (
             SelectorError,
@@ -725,11 +688,13 @@ class Selector(SelectorsGeneration):
         :param kwargs: The attributes you want to filter elements based on it.
         :return: The `Selectors` object of the elements or empty list
         """
+        if self._is_text_node(self._root):
+            return Selectors()
 
         if not args and not kwargs:
             raise TypeError("You have to pass something to search with, like tag name(s), tag attributes, or both.")
 
-        attributes = dict()
+        attributes: Dict[str, Any] = dict()
         tags: Set[str] = set()
         patterns: Set[Pattern] = set()
         results, functions, selectors = Selectors(), [], []
@@ -828,21 +793,19 @@ class Selector(SelectorsGeneration):
         :param candidate: The element to compare with the original element.
         :return: A percentage score of how similar is the candidate to the original element
         """
-        score, checks = 0, 0
+        score: float = 0
+        checks: int = 0
         data = _StorageTools.element_to_dict(candidate)
 
-        # Possible TODO:
-        # Study the idea of giving weight to each test below so some are more important than others
-        # Current results: With weights some websites had better score while it was worse for others
-        score += 1 if original["tag"] == data["tag"] else 0  # * 0.3  # 30%
+        score += 1 if original["tag"] == data["tag"] else 0
         checks += 1
 
         if original["text"]:
-            score += SequenceMatcher(None, original["text"], data.get("text") or "").ratio()  # * 0.3  # 30%
+            score += SequenceMatcher(None, original["text"], data.get("text") or "").ratio()
             checks += 1
 
         # if both don't have attributes, it still counts for something!
-        score += self.__calculate_dict_diff(original["attributes"], data["attributes"])  # * 0.3  # 30%
+        score += self.__calculate_dict_diff(original["attributes"], data["attributes"])
         checks += 1
 
         # Separate similarity test for class, id, href,... this will help in full structural changes
@@ -857,23 +820,19 @@ class Selector(SelectorsGeneration):
                     None,
                     original["attributes"][attrib],
                     data["attributes"].get(attrib) or "",
-                ).ratio()  # * 0.3  # 30%
+                ).ratio()
                 checks += 1
 
-        score += SequenceMatcher(None, original["path"], data["path"]).ratio()  # * 0.1  # 10%
+        score += SequenceMatcher(None, original["path"], data["path"]).ratio()
         checks += 1
 
         if original.get("parent_name"):
             # Then we start comparing parents' data
             if data.get("parent_name"):
-                score += SequenceMatcher(
-                    None, original["parent_name"], data.get("parent_name") or ""
-                ).ratio()  # * 0.2  # 20%
+                score += SequenceMatcher(None, original["parent_name"], data.get("parent_name") or "").ratio()
                 checks += 1
 
-                score += self.__calculate_dict_diff(
-                    original["parent_attribs"], data.get("parent_attribs") or {}
-                )  # * 0.2  # 20%
+                score += self.__calculate_dict_diff(original["parent_attribs"], data.get("parent_attribs") or {})
                 checks += 1
 
                 if original["parent_text"]:
@@ -881,14 +840,14 @@ class Selector(SelectorsGeneration):
                         None,
                         original["parent_text"],
                         data.get("parent_text") or "",
-                    ).ratio()  # * 0.1  # 10%
+                    ).ratio()
                     checks += 1
             # else:
             #     # The original element has a parent and this one not, this is not a good sign
             #     score -= 0.1
 
         if original.get("siblings"):
-            score += SequenceMatcher(None, original["siblings"], data.get("siblings") or []).ratio()  # * 0.1  # 10%
+            score += SequenceMatcher(None, original["siblings"], data.get("siblings") or []).ratio()
             checks += 1
 
         # How % sure? let's see
@@ -908,15 +867,15 @@ class Selector(SelectorsGeneration):
         :param identifier: This is the identifier that will be used to retrieve the element later from the storage. See
             the docs for more info.
         """
-        if self.__adaptive_enabled:
-            target = element
-            if isinstance(target, self.__class__):
-                target: HtmlElement = target._root
+        if self.__adaptive_enabled and self._storage:
+            target_element: Any = element
+            if isinstance(target_element, self.__class__):
+                target_element = target_element._root
 
-            if self._is_text_node(target):
-                target: HtmlElement = target.getparent()
+            if self._is_text_node(target_element):
+                target_element = target_element.getparent()
 
-            self._storage.save(target, identifier)
+            self._storage.save(target_element, identifier)
         else:
             raise RuntimeError(
                 "Can't use `adaptive` features while it's disabled globally, you have to start a new class instance."
@@ -929,7 +888,7 @@ class Selector(SelectorsGeneration):
             the docs for more info.
         :return: A dictionary of the unique properties
         """
-        if self.__adaptive_enabled:
+        if self.__adaptive_enabled and self._storage:
             return self._storage.retrieve(identifier)
 
         raise RuntimeError(
@@ -939,6 +898,8 @@ class Selector(SelectorsGeneration):
     # Operations on text functions
     def json(self) -> Dict:
         """Return JSON response if the response is jsonable otherwise throws error"""
+        if self._is_text_node(self._root):
+            return TextHandler(str(self._root)).json()
         if self._raw_body and isinstance(self._raw_body, (str, bytes)):
             if isinstance(self._raw_body, str):
                 return TextHandler(self._raw_body).json()
@@ -1004,7 +965,8 @@ class Selector(SelectorsGeneration):
         candidate_attributes = (
             self.__get_attributes(candidate, ignore_attributes) if ignore_attributes else candidate.attrib
         )
-        score, checks = 0, 0
+        score: float = 0
+        checks: int = 0
 
         if original_attributes:
             score += sum(
@@ -1059,6 +1021,9 @@ class Selector(SelectorsGeneration):
 
         :return: A ``Selectors`` container of ``Selector`` objects or empty list
         """
+        if self._is_text_node(self._root):
+            return Selectors()
+
         # We will use the elements' root from now on to get the speed boost of using Lxml directly
         root = self._root
         similar_elements = list()
@@ -1088,6 +1053,26 @@ class Selector(SelectorsGeneration):
 
         return Selectors(map(self.__element_convertor, similar_elements))
 
+    @overload
+    def find_by_text(
+        self,
+        text: str,
+        first_match: Literal[True] = ...,
+        partial: bool = ...,
+        case_sensitive: bool = ...,
+        clean_match: bool = ...,
+    ) -> "Selector": ...
+
+    @overload
+    def find_by_text(
+        self,
+        text: str,
+        first_match: Literal[False],
+        partial: bool = ...,
+        case_sensitive: bool = ...,
+        clean_match: bool = ...,
+    ) -> "Selectors": ...
+
     def find_by_text(
         self,
         text: str,
@@ -1103,21 +1088,23 @@ class Selector(SelectorsGeneration):
         :param case_sensitive: if enabled, the letters case will be taken into consideration
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         """
+        if self._is_text_node(self._root):
+            return Selectors()
 
         results = Selectors()
         if not case_sensitive:
             text = text.lower()
 
-        possible_targets = _find_all_elements_with_spaces(self._root)
+        possible_targets = cast(List, _find_all_elements_with_spaces(self._root))
         if possible_targets:
             for node in self.__elements_convertor(possible_targets):
                 """Check if element matches given text otherwise, traverse the children tree and iterate"""
-                node_text = node.text
+                node_text: TextHandler = node.text
                 if clean_match:
-                    node_text = node_text.clean()
+                    node_text = TextHandler(node_text.clean())
 
                 if not case_sensitive:
-                    node_text = node_text.lower()
+                    node_text = TextHandler(node_text.lower())
 
                 if partial:
                     if text in node_text:
@@ -1134,6 +1121,24 @@ class Selector(SelectorsGeneration):
                     return results[0]
         return results
 
+    @overload
+    def find_by_regex(
+        self,
+        query: str | Pattern[str],
+        first_match: Literal[True] = ...,
+        case_sensitive: bool = ...,
+        clean_match: bool = ...,
+    ) -> "Selector": ...
+
+    @overload
+    def find_by_regex(
+        self,
+        query: str | Pattern[str],
+        first_match: Literal[False],
+        case_sensitive: bool = ...,
+        clean_match: bool = ...,
+    ) -> "Selectors": ...
+
     def find_by_regex(
         self,
         query: str | Pattern[str],
@@ -1147,9 +1152,12 @@ class Selector(SelectorsGeneration):
         :param case_sensitive: If enabled, the letters case will be taken into consideration in the regex.
         :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching.
         """
+        if self._is_text_node(self._root):
+            return Selectors()
+
         results = Selectors()
 
-        possible_targets = _find_all_elements_with_spaces(self._root)
+        possible_targets = cast(List, _find_all_elements_with_spaces(self._root))
         if possible_targets:
             for node in self.__elements_convertor(possible_targets):
                 """Check if element matches given regex otherwise, traverse the children tree and iterate"""
@@ -1309,31 +1317,39 @@ class Selectors(List[Selector]):
         """
         return self.__class__([element for element in self if func(element)])
 
-    # For easy copy-paste from Scrapy/parsel code when needed :)
+    @overload
+    def get(self) -> Optional[TextHandler]: ...
+
+    @overload
+    def get(self, default: _T) -> Union[TextHandler, _T]: ...
+
     def get(self, default=None):
-        """Returns the first item of the current list
+        """Returns the serialized string of the first element, or ``default`` if empty.
         :param default: the default value to return if the current list is empty
         """
-        return self[0] if len(self) > 0 else default
+        for x in self:
+            return x.get()
+        return default
 
-    def extract(self):
-        return self
+    def getall(self) -> TextHandlers:
+        """Serialize all elements and return as a TextHandlers list."""
+        return TextHandlers([x.get() for x in self])
 
+    extract = getall
     extract_first = get
-    get_all = extract
 
     @property
-    def first(self):
-        """Returns the first item of the current list or `None` if the list is empty"""
-        return self.get()
+    def first(self) -> Optional[Selector]:
+        """Returns the first Selector item of the current list or `None` if the list is empty"""
+        return self[0] if len(self) > 0 else None
 
     @property
-    def last(self):
-        """Returns the last item of the current list or `None` if the list is empty"""
+    def last(self) -> Optional[Selector]:
+        """Returns the last Selector item of the current list or `None` if the list is empty"""
         return self[-1] if len(self) > 0 else None
 
     @property
-    def length(self):
+    def length(self) -> int:
         """Returns the length of the current list"""
         return len(self)
 

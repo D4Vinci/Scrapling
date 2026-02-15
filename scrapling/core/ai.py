@@ -213,7 +213,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        headless: bool = False,
+        headless: bool = True,  # noqa: F821
         google_search: bool = True,
         real_chrome: bool = False,
         wait: int | float = 0,
@@ -295,7 +295,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        headless: bool = False,
+        headless: bool = True,  # noqa: F821
         google_search: bool = True,
         real_chrome: bool = False,
         wait: int | float = 0,

@@ -10,11 +10,19 @@ from scrapling.core._types import (
     Dict,
     cast,
     List,
-    Optional,
     Tuple,
+    Union,
+    Optional,
+    Callable,
+    Sequence,
+    TYPE_CHECKING,
+    AsyncGenerator,
 )
 from scrapling.core.custom_types import MappingProxyType
 from scrapling.parser import Selector, SQLiteStorageSystem
+
+if TYPE_CHECKING:
+    from scrapling.spiders import Request
 
 
 class Response(Selector):
@@ -32,8 +40,12 @@ class Response(Selector):
         encoding: str = "utf-8",
         method: str = "GET",
         history: List | None = None,
+        meta: Dict[str, Any] | None = None,
         **selector_config: Any,
     ):
+        if isinstance(content, str):
+            content = content.encode("utf-8")
+
         adaptive_domain: str = cast(str, selector_config.pop("adaptive_domain", ""))
         self.status = status
         self.reason = reason
@@ -49,6 +61,78 @@ class Response(Selector):
         )
         # For easier debugging while working from a Python shell
         log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
+
+        if meta and not isinstance(meta, dict):
+            raise TypeError(f"Response meta should be dictionary but got {type(meta).__name__} instead!")
+
+        self.meta: Dict[str, Any] = meta or {}
+        self.request: Optional["Request"] = None  # Will be set by crawler
+
+    @property
+    def body(self) -> bytes:
+        """Return the raw body of the response as bytes."""
+        return cast(bytes, cast(Sequence, self._raw_body))
+
+    def follow(
+        self,
+        url: str,
+        sid: str = "",
+        callback: Callable[["Response"], AsyncGenerator[Union[Dict[str, Any], "Request", None], None]] | None = None,
+        priority: int | None = None,
+        dont_filter: bool = False,
+        meta: dict[str, Any] | None = None,
+        referer_flow: bool = True,
+        **kwargs: Any,
+    ) -> Any:
+        """Create a Request to follow a URL.
+
+        This is a helper method for spiders to easily follow links found in pages.
+
+        **IMPORTANT**: The below arguments if left empty, the corresponding value from the previous request will be used. The only exception is `dont_filter`.
+
+        :param url: The URL to follow (can be relative, will be joined with current URL)
+        :param sid: The session id to use
+        :param callback: Spider callback method to use
+        :param priority: The priority number to use, the higher the number, the higher priority to be processed first.
+        :param dont_filter: If this request has been done before, disable the filter to allow it again.
+        :param meta: Additional meta data to included in the request
+        :param referer_flow: Enabled by default, set the current response url as referer for the new request url.
+        :param kwargs: Additional Request arguments
+        :return: Request object ready to be yielded
+        """
+        from scrapling.spiders import Request
+
+        if not self.request or not isinstance(self.request, Request):
+            raise TypeError("This response has no request set yet.")
+
+        # Merge original session kwargs with new kwargs (new takes precedence)
+        session_kwargs = {**self.request._session_kwargs, **kwargs}
+
+        if referer_flow:
+            # For requests
+            headers = session_kwargs.get("headers", {})
+            headers["referer"] = self.url
+            session_kwargs["headers"] = headers
+
+            # For browsers
+            extra_headers = session_kwargs.get("extra_headers", {})
+            extra_headers["referer"] = self.url
+            session_kwargs["extra_headers"] = extra_headers
+
+            session_kwargs["google_search"] = False
+
+        return Request(
+            url=self.urljoin(url),
+            sid=sid or self.request.sid,
+            callback=callback or self.request.callback,
+            priority=priority if priority is not None else self.request.priority,
+            dont_filter=dont_filter,
+            meta={**(self.meta or {}), **(meta or {})},
+            **session_kwargs,
+        )
+
+    def __str__(self) -> str:
+        return f"<{self.status} {self.url}>"
 
 
 class BaseFetcher:

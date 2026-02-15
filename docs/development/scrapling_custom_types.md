@@ -1,3 +1,5 @@
+# Using Scrapling's custom types
+
 > You can take advantage of the custom-made types for Scrapling and use them outside the library if you want. It's better than copying their code, after all :)
 
 ### All current types can be imported alone, like below

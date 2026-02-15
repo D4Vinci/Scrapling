@@ -77,3 +77,25 @@ class TestValidators:
         config = validate(params, StealthConfig)
 
         assert config.timeout == 60000  # Should be increased
+
+    def test_playwright_config_blocked_domains(self):
+        """Test PlaywrightConfig with blocked_domains"""
+        params = {"blocked_domains": {"ads.example.com", "tracker.io"}}
+
+        config = validate(params, PlaywrightConfig)
+
+        assert config.blocked_domains == {"ads.example.com", "tracker.io"}
+
+    def test_playwright_config_blocked_domains_default_none(self):
+        """Test PlaywrightConfig blocked_domains defaults to None"""
+        config = validate({}, PlaywrightConfig)
+
+        assert config.blocked_domains is None
+
+    def test_stealth_config_blocked_domains(self):
+        """Test StealthConfig inherits blocked_domains"""
+        params = {"blocked_domains": {"ads.example.com"}}
+
+        config = validate(params, StealthConfig)
+
+        assert config.blocked_domains == {"ads.example.com"}

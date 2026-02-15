@@ -1,25 +1,21 @@
-# Read the Docs configuration file
-# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# See https://docs.readthedocs.com/platform/stable/intro/zensical.html for details
+# Example: https://github.com/readthedocs/test-builds/tree/zensical
 
-# Required
 version: 2
 
-# Set the OS, Python version, and other tools you might need
 build:
   os: ubuntu-24.04
   apt_packages:
     - pngquant
   tools:
     python: "3.13"
-
-# Build documentation with Mkdocs
-mkdocs:
-   configuration: mkdocs.yml
-
-# Optionally, but recommended,
-# declare the Python requirements required to build your documentation
-# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
-python:
+  jobs:
     install:
-    - requirements: docs/requirements.txt
-
+      - pip install -r docs/requirements.txt
+      - pip install ".[all]"
+    build:
+      html:
+        - zensical build
+    post_build:
+      - mkdir -p $READTHEDOCS_OUTPUT/html/
+      - cp --recursive site/* $READTHEDOCS_OUTPUT/html/

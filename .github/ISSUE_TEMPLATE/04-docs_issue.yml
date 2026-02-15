@@ -1,0 +1,40 @@
+name: Documentation issue
+description: Report incorrect, unclear, or missing documentation.
+labels: [documentation]
+body:
+  - type: checkboxes
+    attributes:
+      label: Have you searched if there an existing issue for this?
+      description: Please search [existing issues](https://github.com/D4Vinci/Scrapling/labels/documentation).
+      options:
+        - label: I have searched the existing issues
+          required: true
+
+  - type: input
+    attributes:
+      label: "Page URL"
+      description: "Link to the documentation page with the issue."
+      placeholder: "https://scrapling.readthedocs.io/en/latest/..."
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: "Type of issue"
+      options:
+        - Incorrect information
+        - Unclear or confusing
+        - Missing information
+        - Typo or formatting
+        - Broken link
+        - Other
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: "Description"
+      description: "Describe what's wrong and what you expected to find."
+    validations:
+      required: true

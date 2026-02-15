@@ -3,6 +3,7 @@ from types import MappingProxyType
 from re import compile as re_compile, UNICODE, IGNORECASE
 
 from orjson import dumps, loads
+from w3lib.html import replace_entities as _replace_entities
 
 from scrapling.core._types import (
     Any,
@@ -19,7 +20,6 @@ from scrapling.core._types import (
     SupportsIndex,
 )
 from scrapling.core.utils import _is_iterable, flatten, __CONSECUTIVE_SPACES_REGEX__
-from scrapling.core._html_utils import _replace_entities
 
 # Define type variable for AttributeHandler value type
 _TextHandlerType = TypeVar("_TextHandlerType", bound="TextHandler")
@@ -35,9 +35,7 @@ class TextHandler(str):
         lst = super().__getitem__(key)
         return TextHandler(lst)
 
-    def split(
-        self, sep: str | None = None, maxsplit: SupportsIndex = -1
-    ) -> Union[List, "TextHandlers"]:  # pragma: no cover
+    def split(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> list[Any]:  # pragma: no cover
         return TextHandlers([TextHandler(s) for s in super().split(sep, maxsplit)])
 
     def strip(self, chars: str | None = None) -> Union[str, "TextHandler"]:  # pragma: no cover
@@ -61,7 +59,7 @@ class TextHandler(str):
     def expandtabs(self, tabsize: SupportsIndex = 8) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().expandtabs(tabsize))
 
-    def format(self, *args: object, **kwargs: str) -> Union[str, "TextHandler"]:  # pragma: no cover
+    def format(self, *args: object, **kwargs: object) -> Union[str, "TextHandler"]:  # pragma: no cover
         return TextHandler(super().format(*args, **kwargs))
 
     def format_map(self, mapping) -> Union[str, "TextHandler"]:  # pragma: no cover
@@ -291,7 +289,7 @@ class AttributesHandler(Mapping[str, _TextHandlerType]):
 
     __slots__ = ("_data",)
 
-    def __init__(self, mapping=None, **kwargs):
+    def __init__(self, mapping: Any = None, **kwargs: Any) -> None:
         mapping = (
             {key: TextHandler(value) if isinstance(value, str) else value for key, value in mapping.items()}
             if mapping is not None
@@ -324,8 +322,8 @@ class AttributesHandler(Mapping[str, _TextHandlerType]):
                     yield AttributesHandler({key: value})
 
     @property
-    def json_string(self):
-        """Convert current attributes to JSON string if the attributes are JSON serializable otherwise throws error"""
+    def json_string(self) -> bytes:
+        """Convert current attributes to JSON bytes if the attributes are JSON serializable otherwise throws error"""
         return dumps(dict(self._data))
 
     def __getitem__(self, key: str) -> _TextHandlerType:

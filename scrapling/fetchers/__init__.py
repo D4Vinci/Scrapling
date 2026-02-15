@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Any
+from scrapling.engines.toolbelt import ProxyRotator
 
 if TYPE_CHECKING:
     from scrapling.fetchers.requests import Fetcher, AsyncFetcher, FetcherSession
@@ -22,6 +23,7 @@ _LAZY_IMPORTS = {
 __all__ = [
     "Fetcher",
     "AsyncFetcher",
+    "ProxyRotator",
     "FetcherSession",
     "DynamicFetcher",
     "DynamicSession",

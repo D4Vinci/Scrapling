@@ -50,7 +50,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install bandit[toml] ruff vermin
+          pip install bandit[toml] ruff vermin mypy pyright
+          pip install -e ".[all]"
+          pip install lxml-stubs
 
       - name: Run Bandit (Security Linter)
         id: bandit
@@ -83,6 +85,22 @@ jobs:
         run: |
           echo "::group::Vermin - Python 3.10+ Compatibility Check"
           vermin -t=3.10- --violations --eval-annotations --no-tips scrapling/
+          echo "::endgroup::"
+
+      - name: Run Mypy (Static Type Checker)
+        id: mypy
+        continue-on-error: true
+        run: |
+          echo "::group::Mypy - Static Type Checker"
+          mypy scrapling/
+          echo "::endgroup::"
+
+      - name: Run Pyright (Static Type Checker)
+        id: pyright
+        continue-on-error: true
+        run: |
+          echo "::group::Pyright - Static Type Checker"
+          pyright scrapling/
           echo "::endgroup::"
 
       - name: Check results and create summary
@@ -123,6 +141,22 @@ jobs:
             echo "✅ **Vermin (Python 3.10+)**: Passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Vermin (Python 3.10+)**: Failed" >> $GITHUB_STEP_SUMMARY
+            all_passed=false
+          fi
+
+          # Check Mypy
+          if [ "${{ steps.mypy.outcome }}" == "success" ]; then
+            echo "✅ **Mypy (Type Checker)**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Mypy (Type Checker)**: Failed" >> $GITHUB_STEP_SUMMARY
+            all_passed=false
+          fi
+
+          # Check Pyright
+          if [ "${{ steps.pyright.outcome }}" == "success" ]; then
+            echo "✅ **Pyright (Type Checker)**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Pyright (Type Checker)**: Failed" >> $GITHUB_STEP_SUMMARY
             all_passed=false
           fi
 

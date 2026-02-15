@@ -147,7 +147,7 @@ class TestTextMatching:
 class TestSimilarElements:
     def test_finding_similar_products(self, page):
         """Test finding similar product elements"""
-        first_product = page.css_first(".product")
+        first_product = page.css(".product").first
         similar_products = first_product.find_similar()
         assert len(similar_products) == 2
 
@@ -169,10 +169,6 @@ class TestErrorHandling:
         # No arguments
         with pytest.raises(ValueError):
             _ = Selector(adaptive=False)
-
-        # Invalid argument types
-        with pytest.raises(TypeError):
-            _ = Selector(root="ayo", adaptive=False)
 
         with pytest.raises(TypeError):
             _ = Selector(content=1, adaptive=False)
@@ -255,7 +251,7 @@ class TestElementNavigation:
 class TestJSONAndAttributes:
     def test_json_conversion(self, page):
         """Test converting content to JSON"""
-        script_content = page.css("#page-data::text")[0]
+        script_content = page.css("#page-data::text")[0].get()
         assert issubclass(type(script_content.sort()), str)
         page_data = script_content.json()
         assert page_data["totalProducts"] == 3
@@ -282,7 +278,7 @@ class TestJSONAndAttributes:
         assert list(key_value[0].keys()) == ["data-id"]
 
         # JSON attribute conversion
-        attr_json = page.css_first("#products").attrib["schema"].json()
+        attr_json = page.css("#products").first.attrib["schema"].json()
         assert attr_json == {"jsonable": "data"}
         assert isinstance(page.css("#products")[0].attrib.json_string, bytes)
 

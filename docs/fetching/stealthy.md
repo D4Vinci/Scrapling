@@ -1,17 +1,15 @@
-# Introduction
+# Fetching dynamic websites with hard protections
 
 Here, we will discuss the `StealthyFetcher` class. This class is very similar to the [DynamicFetcher](dynamic.md#introduction) class, including the browsers, the automation, and the use of [Playwright's API](https://playwright.dev/python/docs/intro). The main difference is that this class provides advanced anti-bot protection bypass capabilities; most of them are handled automatically under the hood, and the rest is up to you to enable.
 
 As with [DynamicFetcher](dynamic.md#introduction), you will need some knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) to automate the page, as we will explain later.
 
-**Note:** _This fetcher was using a custom version of [Camoufox](https://github.com/daijro/camoufox) as an engine before version 0.3.13, which was replaced now with [patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright) for many reasons. See [this section](#using-camoufox-as-an-engine) for information if you still need to use [Camoufox](https://github.com/daijro/camoufox). We might switch back to [Camoufox](https://github.com/daijro/camoufox) in the future if its development continues._
+!!! success "Prerequisites"
 
-> 💡 **Prerequisites:**
-> 
-> 1. You've completed or read the [DynamicFetcher](dynamic.md#introduction) page since this class builds upon it, and we won't repeat the same information here for that reason.
-> 2. You’ve completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
-> 3. You’ve completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
-> 4. You’ve completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
+    1. You've completed or read the [DynamicFetcher](dynamic.md#introduction) page since this class builds upon it, and we won't repeat the same information here for that reason.
+    2. You've completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
+    3. You've completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
+    4. You've completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
 
 ## Basic Usage
 You have one primary way to import this Fetcher, which is the same for all fetchers.
@@ -21,7 +19,9 @@ You have one primary way to import this Fetcher, which is the same for all fetch
 ```
 Check out how to configure the parsing options [here](choosing.md#parser-configuration-in-all-fetchers)
 
-> Note: The async version of the `fetch` method is the `async_fetch` method, of course.
+!!! abstract
+
+    The async version of the `fetch` method is `async_fetch`, of course.
 
 ## What does it do?
 
@@ -69,15 +69,19 @@ Scrapling provides many options with this fetcher and its session classes. Befor
 |     allow_webgl     | Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended, as many WAFs now check if WebGL is enabled.                                                                     |    ✔️    |
 |   additional_args   | Additional arguments to be passed to Playwright's context as additional settings, and they take higher priority than Scrapling's settings.                                                                                          |    ✔️    |
 |   selector_config   | A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.                                                                                                                            |    ✔️    |
+|   blocked_domains   | A set of domain names to block requests to. Subdomains are also matched (e.g., `"example.com"` blocks `"sub.example.com"` too).                                                                                                     |    ✔️    |
+|    proxy_rotator    | A `ProxyRotator` instance for automatic proxy rotation. Cannot be combined with `proxy`.                                                                                                                                            |    ✔️    |
+|       retries       | Number of retry attempts for failed requests. Defaults to 3.                                                                                                                                                                        |    ✔️    |
+|     retry_delay     | Seconds to wait between retry attempts. Defaults to 1.                                                                                                                                                                              |    ✔️    |
 
-In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `solve_cloudflare`, and `selector_config`.
+In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `solve_cloudflare`, `blocked_domains`, `proxy`, and `selector_config`.
 
-> 🔍 Notes:
-> 
-> 1. It's basically the same arguments as [DynamicFetcher](dynamic.md#introduction) class but with these additional arguments `solve_cloudflare`, `block_webrtc`, `hide_canvas`, and `allow_webgl`.
-> 2. The `disable_resources` option made requests ~25% faster in my tests for some websites and can help save your proxy usage, but be careful with it, as it can cause some websites to never finish loading.
-> 3. The `google_search` argument is enabled by default for all requests, making the request appear to come from a Google search page. So, a request for `https://example.com` will set the referer to `https://www.google.com/search?q=example`. Also, if used together, it takes priority over the referer set by the `extra_headers` argument.
-> 4. If you didn't set a user agent and enabled headless mode, the fetcher will generate a real user agent for the same browser version and use it. If you didn't set a user agent and didn't enable headless mode, the fetcher will use the browser's default user agent, which is the same as in standard browsers in the latest versions.
+!!! note "Notes:"
+
+    1. It's basically the same arguments as [DynamicFetcher](dynamic.md#introduction) class, but with these additional arguments: `solve_cloudflare`, `block_webrtc`, `hide_canvas`, and `allow_webgl`.
+    2. The `disable_resources` option made requests ~25% faster in my tests for some websites and can help save your proxy usage, but be careful with it, as it can cause some websites to never finish loading.
+    3. The `google_search` argument is enabled by default for all requests, making the request appear to come from a Google search page. So, a request for `https://example.com` will set the referer to `https://www.google.com/search?q=example`. Also, if used together, it takes priority over the referer set by the `extra_headers` argument.
+    4. If you didn't set a user agent and enabled headless mode, the fetcher will generate a real user agent for the same browser version and use it. If you didn't set a user agent and didn't enable headless mode, the fetcher will use the browser's default user agent, which is the same as in standard browsers in the latest versions.
 
 ## Examples
 It's easier to understand with examples, so we will now review most of the arguments individually. Since it's the same class as the [DynamicFetcher](dynamic.md#introduction), you can refer to that page for more examples, as we won't repeat all the examples from there.
@@ -108,11 +112,11 @@ The `solve_cloudflare` parameter enables automatic detection and solving all typ
 
 And even solves the custom pages with embedded captcha.
 
-> 🔍 **Important notes:**
-> 
-> 1. Sometimes, with websites that use custom implementations, you will need to use `wait_selector` to make sure Scrapling waits for the real website content to be loaded after solving the captcha. Some websites can be the real definition of an edge case while we are trying to make the solver as generic as possible.
-> 2. The timeout should be at least 60 seconds when using the Cloudflare solver for sufficient challenge-solving time.
-> 3. This feature works seamlessly with proxies and other stealth options.
+!!! notes "**Important notes:**"
+
+    1. Sometimes, with websites that use custom implementations, you will need to use `wait_selector` to make sure Scrapling waits for the real website content to be loaded after solving the captcha. Some websites can be the real definition of an edge case while we are trying to make the solver as generic as possible.
+    2. The timeout should be at least 60 seconds when using the Cloudflare solver for sufficient challenge-solving time.
+    3. This feature works seamlessly with proxies and other stealth options.
 
 ### Browser Automation
 This is where your knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) comes into play. The function you pass here takes the page object from Playwright's API, performs the desired action, and then the fetcher continues.
@@ -172,14 +176,14 @@ def scrape_amazon_product(url):
 
     # Extract product details
     return {
-        'title': page.css_first('#productTitle::text').clean(),
-        'price': page.css_first('.a-price .a-offscreen::text'),
-        'rating': page.css_first('[data-feature-name="averageCustomerReviews"] .a-popover-trigger .a-color-base::text'),
+        'title': page.css('#productTitle::text').get().clean(),
+        'price': page.css('.a-price .a-offscreen::text').get(),
+        'rating': page.css('[data-feature-name="averageCustomerReviews"] .a-popover-trigger .a-color-base::text').get(),
         'reviews_count': page.css('#acrCustomerReviewText::text').re_first(r'[\d,]+'),
         'features': [
-            li.clean() for li in page.css('#feature-bullets li span::text')
+            li.get().clean() for li in page.css('#feature-bullets li span::text')
         ],
-        'availability': page.css_first('#availability').get_all_text(strip=True),
+        'availability': page.css('#availability')[0].get_all_text(strip=True),
         'images': [
             img.attrib['src'] for img in page.css('#altImages img')
         ]
@@ -248,7 +252,8 @@ In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resou
 - **Memory efficiency**: Better resource usage compared to launching new browsers with each fetch.
 
 ## Using Camoufox as an engine
-If you see that Camoufox is stable on your device, has no high memory issues, and want to continue using Camoufox as before v0.3.13. This section is for you.
+
+This fetcher used a custom version of [Camoufox](https://github.com/daijro/camoufox) as an engine before version 0.3.13, which was replaced by [patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright) for many reasons. If you see that Camoufox is stable on your device, has no high memory issues, and you want to continue using it, then you can.
 
 First, you will need to install the Camoufox library, browser, and Firefox system dependencies if you didn't already:
 ```commandline
