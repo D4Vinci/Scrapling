@@ -22,7 +22,7 @@ from scrapling.engines._browsers._types import StealthSession, StealthFetchParam
 from scrapling.engines._browsers._base import SyncSession, AsyncSession, StealthySessionMixin
 from scrapling.engines._browsers._validators import validate_fetch as _validate, StealthConfig
 
-__CF_PATTERN__ = re_compile("challenges.cloudflare.com/cdn-cgi/challenge-platform/.*")
+__CF_PATTERN__ = re_compile(r"^https?://challenges\.cloudflare\.com/cdn-cgi/challenge-platform/.*")
 
 
 class StealthySession(SyncSession, StealthySessionMixin):
