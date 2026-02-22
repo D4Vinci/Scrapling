@@ -248,8 +248,8 @@ class TestSpiderClassAttributes:
     """Test Spider class attribute defaults."""
 
     def test_default_concurrent_requests(self):
-        """Test default concurrent_requests is 16."""
-        assert ConcreteSpider.concurrent_requests == 16
+        """Test default concurrent_requests is 4."""
+        assert ConcreteSpider.concurrent_requests == 4
 
     def test_default_concurrent_requests_per_domain(self):
         """Test default concurrent_requests_per_domain is 0 (disabled)."""

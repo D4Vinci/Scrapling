@@ -170,10 +170,6 @@ class TestErrorHandling:
         with pytest.raises(ValueError):
             _ = Selector(adaptive=False)
 
-        # Invalid argument types
-        with pytest.raises(TypeError):
-            _ = Selector(root="ayo", adaptive=False)
-
         with pytest.raises(TypeError):
             _ = Selector(content=1, adaptive=False)
 

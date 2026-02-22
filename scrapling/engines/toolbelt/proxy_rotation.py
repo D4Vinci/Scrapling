@@ -30,8 +30,8 @@ def is_proxy_error(error: Exception) -> bool:
     return any(indicator in error_msg for indicator in _PROXY_ERROR_INDICATORS)
 
 
-def round_robin(proxies: List[ProxyType], current_index: int) -> Tuple[ProxyType, int]:
-    """Default round-robin rotation strategy."""
+def cyclic_rotation(proxies: List[ProxyType], current_index: int) -> Tuple[ProxyType, int]:
+    """Default cyclic rotation strategy — iterates through proxies sequentially, wrapping around at the end."""
     idx = current_index % len(proxies)
     return proxies[idx], (idx + 1) % len(proxies)
 
@@ -41,7 +41,7 @@ class ProxyRotator:
     A thread-safe proxy rotator with pluggable rotation strategies.
 
     Supports:
-    - Round-robin rotation (default)
+    - Cyclic rotation (default)
     - Custom rotation strategies via callable
     - Both string URLs and Playwright-style dict proxies
     """
@@ -51,7 +51,7 @@ class ProxyRotator:
     def __init__(
         self,
         proxies: List[ProxyType],
-        strategy: RotationStrategy = round_robin,
+        strategy: RotationStrategy = cyclic_rotation,
     ):
         """
         Initialize the proxy rotator.
@@ -59,7 +59,7 @@ class ProxyRotator:
         :param proxies: List of proxy URLs or Playwright-style proxy dicts.
             - String format: "http://proxy1:8080" or "http://user:pass@proxy:8080"
             - Dict format: {"server": "http://proxy:8080", "username": "user", "password": "pass"}
-        :param strategy: Rotation strategy function. Takes (proxies, current_index) and returns (proxy, next_index). Defaults to round_robin.
+        :param strategy: Rotation strategy function. Takes (proxies, current_index) and returns (proxy, next_index). Defaults to cyclic_rotation.
         """
         if not proxies:
             raise ValueError("At least one proxy must be provided")

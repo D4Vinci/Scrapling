@@ -1,6 +1,6 @@
-zensical>=0.0.21
+zensical>=0.0.23
 mkdocstrings>=1.0.3
-mkdocstrings-python>=2.0.1
+mkdocstrings-python>=2.0.2
 griffe-inherited-docstrings
 griffe-runtime-objects
 griffe-sphinx

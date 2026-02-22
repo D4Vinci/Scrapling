@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "scrapling"
 # Static version instead of a dynamic version so we can get better layer caching while building docker, check the docker file to understand
-version = "0.4alpha"
+version = "0.4"
 description = "Scrapling is an undetectable, powerful, flexible, high-performance Python library that makes Web Scraping easy and effortless as it should be!"
-readme = {file = "docs/README.md", content-type = "text/markdown"}
+readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
 authors = [
     {name = "Karim Shoair", email = "karim.shoair@pm.me"}
@@ -28,6 +28,9 @@ keywords = [
     "web-crawler",
     "browser",
     "crawling",
+    "headless",
+    "scraper",
+    "chrome",
 ]
 requires-python = ">=3.10"
 classifiers = [
@@ -46,6 +49,7 @@ classifiers = [
     "Topic :: Text Processing :: Markup :: HTML",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -95,6 +99,8 @@ Changelog = "https://github.com/D4Vinci/Scrapling/releases"
 Documentation = "https://scrapling.readthedocs.io/en/latest/"
 Repository = "https://github.com/D4Vinci/Scrapling"
 "Bug Tracker" = "https://github.com/D4Vinci/Scrapling/issues"
+"Discord" = "https://discord.gg/EMgGbDceNQ"
+"Release Notes" = "https://github.com/D4Vinci/Scrapling/releases"
 
 [project.scripts]
 scrapling = "scrapling.cli:main"

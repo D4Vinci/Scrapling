@@ -73,15 +73,15 @@ class Spider(ABC):
     allowed_domains: Set[str] = set()
 
     # Concurrency settings
-    concurrent_requests: int = 16
+    concurrent_requests: int = 4
     concurrent_requests_per_domain: int = 0
     download_delay: float = 0.0
     max_blocked_retries: int = 3
 
     # Fingerprint adjustments
-    fp_include_kwargs = False
-    fp_keep_fragments = False
-    fp_include_headers = False
+    fp_include_kwargs: bool = False
+    fp_keep_fragments: bool = False
+    fp_include_headers: bool = False
 
     # Logging settings
     logging_level: int = logging.DEBUG

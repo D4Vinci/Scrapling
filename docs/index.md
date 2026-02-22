@@ -23,7 +23,7 @@ Its parser learns from website changes and automatically relocates your elements
 Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+from scrapling.fetchers import Fetcher, StealthyFetcher, DynamicFetcher
 StealthyFetcher.adaptive = True
 page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Fetch website under the radar!
 products = page.css('.product', auto_save=True)                                        # Scrape data that survives website design changes!
@@ -77,7 +77,7 @@ MySpider().start()
 - **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium and Google's Chrome.
 - **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` and fingerprint spoofing. Can easily bypass all types of Cloudflare's Turnstile/Interstitial with automation.
 - **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
-- **Proxy Rotation**: Built-in `ProxyRotator` with round-robin or custom strategies across all session types, plus per-request proxy overrides.
+- **Proxy Rotation**: Built-in `ProxyRotator` with cyclic or custom rotation strategies across all session types, plus per-request proxy overrides.
 - **Domain Blocking**: Block requests to specific domains (and their subdomains) in browser-based fetchers.
 - **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 

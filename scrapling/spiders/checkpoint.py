@@ -33,7 +33,7 @@ class CheckpointManager:
             raise TypeError("Checkpoints interval must be integer or float.")
         else:
             if interval < 0:
-                raise ValueError("Checkpoints interval must be greater than 0.")
+                raise ValueError("Checkpoints interval must be equal or greater than 0.")
 
     async def has_checkpoint(self) -> bool:
         """Check if a checkpoint exists."""

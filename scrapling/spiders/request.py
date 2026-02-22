@@ -85,8 +85,6 @@ class Request:
                 body = post_data.getvalue()
             elif isinstance(post_data, bytes):
                 body = post_data
-            elif post_data is None:
-                body = b""
         else:
             post_data = self._session_kwargs.get("json", {})
             body = orjson.dumps(post_data) if post_data else b""
