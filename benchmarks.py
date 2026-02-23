@@ -1,22 +1,33 @@
 import functools
 import time
 import timeit
+from importlib import import_module
 from statistics import mean
-
-import requests
-from autoscraper import AutoScraper
-from bs4 import BeautifulSoup
-from lxml import etree, html
-from mechanicalsoup import StatefulBrowser
-from parsel import Selector
-from pyquery import PyQuery as pq
-from selectolax.parser import HTMLParser
 
 from scrapling import Selector as ScraplingSelector
 
 large_html = (
     "<html><body>" + '<div class="item">' * 5000 + "</div>" * 5000 + "</body></html>"
 )
+
+
+def _import_or_raise(module_name, symbol=None):
+    """Import benchmark-only dependencies lazily.
+
+    This keeps module import safe for tooling (pytest doctest collection, IDE indexing)
+    while still failing fast when benchmarks are executed without required extras.
+    """
+    try:
+        module = import_module(module_name)
+    except ImportError as exc:
+        raise RuntimeError(
+            f"Missing benchmark dependency '{module_name}'. "
+            "Install benchmark extras before running benchmarks."
+        ) from exc
+
+    if symbol is None:
+        return module
+    return getattr(module, symbol)
 
 
 def benchmark(func):
@@ -44,7 +55,9 @@ def benchmark(func):
 
 
 @benchmark
-def test_lxml():
+def bench_lxml():
+    etree = _import_or_raise("lxml.etree")
+    html = _import_or_raise("lxml.html")
     return [
         e.text
         for e in etree.fromstring(
@@ -56,22 +69,25 @@ def test_lxml():
 
 
 @benchmark
-def test_bs4_lxml():
+def bench_bs4_lxml():
+    BeautifulSoup = _import_or_raise("bs4", "BeautifulSoup")
     return [e.text for e in BeautifulSoup(large_html, "lxml").select(".item")]
 
 
 @benchmark
-def test_bs4_html5lib():
+def bench_bs4_html5lib():
+    BeautifulSoup = _import_or_raise("bs4", "BeautifulSoup")
     return [e.text for e in BeautifulSoup(large_html, "html5lib").select(".item")]
 
 
 @benchmark
-def test_pyquery():
+def bench_pyquery():
+    pq = _import_or_raise("pyquery", "PyQuery")
     return [e.text() for e in pq(large_html)(".item").items()]
 
 
 @benchmark
-def test_scrapling():
+def bench_scrapling():
     # No need to do `.extract()` like parsel to extract text
     # Also, this is faster than `[t.text for t in Selector(large_html, adaptive=False).css('.item')]`
     # for obvious reasons, of course.
@@ -79,19 +95,22 @@ def test_scrapling():
 
 
 @benchmark
-def test_parsel():
+def bench_parsel():
+    Selector = _import_or_raise("parsel", "Selector")
     return Selector(text=large_html).css(".item::text").extract()
 
 
 @benchmark
-def test_mechanicalsoup():
+def bench_mechanicalsoup():
+    StatefulBrowser = _import_or_raise("mechanicalsoup", "StatefulBrowser")
     browser = StatefulBrowser()
     browser.open_fake_page(large_html)
     return [e.text for e in browser.page.select(".item")]
 
 
 @benchmark
-def test_selectolax():
+def bench_selectolax():
+    HTMLParser = _import_or_raise("selectolax.parser", "HTMLParser")
     return [node.text() for node in HTMLParser(large_html).css(".item")]
 
 
@@ -108,12 +127,13 @@ def display(results):
 
 
 @benchmark
-def test_scrapling_text(request_html):
+def bench_scrapling_text(request_html):
     return ScraplingSelector(request_html, adaptive=False).find_by_text("Tipping the Velvet", first_match=True, clean_match=False).find_similar(ignore_attributes=["title"])
 
 
 @benchmark
-def test_autoscraper(request_html):
+def bench_autoscraper(request_html):
+    AutoScraper = _import_or_raise("autoscraper", "AutoScraper")
     # autoscraper by default returns elements text
     return AutoScraper().build(html=request_html, wanted_list=["Tipping the Velvet"])
 
@@ -123,24 +143,25 @@ if __name__ == "__main__":
         " Benchmark: Speed of parsing and retrieving the text content of 5000 nested elements \n"
     )
     results1 = {
-        "Raw Lxml": test_lxml(),
-        "Parsel/Scrapy": test_parsel(),
-        "Scrapling": test_scrapling(),
-        "Selectolax": test_selectolax(),
-        "PyQuery": test_pyquery(),
-        "BS4 with Lxml": test_bs4_lxml(),
-        "MechanicalSoup": test_mechanicalsoup(),
-        "BS4 with html5lib": test_bs4_html5lib(),
+        "Raw Lxml": bench_lxml(),
+        "Parsel/Scrapy": bench_parsel(),
+        "Scrapling": bench_scrapling(),
+        "Selectolax": bench_selectolax(),
+        "PyQuery": bench_pyquery(),
+        "BS4 with Lxml": bench_bs4_lxml(),
+        "MechanicalSoup": bench_mechanicalsoup(),
+        "BS4 with html5lib": bench_bs4_html5lib(),
     }
 
     display(results1)
     print("\n" + "=" * 25)
+    requests = _import_or_raise("requests")
     req = requests.get("https://books.toscrape.com/index.html")
     print(
         " Benchmark: Speed of searching for an element by text content, and retrieving the text of similar elements\n"
     )
     results2 = {
-        "Scrapling": test_scrapling_text(req.text),
-        "AutoScraper": test_autoscraper(req.text),
+        "Scrapling": bench_scrapling_text(req.text),
+        "AutoScraper": bench_autoscraper(req.text),
     }
     display(results2)
