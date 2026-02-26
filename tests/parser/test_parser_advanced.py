@@ -150,6 +150,11 @@ class TestAdvancedSelectors:
         assert page.urljoin("/absolute") == "https://example.com/absolute"
         assert page.urljoin("relative") == "https://example.com/relative"
 
+    def test_root_base_url_is_set(self):
+        """Test parser preserves document base_url from Selector URL."""
+        page = Selector("<html></html>", url="https://example.com/page")
+        assert page._root.base_url == "https://example.com/page"
+
     def test_find_operations_edge_cases(self, complex_html):
         """Test edge cases in find operations"""
         page = Selector(complex_html)

@@ -149,7 +149,11 @@ class Selector(SelectorsGeneration):
                 strip_cdata=(not keep_cdata),
             )
             parser = HTMLParser(**_parser_kwargs)
-            self._root = cast(HtmlElement, fromstring(body or "<html/>", parser=parser, base_url=url or ""))
+            # Keep base_url behavior while avoiding false positives from incomplete type stubs.
+            parse_kwargs: Dict[str, Any] = {"parser": parser}
+            if url:
+                parse_kwargs["base_url"] = url
+            self._root = cast(HtmlElement, fromstring(body or "<html/>", **parse_kwargs))
             self._raw_body = content
 
         else:
