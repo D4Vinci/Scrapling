@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from scrapling.core.shell import Convertor
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
-from scrapling.engines.static import ImpersonateType
+from scrapling.engines._browsers._types import ImpersonateType
 from scrapling.fetchers import (
     Fetcher,
     FetcherSession,
@@ -50,17 +50,17 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        params: Optional[Dict | List | Tuple] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
-        cookies: Optional[Dict[str, str] | list[tuple[str, str]]] = None,
+        params: Optional[Dict[str, str]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        cookies: Optional[Dict[str, str]] = None,
         timeout: Optional[int | float] = 30,
         follow_redirects: bool = True,
         max_redirects: int = 30,
         retries: Optional[int] = 3,
         retry_delay: Optional[int] = 1,
         proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
-        auth: Optional[Tuple[str, str]] = None,
+        proxy_auth: Optional[List[str]] = None,
+        auth: Optional[List[str]] = None,
         verify: Optional[bool] = True,
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
@@ -95,12 +95,12 @@ class ScraplingMCPServer:
         """
         page = Fetcher.get(
             url,
-            auth=auth,
+            auth=tuple(auth) if auth else None,
             proxy=proxy,
             http3=http3,
             verify=verify,
             params=params,
-            proxy_auth=proxy_auth,
+            proxy_auth=tuple(proxy_auth) if proxy_auth else None,
             retry_delay=retry_delay,
             stealthy_headers=stealthy_headers,
             impersonate=impersonate,
@@ -123,22 +123,22 @@ class ScraplingMCPServer:
 
     @staticmethod
     async def bulk_get(
-        urls: Tuple[str, ...],
+        urls: List[str],
         impersonate: ImpersonateType = "chrome",
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        params: Optional[Dict | List | Tuple] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
-        cookies: Optional[Dict[str, str] | list[tuple[str, str]]] = None,
+        params: Optional[Dict[str, str]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        cookies: Optional[Dict[str, str]] = None,
         timeout: Optional[int | float] = 30,
         follow_redirects: bool = True,
         max_redirects: int = 30,
         retries: Optional[int] = 3,
         retry_delay: Optional[int] = 1,
         proxy: Optional[str] = None,
-        proxy_auth: Optional[Tuple[str, str]] = None,
-        auth: Optional[Tuple[str, str]] = None,
+        proxy_auth: Optional[List[str]] = None,
+        auth: Optional[List[str]] = None,
         verify: Optional[bool] = True,
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
@@ -147,7 +147,7 @@ class ScraplingMCPServer:
         Note: This is only suitable for low-mid protection levels. For high-protection levels or websites that require JS loading, use the other tools directly.
         Note: If the `css_selector` resolves to more than one element, all the elements will be returned.
 
-        :param urls: A tuple of the URLs to request.
+        :param urls: A list of the URLs to request.
         :param impersonate: Browser version to impersonate its fingerprint. It's using the latest chrome version by default.
         :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
             - Markdown will convert the page content to Markdown format.
@@ -175,7 +175,7 @@ class ScraplingMCPServer:
             tasks: List[Any] = [
                 session.get(
                     url,
-                    auth=auth,
+                    auth=tuple(auth) if auth else None,
                     proxy=proxy,
                     http3=http3,
                     verify=verify,
@@ -184,7 +184,7 @@ class ScraplingMCPServer:
                     cookies=cookies,
                     timeout=timeout,
                     retries=retries,
-                    proxy_auth=proxy_auth,
+                    proxy_auth=tuple(proxy_auth) if proxy_auth else None,
                     retry_delay=retry_delay,
                     impersonate=impersonate,
                     max_redirects=max_redirects,
@@ -257,7 +257,7 @@ class ScraplingMCPServer:
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `Google Search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         """
         page = await DynamicFetcher.async_fetch(
@@ -291,7 +291,7 @@ class ScraplingMCPServer:
 
     @staticmethod
     async def bulk_fetch(
-        urls: Tuple[str, ...],
+        urls: List[str],
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
@@ -316,7 +316,7 @@ class ScraplingMCPServer:
         Note: This is only suitable for low-mid protection levels.
         Note: If the `css_selector` resolves to more than one element, all the elements will be returned.
 
-        :param urls: A tuple of the URLs to request.
+        :param urls: A list of the URLs to request.
         :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
@@ -339,7 +339,7 @@ class ScraplingMCPServer:
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `Google Search` argument takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         """
         async with AsyncDynamicSession(
@@ -475,7 +475,7 @@ class ScraplingMCPServer:
 
     @staticmethod
     async def bulk_stealthy_fetch(
-        urls: Tuple[str, ...],
+        urls: List[str],
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
@@ -505,7 +505,7 @@ class ScraplingMCPServer:
         Note: This is the only suitable fetcher for high protection levels.
         Note: If the `css_selector` resolves to more than one element, all the elements will be returned.
 
-        :param urls: A tuple of the URLs to request.
+        :param urls: A list of the URLs to request.
         :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
