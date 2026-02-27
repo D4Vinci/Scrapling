@@ -59,7 +59,7 @@ class XPathExpr(OriginalXPathExpr):
     ) -> Self:
         if not isinstance(other, XPathExpr):
             raise ValueError(  # pragma: no cover
-                f"Expressions of type {__name__}.XPathExpr can ony join expressions"
+                f"Expressions of type {__name__}.XPathExpr can only join expressions"
                 f" of the same type (or its descendants), got {type(other)}"
             )
         super().join(combiner, other, *args, **kwargs)

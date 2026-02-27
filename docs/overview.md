@@ -149,7 +149,7 @@ target_element.find_similar()
 Find the first element that matches a CSS selector
 ```python
 page.css('.product-list [data-id="1"]')[0]
-# <data='<article class="product" data-id="1"><h3...' parent='<div class="product-list"> <article clas...'>
+# <data='<article class="product" data-id="1"><h3...' parent='<div class="product-list"> <article class...'>
 ```
 Find all elements that match a CSS selector
 ```python
@@ -159,7 +159,7 @@ page.css('.product-list article')
 Find the first element that matches an XPath selector
 ```python
 page.xpath("//*[@id='products']/div/article")[0]
-# <data='<article class="product" data-id="1"><h3...' parent='<div class="product-list"> <article clas...'>
+# <data='<article class="product" data-id="1"><h3...' parent='<div class="product-list"> <article class...'>
 ```
 Find all elements that match an XPath selector
 ```python
