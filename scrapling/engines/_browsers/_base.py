@@ -419,7 +419,7 @@ class BaseSessionMixin:
         if not config.cdp_url:
             flags = self._browser_options["args"]
             if config.extra_flags or extra_flags:
-                flags = list(set(flags + (config.extra_flags or extra_flags)))
+                flags = list(set(list(flags) + list(config.extra_flags or extra_flags)))
 
             self._browser_options.update(
                 {
@@ -480,7 +480,7 @@ class StealthySessionMixin(BaseSessionMixin):
         config = cast(StealthConfig, self._config)
         flags: Tuple[str, ...] = tuple()
         if not config.cdp_url:
-            flags = DEFAULT_ARGS + STEALTH_ARGS
+            flags = tuple(DEFAULT_ARGS) + tuple(STEALTH_ARGS)
 
             if config.block_webrtc:
                 flags += (
