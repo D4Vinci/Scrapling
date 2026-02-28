@@ -125,7 +125,7 @@ If you are using the Docker image, then it would be something like
 }
 ```
 
-The same logic applies to [Cursor](https://docs.cursor.com/en/context/mcp), [WindSurf](https://windsurf.com/university/tutorials/configuring-first-mcp-server), and others.
+The same logic applies to [Cursor](https://cursor.com/docs/context/mcp), [WindSurf](https://windsurf.com/university/tutorials/configuring-first-mcp-server), and others.
 
 ### Claude Code
 Here it's much simpler to do. If you have [Claude Code](https://www.anthropic.com/claude-code) installed, open the terminal and execute the following command:

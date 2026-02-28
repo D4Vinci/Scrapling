@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from sys import stderr
+from copy import deepcopy
 from functools import wraps
 from re import sub as re_sub
 from collections import namedtuple
@@ -572,6 +573,14 @@ class Convertor:
         return markdownify(body)
 
     @classmethod
+    def _strip_noise_tags(cls, page: Selector) -> Selector:
+        """Return a copy of the Selector with noise tags removed."""
+        clean_root = deepcopy(page._root)
+        for element in clean_root.iter(*{"script", "style", "noscript", "svg"}):
+            element.drop_tree()
+        return Selector(root=clean_root, url=page.url)
+
+    @classmethod
     def _extract_content(
         cls,
         page: Selector,
@@ -587,6 +596,7 @@ class Convertor:
         else:
             if main_content_only:
                 page = cast(Selector, page.css("body").first) or page
+                page = cls._strip_noise_tags(page)
 
             pages = [page] if not css_selector else cast(Selectors, page.css(css_selector))
             for page in pages:
@@ -596,7 +606,9 @@ class Convertor:
                     case "html":
                         yield page.html_content
                     case "text":
-                        txt_content = page.get_all_text(strip=True)
+                        txt_content = page.get_all_text(
+                            strip=True, ignore_tags=("script", "style", "noscript", "svg", "iframe")
+                        )
                         for s in (
                             "\n",
                             "\r",

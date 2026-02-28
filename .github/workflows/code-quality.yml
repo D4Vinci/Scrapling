@@ -21,6 +21,10 @@ on:
       - '**/*.md'
       - 'docs/**'
       - 'images/**'
+      - '.github/**'
+      - '*.yml'
+      - '*.yaml'
+      - 'ruff.toml'
   workflow_dispatch:  # Allow manual triggering
 
 concurrency:
@@ -37,12 +41,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Full history for better analysis
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
           cache: 'pip'
@@ -177,7 +181,7 @@ jobs:
 
       - name: Upload Bandit report
         if: always() && steps.bandit.outcome != 'skipped'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bandit-security-report
           path: bandit-report.json

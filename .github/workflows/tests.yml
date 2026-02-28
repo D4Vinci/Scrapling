@@ -7,9 +7,22 @@ on:
     paths-ignore:
       - '*.md'
       - '**/*.md'
-      - 'docs/*'
-      - 'images/*'
-      - '.github/*'
+      - 'docs/**'
+      - 'images/**'
+      - '.github/**'
+      - '*.yml'
+      - '*.yaml'
+      - 'ruff.toml'
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths-ignore:
+      - '*.md'
+      - '**/*.md'
+      - 'docs/**'
+      - 'images/**'
+      - '.github/**'
       - '*.yml'
       - '*.yaml'
       - 'ruff.toml'
@@ -44,10 +57,10 @@ jobs:
             TOXENV: py313
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -69,7 +82,7 @@ jobs:
 
     - name: Retrieve Playwright browsers from cache if any
       id: playwright-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.cache/ms-playwright
@@ -92,7 +105,7 @@ jobs:
 
     # Cache tox environments
     - name: Cache tox environments
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: .tox
         # Include python version and os in the cache key

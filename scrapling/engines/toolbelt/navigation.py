@@ -2,8 +2,6 @@
 Functions related to files and URLs
 """
 
-from pathlib import Path
-from functools import lru_cache
 from urllib.parse import urlparse
 
 from playwright.async_api import Route as async_Route
@@ -13,8 +11,6 @@ from playwright.sync_api import Route
 from scrapling.core.utils import log
 from scrapling.core._types import Dict, Set, Tuple, Optional, Callable
 from scrapling.engines.constants import EXTRA_RESOURCES
-
-__BYPASSES_DIR__ = Path(__file__).parent / "bypasses"
 
 
 class ProxyDict(Struct):
@@ -111,13 +107,3 @@ def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple) -> Dict:
             raise TypeError(f"Invalid proxy dictionary: {e}")
 
     raise TypeError(f"Invalid proxy string: {proxy_string}")
-
-
-@lru_cache(10, typed=True)
-def js_bypass_path(filename: str) -> str:
-    """Takes the base filename of a JS file inside the `bypasses` folder, then return the full path of it
-
-    :param filename: The base filename of the JS file.
-    :return: The full path of the JS file.
-    """
-    return str(__BYPASSES_DIR__ / filename)

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.D4Vinci/Scrapling",
+  "title": "Scrapling MCP Server",
+  "description": "Web scraping with stealth HTTP, real browsers, and Cloudflare bypass. CSS selectors supported.",
+  "websiteUrl": "https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html",
+  "repository": {
+    "url": "https://github.com/D4Vinci/Scrapling",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/logo.png",
+      "mimeType": "image/png"
+    }
+  ],
+  "version": "0.4.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "scrapling",
+      "version": "0.4.1",
+      "runtimeHint": "uvx",
+      "packageArguments": [
+        {
+          "type": "positional",
+          "valueHint": "mcp",
+          "isFixed": true
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    },
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/d4vinci/scrapling",
+      "packageArguments": [
+        {
+          "type": "positional",
+          "valueHint": "mcp",
+          "isFixed": true
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

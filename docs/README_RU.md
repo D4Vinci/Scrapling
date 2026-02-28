@@ -1,3 +1,5 @@
+<!-- mcp-name: io.github.D4Vinci/Scrapling -->
+
 <h1 align="center">
     <a href="https://scrapling.readthedocs.io">
         <picture>
@@ -33,11 +35,13 @@
     &middot;
     <a href="https://scrapling.readthedocs.io/en/latest/fetching/choosing/"><strong>Выбор Fetcher</strong></a>
     &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/spiders/architecture.html"><strong>Пауки</strong></a>
+    &middot;
+    <a href="https://scrapling.readthedocs.io/en/latest/spiders/proxy-blocking.html"><strong>Ротация прокси</strong></a>
+    &middot;
     <a href="https://scrapling.readthedocs.io/en/latest/cli/overview/"><strong>CLI</strong></a>
     &middot;
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server/"><strong>Режим MCP</strong></a>
-    &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/tutorials/migrating_from_beautifulsoup/"><strong>Миграция с Beautifulsoup</strong></a>
 </p>
 
 Scrapling — это адаптивный фреймворк для Web Scraping, который берёт на себя всё: от одного запроса до полномасштабного обхода сайтов.
@@ -49,9 +53,9 @@ Scrapling — это адаптивный фреймворк для Web Scraping
 ```python
 from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
 StealthyFetcher.adaptive = True
-page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Загрузите сайт незаметно!
-products = page.css('.product', auto_save=True)                                        # Скрапьте данные, которые переживут изменения дизайна сайта!
-products = page.css('.product', adaptive=True)                                         # Позже, если структура сайта изменится, передайте `adaptive=True`, чтобы найти их!
+p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Загрузите сайт незаметно!
+products = p.css('.product', auto_save=True)                                        # Скрапьте данные, которые переживут изменения дизайна сайта!
+products = p.css('.product', adaptive=True)                                         # Позже, если структура сайта изменится, передайте `adaptive=True`, чтобы найти их!
 ```
 Или масштабируйте до полного обхода
 ```python
@@ -69,18 +73,23 @@ MySpider().start()
 ```
 
 
+# Платиновые спонсоры
+
+<i><sub>Хотите стать первой компанией, которая появится здесь? Нажмите [здесь](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
 # Спонсоры
 
 <!-- sponsors -->
 
-<a href="https://www.scrapeless.com/en?utm_source=official&utm_term=scrapling" target="_blank" title="Effortless Web Scraping Toolkit for Business and Developers"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/scrapeless.jpg"></a>
 <a href="https://www.thordata.com/?ls=github&lk=github" target="_blank" title="Unblockable proxies and scraping infrastructure, delivering real-time, reliable web data to power AI models and workflows."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/thordata.jpg"></a>
 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png"></a>
 <a href="https://serpapi.com/?utm_source=scrapling" target="_blank" title="Scrape Google and other search engines with SerpApi"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png"></a>
 <a href="https://visit.decodo.com/Dy6W0b" target="_blank" title="Try the Most Efficient Residential Proxies for Free"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/decodo.png"></a>
 <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>
 <a href="https://hasdata.com/?utm_source=github&utm_medium=banner&utm_campaign=D4Vinci" target="_blank" title="The web scraping service that actually beats anti-bot systems!"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/hasdata.png"></a>
+<a href="https://proxyempire.io/?ref=scrapling&utm_source=scrapling" target="_blank" title="Collect The Data Your Project Needs with the Best Residential Proxies"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/ProxyEmpire.png"></a>
 <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png"></a>
+
+
 <a href="https://www.swiftproxy.net/" target="_blank" title="Unlock Reliable Proxy Services with Swiftproxy!"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/swiftproxy.png"></a>
 <a href="https://www.rapidproxy.io/?ref=d4v" target="_blank" title="Affordable Access to the Proxy World – bypass CAPTCHAs blocks, and avoid additional costs."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/rapidproxy.jpg"></a>
 <a href="https://browser.cash/?utm_source=D4Vinci&utm_medium=referral" target="_blank" title="Browser Automation & AI Browser Agent Platform"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/browserCash.png"></a>
@@ -354,10 +363,19 @@ pip install scrapling
     ```bash
     pip install "scrapling[fetchers]"
 
-    scrapling install
+    scrapling install           # normal install
+    scrapling install  --force  # force reinstall
     ```
 
     Это загрузит все браузеры вместе с их системными зависимостями и зависимостями для манипуляции fingerprint'ами.
+
+    Или вы можете установить их из кода вместо выполнения команды:
+    ```python
+    from scrapling.cli import install
+
+    install([], standalone_mode=False)          # normal install
+    install(["--force"], standalone_mode=False) # force reinstall
+    ```
 
 2. Дополнительные возможности:
    - Установить функцию MCP-сервера:
@@ -393,6 +411,18 @@ docker pull ghcr.io/d4vinci/scrapling:latest
 
 > [!CAUTION]
 > Эта библиотека предоставляется только в образовательных и исследовательских целях. Используя эту библиотеку, вы соглашаетесь соблюдать местные и международные законы о скрапинге данных и конфиденциальности. Авторы и участники не несут ответственности за любое неправомерное использование этого программного обеспечения. Всегда уважайте условия обслуживания веб-сайтов и файлы robots.txt.
+
+## 🎓 Цитирование
+Если вы использовали нашу библиотеку в исследовательских целях, пожалуйста, цитируйте нас со следующей ссылкой:
+```text
+  @misc{scrapling,
+    author = {Karim Shoair},
+    title = {Scrapling},
+    year = {2024},
+    url = {https://github.com/D4Vinci/Scrapling},
+    note = {An adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl!}
+  }
+```
 
 ## Лицензия
 

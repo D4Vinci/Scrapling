@@ -1,8 +1,8 @@
-zensical>=0.0.23
+zensical>=0.0.24
 mkdocstrings>=1.0.3
-mkdocstrings-python>=2.0.2
-griffe-inherited-docstrings
-griffe-runtime-objects
-griffe-sphinx
+mkdocstrings-python>=2.0.3
+griffe-inherited-docstrings>=1.1.3
+griffe-runtime-objects>=0.3.1
+griffe-sphinx>=0.2.1
 black>=26.1.0
 pngquant

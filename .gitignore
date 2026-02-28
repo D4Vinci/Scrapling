@@ -1,4 +1,7 @@
+# local files
 site/*
+local_tests/*
+.mcpregistry_*
 
 # AI related files
 .claude/*

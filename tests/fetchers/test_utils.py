@@ -1,12 +1,10 @@
 import pytest
-from pathlib import Path
 
 from scrapling.engines.toolbelt.custom import StatusText, Response
 from scrapling.engines.toolbelt.navigation import (
     construct_proxy_dict,
     create_intercept_handler,
     create_async_intercept_handler,
-    js_bypass_path,
 )
 from scrapling.engines.toolbelt.fingerprints import (
     generate_convincing_referer,
@@ -201,25 +199,6 @@ class TestConstructProxyDict:
         """Test invalid proxy dictionary"""
         with pytest.raises(TypeError):
             construct_proxy_dict({"invalid": "structure"})
-
-
-class TestJsBypassPath:
-    """Test JavaScript bypass path utility"""
-
-    def test_js_bypass_path(self):
-        """Test getting JavaScript bypass file path"""
-        result = js_bypass_path("webdriver_fully.js")
-
-        assert isinstance(result, str)
-        assert result.endswith("webdriver_fully.js")
-        assert Path(result).exists()
-
-    def test_js_bypass_path_caching(self):
-        """Test that js_bypass_path is cached"""
-        result1 = js_bypass_path("webdriver_fully.js")
-        result2 = js_bypass_path("webdriver_fully.js")
-
-        assert result1 == result2
 
 
 class TestFingerprintFunctions:
