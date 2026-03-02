@@ -77,8 +77,25 @@ MySpider().start()
 ```
 
 # Platinum Sponsors
+<table>
+  <tr>
+    <td width="240">
+      <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
+        <br />
+      </a> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+        <b>Subscribe</b>
+      </a> | 💬 <a href="https://discord.gg/akamai">
+        <b>Discord</b>
+      </a>
+    </td>
+    <td> Scrapling's fetchers handle Cloudflare Turnstile, but for enterprise-grade protection, <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">Hyper Solutions</a> provides API endpoints that generate valid antibot tokens for: <b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
+      <br /> No browser automation. Simple API calls returning the exact cookies and headers these systems require.
+    </td>
+  </tr>
+</table>
 
-<i><sub>Do you want to be the first company to show up here? Click [here](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
+<i><sub>Do you want to show your ad here? Click [here](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
 # Sponsors 
 
 <!-- sponsors -->
@@ -90,7 +107,6 @@ MySpider().start()
 <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>
 <a href="https://hasdata.com/?utm_source=github&utm_medium=banner&utm_campaign=D4Vinci" target="_blank" title="The web scraping service that actually beats anti-bot systems!"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/hasdata.png"></a>
 <a href="https://proxyempire.io/?ref=scrapling&utm_source=scrapling" target="_blank" title="Collect The Data Your Project Needs with the Best Residential Proxies"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/ProxyEmpire.png"></a>
-<a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png"></a>
 
 
 <a href="https://www.swiftproxy.net/" target="_blank" title="Unlock Reliable Proxy Services with Swiftproxy!"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/swiftproxy.png"></a>
