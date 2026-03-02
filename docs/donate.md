@@ -23,9 +23,8 @@ Perks:
 ### 3. [The Platinum tier](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646) ($300/month)
 Perks:
 
-1. Your logo will have a special placement at [the very top of Scrapling's project page](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#platinum-sponsors) with an 35-word paragraph or less.
-2. The same logo will be featured at [the top of Scrapling's PyPI page](https://pypi.org/project/scrapling/) and [the top of Docker's image page](https://hub.docker.com/r/pyd4vinci/scrapling), the same way it was placed on the project's page.
-3. Your logo will have a special placement as a top sponsor on [Scrapling's website](https://scrapling.readthedocs.io/en/latest/) main page. 
-4. A partner role at our Discord server. 
-5. A Shoutout at the end of each [Release notes](https://github.com/D4Vinci/Scrapling/releases).
-6. An announcement that you are our new Platinum sponsor on the library's Twitter page and the Discord server.
+1. Your logo will have a special placement at [the very top of Scrapling's project page](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#platinum-sponsors) with a 35-word paragraph or less.
+2. The same logo will be featured at [the PyPI page](https://pypi.org/project/scrapling/)/[the Docker page](https://hub.docker.com/r/pyd4vinci/scrapling), the same way it was placed on the project's page.
+3. A special placement for your logo as a top sponsor on [Scrapling's website](https://scrapling.readthedocs.io/en/latest/) main page.
+4. A partner role at our Discord server and an announcement on the Twitter page and the Discord server.
+5. A Shoutout at the end of each Release notes.
