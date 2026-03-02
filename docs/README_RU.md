@@ -90,6 +90,22 @@ MySpider().start()
       <br /> Без автоматизации браузера. Простые API-вызовы, возвращающие именно те cookie и заголовки, которые требуют эти системы.
     </td>
   </tr>
+  <tr>
+    <td width="240">
+      <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
+        <br />
+      </a>
+    </td>
+    <td>Мы создали BirdProxies, потому что прокси не должны быть сложными или дорогими. <br /> Быстрые резидентные и ISP прокси в 195+ локациях, честные цены и настоящая поддержка. <br />
+      <b>Попробуйте нашу игру FlappyBird на лендинге и получите бесплатные данные!</b>
+      <br /> 🚀 <a href="https://birdproxies.com/t/scrapling">
+        <b>Попробовать</b>
+      </a> | 💬 <a href="https://discord.com/invite/birdproxies">
+        <b>Discord</b>
+      </a>
+    </td>
+  </tr>
 </table>
 
 <i><sub>Хотите показать здесь свою рекламу? Нажмите [здесь](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
