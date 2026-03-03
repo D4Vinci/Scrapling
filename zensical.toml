@@ -77,7 +77,7 @@ logo = "assets/logo.png"
 favicon = "assets/favicon.ico"
 features = [
     "navigation.path",
-    "announce.dismiss",
+#    "announce.dismiss",
     "navigation.top",
     "navigation.footer",
     "navigation.indexes",
