@@ -18,3 +18,12 @@
   font-style: italic;
   font-weight: 800;
 }
+
+/* Announcement banner background */
+[data-md-color-scheme="default"] .md-banner {
+  background-color: #232946;
+}
+
+[data-md-color-scheme="slate"] .md-banner {
+  background-color: #141428;
+}
