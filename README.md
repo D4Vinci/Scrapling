@@ -100,7 +100,7 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Hey, we built BirdProxies because proxies shouldn't be complicated or overpriced. <br /> Fast residential and ISP proxies in 195+ locations, fair pricing, and real support. <br />
+    <td>Hey, we built BirdProxies because proxies shouldn't be complicated or overpriced. Fast residential and ISP proxies in 195+ locations, fair pricing, and real support. <br />
       <b>Try our FlappyBird game on the landing page for free data!</b>
       <br /> 🚀 <a href="https://birdproxies.com/t/scrapling">
         <b>Try Now</b>
