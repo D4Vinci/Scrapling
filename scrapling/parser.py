@@ -304,13 +304,23 @@ class Selector(SelectorsGeneration):
                 ignored_elements.update(cast(list, _find_all_elements(element)))
 
         _all_strings = []
-        for node in self._root.iter():
-            if node not in ignored_elements:
-                text = node.text
-                if text and isinstance(text, str):
-                    processed_text = text.strip() if strip else text
-                    if not valid_values or processed_text.strip():
-                        _all_strings.append(processed_text)
+
+        def append_text(text: Any) -> None:
+            if text and isinstance(text, str):
+                processed_text = text.strip() if strip else text
+                if not valid_values or processed_text.strip():
+                    _all_strings.append(processed_text)
+
+        def walk(node: Any) -> None:
+            if node in ignored_elements:
+                return
+
+            append_text(node.text)
+            for child in node:
+                walk(child)
+                append_text(child.tail)
+
+        walk(self._root)
 
         return cast(TextHandler, TextHandler(separator).join(_all_strings))
 
