@@ -611,10 +611,10 @@ class TestCheckpointMethods:
             assert result is False
 
     @pytest.mark.asyncio
-    async def test_restore_from_checkpoint_raises_when_disabled(self):
+    async def test_restore_from_checkpoint_returns_false_when_disabled(self):
         engine = _make_engine()  # no crawldir → checkpoint disabled
-        with pytest.raises(RuntimeError):
-            await engine._restore_from_checkpoint()
+        result = await engine._restore_from_checkpoint()
+        assert result is False
 
 
 # ---------------------------------------------------------------------------

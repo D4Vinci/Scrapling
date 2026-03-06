@@ -205,7 +205,7 @@ class CrawlerEngine:
         Returns True if successfully restored, False otherwise.
         """
         if not self._checkpoint_system_enabled:
-            raise
+            return False
 
         data = await self._checkpoint_manager.load()
         if data is None:

@@ -156,6 +156,10 @@ class StealthySession(SyncSession, StealthySessionMixin):
 
                     outer_box = page.locator(box_selector).last.bounding_box()
 
+                if not outer_box:
+                    log.warning("Could not locate Cloudflare captcha bounding box")
+                    return None
+
                 # Calculate the Captcha coordinates for any viewport
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
 
@@ -410,6 +414,10 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         return None
 
                     outer_box = await page.locator(box_selector).last.bounding_box()
+
+                if not outer_box:
+                    log.warning("Could not locate Cloudflare captcha bounding box")
+                    return None
 
                 # Calculate the Captcha coordinates for any viewport
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
