@@ -340,6 +340,8 @@ def test_getting_all_text_from_nested_content():
                 <span>string4</span>
             </div>
             string5
+            <script>ignored</script>
+            <style>ignored</style>
         </main>
     </body>
     </html>
