@@ -183,6 +183,35 @@ class TestAdvancedSelectors:
         text = page.get_all_text(valid_values=False)
         assert text != ""
 
+    def test_get_all_text_includes_tail_nodes(self):
+        """Ensure mixed text around nested tags is preserved"""
+        html = """
+        <html>
+        <body>
+            <main>
+                string1
+                <b>string2</b>
+                string3
+                <div><span>string4</span></div>
+                string5
+            </main>
+        </body>
+        </html>
+        """
+
+        page = Selector(html)
+        node = page.css("main")[0]
+
+        assert node.get_all_text("\n", strip=True) == "string1\nstring2\nstring3\nstring4\nstring5"
+
+    def test_get_all_text_keeps_ignored_tag_tail_text(self):
+        """Text after ignored tags should still be included"""
+        html = "<div>start<script>ignored</script>after<script>ignored2</script>end</div>"
+
+        page = Selector(html)
+
+        assert page.get_all_text(separator="|", strip=True) == "start|after|end"
+
 
 class TestTextHandlerAdvanced:
     """Test advanced TextHandler functionality"""

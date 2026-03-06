@@ -304,13 +304,28 @@ class Selector(SelectorsGeneration):
                 ignored_elements.update(cast(list, _find_all_elements(element)))
 
         _all_strings = []
-        for node in self._root.iter():
-            if node not in ignored_elements:
-                text = node.text
-                if text and isinstance(text, str):
-                    processed_text = text.strip() if strip else text
-                    if not valid_values or processed_text.strip():
-                        _all_strings.append(processed_text)
+
+        def _append_if_valid(text: Any) -> None:
+            if text and isinstance(text, str):
+                processed_text = text.strip() if strip else text
+                if not valid_values or processed_text.strip():
+                    _all_strings.append(processed_text)
+
+        for text_node in self._root.xpath(".//text()"):
+            parent = text_node.getparent()
+            if parent is None:
+                continue
+
+            if parent in ignored_elements:
+                is_tail = bool(getattr(text_node, "is_tail", False))
+                if not is_tail:
+                    continue
+
+                grandparent = parent.getparent()
+                if grandparent is None or grandparent in ignored_elements:
+                    continue
+
+            _append_if_valid(str(text_node))
 
         return cast(TextHandler, TextHandler(separator).join(_all_strings))
 
