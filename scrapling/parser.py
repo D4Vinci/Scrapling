@@ -58,6 +58,7 @@ _find_all_elements = XPath(".//*")
 _find_all_elements_with_spaces = XPath(
     ".//*[normalize-space(text())]"
 )  # This selector gets all elements with text content
+_find_all_text_nodes = XPath(".//text()")
 
 
 class Selector(SelectorsGeneration):
@@ -299,28 +300,31 @@ class Selector(SelectorsGeneration):
 
         ignored_elements: set[Any] = set()
         if ignore_tags:
-            for element in self._root.iter(*ignore_tags):
-                ignored_elements.add(element)
-                ignored_elements.update(cast(list, _find_all_elements(element)))
+            ignored_elements.update(self._root.iter(*ignore_tags))
 
         _all_strings = []
 
-        def append_text(text: Any) -> None:
-            if text and isinstance(text, str):
-                processed_text = text.strip() if strip else text
-                if not valid_values or processed_text.strip():
-                    _all_strings.append(processed_text)
+        def append_text(text: str) -> None:
+            processed_text = text.strip() if strip else text
+            if not valid_values or processed_text.strip():
+                _all_strings.append(processed_text)
 
-        def walk(node: Any) -> None:
-            if node in ignored_elements:
-                return
+        def is_visible_text_node(text_node: _ElementUnicodeResult) -> bool:
+            parent = text_node.getparent()
+            if parent is None:
+                return False
 
-            append_text(node.text)
-            for child in node:
-                walk(child)
-                append_text(child.tail)
+            owner = parent.getparent() if text_node.is_tail else parent
+            while owner is not None:
+                if owner in ignored_elements:
+                    return False
+                owner = owner.getparent()
+            return True
 
-        walk(self._root)
+        for text_node in cast(list[_ElementUnicodeResult], _find_all_text_nodes(self._root)):
+            text = str(text_node)
+            if text and is_visible_text_node(text_node):
+                append_text(text)
 
         return cast(TextHandler, TextHandler(separator).join(_all_strings))
 
