@@ -304,14 +304,25 @@ class Selector(SelectorsGeneration):
                 ignored_elements.update(cast(list, _find_all_elements(element)))
 
         _all_strings = []
-        for node in self._root.iter():
-            if node not in ignored_elements:
-                text = node.text
-                if text and isinstance(text, str):
-                    processed_text = text.strip() if strip else text
-                    if not valid_values or processed_text.strip():
-                        _all_strings.append(processed_text)
 
+        def _append_text(value: Any) -> None:
+            if value and isinstance(value, str):
+                processed_value = value.strip() if strip else value
+                if not valid_values or processed_value.strip():
+                    _all_strings.append(processed_value)
+
+        def _collect_text(node: Any) -> None:
+            if node not in ignored_elements:
+                _append_text(node.text)
+
+            for child in node:
+                _collect_text(child)
+
+            parent = node.getparent()
+            if parent is not None and parent not in ignored_elements:
+                _append_text(node.tail)
+
+        _collect_text(self._root)
         return cast(TextHandler, TextHandler(separator).join(_all_strings))
 
     def urljoin(self, relative_url: str) -> str:

@@ -183,6 +183,36 @@ class TestAdvancedSelectors:
         text = page.get_all_text(valid_values=False)
         assert text != ""
 
+    def test_get_all_text_includes_tail_text_nodes(self):
+        """Tail text between child elements should be preserved."""
+        page = Selector(
+            """
+            <html>
+                <body>
+                    <main>
+                        string1
+                        <b>string2</b>
+                        string3
+                        <div>
+                            <span>string4</span>
+                        </div>
+                        string5
+                    </main>
+                </body>
+            </html>
+            """
+        )
+
+        text = page.css("main")[0].get_all_text("\n", strip=True)
+        assert text == "string1\nstring2\nstring3\nstring4\nstring5"
+
+    def test_get_all_text_keeps_tail_after_ignored_tags(self):
+        """Ignoring a tag should not drop sibling text stored in its tail."""
+        page = Selector("<div>a<script>ignore</script>b<span>c</span>d</div>")
+
+        text = page.get_all_text(separator="", strip=True)
+        assert text == "abcd"
+
 
 class TestTextHandlerAdvanced:
     """Test advanced TextHandler functionality"""
