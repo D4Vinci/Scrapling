@@ -87,7 +87,7 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> جوالب Scrapling تتعامل مع Cloudflare Turnstile، لكن للحماية على مستوى المؤسسات، توفر Hyper Solutions نقاط نهاية API تولّد رموز antibot صالحة لـ: <b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
+    <td> جوالب Scrapling تتعامل مع Cloudflare Turnstile، لكن للحماية على مستوى المؤسسات، توفر Hyper Solutions نقاط نهاية API تولّد رموز antibot صالحة لـ: <br/><b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
       <br /> بدون أتمتة متصفح. استدعاءات API بسيطة تُرجع الكوكيز والرؤوس الدقيقة التي تتطلبها هذه الأنظمة. <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>اشترك</b>
       </a> | 💬 <a href="https://discord.gg/akamai">

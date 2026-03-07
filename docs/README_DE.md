@@ -87,7 +87,7 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> Scraplings Fetcher bewältigen Cloudflare Turnstile, aber für Schutz auf Unternehmensebene bietet Hyper Solutions API-Endpunkte, die gültige Antibot-Tokens generieren für: <b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
+    <td> Scraplings Fetcher bewältigen Cloudflare Turnstile, aber für Schutz auf Unternehmensebene bietet Hyper Solutions API-Endpunkte, die gültige Antibot-Tokens generieren für: <br/><b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
       <br /> Keine Browser-Automatisierung. Einfache API-Aufrufe, die genau die Cookies und Header zurückgeben, die diese Systeme erfordern.
       <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>Abonnieren</b>

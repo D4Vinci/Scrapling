@@ -87,7 +87,7 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> Scrapling 的 fetcher 可以处理 Cloudflare Turnstile，但对于企业级保护，Hyper Solutions 提供生成有效 antibot 令牌的 API 端点，支持：<b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
+    <td> Scrapling 的 fetcher 可以处理 Cloudflare Turnstile，但对于企业级保护，Hyper Solutions 提供生成有效 antibot 令牌的 API 端点，支持：<br/><b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
       <br /> 无需浏览器自动化。简单的 API 调用即可返回这些系统所需的确切 cookie 和请求头。
       <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>订阅</b>
