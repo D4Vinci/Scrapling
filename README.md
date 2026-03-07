@@ -91,8 +91,7 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> Scrapling's fetchers handle Cloudflare Turnstile, but for enterprise-grade protection, Hyper Solutions provides API endpoints that generate valid antibot tokens for: <br/><b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
-      <br /> No browser automation. Simple API calls returning the exact cookies and headers these systems require. <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+    <td> Scrapling handles Cloudflare Turnstile. For enterprise-grade protection, Hyper Solutions provides API endpoints that generate valid antibot tokens for <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b>, and <b>Incapsula</b>; simple API calls, no browser automation required. <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>Subscribe</b>
       </a> | 💬 <a href="https://discord.gg/akamai">
         <b>Discord</b>

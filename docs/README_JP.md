@@ -87,9 +87,7 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> ScraplingのfetcherはCloudflare Turnstileに対応していますが、エンタープライズレベルの保護には、Hyper Solutionsが有効なantibotトークンを生成するAPIエンドポイントを提供します：<br/><b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
-      <br /> ブラウザ自動化不要。これらのシステムが要求する正確なCookieとヘッダーを返すシンプルなAPI呼び出し。
-      <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+    <td> ScraplingはCloudflare Turnstileに対応。エンタープライズレベルの保護には、Hyper Solutionsが<b>Akamai</b>、<b>DataDome</b>、<b>Kasada</b>、<b>Incapsula</b>向けの有効なantibotトークンを生成するAPIエンドポイントを提供。シンプルなAPI呼び出しで、ブラウザ自動化不要。 <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>登録</b>
       </a> | 💬 <a href="https://discord.gg/akamai">
         <b>Discord</b>
