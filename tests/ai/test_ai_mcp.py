@@ -1,3 +1,6 @@
+from typing import get_type_hints
+
+from pydantic import TypeAdapter
 import pytest
 import pytest_httpbin
 
@@ -15,6 +18,11 @@ class TestMCPServer:
     @pytest.fixture
     def server(self):
         return ScraplingMCPServer()
+
+    def test_fetch_cookies_annotation_is_pydantic_compatible(self):
+        """`cookies` hint should stay compatible with Pydantic model generation on Python < 3.12."""
+        cookies_hint = get_type_hints(ScraplingMCPServer.fetch)["cookies"]
+        TypeAdapter(cookies_hint)
 
     def test_get_tool(self, server, test_url):
         """Test the get tool method"""
