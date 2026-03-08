@@ -209,8 +209,7 @@ class TestFingerprintFunctions:
         url = "https://sub.example.com/page.html"
         result = generate_convincing_referer(url)
 
-        assert result.startswith("https://www.google.com/search?q=")
-        assert "example" in result
+        assert result == "https://www.google.com/"
 
     def test_generate_convincing_referer_caching(self):
         """Test referer generation caching"""

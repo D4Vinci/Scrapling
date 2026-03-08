@@ -20,13 +20,13 @@ chrome_version = 143
 
 @lru_cache(10, typed=True)
 def generate_convincing_referer(url: str) -> str | None:
-    """Takes the domain from the URL without the subdomain/suffix and make it look like you were searching Google for this website
+    """Generate a convincing Google referer header
 
     >>> generate_convincing_referer('https://www.somewebsite.com/blah')
-    'https://www.google.com/search?q=somewebsite'
+    'https://www.google.com/'
 
     :param url: The URL you are about to fetch.
-    :return: Google's search URL of the domain name, or None for localhost/IP addresses
+    :return: Google's URL as referer, or None for localhost/IP addresses
     """
     # Fixing the inaccurate return type hint in `get_tld`
     extracted: Result | None = cast(Result, get_tld(url, as_object=True, fail_silently=True))
@@ -43,7 +43,7 @@ def generate_convincing_referer(url: str) -> str | None:
     if all(part.isdigit() for part in website_name.split(".") if part):
         return None
 
-    return f"https://www.google.com/search?q={website_name}"
+    return "https://www.google.com/"
 
 
 @lru_cache(1, typed=True)
