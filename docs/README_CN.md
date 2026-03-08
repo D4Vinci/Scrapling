@@ -117,11 +117,19 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Evomi：住宅代理低至 0.49 美元/GB。具备完全伪装 Chromium 的爬虫浏览器、住宅 IP、自动验证码解决和反机器人绕过。</br>
+    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>：住宅代理低至 0.49 美元/GB。具备完全伪装 Chromium 的爬虫浏览器、住宅 IP、自动验证码解决和反机器人绕过。</br>
       <b>Scraper API 轻松获取结果。支持 MCP 和 N8N 集成。</b>
-      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
-        <b>立即试用</b>
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank" title="Unlock the Power of Social Media Data & AI">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
+        <br />
       </a>
+    </td>
+    <td>
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> 提供覆盖 16+ 平台（包括 TikTok、X、YouTube 和 Instagram）的 900+ 稳定 API，拥有 4000 万+ 数据集。<br /> 还提供<a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">优惠 AI 模型</a> — Claude、GPT、GEMINI 等，最高优惠 71%。
     </td>
   </tr>
 </table>

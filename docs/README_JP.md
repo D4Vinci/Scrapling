@@ -117,11 +117,19 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Evomi：レジデンシャルプロキシが $0.49/GB から。完全に偽装された Chromium によるスクレイピングブラウザ、レジデンシャル IP、自動 CAPTCHA 解決、アンチボットバイパス。</br>
+    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>：レジデンシャルプロキシが $0.49/GB から。完全に偽装された Chromium によるスクレイピングブラウザ、レジデンシャル IP、自動 CAPTCHA 解決、アンチボットバイパス。</br>
       <b>Scraper API で手間なく結果を取得。MCP と N8N の統合に対応。</b>
-      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
-        <b>今すぐ試す</b>
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank" title="Unlock the Power of Social Media Data & AI">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
+        <br />
       </a>
+    </td>
+    <td>
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> は TikTok、X、YouTube、Instagram を含む 16 以上のプラットフォームで 900 以上の安定した API を提供し、4,000 万以上のデータセットを保有。<br /> さらに <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">割引 AI モデル</a>も提供 — Claude、GPT、GEMINI など最大 71% オフ。
     </td>
   </tr>
 </table>

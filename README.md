@@ -121,11 +121,8 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Evomi: residential proxies from $0.49/GB. Scraping browser with fully spoofed Chromium, residential IPs, auto CAPTCHA solving, and anti-bot bypass. </br>
+    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>: residential proxies from $0.49/GB. Scraping browser with fully spoofed Chromium, residential IPs, auto CAPTCHA solving, and anti-bot bypass. </br>
       <b>Scraper API for hassle-free results. MCP and N8N integrations are available.</b>
-      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
-        <b>Try Now</b>
-      </a>
     </td>
   </tr>
   <tr>

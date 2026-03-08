@@ -117,11 +117,19 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Evomi: بروكسيات سكنية بدءاً من 0.49$/جيجابايت. متصفح سكرابينج مع Chromium مُزيّف بالكامل، عناوين IP سكنية، حل تلقائي لـ CAPTCHA، وتجاوز أنظمة مكافحة البوتات. </br>
+    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>: بروكسيات سكنية بدءاً من 0.49$/جيجابايت. متصفح سكرابينج مع Chromium مُزيّف بالكامل، عناوين IP سكنية، حل تلقائي لـ CAPTCHA، وتجاوز أنظمة مكافحة البوتات. </br>
       <b>واجهة Scraper API لنتائج بدون عناء. تكاملات MCP و N8N متاحة.</b>
-      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
-        <b>جرّب الآن</b>
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank" title="Unlock the Power of Social Media Data & AI">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
+        <br />
       </a>
+    </td>
+    <td>
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> يوفر أكثر من 900 واجهة API مستقرة عبر أكثر من 16 منصة تشمل TikTok و X و YouTube و Instagram، مع أكثر من 40 مليون مجموعة بيانات. <br /> يقدم أيضاً <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">نماذج ذكاء اصطناعي بأسعار مخفضة</a> — Claude و GPT و GEMINI والمزيد بخصم يصل إلى 71%.
     </td>
   </tr>
 </table>

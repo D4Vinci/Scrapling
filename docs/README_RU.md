@@ -117,11 +117,19 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Evomi: резидентные прокси от $0.49/ГБ. Браузер для скрапинга с полностью подменённым Chromium, резидентными IP, автоматическим решением CAPTCHA и обходом анти-бот систем. </br>
+    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>: резидентные прокси от $0.49/ГБ. Браузер для скрапинга с полностью подменённым Chromium, резидентными IP, автоматическим решением CAPTCHA и обходом анти-бот систем. </br>
       <b>Scraper API для получения результатов без лишних сложностей. Доступны интеграции с MCP и N8N.</b>
-      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
-        <b>Попробовать</b>
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank" title="Unlock the Power of Social Media Data & AI">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
+        <br />
       </a>
+    </td>
+    <td>
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> предоставляет более 900 стабильных API на 16+ платформах, включая TikTok, X, YouTube и Instagram, с более чем 40 млн наборов данных. <br /> Также предлагает <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">AI-модели со скидкой</a> — Claude, GPT, GEMINI и другие со скидкой до 71%.
     </td>
   </tr>
 </table>

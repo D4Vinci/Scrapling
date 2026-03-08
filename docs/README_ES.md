@@ -117,11 +117,19 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Evomi: proxies residenciales desde 0,49 $/GB. Navegador de scraping con Chromium totalmente falsificado, IPs residenciales, resolución automática de CAPTCHA y evasión anti-bot. </br>
+    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>: proxies residenciales desde 0,49 $/GB. Navegador de scraping con Chromium totalmente falsificado, IPs residenciales, resolución automática de CAPTCHA y evasión anti-bot. </br>
       <b>API Scraper para resultados sin complicaciones. Integraciones MCP y N8N disponibles.</b>
-      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
-        <b>Probar ahora</b>
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank" title="Unlock the Power of Social Media Data & AI">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
+        <br />
       </a>
+    </td>
+    <td>
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> ofrece más de 900 APIs estables en más de 16 plataformas, incluyendo TikTok, X, YouTube e Instagram, con más de 40M de conjuntos de datos. <br /> También ofrece <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">modelos de IA con descuento</a> — Claude, GPT, GEMINI y más con hasta un 71% de descuento.
     </td>
   </tr>
 </table>
