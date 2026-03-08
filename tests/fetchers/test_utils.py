@@ -7,7 +7,6 @@ from scrapling.engines.toolbelt.navigation import (
     create_async_intercept_handler,
 )
 from scrapling.engines.toolbelt.fingerprints import (
-    generate_convincing_referer,
     get_os_name,
     generate_headers
 )
@@ -203,21 +202,6 @@ class TestConstructProxyDict:
 
 class TestFingerprintFunctions:
     """Test fingerprint generation functions"""
-
-    def test_generate_convincing_referer(self):
-        """Test referer generation"""
-        url = "https://sub.example.com/page.html"
-        result = generate_convincing_referer(url)
-
-        assert result == "https://www.google.com/"
-
-    def test_generate_convincing_referer_caching(self):
-        """Test referer generation caching"""
-        url = "https://example.com"
-        result1 = generate_convincing_referer(url)
-        result2 = generate_convincing_referer(url)
-
-        assert result1 == result2
 
     def test_get_os_name(self):
         """Test OS name detection"""
