@@ -9,7 +9,7 @@ All examples collect **all 100 quotes across 10 pages**.
 Make sure Scrapling is installed:
 
 ```bash
-pip install "scrapling[all]>=0.4.1"
+pip install "scrapling[all]>=0.4.2"
 scrapling install --force
 ```
 
