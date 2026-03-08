@@ -21,8 +21,7 @@ The `StealthyFetcher` class is a stealthy version of the [DynamicFetcher](dynami
 3. It isolates JS execution, removes many Playwright fingerprints, and stops detection through some of the known behaviors that bots do.
 4. It generates canvas noise to prevent fingerprinting through canvas.
 5. It automatically patches known methods to detect running in headless mode and provides an option to defeat timezone mismatch attacks.
-6. It makes requests look as if they came from Google's search page of the requested website.
-7. and other anti-protection options...
+6. and other anti-protection options...
 
 ## Full list of arguments
 Scrapling provides many options with this fetcher and its session classes. Before jumping to the [examples](#examples), here's the full list of arguments

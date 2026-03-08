@@ -280,7 +280,7 @@ For Async requests, you will replace the import like below:
 
 !!! note "Notes:"
 
-    1. You have the `stealthy_headers` argument, which, when enabled, makes requests to generate real browser headers and use them, including a referer header, as if this request came from a Google search of this domain. It's enabled by default.
+    1. You have the `stealthy_headers` argument, which, when enabled, makes requests to generate real browser headers and use them, including a Google referer header. It's enabled by default.
     2. The `impersonate` argument lets you fake the TLS fingerprint for a specific browser version.
     3. There's also the `http3` argument, which, when enabled, makes the fetcher use HTTP/3 for requests, which makes your requests more authentic
 
@@ -320,8 +320,7 @@ Some of the things it does:
 3. It isolates JS execution, removes many Playwright fingerprints, and stops detection through some of the known behaviors that bots do.
 4. It generates canvas noise to prevent fingerprinting through canvas.
 5. It automatically patches known methods to detect running in headless mode and provides an option to defeat timezone mismatch attacks.
-6. It makes requests look as if they came from Google's search page of the requested website.
-7. and other anti-protection options...
+6. and other anti-protection options...
 
 ```python
 >>> from scrapling.fetchers import StealthyFetcher
