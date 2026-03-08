@@ -87,11 +87,10 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> Scrapling справляется с Cloudflare Turnstile. Для защиты корпоративного уровня Hyper Solutions предоставляет API-эндпоинты, генерирующие валидные antibot-токены для <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b> и <b>Incapsula</b> . Простые API-вызовы, без автоматизации браузера. <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
-        <b>Подписаться</b>
-      </a> | 💬 <a href="https://discord.gg/akamai">
-        <b>Discord</b>
-      </a>
+    <td> Scrapling справляется с Cloudflare Turnstile. Для защиты корпоративного уровня
+      <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+        <b>Hyper Solutions</b>
+      </a> предоставляет API-эндпоинты, генерирующие валидные antibot-токены для <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b> и <b>Incapsula</b> . Простые API-вызовы, без автоматизации браузера.
     </td>
   </tr>
   <tr>
@@ -101,13 +100,11 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Мы создали BirdProxies, потому что прокси не должны быть сложными или дорогими. <br /> Быстрые резидентные и ISP прокси в 195+ локациях, честные цены и настоящая поддержка. <br />
+    <td>Мы создали
+      <a href="https://birdproxies.com/t/scrapling">
+        <b>BirdProxies</b>
+      </a>, потому что прокси не должны быть сложными или дорогими. <br /> Быстрые резидентные и ISP прокси в 195+ локациях, честные цены и настоящая поддержка. <br />
       <b>Попробуйте нашу игру FlappyBird на лендинге и получите бесплатные данные!</b>
-      <br /> 🚀 <a href="https://birdproxies.com/t/scrapling">
-        <b>Попробовать</b>
-      </a> | 💬 <a href="https://discord.com/invite/birdproxies">
-        <b>Discord</b>
-      </a>
     </td>
   </tr>
   <tr>
@@ -117,7 +114,10 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>: резидентные прокси от $0.49/ГБ. Браузер для скрапинга с полностью подменённым Chromium, резидентными IP, автоматическим решением CAPTCHA и обходом анти-бот систем. </br>
+    <td>
+      <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
+        <b>Evomi</b>
+      </a>: резидентные прокси от $0.49/ГБ. Браузер для скрапинга с полностью подменённым Chromium, резидентными IP, автоматическим решением CAPTCHA и обходом анти-бот систем. </br>
       <b>Scraper API для получения результатов без лишних сложностей. Доступны интеграции с MCP и N8N.</b>
     </td>
   </tr>

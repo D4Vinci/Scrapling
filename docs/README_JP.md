@@ -87,12 +87,9 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> ScraplingはCloudflare Turnstileに対応。エンタープライズレベルの保護には、Hyper Solutionsが<b>Akamai</b>、<b>DataDome</b>、<b>Kasada</b>、<b>Incapsula</b>向けの有効なantibotトークンを生成するAPIエンドポイントを提供。シンプルなAPI呼び出しで、ブラウザ自動化不要。 <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
-        <b>登録</b>
-      </a> | 💬 <a href="https://discord.gg/akamai">
-        <b>Discord</b>
-      </a>
-    </td>
+    <td> ScraplingはCloudflare Turnstileに対応。エンタープライズレベルの保護には、<a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+        <b>Hyper Solutions</b>
+      </a>が<b>Akamai</b>、<b>DataDome</b>、<b>Kasada</b>、<b>Incapsula</b>向けの有効なantibotトークンを生成するAPIエンドポイントを提供。シンプルなAPI呼び出しで、ブラウザ自動化不要。 </td>
   </tr>
   <tr>
     <td width="200">
@@ -101,13 +98,10 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>プロキシは複雑で高価であるべきではないと考え、BirdProxiesを構築しました。 <br /> 195以上のロケーションの高速レジデンシャル・ISPプロキシ、公正な価格設定、そして本物のサポート。 <br />
+    <td>プロキシは複雑で高価であるべきではないと考え、<a href="https://birdproxies.com/t/scrapling">
+        <b>BirdProxies</b>
+      </a>を構築しました。 <br /> 195以上のロケーションの高速レジデンシャル・ISPプロキシ、公正な価格設定、そして本物のサポート。 <br />
       <b>ランディングページでFlappyBirdゲームを試して無料データをゲット！</b>
-      <br /> 🚀 <a href="https://birdproxies.com/t/scrapling">
-        <b>今すぐ試す</b>
-      </a> | 💬 <a href="https://discord.com/invite/birdproxies">
-        <b>Discord</b>
-      </a>
     </td>
   </tr>
   <tr>
@@ -117,7 +111,10 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>：レジデンシャルプロキシが $0.49/GB から。完全に偽装された Chromium によるスクレイピングブラウザ、レジデンシャル IP、自動 CAPTCHA 解決、アンチボットバイパス。</br>
+    <td>
+      <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
+        <b>Evomi</b>
+      </a>：レジデンシャルプロキシが $0.49/GB から。完全に偽装された Chromium によるスクレイピングブラウザ、レジデンシャル IP、自動 CAPTCHA 解決、アンチボットバイパス。</br>
       <b>Scraper API で手間なく結果を取得。MCP と N8N の統合に対応。</b>
     </td>
   </tr>

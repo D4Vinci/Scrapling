@@ -91,12 +91,9 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> Scrapling handles Cloudflare Turnstile. For enterprise-grade protection, Hyper Solutions provides API endpoints that generate valid antibot tokens for <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b>, and <b>Incapsula</b>. Simple API calls, no browser automation required. <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
-        <b>Subscribe</b>
-      </a> | 💬 <a href="https://discord.gg/akamai">
-        <b>Discord</b>
-      </a>
-    </td>
+    <td> Scrapling handles Cloudflare Turnstile. For enterprise-grade protection, <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+        <b>Hyper Solutions</b>
+      </a> provides API endpoints that generate valid antibot tokens for <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b>, and <b>Incapsula</b>. Simple API calls, no browser automation required. </td>
   </tr>
   <tr>
     <td width="200">
@@ -105,13 +102,10 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Hey, we built BirdProxies because proxies shouldn't be complicated or overpriced. Fast residential and ISP proxies in 195+ locations, fair pricing, and real support. <br />
+    <td>Hey, we built <a href="https://birdproxies.com/t/scrapling">
+        <b>BirdProxies</b>
+      </a> because proxies shouldn't be complicated or overpriced. Fast residential and ISP proxies in 195+ locations, fair pricing, and real support. <br />
       <b>Try our FlappyBird game on the landing page for free data!</b>
-      <br /> 🚀 <a href="https://birdproxies.com/t/scrapling">
-        <b>Try Now</b>
-      </a> | 💬 <a href="https://discord.com/invite/birdproxies">
-        <b>Discord</b>
-      </a>
     </td>
   </tr>
   <tr>
@@ -121,7 +115,10 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>: residential proxies from $0.49/GB. Scraping browser with fully spoofed Chromium, residential IPs, auto CAPTCHA solving, and anti-bot bypass. </br>
+    <td>
+      <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
+        <b>Evomi</b>
+      </a>: residential proxies from $0.49/GB. Scraping browser with fully spoofed Chromium, residential IPs, auto CAPTCHA solving, and anti-bot bypass. </br>
       <b>Scraper API for hassle-free results. MCP and N8N integrations are available.</b>
     </td>
   </tr>

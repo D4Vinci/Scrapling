@@ -87,12 +87,9 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> Scrapling يتعامل مع Cloudflare Turnstile. للحماية على مستوى المؤسسات، توفر Hyper Solutions نقاط نهاية API تولّد رموز antibot صالحة لـ <b>Akamai</b>، <b>DataDome</b>، <b>Kasada</b> و <b>Incapsula</b> . استدعاءات API بسيطة، بدون أتمتة متصفح. <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
-        <b>اشترك</b>
-      </a> | 💬 <a href="https://discord.gg/akamai">
-        <b>Discord</b>
-      </a>
-    </td>
+    <td> Scrapling يتعامل مع Cloudflare Turnstile. للحماية على مستوى المؤسسات، توفر <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+        <b>Hyper Solutions</b>
+      </a> نقاط نهاية API تولّد رموز antibot صالحة لـ <b>Akamai</b>، <b>DataDome</b>، <b>Kasada</b> و <b>Incapsula</b>. استدعاءات API بسيطة، بدون أتمتة متصفح. </td>
   </tr>
   <tr>
     <td width="200">
@@ -101,13 +98,10 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>مرحباً، لقد بنينا BirdProxies لأن البروكسيات لا يجب أن تكون معقدة أو باهظة الثمن. <br /> بروكسيات سكنية و ISP سريعة في أكثر من 195 موقعاً، أسعار عادلة، ودعم حقيقي. <br />
+    <td>مرحباً، لقد بنينا <a href="https://birdproxies.com/t/scrapling">
+        <b>BirdProxies</b>
+      </a> لأن البروكسيات لا يجب أن تكون معقدة أو باهظة الثمن. <br /> بروكسيات سكنية و ISP سريعة في أكثر من 195 موقعاً، أسعار عادلة، ودعم حقيقي. <br />
       <b>جرّب لعبة FlappyBird على صفحة الهبوط للحصول على بيانات مجانية!</b>
-      <br /> 🚀 <a href="https://birdproxies.com/t/scrapling">
-        <b>جرّب الآن</b>
-      </a> | 💬 <a href="https://discord.com/invite/birdproxies">
-        <b>Discord</b>
-      </a>
     </td>
   </tr>
   <tr>
@@ -117,7 +111,10 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td><a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling"><b>Evomi</b></a>: بروكسيات سكنية بدءاً من 0.49$/جيجابايت. متصفح سكرابينج مع Chromium مُزيّف بالكامل، عناوين IP سكنية، حل تلقائي لـ CAPTCHA، وتجاوز أنظمة مكافحة البوتات. </br>
+    <td>
+      <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
+        <b>Evomi</b>
+      </a>: بروكسيات سكنية بدءاً من 0.49$/جيجابايت. متصفح سكرابينج مع Chromium مُزيّف بالكامل، عناوين IP سكنية، حل تلقائي لـ CAPTCHA، وتجاوز أنظمة مكافحة البوتات. </br>
       <b>واجهة Scraper API لنتائج بدون عناء. تكاملات MCP و N8N متاحة.</b>
     </td>
   </tr>
