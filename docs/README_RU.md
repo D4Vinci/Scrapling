@@ -18,6 +18,10 @@
         <img alt="PyPI version" src="https://badge.fury.io/py/Scrapling.svg"></a>
     <a href="https://pepy.tech/project/scrapling" alt="PyPI Downloads">
         <img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/scrapling?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=Downloads"></a>
+    <a href="https://github.com/D4Vinci/Scrapling/tree/main/agent-skill" alt="AI Agent Skill directory">
+        <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fgithub.com%2FD4Vinci%2FScrapling%2Ftree%2Fmain%2Fagent-skill"></a>
+    <a href="https://clawhub.ai/D4Vinci/scrapling-official" alt="OpenClaw Skill">
+        <img alt="OpenClaw Skill" src="https://img.shields.io/badge/Clawhub-darkred?style=flat&label=OpenClaw&link=https%3A%2F%2Fclawhub.ai%2FD4Vinci%2Fscrapling-official"></a>
     <br/>
     <a href="https://discord.gg/EMgGbDceNQ" alt="Discord" target="_blank">
       <img alt="Discord" src="https://img.shields.io/discord/1360786381042880532?style=social&logo=discord&link=https%3A%2F%2Fdiscord.gg%2FEMgGbDceNQ">
@@ -87,11 +91,10 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td> Scrapling справляется с Cloudflare Turnstile. Для защиты корпоративного уровня Hyper Solutions предоставляет API-эндпоинты, генерирующие валидные antibot-токены для <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b> и <b>Incapsula</b> . Простые API-вызовы, без автоматизации браузера. <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
-        <b>Подписаться</b>
-      </a> | 💬 <a href="https://discord.gg/akamai">
-        <b>Discord</b>
-      </a>
+    <td> Scrapling справляется с Cloudflare Turnstile. Для защиты корпоративного уровня
+      <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+        <b>Hyper Solutions</b>
+      </a> предоставляет API-эндпоинты, генерирующие валидные antibot-токены для <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b> и <b>Incapsula</b> . Простые API-вызовы, без автоматизации браузера.
     </td>
   </tr>
   <tr>
@@ -101,13 +104,11 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Мы создали BirdProxies, потому что прокси не должны быть сложными или дорогими. <br /> Быстрые резидентные и ISP прокси в 195+ локациях, честные цены и настоящая поддержка. <br />
+    <td>Мы создали
+      <a href="https://birdproxies.com/t/scrapling">
+        <b>BirdProxies</b>
+      </a>, потому что прокси не должны быть сложными или дорогими. <br /> Быстрые резидентные и ISP прокси в 195+ локациях, честные цены и настоящая поддержка. <br />
       <b>Попробуйте нашу игру FlappyBird на лендинге и получите бесплатные данные!</b>
-      <br /> 🚀 <a href="https://birdproxies.com/t/scrapling">
-        <b>Попробовать</b>
-      </a> | 💬 <a href="https://discord.com/invite/birdproxies">
-        <b>Discord</b>
-      </a>
     </td>
   </tr>
   <tr>
@@ -117,11 +118,22 @@ MySpider().start()
         <br />
       </a>
     </td>
-    <td>Evomi: резидентные прокси от $0.49/ГБ. Браузер для скрапинга с полностью подменённым Chromium, резидентными IP, автоматическим решением CAPTCHA и обходом анти-бот систем. </br>
+    <td>
+      <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
+        <b>Evomi</b>
+      </a>: резидентные прокси от $0.49/ГБ. Браузер для скрапинга с полностью подменённым Chromium, резидентными IP, автоматическим решением CAPTCHA и обходом анти-бот систем. </br>
       <b>Scraper API для получения результатов без лишних сложностей. Доступны интеграции с MCP и N8N.</b>
-      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
-        <b>Попробовать</b>
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank" title="Unlock the Power of Social Media Data & AI">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
+        <br />
       </a>
+    </td>
+    <td>
+      <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> предоставляет более 900 стабильных API на 16+ платформах, включая TikTok, X, YouTube и Instagram, с более чем 40 млн наборов данных. <br /> Также предлагает <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">AI-модели со скидкой</a> — Claude, GPT, GEMINI и другие со скидкой до 71%.
     </td>
   </tr>
 </table>
