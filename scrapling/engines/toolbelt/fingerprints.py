@@ -14,8 +14,8 @@ from scrapling.core._types import Dict, Literal, Tuple, cast
 __OS_NAME__ = platform_system()
 OSName = Literal["linux", "macos", "windows"]
 # Current versions hardcoded for now (Playwright doesn't allow to know the version of a browser without launching it)
-chromium_version = 141
-chrome_version = 143
+chromium_version = 145
+chrome_version = 145
 
 
 @lru_cache(10, typed=True)
