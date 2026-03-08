@@ -1,8 +1,8 @@
 # Scrapling Agent Skill
 
-This directory aims to align with the [AgentSkill](https://agentskills.io/specification) specification to make a skill readable by OpenClaw and other agentic tools. It encapsulates almost all the documentation website's content in Markdown format, so the agent doesn't have to guess anything.
+The skill aligns with the [AgentSkill](https://agentskills.io/specification) specification, so it will be readable by [OpenClaw](https://github.com/openclaw/openclaw), [Claude Code](https://claude.com/product/claude-code), and other agentic tools. It encapsulates almost all of the documentation website's content in Markdown, so the agent doesn't have to guess anything.
 
-It can be used to answer almost 90% of any questions you would have about scrapling. We tested them on [OpenClaw](https://github.com/openclaw/openclaw) and [Claude Code](https://claude.com/product/claude-code) but please open a [ticket](https://github.com/D4Vinci/Scrapling/issues/new/choose) if you faced any issues or use or [our Discord server](https://discord.gg/EMgGbDceNQ).
+It can be used to answer almost 90% of any questions you would have about scrapling. We tested it on [OpenClaw](https://github.com/openclaw/openclaw) and [Claude Code](https://claude.com/product/claude-code), but please open a [ticket](https://github.com/D4Vinci/Scrapling/issues/new/choose) if you faced any issues or use our [Discord server](https://discord.gg/EMgGbDceNQ).
 
 ## Installation
 
@@ -13,4 +13,5 @@ If you are an [OpenClaw](https://github.com/openclaw/openclaw) and [Claude Code]
 ```bash
 clawhub install scrapling-official
 ```
+
 Or go to the [Clawhub](https://docs.openclaw.ai/tools/clawhub) page from [here](https://clawhub.ai/D4Vinci/scrapling-official).
