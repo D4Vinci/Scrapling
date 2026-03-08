@@ -239,6 +239,86 @@ In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resou
 - **Consistent fingerprint**: Same browser fingerprint across all requests.
 - **Memory efficiency**: Better resource usage compared to launching new browsers with each fetch.
 
+## Using Camoufox as an Engine
+
+This fetcher used a custom version of [Camoufox](https://github.com/daijro/camoufox) as an engine before version 0.3.13, which was replaced by [patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright) for many reasons. If Camoufox is stable on your device, has no high memory issues, and you want to continue using it, you can.
+
+First, install the Camoufox library, browser, and Firefox system dependencies:
+
+```commandline
+pip install camoufox
+playwright install-deps firefox
+camoufox fetch
+```
+
+Then inherit from `StealthySession` and override the `start` method:
+
+```python
+from scrapling.fetchers import StealthySession
+from playwright.sync_api import sync_playwright
+from camoufox.utils import launch_options as generate_launch_options
+
+class StealthySession(StealthySession):
+    def start(self):
+        """Create a browser for this instance and context."""
+        if not self.playwright:
+            self.playwright = sync_playwright().start()
+            launch_options = generate_launch_options(**{
+                "geoip": False,
+                "proxy": self._config.proxy,
+                "headless": self._config.headless,
+                "humanize": True if self._config.solve_cloudflare else False,
+                "i_know_what_im_doing": True,
+                "allow_webgl": self._config.allow_webgl,
+                "block_webrtc": self._config.block_webrtc,
+                "os": None,
+                "user_data_dir": self._config.user_data_dir,
+                "firefox_user_prefs": {
+                    "browser.sessionhistory.max_entries": 10,
+                    "browser.sessionhistory.max_total_viewers": -1,
+                    "browser.cache.memory.enable": True,
+                    "browser.cache.disk_cache_ssl": True,
+                    "browser.cache.disk.smart_size.enabled": True,
+                },
+            })
+            self.context = self.playwright.firefox.launch_persistent_context(**launch_options)
+        else:
+            raise RuntimeError("Session has been already started")
+```
+
+After that, use it normally:
+
+```python
+with StealthySession(solve_cloudflare=True, headless=True) as session:
+    page = session.fetch('https://sergiodemo.com/security/challenge/legacy-challenge')
+    if page.css('#page-not-found-404'):
+        print('Cloudflare challenge solved successfully!')
+```
+
+The same logic applies to `AsyncStealthySession` with async equivalents:
+
+```python
+from scrapling.fetchers import AsyncStealthySession
+from playwright.async_api import async_playwright
+from camoufox.utils import launch_options as generate_launch_options
+
+class AsyncStealthySession(AsyncStealthySession):
+    async def start(self):
+        """Create a browser for this instance and context."""
+        if not self.playwright:
+            self.playwright = await async_playwright().start()
+            launch_options = generate_launch_options(**{"headless": True, "user_data_dir": ''})
+            # or set the launch options as in the sync example above
+            self.context = await self.playwright.firefox.launch_persistent_context(**launch_options)
+        else:
+            raise RuntimeError("Session has been already started")
+
+async with AsyncStealthySession(solve_cloudflare=True, headless=True) as session:
+    page = await session.fetch('https://sergiodemo.com/security/challenge/legacy-challenge')
+    if page.css('#page-not-found-404'):
+        print('Cloudflare challenge solved successfully!')
+```
+
 ## When to Use
 
 Use StealthyFetcher when:
