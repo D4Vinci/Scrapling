@@ -5,7 +5,6 @@ Functions related to generating headers and fingerprints generally
 from functools import lru_cache
 from platform import system as platform_system
 
-from tld import get_tld, Result
 from browserforge.headers import Browser, HeaderGenerator
 from browserforge.headers.generator import SUPPORTED_OPERATING_SYSTEMS
 
@@ -16,34 +15,6 @@ OSName = Literal["linux", "macos", "windows"]
 # Current versions hardcoded for now (Playwright doesn't allow to know the version of a browser without launching it)
 chromium_version = 145
 chrome_version = 145
-
-
-@lru_cache(10, typed=True)
-def generate_convincing_referer(url: str) -> str | None:
-    """Generate a convincing Google referer header
-
-    >>> generate_convincing_referer('https://www.somewebsite.com/blah')
-    'https://www.google.com/'
-
-    :param url: The URL you are about to fetch.
-    :return: Google's URL as referer, or None for localhost/IP addresses
-    """
-    # Fixing the inaccurate return type hint in `get_tld`
-    extracted: Result | None = cast(Result, get_tld(url, as_object=True, fail_silently=True))
-    if not extracted:
-        return None
-
-    website_name = extracted.domain
-
-    # Skip generating referer for localhost, IP addresses, or when there's no valid domain
-    if not website_name or not extracted.tld or website_name in ("localhost", "127.0.0.1", "::1"):
-        return None
-
-    # Check if it's an IP address (simple check for IPv4)
-    if all(part.isdigit() for part in website_name.split(".") if part):
-        return None
-
-    return "https://www.google.com/"
 
 
 @lru_cache(1, typed=True)
