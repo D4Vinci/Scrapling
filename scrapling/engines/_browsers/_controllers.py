@@ -14,7 +14,6 @@ from scrapling.core.utils import log
 from scrapling.core._types import Optional, ProxyType, Unpack
 from scrapling.engines.toolbelt.proxy_rotation import is_proxy_error
 from scrapling.engines.toolbelt.convertor import Response, ResponseFactory
-from scrapling.engines.toolbelt.fingerprints import generate_convincing_referer
 from scrapling.engines._browsers._types import PlaywrightSession, PlaywrightFetchParams
 from scrapling.engines._browsers._base import SyncSession, AsyncSession, DynamicSessionMixin
 from scrapling.engines._browsers._validators import validate_fetch as _validate, PlaywrightConfig
@@ -58,8 +57,8 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
-        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param google_search: Enabled by default, Scrapling will set a Google referer header.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
         :param extra_flags: A list of additional browser flags to pass to the browser on launch.
@@ -103,11 +102,11 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
-        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+        :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
         :param blocked_domains: A set of domain names to block requests to. Subdomains are also matched (e.g., ``"example.com"`` blocks ``"sub.example.com"`` too).
@@ -127,9 +126,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
 
         request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
         referer = (
-            generate_convincing_referer(url)
-            if (params.google_search and "referer" not in request_headers_keys)
-            else None
+            "https://www.google.com/" if (params.google_search and "referer" not in request_headers_keys) else None
         )
 
         for attempt in range(self._config.retries):
@@ -226,8 +223,8 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
-        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param google_search: Enabled by default, Scrapling will set a Google referer header.
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param max_pages: The maximum number of tabs to be opened at the same time. It will be used in rotation through a PagePool.
         :param user_data_dir: Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory.
@@ -271,11 +268,11 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         """Opens up the browser and do your request based on your chosen options.
 
         :param url: The Target url.
-        :param google_search: Enabled by default, Scrapling will set the referer header to be as if this request came from a Google search of this website's domain name.
+        :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by the `google_search` argument takes priority over the referer set here if used together._
+        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
         :param blocked_domains: A set of domain names to block requests to. Subdomains are also matched (e.g., ``"example.com"`` blocks ``"sub.example.com"`` too).
@@ -296,9 +293,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
 
         request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
         referer = (
-            generate_convincing_referer(url)
-            if (params.google_search and "referer" not in request_headers_keys)
-            else None
+            "https://www.google.com/" if (params.google_search and "referer" not in request_headers_keys) else None
         )
 
         for attempt in range(self._config.retries):

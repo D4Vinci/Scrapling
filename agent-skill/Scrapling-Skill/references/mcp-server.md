@@ -25,7 +25,7 @@ Fast HTTP GET with browser fingerprint impersonation (TLS, headers). Suitable fo
 | `timeout`           | number                             | 30           | Seconds before timeout                                             |
 | `retries`           | int                                | 3            | Retry attempts on failure                                          |
 | `retry_delay`       | int                                | 1            | Seconds between retries                                            |
-| `stealthy_headers`  | bool                               | true         | Generate realistic browser headers and Google-search referer       |
+| `stealthy_headers`  | bool                               | true         | Generate realistic browser headers and Google referer       |
 | `http3`             | bool                               | false        | Use HTTP/3 (may conflict with `impersonate`)                       |
 | `follow_redirects`  | bool                               | true         | Follow HTTP redirects                                              |
 | `max_redirects`     | int                                | 30           | Max redirects (-1 for unlimited)                                   |
@@ -58,7 +58,7 @@ Opens a Chromium browser via Playwright to render JavaScript. Suitable for dynam
 | `wait_selector_state` | str                 | `"attached"` | State for wait_selector: `"attached"` / `"visible"` / `"hidden"` / `"detached"` |
 | `network_idle`        | bool                | false        | Wait until no network activity for 500ms                                        |
 | `disable_resources`   | bool                | false        | Block fonts, images, media, stylesheets, etc. for speed                         |
-| `google_search`       | bool                | true         | Set referer as if from Google search                                            |
+| `google_search`       | bool                | true         | Set a Google referer header                                            |
 | `real_chrome`         | bool                | false        | Use locally installed Chrome instead of bundled Chromium                        |
 | `cdp_url`             | str or null         | null         | Connect to existing browser via CDP URL                                         |
 | `extra_headers`       | dict or null        | null         | Additional request headers                                                      |

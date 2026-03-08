@@ -1,7 +1,7 @@
 ---
 name: scrapling-official
 description: Scrape web pages using Scrapling with anti-bot bypass (like Cloudflare Turnstile), stealth headless browsing, spiders framework, adaptive scraping, and JavaScript rendering. Use when asked to scrape, crawl, or extract data from websites; web_fetch fails; the site has anti-bot protections; write Python code to scrape/crawl; or write spiders.
-version: 0.4.1
+version: 0.4.2
 license: Complete terms in LICENSE.txt
 ---
 
@@ -22,7 +22,7 @@ Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers fo
 
 Create a virtual Python environment through any way available, like `venv`, then inside the environment do:
 
-`pip install "scrapling[all]>=0.4.1"`
+`pip install "scrapling[all]>=0.4.2"`
 
 Then do this to download all the browsers' dependencies:
 

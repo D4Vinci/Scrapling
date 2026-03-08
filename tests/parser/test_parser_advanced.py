@@ -183,6 +183,33 @@ class TestAdvancedSelectors:
         text = page.get_all_text(valid_values=False)
         assert text != ""
 
+    def test_get_all_text_preserves_interleaved_text_nodes(self):
+        """Test get_all_text preserves interleaved text nodes"""
+        html = """
+        <html>
+        <body>
+            <main>
+                string1
+                <b>string2</b>
+                string3
+                <div>
+                    <span>string4</span>
+                </div>
+                string5
+                <script>ignored</script>
+                string6
+                <style>ignored</style>
+                string7
+            </main>
+        </body>
+        </html>
+        """
+
+        page = Selector(html, adaptive=False)
+        node = page.css("main")[0]
+
+        assert node.get_all_text("\n", strip=True) == "string1\nstring2\nstring3\nstring4\nstring5\nstring6\nstring7"
+
 
 class TestTextHandlerAdvanced:
     """Test advanced TextHandler functionality"""

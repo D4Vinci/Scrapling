@@ -20,7 +20,7 @@ Check out how to configure the parsing options [here](choosing.md#parser-configu
 All methods for making requests here share some arguments, so let's discuss them first.
 
 - **url**: The targeted URL
-- **stealthy_headers**: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of the URL's domain.
+- **stealthy_headers**: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
 - **follow_redirects**: As the name implies, tell the fetcher to follow redirections. **Enabled by default**
 - **timeout**: The number of seconds to wait for each request to be finished. **Defaults to 30 seconds**.
 - **retries**: The number of retries that the fetcher will do for failed requests. **Defaults to three retries**.
