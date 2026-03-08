@@ -7,13 +7,13 @@ Thank you, stay curious, and hack the planet! ❤️
 ## Advertisement
 If you are looking to **advertise** your business to our target audience, check out the [available tiers](https://github.com/sponsors/D4Vinci):
 
-### 1. [The Silver tier](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=435496) ($50/month)
+### 1. [The Silver tier](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=435495) ($100/month)
 Perks:
 
 1. Your logo will be featured at [the top of Scrapling's project page](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#sponsors).
 2. The same logo will be featured at [the top of Scrapling's PyPI page](https://pypi.org/project/scrapling/) and [the top of Docker's image page](https://hub.docker.com/r/pyd4vinci/scrapling), the same way it was placed on the project's page.
 
-### 2. [The Gold tier](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=435495) ($100/month)
+### 2. [The Gold tier](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=591422) ($200/month)
 Perks:
 
 1. Your logo will be featured at [the top of Scrapling's project page](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#sponsors).

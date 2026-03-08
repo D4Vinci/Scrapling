@@ -81,22 +81,21 @@ MySpider().start()
 # プラチナスポンサー
 <table>
   <tr>
-    <td width="240">
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
         <br />
-      </a> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+      </a>
+    </td>
+    <td> ScraplingはCloudflare Turnstileに対応。エンタープライズレベルの保護には、Hyper Solutionsが<b>Akamai</b>、<b>DataDome</b>、<b>Kasada</b>、<b>Incapsula</b>向けの有効なantibotトークンを生成するAPIエンドポイントを提供。シンプルなAPI呼び出しで、ブラウザ自動化不要。 <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>登録</b>
       </a> | 💬 <a href="https://discord.gg/akamai">
         <b>Discord</b>
       </a>
     </td>
-    <td> ScraplingのfetcherはCloudflare Turnstileに対応していますが、エンタープライズレベルの保護には、<a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">Hyper Solutions</a>が有効なantibotトークンを生成するAPIエンドポイントを提供します：<b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
-      <br /> ブラウザ自動化不要。これらのシステムが要求する正確なCookieとヘッダーを返すシンプルなAPI呼び出し。
-    </td>
   </tr>
   <tr>
-    <td width="240">
+    <td width="200">
       <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
         <br />
@@ -111,6 +110,20 @@ MySpider().start()
       </a>
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
+        <br />
+      </a>
+    </td>
+    <td>Evomi：レジデンシャルプロキシが $0.49/GB から。完全に偽装された Chromium によるスクレイピングブラウザ、レジデンシャル IP、自動 CAPTCHA 解決、アンチボットバイパス。</br>
+      <b>Scraper API で手間なく結果を取得。MCP と N8N の統合に対応。</b>
+      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
+        <b>今すぐ試す</b>
+      </a>
+    </td>
+  </tr>
 </table>
 
 <i><sub>ここに広告を表示したいですか？[こちら](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)をクリック</sub></i>
@@ -119,7 +132,6 @@ MySpider().start()
 <!-- sponsors -->
 
 <a href="https://www.thordata.com/?ls=github&lk=github" target="_blank" title="Unblockable proxies and scraping infrastructure, delivering real-time, reliable web data to power AI models and workflows."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/thordata.jpg"></a>
-<a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png"></a>
 <a href="https://serpapi.com/?utm_source=scrapling" target="_blank" title="Scrape Google and other search engines with SerpApi"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png"></a>
 <a href="https://visit.decodo.com/Dy6W0b" target="_blank" title="Try the Most Efficient Residential Proxies for Free"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/decodo.png"></a>
 <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>

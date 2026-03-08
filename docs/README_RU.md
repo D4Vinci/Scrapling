@@ -81,22 +81,21 @@ MySpider().start()
 # Платиновые спонсоры
 <table>
   <tr>
-    <td width="240">
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
         <br />
-      </a> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+      </a>
+    </td>
+    <td> Scrapling справляется с Cloudflare Turnstile. Для защиты корпоративного уровня Hyper Solutions предоставляет API-эндпоинты, генерирующие валидные antibot-токены для <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b> и <b>Incapsula</b> . Простые API-вызовы, без автоматизации браузера. <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>Подписаться</b>
       </a> | 💬 <a href="https://discord.gg/akamai">
         <b>Discord</b>
       </a>
     </td>
-    <td> Fetcher'ы Scrapling справляются с Cloudflare Turnstile, но для защиты корпоративного уровня <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">Hyper Solutions</a> предоставляет API-эндпоинты, генерирующие валидные antibot-токены для: <b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
-      <br /> Без автоматизации браузера. Простые API-вызовы, возвращающие именно те cookie и заголовки, которые требуют эти системы.
-    </td>
   </tr>
   <tr>
-    <td width="240">
+    <td width="200">
       <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
         <br />
@@ -111,6 +110,20 @@ MySpider().start()
       </a>
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
+        <br />
+      </a>
+    </td>
+    <td>Evomi: резидентные прокси от $0.49/ГБ. Браузер для скрапинга с полностью подменённым Chromium, резидентными IP, автоматическим решением CAPTCHA и обходом анти-бот систем. </br>
+      <b>Scraper API для получения результатов без лишних сложностей. Доступны интеграции с MCP и N8N.</b>
+      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
+        <b>Попробовать</b>
+      </a>
+    </td>
+  </tr>
 </table>
 
 <i><sub>Хотите показать здесь свою рекламу? Нажмите [здесь](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
@@ -119,7 +132,6 @@ MySpider().start()
 <!-- sponsors -->
 
 <a href="https://www.thordata.com/?ls=github&lk=github" target="_blank" title="Unblockable proxies and scraping infrastructure, delivering real-time, reliable web data to power AI models and workflows."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/thordata.jpg"></a>
-<a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png"></a>
 <a href="https://serpapi.com/?utm_source=scrapling" target="_blank" title="Scrape Google and other search engines with SerpApi"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png"></a>
 <a href="https://visit.decodo.com/Dy6W0b" target="_blank" title="Try the Most Efficient Residential Proxies for Free"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/decodo.png"></a>
 <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>

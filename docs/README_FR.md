@@ -81,22 +81,21 @@ MySpider().start()
 # Sponsors Platine
 <table>
   <tr>
-    <td width="240">
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
         <br />
-      </a> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+      </a>
+    </td>
+    <td> Scrapling gère Cloudflare Turnstile. Pour une protection de niveau entreprise, Hyper Solutions fournit des endpoints API qui génèrent des tokens antibot valides pour <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b> et <b>Incapsula</b> . De simples appels API, sans automatisation de navigateur. <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>S'abonner</b>
       </a> | 💬 <a href="https://discord.gg/akamai">
         <b>Discord</b>
       </a>
     </td>
-    <td> Les fetchers de Scrapling gèrent Cloudflare Turnstile, mais pour une protection de niveau entreprise, <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">Hyper Solutions</a> fournit des points d'accès API qui génèrent des tokens antibot valides pour : <b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
-      <br /> Pas d'automatisation de navigateur. De simples appels API retournant exactement les cookies et headers requis par ces systèmes.
-    </td>
   </tr>
   <tr>
-    <td width="240">
+    <td width="200">
       <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
         <br />
@@ -111,6 +110,20 @@ MySpider().start()
       </a>
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
+        <br />
+      </a>
+    </td>
+    <td>Evomi : proxies résidentiels à partir de 0,49 $/Go. Navigateur de scraping avec Chromium entièrement falsifié, IPs résidentielles, résolution automatique de CAPTCHA et contournement anti-bot. </br>
+      <b>API Scraper pour des résultats sans tracas. Intégrations MCP et N8N disponibles.</b>
+      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
+        <b>Essayer maintenant</b>
+      </a>
+    </td>
+  </tr>
 </table>
 
 <i><sub>Vous souhaitez afficher votre publicité ici ? Cliquez [ici](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
@@ -119,7 +132,6 @@ MySpider().start()
 <!-- sponsors -->
 
 <a href="https://www.thordata.com/?ls=github&lk=github" target="_blank" title="Unblockable proxies and scraping infrastructure, delivering real-time, reliable web data to power AI models and workflows."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/thordata.jpg"></a>
-<a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png"></a>
 <a href="https://serpapi.com/?utm_source=scrapling" target="_blank" title="Scrape Google and other search engines with SerpApi"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png"></a>
 <a href="https://visit.decodo.com/Dy6W0b" target="_blank" title="Try the Most Efficient Residential Proxies for Free"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/decodo.png"></a>
 <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>

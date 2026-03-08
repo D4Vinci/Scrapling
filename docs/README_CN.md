@@ -81,22 +81,21 @@ MySpider().start()
 # 铂金赞助商
 <table>
   <tr>
-    <td width="240">
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
         <br />
-      </a> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
+      </a>
+    </td>
+    <td> Scrapling 可处理 Cloudflare Turnstile。对于企业级保护，Hyper Solutions 提供 API 端点，生成适用于 <b>Akamai</b>、<b>DataDome</b>、<b>Kasada</b> 和 <b>Incapsula</b> 的有效 antibot 令牌。简单的 API 调用，无需浏览器自动化。 <br /> 🚀 <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>订阅</b>
       </a> | 💬 <a href="https://discord.gg/akamai">
         <b>Discord</b>
       </a>
     </td>
-    <td> Scrapling 的 fetcher 可以处理 Cloudflare Turnstile，但对于企业级保护，<a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">Hyper Solutions</a> 提供生成有效 antibot 令牌的 API 端点，支持：<b>Akamai</b> • <b>DataDome</b> • <b>Kasada</b> • <b>Incapsula</b>
-      <br /> 无需浏览器自动化。简单的 API 调用即可返回这些系统所需的确切 cookie 和请求头。
-    </td>
   </tr>
   <tr>
-    <td width="240">
+    <td width="200">
       <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
         <br />
@@ -111,6 +110,20 @@ MySpider().start()
       </a>
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
+        <br />
+      </a>
+    </td>
+    <td>Evomi：住宅代理低至 0.49 美元/GB。具备完全伪装 Chromium 的爬虫浏览器、住宅 IP、自动验证码解决和反机器人绕过。</br>
+      <b>Scraper API 轻松获取结果。支持 MCP 和 N8N 集成。</b>
+      <br /> 🚀 <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling">
+        <b>立即试用</b>
+      </a>
+    </td>
+  </tr>
 </table>
 
 <i><sub>想在这里展示您的广告吗？点击[这里](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
@@ -119,7 +132,6 @@ MySpider().start()
 <!-- sponsors -->
 
 <a href="https://www.thordata.com/?ls=github&lk=github" target="_blank" title="Unblockable proxies and scraping infrastructure, delivering real-time, reliable web data to power AI models and workflows."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/thordata.jpg"></a>
-<a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png"></a>
 <a href="https://serpapi.com/?utm_source=scrapling" target="_blank" title="Scrape Google and other search engines with SerpApi"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png"></a>
 <a href="https://visit.decodo.com/Dy6W0b" target="_blank" title="Try the Most Efficient Residential Proxies for Free"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/decodo.png"></a>
 <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>

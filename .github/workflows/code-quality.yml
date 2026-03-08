@@ -11,6 +11,7 @@ on:
       - 'docs/**'
       - 'images/**'
       - '.github/**'
+      - 'agent-skill/**'
       - '!.github/workflows/code-quality.yml'  # Always run when this workflow changes
   pull_request:
     branches:
@@ -22,6 +23,7 @@ on:
       - 'docs/**'
       - 'images/**'
       - '.github/**'
+      - 'agent-skill/**'
       - '*.yml'
       - '*.yaml'
       - 'ruff.toml'
