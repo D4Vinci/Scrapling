@@ -1,0 +1,6 @@
+{
+  "name": "scrapling-skill",
+  "description": "Scrape web pages using Scrapling with anti-bot bypass (like Cloudflare Turnstile), stealth headless browsing, spiders framework, adaptive scraping, and JavaScript rendering.",
+  "version": "0.4.1",
+  "license": "BSD-3-Clause"
+}

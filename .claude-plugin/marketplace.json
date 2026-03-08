@@ -1,0 +1,25 @@
+{
+  "name": "scrapling-marketplace",
+  "owner": {
+    "name": "D4Vinci"
+  },
+  "metadata": {
+    "description": "Official Scrapling plugin marketplace for Claude Code. Provides web scraping skills with anti-bot bypass, stealth browsing, and adaptive scraping."
+  },
+  "plugins": [
+    {
+      "name": "scrapling-skill",
+      "source": "./agent-skill/Scrapling-Skill",
+      "description": "Scrape web pages using Scrapling with anti-bot bypass (like Cloudflare Turnstile), stealth headless browsing, spiders framework, adaptive scraping, and JavaScript rendering.",
+      "version": "0.4.1",
+      "author": {
+        "name": "D4Vinci"
+      },
+      "homepage": "https://scrapling.readthedocs.io",
+      "repository": "https://github.com/D4Vinci/Scrapling",
+      "license": "BSD-3-Clause",
+      "keywords": ["scraping", "web-scraping", "crawling", "anti-bot", "cloudflare", "stealth", "spider"],
+      "category": "web-scraping"
+    }
+  ]
+}
