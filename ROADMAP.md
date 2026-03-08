@@ -4,11 +4,11 @@
 - [x] Add more documentation.
 - [x] Add the browsing ability.
 - [x] Create detailed documentation for the 'readthedocs' website, preferably add GitHub action for deploying it.
-- [ ] Create a Scrapy plugin/decorator to make it replace parsel in the response argument when needed.
+- [x] Create a Scrapy plugin/decorator to make it replace parsel in the response argument when needed.
 - [x] Need to add more functionality to `AttributesHandler` and more navigation functions to `Selector` object (ex: functions similar to map, filter, and reduce functions but here pass it to the element and the function is executed on children, siblings, next elements, etc...)
 - [x] Add `.filter` method to `Selectors` object and other similar methods.
-- [ ] Add functionality to automatically detect pagination URLs
-- [ ] Add the ability to auto-detect schemas in pages and manipulate them.
-- [ ] Add `analyzer` ability that tries to learn about the page through meta-elements and return what it learned
-- [ ] Add the ability to generate a regex from a group of elements (Like for all href attributes)
+- [x] Add functionality to automatically detect pagination URLs
+- [x] Add the ability to auto-detect schemas in pages and manipulate them.
+- [x] Add `analyzer` ability that tries to learn about the page through meta-elements and return what it learned
+- [x] Add the ability to generate a regex from a group of elements (Like for all href attributes)
 - 

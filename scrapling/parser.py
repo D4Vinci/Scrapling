@@ -1,6 +1,9 @@
 from pathlib import Path
+import re
 from inspect import signature
-from urllib.parse import urljoin
+from os.path import commonprefix
+from json import loads as json_loads, JSONDecodeError
+from urllib.parse import urljoin, urlparse, parse_qs
 from difflib import SequenceMatcher
 from re import Pattern as re_Pattern
 
@@ -58,6 +61,46 @@ _find_all_elements = XPath(".//*")
 _find_all_elements_with_spaces = XPath(
     ".//*[normalize-space(text())]"
 )  # This selector gets all elements with text content
+
+
+def _longest_common_suffix(values: List[str]) -> str:
+    if not values:
+        return ""
+    reversed_values = [v[::-1] for v in values]
+    return commonprefix(reversed_values)[::-1]
+
+
+def _pattern_for_segment(segment: str) -> str:
+    if not segment:
+        return ""
+    if segment.isdigit():
+        return r"\d+"
+    if re.fullmatch(r"[A-Za-z0-9_-]+", segment):
+        return r"[\w-]+"
+    return re.escape(segment)
+
+
+def _build_group_regex(values: List[str]) -> str:
+    unique_values = list(dict.fromkeys(v for v in values if v))
+    if not unique_values:
+        raise ValueError("No values found to generate a regex")
+
+    if len(unique_values) == 1:
+        return re.escape(unique_values[0])
+
+    prefix = commonprefix(unique_values)
+    suffix = _longest_common_suffix(unique_values)
+    if prefix and suffix and len(prefix) + len(suffix) >= min(len(v) for v in unique_values):
+        suffix = ""
+
+    middles = [v[len(prefix) : len(v) - len(suffix) if suffix else len(v)] for v in unique_values]
+    middle_patterns = list(dict.fromkeys(_pattern_for_segment(value) for value in middles))
+    if len(middle_patterns) == 1:
+        variable = middle_patterns[0]
+    else:
+        variable = "(?:{})".format("|".join(middle_patterns))
+
+    return "{}{}{}".format(re.escape(prefix), variable, re.escape(suffix))
 
 
 class Selector(SelectorsGeneration):
@@ -1178,6 +1221,161 @@ class Selector(SelectorsGeneration):
                 return results[0]
         return results
 
+    def detect_pagination_urls(self, include_current: bool = False) -> TextHandlers:
+        """Auto-detect possible pagination URLs from the current page.
+
+        Detection sources:
+        - `<link rel="next">` and `<a rel="next">`
+        - anchor text and attributes containing next/older/more semantics
+        - query params like `page`, `p`, `pg`, `paged`
+        """
+        if self._is_text_node(self._root):
+            return TextHandlers()
+
+        seen: Set[str] = set()
+        results: List[str] = []
+        query_keys = {"page", "p", "pg", "paged"}
+        keyword_hints = ("next", "older", "more", ">>", "›", "→")
+
+        def add_candidate(value: str) -> None:
+            if not value:
+                return
+            normalized = value.strip()
+            if not normalized:
+                return
+            if self.url:
+                normalized = urljoin(self.url, normalized)
+            if normalized not in seen:
+                seen.add(normalized)
+                results.append(normalized)
+
+        primary_candidates = cast(
+            List[str],
+            self._root.xpath('//link[@rel="next"]/@href | //a[@rel="next"]/@href'),
+        )
+        for href in primary_candidates:
+            add_candidate(href)
+
+        for anchor in cast(List[HtmlElement], self._root.xpath("//a[@href]")):
+            href = (anchor.get("href") or "").strip()
+            if not href:
+                continue
+
+            anchor_text = clean_spaces(anchor.text_content() or "").lower()
+            rel_value = (anchor.get("rel") or "").lower()
+            class_value = (anchor.get("class") or "").lower()
+            id_value = (anchor.get("id") or "").lower()
+            aria_label = (anchor.get("aria-label") or "").lower()
+
+            if any(
+                hint in field
+                for field in (anchor_text, rel_value, class_value, id_value, aria_label)
+                for hint in keyword_hints
+            ):
+                add_candidate(href)
+                continue
+
+            parsed = urlparse(href)
+            query = parse_qs(parsed.query)
+            if any((k.lower() in query_keys and any(v.isdigit() for v in values)) for k, values in query.items()):
+                add_candidate(href)
+
+        if not include_current and self.url and self.url in seen:
+            results = [url for url in results if url != self.url]
+
+        return TextHandlers(results)
+
+    def detect_schemas(self) -> List[Dict[str, Any]]:
+        """Auto-detect machine-readable schemas embedded in page markup."""
+        if self._is_text_node(self._root):
+            return []
+
+        schemas: List[Dict[str, Any]] = []
+
+        json_ld_nodes = cast(
+            List[str],
+            self._root.xpath(
+                '//script[translate(@type,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="application/ld+json"]/text()'
+            ),
+        )
+        for raw in json_ld_nodes:
+            payload = (raw or "").strip()
+            if not payload:
+                continue
+            try:
+                parsed = json_loads(payload)
+            except JSONDecodeError:
+                continue
+
+            if isinstance(parsed, list):
+                for item in parsed:
+                    if isinstance(item, dict):
+                        schemas.append({"source": "json-ld", "data": item})
+            elif isinstance(parsed, dict):
+                schemas.append({"source": "json-ld", "data": parsed})
+
+        microdata_nodes = cast(List[HtmlElement], self._root.xpath('//*[@itemscope]'))
+        for node in microdata_nodes:
+            item_type = node.attrib.get("itemtype")
+            item_props = cast(List[str], node.xpath('.//*[@itemprop]/@itemprop'))
+            schemas.append(
+                {
+                    "source": "microdata",
+                    "type": item_type,
+                    "properties": sorted(set(item_props)),
+                    "property_count": len(set(item_props)),
+                }
+            )
+
+        og_meta = cast(List[HtmlElement], self._root.xpath('//meta[starts-with(@property, "og:")]'))
+        if og_meta:
+            data = {
+                (node.attrib.get("property") or ""): (node.attrib.get("content") or "")
+                for node in og_meta
+                if node.attrib.get("property")
+            }
+            if data:
+                schemas.append({"source": "open-graph", "data": data})
+
+        return schemas
+
+    def analyze(self) -> Dict[str, Any]:
+        """Analyze current page and return a compact metadata summary."""
+        if self._is_text_node(self._root):
+            return {}
+
+        title = self.css("title::text").get("")
+        description = self.css('meta[name="description"]::attr(content)').get("")
+        canonical = self.css('link[rel="canonical"]::attr(href)').get("")
+        if canonical and self.url:
+            canonical = TextHandler(urljoin(self.url, str(canonical)))
+
+        pagination_urls = self.detect_pagination_urls()
+        schemas = self.detect_schemas()
+
+        return {
+            "title": str(title) if title is not None else "",
+            "description": str(description) if description is not None else "",
+            "canonical_url": str(canonical) if canonical is not None else "",
+            "language": self.attrib.get("lang", "") if self.tag == "html" else self.css("html::attr(lang)").get(""),
+            "links_count": len(self.css("a[href]")),
+            "images_count": len(self.css("img[src]")),
+            "forms_count": len(self.css("form")),
+            "scripts_count": len(self.css("script")),
+            "headings_count": len(self.css("h1, h2, h3, h4, h5, h6")),
+            "schema_count": len(schemas),
+            "schemas": schemas,
+            "pagination_urls": list(map(str, pagination_urls)),
+        }
+
+    def generate_regex(self, selector: str, attribute: str = "href") -> TextHandler:
+        """Generate a regex that matches a group of element values.
+
+        Example:
+            `page.generate_regex("a.product-link", attribute="href")`
+        """
+        return self.css(selector).generate_regex(attribute=attribute)
+
 
 class Selectors(List[Selector]):
     """
@@ -1316,6 +1514,23 @@ class Selectors(List[Selector]):
         :return: The new `Selectors` object or empty list otherwise.
         """
         return self.__class__([element for element in self if func(element)])
+
+    def generate_regex(self, attribute: str = "href") -> TextHandler:
+        """Generate a regex pattern from a group of elements.
+
+        :param attribute: Attribute to use as input values. If empty, uses element text.
+        :return: A regex pattern string wrapped in ``TextHandler``.
+        """
+        values: List[str] = []
+        for element in self:
+            if attribute:
+                value = element.attrib.get(attribute)
+            else:
+                value = element.text
+            if value:
+                values.append(str(value))
+
+        return TextHandler(_build_group_regex(values))
 
     @overload
     def get(self) -> Optional[TextHandler]: ...
