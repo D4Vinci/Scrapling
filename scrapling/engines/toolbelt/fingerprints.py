@@ -8,7 +8,7 @@ from platform import system as platform_system
 from browserforge.headers import Browser, HeaderGenerator
 from browserforge.headers.generator import SUPPORTED_OPERATING_SYSTEMS
 
-from scrapling.core._types import Dict, Literal, Tuple, cast
+from scrapling.core._types import Dict, Literal, Tuple
 
 __OS_NAME__ = platform_system()
 OSName = Literal["linux", "macos", "windows"]
