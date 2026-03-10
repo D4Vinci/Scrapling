@@ -408,6 +408,9 @@ Scrapling's adaptive element finding capabilities significantly outperform alter
 
 > All benchmarks represent averages of 100+ runs. See [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology.
 
+![Star History](https://api.star-history.com/svg?repos=D4Vinci/Scrapling/repository&type=Date)<p align="center">
+
+
 ## Installation
 
 Scrapling requires Python 3.10 or higher:
