@@ -51,7 +51,7 @@ MySpider().start()
     <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png"></a>
     <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg"></a>
     <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png"></a>
-    <a href="https://tikhub.io/?ref=KarimShoair" target="_blank" title="Unlock the Power of Social Media Data & AI"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg"></a>
+    <a href="https://tikhub.io/?ref=KarimShoair" target="_blank" title="Unlock the Power of Social Media Data & AI"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg"></a><a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png"></a>
     <br/><br/>
     <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>
 </div>
