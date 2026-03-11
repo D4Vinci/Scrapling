@@ -140,7 +140,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> يوفر بروكسيات سكنية و ISP سريعة مصممة للمطورين والسكرابرز. تغطية IP عالمية، إخفاء هوية عالي، تدوير ذكي لعناوين IP، وأداء موثوق للأتمتة واستخراج البيانات. استخدم <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> لتبسيط زحف الويب على نطاق واسع.
+    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> يوفر بروكسيات سكنية و ISP سريعة للمطورين والسكرابرز. تغطية IP عالمية، إخفاء هوية عالي، تدوير ذكي، وأداء موثوق للأتمتة واستخراج البيانات. استخدم <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> لتبسيط زحف الويب على نطاق واسع.
     </td>
   </tr>
 </table>

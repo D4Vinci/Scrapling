@@ -140,7 +140,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> fournit des proxies résidentiels et ISP rapides conçus pour les développeurs et les scrapeurs. Couverture IP mondiale, anonymat élevé, rotation intelligente des IP et performances fiables pour l'automatisation et l'extraction de données. Utilisez <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> pour simplifier le crawling web à grande échelle.
+    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> fournit des proxies résidentiels et ISP rapides pour les développeurs et les scrapeurs. Couverture IP mondiale, anonymat élevé, rotation intelligente et performances fiables pour l'automatisation et l'extraction de données. Utilisez <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> pour simplifier le crawling web à grande échelle.
     </td>
   </tr>
 </table>

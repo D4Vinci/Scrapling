@@ -140,7 +140,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> 提供专为开发者和爬虫设计的快速住宅和 ISP 代理。全球 IP 覆盖、高匿名性、智能 IP 轮换，以及可靠的自动化和数据提取性能。使用 <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> 简化大规模网页爬取。
+    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> 提供面向开发者和爬虫的快速住宅和 ISP 代理。全球 IP 覆盖、高匿名性、智能轮换，以及可靠的自动化和数据提取性能。使用 <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> 简化大规模网页爬取。
     </td>
   </tr>
 </table>
