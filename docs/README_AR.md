@@ -132,6 +132,17 @@ MySpider().start()
       <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> يوفر أكثر من 900 واجهة API مستقرة عبر أكثر من 16 منصة تشمل TikTok و X و YouTube و Instagram، مع أكثر من 40 مليون مجموعة بيانات. <br /> يقدم أيضاً <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">نماذج ذكاء اصطناعي بأسعار مخفضة</a> — Claude و GPT و GEMINI والمزيد بخصم يصل إلى 71%.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png">
+        <br />
+      </a>
+    </td>
+    <td>
+    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> يوفر بروكسيات سكنية و ISP سريعة مصممة للمطورين والسكرابرز. تغطية IP عالمية، إخفاء هوية عالي، تدوير ذكي لعناوين IP، وأداء موثوق للأتمتة واستخراج البيانات. استخدم <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> لتبسيط زحف الويب على نطاق واسع.
+    </td>
+  </tr>
 </table>
 
 <i><sub>هل تريد عرض إعلانك هنا؟ انقر [هنا](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>

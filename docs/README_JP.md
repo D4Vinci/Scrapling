@@ -132,6 +132,17 @@ MySpider().start()
       <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> は TikTok、X、YouTube、Instagram を含む 16 以上のプラットフォームで 900 以上の安定した API を提供し、4,000 万以上のデータセットを保有。<br /> さらに <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">割引 AI モデル</a>も提供 — Claude、GPT、GEMINI など最大 71% オフ。
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png">
+        <br />
+      </a>
+    </td>
+    <td>
+    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> は開発者やスクレイパー向けに設計された高速なレジデンシャルおよび ISP プロキシを提供。グローバル IP カバレッジ、高い匿名性、スマートな IP ローテーション、自動化とデータ抽出のための信頼性の高いパフォーマンス。<a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> で大規模ウェブクローリングを簡素化。
+    </td>
+  </tr>
 </table>
 
 <i><sub>ここに広告を表示したいですか？[こちら](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)をクリック</sub></i>

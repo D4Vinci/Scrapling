@@ -132,6 +132,17 @@ MySpider().start()
       <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> 提供覆盖 16+ 平台（包括 TikTok、X、YouTube 和 Instagram）的 900+ 稳定 API，拥有 4000 万+ 数据集。<br /> 还提供<a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">优惠 AI 模型</a> — Claude、GPT、GEMINI 等，最高优惠 71%。
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png">
+        <br />
+      </a>
+    </td>
+    <td>
+    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> 提供专为开发者和爬虫设计的快速住宅和 ISP 代理。全球 IP 覆盖、高匿名性、智能 IP 轮换，以及可靠的自动化和数据提取性能。使用 <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> 简化大规模网页爬取。
+    </td>
+  </tr>
 </table>
 
 <i><sub>想在这里展示您的广告吗？点击[这里](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>

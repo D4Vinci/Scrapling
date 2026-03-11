@@ -135,6 +135,17 @@ MySpider().start()
       <a href="https://tikhub.io/?ref=KarimShoair" target="_blank">TikHub.io</a> предоставляет более 900 стабильных API на 16+ платформах, включая TikTok, X, YouTube и Instagram, с более чем 40 млн наборов данных. <br /> Также предлагает <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">AI-модели со скидкой</a> — Claude, GPT, GEMINI и другие со скидкой до 71%.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png">
+        <br />
+      </a>
+    </td>
+    <td>
+    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> предоставляет быстрые резидентные и ISP прокси, разработанные для разработчиков и скраперов. Глобальное покрытие IP, высокая анонимность, умная ротация IP и надёжная производительность для автоматизации и извлечения данных. Используйте <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> для упрощения масштабного веб-краулинга.
+    </td>
+  </tr>
 </table>
 
 <i><sub>Хотите показать здесь свою рекламу? Нажмите [здесь](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
