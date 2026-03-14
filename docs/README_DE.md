@@ -87,7 +87,6 @@ MySpider().start()
     <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
-        <br />
       </a>
     </td>
     <td> Scrapling bewältigt Cloudflare Turnstile. Für Schutz auf Unternehmensebene bietet <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
@@ -98,7 +97,6 @@ MySpider().start()
     <td width="200">
       <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
-        <br />
       </a>
     </td>
     <td>Hey, wir haben <a href="https://birdproxies.com/t/scrapling">
@@ -111,7 +109,6 @@ MySpider().start()
     <td width="200">
       <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
-        <br />
       </a>
     </td>
     <td>
@@ -125,7 +122,6 @@ MySpider().start()
     <td width="200">
       <a href="https://tikhub.io/?ref=KarimShoair" target="_blank" title="Unlock the Power of Social Media Data & AI">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
-        <br />
       </a>
     </td>
     <td>
@@ -136,11 +132,21 @@ MySpider().start()
     <td width="200">
       <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png">
-        <br />
       </a>
     </td>
     <td>
     <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> bietet schnelle Residential- und ISP-Proxies für Entwickler und Scraper. Globale IP-Abdeckung, hohe Anonymität, intelligente Rotation und zuverlässige Leistung für Automatisierung und Datenextraktion. Verwenden Sie <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a>, um großflächiges Web-Crawling zu vereinfachen.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
+      </a>
+    </td>
+    <td>
+    Klappe den Laptop zu. Deine Scraper laufen weiter. <br />
+    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - Cloud-Server für ununterbrochene Automatisierung. Windows- und Linux-Maschinen mit voller Kontrolle. Ab €6,99/Monat.
     </td>
   </tr>
 </table>
@@ -149,8 +155,6 @@ MySpider().start()
 # Sponsoren
 
 <!-- sponsors -->
-
-<a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png"></a>
 
 <a href="https://serpapi.com/?utm_source=scrapling" target="_blank" title="Scrape Google and other search engines with SerpApi"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SerpApi.png"></a>
 <a href="https://visit.decodo.com/Dy6W0b" target="_blank" title="Try the Most Efficient Residential Proxies for Free"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/decodo.png"></a>
