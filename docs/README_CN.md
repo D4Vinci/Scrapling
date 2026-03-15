@@ -149,6 +149,16 @@ MySpider().start()
     <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - 为不间断自动化而生的云服务器。Windows 和 Linux 系统，完全掌控。低至 €6.99/月。
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank" title="The #1 newsletter dedicated to Web Scraping">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TWSC.png">
+      </a>
+    </td>
+    <td>
+    阅读 <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank">The Web Scraping Club 上关于 Scrapling 的完整评测</a>（2025年11月），这是排名第一的网页抓取专业通讯。
+    </td>
+  </tr>
 </table>
 
 <i><sub>想在这里展示您的广告吗？点击[这里](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
