@@ -74,7 +74,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
         self.__validate__(**kwargs)
-        super().__init__()
+        super().__init__(max_pages=self._config.max_pages)
 
     def start(self) -> None:
         """Create a browser for this instance and context."""
