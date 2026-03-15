@@ -1,7 +1,7 @@
 import pytest
 import pytest_httpbin
 
-from scrapling.core.ai import ScraplingMCPServer, ResponseModel
+from scrapling.core.ai import ScraplingMCPServer, ResponseModel, _normalize_credentials
 
 
 @pytest_httpbin.use_class_based_httpbin
@@ -56,3 +56,25 @@ class TestMCPServer:
         """Test the bulk_stealthy_fetch tool method"""
         result = await server.bulk_stealthy_fetch(urls=(test_url, test_url), headless=True)
         assert all(isinstance(r, ResponseModel) for r in result)
+
+
+class TestNormalizeCredentials:
+    """Test the _normalize_credentials helper"""
+
+    def test_none_returns_none(self):
+        assert _normalize_credentials(None) is None
+
+    def test_empty_dict_returns_none(self):
+        assert _normalize_credentials({}) is None
+
+    def test_valid_credentials_returns_tuple(self):
+        result = _normalize_credentials({"username": "user", "password": "pass"})
+        assert result == ("user", "pass")
+
+    def test_missing_password_raises(self):
+        with pytest.raises(ValueError, match="password"):
+            _normalize_credentials({"username": "user"})
+
+    def test_missing_username_raises(self):
+        with pytest.raises(ValueError, match="username"):
+            _normalize_credentials({"password": "pass"})
