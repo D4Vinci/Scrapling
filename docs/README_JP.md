@@ -149,6 +149,16 @@ MySpider().start()
     <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - ノンストップ自動化のために構築されたクラウドサーバー。WindowsとLinuxマシンを完全制御。月額€6.99から。
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank" title="The #1 newsletter dedicated to Web Scraping">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TWSC.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank">The Web Scraping ClubでScraplingの詳細レビュー</a>（2025年11月）をお読みください。Webスクレイピング専門のNo.1ニュースレターです。
+    </td>
+  </tr>
 </table>
 
 <i><sub>ここに広告を表示したいですか？[こちら](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)をクリック</sub></i>
