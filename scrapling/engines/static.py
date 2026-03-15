@@ -26,7 +26,7 @@ from .toolbelt.custom import Response
 from .toolbelt.convertor import ResponseFactory
 from .toolbelt.proxy_rotation import ProxyRotator, is_proxy_error
 from ._browsers._types import RequestsSession, GetRequestParams, DataRequestParams, ImpersonateType
-from .toolbelt.fingerprints import generate_convincing_referer, generate_headers, __default_useragent__
+from .toolbelt.fingerprints import generate_headers, __default_useragent__
 
 _NO_SESSION: Any = object()
 
@@ -166,14 +166,14 @@ class _ConfigurationLogic(ABC):
         """
         1. Adds a useragent to the headers if it doesn't have one
         2. Generates real headers and append them to current headers
-        3. Generates a referer header that looks like as if this request came from a Google's search of the current URL's domain.
+        3. Sets a Google referer header.
         """
         # Merge session headers with request headers, request takes precedence (if it was set)
         final_headers = {**self._default_headers, **(headers if headers else {})}
         headers_keys = {k.lower() for k in final_headers}
         if stealth:
             if "referer" not in headers_keys:
-                final_headers["referer"] = generate_convincing_referer(url)
+                final_headers["referer"] = "https://www.google.com/"
 
             if not impersonate_enabled:  # Curl will generate the suitable headers
                 extra_headers = generate_headers(browser_mode=False)
@@ -672,7 +672,7 @@ class FetcherSession:
         """
         :param impersonate: Browser version to impersonate. Can be a single browser string or a list of browser strings for random selection. (Default: latest available Chrome version)
         :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets the referer header as if this request came from a Google search of URL's domain.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
         :param proxies: Dict of proxies to use. Format: {"http": proxy_url, "https": proxy_url}.
         :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
                      Cannot be used together with the `proxies` parameter.

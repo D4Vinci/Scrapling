@@ -4,7 +4,6 @@ Type definitions for type checking purposes.
 
 from typing import (
     TYPE_CHECKING,
-    TypedDict,
     TypeAlias,
     cast,
     overload,
@@ -32,7 +31,7 @@ from typing import (
     Coroutine,
     SupportsIndex,
 )
-from typing_extensions import Self, Unpack
+from typing_extensions import Self, Unpack, TypedDict
 
 # Proxy can be a string URL or a dict (Playwright format: {"server": "...", "username": "...", "password": "..."})
 ProxyType = Union[str, Dict[str, str]]
