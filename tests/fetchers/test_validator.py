@@ -99,3 +99,14 @@ class TestValidators:
         config = validate(params, StealthConfig)
 
         assert config.blocked_domains == {"ads.example.com"}
+
+    def test_stealth_config_akamai_timeout(self):
+        """Test StealthConfig timeout adjustment for Akamai"""
+        params = {
+            "solve_akamai": True,
+            "timeout": 10000
+        }
+
+        config = validate(params, StealthConfig)
+
+        assert config.timeout == 60000

@@ -124,12 +124,15 @@ class StealthConfig(PlaywrightConfig, kw_only=True, frozen=False, weakref=True):
     hide_canvas: bool = False
     block_webrtc: bool = False
     solve_cloudflare: bool = False
+    solve_akamai: bool = False
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
         super(StealthConfig, self).__post_init__()
         # Cloudflare timeout adjustment
         if self.solve_cloudflare and self.timeout < 60_000:
+            self.timeout = 60_000
+        if self.solve_akamai and self.timeout < 60_000:
             self.timeout = 60_000
 
 
@@ -149,6 +152,7 @@ class _fetch_params:
     load_dom: bool
     blocked_domains: Optional[Set[str]]
     solve_cloudflare: bool
+    solve_akamai: bool
     selector_config: Dict
 
 
@@ -178,15 +182,17 @@ def validate_fetch(
             field: getattr(validated_config, field) for field in overrides.keys() if hasattr(validated_config, field)
         }
 
-        # Preserve solve_cloudflare if the user explicitly provided it, even if the model doesn't have it
         if "solve_cloudflare" in overrides:
             validated_dict["solve_cloudflare"] = overrides["solve_cloudflare"]
+        if "solve_akamai" in overrides:
+            validated_dict["solve_akamai"] = overrides["solve_akamai"]
 
         # Start with session defaults, then overwrite with validated overrides
         result.update(validated_dict)
 
     # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
     result.setdefault("solve_cloudflare", False)
+    result.setdefault("solve_akamai", False)
     result.setdefault("blocked_domains", None)
 
     return _fetch_params(**result)

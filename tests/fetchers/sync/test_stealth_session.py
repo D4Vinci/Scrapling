@@ -92,3 +92,10 @@ class TestStealthySession:
             result = StealthySession._detect_cloudflare(page_content)
             assert result is None
             assert session.fetch(self.status_200).status == 200
+
+            # Test Akamai detection
+            for akamai_signal in ("<title>Challenge Page</title>", "/.well-known/sbsd"):
+                page_content = f"<html><head>{akamai_signal}</head><body></body></html>"
+                assert session._detect_akamai(page_content) is True
+
+            assert StealthySession._detect_akamai("<html><body>Regular page</body></html>") is False

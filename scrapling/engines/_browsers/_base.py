@@ -532,3 +532,7 @@ class StealthySessionMixin(BaseSessionMixin):
             return "embedded"
 
         return None
+
+    @staticmethod
+    def _detect_akamai(page_content: str) -> bool:
+        return "<title>Challenge Page</title>" in page_content or "/.well-known/sbsd" in page_content

@@ -184,6 +184,24 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     log.info("Looks like Cloudflare captcha is still present, solving again")
                     return self._cloudflare_solver(page)
 
+    def _akamai_solver(self, page: Page) -> None:  # pragma: no cover
+        self._wait_for_networkidle(page, timeout=5000)
+        if not self._detect_akamai(ResponseFactory._get_page_content(page)):
+            log.error("No Akamai challenge found.")
+            return None
+
+        log.info("Akamai Bot Manager challenge detected, waiting for resolution...")
+        attempts = 0
+        while self._detect_akamai(ResponseFactory._get_page_content(page)):
+            if attempts >= 300:
+                log.info("Akamai challenge did not resolve after 30s, continuing...")
+                break
+            page.wait_for_timeout(100)
+            attempts += 1
+
+        self._wait_for_page_stability(page, True, False)
+        log.info("Akamai challenge resolved.")
+
     def fetch(self, url: str, **kwargs: Unpack[StealthFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
@@ -240,6 +258,10 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     if params.solve_cloudflare:
                         self._cloudflare_solver(page)
                         # Make sure the page is fully loaded after the captcha
+                        self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+
+                    if params.solve_akamai:
+                        self._akamai_solver(page)
                         self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
                     if params.page_action:
@@ -437,6 +459,24 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     log.info("Looks like Cloudflare captcha is still present, solving again")
                     return await self._cloudflare_solver(page)
 
+    async def _akamai_solver(self, page: async_Page) -> None:  # pragma: no cover
+        await self._wait_for_networkidle(page, timeout=5000)
+        if not self._detect_akamai(await ResponseFactory._get_async_page_content(page)):
+            log.error("No Akamai challenge found.")
+            return None
+
+        log.info("Akamai Bot Manager challenge detected, waiting for resolution...")
+        attempts = 0
+        while self._detect_akamai(await ResponseFactory._get_async_page_content(page)):
+            if attempts >= 300:
+                log.info("Akamai challenge did not resolve after 30s, continuing...")
+                break
+            await page.wait_for_timeout(100)
+            attempts += 1
+
+        await self._wait_for_page_stability(page, True, False)
+        log.info("Akamai challenge resolved.")
+
     async def fetch(self, url: str, **kwargs: Unpack[StealthFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
 
@@ -494,6 +534,10 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     if params.solve_cloudflare:
                         await self._cloudflare_solver(page)
                         # Make sure the page is fully loaded after the captcha
+                        await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+
+                    if params.solve_akamai:
+                        await self._akamai_solver(page)
                         await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
                     if params.page_action:

@@ -112,7 +112,9 @@ class StealthSession(PlaywrightSession, total=False):
     hide_canvas: bool
     block_webrtc: bool
     solve_cloudflare: bool
+    solve_akamai: bool
 
 
 class StealthFetchParams(PlaywrightFetchParams, total=False):
     solve_cloudflare: bool
+    solve_akamai: bool
