@@ -443,7 +443,7 @@ Scrapling's adaptive element finding capabilities significantly outperform alter
 
 ## Installation
 
-Scrapling requires Python 3.10 or higher:
+Scrapling requires Python 3.10 or higher: 
 
 ```bash
 pip install scrapling

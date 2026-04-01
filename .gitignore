@@ -104,6 +104,15 @@ coverage.xml
 output/*.html
 output/*/index.html
 
+# Scrapling Data Results
+*.json
+*.md
+!README.md
+!implementation_plan.md
+!task.md
+!walkthrough.md
+scrapling/.scrapling_dependencies_installed
+
 # Sphinx
 docs/_build
 public/
