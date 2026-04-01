@@ -48,7 +48,7 @@ class CrawlerEngine:
             async def _fetch_robots(url: str, sid: str):
                 return await self.session_manager.fetch(Request(url, sid=sid))
 
-            self._robots_manager = RobotsTxtManager(_fetch_robots)
+            self._robots_manager: Optional[RobotsTxtManager] = RobotsTxtManager(_fetch_robots)
         else:
             self._robots_manager = None
 
