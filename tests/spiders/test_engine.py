@@ -83,6 +83,7 @@ class MockSpider:
         is_blocked_fn=None,
         on_scraped_item_fn=None,
         retry_blocked_request_fn=None,
+        robots_txt_obey: bool = False,
     ):
         self.concurrent_requests = concurrent_requests
         self.concurrent_requests_per_domain = concurrent_requests_per_domain
@@ -93,6 +94,7 @@ class MockSpider:
         self.fp_include_headers = fp_include_headers
         self.fp_keep_fragments = fp_keep_fragments
         self.name = "test_spider"
+        self.robots_txt_obey = robots_txt_obey
 
         # Tracking lists
         self.on_start_calls: list[dict] = []
