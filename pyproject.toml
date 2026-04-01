@@ -67,6 +67,7 @@ dependencies = [
     "tld>=0.13.2",
     "w3lib>=2.4.1",
     "typing_extensions",
+    "protego>=0.4.0",
 ]
 
 [project.optional-dependencies]
