@@ -18,11 +18,6 @@
     "displayName": "Scrapling",
     "shortDescription": "Adaptive web scraping framework for Codex",
     "category": "Productivity",
-    "capabilities": [
-      "Read",
-      "Write",
-      "Interactive"
-    ],
     "websiteURL": "https://github.com/D4Vinci/Scrapling"
   }
 }
