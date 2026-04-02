@@ -1,0 +1,28 @@
+{
+  "name": "scrapling",
+  "version": "0.1.0",
+  "description": "Adaptive web scraping framework for Codex",
+  "author": {
+    "name": "D4Vinci",
+    "url": "https://github.com/D4Vinci/Scrapling"
+  },
+  "homepage": "https://github.com/D4Vinci/Scrapling",
+  "repository": "https://github.com/D4Vinci/Scrapling",
+  "keywords": [
+    "mcp",
+    "codex",
+    "scrapling"
+  ],
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Scrapling",
+    "shortDescription": "Adaptive web scraping framework for Codex",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write",
+      "Interactive"
+    ],
+    "websiteURL": "https://github.com/D4Vinci/Scrapling"
+  }
+}

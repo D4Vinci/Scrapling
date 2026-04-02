@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "scrapling": {
+      "command": "python",
+      "args": [
+        "-m",
+        "scrapling"
+      ]
+    }
+  }
+}
