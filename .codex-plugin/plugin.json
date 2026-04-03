@@ -19,5 +19,6 @@
     "shortDescription": "Adaptive web scraping framework for Codex",
     "category": "Productivity",
     "websiteURL": "https://github.com/D4Vinci/Scrapling"
-  }
+  },
+  "skills": "./skills/"
 }
