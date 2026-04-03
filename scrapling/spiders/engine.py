@@ -251,17 +251,21 @@ class CrawlerEngine:
                     while self._running:
                         if self._pause_requested:
                             if self._active_tasks == 0 or self._force_stop:
-                                if self._force_stop:
-                                    log.warning(f"Force stopping with {self._active_tasks} active tasks")
-                                    tg.cancel_scope.cancel()
-
-                                # Only save checkpoint if checkpoint system is enabled
+                                # Save checkpoint BEFORE cancelling the scope.
+                                # cancel_scope.cancel() makes all subsequent awaits
+                                # raise Cancelled, which would abort the checkpoint
+                                # write and leave self.paused=False — causing the
+                                # finally block to DELETE the previous checkpoint.
                                 if self._checkpoint_system_enabled:
                                     await self._save_checkpoint()
                                     self.paused = True
                                     log.info("Spider paused, checkpoint saved")
                                 else:
                                     log.info("Spider stopped gracefully")
+
+                                if self._force_stop:
+                                    log.warning(f"Force stopping with {self._active_tasks} active tasks")
+                                    tg.cancel_scope.cancel()
 
                                 self._running = False
                                 break
