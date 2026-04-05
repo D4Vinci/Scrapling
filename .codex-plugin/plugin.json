@@ -1,0 +1,16 @@
+{
+  "name": "Scrapling",
+  "version": "0.1.0",
+  "description": "\ud83d\udd77\ufe0f An adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl!",
+  "author": {
+    "name": "D4Vinci",
+    "url": "https://github.com/D4Vinci"
+  },
+  "homepage": "https://github.com/D4Vinci/Scrapling",
+  "repository": "https://github.com/D4Vinci/Scrapling",
+  "keywords": [
+    "mcp",
+    "codex"
+  ],
+  "mcpServers": "./.mcp.json"
+}
