@@ -74,6 +74,7 @@ class PlaywrightSession(TypedDict, total=False):
     wait: int | float
     timezone_id: str | None
     page_action: Optional[Callable]
+    pre_nav_listeners: Optional[Dict[str, Callable]]
     proxy: Optional[str | Dict[str, str] | Tuple]
     proxy_rotator: Optional[ProxyRotator]
     extra_headers: Optional[Dict[str, str]]
@@ -103,6 +104,7 @@ class PlaywrightFetchParams(TypedDict, total=False):
     disable_resources: bool
     wait_selector: Optional[str]
     page_action: Optional[Callable]
+    pre_nav_listeners: Optional[Dict[str, Callable]]
     selector_config: Optional[Dict]
     extra_headers: Optional[Dict[str, str]]
     wait_selector_state: SelectorWaitStates

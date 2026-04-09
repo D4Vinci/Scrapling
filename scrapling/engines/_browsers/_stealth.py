@@ -188,6 +188,9 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
+        :param pre_nav_listeners: A dictionary mapping Playwright event names to handler callables. Handlers are
+            registered on the page before ``page.goto()`` is called, so they fire from the very first navigation.
+            Useful for events like ``"websocket"`` that must be set up before the page loads.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
@@ -234,6 +237,10 @@ class StealthySession(SyncSession, StealthySessionMixin):
                         xhr_container=xhr_captured,
                     ),
                 )
+
+                if params.pre_nav_listeners:
+                    for event_name, handler in params.pre_nav_listeners.items():
+                        page.on(event_name, handler)
 
                 try:
                     first_response = page.goto(url, referer=referer)
@@ -455,6 +462,9 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object and does the automation you need.
+        :param pre_nav_listeners: A dictionary mapping Playwright event names to handler callables. Handlers are
+            registered on the page before ``page.goto()`` is called, so they fire from the very first navigation.
+            Useful for events like ``"websocket"`` that must be set up before the page loads.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
@@ -502,6 +512,10 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         xhr_container=xhr_captured,
                     ),
                 )
+
+                if params.pre_nav_listeners:
+                    for event_name, handler in params.pre_nav_listeners.items():
+                        page.on(event_name, handler)
 
                 try:
                     first_response = await page.goto(url, referer=referer)

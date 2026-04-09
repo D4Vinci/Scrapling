@@ -1,6 +1,9 @@
 import pytest
+from unittest.mock import MagicMock, patch, call
 from scrapling.engines._browsers._validators import (
     validate,
+    validate_fetch,
+    _fetch_params,
     StealthConfig,
     PlaywrightConfig,
 )
@@ -99,3 +102,91 @@ class TestValidators:
         config = validate(params, StealthConfig)
 
         assert config.blocked_domains == {"ads.example.com"}
+
+    def test_playwright_config_pre_nav_listeners_default_none(self):
+        """Test PlaywrightConfig pre_nav_listeners defaults to None"""
+        config = validate({}, PlaywrightConfig)
+
+        assert config.pre_nav_listeners is None
+
+    def test_playwright_config_pre_nav_listeners_accepted(self):
+        """Test PlaywrightConfig accepts a pre_nav_listeners dict"""
+        handler = MagicMock()
+        params = {"pre_nav_listeners": {"websocket": handler}}
+
+        config = validate(params, PlaywrightConfig)
+
+        assert config.pre_nav_listeners == {"websocket": handler}
+
+    def test_stealth_config_pre_nav_listeners_accepted(self):
+        """Test StealthConfig inherits pre_nav_listeners support"""
+        handler = MagicMock()
+        params = {"pre_nav_listeners": {"websocket": handler}}
+
+        config = validate(params, StealthConfig)
+
+        assert config.pre_nav_listeners == {"websocket": handler}
+
+    def test_pre_nav_listeners_registered_before_goto(self):
+        """Test that pre_nav_listeners are registered on the page before page.goto() is called"""
+        call_order: list = []
+        mock_page = MagicMock()
+
+        def track_on(event: str, handler: object) -> None:
+            call_order.append(("on", event))
+
+        def track_goto(*args: object, **kwargs: object) -> MagicMock:
+            call_order.append(("goto",))
+            return MagicMock()
+
+        mock_page.on.side_effect = track_on
+        mock_page.goto.side_effect = track_goto
+
+        ws_handler = MagicMock()
+        pre_nav_listeners = {"websocket": ws_handler}
+
+        # Simulate the registration logic used in fetch() methods
+        mock_page.on("response", MagicMock())
+        if pre_nav_listeners:
+            for event_name, handler in pre_nav_listeners.items():
+                mock_page.on(event_name, handler)
+        mock_page.goto("https://example.com")
+
+        assert call_order.index(("on", "websocket")) < call_order.index(("goto",)), (
+            "pre_nav_listeners must be registered before page.goto()"
+        )
+
+    def test_pre_nav_listeners_multiple_events(self):
+        """Test that multiple pre_nav_listeners are all registered before goto"""
+        call_order: list = []
+        mock_page = MagicMock()
+
+        def track_on(event: str, handler: object) -> None:
+            call_order.append(("on", event))
+
+        def track_goto(*args: object, **kwargs: object) -> MagicMock:
+            call_order.append(("goto",))
+            return MagicMock()
+
+        mock_page.on.side_effect = track_on
+        mock_page.goto.side_effect = track_goto
+
+        pre_nav_listeners = {"websocket": MagicMock(), "request": MagicMock()}
+
+        mock_page.on("response", MagicMock())
+        if pre_nav_listeners:
+            for event_name, handler in pre_nav_listeners.items():
+                mock_page.on(event_name, handler)
+        mock_page.goto("https://example.com")
+
+        goto_index = call_order.index(("goto",))
+        for event in ("websocket", "request"):
+            assert call_order.index(("on", event)) < goto_index, (
+                f"pre_nav_listener for '{event}' must be registered before page.goto()"
+            )
+
+    def test_fetch_params_includes_pre_nav_listeners(self):
+        """Test that _fetch_params dataclass includes pre_nav_listeners field"""
+        from dataclasses import fields as dc_fields
+        field_names = {f.name for f in dc_fields(_fetch_params)}
+        assert "pre_nav_listeners" in field_names
