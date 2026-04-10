@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Union
 from functools import lru_cache
 from urllib.parse import urlparse
 from dataclasses import dataclass, fields
@@ -53,7 +53,7 @@ def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
 # Type aliases for cleaner annotations
 PagesCount = Annotated[int, Meta(ge=1, le=50)]
 RetriesCount = Annotated[int, Meta(ge=1, le=10)]
-Seconds = Annotated[int, float, Meta(ge=0)]
+Seconds = Annotated[Union[int, float], Meta(ge=0)]
 
 
 class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
