@@ -2,6 +2,7 @@ from time import time
 from re import search as re_search
 from asyncio import sleep as asyncio_sleep, Lock
 from contextlib import contextmanager, asynccontextmanager
+import logging
 
 from playwright.sync_api._generated import Page
 from playwright.sync_api import (
@@ -41,8 +42,13 @@ from scrapling.core._types import (
     ProxyType,
     Generator,
     AsyncGenerator,
+    Sequence,
+    SetCookieParam,
 )
 from scrapling.engines.constants import STEALTH_ARGS, HARMFUL_ARGS, DEFAULT_ARGS
+
+# Setup logger for this module
+log = logging.getLogger("scrapling")
 
 
 class SyncSession:
@@ -95,9 +101,60 @@ class SyncSession:
             ctx.add_init_script(path=config.init_script)
 
         if config.cookies:  # pragma: no cover
-            ctx.add_cookies(config.cookies)
+            try:
+                # Validate and add cookies to the browser context
+                self._add_cookies_to_context(ctx, config.cookies)
+            except ValueError as e:
+                # Re-raise validation errors - these indicate invalid cookie format
+                log.error(f"Cookie validation failed: {e}")
+                raise
+            except Exception as e:
+                # Handle other errors (e.g., Playwright errors) gracefully
+                log.warning(f"Failed to add cookies to context: {e}")
+                # Continue without cookies rather than failing completely
 
         return ctx
+
+    def _add_cookies_to_context(self, ctx: BrowserContext, cookies: Sequence[SetCookieParam]) -> None:
+        """Add cookies to the browser context with proper validation and error handling.
+
+        :param ctx: The browser context to add cookies to
+        :param cookies: Sequence of cookie dictionaries in Playwright SetCookieParam format
+        :raises ValueError: If cookie format is invalid
+        """
+        if not cookies:
+            return
+
+        validated_cookies = []
+        for cookie in cookies:
+            # Type validation - must be a dict
+            if not isinstance(cookie, dict):
+                raise ValueError(f"Cookie must be a dictionary, got {type(cookie).__name__}: {repr(cookie)}")
+
+            # Ensure required fields are present
+            if 'name' not in cookie or 'value' not in cookie:
+                raise ValueError(f"Cookie must have 'name' and 'value' fields: {cookie}")
+
+            # Normalize cookie format
+            normalized_cookie = {
+                'name': cookie['name'],
+                'value': cookie['value'],
+                'domain': cookie.get('domain'),
+                'path': cookie.get('path', '/'),
+                'url': cookie.get('url'),
+                'expires': cookie.get('expires'),
+                'httpOnly': cookie.get('httpOnly', True),
+                'secure': cookie.get('secure', True),
+                'sameSite': cookie.get('sameSite', 'Lax'),
+            }
+
+            # Filter out None values for optional fields
+            normalized_cookie = {k: v for k, v in normalized_cookie.items() if v is not None}
+            validated_cookies.append(normalized_cookie)
+
+        if validated_cookies:
+            ctx.add_cookies(validated_cookies)
+            log.info(f"Added {len(validated_cookies)} cookies to browser context")
 
     def _get_page(
         self,
@@ -268,9 +325,62 @@ class AsyncSession:
             await ctx.add_init_script(path=config.init_script)
 
         if config.cookies:  # pragma: no cover
-            await ctx.add_cookies(config.cookies)
+            try:
+                # Validate and add cookies to the browser context
+                await self._async_add_cookies_to_context(ctx, config.cookies)
+            except ValueError as e:
+                # Re-raise validation errors - these indicate invalid cookie format
+                log.error(f"Cookie validation failed: {e}")
+                raise
+            except Exception as e:
+                # Handle other errors (e.g., Playwright errors) gracefully
+                log.warning(f"Failed to add cookies to context: {e}")
+                # Continue without cookies rather than failing completely
 
         return ctx
+
+    async def _async_add_cookies_to_context(
+        self, ctx: AsyncBrowserContext, cookies: Sequence[SetCookieParam]
+    ) -> None:
+        """Add cookies to the async browser context with proper validation and error handling.
+
+        :param ctx: The async browser context to add cookies to
+        :param cookies: Sequence of cookie dictionaries in Playwright SetCookieParam format
+        :raises ValueError: If cookie format is invalid
+        """
+        if not cookies:
+            return
+
+        validated_cookies = []
+        for cookie in cookies:
+            # Type validation - must be a dict
+            if not isinstance(cookie, dict):
+                raise ValueError(f"Cookie must be a dictionary, got {type(cookie).__name__}: {repr(cookie)}")
+
+            # Ensure required fields are present
+            if 'name' not in cookie or 'value' not in cookie:
+                raise ValueError(f"Cookie must have 'name' and 'value' fields: {cookie}")
+
+            # Normalize cookie format
+            normalized_cookie = {
+                'name': cookie['name'],
+                'value': cookie['value'],
+                'domain': cookie.get('domain'),
+                'path': cookie.get('path', '/'),
+                'url': cookie.get('url'),
+                'expires': cookie.get('expires'),
+                'httpOnly': cookie.get('httpOnly', True),
+                'secure': cookie.get('secure', True),
+                'sameSite': cookie.get('sameSite', 'Lax'),
+            }
+
+            # Filter out None values for optional fields
+            normalized_cookie = {k: v for k, v in normalized_cookie.items() if v is not None}
+            validated_cookies.append(normalized_cookie)
+
+        if validated_cookies:
+            await ctx.add_cookies(validated_cookies)
+            log.info(f"Added {len(validated_cookies)} cookies to browser context")
 
     async def _get_page(
         self,
