@@ -164,6 +164,10 @@ When `main_content_only=true` (the default), the server automatically sanitizes 
 
 Keep `main_content_only=true` for maximum protection.
 
+## Ad blocking
+
+All browser-based tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) and persistent sessions (`open_session`) automatically block requests to ~3,500 known ad and tracker domains. This is always enabled in the MCP server to save tokens and speed up page loads. No configuration needed.
+
 ## Setup
 
 Start the server (stdio transport, used by most MCP clients):

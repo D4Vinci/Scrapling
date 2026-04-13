@@ -33,6 +33,7 @@ The Scrapling MCP Server provides nine powerful tools for web scraping:
 - **Browser Impersonation**: Mimic real browsers with TLS fingerprinting, real browser headers matching that version, and more
 - **Parallel Processing**: Scrape multiple URLs concurrently for efficiency
 - **Session Persistence**: Reuse browser sessions across multiple requests for better performance
+- **Ad Blocking**: All browser-based tools automatically block requests to ~3,500 known ad and tracker domains, saving tokens and speeding up page loads
 - **Prompt Injection Protection**: Automatic sanitization of hidden content (CSS-hidden elements, aria-hidden, zero-width characters, HTML comments, template tags) that could be used for prompt injection attacks
 
 #### But why use Scrapling MCP Server instead of other available tools?

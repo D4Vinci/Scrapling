@@ -230,7 +230,8 @@ MySpider().start()
 - **Contournement anti-bot** : Capacités de furtivité avancées avec `StealthyFetcher` et usurpation d'empreinte. Peut facilement contourner tous les types de Turnstile/Interstitial de Cloudflare avec l'automatisation.
 - **Gestion de sessions** : Support de sessions persistantes avec les classes `FetcherSession`, `StealthySession` et `DynamicSession` pour la gestion des cookies et de l'état entre les requêtes.
 - **Rotation de proxy** : `ProxyRotator` intégré avec des stratégies de rotation cycliques ou personnalisées sur tous les types de sessions, plus des surcharges de proxy par requête.
-- **Blocage de domaines** : Bloquez les requêtes vers des domaines spécifiques (et leurs sous-domaines) dans les fetchers basés sur navigateur.
+- **Blocage de domaines et publicités** : Bloquez les requêtes vers des domaines spécifiques (et leurs sous-domaines) ou activez le blocage de publicités intégré (~3 500 domaines publicitaires/traceurs connus) dans les fetchers basés sur navigateur.
+- **Prévention des fuites DNS** : Support optionnel de DNS-over-HTTPS pour router les requêtes DNS via le DoH de Cloudflare, empêchant les fuites DNS lors de l'utilisation de proxies.
 - **Support async** : Support async complet sur tous les fetchers et classes de sessions async dédiées.
 
 ### Scraping adaptatif & Intégration IA

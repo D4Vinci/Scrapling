@@ -53,6 +53,8 @@ def __Request_and_Save(
     if not output_path.is_absolute():
         output_path = Path.cwd() / output_file
 
+    if ai_targeted:
+        kwargs.setdefault("block_ads", True)
     response = fetcher_func(url, **kwargs)
     Convertor.write_content_to_file(response, str(output_path), css_selector, main_content_only=ai_targeted)
     log.info(f"Content successfully saved to '{output_path}'")
@@ -309,6 +311,16 @@ def _common_browser_options(f):
             default=True,
             help="Run browser in headless mode (default: True)",
         ),
+        option(
+            "--dns-over-https/--no-dns-over-https",
+            default=False,
+            help="Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)",
+        ),
+        option(
+            "--block-ads/--no-block-ads",
+            default=False,
+            help="Block requests to known ad and tracker domains (default: False)",
+        ),
     ]
     for decorator in decorators:
         f = decorator(f)
@@ -498,6 +510,8 @@ def __build_browser_kwargs(
     real_chrome,
     proxy,
     parsed_headers,
+    dns_over_https,
+    block_ads,
 ) -> Dict[str, Any]:
     """Build shared kwargs dict for browser-based commands."""
     kwargs: Dict[str, Any] = {
@@ -507,6 +521,8 @@ def __build_browser_kwargs(
         "timeout": timeout,
         "locale": locale,
         "real_chrome": real_chrome,
+        "dns_over_https": dns_over_https,
+        "block_ads": block_ads,
     }
     if wait > 0:
         kwargs["wait"] = wait
@@ -538,6 +554,8 @@ def fetch(
     proxy,
     extra_headers,
     ai_targeted,
+    dns_over_https,
+    block_ads,
 ):
     """Opens up a browser and fetch content using DynamicFetcher."""
     parsed_headers, _ = _ParseHeaders(extra_headers, False)
@@ -552,6 +570,8 @@ def fetch(
         real_chrome,
         proxy,
         parsed_headers,
+        dns_over_https,
+        block_ads,
     )
     from scrapling.fetchers import DynamicFetcher
 
@@ -597,6 +617,8 @@ def stealthy_fetch(
     allow_webgl,
     hide_canvas,
     ai_targeted,
+    dns_over_https,
+    block_ads,
 ):
     """Opens up a browser with advanced stealth features and fetch content using StealthyFetcher."""
     parsed_headers, _ = _ParseHeaders(extra_headers, False)
@@ -611,6 +633,8 @@ def stealthy_fetch(
         real_chrome,
         proxy,
         parsed_headers,
+        dns_over_https,
+        block_ads,
     )
     kwargs.update(
         {

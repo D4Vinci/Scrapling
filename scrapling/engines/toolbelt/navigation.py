@@ -19,6 +19,27 @@ class ProxyDict(Struct):
     password: str = ""
 
 
+def _is_domain_blocked(hostname: str, domains: frozenset) -> bool:
+    """Check if a hostname matches any blocked domain using O(1) frozenset lookups.
+
+    Walks up the hostname's suffix chain: for "tracker.ads.doubleclick.net",
+    checks "tracker.ads.doubleclick.net", "ads.doubleclick.net", "doubleclick.net".
+
+    :param hostname: The hostname to check.
+    :param domains: A frozenset of blocked domain names.
+    :return: True if the hostname or any of its parent domains is in the blocked set.
+    """
+    if hostname in domains:
+        return True
+    idx = hostname.find(".")
+    while idx != -1:
+        suffix = hostname[idx + 1 :]
+        if "." in suffix and suffix in domains:
+            return True
+        idx = hostname.find(".", idx + 1)
+    return False
+
+
 def create_intercept_handler(disable_resources: bool, blocked_domains: Optional[Set[str]] = None) -> Callable:
     """Create a route handler that blocks both resource types and specific domains.
 
@@ -27,7 +48,7 @@ def create_intercept_handler(disable_resources: bool, blocked_domains: Optional[
     :return: A sync route handler function.
     """
     disabled_resources = EXTRA_RESOURCES if disable_resources else set()
-    domains = blocked_domains or set()
+    domains = frozenset(blocked_domains) if blocked_domains else frozenset()
 
     def handler(route: Route):
         if route.request.resource_type in disabled_resources:
@@ -35,7 +56,7 @@ def create_intercept_handler(disable_resources: bool, blocked_domains: Optional[
             route.abort()
         elif domains:
             hostname = urlparse(route.request.url).hostname or ""
-            if any(hostname == d or hostname.endswith("." + d) for d in domains):
+            if _is_domain_blocked(hostname, domains):
                 log.debug(f'Blocking request to blocked domain "{hostname}" ({route.request.url})')
                 route.abort()
             else:
@@ -54,7 +75,7 @@ def create_async_intercept_handler(disable_resources: bool, blocked_domains: Opt
     :return: An async route handler function.
     """
     disabled_resources = EXTRA_RESOURCES if disable_resources else set()
-    domains = blocked_domains or set()
+    domains = frozenset(blocked_domains) if blocked_domains else frozenset()
 
     async def handler(route: async_Route):
         if route.request.resource_type in disabled_resources:
@@ -62,7 +83,7 @@ def create_async_intercept_handler(disable_resources: bool, blocked_domains: Opt
             await route.abort()
         elif domains:
             hostname = urlparse(route.request.url).hostname or ""
-            if any(hostname == d or hostname.endswith("." + d) for d in domains):
+            if _is_domain_blocked(hostname, domains):
                 log.debug(f'Blocking request to blocked domain "{hostname}" ({route.request.url})')
                 await route.abort()
             else:

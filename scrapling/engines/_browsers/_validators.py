@@ -53,7 +53,7 @@ def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
 # Type aliases for cleaner annotations
 PagesCount = Annotated[int, Meta(ge=1, le=50)]
 RetriesCount = Annotated[int, Meta(ge=1, le=10)]
-Seconds = Annotated[int, float, Meta(ge=0)]
+Seconds = Annotated[float, Meta(ge=0)]
 
 
 class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
@@ -86,10 +86,12 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     useragent: Optional[str] = None
     extra_flags: Optional[List[str]] = None
     blocked_domains: Optional[Set[str]] = None
+    block_ads: bool = False
     retries: RetriesCount = 3
     retry_delay: Seconds = 1
     capture_xhr: str | None = None
     executable_path: Optional[str] = None
+    dns_over_https: bool = False
 
     def __post_init__(self):  # pragma: no cover
         """Custom validation after msgspec validation"""
@@ -127,6 +129,14 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
             validation_msg = _is_invalid_file_path(self.executable_path)
             if validation_msg:
                 raise ValueError(validation_msg)
+
+        if self.block_ads:
+            from scrapling.engines.toolbelt.ad_domains import AD_DOMAINS
+
+            if self.blocked_domains:
+                self.blocked_domains = self.blocked_domains | set(AD_DOMAINS)
+            else:
+                self.blocked_domains = set(AD_DOMAINS)
 
 
 class StealthConfig(PlaywrightConfig, kw_only=True, frozen=False, weakref=True):

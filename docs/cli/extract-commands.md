@@ -24,7 +24,7 @@ The extract command is a set of simple terminal tools that:
 
 !!! tip "AI-Targeted Mode"
 
-    All extract commands support an `--ai-targeted` flag. When enabled, it extracts only the main body content, strips noise tags (script, style, noscript, svg), removes hidden elements that could be used for prompt injection (CSS-hidden, aria-hidden, template tags), strips zero-width unicode characters, and removes HTML comments. This is ideal when the output is destined for an AI model.
+    All extract commands support an `--ai-targeted` flag. When enabled, it extracts only the main body content, strips noise tags (script, style, noscript, svg), removes hidden elements that could be used for prompt injection (CSS-hidden, aria-hidden, template tags), strips zero-width unicode characters, and removes HTML comments. For browser commands (`fetch`/`stealthy-fetch`), it also automatically enables ad blocking. This is ideal when the output is destined for an AI model.
 
 ## Quick Start
 
@@ -291,6 +291,8 @@ We will go through each command in detail below.
       --real-chrome/--no-real-chrome              If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
       --proxy TEXT                                Proxy URL in format "http://username:password@host:port"
       -H, --extra-headers TEXT                    Extra headers in format "Key: Value" (can be used multiple times)
+      --dns-over-https / --no-dns-over-https   Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)
+      --block-ads / --no-block-ads               Block requests to known ad and tracker domains (default: False)
       --ai-targeted                              Extract only main content and sanitize hidden elements for AI consumption (default: False)
       --help                                      Show this message and exit.
     ```
@@ -337,6 +339,8 @@ We will go through each command in detail below.
       --hide-canvas / --show-canvas               Add noise to canvas operations (default: False)
       --proxy TEXT                                Proxy URL in format "http://username:password@host:port"
       -H, --extra-headers TEXT                    Extra headers in format "Key: Value" (can be used multiple times)
+      --dns-over-https / --no-dns-over-https   Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)
+      --block-ads / --no-block-ads               Block requests to known ad and tracker domains (default: False)
       --ai-targeted                              Extract only main content and sanitize hidden elements for AI consumption (default: False)
       --help                                      Show this message and exit.
     ```

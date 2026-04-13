@@ -5,11 +5,9 @@ from scrapling.engines.toolbelt.navigation import (
     construct_proxy_dict,
     create_intercept_handler,
     create_async_intercept_handler,
+    _is_domain_blocked,
 )
-from scrapling.engines.toolbelt.fingerprints import (
-    get_os_name,
-    generate_headers
-)
+from scrapling.engines.toolbelt.fingerprints import get_os_name, generate_headers
 
 
 @pytest.fixture
@@ -148,31 +146,19 @@ class TestConstructProxyDict:
         """Test a basic proxy string"""
         result = construct_proxy_dict("http://proxy.example.com:8080")
 
-        expected = {
-            "server": "http://proxy.example.com:8080",
-            "username": "",
-            "password": ""
-        }
+        expected = {"server": "http://proxy.example.com:8080", "username": "", "password": ""}
         assert result == expected
 
     def test_proxy_string_with_auth(self):
         """Test proxy string with authentication"""
         result = construct_proxy_dict("http://user:pass@proxy.example.com:8080")
 
-        expected = {
-            "server": "http://proxy.example.com:8080",
-            "username": "user",
-            "password": "pass"
-        }
+        expected = {"server": "http://proxy.example.com:8080", "username": "user", "password": "pass"}
         assert result == expected
 
     def test_proxy_dict_input(self):
         """Test proxy dictionary input"""
-        input_dict = {
-            "server": "http://proxy.example.com:8080",
-            "username": "user",
-            "password": "pass"
-        }
+        input_dict = {"server": "http://proxy.example.com:8080", "username": "user", "password": "pass"}
         result = construct_proxy_dict(input_dict)
 
         assert result == input_dict
@@ -182,11 +168,7 @@ class TestConstructProxyDict:
         input_dict = {"server": "http://proxy.example.com:8080"}
         result = construct_proxy_dict(input_dict)
 
-        expected = {
-            "server": "http://proxy.example.com:8080",
-            "username": "",
-            "password": ""
-        }
+        expected = {"server": "http://proxy.example.com:8080", "username": "", "password": ""}
         assert result == expected
 
     def test_invalid_proxy_string(self):
@@ -240,7 +222,7 @@ class TestResponse:
             cookies={"session": "abc123"},
             headers={"Content-Type": "text/html"},
             request_headers={"User-Agent": "Test"},
-            encoding="utf-8"
+            encoding="utf-8",
         )
 
         assert response.url == "https://example.com"
@@ -250,7 +232,7 @@ class TestResponse:
 
     def test_response_with_bytes_content(self):
         """Test Response with 'bytes' content"""
-        content_bytes = "<html><body>Test</body></html>".encode('utf-8')
+        content_bytes = "<html><body>Test</body></html>".encode("utf-8")
 
         response = Response(
             url="https://example.com",
@@ -259,7 +241,7 @@ class TestResponse:
             reason="OK",
             cookies={},
             headers={},
-            request_headers={}
+            request_headers={},
         )
 
         # Should handle 'bytes' content properly
@@ -268,6 +250,7 @@ class TestResponse:
 
 class _MockRequest:
     """Minimal mock for Playwright's Request object."""
+
     def __init__(self, url: str, resource_type: str = "document"):
         self.url = url
         self.resource_type = resource_type
@@ -275,6 +258,7 @@ class _MockRequest:
 
 class _MockRoute:
     """Minimal mock for Playwright's sync Route object."""
+
     def __init__(self, url: str, resource_type: str = "document"):
         self.request = _MockRequest(url, resource_type)
         self.aborted = False
@@ -289,6 +273,7 @@ class _MockRoute:
 
 class _AsyncMockRoute:
     """Minimal mock for Playwright's async Route object."""
+
     def __init__(self, url: str, resource_type: str = "document"):
         self.request = _MockRequest(url, resource_type)
         self.aborted = False
@@ -411,3 +396,90 @@ class TestCreateAsyncInterceptHandler:
         route = _AsyncMockRoute("https://notexample.com/page")
         await handler(route)
         assert route.continued
+
+
+class TestIsDomainBlocked:
+    """Test the frozenset-based domain matching helper."""
+
+    def test_exact_match(self):
+        domains = frozenset({"doubleclick.net"})
+        assert _is_domain_blocked("doubleclick.net", domains) is True
+
+    def test_subdomain_match(self):
+        domains = frozenset({"doubleclick.net"})
+        assert _is_domain_blocked("ads.doubleclick.net", domains) is True
+
+    def test_deep_subdomain_match(self):
+        domains = frozenset({"doubleclick.net"})
+        assert _is_domain_blocked("tracker.ads.doubleclick.net", domains) is True
+
+    def test_no_partial_match(self):
+        domains = frozenset({"doubleclick.net"})
+        assert _is_domain_blocked("notdoubleclick.net", domains) is False
+
+    def test_no_match(self):
+        domains = frozenset({"doubleclick.net"})
+        assert _is_domain_blocked("example.com", domains) is False
+
+    def test_empty_domains(self):
+        assert _is_domain_blocked("example.com", frozenset()) is False
+
+    def test_multiple_domains(self):
+        domains = frozenset({"ads.com", "tracker.io", "doubleclick.net"})
+        assert _is_domain_blocked("cdn.ads.com", domains) is True
+        assert _is_domain_blocked("tracker.io", domains) is True
+        assert _is_domain_blocked("safe.example.com", domains) is False
+
+
+class TestAdDomains:
+    """Test the built-in ad domain list."""
+
+    def test_ad_domains_is_frozenset(self):
+        from scrapling.engines.toolbelt.ad_domains import AD_DOMAINS
+
+        assert isinstance(AD_DOMAINS, frozenset)
+
+    def test_ad_domains_has_entries(self):
+        from scrapling.engines.toolbelt.ad_domains import AD_DOMAINS
+
+        assert len(AD_DOMAINS) > 1000
+
+    def test_ad_domains_contains_known_entries(self):
+        from scrapling.engines.toolbelt.ad_domains import AD_DOMAINS
+
+        assert "doubleclick.net" in AD_DOMAINS
+        assert "googlesyndication.com" in AD_DOMAINS
+
+
+class TestBlockAdsConfig:
+    """Test that block_ads merges ad domains into blocked_domains at config level."""
+
+    def test_block_ads_populates_blocked_domains(self):
+        from scrapling.engines._browsers._validators import PlaywrightConfig
+
+        config = PlaywrightConfig(block_ads=True)
+        assert config.blocked_domains is not None
+        assert len(config.blocked_domains) > 1000
+        assert "doubleclick.net" in config.blocked_domains
+
+    def test_block_ads_false_leaves_blocked_domains_none(self):
+        from scrapling.engines._browsers._validators import PlaywrightConfig
+
+        config = PlaywrightConfig(block_ads=False)
+        assert config.blocked_domains is None
+
+    def test_block_ads_merges_with_user_domains(self):
+        from scrapling.engines._browsers._validators import PlaywrightConfig
+
+        user_domains = {"my-custom-block.com"}
+        config = PlaywrightConfig(block_ads=True, blocked_domains=user_domains)
+        assert config.blocked_domains is not None
+        assert "my-custom-block.com" in config.blocked_domains
+        assert "doubleclick.net" in config.blocked_domains
+
+    def test_block_ads_does_not_modify_original_set(self):
+        from scrapling.engines._browsers._validators import PlaywrightConfig
+
+        user_domains = {"my-custom-block.com"}
+        _ = PlaywrightConfig(block_ads=True, blocked_domains=user_domains)
+        assert len(user_domains) == 1

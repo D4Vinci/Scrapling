@@ -230,7 +230,8 @@ MySpider().start()
 - **アンチボット回避**：`StealthyFetcher` と fingerprint 偽装による高度なステルス機能。自動化で Cloudflare の Turnstile/Interstitial のすべてのタイプを簡単に回避。
 - **Session 管理**：リクエスト間で Cookie と状態を管理するための `FetcherSession`、`StealthySession`、`DynamicSession` クラスによる永続的な Session サポート。
 - **Proxy 回転**：すべての Session タイプに対応したラウンドロビンまたはカスタム戦略の組み込み `ProxyRotator`、さらにリクエストごとの Proxy オーバーライド。
-- **ドメインブロック**：ブラウザベースの Fetcher で特定のドメイン（およびそのサブドメイン）へのリクエストをブロック。
+- **ドメイン＆広告ブロック**：ブラウザベースの Fetcher で特定のドメイン（およびそのサブドメイン）へのリクエストをブロック、または内蔵広告ブロック（約3,500の既知の広告/トラッカードメイン）を有効化。
+- **DNS リーク防止**：Proxy 使用時の DNS リークを防ぐため、Cloudflare の DoH 経由で DNS クエリをルーティングするオプションの DNS-over-HTTPS サポート。
 - **async サポート**：すべての Fetcher および専用 async Session クラス全体での完全な async サポート。
 
 ### 適応型スクレイピングと AI 統合

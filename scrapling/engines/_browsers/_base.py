@@ -455,6 +455,13 @@ class BaseSessionMixin:
             if config.extra_flags or extra_flags:
                 flags = list(set(tuple(flags) + tuple(config.extra_flags or extra_flags or ())))
 
+            if config.dns_over_https:
+                doh_flag = "--dns-over-https-templates=https://cloudflare-dns.com/dns-query"
+                if isinstance(flags, list):
+                    flags.append(doh_flag)
+                else:
+                    flags = list(flags) + [doh_flag]
+
             self._browser_options.update(
                 {
                     "args": flags,
