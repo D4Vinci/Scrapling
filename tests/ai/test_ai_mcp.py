@@ -1,9 +1,12 @@
+import base64
+
 import pytest
 import pytest_httpbin
 
 from scrapling.core.ai import (
     ScraplingMCPServer,
     ResponseModel,
+    ScreenshotModel,
     SessionInfo,
     SessionCreatedModel,
     SessionClosedModel,
@@ -198,3 +201,75 @@ class TestNormalizeCredentials:
     def test_missing_username_raises(self):
         with pytest.raises(ValueError, match="username"):
             _normalize_credentials({"password": "pass"})
+
+
+@pytest_httpbin.use_class_based_httpbin
+class TestScreenshot:
+    """Test MCP screenshot functionality"""
+
+    @pytest.fixture(scope="class")
+    def test_url(self, httpbin):
+        return f"{httpbin.url}/html"
+
+    @pytest.fixture
+    def server(self):
+        return ScraplingMCPServer()
+
+    @pytest.mark.asyncio
+    async def test_screenshot_ad_hoc_png(self, server, test_url):
+        """Test taking a PNG screenshot without a session (ad-hoc browser)"""
+        result = await server.screenshot(url=test_url, image_type="png", headless=True)
+        assert isinstance(result, ScreenshotModel)
+        assert result.image_type == "png"
+        assert result.full_page is False
+        # Verify valid base64 that decodes to a PNG
+        raw = base64.b64decode(result.image_data)
+        assert raw[:4] == b"\x89PNG"
+
+    @pytest.mark.asyncio
+    async def test_screenshot_ad_hoc_jpeg(self, server, test_url):
+        """Test taking a JPEG screenshot"""
+        result = await server.screenshot(url=test_url, image_type="jpeg", quality=80, headless=True)
+        assert isinstance(result, ScreenshotModel)
+        assert result.image_type == "jpeg"
+        raw = base64.b64decode(result.image_data)
+        assert raw[:2] == b"\xff\xd8"  # JPEG magic bytes
+
+    @pytest.mark.asyncio
+    async def test_screenshot_full_page(self, server, test_url):
+        """Test full-page screenshot"""
+        result = await server.screenshot(url=test_url, full_page=True, headless=True)
+        assert isinstance(result, ScreenshotModel)
+        assert result.full_page is True
+        assert len(result.image_data) > 0
+
+    @pytest.mark.asyncio
+    async def test_screenshot_with_session(self, server, test_url):
+        """Test screenshot using a persistent session"""
+        session = await server.open_session(session_type="dynamic", headless=True)
+        session_id = session.session_id
+
+        result = await server.screenshot(url=test_url, session_id=session_id)
+        assert isinstance(result, ScreenshotModel)
+        raw = base64.b64decode(result.image_data)
+        assert raw[:4] == b"\x89PNG"
+
+        await server.close_session(session_id)
+
+    @pytest.mark.asyncio
+    async def test_screenshot_with_stealthy_session(self, server, test_url):
+        """Test screenshot using a stealthy session"""
+        session = await server.open_session(session_type="stealthy", headless=True)
+        session_id = session.session_id
+
+        result = await server.screenshot(url=test_url, session_id=session_id)
+        assert isinstance(result, ScreenshotModel)
+        assert len(result.image_data) > 0
+
+        await server.close_session(session_id)
+
+    @pytest.mark.asyncio
+    async def test_screenshot_nonexistent_session(self, server, test_url):
+        """Test screenshot with invalid session ID raises error"""
+        with pytest.raises(ValueError, match="not found"):
+            await server.screenshot(url=test_url, session_id="nonexistent")

@@ -1,4 +1,5 @@
 from uuid import uuid4
+from base64 import b64encode
 from asyncio import gather
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
@@ -63,6 +64,18 @@ class SessionClosedModel(BaseModel):
     message: str = Field(description="A confirmation message.")
 
 
+ScreenshotType = Literal["png", "jpeg"]
+
+
+class ScreenshotModel(BaseModel):
+    """Screenshot result with base64-encoded image data."""
+
+    url: str = Field(description="The URL of the page that was captured.")
+    image_data: str = Field(description="Base64-encoded image data.")
+    image_type: ScreenshotType = Field(description="The image format: 'png' or 'jpeg'.")
+    full_page: bool = Field(description="Whether the screenshot captures the full scrollable page.")
+
+
 @dataclass
 class _SessionEntry:
     session: Any  # AsyncDynamicSession | AsyncStealthySession
@@ -118,6 +131,15 @@ class ScraplingMCPServer:
                 f"Session '{session_id}' is a '{entry.session_type}' session, but this tool requires a "
                 f"'{expected_type}' session. Use the matching fetch tool for your session type."
             )
+        return entry
+
+    def _get_session_any_type(self, session_id: str) -> _SessionEntry:
+        """Look up a session by ID without enforcing a specific type."""
+        entry = self._sessions.get(session_id)
+        if entry is None:
+            raise ValueError(f"Session '{session_id}' not found. Use list_sessions to see active sessions.")
+        if not entry.session._is_alive:
+            raise ValueError(f"Session '{session_id}' is no longer alive. Open a new session.")
         return entry
 
     async def open_session(
@@ -252,6 +274,119 @@ class ScraplingMCPServer:
             )
             for sid, entry in self._sessions.items()
         ]
+
+    async def screenshot(
+        self,
+        url: str,
+        image_type: ScreenshotType = "png",
+        full_page: bool = False,
+        quality: Optional[int] = None,
+        wait: int | float = 0,
+        wait_selector: Optional[str] = None,
+        wait_selector_state: SelectorWaitStates = "attached",
+        network_idle: bool = False,
+        timeout: int | float = 30000,
+        session_id: Optional[str] = None,
+        # Ad-hoc browser options (ignored when session_id is provided)
+        headless: bool = True,
+        proxy: Optional[str | Dict[str, str]] = None,
+        locale: str | None = None,
+        timezone_id: str | None = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+        useragent: Optional[str] = None,
+        cookies: Sequence[SetCookieParam] | None = None,
+        google_search: bool = True,
+        disable_resources: bool = False,
+    ) -> ScreenshotModel:
+        """Take a screenshot of a web page and return the image as base64-encoded data.
+        Supports both ad-hoc usage and persistent sessions. When a `session_id` is provided,
+        the existing browser session is reused; otherwise a temporary browser is launched.
+
+        :param url: The URL to navigate to and capture.
+        :param image_type: Image format for the screenshot. Defaults to "png". Use "jpeg" for smaller file sizes.
+        :param full_page: When True, captures the full scrollable page instead of just the viewport. Defaults to False.
+        :param quality: Image quality for JPEG screenshots (0-100). Ignored for PNG. Defaults to None.
+        :param wait: Time in milliseconds to wait after page load before capturing. Defaults to 0.
+        :param wait_selector: Optional CSS selector to wait for before taking the screenshot.
+        :param wait_selector_state: State to wait for the selector. Defaults to "attached".
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param timeout: Timeout in milliseconds for page operations. Defaults to 30,000.
+        :param session_id: Optional session ID from open_session. Reuses an existing browser session.
+        :param headless: Run the browser in headless mode. Ignored when session_id is provided.
+        :param proxy: Proxy configuration. Ignored when session_id is provided.
+        :param locale: Browser locale. Ignored when session_id is provided.
+        :param timezone_id: Browser timezone. Ignored when session_id is provided.
+        :param extra_headers: Extra HTTP headers. Ignored when session_id is provided.
+        :param useragent: Custom user agent string. Ignored when session_id is provided.
+        :param cookies: Cookies to set. Ignored when session_id is provided.
+        :param google_search: Set Google referer header. Defaults to True.
+        :param disable_resources: Drop requests for fonts, images, etc. for faster loading. Defaults to False.
+        """
+        screenshot_kwargs: Dict[str, Any] = {
+            "type": image_type,
+            "full_page": full_page,
+        }
+        if image_type == "jpeg" and quality is not None:
+            screenshot_kwargs["quality"] = quality
+
+        # Mutable container to capture the screenshot bytes from inside page_action
+        captured: List[bytes] = []
+        captured_url: List[str] = []
+
+        async def _capture_screenshot(page: Any) -> None:
+            """page_action callback that captures the screenshot before the page closes."""
+            captured.append(await page.screenshot(**screenshot_kwargs))
+            captured_url.append(page.url)
+
+        if session_id:
+            entry = self._get_session_any_type(session_id)
+            session = entry.session
+
+            fetch_kwargs: Dict[str, Any] = {
+                "wait": wait,
+                "timeout": timeout,
+                "google_search": google_search,
+                "disable_resources": disable_resources,
+                "network_idle": network_idle,
+                "page_action": _capture_screenshot,
+            }
+            if extra_headers:
+                fetch_kwargs["extra_headers"] = extra_headers
+            if wait_selector:
+                fetch_kwargs["wait_selector"] = wait_selector
+                fetch_kwargs["wait_selector_state"] = wait_selector_state
+
+            await session.fetch(url, **fetch_kwargs)
+        else:
+            async with AsyncDynamicSession(
+                wait=wait,
+                proxy=proxy,
+                locale=locale,
+                timeout=timeout,
+                cookies=cookies,
+                headless=headless,
+                block_ads=True,
+                max_pages=1,
+                useragent=useragent,
+                timezone_id=timezone_id,
+                network_idle=network_idle,
+                wait_selector=wait_selector,
+                google_search=google_search,
+                extra_headers=extra_headers,
+                disable_resources=disable_resources,
+                wait_selector_state=wait_selector_state,
+            ) as session:
+                await session.fetch(url, page_action=_capture_screenshot)
+
+        if not captured:
+            raise RuntimeError(f"Failed to capture screenshot for {url}")
+
+        return ScreenshotModel(
+            url=captured_url[0] if captured_url else url,
+            image_data=b64encode(captured[0]).decode("ascii"),
+            image_type=image_type,
+            full_page=full_page,
+        )
 
     @staticmethod
     async def get(
@@ -826,6 +961,13 @@ class ScraplingMCPServer:
             self.bulk_stealthy_fetch,
             title="bulk_stealthy_fetch",
             description=self.bulk_stealthy_fetch.__doc__,
+            structured_output=True,
+        )
+        # Screenshot tool
+        server.add_tool(
+            self.screenshot,
+            title="screenshot",
+            description=self.screenshot.__doc__,
             structured_output=True,
         )
         server.run(transport="stdio" if not http else "streamable-http")
