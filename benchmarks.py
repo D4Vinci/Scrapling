@@ -4,9 +4,10 @@ import timeit
 from statistics import mean
 
 import requests
+from urllib.parse import urlparse
 from autoscraper import AutoScraper
 from bs4 import BeautifulSoup
-from lxml import etree, html
+from defusedxml import lxml as defused_lxml
 from mechanicalsoup import StatefulBrowser
 from parsel import Selector
 from pyquery import PyQuery as pq
@@ -47,11 +48,7 @@ def benchmark(func):
 def test_lxml():
     return [
         e.text
-        for e in etree.fromstring(
-            large_html,
-            # Scrapling and Parsel use the same parser inside, so this is just to make it fair
-            parser=html.HTMLParser(recover=True, huge_tree=True),
-        ).cssselect(".item")
+        for e in defused_lxml.fromstring(large_html).cssselect(".item")
     ]
 
 
@@ -135,7 +132,11 @@ if __name__ == "__main__":
 
     display(results1)
     print("\n" + "=" * 25)
-    req = requests.get("https://books.toscrape.com/index.html")
+    _url = "https://books.toscrape.com/index.html"
+    _parsed = urlparse(_url)
+    if _parsed.scheme not in ("http", "https"):
+        raise ValueError(f"Disallowed URL scheme: {_parsed.scheme!r}")
+    req = requests.get(_url, timeout=10)
     print(
         " Benchmark: Speed of searching for an element by text content, and retrieving the text of similar elements\n"
     )

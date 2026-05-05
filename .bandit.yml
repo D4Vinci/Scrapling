@@ -3,6 +3,19 @@ skips:
 - B311
 - B113  # `Requests call without timeout` these requests are done in the benchmark and examples scripts only
 - B403  # We are using pickle for tests only
+- B313  # XML vulnerabilities: benchmarks.py uses lxml for HTML parsing benchmarks only
+- B314  # XML vulnerabilities: benchmarks.py uses lxml for HTML parsing benchmarks only
+- B315  # XML vulnerabilities: benchmarks.py uses lxml for HTML parsing benchmarks only
+- B316  # XML vulnerabilities: benchmarks.py uses lxml for HTML parsing benchmarks only
+- B318  # XML vulnerabilities: benchmarks.py uses lxml for HTML parsing benchmarks only
+- B319  # XML vulnerabilities: benchmarks.py uses lxml for HTML parsing benchmarks only
+- B320  # lxml.etree.fromstring: used in benchmarks.py for HTML parsing benchmarks only
+- B405  # lxml import: used in benchmarks.py for performance benchmarking only
+- B406  # lxml import: used in benchmarks.py for performance benchmarking only
+- B407  # lxml import: used in benchmarks.py for performance benchmarking only
+- B408  # lxml import: used in benchmarks.py for performance benchmarking only
+- B409  # lxml import: used in benchmarks.py for performance benchmarking only
+- B410  # lxml import: used in benchmarks.py for performance benchmarking only
 - B404  # Using subprocess library
 - B602  # subprocess call with shell=True identified
 - B110  # Try, Except, Pass detected.
