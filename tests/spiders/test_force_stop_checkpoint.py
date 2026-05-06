@@ -135,7 +135,7 @@ class TestForceStopCheckpointPreservation:
             session = MockSession(delay=0.5)
             engine = _make_engine(spider, session, crawldir=tmpdir, interval=0)
 
-            checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
+            checkpoint_path = Path(tmpdir) / "checkpoint.json"
 
             async def force_stop_after_delay():
                 """Simulate two rapid Ctrl+C presses."""
@@ -165,7 +165,7 @@ class TestForceStopCheckpointPreservation:
             session = MockSession(delay=0.3)
             engine = _make_engine(spider, session, crawldir=tmpdir, interval=0)
 
-            checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
+            checkpoint_path = Path(tmpdir) / "checkpoint.json"
 
             async def pause_after_delay():
                 await anyio.sleep(0.1)
@@ -214,7 +214,7 @@ class TestForceStopCheckpointPreservation:
 
             await engine.crawl()
 
-            checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
+            checkpoint_path = Path(tmpdir) / "checkpoint.json"
             # No pause → checkpoint should be cleaned up
             assert not checkpoint_path.exists()
             assert engine.paused is False
@@ -257,7 +257,7 @@ class TestForceStopCheckpointPreservation:
                 tg.start_soon(pause1)
                 await engine1.crawl()
 
-            checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
+            checkpoint_path = Path(tmpdir) / "checkpoint.json"
             assert checkpoint_path.exists(), "First run should create checkpoint"
             first_checkpoint_size = checkpoint_path.stat().st_size
 

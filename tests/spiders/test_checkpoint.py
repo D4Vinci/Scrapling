@@ -1,11 +1,11 @@
 """Tests for the CheckpointManager and CheckpointData classes."""
 
-import pickle
 import tempfile
 from pathlib import Path
 
 import pytest
 import anyio
+import orjson
 
 from scrapling.spiders.request import Request
 from scrapling.spiders.checkpoint import CheckpointData, CheckpointManager
@@ -35,18 +35,23 @@ class TestCheckpointData:
         assert data.requests[0].url == "https://example.com/1"
         assert data.seen == {"url1", "url2", "url3"}
 
-    def test_pickle_roundtrip(self):
-        """Test that CheckpointData can be pickled and unpickled."""
+    def test_json_roundtrip(self):
+        """Test that CheckpointData can be serialized to JSON and back."""
+        from scrapling.spiders.checkpoint import _checkpoint_to_dict, _dict_to_checkpoint
+
         requests = [Request("https://example.com", priority=5)]
-        seen = {"fingerprint1", "fingerprint2"}
+        seen = {b"fingerprint1", b"fingerprint2"}
         data = CheckpointData(requests=requests, seen=seen)
 
-        pickled = pickle.dumps(data)
-        restored = pickle.loads(pickled)
+        d = _checkpoint_to_dict(data)
+        json_bytes = orjson.dumps(d)
+        restored_d = orjson.loads(json_bytes)
+        restored = _dict_to_checkpoint(restored_d, None)
 
         assert len(restored.requests) == 1
         assert restored.requests[0].url == "https://example.com"
-        assert restored.seen == {"fingerprint1", "fingerprint2"}
+        assert restored.requests[0].priority == 5
+        assert restored.seen == {b"fingerprint1", b"fingerprint2"}
 
 
 class TestCheckpointManagerInit:
@@ -90,7 +95,7 @@ class TestCheckpointManagerInit:
         """Test that checkpoint file path is correctly constructed."""
         manager = CheckpointManager("/tmp/test_crawl")
 
-        expected_path = "/tmp/test_crawl/checkpoint.pkl"
+        expected_path = "/tmp/test_crawl/checkpoint.json"
         assert str(manager._checkpoint_path) == expected_path
 
 
@@ -120,12 +125,12 @@ class TestCheckpointManagerOperations:
 
         data = CheckpointData(
             requests=[Request("https://example.com")],
-            seen={"fp1", "fp2"},
+            seen={b"fp1", b"fp2"},
         )
 
         await manager.save(data)
 
-        checkpoint_path = crawl_dir / "checkpoint.pkl"
+        checkpoint_path = crawl_dir / "checkpoint.json"
         assert checkpoint_path.exists()
 
     @pytest.mark.asyncio
@@ -169,7 +174,7 @@ class TestCheckpointManagerOperations:
                 Request("https://example.com/1", priority=10),
                 Request("https://example.com/2", priority=5),
             ],
-            seen={"fp1", "fp2", "fp3"},
+            seen={b"fp1", b"fp2", b"fp3"},
         )
 
         await manager.save(original_data)
@@ -179,7 +184,7 @@ class TestCheckpointManagerOperations:
         assert len(loaded_data.requests) == 2
         assert loaded_data.requests[0].url == "https://example.com/1"
         assert loaded_data.requests[0].priority == 10
-        assert loaded_data.seen == {"fp1", "fp2", "fp3"}
+        assert loaded_data.seen == {b"fp1", b"fp2", b"fp3"}
 
     @pytest.mark.asyncio
     async def test_save_is_atomic(self, temp_dir: Path):
@@ -195,7 +200,7 @@ class TestCheckpointManagerOperations:
         assert not temp_path.exists()
 
         # Checkpoint file should exist
-        checkpoint_path = crawl_dir / "checkpoint.pkl"
+        checkpoint_path = crawl_dir / "checkpoint.json"
         assert checkpoint_path.exists()
 
     @pytest.mark.asyncio
@@ -208,7 +213,7 @@ class TestCheckpointManagerOperations:
         data = CheckpointData()
         await manager.save(data)
 
-        checkpoint_path = crawl_dir / "checkpoint.pkl"
+        checkpoint_path = crawl_dir / "checkpoint.json"
         assert checkpoint_path.exists()
 
         # Cleanup should remove it
@@ -230,8 +235,8 @@ class TestCheckpointManagerOperations:
         crawl_dir = temp_dir / "crawl"
         crawl_dir.mkdir(parents=True)
 
-        checkpoint_path = crawl_dir / "checkpoint.pkl"
-        checkpoint_path.write_bytes(b"not valid pickle data")
+        checkpoint_path = crawl_dir / "checkpoint.json"
+        checkpoint_path.write_bytes(b"not valid json data")
 
         manager = CheckpointManager(crawl_dir)
 
@@ -247,14 +252,14 @@ class TestCheckpointManagerOperations:
         # First save
         data1 = CheckpointData(
             requests=[Request("https://example.com/1")],
-            seen={"fp1"},
+            seen={b"fp1"},
         )
         await manager.save(data1)
 
         # Second save
         data2 = CheckpointData(
             requests=[Request("https://example.com/2"), Request("https://example.com/3")],
-            seen={"fp2", "fp3"},
+            seen={b"fp2", b"fp3"},
         )
         await manager.save(data2)
 
@@ -264,7 +269,7 @@ class TestCheckpointManagerOperations:
         assert loaded is not None
         assert len(loaded.requests) == 2
         assert loaded.requests[0].url == "https://example.com/2"
-        assert loaded.seen == {"fp2", "fp3"}
+        assert loaded.seen == {b"fp2", b"fp3"}
 
 
 class TestCheckpointManagerEdgeCases:
@@ -300,7 +305,7 @@ class TestCheckpointManagerEdgeCases:
             Request(f"https://example.com/{i}", priority=i % 10)
             for i in range(1000)
         ]
-        seen = {f"fp_{i}" for i in range(2000)}
+        seen = {f"fp_{i}".encode() for i in range(2000)}
 
         data = CheckpointData(requests=requests, seen=seen)
         await manager.save(data)
@@ -339,3 +344,24 @@ class TestCheckpointManagerEdgeCases:
         assert restored.dont_filter is True
         assert restored.meta == {"item_id": 123, "page": 5}
         assert restored._session_kwargs == {"proxy": "http://proxy:8080"}
+
+    @pytest.mark.asyncio
+    async def test_checkpoint_file_is_valid_json(self, temp_dir: Path):
+        """Test that checkpoint file is human-readable JSON."""
+        manager = CheckpointManager(temp_dir / "crawl")
+
+        data = CheckpointData(
+            requests=[Request("https://example.com", priority=5)],
+            seen={b"fp1"},
+        )
+        await manager.save(data)
+
+        checkpoint_path = temp_dir / "crawl" / "checkpoint.json"
+        content = checkpoint_path.read_text()
+
+        # Should be valid JSON
+        parsed = orjson.loads(content)
+        assert "requests" in parsed
+        assert "seen" in parsed
+        assert len(parsed["requests"]) == 1
+        assert parsed["requests"][0]["url"] == "https://example.com"

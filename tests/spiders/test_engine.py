@@ -608,7 +608,7 @@ class TestCheckpointMethods:
             await engine._save_checkpoint()
 
             # Verify checkpoint file exists
-            checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
+            checkpoint_path = Path(tmpdir) / "checkpoint.json"
             assert checkpoint_path.exists()
 
     @pytest.mark.asyncio
@@ -745,7 +745,7 @@ class TestCrawl:
 
             await engine.crawl()
 
-            checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
+            checkpoint_path = Path(tmpdir) / "checkpoint.json"
             assert not checkpoint_path.exists()  # Cleaned up
 
     @pytest.mark.asyncio

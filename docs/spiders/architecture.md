@@ -67,7 +67,7 @@ When a request comes in, the Session Manager routes it to the correct session ba
 
 ### Checkpoint System
 
-An optional system that, if enabled, saves the crawler's state (pending requests + seen URL fingerprints) to a pickle file on disk. Writes are atomic (temp file + rename) to prevent corruption. Checkpoints are saved periodically at a configurable interval and on graceful shutdown. Upon successful completion (not paused), checkpoint files are automatically cleaned up.
+An optional system that, if enabled, saves the crawler's state (pending requests + seen URL fingerprints) to a JSON file on disk. Writes are atomic (temp file + rename) to prevent corruption. Checkpoints are saved periodically at a configurable interval and on graceful shutdown. Upon successful completion (not paused), checkpoint files are automatically cleaned up.
 
 ### Response Cache
 
