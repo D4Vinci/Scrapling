@@ -138,12 +138,24 @@ class CrawlerEngine:
         if not request.sid:
             request.sid = self.session_manager.default_session_id
 
+    def _max_items_reached(self) -> bool:
+        # getattr-defensive so a duck-typed spider stub (e.g. test fixtures
+        # that don't subclass `Spider`) works without setting this field.
+        cap = getattr(self.spider, "max_items", None)
+        return cap is not None and self.stats.items_scraped >= cap
+
     async def _run_callbacks(self, request: Request, response: Response) -> None:
         """Dispatch response to the request's callback and process yielded items/requests."""
         callback = request.callback if request.callback else self.spider.parse
         try:
             async for result in callback(response):
                 if isinstance(result, Request):
+                    # Stop accepting new follows once max_items is reached.
+                    # In-flight callbacks may keep yielding; just drop them
+                    # so the queue doesn't grow past the cap.
+                    if self._max_items_reached():
+                        log.debug(f"Dropped follow past max_items cap: {result.url}")
+                        continue
                     if self._is_domain_allowed(result):
                         self._normalize_request(result)
                         await self.scheduler.enqueue(result)
@@ -151,6 +163,13 @@ class CrawlerEngine:
                         self.stats.offsite_requests_count += 1
                         log.debug(f"Filtered offsite request to: {result.url}")
                 elif isinstance(result, dict):
+                    # Cap items too: a single parse() can yield several
+                    # items + follows; once we've hit the cap, drop the
+                    # extras as well to avoid overshoot from this callback.
+                    if self._max_items_reached():
+                        self.stats.items_dropped += 1
+                        log.debug(f"Dropped item past max_items cap from {response.url}")
+                        continue
                     processed_result = await self.spider.on_scraped_item(result)
                     if processed_result:
                         self.stats.items_scraped += 1
@@ -355,7 +374,29 @@ class CrawlerEngine:
 
                 # Process queue
                 async with create_task_group() as tg:
+                    cap_announced = False
                     while self._running:
+                        # Hard cap on scraped items. Drain anything still
+                        # queued (already-in-flight requests will finish
+                        # but won't dispatch new work). When active_tasks
+                        # drains, we exit. _run_callbacks also drops any
+                        # follows yielded by in-flight tasks past the cap.
+                        if self._max_items_reached():
+                            if not cap_announced:
+                                dropped = self.scheduler.drain()
+                                log.info(
+                                    f"max_items={self.spider.max_items} reached "
+                                    f"(items_scraped={self.stats.items_scraped}); "
+                                    f"draining queue ({dropped} requests), "
+                                    f"waiting for {self._active_tasks} in-flight tasks"
+                                )
+                                cap_announced = True
+                            if self._active_tasks == 0:
+                                self._running = False
+                                break
+                            await anyio.sleep(0.05)
+                            continue
+
                         if self._pause_requested:
                             if self._active_tasks == 0 or self._force_stop:
                                 # Save checkpoint before canceling to avoid data loss

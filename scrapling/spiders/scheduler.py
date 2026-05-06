@@ -57,6 +57,24 @@ class Scheduler:
     def is_empty(self) -> bool:
         return self._queue.empty()
 
+    def drain(self) -> int:
+        """Drop every queued request without dequeueing them through the
+        normal awaitable path. Used by the engine when a hard cap (e.g.
+        `Spider.max_items`) is hit and we want to stop feeding workers
+        immediately. Returns the number of requests discarded.
+
+        The seen-fingerprints set is left intact so any duplicates that
+        slip through in-flight callbacks still get filtered."""
+        dropped = 0
+        while not self._queue.empty():
+            try:
+                self._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+            dropped += 1
+        self._pending.clear()
+        return dropped
+
     def snapshot(self) -> Tuple[List[Request], Set[bytes]]:
         """Create a snapshot of the current state for checkpoints."""
         sorted_items = sorted(self._pending.values(), key=lambda x: (x[0], x[1]))  # Maintain queue order

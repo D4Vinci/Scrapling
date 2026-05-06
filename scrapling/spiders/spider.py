@@ -85,6 +85,13 @@ class Spider(ABC):
     download_delay: float = 0.0
     max_blocked_retries: int = 3
 
+    # Crawl scope cap. When set, the engine stops dispatching new requests
+    # and dropping queued follows once `stats.items_scraped >= max_items`.
+    # In-flight requests still complete (their items are kept), so the
+    # final `items_scraped` may overshoot by up to `concurrent_requests - 1`.
+    # Default `None` = unlimited (preserves the historical behaviour).
+    max_items: Optional[int] = None
+
     # Fingerprint adjustments
     fp_include_kwargs: bool = False
     fp_keep_fragments: bool = False

@@ -384,3 +384,35 @@ class TestSchedulerIntegration:
         result = await new_scheduler.enqueue(Request("https://example.com", sid="s1"))
 
         assert result is False  # Duplicate filtered based on restored seen set
+
+
+class TestSchedulerDrain:
+    """Tests for the drain() helper used to enforce max_items."""
+
+    @pytest.mark.asyncio
+    async def test_drain_empties_queue_and_returns_count(self):
+        scheduler = Scheduler()
+        for i in range(5):
+            await scheduler.enqueue(Request(f"https://example.com/{i}"))
+
+        dropped = scheduler.drain()
+
+        assert dropped == 5
+        assert scheduler.is_empty
+        assert len(scheduler) == 0
+
+    @pytest.mark.asyncio
+    async def test_drain_preserves_seen_set(self):
+        """Seen fingerprints must survive drain so duplicates that slip
+        through still get filtered after the cap is hit."""
+        scheduler = Scheduler()
+        await scheduler.enqueue(Request("https://example.com/a"))
+
+        scheduler.drain()
+
+        result = await scheduler.enqueue(Request("https://example.com/a"))
+        assert result is False
+
+    def test_drain_on_empty_returns_zero(self):
+        scheduler = Scheduler()
+        assert scheduler.drain() == 0

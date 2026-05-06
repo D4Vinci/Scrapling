@@ -78,6 +78,7 @@ class MockSpider:
         concurrent_requests_per_domain: int = 0,
         download_delay: float = 0.0,
         max_blocked_retries: int = 3,
+        max_items: int | None = None,
         allowed_domains: Set[str] | None = None,
         fp_include_kwargs: bool = False,
         fp_include_headers: bool = False,
@@ -92,6 +93,7 @@ class MockSpider:
         self.concurrent_requests_per_domain = concurrent_requests_per_domain
         self.download_delay = download_delay
         self.max_blocked_retries = max_blocked_retries
+        self.max_items = max_items
         self.allowed_domains = allowed_domains or set()
         self.fp_include_kwargs = fp_include_kwargs
         self.fp_include_headers = fp_include_headers
@@ -465,6 +467,62 @@ class TestProcessRequest:
         assert engine.stats.items_dropped == 1
         assert engine.stats.items_scraped == 0
         assert len(engine.items) == 0
+
+    @pytest.mark.asyncio
+    async def test_max_items_drops_yielded_follows_past_cap(self):
+        """Once items_scraped reaches max_items, _run_callbacks should
+        drop newly-yielded Request objects rather than enqueue them."""
+
+        async def callback(response) -> AsyncGenerator:
+            yield {"url": str(response)}
+            yield Request("https://example.com/page2", sid="default")
+            yield Request("https://example.com/page3", sid="default")
+
+        spider = MockSpider(max_items=1)
+        engine = _make_engine(spider=spider)
+
+        request = Request("https://example.com", sid="default", callback=callback)
+        await engine._process_request(request)
+
+        assert engine.stats.items_scraped == 1
+        assert engine.scheduler.is_empty, (
+            "follows yielded after the cap was hit must not be enqueued"
+        )
+
+    @pytest.mark.asyncio
+    async def test_max_items_drops_extra_items_past_cap(self):
+        """A single callback that yields several items shouldn't exceed
+        max_items — the extras should be counted as dropped."""
+
+        async def callback(response) -> AsyncGenerator:
+            yield {"url": "a"}
+            yield {"url": "b"}
+            yield {"url": "c"}
+
+        spider = MockSpider(max_items=2)
+        engine = _make_engine(spider=spider)
+
+        request = Request("https://example.com", sid="default", callback=callback)
+        await engine._process_request(request)
+
+        assert engine.stats.items_scraped == 2
+        assert engine.stats.items_dropped == 1
+        assert len(engine.items) == 2
+
+    @pytest.mark.asyncio
+    async def test_max_items_none_preserves_legacy_behaviour(self):
+        async def callback(response) -> AsyncGenerator:
+            yield {"url": "a"}
+            yield Request("https://example.com/page2", sid="default")
+
+        spider = MockSpider(max_items=None)
+        engine = _make_engine(spider=spider)
+
+        request = Request("https://example.com", sid="default", callback=callback)
+        await engine._process_request(request)
+
+        assert engine.stats.items_scraped == 1
+        assert not engine.scheduler.is_empty
 
     @pytest.mark.asyncio
     async def test_callback_exception_calls_on_error(self):
