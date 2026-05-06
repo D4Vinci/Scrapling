@@ -1,3 +1,4 @@
+from os import environ
 from uuid import uuid4
 from asyncio import gather
 from datetime import datetime, timezone
@@ -33,6 +34,7 @@ from scrapling.core._types import (
 
 SessionType = Literal["dynamic", "stealthy"]
 ScreenshotType = Literal["png", "jpeg"]
+USER_DATA_DIR_ENV = "SCRAPLING_USER_DATA_DIR"
 
 
 class ResponseModel(BaseModel):
@@ -102,6 +104,13 @@ def _normalize_credentials(credentials: Optional[Dict[str, str]]) -> Optional[Tu
         raise ValueError("Credentials dictionary must contain both 'username' and 'password' keys")
 
     return username, password
+
+
+def _apply_mcp_user_data_dir(kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    user_data_dir = environ.get(USER_DATA_DIR_ENV)
+    if user_data_dir:
+        kwargs["user_data_dir"] = user_data_dir
+    return kwargs
 
 
 class ScraplingMCPServer:
@@ -205,6 +214,7 @@ class ScraplingMCPServer:
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
         )
+        _apply_mcp_user_data_dir(common_kwargs)
 
         session: Union[AsyncDynamicSession, AsyncStealthySession]
         if session_type == "stealthy":
@@ -637,24 +647,28 @@ class ScraplingMCPServer:
             responses = await gather(*tasks)
         else:
             async with AsyncDynamicSession(
-                wait=wait,
-                proxy=proxy,
-                locale=locale,
-                timeout=timeout,
-                cookies=cookies,
-                cdp_url=cdp_url,
-                headless=headless,
-                block_ads=True,
-                max_pages=len(urls),
-                useragent=useragent,
-                timezone_id=timezone_id,
-                real_chrome=real_chrome,
-                network_idle=network_idle,
-                wait_selector=wait_selector,
-                google_search=google_search,
-                extra_headers=extra_headers,
-                disable_resources=disable_resources,
-                wait_selector_state=wait_selector_state,
+                **_apply_mcp_user_data_dir(
+                    dict(
+                        wait=wait,
+                        proxy=proxy,
+                        locale=locale,
+                        timeout=timeout,
+                        cookies=cookies,
+                        cdp_url=cdp_url,
+                        headless=headless,
+                        block_ads=True,
+                        max_pages=len(urls),
+                        useragent=useragent,
+                        timezone_id=timezone_id,
+                        real_chrome=real_chrome,
+                        network_idle=network_idle,
+                        wait_selector=wait_selector,
+                        google_search=google_search,
+                        extra_headers=extra_headers,
+                        disable_resources=disable_resources,
+                        wait_selector_state=wait_selector_state,
+                    )
+                )
             ) as session:
                 tasks = [session.fetch(url) for url in urls]
                 responses = await gather(*tasks)
@@ -846,28 +860,32 @@ class ScraplingMCPServer:
             responses = await gather(*tasks)
         else:
             async with AsyncStealthySession(
-                wait=wait,
-                proxy=proxy,
-                locale=locale,
-                cdp_url=cdp_url,
-                timeout=timeout,
-                cookies=cookies,
-                headless=headless,
-                block_ads=True,
-                useragent=useragent,
-                timezone_id=timezone_id,
-                real_chrome=real_chrome,
-                hide_canvas=hide_canvas,
-                allow_webgl=allow_webgl,
-                network_idle=network_idle,
-                block_webrtc=block_webrtc,
-                wait_selector=wait_selector,
-                google_search=google_search,
-                extra_headers=extra_headers,
-                additional_args=additional_args,
-                solve_cloudflare=solve_cloudflare,
-                disable_resources=disable_resources,
-                wait_selector_state=wait_selector_state,
+                **_apply_mcp_user_data_dir(
+                    dict(
+                        wait=wait,
+                        proxy=proxy,
+                        locale=locale,
+                        cdp_url=cdp_url,
+                        timeout=timeout,
+                        cookies=cookies,
+                        headless=headless,
+                        block_ads=True,
+                        useragent=useragent,
+                        timezone_id=timezone_id,
+                        real_chrome=real_chrome,
+                        hide_canvas=hide_canvas,
+                        allow_webgl=allow_webgl,
+                        network_idle=network_idle,
+                        block_webrtc=block_webrtc,
+                        wait_selector=wait_selector,
+                        google_search=google_search,
+                        extra_headers=extra_headers,
+                        additional_args=additional_args,
+                        solve_cloudflare=solve_cloudflare,
+                        disable_resources=disable_resources,
+                        wait_selector_state=wait_selector_state,
+                    )
+                )
             ) as session:
                 tasks = [session.fetch(url) for url in urls]
                 responses = await gather(*tasks)

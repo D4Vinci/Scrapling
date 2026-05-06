@@ -8,6 +8,7 @@ import pytest
 import pytest_httpbin
 from mcp.types import ImageContent, TextContent
 
+import scrapling.core.ai as ai_module
 from scrapling.core.ai import (
     ScraplingMCPServer,
     ResponseModel,
@@ -202,6 +203,38 @@ class TestSessionManagement:
             await server.open_session(session_type="dynamic", session_id="dupe", headless=True)
 
         await server.close_session("dupe")
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("session_type", "session_class_name"),
+        [("dynamic", "AsyncDynamicSession"), ("stealthy", "AsyncStealthySession")],
+    )
+    async def test_open_session_uses_env_user_data_dir(
+        self, server, monkeypatch, tmp_path, session_type, session_class_name
+    ):
+        """Browser sessions use SCRAPLING_USER_DATA_DIR when it is set."""
+        captured_kwargs = {}
+
+        class FakeSession:
+            _is_alive = True
+
+            def __init__(self, **kwargs):
+                captured_kwargs.update(kwargs)
+
+            async def start(self):
+                pass
+
+            async def close(self):
+                self._is_alive = False
+
+        user_data_dir = str(tmp_path / "profile")
+        monkeypatch.setenv("SCRAPLING_USER_DATA_DIR", user_data_dir)
+        monkeypatch.setattr(ai_module, session_class_name, FakeSession)
+
+        opened = await server.open_session(session_type=session_type, headless=True)
+
+        assert captured_kwargs["user_data_dir"] == user_data_dir
+        await server.close_session(opened.session_id)
 
 
 def _png_height(data: bytes) -> int:
