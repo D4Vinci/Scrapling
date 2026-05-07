@@ -22,10 +22,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get PR title
-        id: pr_title
-        run: echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
-
       - name: Save PR body to file
         uses: actions/github-script@v8
         with:
@@ -35,13 +31,14 @@ jobs:
 
       - name: Extract version
         id: extract_version
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          PR_TITLE="${{ steps.pr_title.outputs.title }}"
-          if [[ $PR_TITLE =~ ^v ]]; then
-            echo "version=$PR_TITLE" >> $GITHUB_OUTPUT
+          if [[ "$PR_TITLE" =~ ^v[0-9]+(\.[0-9]+)*([.-]?[a-zA-Z][a-zA-Z0-9.+-]*)?$ ]]; then
+            printf 'version=%s\n' "$PR_TITLE" >> "$GITHUB_OUTPUT"
             echo "Valid version format found in PR title: $PR_TITLE"
           else
-            echo "Error: PR title '$PR_TITLE' must start with 'v' (e.g., 'v1.0.0') to create a release."
+            echo "Error: PR title must look like v1, v1.0, v1.0.0, v1.0.0-rc1, or v1.0.0rc1 to create a release."
             exit 1
           fi
 
