@@ -14,16 +14,16 @@ WORKDIR /app
 COPY pyproject.toml ./
 
 # Install dependencies only
-RUN --mount=type=cache,id=uv,target=/root/.cache/uv \
+RUN --mount=type=cache,sharing=shared,target=/root/.cache/uv \
     uv sync --no-install-project --all-extras --compile-bytecode
 
 # Copy source code
 COPY . .
 
 # Install browsers and project in one optimized layer
-RUN --mount=type=cache,id=uv,target=/root/.cache/uv \
-    --mount=type=cache,id=apt-cache,target=/var/cache/apt \
-    --mount=type=cache,id=apt-lib,target=/var/lib/apt \
+RUN --mount=type=cache,sharing=shared,target=/root/.cache/uv \
+    --mount=type=cache,sharing=shared,target=/var/cache/apt \
+    --mount=type=cache,sharing=shared,target=/var/lib/apt \
     apt-get update && \
     uv run playwright install-deps chromium && \
     uv run playwright install chromium && \
