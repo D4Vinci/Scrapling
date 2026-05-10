@@ -1,37 +1,13 @@
-FROM python:3.12-slim-trixie
-
-LABEL io.modelcontextprotocol.server.name="io.github.D4Vinci/Scrapling"
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+FROM pyd4vinci/scrapling:latest
 
 WORKDIR /app
 
-# Copy dependency file first for better layer caching
-COPY pyproject.toml ./
+# Install FastAPI and uvicorn on top of the existing Scrapling image
+RUN pip install fastapi uvicorn --break-system-packages
 
-# Install dependencies only
-RUN uv sync --no-install-project --all-extras --compile-bytecode
+# Copy our API server
+COPY api.py .
 
-# Copy source code
-COPY . .
-
-# Install browsers and project in one optimized layer
-RUN apt-get update && \
-    uv run playwright install-deps chromium && \
-    uv run playwright install chromium && \
-    uv sync --all-extras --compile-bytecode && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Expose port for MCP server HTTP transport
 EXPOSE 8000
 
-# Set entrypoint to run scrapling
-ENTRYPOINT ["uv", "run", "scrapling"]
-
-# Default command (can be overridden)
-CMD ["--help"]
+CMD ["python", "api.py"]
