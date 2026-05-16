@@ -150,14 +150,50 @@ def install(force):  # pragma: no cover
 @option(
     "--host",
     type=str,
-    default="0.0.0.0",
-    help="The host to use if streamable-http transport is enabled (Default: '0.0.0.0')",
+    default="127.0.0.1",
+    help="Host to bind when --http is set. Defaults to loopback. Use --bind-all to listen on all interfaces.",
+)
+@option(
+    "--bind-all",
+    is_flag=True,
+    default=False,
+    help="Allow binding the HTTP MCP transport to all interfaces (0.0.0.0). Required when exposing the server beyond localhost.",
 )
 @option(
     "--port", type=int, default=8000, help="The port to use if streamable-http transport is enabled (Default: 8000)"
 )
-def mcp(http, host, port):
+def mcp(http, host, port, bind_all):
+    from click import UsageError, secho
+
     from scrapling.core.ai import ScraplingMCPServer
+    from scrapling.core._url_guard import UnsafeURLError
+
+    _ALL_INTERFACE_HOSTS = {"0.0.0.0", "::", "*"}
+
+    if http:
+        if bind_all:
+            host = "0.0.0.0"
+        if host in _ALL_INTERFACE_HOSTS and not bind_all:
+            raise UsageError(
+                "Refusing to bind HTTP MCP transport to all interfaces without --bind-all. "
+                "Use --host 127.0.0.1 (default) or pass --bind-all explicitly."
+            )
+        try:
+            from scrapling.core._url_guard import require_http_token
+
+            require_http_token()
+        except UnsafeURLError as e:
+            raise UsageError(str(e))
+        if bind_all:
+            secho(
+                "WARNING: HTTP MCP transport is binding to 0.0.0.0. The server will be reachable "
+                "from every network this machine is connected to. Per-request Bearer auth using "
+                "SCRAPLING_MCP_TOKEN is enforced, but treat the token as a shared secret and "
+                "consider terminating TLS in a reverse proxy before exposing this beyond a "
+                "trusted network.",
+                fg="yellow",
+                err=True,
+            )
 
     server = ScraplingMCPServer()
     server.serve(http, host, port)

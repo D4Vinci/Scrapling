@@ -7,6 +7,11 @@ from mcp.server.fastmcp import FastMCP, Image
 from mcp.types import ImageContent, TextContent
 from pydantic import BaseModel, Field
 
+from scrapling.core._url_guard import (
+    UnsafeURLError,
+    require_http_token,
+    validate_url as _validate_mcp_url,
+)
 from scrapling.core.shell import Convertor
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.engines.static import ImpersonateType
@@ -88,6 +93,18 @@ def _translate_response(
         )
     )
     return ResponseModel(status=page.status, content=content, url=page.url)
+
+
+def _guard_urls(urls) -> None:
+    """Validate every URL handed to an MCP tool. Raises ``UnsafeURLError``.
+
+    ``urls`` may be a single string or any iterable of strings.
+    """
+    if isinstance(urls, str):
+        _validate_mcp_url(urls)
+        return
+    for u in urls:
+        _validate_mcp_url(u)
 
 
 def _normalize_credentials(credentials: Optional[Dict[str, str]]) -> Optional[Tuple[str, str]]:
@@ -292,6 +309,7 @@ class ScraplingMCPServer:
         if quality is not None and image_type != "jpeg":
             raise ValueError("'quality' is only valid when 'image_type' is 'jpeg'.")
 
+        _guard_urls(url)
         entry = self._get_session(session_id, expected_type=None)
 
         screenshot_kwargs: Dict[str, Any] = {"type": image_type, "full_page": full_page}
@@ -450,6 +468,7 @@ class ScraplingMCPServer:
         :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
         :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
         """
+        _guard_urls(urls)
         normalized_proxy_auth = _normalize_credentials(proxy_auth)
         normalized_auth = _normalize_credentials(auth)
 
@@ -617,6 +636,7 @@ class ScraplingMCPServer:
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
+        _guard_urls(urls)
         if session_id:
             entry = self._get_session(session_id, "dynamic")
             tasks = [
@@ -825,6 +845,7 @@ class ScraplingMCPServer:
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
+        _guard_urls(urls)
         if session_id:
             entry = self._get_session(session_id, "stealthy")
             tasks = [
@@ -875,8 +896,32 @@ class ScraplingMCPServer:
         return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
 
     def serve(self, http: bool, host: str, port: int):
-        """Serve the MCP server."""
-        server = FastMCP(name="Scrapling", host=host, port=port)
+        """Serve the MCP server.
+
+        Security notes:
+          * HTTP transport refuses to start unless ``SCRAPLING_MCP_TOKEN``
+            is set, and that same token is required, per request, in an
+            ``Authorization: Bearer <token>`` header. Requests without a
+            bearer token receive 401; requests with a wrong token receive
+            401. Comparison is constant-time via ``hmac.compare_digest``.
+          * stdio transport requires no token and applies no auth.
+          * Tool methods themselves validate URLs (``_guard_urls``) and
+            consult the optional ``SCRAPLING_MCP_ALLOWLIST``.
+        """
+        if http:
+            from scrapling.core._mcp_auth import build_http_auth
+
+            token = require_http_token()
+            auth_settings, token_verifier = build_http_auth(token, port)
+            server = FastMCP(
+                name="Scrapling",
+                host=host,
+                port=port,
+                auth=auth_settings,
+                token_verifier=token_verifier,
+            )
+        else:
+            server = FastMCP(name="Scrapling", host=host, port=port)
         # Session management tools
         server.add_tool(self.open_session, title="open_session", structured_output=True)
         server.add_tool(self.close_session, title="close_session", structured_output=True)
