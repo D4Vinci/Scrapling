@@ -256,6 +256,109 @@ def _strip_tags(value: str) -> str:
     return re.sub(r"<[^>]+>", "", value)
 
 
+_REDDIT_ATOM_NS = {
+    "atom": "http://www.w3.org/2005/Atom",
+    "thr": "http://purl.org/syndication/thread/1.0",
+}
+
+
+def _reddit_atom_text(content: str) -> str:
+    """Strip Reddit's ``<!-- SC_OFF -->`` markers and HTML tags from atom content."""
+
+    if not content:
+        return ""
+    cleaned = re.sub(r"<!--\s*SC_(?:OFF|ON)\s*-->", "", content)
+    cleaned = re.sub(r"</p>\s*<p>", "\n\n", cleaned, flags=re.I)
+    cleaned = re.sub(r"<br\s*/?>", "\n", cleaned, flags=re.I)
+    cleaned = _strip_tags(cleaned).strip()
+    return unescape(cleaned)
+
+
+async def _reddit_rss_fallback(cleaned_url: str, max_comments: int) -> Optional["AdapterResponse"]:
+    """Fall back to Reddit's anonymous Atom feed when ``.json`` is 403.
+
+    The endpoint is ``{permalink}/.rss`` and currently returns post + comments
+    (flat, no threading) without any auth. Returns ``None`` when the fallback
+    itself fails so the caller can keep its original error message.
+    """
+
+    from xml.etree import ElementTree as ET  # local import keeps cold-start light
+
+    import httpx  # already a transitive dep of scrapling; keep import local
+
+    rss_url = cleaned_url.rstrip("/") + "/.rss"
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/atom+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True, headers=headers) as client:
+            response = await client.get(rss_url)
+    except Exception:
+        return None
+    if response.status_code >= 400:
+        return None
+
+    try:
+        root = ET.fromstring(response.text)
+    except Exception:
+        return None
+
+    entries = root.findall("atom:entry", _REDDIT_ATOM_NS)
+    if not entries:
+        return None
+
+    def _author(entry: Any) -> Optional[str]:
+        name_el = entry.find("atom:author/atom:name", _REDDIT_ATOM_NS)
+        if name_el is None or not name_el.text:
+            return None
+        handle = name_el.text.strip()
+        return handle[3:] if handle.startswith("/u/") else handle
+
+    # First entry is the submission itself.
+    post_entry = entries[0]
+    title = post_entry.findtext("atom:title", "", _REDDIT_ATOM_NS).strip()
+    content = post_entry.findtext("atom:content", "", _REDDIT_ATOM_NS) or ""
+    link_el = post_entry.find("atom:link", _REDDIT_ATOM_NS)
+    permalink = link_el.get("href") if link_el is not None else cleaned_url
+    subreddit_match = re.search(r"/r/([^/]+)/", permalink or "")
+
+    post = RedditPost(
+        title=title or None,
+        author=_author(post_entry),
+        subreddit=subreddit_match.group(1) if subreddit_match else None,
+        url=permalink or cleaned_url,
+        selftext=_reddit_atom_text(content) or None,
+        score=None,
+        num_comments=max(0, len(entries) - 1) or None,
+        created_utc=None,
+    )
+
+    comments: List[RedditComment] = []
+    for entry in entries[1 : 1 + (max_comments or len(entries))]:
+        body_html = entry.findtext("atom:content", "", _REDDIT_ATOM_NS) or ""
+        comments.append(
+            RedditComment(
+                author=_author(entry),
+                body=_reddit_atom_text(body_html),
+                score=None,
+                replies=[],
+            )
+        )
+
+    result = RedditThreadResult(post=post, comments=comments)
+    return AdapterResponse(
+        success=True,
+        site="reddit",
+        data=result.model_dump(),
+        error=None,
+        fallback_html=None,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Tools
 # ---------------------------------------------------------------------------
@@ -818,6 +921,12 @@ class AdaptersMCPTools:
             response = None
 
         if response is None:
+            # Bug #6 follow-up: anonymous .json is blocked, but the public Atom
+            # feed at `{permalink}/.rss` still serves post + (flat) comments
+            # without auth. Try it before giving up.
+            rss_result = await _reddit_rss_fallback(cleaned, max_comments)
+            if rss_result is not None:
+                return rss_result
             return AdapterResponse(
                 success=False,
                 site="reddit",
