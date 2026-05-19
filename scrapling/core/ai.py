@@ -596,7 +596,15 @@ class ScraplingMCPServer:
 
     def serve(self, http: bool, host: str, port: int):
         """Serve the MCP server."""
+        from scrapling.core.ai_interact import InteractMCPTools
+        from scrapling.core.ai_session import SessionMCPTools
+        from scrapling.core.ai_vision import VisionMCPTools
+        from scrapling.core.ai_extract import ExtractMCPTools
+        from scrapling.core.ai_adapters import AdaptersMCPTools
+
         server = FastMCP(name="Scrapling", host=host, port=port)
+
+        # --- Original 6 fetchers -------------------------------------------------
         server.add_tool(self.get, title="get", description=self.get.__doc__, structured_output=True)
         server.add_tool(self.bulk_get, title="bulk_get", description=self.bulk_get.__doc__, structured_output=True)
         server.add_tool(self.fetch, title="fetch", description=self.fetch.__doc__, structured_output=True)
@@ -612,4 +620,37 @@ class ScraplingMCPServer:
             description=self.bulk_stealthy_fetch.__doc__,
             structured_output=True,
         )
+
+        # --- Session management --------------------------------------------------
+        for name in ("open_session", "close_session", "list_sessions", "export_session",
+                     "import_session", "screenshot", "pdf_export", "record_har",
+                     "dom_diff", "network_intercept", "extract_api_calls"):
+            fn = getattr(SessionMCPTools, name)
+            server.add_tool(fn, title=name, description=fn.__doc__, structured_output=True)
+
+        # --- Browser interaction & action plan -----------------------------------
+        for name in ("click", "type_text", "press_key", "scroll", "hover",
+                     "wait_for", "navigate", "get_page_state", "run_action_plan"):
+            fn = getattr(InteractMCPTools, name)
+            server.add_tool(fn, title=name, description=fn.__doc__, structured_output=True)
+
+        # --- Vision & anti-detection ---------------------------------------------
+        for name in ("vision_select", "find_clickable_elements", "compare_screenshots",
+                     "extract_text_from_image", "humanize_fingerprint", "align_with_proxy",
+                     "detect_protection", "auto_solve_captcha"):
+            fn = getattr(VisionMCPTools, name)
+            server.add_tool(fn, title=name, description=fn.__doc__, structured_output=True)
+
+        # --- Schema-driven & self-healing extraction -----------------------------
+        for name in ("smart_extract", "self_healing_selector", "extract_links",
+                     "extract_structured_data"):
+            fn = getattr(ExtractMCPTools, name)
+            server.add_tool(fn, title=name, description=fn.__doc__, structured_output=True)
+
+        # --- High-level site adapters --------------------------------------------
+        for name in ("telegram_channel", "twitter_thread", "youtube_transcript",
+                     "github_repo", "reddit_thread", "hackernews_item"):
+            fn = getattr(AdaptersMCPTools, name)
+            server.add_tool(fn, title=name, description=fn.__doc__, structured_output=True)
+
         server.run(transport="stdio" if not http else "streamable-http")
