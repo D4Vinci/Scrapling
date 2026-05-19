@@ -458,14 +458,20 @@ class VisionMCPTools:
             )
 
         return VisionResponse(
-            success=True,
+            success=bool(results),
             data={
                 "query": query,
                 "candidates": results,
                 "total_scanned": len(nodes),
                 "screenshot_base64": screenshot_b64 if not screenshot_save_path else None,
                 "screenshot_path": screenshot_save_path,
+                "hint": (
+                    "no element matched the query; consider rephrasing, calling "
+                    "find_clickable_elements first, or running get_page_state to "
+                    "see what's actually on the page"
+                ) if not results else None,
             },
+            error=None if results else f"no element matched query: {query!r}",
             method="vision_select",
         )
 
@@ -806,7 +812,7 @@ class VisionMCPTools:
                 # a Cloudflare splash without solving anything.
                 from scrapling.fetchers import StealthyFetcher  # local import
 
-                page = StealthyFetcher.fetch(session_id_or_url, headless=True, network_idle=False)
+                page = await StealthyFetcher.async_fetch(session_id_or_url, headless=True, network_idle=False)
                 html = getattr(page, "html_content", "") or getattr(page, "body", "") or ""
                 raw_headers = getattr(page, "headers", {}) or {}
                 headers = {str(k).lower(): str(v) for k, v in dict(raw_headers).items()}

@@ -495,6 +495,25 @@ class InteractMCPTools:
                     entry["output"] = resp.data
             except Exception as exc:  # noqa: BLE001
                 entry["error"] = f"{type(exc).__name__}: {exc}"
+            # X2 finding: when a step fails the LLM has no idea what's
+            # actually on the page. Attach a trimmed dom_summary so the
+            # caller can choose a different selector without re-prompting.
+            if not entry["success"]:
+                try:
+                    state = await InteractMCPTools.get_page_state(
+                        session_id=session_id,
+                        include_screenshot=False,
+                        include_dom_summary=True,
+                    )
+                    if state.success and state.data:
+                        summary = state.data.get("dom_summary") or []
+                        entry["page_state"] = {
+                            "url": state.data.get("url"),
+                            "title": state.data.get("title"),
+                            "dom_summary": summary[:30],
+                        }
+                except Exception:  # noqa: BLE001 - best effort
+                    pass
             results.append(entry)
             if stop_on_error and not entry["success"]:
                 break

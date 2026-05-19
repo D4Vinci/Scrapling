@@ -479,11 +479,29 @@ class AdaptersMCPTools:
                     break
 
             def _stat(testid: str) -> Optional[str]:
-                nodes = article.cssselect(f'div[data-testid="{testid}"]')
-                if not nodes:
-                    return None
-                value = nodes[0].text_content().strip()
-                return value or None
+                # Bug #8: X has rotated DOM repeatedly; old data-testid="like"/"retweet"/"reply"
+                # often resolves to the button container with no text. Try several
+                # variants and finally fall back to aria-label="N Likes" parsing.
+                for sel in (
+                    f'div[data-testid="{testid}"]',
+                    f'div[data-testid="{testid}-count"]',
+                    f'div[data-testid="un{testid}"]',
+                    f'button[data-testid="{testid}"]',
+                    f'button[aria-label*="{testid}"]',
+                    f'a[data-testid="{testid}"]',
+                ):
+                    nodes = article.cssselect(sel)
+                    if not nodes:
+                        continue
+                    value = (nodes[0].text_content() or "").strip()
+                    if value:
+                        return value
+                    # Pull a number out of aria-label like "1,234 Likes"
+                    aria = nodes[0].get("aria-label") or ""
+                    m = re.search(r"([\d,.]+\s*[KkMm]?)", aria)
+                    if m:
+                        return m.group(1).strip()
+                return None
 
             media: List[str] = []
             for img in article.cssselect('div[data-testid="tweetPhoto"] img'):
@@ -591,27 +609,41 @@ class AdaptersMCPTools:
 
         transcript_segments: List[TranscriptSegment] = []
         resolved_lang: Optional[str] = None
+        caption_failure: Optional[str] = None
         if track and track.get("baseUrl"):
             resolved_lang = track.get("languageCode")
             try:
                 caption_response = await AsyncFetcher.get(track["baseUrl"], stealthy_headers=True, timeout=20)
                 caption_xml = _response_html(caption_response) or _decode_body(getattr(caption_response, "body", b""))
-                for match in re.finditer(
-                    r'<text\s+start="([\d.]+)"(?:\s+dur="([\d.]+)")?[^>]*>(.*?)</text>',
-                    caption_xml,
-                    flags=re.DOTALL,
-                ):
-                    raw = match.group(3) or ""
-                    text_value = unescape(_strip_tags(raw)).strip()
-                    if not text_value:
-                        continue
-                    transcript_segments.append(
-                        TranscriptSegment(
-                            start=float(match.group(1) or 0.0),
-                            duration=float(match.group(2) or 0.0),
-                            text=text_value,
-                        )
+                # Bug #7: YouTube increasingly returns HTTP 200 with a 13-byte
+                # `<html></html>` body for captions when the caller has no
+                # consent cookie / signed token. Detect and surface that
+                # accurately instead of pretending no captions exist.
+                stripped = (caption_xml or "").strip().lower()
+                if not stripped or stripped in ("<html></html>", "<html/>", "<?xml version=\"1.0\" encoding=\"utf-8\"?>"):
+                    caption_failure = (
+                        "caption endpoint returned empty body (likely consent-gated; "
+                        "try a stealthy session that carries YouTube cookies)"
                     )
+                else:
+                    for match in re.finditer(
+                        r'<text\s+start="([\d.]+)"(?:\s+dur="([\d.]+)")?[^>]*>(.*?)</text>',
+                        caption_xml,
+                        flags=re.DOTALL,
+                    ):
+                        raw = match.group(3) or ""
+                        text_value = unescape(_strip_tags(raw)).strip()
+                        if not text_value:
+                            continue
+                        transcript_segments.append(
+                            TranscriptSegment(
+                                start=float(match.group(1) or 0.0),
+                                duration=float(match.group(2) or 0.0),
+                                text=text_value,
+                            )
+                        )
+                    if not transcript_segments:
+                        caption_failure = "caption body had no <text> segments"
             except Exception as exc:  # pragma: no cover - depend on network
                 return AdapterResponse(
                     success=False,
@@ -626,11 +658,20 @@ class AdaptersMCPTools:
             transcript=transcript_segments,
             available_languages=available,
         )
+        # Distinguish "no track listed" from "track listed but body empty".
+        if transcript_segments:
+            error_text: Optional[str] = None
+        elif caption_failure:
+            error_text = caption_failure
+        elif not captions:
+            error_text = "no caption tracks listed in player response"
+        else:
+            error_text = "caption track exists but no usable baseUrl"
         return AdapterResponse(
             success=bool(transcript_segments) or bool(metadata.title),
             site="youtube",
             data=result.model_dump(),
-            error=None if transcript_segments else "no caption tracks available",
+            error=error_text,
         )
 
     # --------------------------------------------------------------------- GitHub
@@ -749,13 +790,43 @@ class AdaptersMCPTools:
             "User-Agent": "scrapling-mcp/1.0 (+https://github.com/D4Vinci/Scrapling)",
             "Accept": "application/json",
         }
-        try:
-            response = await AsyncFetcher.get(json_url, headers=headers, timeout=20, retries=2)
-        except Exception as exc:
-            return AdapterResponse(success=False, site="reddit", error=f"fetch failed: {exc}")
+        # Bug #6: Reddit aggressively 403s anonymous .json access since 2023.
+        # Try the legacy old.reddit.com host first (currently still allows anon
+        # JSON), then fall back to the modern host. On 403/429 we surface
+        # fallback_html so the LLM can see the anti-bot wall instead of an
+        # opaque "reddit returned 403".
+        candidate_urls: List[str] = []
+        m = re.match(r"https?://([^/]+)(/.*)$", json_url)
+        if m and m.group(1) not in ("old.reddit.com",):
+            candidate_urls.append(f"https://old.reddit.com{m.group(2)}")
+        candidate_urls.append(json_url)
 
-        if getattr(response, "status", 0) >= 400:
-            return AdapterResponse(success=False, site="reddit", error=f"reddit returned {response.status}")
+        response = None
+        last_status = 0
+        last_body = ""
+        for attempt_url in candidate_urls:
+            try:
+                response = await AsyncFetcher.get(attempt_url, headers=headers, timeout=20, retries=2)
+            except Exception as exc:
+                last_status = -1
+                last_body = f"fetch failed: {exc}"
+                continue
+            last_status = getattr(response, "status", 0)
+            if last_status < 400:
+                break
+            last_body = _decode_body(getattr(response, "body", b""))[:5000]
+            response = None
+
+        if response is None:
+            return AdapterResponse(
+                success=False,
+                site="reddit",
+                error=(
+                    f"reddit blocks anonymous .json access (status={last_status}); "
+                    "supply OAuth credentials or a registered User-Agent"
+                ),
+                fallback_html=last_body or None,
+            )
 
         try:
             payload = json.loads(_decode_body(getattr(response, "body", b"")) or "[]")

@@ -88,6 +88,11 @@ _FIELD_HINTS = {
     "category": (("a", "span"), ("category", "tag", "topic", "section")),
     "tag": (("a", "span"), ("tag", "label", "category")),
     "content": (("div", "article", "section", "p"), ("content", "body", "article")),
+    "text": (("p", "div", "span", "article"), ("text", "body", "content", "message")),
+    "body": (("p", "div", "article"), ("body", "content", "text", "message")),
+    "excerpt": (("p", "div", "span"), ("excerpt", "summary", "description", "abstract")),
+    "message": (("p", "div", "span"), ("message", "text", "body", "comment")),
+    "comment": (("p", "div", "span"), ("comment", "message", "body", "text")),
     "id": ((), ("id",)),
 }
 _DOC_EXTS = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "zip", "rar", "7z", "tar", "gz", "csv", "txt"}
@@ -364,6 +369,21 @@ class SchemaExtractor:
             candidates.sort(key=lambda t: t[0], reverse=True)
             return self._element_value(candidates[0][1], k)
 
+        # Bug #5: when a field has no _FIELD_HINTS entry and no class/id signal,
+        # fall back to the longest <p> / textNode inside the scope so generic
+        # keys like "text", "body", "comment" don't silently return None.
+        if scope is not self.root and k not in _FIELD_HINTS:
+            best_text = ""
+            for el in scope.iter():
+                if not isinstance(getattr(el, "tag", None), str):
+                    continue
+                if el.tag in ("p", "div", "span"):
+                    txt = _text_of(el)
+                    if len(txt) > len(best_text):
+                        best_text = txt
+            if best_text:
+                return best_text
+
         # 4. last resort: root-level direct text for trivial roots
         if scope is self.root and k in ("title",):
             t = scope.find(".//title")
@@ -432,6 +452,30 @@ class SchemaExtractor:
 # Structured data extractor (shared)
 # ---------------------------------------------------------------------------
 def _extract_jsonld(root) -> List[Any]:
+    """Pull JSON-LD blobs out of a document.
+
+    Bug #4: previously stored `{"@context": ..., "@graph": [...]}` as a single
+    opaque entry, so consumers searching for `@type=Article` would miss it.
+    Now we expand `@graph` into top-level entries and propagate `@context`
+    onto each child (matching Google's structured-data convention).
+    """
+
+    def _push(out: List[Any], data: Any) -> None:
+        if isinstance(data, list):
+            for item in data:
+                _push(out, item)
+            return
+        if isinstance(data, dict):
+            if isinstance(data.get("@graph"), list):
+                ctx = data.get("@context")
+                for child in data["@graph"]:
+                    if isinstance(child, dict) and ctx is not None and "@context" not in child:
+                        child = dict(child)
+                        child["@context"] = ctx
+                    _push(out, child)
+                return
+        out.append(data)
+
     out: List[Any] = []
     for s in root.iter("script"):
         if (s.get("type") or "").lower() != "application/ld+json":
@@ -446,10 +490,7 @@ def _extract_jsonld(root) -> List[Any]:
                 data = json.loads(re.sub(r",\s*([\]}])", r"\1", raw))
             except Exception:
                 continue
-        if isinstance(data, list):
-            out.extend(data)
-        else:
-            out.append(data)
+        _push(out, data)
     return out
 
 
@@ -644,13 +685,32 @@ class ExtractMCPTools:
                 method_used="fallback-text",
             )
 
-        # 1. JSON-LD shortcut: when schema top key matches a JSON-LD @type or property
+        # 1. JSON-LD shortcut: when schema top key matches a JSON-LD @type or property.
+        # Bug #1: previously returned the raw entry/payload regardless of schema shape,
+        # which violated `{"key": [...]}` contracts. Now we coerce shape and expand
+        # `itemListElement` / `@graph` so list schemas always receive a list.
         try:
             jsonld = _extract_jsonld(root)
         except Exception:
             jsonld = []
-        for top_key in schema.keys():
+
+        def _coerce_jsonld_payload(entry: Dict[str, Any], top_key: str, want_list: bool) -> Any:
+            payload = entry.get(top_key, entry) if top_key in entry else entry
+            # Expand ItemList → its members.
+            if isinstance(payload, dict) and isinstance(payload.get("itemListElement"), list):
+                payload = payload["itemListElement"]
+            # Expand @graph → its members (Google/SEO convention).
+            if isinstance(payload, dict) and isinstance(payload.get("@graph"), list):
+                payload = payload["@graph"]
+            if want_list and not isinstance(payload, list):
+                payload = [payload]
+            if not want_list and isinstance(payload, list):
+                payload = payload[0] if payload else {}
+            return payload
+
+        for top_key, top_val in schema.items():
             tk = top_key.lower().rstrip("s")
+            want_list = isinstance(top_val, list)
             for entry in jsonld:
                 if not isinstance(entry, dict):
                     continue
@@ -660,10 +720,10 @@ class ExtractMCPTools:
                 else:
                     etypes = [str(etype).lower()] if etype else []
                 if any(tk in t for t in etypes) or top_key in entry:
-                    payload = entry.get(top_key, entry)
+                    payload = _coerce_jsonld_payload(entry, top_key, want_list)
                     return ExtractResponse(
                         success=True,
-                        data={top_key: payload} if top_key not in entry else {top_key: entry[top_key]},
+                        data={top_key: payload},
                         method_used="json-ld",
                     )
 
@@ -751,13 +811,30 @@ class ExtractMCPTools:
         # Quick win: id direct match
         candidates: List[Tuple[float, Any, str]] = []  # (confidence, element, reason)
 
-        # First pass: check if broken selector now resolves but text changed (rare but useful baseline)
+        # First pass: broken selector still resolves. Bug #2: previously
+        # we awarded a flat 0.5 here without comparing against last_known_text,
+        # so completely-wrong elements scored as high-confidence matches.
+        # Now we use a weak baseline (0.15) and require lkt corroboration
+        # before promoting; mismatched text is penalised, not rewarded.
         try:
             existing = root.cssselect(broken_selector) if broken_selector else []
         except Exception:
             existing = []
         for e in existing[:5]:
-            candidates.append((0.5, e, "broken-selector-still-resolves"))
+            base = 0.15
+            reason_parts = ["broken-selector-resolves"]
+            if lkt:
+                cand_text_low = _text_of(e).lower()
+                if cand_text_low == lkt_low:
+                    base = 0.85
+                    reason_parts.append("text-exact")
+                elif lkt_low and lkt_low in cand_text_low:
+                    base = 0.55
+                    reason_parts.append("text-contains")
+                else:
+                    base = 0.05  # penalise: structurally there but text doesn't match
+                    reason_parts.append("text-mismatch")
+            candidates.append((base, e, ",".join(reason_parts)))
 
         # Iterate candidates
         for el in root.iter():
@@ -872,7 +949,14 @@ class ExtractMCPTools:
         if root is None:
             return ExtractResponse(success=False, error="Failed to parse HTML.")
 
-        base = url or ""
+        # Bug #3: respect document-level <base href>; the HTML spec says relative
+        # URLs resolve against <base> first, falling back to the request URL.
+        base_el = root.find(".//base[@href]")
+        doc_base = (base_el.get("href") if base_el is not None else "") or ""
+        if doc_base and url:
+            base = urljoin(url, doc_base)
+        else:
+            base = doc_base or url or ""
         base_host = urlparse(base).netloc.lower() if base else ""
         wanted = set(types) if types else None
 

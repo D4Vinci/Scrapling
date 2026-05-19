@@ -218,7 +218,17 @@ class SessionMCPTools:
             else:
                 session = AsyncDynamicSession(**common_kwargs)
 
-            await session.__aenter__()
+            try:
+                await session.__aenter__()
+            except Exception:
+                # __aenter__ may have launched playwright/browser before raising;
+                # always attempt teardown so we never leak chromium processes.
+                try:
+                    await session.__aexit__(None, None, None)
+                except Exception:  # noqa: BLE001 - best-effort cleanup
+                    pass
+                raise
+
             register_session(sid, session, session_type)
             # Make sure the registry record carries the type even if a
             # third-party ``register_session`` ignored the kwarg.
@@ -268,6 +278,12 @@ class SessionMCPTools:
                 _API_CAPTURES.pop(session_id, None)
                 _ROUTE_REGISTRY.pop(session_id, None)
                 har_meta = _HAR_REGISTRY.pop(session_id, None)
+                # Bug #14: ai_interact._MOUSE_POS leaked one entry per session.
+                try:
+                    from scrapling.core.ai_interact import _MOUSE_POS as _mp
+                    _mp.pop(session_id, None)
+                except Exception:  # noqa: BLE001
+                    pass
 
             return SessionResponse(
                 success=True,
@@ -435,8 +451,16 @@ class SessionMCPTools:
         timeout: int = 30000,
         return_base64: bool = True,
         save_path: Optional[str] = None,
+        max_base64_bytes: int = 524288,
     ) -> SessionResponse:
-        """Capture a screenshot of the session's active page."""
+        """Capture a screenshot of the session's active page.
+
+        ``return_base64`` defaults to True for ergonomics, but full-page shots on
+        modern resolutions can easily exceed several megabytes. When the raw
+        image is larger than ``max_base64_bytes`` and no ``save_path`` is given,
+        we transparently write to a temp file and return the path instead of an
+        oversized base64 blob.
+        """
 
         try:
             page = await _get_or_create_page(session_id)
@@ -471,15 +495,30 @@ class SessionMCPTools:
             width = (viewport or {}).get("width") if isinstance(viewport, dict) else None
             height = (viewport or {}).get("height") if isinstance(viewport, dict) else None
 
+            size = len(raw) if raw else 0
             data: Dict[str, Any] = {
                 "width": width,
                 "height": height,
                 "save_path": save_path,
                 "image_type": image_type,
-                "size_bytes": len(raw) if raw else 0,
+                "size_bytes": size,
             }
-            if return_base64 and raw:
-                data["image_base64"] = base64.b64encode(raw).decode("ascii")
+            if raw:
+                # Auto-spill large screenshots to disk to keep MCP payloads sane.
+                if return_base64 and not save_path and size > max_base64_bytes:
+                    import tempfile
+
+                    fd, tmp_path = tempfile.mkstemp(prefix="scrapling-shot-", suffix=f".{image_type}")
+                    with __import__("os").fdopen(fd, "wb") as fp:
+                        fp.write(raw)
+                    data["save_path"] = tmp_path
+                    data["spilled_to_disk"] = True
+                    data["reason"] = (
+                        f"image is {size} bytes; exceeded max_base64_bytes={max_base64_bytes}. "
+                        "Pass save_path to choose your own location, or raise max_base64_bytes."
+                    )
+                elif return_base64:
+                    data["image_base64"] = base64.b64encode(raw).decode("ascii")
             return SessionResponse(success=True, session_id=session_id, data=data)
         except Exception as exc:  # noqa: BLE001
             return SessionResponse(
@@ -572,19 +611,18 @@ class SessionMCPTools:
                         "to open_session() to enable it."
                     )
 
-                session = record["session"]
-                context = getattr(session, "context", None)
-                if context is not None:
-                    # Closing the context flushes the HAR file to disk.
-                    try:
-                        await context.close()
-                    except Exception:  # noqa: BLE001
-                        pass
+                # Bug #12: closing only the context leaves the session half-dead
+                # in the registry; subsequent close_session would re-close an
+                # already-closed context. Tear the whole session down so the
+                # caller gets a clean state and a flushed HAR.
+                har_path = har_meta.get("path")
+                close_resp = await SessionMCPTools.close_session(session_id)
                 har_meta["active"] = False
                 return SessionResponse(
-                    success=True,
+                    success=close_resp.success,
                     session_id=session_id,
-                    data={"stopped": True, "path": har_meta.get("path")},
+                    data={"stopped": True, "path": har_path, "session_closed": True},
+                    error=close_resp.error,
                 )
 
             if action == "start":
