@@ -344,6 +344,12 @@ class SchemaExtractor:
 
         # 3. tag + class hints
         tags, words = _FIELD_HINTS.get(k, ((), (k,)))
+        # V1 finding: for content-like fields (text/body/...) the parent
+        # container often scores the same as its leaf <p>, and iter()
+        # ordering returns the parent first, so we end up with sibling
+        # field text glued onto the answer. Bias such fields toward the
+        # deepest leaf and the shortest standalone text.
+        content_field = k in ("text", "body", "excerpt", "message", "comment", "content", "description", "summary")
         candidates: List[Tuple[float, Any]] = []
         for el in scope.iter():
             if not isinstance(getattr(el, "tag", None), str):
@@ -363,10 +369,25 @@ class SchemaExtractor:
                 score += 2.0
             if k in ("date", "time", "published") and tag == "time":
                 score += 2.0
+            if content_field:
+                # Prefer leaves: penalise elements with element children.
+                if any(isinstance(getattr(c, "tag", None), str) for c in el):
+                    score -= 0.5
+                # Slight bonus for paragraph-shaped tags.
+                if tag in ("p", "blockquote"):
+                    score += 0.6
             if score > 0:
                 candidates.append((score, el))
         if candidates:
-            candidates.sort(key=lambda t: t[0], reverse=True)
+            # Stable tie-break for content fields: shorter text wins,
+            # so a clean leaf <p> beats its parent's concatenated text.
+            if content_field:
+                candidates.sort(
+                    key=lambda t: (t[0], -len(_text_of(t[1]) or "")),
+                    reverse=True,
+                )
+            else:
+                candidates.sort(key=lambda t: t[0], reverse=True)
             return self._element_value(candidates[0][1], k)
 
         # Bug #5: when a field has no _FIELD_HINTS entry and no class/id signal,
