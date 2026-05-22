@@ -9,6 +9,7 @@ Not sure where to start? Pick the path that matches what you're trying to do:
 | **Build a crawler** that scales | [Spiders](spiders/getting-started.md): concurrent, multi-session crawls with pause/resume |
 | **Scrape without writing code** | [CLI extract commands](cli/extract-commands.md) or hook up the [MCP server](ai/mcp-server.md) to your favourite AI tool |
 | **Migrate** from another library | [From BeautifulSoup](tutorials/migrating_from_beautifulsoup.md) or [Scrapy comparison](spiders/architecture.md#comparison-with-scrapy) |
+| **Use Scrapy’s stack** with Scrapling parsers | [Scrapy integration](integrations/scrapy.md): optional middleware and factory |
 
 ---
 
