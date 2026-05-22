@@ -101,3 +101,5 @@ If you're coming from Scrapy, here's how Scrapling's spider system maps:
 | Running            | `scrapy crawl spider_name`    | `MySpider().start()`                                            |
 | Streaming          | N/A                           | `async for item in spider.stream()`                             |
 | Multi-session      | N/A                           | Multiple sessions with different types per spider               |
+
+To use Scrapling's parsing and adaptive selectors **inside** a Scrapy spider, see the optional [Scrapy integration](../integrations/scrapy.md) (`pip install "scrapling[scrapy]"`).
