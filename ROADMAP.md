@@ -4,7 +4,7 @@
 - [x] Add more documentation.
 - [x] Add the browsing ability.
 - [x] Create detailed documentation for the 'readthedocs' website, preferably add GitHub action for deploying it.
-- [ ] Create a Scrapy plugin/decorator to make it replace parsel in the response argument when needed.
+- [x] Scrapy integration: factory ``scrapling_response_from_scrapy`` + ``ScraplingMiddleware`` (optional ``scrapling[scrapy]``). Scrapy's parsel ``response.css``/``xpath`` unchanged; use ``response.meta['scrapling']`` or the factory for Scrapling parsing / adaptive.
 - [x] Need to add more functionality to `AttributesHandler` and more navigation functions to `Selector` object (ex: functions similar to map, filter, and reduce functions but here pass it to the element and the function is executed on children, siblings, next elements, etc...)
 - [x] Add `.filter` method to `Selectors` object and other similar methods.
 - [ ] Add functionality to automatically detect pagination URLs
