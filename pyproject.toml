@@ -91,6 +91,9 @@ shell = [
     "markdownify>=1.2.0",
     "scrapling[fetchers]",
 ]
+scrapy = [
+    "scrapy>=2.10,<3",
+]
 all = [
     "scrapling[ai,shell]",
 ]
@@ -125,4 +128,4 @@ check_untyped_defs = true
 pythonVersion = "3.10"
 typeCheckingMode = "basic"
 include = ["scrapling"]
-ignore = ["tests", "benchmarks.py"]
+ignore = ["tests", "benchmarks.py", "scrapling/contrib/scrapy"]
