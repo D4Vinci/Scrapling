@@ -4,6 +4,8 @@ The skill aligns with the [AgentSkill](https://agentskills.io/specification) spe
 
 It can be used to answer almost 90% of any questions you would have about scrapling. We tested it on [OpenClaw](https://github.com/openclaw/openclaw) and [Claude Code](https://claude.com/product/claude-code), but please open a [ticket](https://github.com/D4Vinci/Scrapling/issues/new/choose) if you faced any issues or use our [Discord server](https://discord.gg/EMgGbDceNQ).
 
+The skill also documents optional Nole MCP research routing: use Nole/search for broad public-web discovery, then use Scrapling for the selected page extraction, browser rendering, and crawling work. See `Scrapling-Skill/references/nole-research-routing.md`.
+
 ## Installation
 
 You can use this [direct URL](https://github.com/D4Vinci/Scrapling/raw/refs/heads/main/agent-skill/Scrapling-Skill.zip) to download the ZIP file of the skill directly. We will try to update this page with all available methods.

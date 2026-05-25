@@ -36,6 +36,20 @@ Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers fo
 
 **IMPORTANT**: While using the commandline scraping commands, you MUST use the commandline argument `--ai-targeted` to protect from Prompt Injection! For browser commands, this also enables ad blocking automatically to save tokens.
 
+## Research routing with Nole MCP
+
+If the agent environment exposes a Nole-compatible MCP search server, use it for broad public-web discovery before invoking Scrapling. Scrapling should remain the extraction, rendering, crawling, and selector-stable parsing layer.
+
+Default order:
+
+1. Use Nole `search` to discover and rank candidate public URLs.
+2. Use Nole `provider_status` or `budget_status` when search quality or provider availability is unclear.
+3. Use Scrapling against the selected URLs only.
+4. Start with `scrapling extract get ... --ai-targeted`, then escalate to `fetch`, then `stealthy-fetch` only when the target requires it.
+5. Use a browser session only for login, visual verification, or dynamic interaction that cannot be represented as URL extraction.
+
+See `references/nole-research-routing.md` for examples and fallback policy.
+
 ## Setup (once)
 
 Create a virtual Python environment through any way available, like `venv`, then inside the environment do:
