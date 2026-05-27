@@ -91,8 +91,6 @@ MySpider().start()
   </a>
   <br />
   <br />
-  <a href="https://www.crawleo.dev/?utm_source=github&utm_medium=sponsor&utm_campaign=scrapling" target="_blank" title="Supercharge your AI with Real-Time Web Intelligence"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/crawleo.png"></a>
-  <br />
 </div>
 <!-- /sponsors -->
 
