@@ -201,6 +201,16 @@ MySpider().start()
     <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> предоставляет резидентные прокси всего от $0,015 за IP или $0,68 за ГБ. Более 20 млн IP в 90+ странах. Закреплённые или ротационные сессии, управление через настольное или мобильное приложение.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://go.nodemaven.com/scrapling" target="_blank" title="Proxies with the Highest IP Scores">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://go.nodemaven.com/scrapling" target="_blank">NodeMaven</a> - надёжный провайдер прокси с самым высоким качеством IP на рынке. Используйте промокод SCRAPLING35 для получения скидки 35% на прокси.
+    </td>
+  </tr>
 </table>
 
 <i><sub>Хотите показать здесь свою рекламу? Нажмите [здесь](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>

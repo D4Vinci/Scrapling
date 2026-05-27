@@ -198,6 +198,16 @@ MySpider().start()
     <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> はIPあたり $0.015 またはGBあたり $0.68 からの住宅用プロキシを提供します。90カ国以上で2,000万以上のIPを保有。固定セッションまたはローテーションセッションをデスクトップまたはモバイルアプリで管理できます。
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://go.nodemaven.com/scrapling" target="_blank" title="Proxies with the Highest IP Scores">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://go.nodemaven.com/scrapling" target="_blank">NodeMaven</a> - 市場最高品質のIPを提供する信頼性の高いプロキシプロバイダー。プロモコード SCRAPLING35 でプロキシが35%割引になります。
+    </td>
+  </tr>
 </table>
 
 <i><sub>ここに広告を表示したいですか？[こちら](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)をクリック</sub></i>

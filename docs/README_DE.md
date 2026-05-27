@@ -198,6 +198,16 @@ MySpider().start()
     <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> bietet Residential-Proxys ab nur 0,015 $/IP oder 0,68 $/GB. Über 20 Mio. IPs in mehr als 90 Ländern. Sticky oder rotierende Sessions, verwaltet über die Desktop- oder Mobile-App.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://go.nodemaven.com/scrapling" target="_blank" title="Proxies with the Highest IP Scores">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://go.nodemaven.com/scrapling" target="_blank">NodeMaven</a> - zuverlässiger Proxy-Anbieter mit der höchsten IP-Qualität auf dem Markt. Nutze den Promo-Code SCRAPLING35 für 35% Rabatt auf Proxys.
+    </td>
+  </tr>
 </table>
 
 <i><sub>Möchten Sie Ihre Anzeige hier zeigen? Klicken Sie [hier](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>

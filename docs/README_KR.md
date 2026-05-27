@@ -198,6 +198,16 @@ MySpider().start()
     <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a>는 IP당 $0.015 또는 GB당 $0.68의 저렴한 가격부터 시작하는 주거용 프록시를 제공합니다. 90개국 이상에서 2천만 개 이상의 IP를 보유하고 있으며, 고정 또는 회전 세션을 데스크톱이나 모바일 앱에서 관리할 수 있습니다.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://go.nodemaven.com/scrapling" target="_blank" title="Proxies with the Highest IP Scores">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://go.nodemaven.com/scrapling" target="_blank">NodeMaven</a> - 시장에서 가장 높은 품질의 IP를 제공하는 신뢰할 수 있는 프록시 제공업체입니다. 프로모 코드 SCRAPLING35를 사용하면 프록시 35% 할인을 받을 수 있습니다.
+    </td>
+  </tr>
 </table>
 
 <i><sub>여기에 광고를 게재하고 싶으신가요? [여기](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)를 클릭하세요</sub></i>

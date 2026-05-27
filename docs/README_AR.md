@@ -198,6 +198,16 @@ MySpider().start()
     يوفر <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> بروكسيات سكنية بدءًا من 0.015 دولار فقط لكل IP أو 0.68 دولار لكل جيجابايت. أكثر من 20 مليون عنوان IP في أكثر من 90 دولة. جلسات ثابتة أو متناوبة، تتم إدارتها من تطبيق سطح المكتب أو الجوال.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://go.nodemaven.com/scrapling" target="_blank" title="Proxies with the Highest IP Scores">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://go.nodemaven.com/scrapling" target="_blank">NodeMaven</a> - مزود بروكسيات موثوق يقدم أعلى جودة IP في السوق. استخدم كود الخصم SCRAPLING35 للحصول على خصم 35% على البروكسيات.
+    </td>
+  </tr>
 </table>
 
 <i><sub>هل تريد عرض إعلانك هنا؟ انقر [هنا](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
