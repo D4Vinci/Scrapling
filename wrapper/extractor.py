@@ -43,16 +43,35 @@ def _apply_regex(text: str, pattern: str) -> str | None:
 # Core extraction
 # ---------------------------------------------------------------------------
 
+def _coerce(value, type_name: str | None):
+    """Apply optional type coercion to a single extracted string value."""
+    if type_name is None or value is None:
+        return value
+    if type_name == "int":
+        # Strip anything that isn't a digit or minus sign before converting
+        cleaned = re.sub(r"[^\d-]", "", str(value))
+        return int(cleaned) if cleaned else None
+    if type_name == "float":
+        # Strip anything that isn't a digit, dot, comma, or minus; normalise comma→dot
+        cleaned = re.sub(r"[^\d.,-]", "", str(value)).replace(",", ".")
+        # If multiple dots remain (e.g. "1.400.000"), keep only the last as decimal
+        parts = cleaned.split(".")
+        if len(parts) > 2:
+            cleaned = "".join(parts[:-1]) + "." + parts[-1]
+        return float(cleaned) if cleaned else None
+    return str(value)
+
+
 def extract_field(
     element: "Selector",
     field_cfg: FieldConfig,
-) -> Union[str, list[str], None]:
+) -> Union[str, list, None]:
     """
     Extract a single named field from a Selector element.
 
     Returns:
-        - A plain str when all=False (or None if nothing matched).
-        - A list[str] when all=True (may be empty).
+        - A plain str (or int/float if type is set) when all=False, or None if nothing matched.
+        - A list when all=True (may be empty).
     """
     css = _build_css(field_cfg.selector, field_cfg.attr)
     results = element.css(css)
@@ -61,8 +80,8 @@ def extract_field(
         raw_values = [str(v) for v in results.getall()]
         if field_cfg.regex:
             applied = [_apply_regex(v, field_cfg.regex) for v in raw_values]
-            return [v for v in applied if v is not None]
-        return raw_values
+            raw_values = [v for v in applied if v is not None]
+        return [_coerce(v, field_cfg.type) for v in raw_values]
 
     # single-value path
     raw = results.get()
@@ -72,8 +91,8 @@ def extract_field(
     if not text:
         return None
     if field_cfg.regex:
-        return _apply_regex(text, field_cfg.regex)
-    return text
+        text = _apply_regex(text, field_cfg.regex)
+    return _coerce(text, field_cfg.type)
 
 
 def extract_items(page: "Selector", cfg: ItemsConfig) -> list[dict]:

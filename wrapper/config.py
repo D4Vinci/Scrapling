@@ -34,6 +34,7 @@ class FieldConfig:
     attr: Optional[str] = None      # HTML attribute to read; None → text content
     regex: Optional[str] = None     # Optional regex applied after extraction (first group)
     all: bool = False               # True → getall(); False → get() (first match only)
+    type: Optional[Literal["str", "int", "float"]] = None  # Coerce extracted value
 
 
 @dataclass
@@ -117,11 +118,16 @@ def _parse_field(name: str, raw: Any, context: str) -> FieldConfig:
     if not isinstance(all_matches, bool):
         raise ConfigError(f"{location}.all: must be true or false")
 
-    unknown = set(raw) - {"selector", "attr", "regex", "all"}
+    type_coerce = raw.get("type")
+    if type_coerce is not None:
+        if type_coerce not in ("str", "int", "float"):
+            raise ConfigError(f"{location}.type: must be 'str', 'int', or 'float'")
+
+    unknown = set(raw) - {"selector", "attr", "regex", "all", "type"}
     if unknown:
         raise ConfigError(f"{location}: unknown key(s): {', '.join(sorted(unknown))}")
 
-    return FieldConfig(selector=selector, attr=attr, regex=regex, all=all_matches)
+    return FieldConfig(selector=selector, attr=attr, regex=regex, all=all_matches, type=type_coerce)
 
 
 def _parse_fields(raw_fields: Any, context: str) -> dict[str, FieldConfig]:
