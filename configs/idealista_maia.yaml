@@ -1,0 +1,36 @@
+name: idealista_maia
+url: "https://www.idealista.pt/comprar-casas/maia/com-preco-max_120000,apenas-apartamentos/"
+fetcher: stealth
+output: json
+
+fetcher_options:
+  extra_headers:
+    Accept-Language: "pt-PT,pt;q=0.9,en;q=0.8"
+
+items:
+  # Exclude ads (.adv) and geo-reach carousel cards (.geo-reach-card)
+  container: "article.item.item_hightop"
+  fields:
+    title:
+      selector: "a.item-link span"
+    price:
+      selector: "span.item-price"
+      regex: '[\d.,]+'
+      type: float
+    rooms:
+      selector: "span.item-detail"
+      regex: '(\d+)\s*[Qq]uarto'
+    area:
+      selector: "span.item-detail"
+      regex: '(\d+)\s*m'
+      type: int
+    floor:
+      selector: "span.item-detail"
+      regex: '(\d+)[ºo]\s*[Aa]ndar'
+    url:
+      selector: "a.item-link"
+      attr: href
+
+pagination:
+  next_selector: "a.icon-arrow-right-after"
+  max_pages: 5
