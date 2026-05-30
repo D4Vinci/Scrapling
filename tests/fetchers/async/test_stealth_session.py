@@ -84,3 +84,17 @@ class TestAsyncStealthySession:
             # Test with invalid URL
             with pytest.raises(Exception):
                 await session.fetch("invalid://url")
+
+    async def test_init_script_with_user_data_dir(self, urls, tmp_path):
+        """Test init script injection with a persistent user data directory"""
+        init_script = tmp_path / "init.js"
+        init_script.write_text("window.__scraplingInitScriptLoaded = true;", encoding="utf-8")
+
+        async with AsyncStealthySession(
+                headless=True,
+                user_data_dir=str(tmp_path / "profile"),
+                init_script=str(init_script),
+        ) as session:
+            response = await session.fetch(urls["basic"])
+
+        assert response.status == 200
