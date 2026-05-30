@@ -62,6 +62,11 @@ class FetcherOptions:
     http3: bool = False
     proxy: Optional[str] = None
     extra_headers: dict[str, str] = field(default_factory=dict)
+    # Browser-fetcher options (stealth / dynamic only)
+    real_chrome: bool = False       # Use installed Chrome instead of bundled Chromium
+    network_idle: bool = False      # Wait until no network activity for 500 ms
+    block_ads: bool = False         # Block ~3,500 known ad/tracking domains
+    disable_resources: bool = False # Drop images/fonts/media for speed
 
 
 @dataclass
@@ -226,7 +231,16 @@ def _parse_fetcher_options(raw: Any) -> FetcherOptions:
             raise ConfigError("fetcher_options.extra_headers: all keys and values must be strings")
         opts.extra_headers = eh
 
-    unknown = set(raw) - {"impersonate", "http3", "proxy", "extra_headers"}
+    for bool_key in ("real_chrome", "network_idle", "block_ads", "disable_resources"):
+        if bool_key in raw:
+            if not isinstance(raw[bool_key], bool):
+                raise ConfigError(f"fetcher_options.{bool_key}: must be true or false")
+            setattr(opts, bool_key, raw[bool_key])
+
+    unknown = set(raw) - {
+        "impersonate", "http3", "proxy", "extra_headers",
+        "real_chrome", "network_idle", "block_ads", "disable_resources",
+    }
     if unknown:
         raise ConfigError(f"fetcher_options: unknown key(s): {', '.join(sorted(unknown))}")
 

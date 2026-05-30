@@ -4,6 +4,9 @@ fetcher: stealth
 output: json
 
 fetcher_options:
+  real_chrome: true      # Use your installed Chrome — much harder to detect than Chromium
+  network_idle: true     # Wait until page fully settles before extracting
+  block_ads: true
   extra_headers:
     Accept-Language: "pt-PT,pt;q=0.9,en;q=0.8"
 

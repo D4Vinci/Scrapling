@@ -113,6 +113,15 @@ def _browser_kwargs(fo, ro) -> dict:
     if ro.timeout:
         kwargs["timeout"] = ro.timeout * 1000
 
+    if fo.real_chrome:
+        kwargs["real_chrome"] = True
+    if fo.network_idle:
+        kwargs["network_idle"] = True
+    if fo.block_ads:
+        kwargs["block_ads"] = True
+    if fo.disable_resources:
+        kwargs["disable_resources"] = True
+
     return kwargs
 
 
