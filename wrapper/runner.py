@@ -35,29 +35,35 @@ def scrape(cfg: ScrapeConfig, fetcher: "FetcherWrapper") -> ScrapeResult:
     """
     Fetch one or more pages according to *cfg* and return all extracted data.
 
+    - cfg.urls       → one or more start URLs; items are accumulated across all of them
     - cfg.items      → rows accumulated across every page into result.items
-    - cfg.top_level  → extracted from the first page only into result.top_level
-    - cfg.pagination → followed until the next-selector yields nothing or
-                       max_pages is reached; absent means single-page only
+    - cfg.top_level  → extracted from the first page of the first URL only
+    - cfg.pagination → followed per start URL until exhausted or max_pages reached
     """
     result = ScrapeResult()
-    url: str = cfg.url
     max_pages: int | None = cfg.pagination.max_pages if cfg.pagination else None
+    top_level_done = False
 
-    while url:
-        log.info("Fetching page %d: %s", result.pages_scraped + 1, url)
-        page = fetcher.fetch(url)
-        result.pages_scraped += 1
+    for start_url in cfg.urls:
+        url: str | None = start_url
+        pages_this_url = 0
 
-        if cfg.items:
-            new_rows = extract_items(page, cfg.items)
-            log.debug("  extracted %d item(s)", len(new_rows))
-            result.items.extend(new_rows)
+        while url:
+            log.info("Fetching page %d: %s", result.pages_scraped + 1, url)
+            page = fetcher.fetch(url)
+            result.pages_scraped += 1
+            pages_this_url += 1
 
-        if cfg.top_level and result.pages_scraped == 1:
-            result.top_level = extract_top_level(page, cfg.top_level)
+            if cfg.items:
+                new_rows = extract_items(page, cfg.items)
+                log.debug("  extracted %d item(s)", len(new_rows))
+                result.items.extend(new_rows)
 
-        url = _next_url(page, cfg, result.pages_scraped, max_pages)
+            if cfg.top_level and not top_level_done:
+                result.top_level = extract_top_level(page, cfg.top_level)
+                top_level_done = True
+
+            url = _next_url(page, cfg, pages_this_url, max_pages)
 
     log.info(
         "Done. %d page(s) scraped, %d item(s) collected.",

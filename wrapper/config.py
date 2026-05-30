@@ -79,7 +79,7 @@ class RequestOptions:
 @dataclass
 class ScrapeConfig:
     name: str
-    url: str
+    urls: list[str]
     fetcher: Literal["http", "stealth", "dynamic"]
     output: Literal["json", "csv", "stdout"]
     fetcher_options: FetcherOptions
@@ -306,11 +306,31 @@ def load_config(path: str | Path) -> ScrapeConfig:
         raise ConfigError(f"{path}: top-level structure must be a YAML mapping")
 
     # --- required top-level keys ---
-    for key in ("name", "url"):
-        if key not in raw:
-            raise ConfigError(f"Missing required top-level key '{key}'")
-        if not isinstance(raw[key], str) or not raw[key].strip():
-            raise ConfigError(f"'{key}' must be a non-empty string")
+    if "name" not in raw:
+        raise ConfigError("Missing required top-level key 'name'")
+    if not isinstance(raw["name"], str) or not raw["name"].strip():
+        raise ConfigError("'name' must be a non-empty string")
+
+    has_url = "url" in raw
+    has_urls = "urls" in raw
+    if has_url and has_urls:
+        raise ConfigError("Use either 'url' or 'urls', not both")
+    if not has_url and not has_urls:
+        raise ConfigError("Missing required key 'url' (single) or 'urls' (list)")
+
+    if has_url:
+        if not isinstance(raw["url"], str) or not raw["url"].strip():
+            raise ConfigError("'url' must be a non-empty string")
+        urls = [raw["url"].strip()]
+    else:
+        raw_urls = raw["urls"]
+        if not isinstance(raw_urls, list) or not raw_urls:
+            raise ConfigError("'urls' must be a non-empty list")
+        urls = []
+        for i, u in enumerate(raw_urls):
+            if not isinstance(u, str) or not u.strip():
+                raise ConfigError(f"'urls[{i}]' must be a non-empty string")
+            urls.append(u.strip())
 
     fetcher = raw.get("fetcher", "http")
     if fetcher not in FETCHER_TYPES:
@@ -340,7 +360,7 @@ def load_config(path: str | Path) -> ScrapeConfig:
         raise ConfigError("'pagination' requires 'items' to be defined")
 
     known_keys = {
-        "name", "url", "fetcher", "output",
+        "name", "url", "urls", "fetcher", "output",
         "fetcher_options", "request_options",
         "items", "top_level", "pagination",
     }
@@ -350,7 +370,7 @@ def load_config(path: str | Path) -> ScrapeConfig:
 
     return ScrapeConfig(
         name=raw["name"].strip(),
-        url=raw["url"].strip(),
+        urls=urls,
         fetcher=fetcher,
         output=output,
         fetcher_options=fetcher_options,
