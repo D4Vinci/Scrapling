@@ -1,0 +1,37 @@
+# Scrape the public demo site books.toscrape.com
+# This is a list page — each <article> is one book record.
+
+name: books_to_scrape
+url: "https://books.toscrape.com"
+fetcher: http          # http | stealth | dynamic
+output: json           # json | csv | stdout
+
+fetcher_options:
+  impersonate: chrome
+  http3: false
+
+request_options:
+  headers:
+    Accept-Language: "en-US,en;q=0.9"
+  timeout: 30
+
+# Repeating list of items on the page
+items:
+  container: "article.product_pod"   # one <article> per book
+  fields:
+    title:
+      selector: "h3 a"
+      attr: title                    # <a title="..."> holds the full title
+    price:
+      selector: "p.price_color"
+      # no attr → extracts visible text content
+    rating:
+      selector: "p.star-rating"
+      attr: class                    # e.g. "star-rating Three"
+    link:
+      selector: "h3 a"
+      attr: href
+
+pagination:
+  next_selector: "li.next a"         # the "next →" button
+  max_pages: 3                       # scrape first 3 pages only
