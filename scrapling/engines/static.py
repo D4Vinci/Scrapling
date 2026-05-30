@@ -30,6 +30,8 @@ from ._browsers._types import RequestsSession, GetRequestParams, DataRequestPara
 from .toolbelt.fingerprints import generate_headers, __default_useragent__
 
 _NO_SESSION: Any = object()
+# Sentinel for "argument not provided", so an explicit ``None`` can be told apart from omission.
+_UNSET: Any = object()
 
 
 def _select_random_browser(impersonate: ImpersonateType) -> Optional[BrowserTypeLiteral]:
@@ -97,6 +99,25 @@ class _ConfigurationLogic(ABC):
     def _get_param(kwargs: Dict, key: str, default: Any) -> Any:
         """Get parameter from kwargs if present, otherwise return default."""
         return kwargs[key] if key in kwargs else default
+
+    def _resolve_proxy(self, request_proxy: Any = _UNSET) -> Any:
+        """Resolve the effective singular ``proxy`` for a single request.
+
+        Precedence, highest first:
+        1. An explicit per-request ``proxy`` (including ``None`` to drop the session ``proxy``).
+        2. The next proxy from the rotator, when one is configured.
+        3. The session-level default ``proxy``.
+
+        ``request_proxy`` stays ``_UNSET`` when the caller omitted it, so an explicit
+        ``proxy=None`` is not mistaken for "unset" and the session default is applied only
+        when no per-request proxy was given (the conflation behind #295). The plural
+        ``proxies`` mapping is resolved separately in :meth:`_merge_request_args`.
+        """
+        if request_proxy is not _UNSET:
+            return request_proxy
+        if self._proxy_rotator:
+            return self._proxy_rotator.get_proxy()
+        return self._default_proxy
 
     def _merge_request_args(self, **method_kwargs) -> Dict[str, Any]:
         """Merge request-specific arguments with default session arguments."""
@@ -229,7 +250,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
         selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
         max_retries = self._get_param(kwargs, "retries", self._default_retries)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
-        static_proxy = kwargs.pop("proxy", None)
+        request_proxy = kwargs.pop("proxy", _UNSET)
 
         session = self._curl_session
         one_off_request = False
@@ -244,10 +265,7 @@ class _SyncSessionLogic(_ConfigurationLogic):
 
         try:
             for attempt in range(max_retries):
-                if self._proxy_rotator and static_proxy is None:
-                    proxy = self._proxy_rotator.get_proxy()
-                else:
-                    proxy = static_proxy
+                proxy = self._resolve_proxy(request_proxy)
 
                 request_args = self._merge_request_args(stealth=stealth, proxy=proxy, **kwargs)
                 try:
@@ -443,7 +461,7 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
         max_retries = self._get_param(kwargs, "retries", self._default_retries)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
-        static_proxy = kwargs.pop("proxy", None)
+        request_proxy = kwargs.pop("proxy", _UNSET)
 
         session = self._async_curl_session
         one_off_request = False
@@ -459,12 +477,8 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             raise RuntimeError("No active session available.")  # pragma: no cover
 
         try:
-            # Determine if we should use proxy rotation
             for attempt in range(max_retries):
-                if self._proxy_rotator and static_proxy is None:
-                    proxy = self._proxy_rotator.get_proxy()
-                else:
-                    proxy = static_proxy
+                proxy = self._resolve_proxy(request_proxy)
 
                 request_args = self._merge_request_args(stealth=stealth, proxy=proxy, **kwargs)
                 try:
