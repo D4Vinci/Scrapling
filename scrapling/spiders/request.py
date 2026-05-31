@@ -12,6 +12,9 @@ from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Optional,
 if TYPE_CHECKING:
     from scrapling.spiders.spider import Spider
 
+_SECURITY_CONTEXT_HEADERS = frozenset({"authorization", "cookie"})
+_SECURITY_CONTEXT_KWARGS = frozenset({"auth", "cookies"})
+
 
 def _convert_to_bytes(value: str | bytes) -> bytes:
     if isinstance(value, bytes):
@@ -27,6 +30,16 @@ def _stable_value_repr(value: Any) -> str:
         return orjson.dumps(value, option=orjson.OPT_SORT_KEYS, default=repr).decode()
     except TypeError:
         return repr(value)
+
+
+def _process_headers(headers: Dict[str, Any], header_names: frozenset[str] | None = None) -> Tuple[Tuple[str, str], ...]:
+    processed_headers = {}
+    for key, value in headers.items():
+        normalized_key = key.lower()
+        if header_names is not None and normalized_key not in header_names:
+            continue
+        processed_headers[_convert_to_bytes(normalized_key).hex()] = _convert_to_bytes(value).hex()
+    return tuple(sorted(processed_headers.items()))
 
 
 class Request:
@@ -96,12 +109,29 @@ class Request:
             post_data = self._session_kwargs.get("json", {})
             body = orjson.dumps(post_data) if post_data else b""
 
-        data: Dict[str, str | Tuple] = {
+        data: Dict[str, Any] = {
             "sid": self.sid,
             "body": body.hex(),
             "method": self._session_kwargs.get("method", "GET"),
             "url": canonicalize_url(self.url, keep_fragments=keep_fragments),
         }
+
+        security_context_kwargs = {
+            key.lower(): _stable_value_repr(value)
+            for key, value in self._session_kwargs.items()
+            if key.lower() in _SECURITY_CONTEXT_KWARGS
+        }
+        if security_context_kwargs:
+            data["security_context_kwargs"] = tuple(sorted(security_context_kwargs.items()))
+
+        security_context_headers = []
+        for headers_key in ("headers", "extra_headers"):
+            headers = self._session_kwargs.get(headers_key) or {}
+            processed_headers = _process_headers(headers, _SECURITY_CONTEXT_HEADERS)
+            if processed_headers:
+                security_context_headers.append((headers_key, processed_headers))
+        if security_context_headers:
+            data["security_context_headers"] = tuple(security_context_headers)
 
         if include_kwargs:
             filtered_kwargs = {
@@ -113,11 +143,7 @@ class Request:
 
         if include_headers:
             headers = self._session_kwargs.get("headers") or self._session_kwargs.get("extra_headers") or {}
-            processed_headers = {}
-            # Some header normalization
-            for key, value in headers.items():
-                processed_headers[_convert_to_bytes(key.lower()).hex()] = _convert_to_bytes(value).hex()
-            data["headers"] = tuple(processed_headers.items())
+            data["headers"] = _process_headers(headers)
 
         fp = hashlib.sha1(orjson.dumps(data, option=orjson.OPT_SORT_KEYS), usedforsecurity=False).digest()
         self._fp = fp

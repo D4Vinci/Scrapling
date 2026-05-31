@@ -99,6 +99,37 @@ class TestRequestProperties:
         r2 = Request("https://example.com/page2")
         assert r1.update_fingerprint() != r2.update_fingerprint()
 
+    def test_fingerprint_auth_headers_differ_by_default(self):
+        """Test auth-bearing headers are included in the default fingerprint."""
+        r1 = Request("https://example.com/account", headers={"Authorization": "Bearer token-1"})
+        r2 = Request("https://example.com/account", headers={"Authorization": "Bearer token-2"})
+        r3 = Request("https://example.com/account", headers={"Cookie": "session=one"})
+        r4 = Request("https://example.com/account", headers={"Cookie": "session=two"})
+
+        assert r1.update_fingerprint() != r2.update_fingerprint()
+        assert r3.update_fingerprint() != r4.update_fingerprint()
+
+    def test_fingerprint_extra_auth_headers_differ_by_default(self):
+        """Test browser-style auth headers are included in the default fingerprint."""
+        r1 = Request("https://example.com/account", extra_headers={"Authorization": "Bearer token-1"})
+        r2 = Request("https://example.com/account", extra_headers={"Authorization": "Bearer token-2"})
+
+        assert r1.update_fingerprint() != r2.update_fingerprint()
+
+    def test_fingerprint_cookies_kwarg_differs_by_default(self):
+        """Test explicit cookies are included in the default fingerprint."""
+        r1 = Request("https://example.com/account", cookies={"session": "one"})
+        r2 = Request("https://example.com/account", cookies={"session": "two"})
+
+        assert r1.update_fingerprint() != r2.update_fingerprint()
+
+    def test_fingerprint_non_auth_headers_ignored_by_default(self):
+        """Test non-auth headers still require include_headers to affect fingerprints."""
+        r1 = Request("https://example.com", headers={"X-Test": "A"})
+        r2 = Request("https://example.com", headers={"X-Test": "B"})
+
+        assert r1.update_fingerprint() == r2.update_fingerprint()
+
     def test_fingerprint_include_kwargs_uses_kwarg_values(self):
         """Test kwargs with different values produce different fingerprints."""
         r1 = Request("https://example.com", timeout=1)
