@@ -78,7 +78,10 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
                 if self._config.cdp_url:  # pragma: no cover
                     self.browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
                     if not self._config.proxy_rotator and self.browser:
-                        self.context = self.browser.new_context(**self._context_options)
+                        if self.browser.contexts:
+                            self.context = self.browser.contexts[0]
+                        else:
+                            self.context = self.browser.new_context(**self._context_options)
                 elif self._config.proxy_rotator:
                     self.browser = self.playwright.chromium.launch(**self._browser_options)
                 else:
@@ -266,7 +269,10 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
                 if self._config.cdp_url:
                     self.browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
                     if not self._config.proxy_rotator and self.browser:
-                        self.context = await self.browser.new_context(**self._context_options)
+                        if self.browser.contexts:
+                            self.context = self.browser.contexts[0]
+                        else:
+                            self.context = await self.browser.new_context(**self._context_options)
                 elif self._config.proxy_rotator:
                     self.browser = await self.playwright.chromium.launch(**self._browser_options)
                 else:
