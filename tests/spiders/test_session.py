@@ -31,6 +31,19 @@ class MockSession:  # type: ignore[type-arg]
         pass
 
 
+class MockCookieJar:
+    def __init__(self, value: str):
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"MockCookieJar({self.value})"
+
+
+class MockCurlSession:
+    def __init__(self, cookies):
+        self.cookies = cookies
+
+
 class TestSessionManagerInit:
     """Test SessionManager initialization."""
 
@@ -201,6 +214,30 @@ class TestSessionManagerGet:
 
         with pytest.raises(KeyError, match="Available:"):
             manager.get("nonexistent")
+
+
+class TestSessionManagerCacheContext:
+    def test_cache_context_includes_default_headers(self):
+        manager = SessionManager()
+        session = MockSession()
+        session._default_headers = {"Authorization": "Bearer token"}
+        manager.add("default", session)
+
+        context = manager.cache_context("default")
+
+        assert context["headers"] == {"Authorization": "Bearer token"}
+
+    def test_cache_context_changes_with_cookie_jar(self):
+        manager = SessionManager()
+        session = MockSession()
+        session._client = type("Client", (), {"_async_curl_session": MockCurlSession(MockCookieJar("a=1"))})()
+        manager.add("default", session)
+
+        context = manager.cache_context("default")
+        session._client._async_curl_session.cookies = MockCookieJar("a=2")
+
+        assert context["cookies"] == "MockCookieJar(a=1)"
+        assert manager.cache_context("default")["cookies"] == "MockCookieJar(a=2)"
 
 
 class TestSessionManagerContains:

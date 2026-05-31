@@ -12,6 +12,8 @@ from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Optional,
 if TYPE_CHECKING:
     from scrapling.spiders.spider import Spider
 
+_CACHE_FINGERPRINT_VERSION = 2
+
 
 def _convert_to_bytes(value: str | bytes) -> bytes:
     if isinstance(value, bytes):
@@ -81,6 +83,16 @@ class Request:
         if self._fp is not None:
             return self._fp
 
+        fp = self.fingerprint(include_kwargs, include_headers, keep_fragments)
+        self._fp = fp
+        return fp
+
+    def _fingerprint_data(
+        self,
+        include_kwargs: bool = False,
+        include_headers: bool = False,
+        keep_fragments: bool = False,
+    ) -> Dict[str, Any]:
         post_data = self._session_kwargs.get("data", {})
         body = b""
         if post_data:
@@ -96,7 +108,7 @@ class Request:
             post_data = self._session_kwargs.get("json", {})
             body = orjson.dumps(post_data) if post_data else b""
 
-        data: Dict[str, str | Tuple] = {
+        data: Dict[str, Any] = {
             "sid": self.sid,
             "body": body.hex(),
             "method": self._session_kwargs.get("method", "GET"),
@@ -117,11 +129,27 @@ class Request:
             # Some header normalization
             for key, value in headers.items():
                 processed_headers[_convert_to_bytes(key.lower()).hex()] = _convert_to_bytes(value).hex()
-            data["headers"] = tuple(processed_headers.items())
+            data["headers"] = tuple(sorted(processed_headers.items()))
 
-        fp = hashlib.sha1(orjson.dumps(data, option=orjson.OPT_SORT_KEYS), usedforsecurity=False).digest()
-        self._fp = fp
-        return fp
+        return data
+
+    def fingerprint(
+        self,
+        include_kwargs: bool = False,
+        include_headers: bool = False,
+        keep_fragments: bool = False,
+    ) -> bytes:
+        """Generate a request fingerprint without mutating the cached scheduler fingerprint."""
+        data = self._fingerprint_data(include_kwargs, include_headers, keep_fragments)
+        return hashlib.sha1(orjson.dumps(data, option=orjson.OPT_SORT_KEYS), usedforsecurity=False).digest()
+
+    def cache_fingerprint(self, keep_fragments: bool = False, cache_context: Any | None = None) -> bytes:
+        """Generate a development-cache fingerprint with full request context."""
+        data = self._fingerprint_data(include_kwargs=True, include_headers=True, keep_fragments=keep_fragments)
+        data["cache_fingerprint_version"] = _CACHE_FINGERPRINT_VERSION
+        if cache_context is not None:
+            data["cache_context"] = _stable_value_repr(cache_context)
+        return hashlib.sha256(orjson.dumps(data, option=orjson.OPT_SORT_KEYS), usedforsecurity=False).digest()
 
     def __repr__(self) -> str:
         callback_name = getattr(self.callback, "__name__", None) or "None"

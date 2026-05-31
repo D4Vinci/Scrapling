@@ -129,7 +129,7 @@ class MySpider(Spider):
 
 ### How It Works
 
-1. **Cache key**: Each response is keyed by the request's fingerprint, so any change to fingerprint-affecting attributes (`fp_include_kwargs`, `fp_include_headers`, `fp_keep_fragments`) will produce a fresh fetch.
+1. **Cache key**: Each response is keyed by a development-cache fingerprint that includes the request URL, method, body, session ID, headers, and request kwargs. This keeps cached responses separate when authorization headers, cookies, or other request context changes.
 2. **Storage format**: One JSON file per response, named `{fingerprint_hex}.json`. The body is base64-encoded so binary content is preserved exactly. Writes are atomic (temp file + rename).
 3. **Replay**: On a cache hit, the engine skips the network entirely, including `download_delay`, rate limiting, and the `is_blocked()` retry path. The cached response goes straight to your callback.
 4. **Stats**: Cached requests still count toward `requests_count`, `response_bytes`, and the per-status counters, so your stat output looks the same as a normal crawl. Two extra counters, `cache_hits` and `cache_misses`, let you see how the cache performed.
