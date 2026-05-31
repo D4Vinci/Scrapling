@@ -181,8 +181,14 @@ class CrawlerEngine:
         else:
             delay = self.spider.download_delay
 
-        if self._cache_manager and request._fp is not None:
-            cached = await self._cache_manager.get(request._fp)
+        cache_fingerprint = None
+        if self._cache_manager:
+            sid = request.sid or self.session_manager.default_session_id
+            cache_fingerprint = request.cache_fingerprint(
+                self.spider.fp_keep_fragments, self.session_manager.cache_context(sid)
+            )
+        if self._cache_manager and cache_fingerprint is not None:
+            cached = await self._cache_manager.get(cache_fingerprint)
             if cached is not None:
                 cached.request = request
                 self.stats.cache_hits += 1
@@ -212,9 +218,9 @@ class CrawlerEngine:
                 await self.spider.on_error(request, e)
                 return
 
-        if self._cache_manager and request._fp is not None:
+        if self._cache_manager and cache_fingerprint is not None:
             self.stats.cache_misses += 1
-            await self._cache_manager.put(request._fp, response, request._session_kwargs.get("method", "GET"))
+            await self._cache_manager.put(cache_fingerprint, response, request._session_kwargs.get("method", "GET"))
 
         if await self.spider.is_blocked(response):
             self.stats.blocked_requests_count += 1

@@ -3,7 +3,7 @@ from asyncio import Lock
 from scrapling.spiders.request import Request
 from scrapling.engines.static import _ASyncSessionLogic
 from scrapling.engines.toolbelt.convertor import Response
-from scrapling.core._types import Set, cast, SUPPORTED_HTTP_METHODS
+from scrapling.core._types import Set, Dict, Any, cast, SUPPORTED_HTTP_METHODS
 from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, FetcherSession
 
 Session = FetcherSession | AsyncDynamicSession | AsyncStealthySession
@@ -79,6 +79,32 @@ class SessionManager:
             available = ", ".join(self._sessions.keys())
             raise KeyError(f"Session '{session_id}' not found. Available: {available}")
         return self._sessions[session_id]
+
+    def cache_context(self, session_id: str) -> Dict[str, Any]:
+        """Return stable session fields that affect development-cache response identity."""
+        session = self.get(session_id)
+        context: Dict[str, Any] = {"session_type": f"{session.__class__.__module__}.{session.__class__.__qualname__}"}
+
+        default_headers = getattr(session, "_default_headers", None)
+        if default_headers:
+            context["headers"] = default_headers
+
+        client = getattr(session, "_client", None)
+        for attr in ("_curl_session", "_async_curl_session"):
+            curl_session = getattr(client, attr, None)
+            cookies = getattr(curl_session, "cookies", None)
+            if cookies:
+                context["cookies"] = repr(cookies)
+                break
+
+        config = getattr(session, "_config", None)
+        if config is not None:
+            for key in ("extra_headers", "cookies", "user_data_dir"):
+                value = getattr(config, key, None)
+                if value:
+                    context[key] = value
+
+        return context
 
     async def start(self) -> None:
         """Start all sessions that aren't already alive."""

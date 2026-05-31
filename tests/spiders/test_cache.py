@@ -114,6 +114,7 @@ class MockSession:
     def __init__(self):
         self._is_alive = False
         self.fetch_count = 0
+        self.request_headers: list[dict[str, str]] = []
 
     async def __aenter__(self):
         self._is_alive = True
@@ -124,7 +125,10 @@ class MockSession:
 
     async def fetch(self, url: str, **kwargs):
         self.fetch_count += 1
-        return _make_response(url=url, body=b"<html>fetched</html>")
+        headers = dict(kwargs.get("headers") or {})
+        self.request_headers.append(headers)
+        token = headers.get("Authorization", "anonymous")
+        return _make_response(url=url, body=f"<html>{token}</html>".encode())
 
 
 class _LogCounterStub:
@@ -133,7 +137,7 @@ class _LogCounterStub:
 
 
 class MockSpider:
-    def __init__(self, cache_dir: str):
+    def __init__(self, cache_dir: str, headers: dict[str, str] | None = None):
         self.concurrent_requests = 4
         self.concurrent_requests_per_domain = 0
         self.download_delay = 0.0
@@ -149,6 +153,7 @@ class MockSpider:
         self.name = "test_cache_spider"
         self._log_counter = _LogCounterStub()
         self.scraped_items: list[dict] = []
+        self.headers = headers or {}
 
     async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
         yield {"url": str(response)}
@@ -173,7 +178,7 @@ class MockSpider:
         return request
 
     async def start_requests(self) -> AsyncGenerator[Request, None]:
-        yield Request("https://example.com/page1", sid="default")
+        yield Request("https://example.com/page1", sid="default", headers=self.headers)
 
 
 class TestDevelopmentModeIntegration:
@@ -217,6 +222,81 @@ class TestDevelopmentModeIntegration:
             assert engine2.stats.cache_hits == 1
             assert engine2.stats.cache_misses == 0
             assert engine2.stats.items_scraped == 1
+
+    @pytest.mark.anyio
+    async def test_different_authorization_headers_do_not_share_cache(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            attacker_session = MockSession()
+            attacker_spider = MockSpider(cache_dir=tmpdir, headers={"Authorization": "Bearer attacker-token"})
+            sm = SessionManager()
+            sm.add("default", attacker_session)
+            engine = CrawlerEngine(attacker_spider, sm)
+
+            await engine.crawl()
+            assert attacker_session.fetch_count == 1
+            assert engine.stats.cache_misses == 1
+
+            victim_session = MockSession()
+            victim_spider = MockSpider(cache_dir=tmpdir, headers={"Authorization": "Bearer victim-token"})
+            sm2 = SessionManager()
+            sm2.add("default", victim_session)
+            engine2 = CrawlerEngine(victim_spider, sm2)
+
+            await engine2.crawl()
+            assert victim_session.fetch_count == 1
+            assert victim_session.request_headers == [{"Authorization": "Bearer victim-token"}]
+            assert engine2.stats.cache_hits == 0
+            assert engine2.stats.cache_misses == 1
+
+    @pytest.mark.anyio
+    async def test_same_authorization_header_uses_cache(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            headers = {"Authorization": "Bearer stable-token"}
+            session = MockSession()
+            spider = MockSpider(cache_dir=tmpdir, headers=headers)
+            sm = SessionManager()
+            sm.add("default", session)
+            engine = CrawlerEngine(spider, sm)
+
+            await engine.crawl()
+            assert session.fetch_count == 1
+
+            session2 = MockSession()
+            spider2 = MockSpider(cache_dir=tmpdir, headers=headers)
+            sm2 = SessionManager()
+            sm2.add("default", session2)
+            engine2 = CrawlerEngine(spider2, sm2)
+
+            await engine2.crawl()
+            assert session2.fetch_count == 0
+            assert engine2.stats.cache_hits == 1
+            assert engine2.stats.cache_misses == 0
+
+    @pytest.mark.anyio
+    async def test_different_session_default_headers_do_not_share_cache(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            attacker_session = MockSession()
+            attacker_session._default_headers = {"Authorization": "Bearer attacker-token"}
+            attacker_spider = MockSpider(cache_dir=tmpdir)
+            sm = SessionManager()
+            sm.add("default", attacker_session)
+            engine = CrawlerEngine(attacker_spider, sm)
+
+            await engine.crawl()
+            assert attacker_session.fetch_count == 1
+            assert engine.stats.cache_misses == 1
+
+            victim_session = MockSession()
+            victim_session._default_headers = {"Authorization": "Bearer victim-token"}
+            victim_spider = MockSpider(cache_dir=tmpdir)
+            sm2 = SessionManager()
+            sm2.add("default", victim_session)
+            engine2 = CrawlerEngine(victim_spider, sm2)
+
+            await engine2.crawl()
+            assert victim_session.fetch_count == 1
+            assert engine2.stats.cache_hits == 0
+            assert engine2.stats.cache_misses == 1
 
     @pytest.mark.anyio
     async def test_disabled_by_default(self):
