@@ -73,8 +73,8 @@ dependencies = [
 fetchers = [
     "click>=8.3.0",
     "curl_cffi>=0.15.0",
-    "playwright==1.59.0",
-    "patchright==1.59.1",
+    "playwright==1.60.0",
+    "patchright==1.60.0",
     "browserforge>=1.2.4",
     "apify-fingerprint-datapoints>=0.13.0",
     "msgspec>=0.21.1",
