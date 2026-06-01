@@ -254,8 +254,8 @@ class TextHandlers(List[TextHandler]):
         clean_match: bool = False,
         case_sensitive: bool = True,
     ) -> TextHandler:  # pragma: no cover
-        """Call the ``.re_first()`` method for each element in this list and return
-        the first result or the default value otherwise.
+        """Run the given regex against each element in this list and return
+        the first match found, or the default value otherwise.
 
         :param regex: Can be either a compiled regular expression or a string.
         :param default: The default value to be returned if there is no match
