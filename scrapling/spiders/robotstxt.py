@@ -1,3 +1,4 @@
+from time import time
 from urllib.parse import urlparse
 
 from anyio import create_task_group
@@ -10,19 +11,38 @@ from scrapling.core.utils import log
 class RobotsTxtManager:
     """Manages fetching, parsing, and caching of robots.txt files."""
 
-    def __init__(self, fetch_fn: Callable[[str, str], Awaitable]):
+    def __init__(
+        self,
+        fetch_fn: Callable[[str, str], Awaitable],
+        user_agent: str = "*",
+        fail_closed: bool = False,
+        max_cache_entries: int = 256,
+        ttl_seconds: Optional[float] = None,
+    ):
         self._fetch_fn = fetch_fn
-        self._cache: Dict[str, Protego] = {}
+        self._user_agent = user_agent or "*"
+        self._fail_closed = fail_closed
+        self._max_cache_entries = max_cache_entries
+        self._ttl_seconds = ttl_seconds
+        self._cache: Dict[str, tuple[float, Protego]] = {}
 
     async def _get_parser(self, url: str, sid: str) -> Protego:
         parsed = urlparse(url)
-        domain = parsed.netloc
+        hostname = (parsed.hostname or parsed.netloc).lower()
+        authority = hostname
+        if parsed.port is not None:
+            authority = f"{hostname}:{parsed.port}"
+        domain = authority
 
-        if domain in self._cache:
-            return self._cache[domain]
+        cached = self._cache.get(domain)
+        if cached is not None:
+            cached_at, parser = cached
+            if self._ttl_seconds is None or time() - cached_at <= self._ttl_seconds:
+                return parser
+            self._cache.pop(domain, None)
 
         scheme = parsed.scheme or "https"
-        robots_url = f"{scheme}://{domain}/robots.txt"
+        robots_url = f"{scheme}://{authority}/robots.txt"
         content = ""
         try:
             response = await self._fetch_fn(robots_url, sid)
@@ -30,14 +50,18 @@ class RobotsTxtManager:
                 content = response.body.decode(response.encoding, errors="replace")
         except Exception as e:
             log.warning(f"Failed to fetch robots.txt for {domain}: {e}")
+            if self._fail_closed:
+                content = "User-agent: *\nDisallow: /\n"
 
         try:
             parser = Protego.parse(content)
         except Exception as e:
             log.warning(f"Failed to parse robots.txt for {domain}: {e}")
-            parser = Protego.parse("")
+            parser = Protego.parse("User-agent: *\nDisallow: /\n" if self._fail_closed else "")
 
-        self._cache[domain] = parser
+        if len(self._cache) >= self._max_cache_entries:
+            self._cache.pop(next(iter(self._cache)))
+        self._cache[domain] = (time(), parser)
         return parser
 
     async def can_fetch(self, url: str, sid: str) -> bool:
@@ -47,7 +71,7 @@ class RobotsTxtManager:
         :param sid: Session ID for fetching robots.txt if not yet cached
         """
         parser = await self._get_parser(url, sid)
-        return parser.can_fetch(url, "*")
+        return parser.can_fetch(url, self._user_agent)
 
     async def get_delay_directives(self, url: str, sid: str) -> tuple[Optional[float], Optional[tuple[int, int]]]:
         """Return both crawl-delay and request-rate in a single parser lookup.
@@ -56,8 +80,8 @@ class RobotsTxtManager:
         :param sid: Session ID for fetching robots.txt if not yet cached
         """
         parser = await self._get_parser(url, sid)
-        c_delay = parser.crawl_delay("*")
-        rate = parser.request_rate("*")
+        c_delay = parser.crawl_delay(self._user_agent)
+        rate = parser.request_rate(self._user_agent)
         return (
             float(c_delay) if c_delay is not None else None,
             (rate.requests, rate.seconds) if rate is not None else None,

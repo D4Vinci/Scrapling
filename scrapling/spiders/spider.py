@@ -74,10 +74,22 @@ class Spider(ABC):
 
     # Robots.txt compliance
     robots_txt_obey: bool = False
+    robots_user_agent: str = "*"
+    robots_txt_fail_closed: bool = False
 
     # Development mode
     development_mode: bool = False
     development_cache_dir: Optional[str] = None
+    development_cache_ttl: Optional[float] = None
+    development_cache_max_entries: int = 4096
+    development_cache_max_bytes: Optional[int] = 512 * 1024 * 1024
+
+    # Checkpoint security
+    checkpoint_store_secrets: bool = False
+
+    # Robots.txt cache
+    robots_txt_cache_max_entries: int = 256
+    robots_txt_cache_ttl: Optional[float] = None
 
     # Concurrency settings
     concurrent_requests: int = 4
@@ -91,7 +103,7 @@ class Spider(ABC):
     fp_include_headers: bool = False
 
     # Logging settings
-    logging_level: int = logging.DEBUG
+    logging_level: int = logging.INFO
     logging_format: str = "[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"
     logging_date_format: str = "%Y-%m-%d %H:%M:%S"
     log_file: Optional[str] = None
