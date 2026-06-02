@@ -142,6 +142,14 @@ class TestTextMatching:
         )
         assert len(out_of_stock) == 1
 
+    def test_first_match_no_text_match_returns_none(self, page):
+        """No first_match text hit should return None, not an empty Selectors list."""
+        assert page.find_by_text("definitely missing", first_match=True) is None
+
+    def test_first_match_no_regex_match_returns_none(self, page):
+        """No first_match regex hit should return None, not an empty Selectors list."""
+        assert page.find_by_regex(r"definitely\s+missing", first_match=True) is None
+
 
 # Similar Elements Tests
 class TestSimilarElements:
@@ -178,6 +186,11 @@ class TestErrorHandling:
         with pytest.raises(ValueError):
             _ = Selector(html_content, storage=object, adaptive=True)
 
+    def test_unknown_selector_kwargs_warn(self, html_content, caplog):
+        """Misspelled Selector kwargs should be observable instead of silently ignored."""
+        _ = Selector(html_content, adabtive=True)
+        assert "Unknown Selector arguments ignored" in caplog.text
+
     def test_bad_selectors(self, page):
         """Test handling of invalid selectors"""
         with pytest.raises((SelectorError, SelectorSyntaxError)):
@@ -189,11 +202,25 @@ class TestErrorHandling:
 
 # Pickling and Object Representation Tests
 class TestPicklingAndRepresentation:
-    def test_unpickleable_objects(self, page):
-        """Test that Selector objects cannot be pickled"""
+    def test_selector_pickle_roundtrip_uses_plain_state(self, page):
+        """Selector objects serialize through HTML state instead of raw lxml proxies."""
         table = page.css(".product-list")[0]
-        with pytest.raises(TypeError):
-            pickle.dumps(table)
+        restored = pickle.loads(pickle.dumps(table))
+        assert restored.css("article.product").length == 3
+        assert restored.url == table.url
+
+    def test_selectors_pickle_roundtrip_uses_plain_state(self, page):
+        """Selector lists serialize as plain selector states."""
+        products = page.css("article.product")
+        restored = pickle.loads(pickle.dumps(products))
+        assert restored.length == 3
+        assert restored[0].css("h3").first.text == "Product 1"
+
+    def test_selector_to_state_roundtrip(self, page):
+        """Explicit state APIs support multiprocessing/distributed worker handoff."""
+        product = page.css("article.product").first
+        restored = Selector.from_state(product.to_state())
+        assert restored.css(".price").first.text == "$10.99"
 
     def test_string_representations(self, page):
         """Test custom string representations of objects"""
