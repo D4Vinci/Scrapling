@@ -144,7 +144,7 @@ When using `response.follow()`, the priority is inherited from the original requ
 
 ## Deduplication
 
-The spider automatically deduplicates requests based on a fingerprint computed from the URL, HTTP method, request body, and session ID. If two requests produce the same fingerprint, the second one is silently dropped.
+The spider automatically deduplicates requests based on a fingerprint computed from the URL, HTTP method, request body, session ID, and authentication-related request context such as `Authorization`/`Cookie` headers and explicit `cookies`/`auth` kwargs. If two requests produce the same fingerprint, the second one is silently dropped.
 
 To allow duplicate requests (e.g., re-visiting a page after login), set `dont_filter=True`:
 

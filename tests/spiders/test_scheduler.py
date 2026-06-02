@@ -89,6 +89,36 @@ class TestSchedulerEnqueue:
         assert result2 is True
         assert len(scheduler) == 2
 
+    @pytest.mark.asyncio
+    async def test_enqueue_different_authorization_headers_not_duplicate(self):
+        """Test auth-distinct requests are not filtered as duplicates."""
+        scheduler = Scheduler()
+
+        request1 = Request("https://example.com/account", sid="s1", headers={"Authorization": "Bearer token-1"})
+        request2 = Request("https://example.com/account", sid="s1", headers={"Authorization": "Bearer token-2"})
+
+        result1 = await scheduler.enqueue(request1)
+        result2 = await scheduler.enqueue(request2)
+
+        assert result1 is True
+        assert result2 is True
+        assert len(scheduler) == 2
+
+    @pytest.mark.asyncio
+    async def test_enqueue_different_cookies_not_duplicate(self):
+        """Test cookie-distinct requests are not filtered as duplicates."""
+        scheduler = Scheduler()
+
+        request1 = Request("https://example.com/account", sid="s1", cookies={"session": "one"})
+        request2 = Request("https://example.com/account", sid="s1", cookies={"session": "two"})
+
+        result1 = await scheduler.enqueue(request1)
+        result2 = await scheduler.enqueue(request2)
+
+        assert result1 is True
+        assert result2 is True
+        assert len(scheduler) == 2
+
 
 class TestSchedulerDequeue:
     """Test Scheduler dequeue functionality."""

@@ -53,7 +53,7 @@ The engine orchestrates the entire crawl. It manages the main loop, enforces con
 
 ### Scheduler
 
-A priority queue with built-in URL deduplication. Requests are fingerprinted based on their URL, HTTP method, body, and session ID. The scheduler supports `snapshot()` and `restore()` for the checkpoint system, allowing the crawl state to be saved and resumed.
+A priority queue with built-in URL deduplication. Requests are fingerprinted based on their URL, HTTP method, body, session ID, and authentication-related request context. The scheduler supports `snapshot()` and `restore()` for the checkpoint system, allowing the crawl state to be saved and resumed.
 
 ### Session Manager
 
