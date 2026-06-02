@@ -11,6 +11,7 @@ from playwright.async_api import (
 )
 
 from scrapling.core.utils import log
+from scrapling.core.utils.redaction import redact_proxy
 from scrapling.core._types import Optional, List, ProxyType, Unpack
 from scrapling.engines.toolbelt.proxy_rotation import is_proxy_error
 from scrapling.engines.toolbelt.convertor import Response, ResponseFactory
@@ -75,7 +76,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
             self.playwright = sync_playwright().start()
 
             try:
-                if self._config.cdp_url:  # pragma: no cover
+                if self._config.cdp_url:
                     self.browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
                     if not self._config.proxy_rotator and self.browser:
                         self.context = self.browser.new_context(**self._context_options)
@@ -123,7 +124,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         static_proxy = kwargs.pop("proxy", None)
 
         params = _validate(kwargs, self, PlaywrightConfig)
-        if not self._is_alive:  # pragma: no cover
+        if not self._is_alive:
             raise RuntimeError("Context manager has been closed")
 
         request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
@@ -157,8 +158,10 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
                 if params.page_setup:
                     try:
                         params.page_setup(page)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error executing page_setup: {e}")
+                    except Exception as e:
+                        log.error(f"Error executing page_setup: {e}", exc_info=True)
+                        if params.raise_on_page_action_error:
+                            raise
 
                 try:
                     first_response = page.goto(url, referer=referer)
@@ -170,16 +173,20 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
                     if params.page_action:
                         try:
                             _ = params.page_action(page)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing page_action: {e}")
+                        except Exception as e:
+                            log.error(f"Error executing page_action: {e}", exc_info=True)
+                            if params.raise_on_page_action_error:
+                                raise
 
                     if params.wait_selector:
                         try:
                             waiter: Locator = page.locator(params.wait_selector)
                             waiter.first.wait_for(state=params.wait_selector_state)
                             self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+                        except Exception as e:
+                            log.error(f"Error waiting for selector {params.wait_selector}: {e}", exc_info=True)
+                            if params.raise_on_page_action_error:
+                                raise
 
                     page.wait_for_timeout(params.wait)
 
@@ -188,17 +195,21 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
                         first_response,
                         final_response[0],
                         params.selector_config,
-                        meta={"proxy": proxy},
+                        meta={"proxy": redact_proxy(proxy)},
                         xhr_captured=xhr_captured,
                     )
+                    if self._config.proxy_rotator:
+                        self._config.proxy_rotator.mark_success(proxy)
                     return response
 
                 except Exception as e:
                     page_info.mark_error()
                     if attempt < self._config.retries - 1:
                         if is_proxy_error(e):
+                            if self._config.proxy_rotator:
+                                self._config.proxy_rotator.mark_failure(proxy)
                             log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                                f"Proxy '{redact_proxy(proxy)}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
                             )
                         else:
                             log.warning(
@@ -209,7 +220,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
                         log.error(f"Failed after {self._config.retries} attempts: {e}")
                         raise
 
-        raise RuntimeError("Request failed")  # pragma: no cover
+        raise RuntimeError("Request failed")
 
 
 class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
@@ -312,7 +323,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
 
         params = _validate(kwargs, self, PlaywrightConfig)
 
-        if not self._is_alive:  # pragma: no cover
+        if not self._is_alive:
             raise RuntimeError("Context manager has been closed")
 
         request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
@@ -346,8 +357,10 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
                 if params.page_setup:
                     try:
                         await params.page_setup(page)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error executing page_setup: {e}")
+                    except Exception as e:
+                        log.error(f"Error executing page_setup: {e}", exc_info=True)
+                        if params.raise_on_page_action_error:
+                            raise
 
                 try:
                     first_response = await page.goto(url, referer=referer)
@@ -359,16 +372,20 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
                     if params.page_action:
                         try:
                             _ = await params.page_action(page)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing page_action: {e}")
+                        except Exception as e:
+                            log.error(f"Error executing page_action: {e}", exc_info=True)
+                            if params.raise_on_page_action_error:
+                                raise
 
                     if params.wait_selector:
                         try:
                             waiter: AsyncLocator = page.locator(params.wait_selector)
                             await waiter.first.wait_for(state=params.wait_selector_state)
                             await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+                        except Exception as e:
+                            log.error(f"Error waiting for selector {params.wait_selector}: {e}", exc_info=True)
+                            if params.raise_on_page_action_error:
+                                raise
 
                     await page.wait_for_timeout(params.wait)
 
@@ -377,17 +394,21 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
                         first_response,
                         final_response[0],
                         params.selector_config,
-                        meta={"proxy": proxy},
+                        meta={"proxy": redact_proxy(proxy)},
                         xhr_captured=xhr_captured,
                     )
+                    if self._config.proxy_rotator:
+                        self._config.proxy_rotator.mark_success(proxy)
                     return response
 
                 except Exception as e:
                     page_info.mark_error()
                     if attempt < self._config.retries - 1:
                         if is_proxy_error(e):
+                            if self._config.proxy_rotator:
+                                self._config.proxy_rotator.mark_failure(proxy)
                             log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                                f"Proxy '{redact_proxy(proxy)}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
                             )
                         else:
                             log.warning(
@@ -398,4 +419,4 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
                         log.error(f"Failed after {self._config.retries} attempts: {e}")
                         raise
 
-        raise RuntimeError("Request failed")  # pragma: no cover
+        raise RuntimeError("Request failed")
