@@ -6,6 +6,8 @@ from dataclasses import dataclass, fields
 
 from msgspec import Struct, Meta, convert, ValidationError
 
+from scrapling.core.utils import log
+
 from scrapling.core._types import (
     Any,
     Dict,
@@ -25,8 +27,7 @@ from scrapling.engines._browsers._types import PlaywrightFetchParams, StealthFet
 
 
 # Custom validators for msgspec
-@lru_cache(8)
-def _is_invalid_file_path(value: str) -> bool | str:  # pragma: no cover
+def _is_invalid_file_path(value: str) -> bool | str:
     """Fast file path validation"""
     path = Path(value)
     if not path.exists():
@@ -45,7 +46,7 @@ def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
         return "CDP URL must use 'ws://' or 'wss://' scheme"
 
     netloc = urlparse(cdp_url).netloc
-    if not netloc:  # pragma: no cover
+    if not netloc:
         return "Invalid hostname for the CDP URL"
     return False
 
@@ -92,8 +93,11 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     capture_xhr: str | None = None
     executable_path: Optional[str] = None
     dns_over_https: bool = False
+    ignore_https_errors: bool = False
+    raise_on_page_action_error: bool = False
+    cloudflare_max_attempts: int = 3
 
-    def __post_init__(self):  # pragma: no cover
+    def __post_init__(self):
         """Custom validation after msgspec validation"""
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
@@ -144,15 +148,28 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
 class StealthConfig(PlaywrightConfig, kw_only=True, frozen=False, weakref=True):
     allow_webgl: bool = True
     hide_canvas: bool = False
-    block_webrtc: bool = False
+    block_webrtc: Optional[bool] = None
     solve_cloudflare: bool = False
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
         super(StealthConfig, self).__post_init__()
+        if self.proxy and self.block_webrtc is None:
+            self.block_webrtc = True
+            if not self.dns_over_https:
+                self.dns_over_https = True
+            log.info("WebRTC and DNS-over-HTTPS protections were enabled automatically because proxy is configured.")
+        elif self.block_webrtc is None:
+            self.block_webrtc = False
+
+        if self.ignore_https_errors:
+            log.warning("Stealth browser context is configured to ignore HTTPS errors; TLS verification is disabled.")
+
         # Cloudflare timeout adjustment
         if self.solve_cloudflare and self.timeout < 60_000:
             self.timeout = 60_000
+        if self.cloudflare_max_attempts < 1:
+            raise ValueError("cloudflare_max_attempts must be at least 1")
 
 
 @dataclass
@@ -173,13 +190,15 @@ class _fetch_params:
     blocked_domains: Optional[Set[str]]
     solve_cloudflare: bool
     selector_config: Dict
+    raise_on_page_action_error: bool
+    cloudflare_max_attempts: int
 
 
 def validate_fetch(
     method_kwargs: Dict | PlaywrightFetchParams | StealthFetchParams,
     session: Any,
     model: type[PlaywrightConfig] | type[StealthConfig],
-) -> _fetch_params:  # pragma: no cover
+) -> _fetch_params:
     result: Dict[str, Any] = {}
     overrides: Dict[str, Any] = {}
     kwargs_dict: Dict[str, Any] = dict(method_kwargs)
@@ -211,6 +230,8 @@ def validate_fetch(
     # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
     result.setdefault("solve_cloudflare", False)
     result.setdefault("blocked_domains", None)
+    result.setdefault("raise_on_page_action_error", False)
+    result.setdefault("cloudflare_max_attempts", 3)
 
     return _fetch_params(**result)
 

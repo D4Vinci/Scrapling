@@ -20,7 +20,7 @@ from playwright._impl._errors import Error as PlaywrightError
 from scrapling.parser import Selector
 from scrapling.engines._browsers._page import PageInfo, PagePool
 from scrapling.engines._browsers._validators import validate, PlaywrightConfig, StealthConfig
-from scrapling.engines._browsers._config_tools import __default_chrome_useragent__, __default_useragent__
+from scrapling.engines._browsers._config_tools import default_chrome_useragent, default_useragent
 from scrapling.engines.toolbelt.navigation import (
     construct_proxy_dict,
     create_intercept_handler,
@@ -63,7 +63,7 @@ class SyncSession:
     def start(self) -> None:
         pass
 
-    def close(self):  # pragma: no cover
+    def close(self):
         """Close all resources"""
         if not self._is_alive:
             return
@@ -94,7 +94,7 @@ class SyncSession:
         if config.init_script:
             ctx.add_init_script(path=config.init_script)
 
-        if config.cookies:  # pragma: no cover
+        if config.cookies:
             ctx.add_cookies(config.cookies)
 
         return ctx
@@ -106,7 +106,7 @@ class SyncSession:
         disable_resources: bool,
         blocked_domains: Optional[Set[str]] = None,
         context: Optional[BrowserContext] = None,
-    ) -> PageInfo[Page]:  # pragma: no cover
+    ) -> PageInfo[Page]:
         """Get a new page to use"""
         # No need to check if a page is available or not in sync code because the code blocked before reaching here till the page closed, ofc.
         ctx = context if context is not None else self.context
@@ -136,8 +136,11 @@ class SyncSession:
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
             page.wait_for_load_state("networkidle", timeout=timeout)
-        except (PlaywrightError, Exception):
-            pass
+        except PlaywrightError as exc:
+            # networkidle often times out on pages with long-polling; keep it non-fatal but observable.
+            import logging
+
+            logging.getLogger("scrapling").debug("Network idle wait did not complete: %r", exc)
 
     def _wait_for_page_stability(self, page: Page | Frame, load_dom: bool, network_idle: bool):
         page.wait_for_load_state(state="load")
@@ -191,7 +194,7 @@ class SyncSession:
         """Acquire a page - either from persistent context or fresh context with proxy."""
         if proxy:
             # Rotation mode: create fresh context with the provided proxy
-            if not self.browser:  # pragma: no cover
+            if not self.browser:
                 raise RuntimeError("Browser not initialized for proxy rotation mode")
             context_options = self._build_context_with_proxy(proxy)
             context: BrowserContext = self.browser.new_context(**context_options)
@@ -236,7 +239,7 @@ class AsyncSession:
 
     async def close(self):
         """Close all resources"""
-        if not self._is_alive:  # pragma: no cover
+        if not self._is_alive:
             return
 
         if self.context:
@@ -264,10 +267,10 @@ class AsyncSession:
         self, config: PlaywrightConfig | StealthConfig, ctx: AsyncBrowserContext
     ) -> AsyncBrowserContext:
         """Initialize the browser context."""
-        if config.init_script:  # pragma: no cover
+        if config.init_script:
             await ctx.add_init_script(path=config.init_script)
 
-        if config.cookies:  # pragma: no cover
+        if config.cookies:
             await ctx.add_cookies(config.cookies)
 
         return ctx
@@ -279,7 +282,7 @@ class AsyncSession:
         disable_resources: bool,
         blocked_domains: Optional[Set[str]] = None,
         context: Optional[AsyncBrowserContext] = None,
-    ) -> PageInfo[AsyncPage]:  # pragma: no cover
+    ) -> PageInfo[AsyncPage]:
         """Get a new page to use"""
         ctx = context if context is not None else self.context
         if TYPE_CHECKING:
@@ -323,8 +326,10 @@ class AsyncSession:
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
             await page.wait_for_load_state("networkidle", timeout=timeout)
-        except (PlaywrightError, Exception):
-            pass
+        except PlaywrightError as exc:
+            import logging
+
+            logging.getLogger("scrapling").debug("Network idle wait did not complete: %r", exc)
 
     async def _wait_for_page_stability(self, page: AsyncPage | AsyncFrame, load_dom: bool, network_idle: bool):
         await page.wait_for_load_state(state="load")
@@ -378,7 +383,7 @@ class AsyncSession:
         """Acquire a page - either from persistent context or fresh context with proxy."""
         if proxy:
             # Rotation mode: create fresh context with the provided proxy
-            if not self.browser:  # pragma: no cover
+            if not self.browser:
                 raise RuntimeError("Browser not initialized for proxy rotation mode")
             context_options = self._build_context_with_proxy(proxy)
             context: AsyncBrowserContext = await self.browser.new_context(**context_options)
@@ -447,7 +452,7 @@ class BaseSessionMixin:
             self._context_options["user_agent"] = config.useragent
         elif not config.useragent and config.headless:
             self._context_options["user_agent"] = (
-                __default_chrome_useragent__ if config.real_chrome else __default_useragent__
+                default_chrome_useragent() if config.real_chrome else default_useragent()
             )
 
         if not config.cdp_url:
@@ -511,7 +516,7 @@ class StealthySessionMixin(BaseSessionMixin):
                 "has_touch": False,
                 # I'm thinking about disabling it to rest from all Service Workers' headache, but let's keep it as it is for now
                 "service_workers": "allow",
-                "ignore_https_errors": True,
+                "ignore_https_errors": self._config.ignore_https_errors,
                 "screen": {"width": 1920, "height": 1080},
                 "viewport": {"width": 1920, "height": 1080},
                 "permissions": ["geolocation", "notifications"],
@@ -565,9 +570,14 @@ class StealthySessionMixin(BaseSessionMixin):
             "managed",
             "interactive",
         )
+        lowered = page_content.lower()
         for ctype in challenge_types:
             if f"cType: '{ctype}'" in page_content:
                 return ctype
+        if "cf-chl" in lowered or "challenge-platform" in lowered or "just a moment" in lowered:
+            return "managed"
+        if "verifying you are human" in lowered or "turnstile" in lowered:
+            return "interactive"
 
         # Check if turnstile captcha is embedded inside the page (Usually inside a closed Shadow iframe)
         selector = Selector(content=page_content)
