@@ -12,6 +12,7 @@ from curl_cffi.requests import (
 )
 
 from scrapling.core.utils import log
+from scrapling.core.utils.redaction import redact_proxy
 from scrapling.core._types import (
     Any,
     Dict,
@@ -27,7 +28,7 @@ from .toolbelt.custom import Response
 from .toolbelt.convertor import ResponseFactory
 from .toolbelt.proxy_rotation import ProxyRotator, is_proxy_error
 from ._browsers._types import RequestsSession, GetRequestParams, DataRequestParams, ImpersonateType
-from .toolbelt.fingerprints import generate_headers, __default_useragent__
+from .toolbelt.fingerprints import generate_headers, default_useragent
 
 _NO_SESSION: Any = object()
 
@@ -184,7 +185,7 @@ class _ConfigurationLogic(ABC):
                 )  # Don't overwrite user-supplied headers
 
         elif "user-agent" not in headers_keys and not impersonate_enabled:  # pragma: no cover
-            final_headers["User-Agent"] = __default_useragent__
+            final_headers["User-Agent"] = default_useragent()
             log.debug(f"Can't find useragent in headers so '{final_headers['User-Agent']}' was used.")
 
         return final_headers
@@ -230,6 +231,8 @@ class _SyncSessionLogic(_ConfigurationLogic):
         max_retries = self._get_param(kwargs, "retries", self._default_retries)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
         static_proxy = kwargs.pop("proxy", None)
+        if max_retries is None or max_retries < 1:
+            raise ValueError("retries must be at least 1")
 
         session = self._curl_session
         one_off_request = False
@@ -253,27 +256,33 @@ class _SyncSessionLogic(_ConfigurationLogic):
                 try:
                     response = session.request(method, **request_args)
                     assert response is not None
-                    result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": proxy})
+                    result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": redact_proxy(proxy)})
+                    if self._proxy_rotator:
+                        self._proxy_rotator.mark_success(proxy)
                     return result
-                except CurlError as e:  # pragma: no cover
+                except (CurlError, TimeoutError, ConnectionError) as e:  # pragma: no cover
                     if attempt < max_retries - 1:
                         # Now if the rotator is enabled, we will try again with the new proxy
                         # If it's not enabled, then we will try again with the same proxy
                         if is_proxy_error(e):
+                            if self._proxy_rotator:
+                                self._proxy_rotator.mark_failure(proxy)
                             log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."
+                                f"Proxy '{redact_proxy(proxy)}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."
                             )
                         else:
                             log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
                         time_sleep(retry_delay)
                     else:
+                        if is_proxy_error(e) and self._proxy_rotator:
+                            self._proxy_rotator.mark_failure(proxy)
                         log.error(f"Failed after {max_retries} attempts: {e}")
                         raise  # Raise the exception if all retries fail
         finally:
             if session and one_off_request:
                 session.close()
 
-        raise RuntimeError("No active session available.")  # pragma: no cover
+        raise RuntimeError(f"Request failed after {max_retries} retry attempt(s).")  # pragma: no cover
 
     def get(self, url: str, **kwargs: Unpack[GetRequestParams]) -> Response:
         """
@@ -444,6 +453,8 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         max_retries = self._get_param(kwargs, "retries", self._default_retries)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
         static_proxy = kwargs.pop("proxy", None)
+        if max_retries is None or max_retries < 1:
+            raise ValueError("retries must be at least 1")
 
         session = self._async_curl_session
         one_off_request = False
@@ -469,28 +480,34 @@ class _ASyncSessionLogic(_ConfigurationLogic):
                 request_args = self._merge_request_args(stealth=stealth, proxy=proxy, **kwargs)
                 try:
                     response = await session.request(method, **request_args)
-                    result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": proxy})
+                    result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": redact_proxy(proxy)})
+                    if self._proxy_rotator:
+                        self._proxy_rotator.mark_success(proxy)
                     return result
-                except CurlError as e:  # pragma: no cover
+                except (CurlError, TimeoutError, ConnectionError) as e:  # pragma: no cover
                     if attempt < max_retries - 1:
                         # Now if the rotator is enabled, we will try again with the new proxy
                         # If it's not enabled, then we will try again with the same proxy
                         if is_proxy_error(e):
+                            if self._proxy_rotator:
+                                self._proxy_rotator.mark_failure(proxy)
                             log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."
+                                f"Proxy '{redact_proxy(proxy)}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."
                             )
                         else:
                             log.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay} seconds...")
 
                         await asyncio_sleep(retry_delay)
                     else:
+                        if is_proxy_error(e) and self._proxy_rotator:
+                            self._proxy_rotator.mark_failure(proxy)
                         log.error(f"Failed after {max_retries} attempts: {e}")
                         raise  # Raise the exception if all retries fail
         finally:
             if session and one_off_request:
                 await session.close()
 
-        raise RuntimeError("No active session available.")  # pragma: no cover
+        raise RuntimeError(f"Request failed after {max_retries} retry attempt(s).")  # pragma: no cover
 
     def get(self, url: str, **kwargs: Unpack[GetRequestParams]) -> Awaitable[Response]:
         """

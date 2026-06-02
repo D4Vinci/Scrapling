@@ -1,6 +1,7 @@
 from threading import Lock
+from time import monotonic
 
-from scrapling.core._types import Callable, Dict, List, Tuple, ProxyType
+from scrapling.core._types import Any, Callable, Dict, List, Tuple, ProxyType
 
 
 RotationStrategy = Callable[[List[ProxyType], int], Tuple[ProxyType, int]]
@@ -37,42 +38,46 @@ def cyclic_rotation(proxies: List[ProxyType], current_index: int) -> Tuple[Proxy
 
 
 class ProxyRotator:
-    """
-    A thread-safe proxy rotator with pluggable rotation strategies.
+    """Thread-safe proxy rotator with health tracking and cooldown."""
 
-    Supports:
-    - Cyclic rotation (default)
-    - Custom rotation strategies via callable
-    - Both string URLs and Playwright-style dict proxies
-    """
-
-    __slots__ = ("_proxies", "_proxy_to_index", "_strategy", "_current_index", "_lock")
+    __slots__ = (
+        "_proxies",
+        "_proxy_to_index",
+        "_strategy",
+        "_current_index",
+        "_lock",
+        "_fail_count",
+        "_cooldown_until",
+        "_cooldown_seconds",
+        "_max_failures",
+    )
 
     def __init__(
         self,
         proxies: List[ProxyType],
         strategy: RotationStrategy = cyclic_rotation,
+        cooldown_seconds: float = 60.0,
+        max_failures: int = 3,
     ):
-        """
-        Initialize the proxy rotator.
-
-        :param proxies: List of proxy URLs or Playwright-style proxy dicts.
-            - String format: "http://proxy1:8080" or "http://user:pass@proxy:8080"
-            - Dict format: {"server": "http://proxy:8080", "username": "user", "password": "pass"}
-        :param strategy: Rotation strategy function. Takes (proxies, current_index) and returns (proxy, next_index). Defaults to cyclic_rotation.
-        """
         if not proxies:
             raise ValueError("At least one proxy must be provided")
 
         if not callable(strategy):
             raise TypeError(f"strategy must be callable, got {type(strategy).__name__}")
+        if cooldown_seconds < 0:
+            raise ValueError("cooldown_seconds must be non-negative")
+        if max_failures < 1:
+            raise ValueError("max_failures must be at least 1")
 
         self._strategy = strategy
         self._lock = Lock()
+        self._cooldown_seconds = float(cooldown_seconds)
+        self._max_failures = int(max_failures)
+        self._fail_count: Dict[str, int] = {}
+        self._cooldown_until: Dict[str, float] = {}
 
-        # Validate and store proxies
         self._proxies: List[ProxyType] = []
-        self._proxy_to_index: Dict[str, int] = {}  # O(1) lookup by unique key (server + username)
+        self._proxy_to_index: Dict[str, int] = {}
         for i, proxy in enumerate(proxies):
             if isinstance(proxy, (str, dict)):
                 if isinstance(proxy, dict) and "server" not in proxy:
@@ -85,19 +90,52 @@ class ProxyRotator:
 
         self._current_index = 0
 
+    def _available(self) -> List[ProxyType]:
+        now = monotonic()
+        available = [p for p in self._proxies if self._cooldown_until.get(_get_proxy_key(p), 0.0) <= now]
+        return available or list(self._proxies)
+
     def get_proxy(self) -> ProxyType:
-        """Get the next proxy according to the rotation strategy."""
+        """Get the next healthy proxy according to the rotation strategy."""
         with self._lock:
-            proxy, self._current_index = self._strategy(self._proxies, self._current_index)
+            candidates = self._available()
+            proxy, self._current_index = self._strategy(candidates, self._current_index)
             return proxy
+
+    def mark_failure(self, proxy: ProxyType | None) -> None:
+        if proxy is None:
+            return
+        key = _get_proxy_key(proxy)
+        with self._lock:
+            failures = self._fail_count.get(key, 0) + 1
+            self._fail_count[key] = failures
+            if failures >= self._max_failures:
+                self._cooldown_until[key] = monotonic() + (self._cooldown_seconds * failures)
+
+    def mark_success(self, proxy: ProxyType | None) -> None:
+        if proxy is None:
+            return
+        key = _get_proxy_key(proxy)
+        with self._lock:
+            self._fail_count.pop(key, None)
+            self._cooldown_until.pop(key, None)
+
+    def health_snapshot(self) -> Dict[str, Dict[str, Any]]:
+        now = monotonic()
+        with self._lock:
+            return {
+                key: {
+                    "failures": self._fail_count.get(key, 0),
+                    "cooldown_remaining": max(0.0, self._cooldown_until.get(key, 0.0) - now),
+                }
+                for key in self._proxy_to_index
+            }
 
     @property
     def proxies(self) -> List[ProxyType]:
-        """Get a copy of all configured proxies."""
         return list(self._proxies)
 
     def __len__(self) -> int:
-        """Return the total number of configured proxies."""
         return len(self._proxies)
 
     def __repr__(self) -> str:
