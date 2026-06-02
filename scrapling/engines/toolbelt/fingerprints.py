@@ -3,6 +3,7 @@ Functions related to generating headers and fingerprints generally
 """
 
 from functools import lru_cache
+from os import getenv
 from platform import system as platform_system
 
 from browserforge.headers import Browser, HeaderGenerator
@@ -12,9 +13,19 @@ from scrapling.core._types import Dict, Literal, Tuple
 
 __OS_NAME__ = platform_system()
 OSName = Literal["linux", "macos", "windows"]
-# Current versions hardcoded for now (Playwright doesn't allow to know the version of a browser without launching it)
-chromium_version = 147
-chrome_version = 147
+_CHROMIUM_VERSION_FALLBACK = 147
+_CHROME_VERSION_FALLBACK = 147
+
+
+def _browser_major_from_env(name: str, fallback: int) -> int:
+    value = getenv(name)
+    if value and value.isdigit():
+        return int(value)
+    return fallback
+
+
+chromium_version = _browser_major_from_env("SCRAPLING_CHROMIUM_VERSION", _CHROMIUM_VERSION_FALLBACK)
+chrome_version = _browser_major_from_env("SCRAPLING_CHROME_VERSION", _CHROME_VERSION_FALLBACK)
 
 
 @lru_cache(1, typed=True)
@@ -56,4 +67,17 @@ def generate_headers(browser_mode: bool | str = False) -> Dict:
     return HeaderGenerator(browser=browsers, os=os_name, device="desktop").generate()
 
 
-__default_useragent__ = generate_headers(browser_mode=False).get("User-Agent")
+@lru_cache(1, typed=True)
+def default_useragent() -> str:
+    return generate_headers(browser_mode=False).get("User-Agent", "")
+
+
+@lru_cache(2, typed=True)
+def default_browser_useragent(real_chrome: bool = False) -> str:
+    return generate_headers(browser_mode="chrome" if real_chrome else True).get("User-Agent", "")
+
+
+def __getattr__(name: str):
+    if name == "__default_useragent__":
+        return default_useragent()
+    raise AttributeError(name)

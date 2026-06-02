@@ -1,13 +1,14 @@
 import hashlib
 from io import BytesIO
-from functools import cached_property
+from base64 import b64encode, b64decode
 from urllib.parse import urlparse, urlencode
 
 import orjson
 from w3lib.url import canonicalize_url
 
 from scrapling.engines.toolbelt.custom import Response
-from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Optional, Union, Tuple, TYPE_CHECKING
+from scrapling.core.utils.redaction import redact_headers, redact_mapping, redact_proxy, is_sensitive_key
+from scrapling.core._types import Any, AsyncGenerator, Callable, Dict, Optional, Union, Tuple, Mapping, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scrapling.spiders.spider import Spider
@@ -29,6 +30,50 @@ def _stable_value_repr(value: Any) -> str:
         return repr(value)
 
 
+def _json_safe(value: Any, *, store_secrets: bool = False, key: str = "") -> Any:
+    """Normalize checkpoint payloads into deterministic JSON-safe values."""
+    if callable(value):
+        return None
+    if value is None or isinstance(value, (str, int, float, bool)):
+        if not store_secrets and isinstance(value, str):
+            if key.lower() in {"proxy", "proxies"}:
+                return redact_proxy(value)
+            if is_sensitive_key(key):
+                return "***"
+        return value
+    if isinstance(value, bytes):
+        return {"__type__": "bytes", "base64": b64encode(value).decode("ascii")}
+    if isinstance(value, BytesIO):
+        return {"__type__": "bytes", "base64": b64encode(value.getvalue()).decode("ascii")}
+    if isinstance(value, (set, tuple, list)):
+        return [_json_safe(item, store_secrets=store_secrets) for item in value]
+    if isinstance(value, dict) or hasattr(value, "items"):
+        mapping = dict(value)
+        if not store_secrets:
+            lowered = key.lower()
+            if lowered in {"headers", "extra_headers", "request_headers"}:
+                mapping = redact_headers(mapping)
+            elif lowered in {"proxy", "proxies"}:
+                mapping = redact_proxy(mapping)
+            else:
+                mapping = redact_mapping(mapping)
+        return {str(k): _json_safe(v, store_secrets=store_secrets, key=str(k)) for k, v in mapping.items() if not callable(v)}
+    return repr(value)
+
+
+def _json_restore(value: Any) -> Any:
+    if isinstance(value, dict) and value.get("__type__") == "bytes" and isinstance(value.get("base64"), str):
+        try:
+            return b64decode(value["base64"].encode("ascii"))
+        except Exception:
+            return b""
+    if isinstance(value, dict):
+        return {k: _json_restore(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_json_restore(v) for v in value]
+    return value
+
+
 class Request:
     def __init__(
         self,
@@ -41,7 +86,8 @@ class Request:
         _retry_count: int = 0,
         **kwargs: Any,
     ) -> None:
-        self.url: str = url
+        self._fp: Optional[bytes] = None
+        self.url = url
         self.sid: str = sid
         self.callback = callback
         self.priority: int = priority
@@ -49,11 +95,10 @@ class Request:
         self.meta: dict[str, Any] = meta if meta else {}
         self._retry_count: int = _retry_count
         self._session_kwargs = kwargs if kwargs else {}
-        self._fp: Optional[bytes] = None
 
     def copy(self) -> "Request":
         """Create a copy of this request."""
-        return Request(
+        request = Request(
             url=self.url,
             sid=self.sid,
             callback=self.callback,
@@ -63,10 +108,23 @@ class Request:
             _retry_count=self._retry_count,
             **self._session_kwargs,
         )
+        request._fp = self._fp
+        return request
 
-    @cached_property
+    @property
+    def url(self) -> str:
+        return self._url
+
+    @url.setter
+    def url(self, value: str) -> None:
+        self._url = str(value)
+        # URL participates in the default fingerprint; reset stale cached value on mutation.
+        if hasattr(self, "_fp"):
+            self._fp = None
+
+    @property
     def domain(self) -> str:
-        return urlparse(self.url).netloc
+        return (urlparse(self.url).hostname or "").lower()
 
     def update_fingerprint(
         self,
@@ -146,9 +204,49 @@ class Request:
         """Requests are equal if they have the same fingerprint."""
         if not isinstance(other, Request):
             return NotImplemented
-        if self._fp is None or other._fp is None:
-            raise RuntimeError("Cannot compare requests before generating their fingerprints!")
-        return self._fp == other._fp
+        return self.update_fingerprint() == other.update_fingerprint()
+
+    def __hash__(self) -> int:
+        """Make Request usable in sets/maps with the same key as equality."""
+        return hash(self.update_fingerprint())
+
+    def to_state(self, *, store_secrets: bool = False) -> dict[str, Any]:
+        """Serialize this request to a versioned, pickle-free checkpoint state.
+
+        Secrets are redacted by default so checkpoints are safe to keep on disk.
+        Pass ``store_secrets=True`` only when exact proxy/auth replay is required
+        and the checkpoint directory is trusted.
+        """
+        return {
+            "version": 1,
+            "url": self.url,
+            "sid": self.sid,
+            "priority": self.priority,
+            "dont_filter": self.dont_filter,
+            "meta": _json_safe(self.meta, store_secrets=store_secrets, key="meta"),
+            "_retry_count": self._retry_count,
+            "_session_kwargs": _json_safe(self._session_kwargs, store_secrets=store_secrets, key="_session_kwargs"),
+            "_fp": self._fp.hex() if self._fp else None,
+            "callback": getattr(self.callback, "__name__", None),
+        }
+
+    @classmethod
+    def from_state(cls, state: Mapping[str, Any], callback_registry: Mapping[str, Any]) -> "Request":
+        """Restore a request from pickle-free checkpoint state."""
+        session_kwargs = dict(_json_restore(state.get("_session_kwargs") or {}))
+        req = cls(
+            url=str(state["url"]),
+            sid=str(state.get("sid") or ""),
+            callback=callback_registry.get(state.get("callback")),
+            priority=int(state.get("priority", 0)),
+            dont_filter=bool(state.get("dont_filter", False)),
+            meta=dict(_json_restore(state.get("meta") or {})),
+            _retry_count=int(state.get("_retry_count", 0)),
+            **session_kwargs,
+        )
+        fp = state.get("_fp")
+        req._fp = bytes.fromhex(fp) if isinstance(fp, str) and fp else None
+        return req
 
     def __getstate__(self) -> dict[str, Any]:
         """Prepare state for pickling - store callback as name string for pickle compatibility."""

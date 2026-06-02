@@ -27,6 +27,7 @@ from orjson import loads as json_loads, JSONDecodeError
 from ._shell_signatures import Signatures_map
 from scrapling import __version__
 from scrapling.core.utils import log
+from scrapling.core.utils.redaction import redact_proxy
 from scrapling.parser import Selector, Selectors
 from scrapling.core.custom_types import TextHandler
 from scrapling.engines.toolbelt.custom import Response
@@ -65,8 +66,23 @@ Request = namedtuple(
         "cookies",
         "proxy",
         "follow_redirects",  # Added for -L flag
+        "insecure",
+        "compressed",
     ],
 )
+
+
+def _normalize_proxy_url(proxy: str) -> str:
+    """Return a curl proxy value as a valid URL without adding literal braces.
+
+    DevTools can emit ``curl -x host:port`` without a scheme. Scrapling's
+    fetchers expect URL-shaped proxy values, so the shell should prepend
+    ``http://`` exactly once while preserving explicit schemes such as
+    ``socks5://``. Keeping this logic in one helper prevents regressions of
+    the old brace-wrapped proxy URL regression.
+    """
+    return proxy if "://" in proxy else f"http://{proxy}"
+
 
 # Precompiled for the prompt injection sanitizer
 _HIDDEN_XPATH = XPath(
@@ -192,6 +208,10 @@ class CurlParser:
             method = "post"
 
         headers, cookies = _ParseHeaders(parsed_args.header)
+        if parsed_args.user_agent and "User-Agent" not in headers:
+            headers["User-Agent"] = parsed_args.user_agent
+        if parsed_args.compressed and "Accept-Encoding" not in headers:
+            headers["Accept-Encoding"] = "gzip, deflate, br"
 
         if parsed_args.cookie:
             # We are focusing on the string format from DevTools.
@@ -262,7 +282,7 @@ class CurlParser:
         # --- Process Proxy ---
         proxies: Optional[Dict[str, str]] = None
         if parsed_args.proxy:
-            proxy_url = f"http://{parsed_args.proxy}" if "://" not in parsed_args.proxy else parsed_args.proxy
+            proxy_url = _normalize_proxy_url(parsed_args.proxy)
 
             if parsed_args.proxy_user:
                 user_pass = parsed_args.proxy_user
@@ -282,7 +302,7 @@ class CurlParser:
 
             # Standard proxy dict format
             proxies = {"http": proxy_url, "https": proxy_url}
-            log.debug(f"Using proxy configuration: {proxies}")
+            log.debug("Using proxy configuration: %s", redact_proxy(proxies))
 
         # --- Final Context ---
         return Request(
@@ -295,6 +315,8 @@ class CurlParser:
             cookies=cookies,
             proxy=proxies,
             follow_redirects="safe",  # Follows redirects but rejects those to internal/private IPs
+            insecure=parsed_args.insecure,
+            compressed=parsed_args.compressed,
         )
 
     def convert2fetcher(self, curl_command: Request | str) -> Optional[Response]:
@@ -310,6 +332,10 @@ class CurlParser:
             method = request_args.pop("method").strip().lower()
             if method in self._supported_methods:
                 request_args["json"] = request_args.pop("json_data")
+                if request_args.pop("insecure", False):
+                    log.warning("curl -k/--insecure parsed; disabling TLS certificate verification for this request.")
+                    request_args["verify"] = False
+                request_args.pop("compressed", None)
 
                 # Ensure data/json are removed for non-POST/PUT methods
                 if method not in ("post", "put"):
