@@ -10,9 +10,7 @@ on:
       - '**/*.md'
       - 'docs/**'
       - 'images/**'
-      - '.github/**'
       - 'agent-skill/**'
-      - '!.github/workflows/code-quality.yml'  # Always run when this workflow changes
   pull_request:
     branches:
       - main
@@ -22,11 +20,7 @@ on:
       - '**/*.md'
       - 'docs/**'
       - 'images/**'
-      - '.github/**'
       - 'agent-skill/**'
-      - '*.yml'
-      - '*.yaml'
-      - 'ruff.toml'
   workflow_dispatch:  # Allow manual triggering
 
 concurrency:
@@ -62,7 +56,6 @@ jobs:
 
       - name: Run Bandit (Security Linter)
         id: bandit
-        continue-on-error: true
         run: |
           echo "::group::Bandit - Security Linter"
           bandit -r -c .bandit.yml scrapling/ -f json -o bandit-report.json
@@ -71,23 +64,27 @@ jobs:
 
       - name: Run Ruff Linter
         id: ruff-lint
-        continue-on-error: true
         run: |
           echo "::group::Ruff - Linter"
-          ruff check scrapling/ --output-format=github
+          ruff check scrapling/ tests/ --output-format=github
           echo "::endgroup::"
 
       - name: Run Ruff Formatter Check
         id: ruff-format
-        continue-on-error: true
         run: |
           echo "::group::Ruff - Formatter Check"
-          ruff format --check scrapling/ --diff
+          ruff format --check scrapling/ tests/ --diff
+          echo "::endgroup::"
+
+      - name: Run unresolved-name gate
+        id: ruff-f821
+        run: |
+          echo "::group::Ruff - F821 unresolved names"
+          ruff check --select F821 scrapling/ tests/ --output-format=github
           echo "::endgroup::"
 
       - name: Run Vermin (Python Version Compatibility)
         id: vermin
-        continue-on-error: true
         run: |
           echo "::group::Vermin - Python 3.10+ Compatibility Check"
           vermin -t=3.10- --violations --eval-annotations --no-tips scrapling/
@@ -95,7 +92,6 @@ jobs:
 
       - name: Run Mypy (Static Type Checker)
         id: mypy
-        continue-on-error: true
         run: |
           echo "::group::Mypy - Static Type Checker"
           mypy scrapling/
@@ -103,7 +99,6 @@ jobs:
 
       - name: Run Pyright (Static Type Checker)
         id: pyright
-        continue-on-error: true
         run: |
           echo "::group::Pyright - Static Type Checker"
           pyright scrapling/
@@ -139,6 +134,14 @@ jobs:
             echo "✅ **Ruff Formatter**: Passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Ruff Formatter**: Failed" >> $GITHUB_STEP_SUMMARY
+            all_passed=false
+          fi
+
+          # Check unresolved names
+          if [ "${{ steps.ruff-f821.outcome }}" == "success" ]; then
+            echo "✅ **Ruff F821 (Unresolved Names)**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Ruff F821 (Unresolved Names)**: Failed" >> $GITHUB_STEP_SUMMARY
             all_passed=false
           fi
 

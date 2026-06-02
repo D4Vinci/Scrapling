@@ -9,11 +9,7 @@ on:
       - '**/*.md'
       - 'docs/**'
       - 'images/**'
-      - '.github/**'
       - 'agent-skill/**'
-      - '*.yml'
-      - '*.yaml'
-      - 'ruff.toml'
   pull_request:
     branches:
       - main
@@ -23,11 +19,7 @@ on:
       - '**/*.md'
       - 'docs/**'
       - 'images/**'
-      - '.github/**'
       - 'agent-skill/**'
-      - '*.yml'
-      - '*.yaml'
-      - 'ruff.toml'
 
 concurrency:
   group: ${{github.workflow}}-${{ github.ref }}
@@ -42,19 +34,35 @@ jobs:
       matrix:
         include:
         - python-version: "3.10"
-          os: macos-latest
+          os: ubuntu-latest
           env:
             TOXENV: py310
         - python-version: "3.11"
-          os: macos-latest
+          os: ubuntu-latest
           env:
             TOXENV: py311
         - python-version: "3.12"
-          os: macos-latest
+          os: ubuntu-latest
           env:
             TOXENV: py312
         - python-version: "3.13"
+          os: ubuntu-latest
+          env:
+            TOXENV: py313
+        - python-version: "3.10"
           os: macos-latest
+          env:
+            TOXENV: py310
+        - python-version: "3.13"
+          os: macos-latest
+          env:
+            TOXENV: py313
+        - python-version: "3.10"
+          os: windows-latest
+          env:
+            TOXENV: py310
+        - python-version: "3.13"
+          os: windows-latest
           env:
             TOXENV: py313
 
@@ -72,13 +80,14 @@ jobs:
 
     - name: Install all browsers dependencies
       run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install playwright==1.59.0 patchright==1.59.1
+        python -m pip install --upgrade pip
+        python -m pip install playwright==1.59.0 patchright==1.59.1
 
     - name: Get Playwright version
       id: playwright-version
+      shell: bash
       run: |
-        PLAYWRIGHT_VERSION=$(python3 -c "import importlib.metadata; print(importlib.metadata.version('playwright'))")
+        PLAYWRIGHT_VERSION=$(python -c "import importlib.metadata; print(importlib.metadata.version('playwright'))")
         echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
         echo "Playwright version: $PLAYWRIGHT_VERSION"
 
@@ -96,14 +105,17 @@ jobs:
           ${{ runner.os }}-playwright-
 
     - name: Install Playwright browsers
+      shell: bash
       run: |
         echo "Cache hit: ${{ steps.playwright-cache.outputs.cache-hit }}"
         if [ "${{ steps.playwright-cache.outputs.cache-hit }}" != "true" ]; then
-          python3 -m playwright install chromium
+          python -m playwright install chromium
         else
           echo "Skipping install - using cached Playwright browsers"
         fi
-        python3 -m playwright install-deps chromium
+        if [ "${{ runner.os }}" = "Linux" ]; then
+          python -m playwright install-deps chromium
+        fi
 
     # Cache tox environments
     - name: Cache tox environments
@@ -111,7 +123,7 @@ jobs:
       with:
         path: .tox
         # Include python version and os in the cache key
-        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('/Users/runner/work/Scrapling/pyproject.toml') }}
+        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}
         restore-keys: |
           tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-
           tox-v1-${{ runner.os }}-

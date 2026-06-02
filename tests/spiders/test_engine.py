@@ -101,6 +101,14 @@ class MockSpider:
         self.development_mode = False
         self.development_cache_dir = None
         self.start_urls = start_urls or []
+        self.robots_user_agent = "*"
+        self.robots_txt_fail_closed = False
+        self.development_cache_ttl = None
+        self.development_cache_max_entries = 4096
+        self.development_cache_max_bytes = 512 * 1024 * 1024
+        self.checkpoint_store_secrets = False
+        self.robots_txt_cache_max_entries = 256
+        self.robots_txt_cache_ttl = None
 
         # Tracking lists
         self.on_start_calls: list[dict] = []
@@ -608,7 +616,7 @@ class TestCheckpointMethods:
             await engine._save_checkpoint()
 
             # Verify checkpoint file exists
-            checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
+            checkpoint_path = Path(tmpdir) / "checkpoint.json"
             assert checkpoint_path.exists()
 
     @pytest.mark.asyncio
@@ -745,7 +753,7 @@ class TestCrawl:
 
             await engine.crawl()
 
-            checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
+            checkpoint_path = Path(tmpdir) / "checkpoint.json"
             assert not checkpoint_path.exists()  # Cleaned up
 
     @pytest.mark.asyncio
