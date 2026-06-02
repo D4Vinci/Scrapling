@@ -19,11 +19,10 @@ from scrapling.core._types import (
     Generator,
     SupportsIndex,
 )
-from scrapling.core.utils import _is_iterable, flatten, __CONSECUTIVE_SPACES_REGEX__
+from scrapling.core.utils import _is_iterable, flatten, __CONSECUTIVE_SPACES_REGEX__, __CLEANING_TABLE__
 
 # Define type variable for AttributeHandler value type
 _TextHandlerType = TypeVar("_TextHandlerType", bound="TextHandler")
-__CLEANING_TABLE__ = str.maketrans("\t\r\n", "   ")
 
 
 class TextHandler(str):
@@ -35,7 +34,7 @@ class TextHandler(str):
         lst = super().__getitem__(key)
         return TextHandler(lst)
 
-    def split(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> list[Any]:  # pragma: no cover
+    def split(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> "TextHandlers":  # pragma: no cover
         return TextHandlers([TextHandler(s) for s in super().split(sep, maxsplit)])
 
     def strip(self, chars: str | None = None) -> Union[str, "TextHandler"]:  # pragma: no cover

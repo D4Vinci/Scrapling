@@ -12,7 +12,7 @@ class TestGetBaseUrl:
     """Test StorageSystemMixin._get_base_url()"""
 
     def _make_storage(self, url=None):
-        # Clear lru_cache between tests to avoid cross-test pollution
+        # Clear compatibility caches between tests to avoid cross-test pollution
         StorageSystemMixin._get_base_url.cache_clear()
         return SQLiteStorageSystem(storage_file=":memory:", url=url)
 
@@ -71,6 +71,21 @@ class TestSQLiteStorageSystem:
         """Test SQLite storage system creation"""
         storage = SQLiteStorageSystem(storage_file=":memory:")
         assert storage is not None
+
+    def test_sqlite_storage_is_not_class_level_singleton(self):
+        """Separate constructor calls should not share a hidden lru_cache instance."""
+        first = SQLiteStorageSystem(storage_file=":memory:", url="https://a.example")
+        second = SQLiteStorageSystem(storage_file=":memory:", url="https://b.example")
+        try:
+            assert first is not second
+            assert first.url != second.url
+        finally:
+            first.close()
+            second.close()
+
+    def test_sqlite_storage_cache_clear_compatibility_shim(self):
+        """cache_clear remains as a no-op compatibility shim after removing class lru_cache."""
+        assert SQLiteStorageSystem.cache_clear() is None
 
     def test_sqlite_storage_with_file(self):
         """Test SQLite storage with an actual file"""
