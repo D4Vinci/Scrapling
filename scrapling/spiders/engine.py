@@ -5,9 +5,10 @@ from urllib.parse import urlparse
 
 import anyio
 from anyio import Path as AsyncPath
-from anyio import create_task_group, CapacityLimiter, create_memory_object_stream, EndOfStream
+from anyio import create_task_group, CapacityLimiter, create_memory_object_stream, WouldBlock, ClosedResourceError, EndOfStream
 
 from scrapling.core.utils import log
+from scrapling.core.utils.redaction import redact_proxy
 from scrapling.spiders.scheduler import Scheduler
 from scrapling.spiders.session import SessionManager
 from scrapling.spiders.request import Request, Response
@@ -49,20 +50,31 @@ class CrawlerEngine:
             async def _fetch_robots(url: str, sid: str) -> Response:
                 return await self.session_manager.fetch(Request(url, sid=sid))
 
-            self._robots_manager: Optional[RobotsTxtManager] = RobotsTxtManager(_fetch_robots)
+            self._robots_manager: Optional[RobotsTxtManager] = RobotsTxtManager(
+                _fetch_robots,
+                spider.robots_user_agent,
+                spider.robots_txt_fail_closed,
+                max_cache_entries=spider.robots_txt_cache_max_entries,
+                ttl_seconds=spider.robots_txt_cache_ttl,
+            )
         else:
             self._robots_manager = None
 
         if self.spider.development_mode:
             cache_dir = self.spider.development_cache_dir or f".scrapling_cache/{self.spider.name}"
-            self._cache_manager: Optional[ResponseCacheManager] = ResponseCacheManager(cache_dir)
+            self._cache_manager: Optional[ResponseCacheManager] = ResponseCacheManager(
+                cache_dir,
+                ttl_seconds=spider.development_cache_ttl,
+                max_entries=spider.development_cache_max_entries,
+                max_bytes=spider.development_cache_max_bytes,
+            )
             log.warning("Development mode enabled -- responses will be cached to disk and replayed on subsequent runs")
         else:
             self._cache_manager = None
 
         self._global_limiter = CapacityLimiter(spider.concurrent_requests)
         self._domain_limiters: dict[str, CapacityLimiter] = {}
-        self._allowed_domains: set[str] = spider.allowed_domains or set()
+        self._allowed_domains: set[str] = {domain.lower().lstrip(".") for domain in (spider.allowed_domains or set())}
 
         if self.spider.robots_txt_obey:
             self._domain_delays: dict[str, float] = {}
@@ -73,11 +85,25 @@ class CrawlerEngine:
         self._item_stream: Any = None
 
         self._checkpoint_system_enabled = bool(crawldir)
-        self._checkpoint_manager = CheckpointManager(crawldir or "", interval)
+        self._checkpoint_manager = CheckpointManager(
+            crawldir or "",
+            interval,
+            self._callback_registry(),
+            store_secrets=spider.checkpoint_store_secrets,
+        )
         self._last_checkpoint_time: float = 0.0
         self._pause_requested: bool = False
         self._force_stop: bool = False
+        self._wake_send, self._wake_receive = create_memory_object_stream[None](1)
         self.paused: bool = False
+
+    def _callback_registry(self) -> dict[str, Any]:
+        """Return spider callbacks by name for pickle-free checkpoint restore."""
+        return {
+            name: getattr(self.spider, name)
+            for name in dir(self.spider)
+            if callable(getattr(self.spider, name, None))
+        }
 
     def _is_domain_allowed(self, request: Request) -> bool:
         """Check if the request's domain is in allowed_domains."""
@@ -138,6 +164,24 @@ class CrawlerEngine:
         if not request.sid:
             request.sid = self.session_manager.default_session_id
 
+    def _wake_loop(self) -> None:
+        """Wake the crawl loop when queue/task/pause state changes.
+
+        A bounded memory stream coalesces repeated wake-ups without the lost-wake
+        race that can happen when replacing Event objects after wait() returns.
+        """
+        try:
+            self._wake_send.send_nowait(None)
+        except (WouldBlock, ClosedResourceError):
+            pass
+
+    async def _wait_for_activity(self) -> None:
+        """Wait until a task, callback, or pause request changes crawl state."""
+        try:
+            await self._wake_receive.receive()
+        except (EndOfStream, ClosedResourceError):
+            return
+
     async def _run_callbacks(self, request: Request, response: Response) -> None:
         """Dispatch response to the request's callback and process yielded items/requests."""
         callback = request.callback if request.callback else self.spider.parse
@@ -147,6 +191,7 @@ class CrawlerEngine:
                     if self._is_domain_allowed(result):
                         self._normalize_request(result)
                         await self.scheduler.enqueue(result)
+                        self._wake_loop()
                     else:
                         self.stats.offsite_requests_count += 1
                         log.debug(f"Filtered offsite request to: {result.url}")
@@ -198,9 +243,9 @@ class CrawlerEngine:
                 await anyio.sleep(delay)
 
             if request._session_kwargs.get("proxy"):
-                self.stats.proxies.append(request._session_kwargs["proxy"])
+                self.stats.proxies.append(redact_proxy(request._session_kwargs["proxy"]))
             if request._session_kwargs.get("proxies"):
-                self.stats.proxies.append(dict(request._session_kwargs["proxies"]))
+                self.stats.proxies.append(redact_proxy(dict(request._session_kwargs["proxies"])))
             try:
                 response = await self.session_manager.fetch(request)
                 self.stats.increment_requests_count(request.sid or self.session_manager.default_session_id)
@@ -229,6 +274,7 @@ class CrawlerEngine:
                 new_request = await self.spider.retry_blocked_request(retry_request, response)
                 self._normalize_request(new_request)
                 await self.scheduler.enqueue(new_request)
+                self._wake_loop()
                 log.info(
                     f"Scheduled blocked request for retry ({retry_request._retry_count}/{self.spider.max_blocked_retries}): {request.url}"
                 )
@@ -244,6 +290,7 @@ class CrawlerEngine:
             await self._process_request(request)
         finally:
             self._active_tasks -= 1
+            self._wake_loop()
 
     def request_pause(self) -> None:
         """Request a graceful pause of the crawl.
@@ -257,9 +304,11 @@ class CrawlerEngine:
         if self._pause_requested:
             # Second Ctrl+C - force stop
             self._force_stop = True
+            self._wake_loop()
             log.warning("Force stop requested, cancelling immediately...")
         else:
             self._pause_requested = True
+            self._wake_loop()
             log.info(
                 "Pause requested, waiting for in-flight requests to complete (press Ctrl+C again to force stop)..."
             )
@@ -290,6 +339,7 @@ class CrawlerEngine:
         if not self._checkpoint_system_enabled:
             return False
 
+        self._checkpoint_manager.set_callback_registry(self._callback_registry())
         data = await self._checkpoint_manager.load()
         if data is None:
             return False
@@ -329,6 +379,7 @@ class CrawlerEngine:
         self._pause_requested = False
         self._force_stop = False
         self.stats = CrawlStats(start_time=anyio.current_time())
+        self._wake_send, self._wake_receive = create_memory_object_stream[None](1)
         self._domain_limiters.clear()
         if self._robots_manager:
             self._domain_delays.clear()
@@ -373,8 +424,7 @@ class CrawlerEngine:
                                 self._running = False
                                 break
 
-                            # Wait briefly and check again
-                            await anyio.sleep(0.05)
+                            await self._wait_for_activity()
                             continue
 
                         if self._checkpoint_system_enabled and self._is_checkpoint_time():
@@ -387,14 +437,13 @@ class CrawlerEngine:
                                 log.debug("Spider idle")
                                 break
 
-                            # Brief wait for callbacks to enqueue new requests
-                            await anyio.sleep(0.05)
+                            await self._wait_for_activity()
                             continue
 
                         # Only spawn tasks up to concurrent_requests limit
                         # This prevents spawning thousands of waiting tasks
                         if self._active_tasks >= self.spider.concurrent_requests:
-                            await anyio.sleep(0.01)
+                            await self._wait_for_activity()
                             continue
 
                         request = await self.scheduler.dequeue()
@@ -409,7 +458,7 @@ class CrawlerEngine:
 
         self.stats.log_levels_counter = self.spider._log_counter.get_counts()
         self.stats.end_time = anyio.current_time()
-        log.info(_dump(self.stats.to_dict()))
+        log.debug(_dump(self.stats.to_dict()))
         return self.stats
 
     @property
