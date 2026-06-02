@@ -66,19 +66,23 @@ class TestRequestProperties:
     """Test Request computed properties."""
 
     def test_domain_extraction(self):
-        """Test domain property extracts netloc correctly."""
+        """Test domain property extracts normalized hostname."""
         request = Request("https://www.example.com/path/page.html?query=1")
         assert request.domain == "www.example.com"
 
     def test_domain_with_port(self):
         """Test domain extraction with port number."""
         request = Request("http://localhost:8080/api")
-        assert request.domain == "localhost:8080"
+        assert request.domain == "localhost"
 
     def test_domain_with_subdomain(self):
         """Test domain extraction with subdomains."""
         request = Request("https://api.v2.example.com/endpoint")
         assert request.domain == "api.v2.example.com"
+
+    def test_domain_strips_userinfo_and_port(self):
+        request = Request("https://user:pass@EXAMPLE.com:8443/path")
+        assert request.domain == "example.com"
 
     def test_fingerprint_returns_bytes(self):
         """Test fingerprint generation returns bytes."""
@@ -205,24 +209,18 @@ class TestRequestComparison:
         r2 = Request("https://example.com")
         r3 = Request("https://example.com/other")
 
-        # Generate fingerprints first (required for equality)
-        r1.update_fingerprint()
-        r2.update_fingerprint()
-        r3.update_fingerprint()
-
+        # Equality lazily generates fingerprints and must not raise.
         assert r1 == r2
         assert r1 != r3
+        assert hash(r1) == hash(r2)
+        assert {r1, r2, r3} == {r1, r3}
 
     def test_equality_different_priorities_same_fingerprint(self):
         """Test requests with same fingerprint are equal despite different priorities."""
         r1 = Request("https://example.com", priority=1)
         r2 = Request("https://example.com", priority=100)
 
-        # Generate fingerprints first
-        r1.update_fingerprint()
-        r2.update_fingerprint()
-
-        assert r1 == r2  # Same fingerprint means equal
+        assert r1 == r2  # Same fingerprint means equal even without manual pre-generation
 
     def test_comparison_with_non_request(self):
         """Test comparison with non-Request types returns NotImplemented."""
