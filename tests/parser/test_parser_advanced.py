@@ -167,6 +167,22 @@ class TestAdvancedSelectors:
         cells = page.find_all(pattern)
         assert len(cells) == 4
 
+    def test_find_all_simple_attributes_use_safe_xpath_values(self):
+        page = Selector('<main><a href="/x&quot;y" data-id="1">ok</a><a href="/z">no</a></main>')
+
+        result = page.find_all("a", href='/x"y')
+
+        assert len(result) == 1
+        assert result[0].text == "ok"
+
+    def test_find_all_advanced_css_attribute_operator_still_supported(self):
+        page = Selector('<main><a href="/posts/1">ok</a><a href="/other">no</a></main>')
+
+        result = page.find_all("a", {"href*": "/posts/"})
+
+        assert len(result) == 1
+        assert result[0].text == "ok"
+
     def test_text_operations_edge_cases(self, complex_html):
         """Test text operation edge cases"""
         page = Selector(complex_html)
