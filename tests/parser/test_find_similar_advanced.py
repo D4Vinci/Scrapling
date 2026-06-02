@@ -2,6 +2,7 @@
 Tests for Selector.find_similar() with non-default parameters.
 Target file: tests/parser/test_general.py (append to TestSimilarElements class)
 """
+
 import pytest
 from scrapling import Selector
 
@@ -61,14 +62,10 @@ class TestFindSimilarAdvanced:
         first = product_page.css("div.product")[0]
         # Ignore both data-price and data-category → only class matters → all 3 divs match
         ignore_all_data = first.find_similar(
-            similarity_threshold=0.2,
-            ignore_attributes=["data-price", "data-category"]
+            similarity_threshold=0.2, ignore_attributes=["data-price", "data-category"]
         )
         # Ignore nothing → data-category difference (fruit vs veggie) may reduce matches
-        ignore_nothing = first.find_similar(
-            similarity_threshold=0.9,
-            ignore_attributes=[]
-        )
+        ignore_nothing = first.find_similar(similarity_threshold=0.9, ignore_attributes=[])
         assert len(ignore_all_data) >= len(ignore_nothing)
 
     def test_find_similar_on_text_node_returns_empty(self, product_page):
@@ -76,3 +73,21 @@ class TestFindSimilarAdvanced:
         text_node = product_page.css(".name::text")[0]
         result = text_node.find_similar()
         assert len(result) == 0
+
+    def test_find_similar_counts_original_attributes_in_similarity_threshold(self):
+        """Extra candidate attributes should not dilute an otherwise exact attribute match."""
+        html = """
+        <html><body>
+            <div class="cards">
+                <div class="card" data-kind="primary">Alpha</div>
+                <div class="card" data-kind="primary" data-id="beta">Beta</div>
+            </div>
+        </body></html>
+        """
+        page = Selector(html, adaptive=False)
+
+        first = page.css("div.card")[0]
+        similar = first.find_similar(similarity_threshold=0.8, ignore_attributes=[])
+
+        assert len(similar) == 1
+        assert similar[0].attrib["data-id"] == "beta"
