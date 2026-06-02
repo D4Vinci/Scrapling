@@ -150,8 +150,8 @@ def install(force):  # pragma: no cover
 @option(
     "--host",
     type=str,
-    default="0.0.0.0",
-    help="The host to use if streamable-http transport is enabled (Default: '0.0.0.0')",
+    default="127.0.0.1",
+    help="The host to use if streamable-http transport is enabled (Default: '127.0.0.1')",
 )
 @option(
     "--port", type=int, default=8000, help="The port to use if streamable-http transport is enabled (Default: 8000)"
@@ -159,6 +159,11 @@ def install(force):  # pragma: no cover
 def mcp(http, host, port):
     from scrapling.core.ai import ScraplingMCPServer
 
+    if http and host not in ("127.0.0.1", "localhost", "::1"):
+        log.warning(
+            f"MCP server will bind to {host}:{port}. This exposes unauthenticated browser tooling to the network; "
+            "use only in a trusted environment or behind authenticated network controls."
+        )
     server = ScraplingMCPServer()
     server.serve(http, host, port)
 

@@ -243,3 +243,24 @@ class TestSitemapSpiderPickle:
         fresh = S()
         restored._restore_callback(fresh)
         assert restored.callback == fresh.parse_post
+
+
+def test_sitemap_safe_xml_parser_blocks_external_entities():
+    class DemoSitemap(SitemapSpider):
+        name = "demo_sitemap_safe"
+        sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        async def parse(self, response):
+            yield None
+
+    body = b'''<?xml version="1.0"?>
+    <!DOCTYPE foo [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url><loc>&xxe;</loc></url>
+    </urlset>'''
+    spider = object.__new__(DemoSitemap)
+    spider.logger = __import__("logging").getLogger("test_sitemap_safe")
+    spider.sitemap_alternate_links = False
+
+    result = spider._sm_body(body)
+    assert result.urls in ([], [""])

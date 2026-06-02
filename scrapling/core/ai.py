@@ -2,6 +2,10 @@ from uuid import uuid4
 from asyncio import gather
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
+import ipaddress
+import os
+import socket
+from urllib.parse import urlparse
 
 from mcp.server.fastmcp import FastMCP, Image
 from mcp.types import ImageContent, TextContent
@@ -70,6 +74,130 @@ class _SessionEntry:
     session: Any  # AsyncDynamicSession | AsyncStealthySession
     session_type: SessionType
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    last_used_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+    def touch(self) -> None:
+        self.last_used_at = datetime.now(timezone.utc)
+
+    def idle_seconds(self) -> float:
+        return (datetime.now(timezone.utc) - self.last_used_at).total_seconds()
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_csv(name: str) -> tuple[str, ...]:
+    value = os.environ.get(name, "")
+    return tuple(part.strip().lower() for part in value.split(",") if part.strip())
+
+
+@dataclass(frozen=True)
+class MCPNetworkPolicy:
+    """Network policy for MCP tools.
+
+    The default policy rejects loopback, private, link-local, reserved, and
+    multicast targets. ``SCRAPLING_MCP_ALLOW_PRIVATE=1`` is an explicit trusted
+    local opt-in. ``SCRAPLING_MCP_ALLOWED_HOSTS`` and
+    ``SCRAPLING_MCP_ALLOWED_CIDRS`` can allow specific targets without opening
+    the entire private network surface.
+    """
+
+    allow_private: bool = False
+    allowed_hosts: tuple[str, ...] = ()
+    allowed_cidrs: tuple[Any, ...] = ()
+
+    @classmethod
+    def from_env(cls) -> "MCPNetworkPolicy":
+        cidrs = []
+        for value in _env_csv("SCRAPLING_MCP_ALLOWED_CIDRS"):
+            try:
+                cidrs.append(ipaddress.ip_network(value, strict=False))
+            except ValueError:
+                pass
+        return cls(
+            allow_private=_env_flag("SCRAPLING_MCP_ALLOW_PRIVATE"),
+            allowed_hosts=_env_csv("SCRAPLING_MCP_ALLOWED_HOSTS"),
+            allowed_cidrs=tuple(cidrs),
+        )
+
+    def _is_allowed_ip(self, ip: Any) -> bool:
+        return any(ip in network for network in self.allowed_cidrs)
+
+    def _is_blocked_ip(self, ip: Any) -> bool:
+        if self.allow_private or self._is_allowed_ip(ip):
+            return False
+        return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast
+
+    def assert_url(self, url: str) -> None:
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"}:
+            raise ValueError(f"Unsupported URL scheme: {parsed.scheme}")
+
+        host = parsed.hostname or ""
+        if not host:
+            raise ValueError("URL must include a hostname")
+        normalized_host = host.lower()
+        if normalized_host in self.allowed_hosts:
+            return
+
+        try:
+            literal_ip = ipaddress.ip_address(host)
+        except ValueError:
+            literal_ip = None
+
+        if literal_ip is not None:
+            if self._is_blocked_ip(literal_ip):
+                raise ValueError(f"Refusing to fetch internal/private address: {literal_ip}")
+            return
+
+        try:
+            infos = socket.getaddrinfo(host, None)
+        except socket.gaierror as exc:
+            raise ValueError(f"Cannot resolve host: {host}") from exc
+
+        for *_, sockaddr in infos:
+            ip = ipaddress.ip_address(sockaddr[0])
+            if self._is_blocked_ip(ip):
+                raise ValueError(f"Refusing to fetch internal/private address: {ip}")
+
+    def assert_urls(self, urls: Sequence[str]) -> None:
+        for url in urls:
+            self.assert_url(url)
+
+
+def _network_policy() -> MCPNetworkPolicy:
+    return MCPNetworkPolicy.from_env()
+
+
+def _assert_public_url(url: str) -> None:
+    _network_policy().assert_url(url)
+
+
+def _assert_public_urls(urls: Sequence[str]) -> None:
+    _network_policy().assert_urls(urls)
+
+
+async def _install_mcp_network_guard(page: Any) -> None:
+    """Install a Playwright route that aborts private-network subresources/redirects."""
+    policy = _network_policy()
+
+    async def _guard_route(route: Any) -> None:
+        try:
+            policy.assert_url(route.request.url)
+        except ValueError:
+            await route.abort()
+            return
+        await route.continue_()
+
+    await page.route("**/*", _guard_route)
+
+
+def _clamp_bulk_pages(url_count: int, max_concurrent: int, hard_cap: int) -> int:
+    return max(1, min(max(1, int(max_concurrent)), int(hard_cap), max(1, int(url_count))))
 
 
 def _translate_response(
@@ -105,8 +233,26 @@ def _normalize_credentials(credentials: Optional[Dict[str, str]]) -> Optional[Tu
 
 
 class ScraplingMCPServer:
+    MAX_SESSIONS = 20
+    SESSION_IDLE_TIMEOUT = 600.0
+    BULK_MAX_CONCURRENT = 20
+
     def __init__(self):
         self._sessions: Dict[str, _SessionEntry] = {}
+
+    async def _prune_idle_sessions(self) -> None:
+        stale_ids = [
+            sid
+            for sid, entry in self._sessions.items()
+            if not entry.session._is_alive or entry.idle_seconds() > self.SESSION_IDLE_TIMEOUT
+        ]
+        for sid in stale_ids:
+            entry = self._sessions.pop(sid, None)
+            if entry is not None:
+                try:
+                    await entry.session.close()
+                except Exception:
+                    pass
 
     def _get_session(self, session_id: str, expected_type: Optional[SessionType]) -> _SessionEntry:
         """Look up a session by ID, optionally validating its type. Pass `None` to skip the type check."""
@@ -120,6 +266,7 @@ class ScraplingMCPServer:
                 f"Session '{session_id}' is a '{entry.session_type}' session, but this tool requires a "
                 f"'{expected_type}' session. Use the matching fetch tool for your session type."
             )
+        entry.touch()
         return entry
 
     async def open_session(
@@ -145,7 +292,7 @@ class ScraplingMCPServer:
         max_pages: int = 5,
         # Stealthy-only params (ignored for dynamic sessions)
         hide_canvas: bool = False,
-        block_webrtc: bool = False,
+        block_webrtc: Optional[bool] = None,
         allow_webgl: bool = True,
         solve_cloudflare: bool = False,
         additional_args: Optional[Dict] = None,
@@ -179,6 +326,10 @@ class ScraplingMCPServer:
         :param solve_cloudflare: (Stealthy only) Solves all types of the Cloudflare's Turnstile/Interstitial challenges.
         :param additional_args: (Stealthy only) Additional arguments to be passed to Playwright's context as additional settings.
         """
+        await self._prune_idle_sessions()
+        if len(self._sessions) >= self.MAX_SESSIONS:
+            raise ValueError(f"Maximum open MCP sessions reached ({self.MAX_SESSIONS}). Close an existing session first.")
+
         session_id = session_id or uuid4().hex[:12]
         if session_id in self._sessions:
             raise ValueError(
@@ -194,7 +345,7 @@ class ScraplingMCPServer:
             cdp_url=cdp_url,
             headless=headless,
             block_ads=True,
-            max_pages=max_pages,
+            max_pages=_clamp_bulk_pages(max_pages, max_pages, self.BULK_MAX_CONCURRENT),
             useragent=useragent,
             timezone_id=timezone_id,
             real_chrome=real_chrome,
@@ -252,6 +403,7 @@ class ScraplingMCPServer:
 
     async def list_sessions(self) -> List[SessionInfo]:
         """List all active browser sessions with their details."""
+        await self._prune_idle_sessions()
         return [
             SessionInfo(
                 session_id=sid,
@@ -291,6 +443,8 @@ class ScraplingMCPServer:
         """
         if quality is not None and image_type != "jpeg":
             raise ValueError("'quality' is only valid when 'image_type' is 'jpeg'.")
+        _assert_public_url(url)
+        await self._prune_idle_sessions()
 
         entry = self._get_session(session_id, expected_type=None)
 
@@ -314,6 +468,7 @@ class ScraplingMCPServer:
             network_idle=network_idle,
             wait_selector=wait_selector,
             wait_selector_state=wait_selector_state,
+            page_setup=_install_mcp_network_guard,
             page_action=_capture,
         )
 
@@ -450,6 +605,9 @@ class ScraplingMCPServer:
         :param http3: Whether to use HTTP3. Defaults to False. It might be problematic if used it with `impersonate`.
         :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
         """
+        _assert_public_urls(urls)
+        if follow_redirects is True:
+            follow_redirects = "safe"
         normalized_proxy_auth = _normalize_credentials(proxy_auth)
         normalized_auth = _normalize_credentials(auth)
 
@@ -484,7 +642,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        headless: bool = True,  # noqa: F821
+        headless: bool = True,
         google_search: bool = True,
         real_chrome: bool = False,
         wait: int | float = 0,
@@ -535,6 +693,7 @@ class ScraplingMCPServer:
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
+        _assert_public_url(url)
         results = await self.bulk_fetch(
             urls=[url],
             extraction_type=extraction_type,
@@ -566,7 +725,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        headless: bool = True,  # noqa: F821
+        headless: bool = True,
         google_search: bool = True,
         real_chrome: bool = False,
         wait: int | float = 0,
@@ -583,6 +742,7 @@ class ScraplingMCPServer:
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
         session_id: Optional[str] = None,
+        max_concurrent: int = 5,
     ) -> List[ResponseModel]:
         """Use playwright to open a browser, then fetch a group of URLs at the same time, and for each page return a structured output of the result.
         Note: This is only suitable for low-mid protection levels.
@@ -617,6 +777,9 @@ class ScraplingMCPServer:
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
+        _assert_public_urls(urls)
+        await self._prune_idle_sessions()
+
         if session_id:
             entry = self._get_session(session_id, "dynamic")
             tasks = [
@@ -631,6 +794,7 @@ class ScraplingMCPServer:
                     wait_selector_state=wait_selector_state,
                     network_idle=network_idle,
                     proxy=proxy,
+                    page_setup=_install_mcp_network_guard,
                 )
                 for url in urls
             ]
@@ -645,7 +809,7 @@ class ScraplingMCPServer:
                 cdp_url=cdp_url,
                 headless=headless,
                 block_ads=True,
-                max_pages=len(urls),
+                max_pages=_clamp_bulk_pages(len(urls), max_concurrent, self.BULK_MAX_CONCURRENT),
                 useragent=useragent,
                 timezone_id=timezone_id,
                 real_chrome=real_chrome,
@@ -656,7 +820,7 @@ class ScraplingMCPServer:
                 disable_resources=disable_resources,
                 wait_selector_state=wait_selector_state,
             ) as session:
-                tasks = [session.fetch(url) for url in urls]
+                tasks = [session.fetch(url, page_setup=_install_mcp_network_guard) for url in urls]
                 responses = await gather(*tasks)
 
         return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
@@ -667,7 +831,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        headless: bool = True,  # noqa: F821
+        headless: bool = True,
         google_search: bool = True,
         real_chrome: bool = False,
         wait: int | float = 0,
@@ -684,7 +848,7 @@ class ScraplingMCPServer:
         cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
-        block_webrtc: bool = False,
+        block_webrtc: Optional[bool] = None,
         allow_webgl: bool = True,
         solve_cloudflare: bool = False,
         additional_args: Optional[Dict] = None,
@@ -728,6 +892,7 @@ class ScraplingMCPServer:
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
+        _assert_public_url(url)
         results = await self.bulk_stealthy_fetch(
             urls=[url],
             extraction_type=extraction_type,
@@ -764,7 +929,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        headless: bool = True,  # noqa: F821
+        headless: bool = True,
         google_search: bool = True,
         real_chrome: bool = False,
         wait: int | float = 0,
@@ -781,11 +946,12 @@ class ScraplingMCPServer:
         cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
-        block_webrtc: bool = False,
+        block_webrtc: Optional[bool] = None,
         allow_webgl: bool = True,
         solve_cloudflare: bool = False,
         additional_args: Optional[Dict] = None,
         session_id: Optional[str] = None,
+        max_concurrent: int = 5,
     ) -> List[ResponseModel]:
         """Use the stealthy fetcher to fetch a group of URLs at the same time, and for each page return a structured output of the result.
         Note: This is the only suitable fetcher for high protection levels.
@@ -825,6 +991,9 @@ class ScraplingMCPServer:
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
         """
+        _assert_public_urls(urls)
+        await self._prune_idle_sessions()
+
         if session_id:
             entry = self._get_session(session_id, "stealthy")
             tasks = [
@@ -840,6 +1009,7 @@ class ScraplingMCPServer:
                     network_idle=network_idle,
                     proxy=proxy,
                     solve_cloudflare=solve_cloudflare,
+                    page_setup=_install_mcp_network_guard,
                 )
                 for url in urls
             ]
@@ -854,6 +1024,7 @@ class ScraplingMCPServer:
                 cookies=cookies,
                 headless=headless,
                 block_ads=True,
+                max_pages=_clamp_bulk_pages(len(urls), max_concurrent, self.BULK_MAX_CONCURRENT),
                 useragent=useragent,
                 timezone_id=timezone_id,
                 real_chrome=real_chrome,
@@ -869,7 +1040,7 @@ class ScraplingMCPServer:
                 disable_resources=disable_resources,
                 wait_selector_state=wait_selector_state,
             ) as session:
-                tasks = [session.fetch(url) for url in urls]
+                tasks = [session.fetch(url, page_setup=_install_mcp_network_guard) for url in urls]
                 responses = await gather(*tasks)
 
         return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]

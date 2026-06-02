@@ -18,6 +18,12 @@ from scrapling.core.ai import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _allow_private_network_for_httpbin_mcp_tests(monkeypatch):
+    monkeypatch.setenv("SCRAPLING_MCP_ALLOW_PRIVATE", "1")
+
+
+
 @pytest_httpbin.use_class_based_httpbin
 class TestMCPServer:
     """Test MCP server functionality"""
@@ -336,3 +342,22 @@ class TestNormalizeCredentials:
     def test_missing_username_raises(self):
         with pytest.raises(ValueError, match="username"):
             _normalize_credentials({"password": "pass"})
+
+
+def test_mcp_network_policy_rejects_private_literal_addresses(monkeypatch):
+    from scrapling.core.ai import MCPNetworkPolicy
+
+    monkeypatch.delenv("SCRAPLING_MCP_ALLOW_PRIVATE", raising=False)
+    policy = MCPNetworkPolicy.from_env()
+
+    with pytest.raises(ValueError, match="internal/private"):
+        policy.assert_url("http://127.0.0.1/")
+    with pytest.raises(ValueError, match="internal/private"):
+        policy.assert_url("http://169.254.169.254/latest/meta-data")
+
+
+def test_mcp_network_policy_private_opt_in(monkeypatch):
+    from scrapling.core.ai import MCPNetworkPolicy
+
+    monkeypatch.setenv("SCRAPLING_MCP_ALLOW_PRIVATE", "1")
+    MCPNetworkPolicy.from_env().assert_url("http://127.0.0.1/")
