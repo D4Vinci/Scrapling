@@ -1,4 +1,4 @@
-import pickle
+import json
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -18,6 +18,28 @@ class CheckpointData:
 
     requests: List["Request"] = field(default_factory=list)
     seen: Set[bytes] = field(default_factory=set)
+
+    def to_json(self) -> str:
+        """Serialize to JSON-safe dict."""
+        return {
+            "requests": [
+                {"url": r.url, "sid": r.sid, "priority": r.priority, "meta": r.meta or {}}
+                for r in self.requests
+            ],
+            "seen": [s.decode("utf-8", errors="ignore") if isinstance(s, bytes) else s for s in self.seen],
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> "CheckpointData":
+        """Deserialize from JSON-safe dict."""
+        from scrapling.spiders.request import Request
+
+        requests = [
+            Request(url=r["url"], sid=r.get("sid", ""), priority=r.get("priority", 0), meta=r.get("meta", {}))
+            for r in data.get("requests", [])
+        ]
+        seen = set(s.encode("utf-8") if isinstance(s, str) else s for s in data.get("seen", []))
+        return cls(requests=requests, seen=seen)
 
 
 class CheckpointManager:
@@ -46,8 +68,8 @@ class CheckpointManager:
         temp_path = self._checkpoint_path.with_suffix(".tmp")
 
         try:
-            serialized = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
-            async with await anyio.open_file(temp_path, "wb") as f:
+            serialized = json.dumps(data.to_json())
+            async with await anyio.open_file(temp_path, "w", encoding="utf-8") as f:
                 await f.write(serialized)
 
             await temp_path.rename(self._checkpoint_path)
@@ -69,9 +91,10 @@ class CheckpointManager:
             return None
 
         try:
-            async with await anyio.open_file(self._checkpoint_path, "rb") as f:
+            async with await anyio.open_file(self._checkpoint_path, "r", encoding="utf-8") as f:
                 content = await f.read()
-                data: CheckpointData = pickle.loads(content)
+                json_data = json.loads(content)
+                data = CheckpointData.from_json(json_data)
 
             log.info(f"Checkpoint loaded: {len(data.requests)} requests, {len(data.seen)} seen URLs")
             return data
