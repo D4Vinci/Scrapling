@@ -226,3 +226,18 @@ class TestDevelopmentModeIntegration:
         sm.add("default", MockSession())
         engine = CrawlerEngine(spider, sm)
         assert engine._cache_manager is None
+
+    @pytest.mark.anyio
+    async def test_cache_prunes_by_max_entries(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache = ResponseCacheManager(tmpdir, max_entries=1, max_bytes=None)
+            fp1 = b"fp1"
+            fp2 = b"fp2"
+
+            await cache.put(fp1, _make_response("https://example.com/1"), "GET")
+            await anyio.sleep(0.01)
+            await cache.put(fp2, _make_response("https://example.com/2"), "GET")
+
+            entries = list(Path(tmpdir).glob("*.json"))
+            assert len(entries) == 1
+            assert entries[0].name == f"{fp2.hex()}.json"

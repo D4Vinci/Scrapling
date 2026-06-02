@@ -1,5 +1,6 @@
 from hashlib import sha256
 from threading import RLock
+from weakref import finalize
 from functools import lru_cache
 from abc import ABC, abstractmethod
 from sqlite3 import connect as db_connect
@@ -70,7 +71,6 @@ class StorageSystemMixin(ABC):  # pragma: no cover
         return f"{hash_value}_{len(_identifier_bytes)}"  # Length to reduce collision chance
 
 
-@lru_cache(1, typed=True)
 class SQLiteStorageSystem(StorageSystemMixin):
     """The recommended system to use, it's race condition safe and thread safe.
     Mainly built, so the library can run in threaded frameworks like scrapy or threaded tools
@@ -87,10 +87,12 @@ class SQLiteStorageSystem(StorageSystemMixin):
         self.lock = RLock()  # Better than Lock for reentrancy
         # >SQLite default mode in the earlier version is 1 not 2 (1=thread-safe 2=serialized)
         # `check_same_thread=False` to allow it to be used across different threads.
+        self._closed = False
         self.connection = db_connect(self.storage_file, check_same_thread=False)
         # WAL (Write-Ahead Logging) allows for better concurrency.
         self.connection.execute("PRAGMA journal_mode=WAL")
         self.cursor = self.connection.cursor()
+        self._finalizer = finalize(self, self._close_resources, self.connection, self.cursor)
         self._setup_database()
         log.debug(f'Storage system loaded with arguments (storage_file="{storage_file}", url="{url}")')
 
@@ -144,13 +146,46 @@ class SQLiteStorageSystem(StorageSystemMixin):
                 return loads(result[0])
             return None
 
-    def close(self):
-        """Close all connections. It will be useful when with some things like scrapy Spider.closed() function/signal"""
-        with self.lock:
-            self.connection.commit()
-            self.cursor.close()
-            self.connection.close()
+    @staticmethod
+    def _close_resources(connection: Any, cursor: Any) -> None:
+        """Close SQLite resources without keeping the storage instance alive."""
+        try:
+            connection.commit()
+        finally:
+            try:
+                cursor.close()
+            finally:
+                connection.close()
 
-    def __del__(self):
-        """To ensure all connections are closed when the object is destroyed."""
+    def close(self):
+        """Close all connections idempotently."""
+        if getattr(self, "_closed", True):
+            return
+        with self.lock:
+            if getattr(self, "_closed", True):
+                return
+            if self._finalizer.alive:
+                self._finalizer()
+            self._closed = True
+
+    def clear(self) -> None:
+        """Delete all adaptive entries for the current base URL."""
+        with self.lock:
+            self.cursor.execute("DELETE FROM storage WHERE url = ?", (self._get_base_url(),))
+            self.connection.commit()
+
+    def vacuum(self) -> None:
+        """Run SQLite VACUUM for long-running adaptive storage housekeeping."""
+        with self.lock:
+            self.connection.execute("VACUUM")
+
+    @classmethod
+    def cache_clear(cls) -> None:
+        """Compatibility shim for callers that used the former lru_cache-wrapped class."""
+        return None
+
+    def __enter__(self) -> "SQLiteStorageSystem":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
         self.close()

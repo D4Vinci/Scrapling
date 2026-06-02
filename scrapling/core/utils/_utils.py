@@ -12,28 +12,16 @@ from functools import lru_cache  # isort:skip
 
 html_forbidden = (html.HtmlComment,)
 
-__CLEANING_TABLE__ = str.maketrans({"\t": " ", "\n": None, "\r": None})
+__CLEANING_TABLE__ = str.maketrans("\t\r\n", "   ")
 __CONSECUTIVE_SPACES_REGEX__ = re_compile(r" +")
 
 
 @lru_cache(1, typed=True)
 def setup_logger():
-    """Create and configure a logger with a standard format.
-
-    :returns: logging.Logger: Configured logger instance
-    """
+    """Create Scrapling's library logger without forcing application logging config."""
     logger = logging.getLogger("scrapling")
-    logger.setLevel(logging.INFO)
-
-    formatter = logging.Formatter(fmt="[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-
-    # Add handler to logger (if not already added)
-    if not logger.handlers:
-        logger.addHandler(console_handler)
-
+    if not any(isinstance(handler, logging.NullHandler) for handler in logger.handlers):
+        logger.addHandler(logging.NullHandler())
     return logger
 
 
@@ -110,11 +98,15 @@ class _StorageTools:
 
     @classmethod
     def _get_element_path(cls, element: html.HtmlElement):
-        parent = element.getparent()
-        return tuple((element.tag,) if parent is None else (cls._get_element_path(parent) + (element.tag,)))
+        parts = []
+        current = element
+        while current is not None:
+            parts.append(current.tag)
+            current = current.getparent()
+        return tuple(reversed(parts))
 
 
 @lru_cache(128, typed=True)
-def clean_spaces(string):
+def clean_spaces(string: str) -> str:
     string = string.translate(__CLEANING_TABLE__)
     return __CONSECUTIVE_SPACES_REGEX__.sub(" ", string)
