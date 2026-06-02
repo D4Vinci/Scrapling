@@ -67,6 +67,44 @@ class TestCurlParser:
 
         assert 'http://user:pass@proxy:8080' in request.proxy['http']
 
+    def test_curl_proxy_without_scheme_is_normalized(self, parser):
+        curl_cmd = 'curl https://example.com -x example.com:3128'
+        request = parser.parse(curl_cmd)
+
+        assert request.proxy == {
+            'http': 'http://example.com:3128',
+            'https': 'http://example.com:3128',
+        }
+        assert '{' not in request.proxy['http']
+        assert '}' not in request.proxy['http']
+
+    def test_curl_proxy_with_explicit_scheme_is_preserved(self, parser):
+        curl_cmd = 'curl https://example.com -x socks5://proxy.local:1080'
+        request = parser.parse(curl_cmd)
+
+        assert request.proxy == {
+            'http': 'socks5://proxy.local:1080',
+            'https': 'socks5://proxy.local:1080',
+        }
+
+    def test_curl_proxy_user_auth_is_added_after_scheme_normalization(self, parser):
+        curl_cmd = 'curl https://example.com -x example.com:3128 -U user:pass'
+        request = parser.parse(curl_cmd)
+
+        assert request.proxy == {
+            'http': 'http://user:pass@example.com:3128',
+            'https': 'http://user:pass@example.com:3128',
+        }
+
+    def test_curl_insecure_user_agent_and_compressed_flags(self, parser):
+        curl_cmd = 'curl https://example.com -k -A "ScraplingTest/1.0" --compressed'
+        request = parser.parse(curl_cmd)
+
+        assert request.insecure is True
+        assert request.compressed is True
+        assert request.headers['User-Agent'] == 'ScraplingTest/1.0'
+        assert request.headers['Accept-Encoding'] == 'gzip, deflate, br'
+
     def test_curl2fetcher(self, parser):
         """Test converting curl to fetcher request"""
         with patch('scrapling.fetchers.Fetcher.get') as mock_get:

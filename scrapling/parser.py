@@ -1,10 +1,11 @@
+from html import escape as html_escape
 from pathlib import Path
 from inspect import signature
 from urllib.parse import urljoin
 from difflib import SequenceMatcher
-from re import Pattern as re_Pattern
+from re import Pattern as re_Pattern, compile as re_compile
 
-from lxml.html import HtmlElement, HTMLParser
+from lxml.html import HtmlElement, HTMLParser, fromstring as html_fromstring
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
 from lxml.etree import (
     XPath,
@@ -59,6 +60,21 @@ _find_all_elements_with_spaces = XPath(
     ".//*[normalize-space(text())]"
 )  # This selector gets all elements with text content
 _find_all_text_nodes = XPath(".//text()")
+_MAX_SELECTOR_STATE_BYTES = 2 * 1024 * 1024
+_SIMPLE_FIND_ATTR_NAME = re_compile(r"^[A-Za-z_][\w.-]*$")
+_SIMPLE_FIND_TAG_NAME = re_compile(r"^(\*|[A-Za-z_][\w.-]*)$")
+
+
+def _can_build_safe_find_all_xpath(tags: Set[str], attributes: Dict[str, Any]) -> bool:
+    """Return True when find_all filters can be represented as safe exact-match XPath.
+
+    Advanced CSS attribute operators such as ``href*`` intentionally keep the legacy CSS path.
+    Simple attribute names use XPath variables, so user values are never interpolated into selectors.
+    """
+    return all(_SIMPLE_FIND_TAG_NAME.fullmatch(tag) for tag in tags) and all(
+        _SIMPLE_FIND_ATTR_NAME.fullmatch(key) for key in attributes
+    )
+
 
 
 class Selector(SelectorsGeneration):
@@ -90,7 +106,7 @@ class Selector(SelectorsGeneration):
         _storage: Optional[StorageSystemMixin] = None,
         storage: Any = SQLiteStorageSystem,
         storage_args: Optional[Dict] = None,
-        **_,
+        **kwargs: Any,
     ):
         """The main class that works as a wrapper for the HTML input data. Using this class, you can search for elements
         with expressions in CSS, XPath, or with simply text. Check the docs for more info.
@@ -117,6 +133,8 @@ class Selector(SelectorsGeneration):
         """
         if root is None and content is None:
             raise ValueError("Selector class needs HTML content, or root arguments to work")
+        if kwargs:
+            log.warning("Unknown Selector arguments ignored: %s", ", ".join(sorted(kwargs)))
 
         self.url = url
         self._raw_body: str | bytes = ""
@@ -172,10 +190,8 @@ class Selector(SelectorsGeneration):
                         "url": url,
                     }
 
-                if not hasattr(storage, "__wrapped__"):
-                    raise ValueError("Storage class must be wrapped with lru_cache decorator, see docs for info")
-
-                if not issubclass(storage.__wrapped__, StorageSystemMixin):  # pragma: no cover
+                storage_cls = getattr(storage, "__wrapped__", storage)
+                if not isinstance(storage_cls, type) or not issubclass(storage_cls, StorageSystemMixin):
                     raise ValueError("Storage system must be inherited from class `StorageSystemMixin`")
 
                 self._storage = storage(**storage_args)
@@ -247,9 +263,96 @@ class Selector(SelectorsGeneration):
 
         return self.__elements_convertor(result)
 
-    def __getstate__(self) -> Any:
-        # lxml don't like it :)
-        raise TypeError("Can't pickle Selector objects")
+    def to_state(self) -> Dict[str, Any]:
+        """Serialize this selector into explicit plain data for worker handoff.
+
+        The state records whether the source was an element/html selector or a
+        text-node selector. Adaptive storage is intentionally represented as
+        policy metadata only; restoring a state will not implicitly open/create
+        SQLite storage unless the caller opts in through ``from_state``.
+        """
+        kind = "text" if self._is_text_node(self._root) else "html"
+        content = str(self._root) if kind == "text" else str(self.html_content)
+        if len(content.encode(self.encoding, errors="ignore")) > _MAX_SELECTOR_STATE_BYTES:
+            log.warning("Serialized selector state is larger than %d bytes", _MAX_SELECTOR_STATE_BYTES)
+        return {
+            "version": 2,
+            "kind": kind,
+            "content": content,
+            "url": self.url,
+            "encoding": self.encoding,
+            "flags": {
+                "huge_tree": self.__huge_tree_enabled,
+                "keep_comments": self.__keep_comments,
+                "keep_cdata": self.__keep_cdata,
+            },
+            "adaptive": bool(self.__adaptive_enabled),
+            "storage_policy": "disabled_on_restore",
+        }
+
+    @classmethod
+    def from_state(
+        cls,
+        state: Dict[str, Any],
+        *,
+        restore_adaptive: bool = False,
+        storage: Any = SQLiteStorageSystem,
+        storage_args: Optional[Dict] = None,
+    ) -> "Selector":
+        """Restore a selector from :meth:`to_state` without lxml object pickling.
+
+        Adaptive storage is off by default to avoid hidden SQLite side effects
+        during unpickling/multiprocessing restore.
+        """
+        content = str(state.get("content", ""))
+        url = str(state.get("url") or "")
+        encoding = str(state.get("encoding") or "utf-8")
+        flags = state.get("flags") if isinstance(state.get("flags"), dict) else state
+        keep_comments = bool(flags.get("keep_comments", False))
+        keep_cdata = bool(flags.get("keep_cdata", False))
+        huge_tree = bool(flags.get("huge_tree", True))
+        if state.get("kind") == "text":
+            content = f'<span data-scrapling-state-kind="text">{html_escape(content)}</span>'
+        parser = HTMLParser(
+            recover=True,
+            remove_blank_text=True,
+            remove_comments=(not keep_comments),
+            encoding=encoding,
+            compact=True,
+            huge_tree=huge_tree,
+            default_doctype=True,
+            strip_cdata=(not keep_cdata),
+        )
+        root = html_fromstring(content or "<html/>", parser=parser, base_url=url or "")
+        return cls(
+            root=cast(HtmlElement, root),
+            url=url,
+            encoding=encoding,
+            huge_tree=huge_tree,
+            keep_comments=keep_comments,
+            keep_cdata=keep_cdata,
+            adaptive=bool(state.get("adaptive", False)) if restore_adaptive else False,
+            storage=storage,
+            storage_args=storage_args,
+        )
+
+    def __getstate__(self) -> Dict[str, Any]:
+        return self.to_state()
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        restored = self.from_state(state)
+        self.url = restored.url
+        self.encoding = restored.encoding
+        self.__adaptive_enabled = restored.__adaptive_enabled
+        self._root = restored._root
+        self._storage = restored._storage
+        self.__keep_comments = restored.__keep_comments
+        self.__huge_tree_enabled = restored.__huge_tree_enabled
+        self.__attributes = restored.__attributes
+        self.__text = restored.__text
+        self.__tag = restored.__tag
+        self.__keep_cdata = restored.__keep_cdata
+        self._raw_body = restored._raw_body
 
     # The following four properties I made them into functions instead of variables directly
     # So they don't slow down the process of initializing many instances of the class and gets executed only
@@ -539,10 +642,11 @@ class Selector(SelectorsGeneration):
         if issubclass(type(element), HtmlElement):
             element = _StorageTools.element_to_dict(element)
 
+        original_tag = cast(Dict, element).get("tag")
         for node in cast(List, _find_all_elements(self._root)):
-            # Collect all elements in the page, then for each element get the matching score of it against the node.
-            # Hence: the code doesn't stop even if the score was 100%
-            # because there might be another element(s) left in page with the same score
+            # Cheap tag pre-filter avoids constructing full candidate dicts for unrelated nodes.
+            if original_tag and getattr(node, "tag", None) != original_tag:
+                continue
             score = self.__calculate_similarity_score(cast(Dict, element), node)
             score_table.setdefault(score, []).append(node)
 
@@ -757,35 +861,51 @@ class Selector(SelectorsGeneration):
             attribute_name = _whitelisted.get(attribute_name, attribute_name)
             attributes[attribute_name] = value
 
-        # It's easier and faster to build a selector than traversing the tree
+        # Prefer an XPath exact-match builder for simple tag/attribute names. Attribute values are
+        # bound as XPath variables instead of being interpolated into CSS selector strings.
         tags = tags or set("*")
-        for tag in tags:
-            selector = tag
-            for key, value in attributes.items():
-                value = value.replace('"', r"\"")  # Escape double quotes in user input
-                # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
-                selector += '[{}="{}"]'.format(key, value)
-            if selector != "*":
-                selectors.append(selector)
-
-        if selectors:
-            results = cast(Selectors, self.css(", ".join(selectors)))
-            if results:
-                # From the results, get the ones that fulfill passed regex patterns
-                for pattern in patterns:
-                    results = results.filter(lambda e: e.text.re(pattern, check_match=True))
-
-                # From the results, get the ones that fulfill passed functions
-                for function in functions:
-                    results = results.filter(function)
+        if attributes and _can_build_safe_find_all_xpath(tags, attributes):
+            variables: Dict[str, str] = {}
+            predicates = []
+            for index, (key, value) in enumerate(attributes.items()):
+                variable = f"v{index}"
+                variables[variable] = value
+                predicates.append(f"@{key}=${variable}")
+            predicate = "".join(f"[{part}]" for part in predicates)
+            selector = " | ".join(f".//{tag}{predicate}" for tag in tags)
+            results = self.xpath(selector, **variables)
         else:
-            results = results or self.below_elements
+            # Legacy CSS mode is retained for advanced selectors/operators such as {"href*": "/p/"}
+            # or tag filters like "div.card". Values are escaped defensively; keys remain explicit user
+            # selector syntax by design.
+            if attributes and not _can_build_safe_find_all_xpath(tags, attributes):
+                log.warning(
+                    "find_all() is using legacy CSS selector construction for advanced tag/attribute syntax. "
+                    "Use simple tag and attribute names for XPath-variable escaping."
+                )
+            for tag in tags:
+                selector = tag
+                for key, value in attributes.items():
+                    value = value.replace("\\", "\\\\").replace('"', r"\"").replace("\n", r"\a ").replace("\r", "")
+                    selector += '[{}="{}"]'.format(key, value)
+                if selector != "*":
+                    selectors.append(selector)
+
+            if selectors:
+                results = cast(Selectors, self.css(", ".join(selectors)))
+            else:
+                results = results or self.below_elements
+
+        if results:
+            # From the results, get the ones that fulfill passed regex patterns
             for pattern in patterns:
                 results = results.filter(lambda e: e.text.re(pattern, check_match=True))
 
-            # Collect an element if it fulfills the passed function otherwise
+            # From the results, get the ones that fulfill passed functions
             for function in functions:
                 results = results.filter(function)
+        else:
+            results = results or Selectors()
 
         return results
 
@@ -860,9 +980,6 @@ class Selector(SelectorsGeneration):
                         data.get("parent_text") or "",
                     ).ratio()
                     checks += 1
-            # else:
-            #     # The original element has a parent and this one not, this is not a good sign
-            #     score -= 0.1
 
         if original.get("siblings"):
             score += SequenceMatcher(None, original["siblings"], data.get("siblings") or []).ratio()
@@ -1079,7 +1196,7 @@ class Selector(SelectorsGeneration):
         partial: bool = ...,
         case_sensitive: bool = ...,
         clean_match: bool = ...,
-    ) -> "Selector": ...
+    ) -> Optional["Selector"]: ...
 
     @overload
     def find_by_text(
@@ -1098,7 +1215,7 @@ class Selector(SelectorsGeneration):
         partial: bool = False,
         case_sensitive: bool = False,
         clean_match: bool = True,
-    ) -> Union["Selectors", "Selector"]:
+    ) -> Union["Selectors", "Selector", None]:
         """Find elements that its text content fully/partially matches input.
         :param text: Text query to match
         :param first_match: Returns the first element that matches conditions, enabled by default
@@ -1107,7 +1224,7 @@ class Selector(SelectorsGeneration):
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
         """
         if self._is_text_node(self._root):
-            return Selectors()
+            return None if first_match else Selectors()
 
         results = Selectors()
         if not case_sensitive:
@@ -1134,9 +1251,8 @@ class Selector(SelectorsGeneration):
                     # we got an element so we should stop
                     break
 
-            if first_match:
-                if results:
-                    return results[0]
+        if first_match:
+            return results[0] if results else None
         return results
 
     @overload
@@ -1146,7 +1262,7 @@ class Selector(SelectorsGeneration):
         first_match: Literal[True] = ...,
         case_sensitive: bool = ...,
         clean_match: bool = ...,
-    ) -> "Selector": ...
+    ) -> Optional["Selector"]: ...
 
     @overload
     def find_by_regex(
@@ -1163,7 +1279,7 @@ class Selector(SelectorsGeneration):
         first_match: bool = True,
         case_sensitive: bool = False,
         clean_match: bool = True,
-    ) -> Union["Selectors", "Selector"]:
+    ) -> Union["Selectors", "Selector", None]:
         """Find elements that its text content matches the input regex pattern.
         :param query: Regex query/pattern to match
         :param first_match: Return the first element that matches conditions; enabled by default.
@@ -1171,7 +1287,7 @@ class Selector(SelectorsGeneration):
         :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching.
         """
         if self._is_text_node(self._root):
-            return Selectors()
+            return None if first_match else Selectors()
 
         results = Selectors()
 
@@ -1192,8 +1308,8 @@ class Selector(SelectorsGeneration):
                     # we got an element so we should stop
                     break
 
-            if results and first_match:
-                return results[0]
+        if first_match:
+            return results[0] if results else None
         return results
 
 
@@ -1371,9 +1487,21 @@ class Selectors(List[Selector]):
         """Returns the length of the current list"""
         return len(self)
 
-    def __getstate__(self) -> Any:  # pragma: no cover
-        # lxml don't like it :)
-        raise TypeError("Can't pickle Selectors object")
+    def to_state(self) -> Dict[str, Any]:
+        """Serialize all selector items into plain data."""
+        return {"version": 1, "items": [selector.to_state() for selector in self]}
+
+    @classmethod
+    def from_state(cls, state: Dict[str, Any]) -> "Selectors":
+        """Restore a selector list from :meth:`to_state`."""
+        return cls(Selector.from_state(item) for item in state.get("items", []))
+
+    def __getstate__(self) -> Dict[str, Any]:
+        return self.to_state()
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        self.clear()
+        self.extend(self.from_state(state))
 
 
 # For backward compatibility
