@@ -1,8 +1,12 @@
 import pytest
+from pathlib import Path
+
 from scrapling.engines._browsers._validators import (
     validate,
     StealthConfig,
     PlaywrightConfig,
+    validate_fetch,
+    _is_invalid_file_path,
 )
 
 
@@ -99,3 +103,30 @@ class TestValidators:
         config = validate(params, StealthConfig)
 
         assert config.blocked_domains == {"ads.example.com"}
+
+
+class TestValidatorRegressionCoverage:
+    def test_file_path_validation_is_not_stale_cached(self, tmp_path):
+        path = tmp_path / "init.js"
+        missing_msg = _is_invalid_file_path(str(path))
+        assert missing_msg
+        path.write_text("// init", encoding="utf-8")
+        assert _is_invalid_file_path(str(path)) is False
+
+    def test_validate_fetch_merges_session_defaults_and_overrides(self):
+        class Session:
+            _config = validate({"timeout": 1000, "wait": 0, "network_idle": False}, PlaywrightConfig)
+
+        params = validate_fetch({"timeout": 2000, "network_idle": True}, Session(), PlaywrightConfig)
+        assert params.timeout == 2000
+        assert params.network_idle is True
+        assert params.wait == 0
+
+    def test_stealth_proxy_auto_enables_webrtc_protections(self):
+        config = validate({"proxy": "http://proxy.example:8080"}, StealthConfig)
+        assert config.block_webrtc is True
+        assert config.dns_over_https is True
+
+    def test_stealth_explicit_webrtc_override_is_preserved(self):
+        config = validate({"proxy": "http://proxy.example:8080", "block_webrtc": False}, StealthConfig)
+        assert config.block_webrtc is False
