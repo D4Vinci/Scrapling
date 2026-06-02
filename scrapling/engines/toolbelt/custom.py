@@ -71,7 +71,7 @@ class Response(Selector):
             **selector_config,
         )
         # For easier debugging while working from a Python shell
-        log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
+        log.debug(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
 
         if meta and not isinstance(meta, dict):
             raise TypeError(f"Response meta should be dictionary but got {type(meta).__name__} instead!")
@@ -174,9 +174,10 @@ class BaseFetcher:
             args_str += ", "
 
         log.warning(
-            f"This logic is deprecated now, and have no effect; It will be removed with v0.3. Use `{self.__class__.__name__}.configure({args_str}{kwargs_str})` instead before fetching"
+            f"Constructor parser options are ignored for `{self.__class__.__name__}`. "
+            f"Use `{self.__class__.__name__}.configure({args_str}{kwargs_str})` for global defaults "
+            f"or `{self.__class__.__name__}.with_options({args_str}{kwargs_str})` for isolated configuration."
         )
-        pass
 
     @classmethod
     def display_config(cls):
@@ -191,24 +192,32 @@ class BaseFetcher:
         )
 
     @classmethod
-    def configure(cls, **kwargs):
-        """Set multiple arguments for the parser at once globally
-
-        :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, keep_cdata, adaptive, storage, storage_args, adaptive_domain
-        """
+    def _validate_parser_options(cls, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        if not kwargs:
+            raise AttributeError(f"You must pass a keyword, current keywords: {cls.parser_keywords}?")
+        validated: Dict[str, Any] = {}
         for key, value in kwargs.items():
             key = key.strip().lower()
-            if hasattr(cls, key):
-                if key in cls.parser_keywords:
-                    setattr(cls, key, value)
-                else:
-                    # Yup, no fun allowed LOL
-                    raise AttributeError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
-            else:
+            if key not in cls.parser_keywords:
                 raise ValueError(f'Unknown parser argument: "{key}"; maybe you meant {cls.parser_keywords}?')
+            validated[key] = value
+        return validated
 
-        if not kwargs:
-            raise AttributeError(f"You must pass a keyword to configure, current keywords: {cls.parser_keywords}?")
+    @classmethod
+    def with_options(cls, **kwargs):
+        """Return an isolated configured fetcher subclass without mutating global class state."""
+        validated = cls._validate_parser_options(kwargs)
+        attrs = {key: getattr(cls, key) for key in cls.parser_keywords}
+        attrs.update(validated)
+        return type(f"{cls.__name__}Configured", (cls,), attrs)
+
+    @classmethod
+    def configure(cls, **kwargs):
+        """Set parser arguments globally. Prefer ``with_options`` for isolated configuration."""
+        validated = cls._validate_parser_options(kwargs)
+        log.warning("%s.configure(...) mutates global class state; prefer %s.with_options(...) for isolated use.", cls.__name__, cls.__name__)
+        for key, value in validated.items():
+            setattr(cls, key, value)
 
     @classmethod
     def _generate_parser_arguments(cls) -> Dict:
