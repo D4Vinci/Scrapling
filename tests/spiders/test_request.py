@@ -285,7 +285,7 @@ class TestRequestPickling:
         assert restored.callback is None
 
     def test_pickle_with_callback_stores_name(self):
-        """Test that callback name is stored when pickling."""
+        """Test that callback identity is stored when pickling."""
 
         async def parse_page(response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
             yield {"data": "test"}
@@ -295,6 +295,13 @@ class TestRequestPickling:
         # Check getstate stores callback name
         state = original.__getstate__()
         assert state["_callback_name"] == "parse_page"
+        assert state["_callback_identity"] == {
+            "name": "parse_page",
+            "qualname": parse_page.__qualname__,
+            "module": parse_page.__module__,
+            "owner_class": None,
+            "owner_module": None,
+        }
         assert state["callback"] is None
 
     def test_pickle_with_none_callback(self):
@@ -303,11 +310,19 @@ class TestRequestPickling:
 
         state = original.__getstate__()
         assert state["_callback_name"] is None
+        assert state["_callback_identity"] is None
         assert state["callback"] is None
 
-    def test_setstate_stores_callback_name(self):
-        """Test that setstate correctly handles callback name."""
+    def test_setstate_stores_callback_identity(self):
+        """Test that setstate correctly handles callback identity."""
         request = Request("https://example.com")
+        callback_identity = {
+            "name": "custom_parse",
+            "qualname": "MockSpider.custom_parse",
+            "module": "tests.spiders.test_request",
+            "owner_class": "MockSpider",
+            "owner_module": "tests.spiders.test_request",
+        }
         state = {
             "url": "https://example.com",
             "sid": "",
@@ -318,12 +333,15 @@ class TestRequestPickling:
             "_retry_count": 0,
             "_session_kwargs": {},
             "_callback_name": "custom_parse",
+            "_callback_identity": callback_identity,
         }
 
         request.__setstate__(state)
 
         assert hasattr(request, "_callback_name")
         assert request._callback_name == "custom_parse"
+        assert hasattr(request, "_callback_identity")
+        assert request._callback_identity == callback_identity
 
     def test_pickle_roundtrip_preserves_session_kwargs(self):
         """Test that session kwargs are preserved through pickle."""
@@ -360,14 +378,22 @@ class TestRequestRestoreCallback:
         spider = MockSpider()
         request = Request("https://example.com")
         request._callback_name = "parse_detail"
+        request._callback_identity = {
+            "name": "parse_detail",
+            "qualname": "TestRequestRestoreCallback.test_restore_callback_from_spider.<locals>.MockSpider.parse_detail",
+            "module": __name__,
+            "owner_class": "TestRequestRestoreCallback.test_restore_callback_from_spider.<locals>.MockSpider",
+            "owner_module": __name__,
+        }
 
         request._restore_callback(spider)  # type: ignore[arg-type]
 
         assert request.callback == spider.parse_detail
         assert not hasattr(request, "_callback_name")
+        assert not hasattr(request, "_callback_identity")
 
-    def test_restore_callback_falls_back_to_parse(self):
-        """Test that missing callback falls back to spider.parse."""
+    def test_restore_callback_raises_for_missing_callback(self):
+        """Test that missing callback is not silently restored to parse."""
 
         class MockSpider:
             async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
@@ -376,11 +402,39 @@ class TestRequestRestoreCallback:
         spider = MockSpider()
         request = Request("https://example.com")
         request._callback_name = "nonexistent_method"
+        request._callback_identity = {
+            "name": "nonexistent_method",
+            "qualname": "MockSpider.nonexistent_method",
+            "module": __name__,
+            "owner_class": "MockSpider",
+            "owner_module": __name__,
+        }
 
-        request._restore_callback(spider)  # type: ignore[arg-type]
+        with pytest.raises(AttributeError, match="Callback 'nonexistent_method' not found"):
+            request._restore_callback(spider)  # type: ignore[arg-type]
 
-        assert request.callback == spider.parse
-        assert not hasattr(request, "_callback_name")
+    def test_restore_callback_rejects_identity_mismatch(self):
+        """Test same callback name on a different spider class is rejected."""
+
+        class AdminSpider:
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+            async def parse_item(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield {"admin": True}
+
+        class PublicSpider:
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+            async def parse_item(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield {"public": True}
+
+        request = Request("https://example.com", callback=AdminSpider().parse_item)
+        restored = pickle.loads(pickle.dumps(request))
+
+        with pytest.raises(ValueError, match="does not match the checkpointed callback identity"):
+            restored._restore_callback(PublicSpider())  # type: ignore[arg-type]
 
     def test_restore_callback_with_none_name(self):
         """Test restore callback when _callback_name is None."""
@@ -392,11 +446,13 @@ class TestRequestRestoreCallback:
         spider = MockSpider()
         request = Request("https://example.com")
         request._callback_name = None
+        request._callback_identity = None
 
         request._restore_callback(spider)  # type: ignore[arg-type]
 
         # Should clean up _callback_name attribute
         assert not hasattr(request, "_callback_name")
+        assert not hasattr(request, "_callback_identity")
 
     def test_restore_callback_without_callback_name_attr(self):
         """Test restore callback when _callback_name attribute doesn't exist."""

@@ -612,6 +612,26 @@ class TestCheckpointMethods:
             assert checkpoint_path.exists()
 
     @pytest.mark.asyncio
+    async def test_restore_checkpoint_rejects_callback_identity_mismatch(self):
+        class AdminSpider(MockSpider):
+            async def parse_item(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield {"admin": True}
+
+        class PublicSpider(MockSpider):
+            async def parse_item(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield {"public": True}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            admin = AdminSpider()
+            engine = _make_engine(spider=admin, crawldir=tmpdir)
+            await engine.scheduler.enqueue(Request("https://example.com/admin", sid="default", callback=admin.parse_item))
+            await engine._save_checkpoint()
+
+            public_engine = _make_engine(spider=PublicSpider(), crawldir=tmpdir)
+            with pytest.raises(ValueError, match="does not match the checkpointed callback identity"):
+                await public_engine._restore_from_checkpoint()
+
+    @pytest.mark.asyncio
     async def test_restore_when_no_checkpoint_returns_false(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             engine = _make_engine(crawldir=tmpdir)

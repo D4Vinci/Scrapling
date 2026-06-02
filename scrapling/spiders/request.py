@@ -29,6 +29,21 @@ def _stable_value_repr(value: Any) -> str:
         return repr(value)
 
 
+def _callback_identity(callback: Callable | None) -> dict[str, str | None] | None:
+    if callback is None:
+        return None
+
+    owner = getattr(callback, "__self__", None)
+    owner_cls = owner.__class__ if owner is not None else None
+    return {
+        "name": getattr(callback, "__name__", None),
+        "qualname": getattr(callback, "__qualname__", None),
+        "module": getattr(callback, "__module__", None),
+        "owner_class": getattr(owner_cls, "__qualname__", None),
+        "owner_module": getattr(owner_cls, "__module__", None),
+    }
+
+
 class Request:
     def __init__(
         self,
@@ -151,15 +166,17 @@ class Request:
         return self._fp == other._fp
 
     def __getstate__(self) -> dict[str, Any]:
-        """Prepare state for pickling - store callback as name string for pickle compatibility."""
+        """Prepare state for pickling - store callback identity for safe restoration."""
         state = self.__dict__.copy()
         state["_callback_name"] = getattr(self.callback, "__name__", None) if self.callback is not None else None
+        state["_callback_identity"] = _callback_identity(self.callback)
         state["callback"] = None  # Don't pickle the actual callable
         return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore state from pickle - callback restored later via _restore_callback()."""
         self._callback_name: str | None = state.pop("_callback_name", None)
+        self._callback_identity: dict[str, str | None] | None = state.pop("_callback_identity", None)
         self.__dict__.update(state)
 
     def _restore_callback(self, spider: "Spider") -> None:
@@ -168,7 +185,22 @@ class Request:
         :param spider: Spider instance to look up callback method on
         """
         if hasattr(self, "_callback_name") and self._callback_name:
-            self.callback = getattr(spider, self._callback_name, None) or spider.parse
+            callback = getattr(spider, self._callback_name, None)
+            if callback is None:
+                raise AttributeError(f"Callback '{self._callback_name}' not found on {spider.__class__.__name__}")
+
+            expected_identity = getattr(self, "_callback_identity", None)
+            if expected_identity is None:
+                raise ValueError("Checkpoint is missing callback identity metadata")
+            if _callback_identity(callback) != expected_identity:
+                raise ValueError(
+                    f"Callback '{self._callback_name}' does not match the checkpointed callback identity"
+                )
+
+            self.callback = callback
             del self._callback_name
+            del self._callback_identity
         elif hasattr(self, "_callback_name"):
             del self._callback_name
+            if hasattr(self, "_callback_identity"):
+                del self._callback_identity
