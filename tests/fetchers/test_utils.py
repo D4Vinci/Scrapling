@@ -1,5 +1,6 @@
 import pytest
 
+from scrapling.engines.toolbelt.convertor import ResponseFactory
 from scrapling.engines.toolbelt.custom import StatusText, Response
 from scrapling.engines.toolbelt.navigation import (
     construct_proxy_dict,
@@ -137,6 +138,32 @@ def test_parsing_response_status(status_map):
 def test_unknown_status_code():
     """Test handling of an unknown status code"""
     assert StatusText.get(1000) == "Unknown Status Code"
+
+
+# The private classmethod is name-mangled; resolve it once for the tests below.
+_extract_encoding = getattr(ResponseFactory, "_ResponseFactory__extract_browser_encoding")
+
+
+def test_browser_encoding_unquoted_charset():
+    """A charset declared without quotes is returned verbatim."""
+    assert _extract_encoding("text/html; charset=utf-8") == "utf-8"
+    assert _extract_encoding("text/html; charset=ISO-8859-1") == "ISO-8859-1"
+    assert _extract_encoding("text/html;charset=windows-1252") == "windows-1252"
+
+
+def test_browser_encoding_quoted_charset():
+    """A quoted charset value (RFC 7231 allows quoting) is unwrapped, not dropped."""
+    assert _extract_encoding('text/html; charset="utf-8"') == "utf-8"
+    assert _extract_encoding('text/html; charset="ISO-8859-1"') == "ISO-8859-1"
+    assert _extract_encoding("text/html; charset='Shift_JIS'") == "Shift_JIS"
+    assert _extract_encoding('text/plain; charset="windows-1252"; boundary=x') == "windows-1252"
+
+
+def test_browser_encoding_defaults_when_missing():
+    """Fall back to the default when no charset is present or the header is empty."""
+    assert _extract_encoding("text/html") == "utf-8"
+    assert _extract_encoding("") == "utf-8"
+    assert _extract_encoding(None) == "utf-8"
 
 
 class TestConstructProxyDict:
