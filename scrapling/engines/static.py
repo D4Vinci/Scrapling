@@ -4,7 +4,7 @@ from time import sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
 from curl_cffi.curl import CurlError
-from curl_cffi import CurlHttpVersion
+from curl_cffi import CurlFollow, CurlHttpVersion
 from curl_cffi.requests import (
     BrowserTypeLiteral,
     Session as CurlSession,
@@ -30,6 +30,30 @@ from ._browsers._types import RequestsSession, GetRequestParams, DataRequestPara
 from .toolbelt.fingerprints import generate_headers, __default_useragent__
 
 _NO_SESSION: Any = object()
+
+# Maps Scrapling's ` FollowRedirects ` string modes to the ` CurlFollow ` enum
+# that ` curl_cffi ` consumes. curl_cffi turns ` allow_redirects ` into a curl
+# option via ` int(allow_redirects) `, so forwarding a raw string such as "all"
+# raises ` ValueError: invalid literal for int() ` (issue #336). Resolving the
+# string here keeps us robust across curl_cffi versions instead of relying on
+# its internal "safe"-only special case.
+_FOLLOW_REDIRECTS_MAP: Dict[str, CurlFollow] = {
+    "safe": CurlFollow.SAFE,
+    "all": CurlFollow.ALL,
+    "obeycode": CurlFollow.OBEYCODE,
+    "firstonly": CurlFollow.FIRSTONLY,
+}
+
+
+def _resolve_follow_redirects(follow_redirects: Any) -> Any:
+    """Resolve a ` FollowRedirects ` value to something curl_cffi accepts.
+
+    String modes are mapped to their ` CurlFollow ` member; booleans and any
+    already-resolved ` CurlFollow ` values are passed through unchanged.
+    """
+    if isinstance(follow_redirects, str):
+        return _FOLLOW_REDIRECTS_MAP.get(follow_redirects, CurlFollow.SAFE)
+    return follow_redirects
 
 
 def _select_random_browser(impersonate: ImpersonateType) -> Optional[BrowserTypeLiteral]:
@@ -121,7 +145,9 @@ class _ConfigurationLogic(ABC):
             "proxy": self._get_param(method_kwargs, "proxy", self._default_proxy),
             "proxy_auth": self._get_param(method_kwargs, "proxy_auth", self._default_proxy_auth),
             "timeout": self._get_param(method_kwargs, "timeout", self._default_timeout),
-            "allow_redirects": self._get_param(method_kwargs, "follow_redirects", self._default_follow_redirects),
+            "allow_redirects": _resolve_follow_redirects(
+                self._get_param(method_kwargs, "follow_redirects", self._default_follow_redirects)
+            ),
             "max_redirects": self._get_param(method_kwargs, "max_redirects", self._default_max_redirects),
             "verify": self._get_param(method_kwargs, "verify", self._default_verify),
             "cert": self._get_param(method_kwargs, "cert", self._default_cert),
