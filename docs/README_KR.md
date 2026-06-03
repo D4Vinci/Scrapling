@@ -185,7 +185,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a>는 IP당 $0.015 또는 GB당 $0.68의 저렴한 가격부터 시작하는 주거용 프록시를 제공합니다. 90개국 이상에서 2천만 개 이상의 IP를 보유하고 있으며, 고정 또는 회전 세션을 데스크톱이나 모바일 앱에서 관리할 수 있습니다.
+    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a>는 IP당 $0.018 또는 GB당 $0.68의 저렴한 가격부터 시작하는 주거용 프록시를 제공합니다. 90개국 이상에서 2천만 개 이상의 IP를 보유하고 있으며, 고정 또는 회전 세션을 데스크톱이나 모바일 앱에서 관리할 수 있습니다.
     </td>
   </tr>
   <tr>

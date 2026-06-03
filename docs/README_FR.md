@@ -185,7 +185,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> propose des proxys résidentiels à partir de seulement 0,015 $/IP ou 0,68 $/Go. Plus de 20 millions d'IPs dans plus de 90 pays. Sessions fixes ou rotatives, gérées depuis l'application de bureau ou mobile.
+    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> propose des proxys résidentiels à partir de seulement 0,018 $/IP ou 0,68 $/Go. Plus de 20 millions d'IPs dans plus de 90 pays. Sessions fixes ou rotatives, gérées depuis l'application de bureau ou mobile.
     </td>
   </tr>
   <tr>

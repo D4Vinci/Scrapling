@@ -185,7 +185,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    يوفر <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> بروكسيات سكنية بدءًا من 0.015 دولار فقط لكل IP أو 0.68 دولار لكل جيجابايت. أكثر من 20 مليون عنوان IP في أكثر من 90 دولة. جلسات ثابتة أو متناوبة، تتم إدارتها من تطبيق سطح المكتب أو الجوال.
+    يوفر <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> بروكسيات سكنية بدءًا من 0.018 دولار فقط لكل IP أو 0.68 دولار لكل جيجابايت. أكثر من 20 مليون عنوان IP في أكثر من 90 دولة. جلسات ثابتة أو متناوبة، تتم إدارتها من تطبيق سطح المكتب أو الجوال.
     </td>
   </tr>
   <tr>

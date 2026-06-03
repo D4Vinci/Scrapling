@@ -185,7 +185,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> はIPあたり $0.015 またはGBあたり $0.68 からの住宅用プロキシを提供します。90カ国以上で2,000万以上のIPを保有。固定セッションまたはローテーションセッションをデスクトップまたはモバイルアプリで管理できます。
+    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> はIPあたり $0.018 またはGBあたり $0.68 からの住宅用プロキシを提供します。90カ国以上で2,000万以上のIPを保有。固定セッションまたはローテーションセッションをデスクトップまたはモバイルアプリで管理できます。
     </td>
   </tr>
   <tr>

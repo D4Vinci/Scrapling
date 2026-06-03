@@ -188,7 +188,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> предоставляет резидентные прокси всего от $0,015 за IP или $0,68 за ГБ. Более 20 млн IP в 90+ странах. Закреплённые или ротационные сессии, управление через настольное или мобильное приложение.
+    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> предоставляет резидентные прокси всего от $0,018 за IP или $0,68 за ГБ. Более 20 млн IP в 90+ странах. Закреплённые или ротационные сессии, управление через настольное или мобильное приложение.
     </td>
   </tr>
   <tr>

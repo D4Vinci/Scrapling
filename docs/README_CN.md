@@ -185,7 +185,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> 提供住宅代理，价格低至每个 IP 仅 $0.015 或每 GB $0.68。覆盖 90+ 国家/地区的 2000 万+ IP。支持固定或轮换会话，可通过桌面或移动应用进行管理。
+    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> 提供住宅代理，价格低至每个 IP 仅 $0.018 或每 GB $0.68。覆盖 90+ 国家/地区的 2000 万+ IP。支持固定或轮换会话，可通过桌面或移动应用进行管理。
     </td>
   </tr>
   <tr>
