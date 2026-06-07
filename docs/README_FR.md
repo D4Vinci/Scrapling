@@ -139,16 +139,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> fournit des proxies résidentiels et ISP rapides pour les développeurs et les scrapeurs. Couverture IP mondiale, anonymat élevé, rotation intelligente et performances fiables pour l'automatisation et l'extraction de données. Utilisez <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> pour simplifier le crawling web à grande échelle.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
       </a>
@@ -185,7 +175,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> propose des proxys résidentiels à partir de seulement 0,015 $/IP ou 0,68 $/Go. Plus de 20 millions d'IPs dans plus de 90 pays. Sessions fixes ou rotatives, gérées depuis l'application de bureau ou mobile.
+    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> propose des proxys résidentiels à partir de seulement 0,018 $/IP ou 0,68 $/Go. Plus de 20 millions d'IPs dans plus de 90 pays. Sessions fixes ou rotatives, gérées depuis l'application de bureau ou mobile.
     </td>
   </tr>
   <tr>

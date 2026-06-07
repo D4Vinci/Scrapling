@@ -139,16 +139,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> يوفر بروكسيات سكنية و ISP سريعة للمطورين والسكرابرز. تغطية IP عالمية، إخفاء هوية عالي، تدوير ذكي، وأداء موثوق للأتمتة واستخراج البيانات. استخدم <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> لتبسيط زحف الويب على نطاق واسع.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
       </a>
@@ -185,7 +175,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    يوفر <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> بروكسيات سكنية بدءًا من 0.015 دولار فقط لكل IP أو 0.68 دولار لكل جيجابايت. أكثر من 20 مليون عنوان IP في أكثر من 90 دولة. جلسات ثابتة أو متناوبة، تتم إدارتها من تطبيق سطح المكتب أو الجوال.
+    يوفر <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> بروكسيات سكنية بدءًا من 0.018 دولار فقط لكل IP أو 0.68 دولار لكل جيجابايت. أكثر من 20 مليون عنوان IP في أكثر من 90 دولة. جلسات ثابتة أو متناوبة، تتم إدارتها من تطبيق سطح المكتب أو الجوال.
     </td>
   </tr>
   <tr>
