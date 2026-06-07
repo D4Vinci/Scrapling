@@ -139,16 +139,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a>는 개발자와 스크레이퍼를 위한 빠른 레지덴셜 및 ISP 프록시를 제공합니다. 글로벌 IP 커버리지, 높은 익명성, 스마트 로테이션, 자동화와 데이터 추출을 위한 안정적인 성능. <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a>로 대규모 웹 크롤링을 간소화하세요.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
       </a>
@@ -185,7 +175,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a>는 IP당 $0.015 또는 GB당 $0.68의 저렴한 가격부터 시작하는 주거용 프록시를 제공합니다. 90개국 이상에서 2천만 개 이상의 IP를 보유하고 있으며, 고정 또는 회전 세션을 데스크톱이나 모바일 앱에서 관리할 수 있습니다.
+    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a>는 IP당 $0.018 또는 GB당 $0.68의 저렴한 가격부터 시작하는 주거용 프록시를 제공합니다. 90개국 이상에서 2천만 개 이상의 IP를 보유하고 있으며, 고정 또는 회전 세션을 데스크톱이나 모바일 앱에서 관리할 수 있습니다.
     </td>
   </tr>
   <tr>
@@ -477,7 +467,8 @@ Scrapling은 Python 3.10 이상이 필요합니다:
 pip install scrapling
 ```
 
-이 설치에는 파서 엔진과 의존성만 포함되며, Fetcher나 커맨드라인 의존성은 포함되지 않습니다.
+> [!IMPORTANT]
+> 이 설치에는 파서 엔진과 의존성만 포함되며, Fetcher나 커맨드라인 의존성은 포함되지 않습니다. 따라서 이 설치만으로는 위 예제처럼 `scrapling.fetchers`나 `scrapling.spiders`에서 무언가를 임포트하면 `ModuleNotFoundError`가 발생합니다. Fetcher나 Spider를 사용하려면 아래와 같이 먼저 Fetcher 의존성을 설치하세요.
 
 ### 선택적 의존성
 

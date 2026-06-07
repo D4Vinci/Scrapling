@@ -50,6 +50,27 @@ class TestResponseCacheManager:
             assert dict(restored.request_headers) == dict(original.request_headers)
 
     @pytest.mark.anyio
+    async def test_put_overwrites_existing_entry(self):
+        """Re-caching the same fingerprint must replace the stored response.
+
+        Regression test for a Windows-only failure: ``Path.rename`` cannot
+        overwrite an existing destination on Windows (raising ``WinError 183``),
+        so the second ``put`` was caught by the error handler, the temp file was
+        removed, and ``get`` kept returning the stale body. ``Path.replace``
+        overwrites atomically on every platform.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache = ResponseCacheManager(tmpdir)
+            fp = b"\x05" * 20
+
+            await cache.put(fp, _make_response(body=b"<html>first</html>"), "GET")
+            await cache.put(fp, _make_response(body=b"<html>second</html>"), "GET")
+
+            restored = await cache.get(fp)
+            assert restored is not None
+            assert restored.body == b"<html>second</html>"
+
+    @pytest.mark.anyio
     async def test_get_cache_miss(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = ResponseCacheManager(tmpdir)
