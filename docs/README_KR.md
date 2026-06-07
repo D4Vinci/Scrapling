@@ -467,7 +467,8 @@ Scrapling은 Python 3.10 이상이 필요합니다:
 pip install scrapling
 ```
 
-이 설치에는 파서 엔진과 의존성만 포함되며, Fetcher나 커맨드라인 의존성은 포함되지 않습니다.
+> [!IMPORTANT]
+> 이 설치에는 파서 엔진과 의존성만 포함되며, Fetcher나 커맨드라인 의존성은 포함되지 않습니다. 따라서 이 설치만으로는 위 예제처럼 `scrapling.fetchers`나 `scrapling.spiders`에서 무언가를 임포트하면 `ModuleNotFoundError`가 발생합니다. Fetcher나 Spider를 사용하려면 아래와 같이 먼저 Fetcher 의존성을 설치하세요.
 
 ### 선택적 의존성
 

@@ -467,7 +467,8 @@ Scrapling 需要 Python 3.10 或更高版本：
 pip install scrapling
 ```
 
-此安装仅包括解析器引擎及其依赖项，没有任何 Fetcher 或命令行依赖项。
+> [!IMPORTANT]
+> 此安装仅包括解析器引擎及其依赖项，没有任何 Fetcher 或命令行依赖项。 因此，仅使用此安装时，像上面的示例那样从 `scrapling.fetchers` 或 `scrapling.spiders` 导入任何内容都会引发 `ModuleNotFoundError`。如果要使用任何 Fetcher 或 Spider，请先按照下面的说明安装 Fetcher 的依赖项。
 
 ### 可选依赖项
 
