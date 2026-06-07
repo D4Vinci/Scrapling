@@ -208,7 +208,7 @@ Docker alternative:
 
 ```bash
 docker pull pyd4vinci/scrapling
-docker run -i --rm scrapling mcp
+docker run -i --rm pyd4vinci/scrapling mcp
 ```
 
 The MCP server name when registering with a client is `ScraplingServer`. The command is the path to the `scrapling` binary and the argument is `mcp`.

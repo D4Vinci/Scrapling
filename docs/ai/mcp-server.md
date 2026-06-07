@@ -129,7 +129,7 @@ If you are using the Docker image, then it would be something like
     "ScraplingServer": {
       "command": "docker",
       "args": [
-        "run", "-i", "--rm", "scrapling", "mcp"
+        "run", "-i", "--rm", "pyd4vinci/scrapling", "mcp"
       ]
     }
   }
