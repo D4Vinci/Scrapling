@@ -19,6 +19,7 @@ from scrapling.core._types import (
     Unpack,
     Optional,
     Awaitable,
+    ProxyType,
     SUPPORTED_HTTP_METHODS,
     FollowRedirects,
 )
@@ -244,10 +245,11 @@ class _SyncSessionLogic(_ConfigurationLogic):
 
         try:
             for attempt in range(max_retries):
+                proxy: Optional[ProxyType]
                 if self._proxy_rotator and static_proxy is None:
                     proxy = self._proxy_rotator.get_proxy()
                 else:
-                    proxy = static_proxy
+                    proxy = static_proxy or self._default_proxy
 
                 request_args = self._merge_request_args(stealth=stealth, proxy=proxy, **kwargs)
                 try:
@@ -461,10 +463,11 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         try:
             # Determine if we should use proxy rotation
             for attempt in range(max_retries):
+                proxy: Optional[ProxyType]
                 if self._proxy_rotator and static_proxy is None:
                     proxy = self._proxy_rotator.get_proxy()
                 else:
-                    proxy = static_proxy
+                    proxy = static_proxy or self._default_proxy
 
                 request_args = self._merge_request_args(stealth=stealth, proxy=proxy, **kwargs)
                 try:
