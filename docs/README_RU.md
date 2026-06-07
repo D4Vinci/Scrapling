@@ -142,16 +142,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank" title="Scalable Web Data Access for AI Applications">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/nsocks.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://www.nsocks.com/?keyword=2p67aivg" target="_blank">Nsocks</a> предоставляет быстрые резидентные и ISP прокси для разработчиков и скраперов. Глобальное покрытие IP, высокая анонимность, умная ротация и надёжная производительность для автоматизации и извлечения данных. Используйте <a href="https://www.xcrawl.com/?keyword=2p67aivg" target="_blank">Xcrawl</a> для упрощения масштабного веб-краулинга.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
       </a>
@@ -188,7 +178,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> предоставляет резидентные прокси всего от $0,015 за IP или $0,68 за ГБ. Более 20 млн IP в 90+ странах. Закреплённые или ротационные сессии, управление через настольное или мобильное приложение.
+    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> предоставляет резидентные прокси всего от $0,018 за IP или $0,68 за ГБ. Более 20 млн IP в 90+ странах. Закреплённые или ротационные сессии, управление через настольное или мобильное приложение.
     </td>
   </tr>
   <tr>
