@@ -671,7 +671,7 @@ class Selector(SelectorsGeneration):
                     element_data = self.retrieve(identifier or selector)
                     if element_data:
                         elements = self.relocate(element_data, percentage)
-                        if elements is not None and auto_save:
+                        if elements and auto_save:
                             self.save(elements[0], identifier or selector)
 
                 return self.__handle_elements(elements)
