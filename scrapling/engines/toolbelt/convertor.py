@@ -10,7 +10,7 @@ from scrapling.core.utils import log
 from .custom import Response, StatusText
 from scrapling.core._types import Dict, List, Optional
 
-__CHARSET_RE__ = re_compile(r"charset=([\w-]+)")
+__CHARSET_RE__ = re_compile(r"""charset=["']?([\w-]+)""")
 
 
 class ResponseFactory:
