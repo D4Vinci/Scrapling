@@ -991,7 +991,9 @@ class Selector(SelectorsGeneration):
                 SequenceMatcher(None, v, candidate_attributes.get(k, "")).ratio()
                 for k, v in original_attributes.items()
             )
-            checks += len(candidate_attributes)
+            # Using `max` so candidates with extra attributes are penalized and candidates
+            # with fewer attributes don't get inflated scores from a smaller denominator
+            checks += max(len(original_attributes), len(candidate_attributes))
         else:
             if not candidate_attributes:
                 # Both don't have attributes, this must mean something
