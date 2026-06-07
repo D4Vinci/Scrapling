@@ -64,7 +64,7 @@ class ResponseCacheManager:
             async with await anyio.open_file(temp_path, "wb") as f:
                 await f.write(serialized)
 
-            await temp_path.rename(self._cache_path(fingerprint))
+            await temp_path.replace(self._cache_path(fingerprint))
         except Exception as e:
             if await temp_path.exists():
                 await temp_path.unlink()
