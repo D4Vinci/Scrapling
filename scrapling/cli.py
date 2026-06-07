@@ -2,6 +2,7 @@ from pathlib import Path
 from subprocess import check_output
 from sys import executable as python_executable
 
+from scrapling import __version__
 from scrapling.core.utils import log
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.core.utils._shell import _CookieParser, _ParseHeaders
@@ -10,7 +11,7 @@ from scrapling.core._types import List, Optional, Dict, Tuple, Any, Callable
 from orjson import loads as json_loads, JSONDecodeError
 
 try:
-    from click import command, option, Choice, group, argument
+    from click import command, option, Choice, group, argument, version_option
 except (ImportError, ModuleNotFoundError) as e:
     raise ModuleNotFoundError(
         "You need to install scrapling with any of the extras to enable Shell commands. See: https://scrapling.readthedocs.io/en/latest/#installation"
@@ -650,6 +651,7 @@ def stealthy_fetch(
 
 
 @group()
+@version_option(version=__version__, prog_name="Scrapling")
 def main():
     pass
 
