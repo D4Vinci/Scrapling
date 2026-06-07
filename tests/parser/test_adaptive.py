@@ -56,6 +56,32 @@ class TestParserAdaptive:
         assert relocated[0].has_class("new-class")
         assert relocated[0].css(".new-description")[0].text == "Description 1"
 
+    def test_relocation_auto_save_no_match_above_threshold(self):
+        """Adaptive relocation with `auto_save=True` must not crash when no element
+        clears the `percentage` threshold (relocate() returns an empty list)."""
+        original_html = """
+                <div class="container">
+                    <article class="product" id="target">
+                        <h3>Widget</h3>
+                        <p class="desc">A widget</p>
+                    </article>
+                </div>
+                """
+        # Unrelated structure so nothing can match a high threshold
+        changed_html = "<html><body><span>totally unrelated content</span></body></html>"
+
+        old_page = Selector(original_html, url="example.com", adaptive=True)
+        new_page = Selector(changed_html, url="example.com", adaptive=True)
+
+        old_page.css("#target", identifier="target", auto_save=True)
+
+        # Before the fix this raised `IndexError: list index out of range` because the
+        # guard checked `elements is not None` but relocate() returns [] (never None).
+        result = new_page.css(
+            "#target", identifier="target", adaptive=True, auto_save=True, percentage=95
+        )
+        assert list(result) == []
+
     @pytest.mark.asyncio
     async def test_element_relocation_async(self):
         """Test relocating element after structure change in async mode"""

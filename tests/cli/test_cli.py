@@ -4,8 +4,9 @@ from unittest.mock import patch, MagicMock
 import pytest_httpbin
 
 from scrapling.parser import Selector
+from scrapling import __version__
 from scrapling.cli import (
-    shell, mcp, get, post, put, delete, fetch, stealthy_fetch
+    main, shell, mcp, get, post, put, delete, fetch, stealthy_fetch
 )
 
 
@@ -31,6 +32,12 @@ class TestCLI:
     @pytest.fixture
     def runner(self):
         return CliRunner()
+
+    def test_version_flag(self, runner):
+        """Test that the --version flag prints the Scrapling version and exits"""
+        result = runner.invoke(main, ['--version'])
+        assert result.exit_code == 0
+        assert result.output.strip() == f'Scrapling, version {__version__}'
 
     def test_shell_command(self, runner):
         """Test shell command"""

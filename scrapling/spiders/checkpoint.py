@@ -50,7 +50,7 @@ class CheckpointManager:
             async with await anyio.open_file(temp_path, "wb") as f:
                 await f.write(serialized)
 
-            await temp_path.rename(self._checkpoint_path)
+            await temp_path.replace(self._checkpoint_path)
 
             log.info(f"Checkpoint saved: {len(data.requests)} requests, {len(data.seen)} seen URLs")
         except Exception as e:

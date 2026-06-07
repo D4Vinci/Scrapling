@@ -50,7 +50,7 @@ The extract command is a set of simple terminal tools that:
     scrapling extract get "https://example.com" content.txt
   
     # Or use the Docker image with something like this:
-    docker run -v $(pwd)/output:/output scrapling extract get "https://blog.example.com" /output/article.md 
+    docker run -v $(pwd)/output:/output pyd4vinci/scrapling extract get "https://blog.example.com" /output/article.md 
     ```
 
 - **Extract Specific Content**

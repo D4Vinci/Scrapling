@@ -467,7 +467,8 @@ Scrapling erfordert Python 3.10 oder höher:
 pip install scrapling
 ```
 
-Diese Installation enthält nur die Parser-Engine und ihre Abhängigkeiten, ohne Fetcher oder Kommandozeilenabhängigkeiten.
+> [!IMPORTANT]
+> Diese Installation enthält nur die Parser-Engine und ihre Abhängigkeiten, ohne Fetcher oder Kommandozeilenabhängigkeiten. Daher führt der Import von allem aus `scrapling.fetchers` oder `scrapling.spiders`, wie in den Beispielen oben, mit dieser Installation allein zu einem `ModuleNotFoundError`. Wenn Sie einen der Fetcher oder Spider verwenden möchten, installieren Sie zuerst die Fetcher-Abhängigkeiten wie unten gezeigt.
 
 ### Optionale Abhängigkeiten
 

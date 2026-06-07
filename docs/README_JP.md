@@ -467,7 +467,8 @@ Scrapling には Python 3.10 以上が必要です：
 pip install scrapling
 ```
 
-このインストールにはパーサーエンジンとその依存関係のみが含まれており、Fetcher やコマンドライン依存関係は含まれていません。
+> [!IMPORTANT]
+> このインストールにはパーサーエンジンとその依存関係のみが含まれており、Fetcher やコマンドライン依存関係は含まれていません。 そのため、このインストールのみでは、上記の例のように `scrapling.fetchers` や `scrapling.spiders` から何かをインポートすると `ModuleNotFoundError` が発生します。Fetcher や Spider を使用する場合は、以下のように、まず Fetcher の依存関係をインストールしてください。
 
 ### オプションの依存関係
 

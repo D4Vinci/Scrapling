@@ -209,7 +209,7 @@ MySpider().start()
 
 <!-- /sponsors -->
 
-<i><sub>Do you want to show your ad here? Click [here](https://github.com/sponsors/D4Vinci) and choose the tier that suites you!</sub></i>
+<i><sub>Do you want to show your ad here? Click [here](https://github.com/sponsors/D4Vinci) and choose the tier that suits you!</sub></i>
 
 ---
 
@@ -471,7 +471,8 @@ Scrapling requires Python 3.10 or higher:
 pip install scrapling
 ```
 
-This installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies.
+> [!IMPORTANT]
+> This installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies. So importing anything from `scrapling.fetchers` or `scrapling.spiders`, like in the examples above, will raise `ModuleNotFoundError` with this installation alone. If you are going to use any of the fetchers or spiders, install the fetchers' dependencies first as shown below.
 
 ### Optional Dependencies
 
