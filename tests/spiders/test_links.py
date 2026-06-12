@@ -183,6 +183,30 @@ class TestExtensions:
         urls = LinkExtractor().extract(resp)
         assert urls == ["https://example.com/d"]
 
+    def test_default_deny_extensions_drops_tar_gz(self):
+        html = '<a href="/dataset.tar.gz">archive</a><a href="/d">ok</a>'
+        resp = _make_response(html)
+        urls = LinkExtractor().extract(resp)
+        assert urls == ["https://example.com/d"]
+
+    def test_default_deny_extensions_drops_tar_bz2(self):
+        html = '<a href="/dataset.tar.bz2">archive</a><a href="/d">ok</a>'
+        resp = _make_response(html)
+        urls = LinkExtractor().extract(resp)
+        assert urls == ["https://example.com/d"]
+
+    def test_custom_deny_extensions_drops_tar_gz(self):
+        html = '<a href="/dataset.tar.gz">archive</a><a href="/dataset.gz">gzip</a><a href="/d">ok</a>'
+        resp = _make_response(html)
+        urls = LinkExtractor(deny_extensions={"tar.gz"}).extract(resp)
+        assert urls == ["https://example.com/dataset.gz", "https://example.com/d"]
+
+    def test_default_deny_extensions_still_drops_zip(self):
+        html = '<a href="/file.zip">archive</a><a href="/d">ok</a>'
+        resp = _make_response(html)
+        urls = LinkExtractor().extract(resp)
+        assert urls == ["https://example.com/d"]
+
     def test_custom_deny_extensions_overrides_default(self):
         html = '<a href="/a.pdf">pdf</a><a href="/b.zip">zip</a>'
         resp = _make_response(html)
