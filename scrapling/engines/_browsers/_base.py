@@ -146,12 +146,6 @@ class SyncSession:
         if network_idle:
             self._wait_for_networkidle(page)
 
-    def _replay_init_script_for_page_action(self, page: Page) -> None:
-        if self._config.init_script:
-            # Make init_script globals visible to the automation execution context.
-            with open(self._config.init_script, encoding="utf-8") as script_file:
-                page.evaluate(script_file.read())
-
     @staticmethod
     def _create_response_handler(
         page_info: PageInfo[Page],
@@ -338,12 +332,6 @@ class AsyncSession:
             await page.wait_for_load_state(state="domcontentloaded")
         if network_idle:
             await self._wait_for_networkidle(page)
-
-    async def _replay_init_script_for_page_action(self, page: AsyncPage) -> None:
-        if self._config.init_script:
-            # Make init_script globals visible to the automation execution context.
-            with open(self._config.init_script, encoding="utf-8") as script_file:
-                await page.evaluate(script_file.read())
 
     @staticmethod
     def _create_response_handler(

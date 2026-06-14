@@ -257,11 +257,6 @@ class StealthySession(SyncSession, StealthySessionMixin):
 
                     if params.page_action:
                         try:
-                            self._replay_init_script_for_page_action(page)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing init_script before page_action: {e}")
-
-                        try:
                             _ = params.page_action(page)
                         except Exception as e:  # pragma: no cover
                             log.error(f"Error executing page_action: {e}")
@@ -537,11 +532,6 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
                     if params.page_action:
-                        try:
-                            await self._replay_init_script_for_page_action(page)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing init_script before page_action: {e}")
-
                         try:
                             _ = await params.page_action(page)
                         except Exception as e:  # pragma: no cover
