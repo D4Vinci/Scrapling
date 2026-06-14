@@ -78,6 +78,21 @@ class TestAsyncStealthySession:
             response = await session.fetch(urls["html"])
             assert response.status == 200
 
+    async def test_init_script_is_available_in_page_action(self, urls, tmp_path):
+        """Test init_script globals are visible to the automation hook."""
+        script_path = tmp_path / "init_script.js"
+        script_path.write_text("window.calculateSum = function(a, b) { return a + b; };", encoding="utf-8")
+        results = []
+
+        async def check_execution_context(page):
+            results.append(await page.evaluate("() => window.calculateSum(1, 1)"))
+
+        async with AsyncStealthySession(init_script=str(script_path), page_action=check_execution_context) as session:
+            response = await session.fetch(urls["html"])
+
+        assert response.status == 200
+        assert results == [2]
+
     async def test_error_handling_in_fetch(self, urls):
         """Test error handling during fetch"""
         async with AsyncStealthySession() as session:
