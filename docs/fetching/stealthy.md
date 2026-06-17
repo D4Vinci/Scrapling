@@ -81,6 +81,8 @@ Scrapling provides many options with this fetcher and its session classes. Befor
 
 In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `page_setup`, `wait_until`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `solve_cloudflare`, `blocked_domains`, `proxy`, and `selector_config`.
 
+`wait_until` controls when Playwright considers the navigation complete. `network_idle=True` is Scrapling's additional post-navigation stability wait, so using `wait_until="networkidle"` with `network_idle=True` can stack two network-idle waits.
+
 !!! note "Notes:"
 
     1. It's basically the same arguments as [DynamicFetcher](dynamic.md#introduction) class, but with these additional arguments: `solve_cloudflare`, `block_webrtc`, `hide_canvas`, and `allow_webgl`. The `capture_xhr` argument is shared with `DynamicFetcher`.

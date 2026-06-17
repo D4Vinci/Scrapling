@@ -1,3 +1,4 @@
+import inspect
 import base64
 import struct
 from contextlib import contextmanager
@@ -8,12 +9,14 @@ import pytest
 import pytest_httpbin
 from mcp.types import ImageContent, TextContent
 
+from scrapling.core import ai as ai_module
 from scrapling.core.ai import (
     ScraplingMCPServer,
     ResponseModel,
     SessionInfo,
     SessionCreatedModel,
     SessionClosedModel,
+    _SessionEntry,
     _normalize_credentials,
 )
 
@@ -336,3 +339,199 @@ class TestNormalizeCredentials:
     def test_missing_username_raises(self):
         with pytest.raises(ValueError, match="username"):
             _normalize_credentials({"password": "pass"})
+
+
+class _FakeBrowserSession:
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+        self.fetch_calls = []
+        self._is_alive = True
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    async def start(self):
+        return None
+
+    async def close(self):
+        self._is_alive = False
+
+    async def fetch(self, url, **kwargs):
+        self.fetch_calls.append((url, kwargs))
+        return object()
+
+
+class TestMCPWaitUntil:
+    """Test wait_until exposure and forwarding in MCP browser tools."""
+
+    def test_browser_tools_expose_wait_until(self):
+        for tool_name in (
+            "open_session",
+            "screenshot",
+            "fetch",
+            "bulk_fetch",
+            "stealthy_fetch",
+            "bulk_stealthy_fetch",
+        ):
+            signature = inspect.signature(getattr(ScraplingMCPServer, tool_name))
+            assert "wait_until" in signature.parameters
+
+    @pytest.mark.asyncio
+    async def test_bulk_fetch_forwards_wait_until_to_dynamic_session(self, monkeypatch):
+        created_sessions = []
+
+        def fake_dynamic_session(**kwargs):
+            session = _FakeBrowserSession(**kwargs)
+            created_sessions.append(session)
+            return session
+
+        monkeypatch.setattr(ai_module, "AsyncDynamicSession", fake_dynamic_session)
+        monkeypatch.setattr(
+            ai_module,
+            "_translate_response",
+            lambda page, extraction_type, css_selector, main_content_only: ResponseModel(
+                status=200,
+                content=[],
+                url="https://example.com",
+            ),
+        )
+
+        server = ScraplingMCPServer()
+        await server.bulk_fetch(urls=["https://example.com"], wait_until="domcontentloaded")
+
+        assert created_sessions[0].kwargs["wait_until"] == "domcontentloaded"
+
+    @pytest.mark.asyncio
+    async def test_open_session_forwards_wait_until_to_dynamic_session(self, monkeypatch):
+        created_sessions = []
+
+        def fake_dynamic_session(**kwargs):
+            session = _FakeBrowserSession(**kwargs)
+            created_sessions.append(session)
+            return session
+
+        monkeypatch.setattr(ai_module, "AsyncDynamicSession", fake_dynamic_session)
+
+        server = ScraplingMCPServer()
+        opened = await server.open_session(session_type="dynamic", wait_until="domcontentloaded")
+
+        assert created_sessions[0].kwargs["wait_until"] == "domcontentloaded"
+        await server.close_session(opened.session_id)
+
+    @pytest.mark.asyncio
+    async def test_bulk_fetch_forwards_wait_until_to_existing_dynamic_session(self, monkeypatch):
+        fake_session = _FakeBrowserSession()
+        server = ScraplingMCPServer()
+        server._sessions["session-id"] = _SessionEntry(session=fake_session, session_type="dynamic")
+        monkeypatch.setattr(
+            ai_module,
+            "_translate_response",
+            lambda page, extraction_type, css_selector, main_content_only: ResponseModel(
+                status=200,
+                content=[],
+                url="https://example.com",
+            ),
+        )
+
+        await server.bulk_fetch(
+            urls=["https://example.com"],
+            session_id="session-id",
+            wait_until="domcontentloaded",
+        )
+
+        assert fake_session.fetch_calls[0][1]["wait_until"] == "domcontentloaded"
+
+    @pytest.mark.asyncio
+    async def test_bulk_stealthy_fetch_forwards_wait_until_to_stealthy_session(self, monkeypatch):
+        created_sessions = []
+
+        def fake_stealthy_session(**kwargs):
+            session = _FakeBrowserSession(**kwargs)
+            created_sessions.append(session)
+            return session
+
+        monkeypatch.setattr(ai_module, "AsyncStealthySession", fake_stealthy_session)
+        monkeypatch.setattr(
+            ai_module,
+            "_translate_response",
+            lambda page, extraction_type, css_selector, main_content_only: ResponseModel(
+                status=200,
+                content=[],
+                url="https://example.com",
+            ),
+        )
+
+        server = ScraplingMCPServer()
+        await server.bulk_stealthy_fetch(urls=["https://example.com"], wait_until="domcontentloaded")
+
+        assert created_sessions[0].kwargs["wait_until"] == "domcontentloaded"
+
+    @pytest.mark.asyncio
+    async def test_open_session_forwards_wait_until_to_stealthy_session(self, monkeypatch):
+        created_sessions = []
+
+        def fake_stealthy_session(**kwargs):
+            session = _FakeBrowserSession(**kwargs)
+            created_sessions.append(session)
+            return session
+
+        monkeypatch.setattr(ai_module, "AsyncStealthySession", fake_stealthy_session)
+
+        server = ScraplingMCPServer()
+        opened = await server.open_session(session_type="stealthy", wait_until="domcontentloaded")
+
+        assert created_sessions[0].kwargs["wait_until"] == "domcontentloaded"
+        await server.close_session(opened.session_id)
+
+    @pytest.mark.asyncio
+    async def test_bulk_stealthy_fetch_forwards_wait_until_to_existing_stealthy_session(self, monkeypatch):
+        fake_session = _FakeBrowserSession()
+        server = ScraplingMCPServer()
+        server._sessions["session-id"] = _SessionEntry(session=fake_session, session_type="stealthy")
+        monkeypatch.setattr(
+            ai_module,
+            "_translate_response",
+            lambda page, extraction_type, css_selector, main_content_only: ResponseModel(
+                status=200,
+                content=[],
+                url="https://example.com",
+            ),
+        )
+
+        await server.bulk_stealthy_fetch(
+            urls=["https://example.com"],
+            session_id="session-id",
+            wait_until="domcontentloaded",
+        )
+
+        assert fake_session.fetch_calls[0][1]["wait_until"] == "domcontentloaded"
+
+    @pytest.mark.asyncio
+    async def test_screenshot_forwards_wait_until_to_existing_session(self):
+        fake_session = _FakeBrowserSession()
+        server = ScraplingMCPServer()
+        server._sessions["session-id"] = _SessionEntry(session=fake_session, session_type="dynamic")
+
+        class FakePage:
+            url = "https://example.com"
+
+            async def screenshot(self, **kwargs):
+                return b"image"
+
+        async def fake_fetch(url, **kwargs):
+            fake_session.fetch_calls.append((url, kwargs))
+            await kwargs["page_action"](FakePage())
+            return object()
+
+        fake_session.fetch = fake_fetch
+
+        await server.screenshot(
+            url="https://example.com",
+            session_id="session-id",
+            wait_until="domcontentloaded",
+        )
+
+        assert fake_session.fetch_calls[0][1]["wait_until"] == "domcontentloaded"

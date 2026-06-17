@@ -28,6 +28,7 @@ from scrapling.core._types import (
     SetCookieParam,
     extraction_types,
     SelectorWaitStates,
+    PageLoadStates,
     FollowRedirects,
 )
 
@@ -141,6 +142,7 @@ class ScraplingMCPServer:
         wait_selector: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
+        wait_until: PageLoadStates = "load",
         wait_selector_state: SelectorWaitStates = "attached",
         max_pages: int = 5,
         # Stealthy-only params (ignored for dynamic sessions)
@@ -171,6 +173,7 @@ class ScraplingMCPServer:
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param cookies: Set cookies for the session. It should be in a dictionary format that Playwright accepts.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param max_pages: Maximum number of concurrent pages/tabs in the browser. Defaults to 5. Higher values allow more parallel fetches.
         :param hide_canvas: (Stealthy only) Add random noise to canvas operations to prevent fingerprinting.
@@ -199,6 +202,7 @@ class ScraplingMCPServer:
             timezone_id=timezone_id,
             real_chrome=real_chrome,
             network_idle=network_idle,
+            wait_until=wait_until,
             wait_selector=wait_selector,
             google_search=google_search,
             extra_headers=extra_headers,
@@ -273,6 +277,7 @@ class ScraplingMCPServer:
         wait_selector: Optional[str] = None,
         wait_selector_state: SelectorWaitStates = "attached",
         network_idle: bool = False,
+        wait_until: PageLoadStates = "load",
         timeout: int | float = 30000,
     ) -> List[ImageContent | TextContent]:
         """Capture a screenshot of a web page using an existing browser session and return it as an image.
@@ -287,6 +292,7 @@ class ScraplingMCPServer:
         :param wait_selector: Optional CSS selector to wait for before capturing.
         :param wait_selector_state: State to wait for the selector. Defaults to "attached".
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param timeout: Timeout in milliseconds for page operations. Defaults to 30,000.
         """
         if quality is not None and image_type != "jpeg":
@@ -312,6 +318,7 @@ class ScraplingMCPServer:
             wait=wait,
             timeout=timeout,
             network_idle=network_idle,
+            wait_until=wait_until,
             wait_selector=wait_selector,
             wait_selector_state=wait_selector_state,
             page_action=_capture,
@@ -499,6 +506,7 @@ class ScraplingMCPServer:
         wait_selector: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
+        wait_until: PageLoadStates = "load",
         wait_selector_state: SelectorWaitStates = "attached",
         session_id: Optional[str] = None,
     ) -> ResponseModel:
@@ -521,6 +529,7 @@ class ScraplingMCPServer:
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request. It should be in a dictionary format that Playwright accepts.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
@@ -555,6 +564,7 @@ class ScraplingMCPServer:
             wait_selector=wait_selector,
             cookies=cookies,
             network_idle=network_idle,
+            wait_until=wait_until,
             wait_selector_state=wait_selector_state,
             session_id=session_id,
         )
@@ -581,6 +591,7 @@ class ScraplingMCPServer:
         wait_selector: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
+        wait_until: PageLoadStates = "load",
         wait_selector_state: SelectorWaitStates = "attached",
         session_id: Optional[str] = None,
     ) -> List[ResponseModel]:
@@ -603,6 +614,7 @@ class ScraplingMCPServer:
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request. It should be in a dictionary format that Playwright accepts.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
@@ -630,6 +642,7 @@ class ScraplingMCPServer:
                     wait_selector=wait_selector,
                     wait_selector_state=wait_selector_state,
                     network_idle=network_idle,
+                    wait_until=wait_until,
                     proxy=proxy,
                 )
                 for url in urls
@@ -650,6 +663,7 @@ class ScraplingMCPServer:
                 timezone_id=timezone_id,
                 real_chrome=real_chrome,
                 network_idle=network_idle,
+                wait_until=wait_until,
                 wait_selector=wait_selector,
                 google_search=google_search,
                 extra_headers=extra_headers,
@@ -683,6 +697,7 @@ class ScraplingMCPServer:
         wait_selector: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
+        wait_until: PageLoadStates = "load",
         wait_selector_state: SelectorWaitStates = "attached",
         block_webrtc: bool = False,
         allow_webgl: bool = True,
@@ -711,6 +726,7 @@ class ScraplingMCPServer:
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
@@ -749,6 +765,7 @@ class ScraplingMCPServer:
             wait_selector=wait_selector,
             cookies=cookies,
             network_idle=network_idle,
+            wait_until=wait_until,
             wait_selector_state=wait_selector_state,
             block_webrtc=block_webrtc,
             allow_webgl=allow_webgl,
@@ -780,6 +797,7 @@ class ScraplingMCPServer:
         wait_selector: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
+        wait_until: PageLoadStates = "load",
         wait_selector_state: SelectorWaitStates = "attached",
         block_webrtc: bool = False,
         allow_webgl: bool = True,
@@ -808,6 +826,7 @@ class ScraplingMCPServer:
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
@@ -838,6 +857,7 @@ class ScraplingMCPServer:
                     wait_selector=wait_selector,
                     wait_selector_state=wait_selector_state,
                     network_idle=network_idle,
+                    wait_until=wait_until,
                     proxy=proxy,
                     solve_cloudflare=solve_cloudflare,
                 )
@@ -860,6 +880,7 @@ class ScraplingMCPServer:
                 hide_canvas=hide_canvas,
                 allow_webgl=allow_webgl,
                 network_idle=network_idle,
+                wait_until=wait_until,
                 block_webrtc=block_webrtc,
                 wait_selector=wait_selector,
                 google_search=google_search,

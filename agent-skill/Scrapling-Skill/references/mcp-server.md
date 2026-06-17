@@ -69,6 +69,8 @@ Opens a Chromium browser via Playwright to render JavaScript. Suitable for dynam
 | `locale`              | str or null         | null         | Browser locale, e.g. `"en-GB"`                                                  |
 | `session_id`          | str or null         | null         | Reuse a persistent session from `open_session` instead of creating a new browser |
 
+`wait_until` controls when Playwright considers the navigation complete. `network_idle=true` is Scrapling's additional post-navigation stability wait, so using `wait_until="networkidle"` with `network_idle=true` can stack two network-idle waits.
+
 ### `bulk_fetch` -- Browser fetch (multiple URLs)
 
 Concurrent browser version of `fetch`. Same parameters (including `session_id`) except `url` is replaced by `urls` (list of strings). Each URL opens in a separate browser tab. Returns a list of `ResponseModel`.
@@ -113,7 +115,7 @@ Opens a browser session that stays alive across multiple fetch calls, avoiding t
 | `block_webrtc`     | bool                        | false        | (Stealthy only) Block WebRTC IP leak                                                                  |
 | `allow_webgl`      | bool                        | true         | (Stealthy only) Keep WebGL enabled                                                                    |
 
-Plus all other browser session parameters (`google_search`, `real_chrome`, `cdp_url`, `locale`, `timezone_id`, `useragent`, `extra_headers`, `cookies`, `disable_resources`, `network_idle`, `wait_selector`, `wait_selector_state`).
+Plus all other browser session parameters (`google_search`, `real_chrome`, `cdp_url`, `locale`, `timezone_id`, `useragent`, `extra_headers`, `cookies`, `disable_resources`, `network_idle`, `wait_until`, `wait_selector`, `wait_selector_state`).
 
 A dynamic session can only be used with `fetch`/`bulk_fetch`. A stealthy session can only be used with `stealthy_fetch`/`bulk_stealthy_fetch`.
 
@@ -150,6 +152,7 @@ Requires an open browser session. Call `open_session` first, then pass the `sess
 | `wait_selector`       | str or null           | null         | CSS selector to wait for before capture                                              |
 | `wait_selector_state` | str                   | `"attached"` | State for `wait_selector`: `"attached"` / `"visible"` / `"hidden"` / `"detached"`    |
 | `network_idle`        | bool                  | false        | Wait until no network activity for 500ms                                             |
+| `wait_until`          | str                   | `"load"`     | Navigation completion state: `"commit"` / `"domcontentloaded"` / `"load"` / `"networkidle"` |
 | `timeout`             | number                | 30000        | Timeout in milliseconds                                                              |
 
 ## Tool selection guide
