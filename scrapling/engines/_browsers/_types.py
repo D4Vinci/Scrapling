@@ -19,6 +19,7 @@ from scrapling.core._types import (
     TypeAlias,
     SetCookieParam,
     SelectorWaitStates,
+    PageLoadStates,
     FollowRedirects,
 )
 from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
@@ -69,6 +70,7 @@ class PlaywrightSession(TypedDict, total=False):
     load_dom: bool
     wait_selector: Optional[str]
     wait_selector_state: SelectorWaitStates
+    wait_until: PageLoadStates
     cookies: Sequence[SetCookieParam] | None
     google_search: bool
     wait: int | float
@@ -107,6 +109,7 @@ class PlaywrightFetchParams(TypedDict, total=False):
     wait_selector: Optional[str]
     page_action: Optional[Callable]
     page_setup: Optional[Callable]
+    wait_until: PageLoadStates
     selector_config: Optional[Dict]
     extra_headers: Optional[Dict[str, str]]
     wait_selector_state: SelectorWaitStates

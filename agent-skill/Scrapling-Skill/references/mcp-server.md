@@ -54,6 +54,7 @@ Opens a Chromium browser via Playwright to render JavaScript. Suitable for dynam
 | `proxy`               | str or dict or null | null         | String URL or `{"server": "...", "username": "...", "password": "..."}`         |
 | `timeout`             | number              | 30000        | Timeout in **milliseconds**                                                     |
 | `wait`                | number              | 0            | Extra wait (ms) after page load before extraction                               |
+| `wait_until`          | str                 | `"load"`     | Navigation completion state: `"commit"` / `"domcontentloaded"` / `"load"` / `"networkidle"` |
 | `wait_selector`       | str or null         | null         | CSS selector to wait for before extraction                                      |
 | `wait_selector_state` | str                 | `"attached"` | State for wait_selector: `"attached"` / `"visible"` / `"hidden"` / `"detached"` |
 | `network_idle`        | bool                | false        | Wait until no network activity for 500ms                                        |

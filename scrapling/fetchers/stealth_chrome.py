@@ -29,6 +29,7 @@ class StealthyFetcher(BaseFetcher):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, runs after navigation, and does the automation you need.
         :param page_setup: A function that takes the `page` object, runs before navigation. Use it to register event listeners or routes that must be set up before the page loads.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
@@ -81,6 +82,7 @@ class StealthyFetcher(BaseFetcher):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, runs after navigation, and does the automation you need.
         :param page_setup: A function that takes the `page` object, runs before navigation. Use it to register event listeners or routes that must be set up before the page loads.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
