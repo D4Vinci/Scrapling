@@ -169,6 +169,26 @@ class TestCLI:
             assert result.exit_code == 0
             assert mock_fetch.call_args[1]["wait_until"] == "domcontentloaded"
 
+    def test_extract_fetch_command_omits_default_wait_until(self, runner, tmp_path, html_url):
+        """Default wait_until is omitted from DynamicFetcher kwargs"""
+        output_file = tmp_path / "output.txt"
+
+        with patch('scrapling.fetchers.DynamicFetcher.fetch') as mock_fetch:
+            mock_response = configure_selector_mock()
+            mock_fetch.return_value = mock_response
+
+            result = runner.invoke(
+                fetch,
+                [
+                    html_url,
+                    str(output_file),
+                    '--headless',
+                    '--timeout', '60000',
+                ]
+            )
+            assert result.exit_code == 0
+            assert "wait_until" not in mock_fetch.call_args[1]
+
     def test_extract_stealthy_fetch_command(self, runner, tmp_path, html_url):
         """Test extract fetch command"""
         output_file = tmp_path / "output.md"
@@ -190,6 +210,26 @@ class TestCLI:
             )
             assert result.exit_code == 0
             assert mock_fetch.call_args[1]["wait_until"] == "domcontentloaded"
+
+    def test_extract_stealthy_fetch_command_omits_default_wait_until(self, runner, tmp_path, html_url):
+        """Default wait_until is omitted from StealthyFetcher kwargs"""
+        output_file = tmp_path / "output.md"
+
+        with patch('scrapling.fetchers.StealthyFetcher.fetch') as mock_fetch:
+            mock_response = configure_selector_mock()
+            mock_fetch.return_value = mock_response
+
+            result = runner.invoke(
+                stealthy_fetch,
+                [
+                    html_url,
+                    str(output_file),
+                    '--headless',
+                    '--timeout', '60000',
+                ]
+            )
+            assert result.exit_code == 0
+            assert "wait_until" not in mock_fetch.call_args[1]
 
     def test_invalid_arguments(self, runner, html_url):
         """Test invalid arguments handling"""
