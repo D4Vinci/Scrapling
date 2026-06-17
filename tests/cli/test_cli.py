@@ -162,10 +162,12 @@ class TestCLI:
                     html_url,
                     str(output_file),
                     '--headless',
-                    '--timeout', '60000'
+                    '--timeout', '60000',
+                    '--wait-until', 'domcontentloaded'
                 ]
             )
             assert result.exit_code == 0
+            assert mock_fetch.call_args[1]["wait_until"] == "domcontentloaded"
 
     def test_extract_stealthy_fetch_command(self, runner, tmp_path, html_url):
         """Test extract fetch command"""
@@ -182,10 +184,12 @@ class TestCLI:
                     str(output_file),
                     '--headless',
                     '--css-selector', 'body',
-                    '--timeout', '60000'
+                    '--timeout', '60000',
+                    '--wait-until', 'domcontentloaded'
                 ]
             )
             assert result.exit_code == 0
+            assert mock_fetch.call_args[1]["wait_until"] == "domcontentloaded"
 
     def test_invalid_arguments(self, runner, html_url):
         """Test invalid arguments handling"""

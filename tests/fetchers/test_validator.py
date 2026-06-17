@@ -44,6 +44,15 @@ class TestValidators:
         with pytest.raises(TypeError):
             validate(params, PlaywrightConfig)
 
+    def test_playwright_config_wait_until(self):
+        """Test PlaywrightConfig with navigation completion states"""
+        config = validate({"wait_until": "domcontentloaded"}, PlaywrightConfig)
+
+        assert config.wait_until == "domcontentloaded"
+
+        with pytest.raises(TypeError):
+            validate({"wait_until": "interactive"}, PlaywrightConfig)
+
     def test_playwright_config_invalid_cdp_url(self):
         """Test PlaywrightConfig with invalid CDP URL"""
         params = {"cdp_url": "invalid-url"}

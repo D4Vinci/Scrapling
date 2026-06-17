@@ -279,6 +279,12 @@ def _common_browser_options(f):
             help="If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)",
         ),
         option("--locale", default=None, help="Specify user locale. Defaults to the system default locale."),
+        option(
+            "--wait-until",
+            type=Choice(["commit", "domcontentloaded", "load", "networkidle"]),
+            default="load",
+            help="When page navigation is considered complete (default: load)",
+        ),
         option("--wait-selector", help="CSS selector to wait for before proceeding"),
         option(
             "--css-selector",
@@ -507,6 +513,7 @@ def __build_browser_kwargs(
     timeout,
     wait,
     wait_selector,
+    wait_until,
     locale,
     real_chrome,
     proxy,
@@ -525,6 +532,8 @@ def __build_browser_kwargs(
         "dns_over_https": dns_over_https,
         "block_ads": block_ads,
     }
+    if wait_until != "load":
+        kwargs["wait_until"] = wait_until
     if wait > 0:
         kwargs["wait"] = wait
     if wait_selector:
@@ -550,6 +559,7 @@ def fetch(
     wait,
     css_selector,
     wait_selector,
+    wait_until,
     locale,
     real_chrome,
     proxy,
@@ -567,6 +577,7 @@ def fetch(
         timeout,
         wait,
         wait_selector,
+        wait_until,
         locale,
         real_chrome,
         proxy,
@@ -609,6 +620,7 @@ def stealthy_fetch(
     wait,
     css_selector,
     wait_selector,
+    wait_until,
     locale,
     real_chrome,
     proxy,
@@ -630,6 +642,7 @@ def stealthy_fetch(
         timeout,
         wait,
         wait_selector,
+        wait_until,
         locale,
         real_chrome,
         proxy,

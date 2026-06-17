@@ -56,6 +56,7 @@ class TestDynamicFetcherAsync:
             {"real_chrome": True, "disable_resources": True},
             {"wait_selector": "h1", "wait_selector_state": "attached"},
             {"wait_selector": "h1", "wait_selector_state": "visible"},
+            {"wait_until": "domcontentloaded"},
             {
                 "google_search": True,
                 "real_chrome": True,

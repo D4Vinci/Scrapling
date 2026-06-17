@@ -18,6 +18,7 @@ from scrapling.core._types import (
     overload,
     SetCookieParam,
     SelectorWaitStates,
+    PageLoadStates,
 )
 from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
 from scrapling.engines.toolbelt.navigation import construct_proxy_dict
@@ -66,6 +67,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     load_dom: bool = True
     wait_selector: Optional[str] = None
     wait_selector_state: SelectorWaitStates = "attached"
+    wait_until: PageLoadStates = "load"
     cookies: Sequence[SetCookieParam] | None = []
     google_search: bool = True
     wait: Seconds = 0
@@ -168,6 +170,7 @@ class _fetch_params:
     disable_resources: bool
     wait_selector: Optional[str]
     wait_selector_state: SelectorWaitStates
+    wait_until: PageLoadStates
     network_idle: bool
     load_dom: bool
     blocked_domains: Optional[Set[str]]

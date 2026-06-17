@@ -9,6 +9,7 @@ from scrapling.core._types import (
     Optional,
     SetCookieParam,
     SelectorWaitStates,
+    PageLoadStates,
     FollowRedirects,
 )
 
@@ -42,6 +43,7 @@ _FETCH_PARAMS = {
     "load_dom": bool,
     "wait_selector": Optional[str],
     "wait_selector_state": SelectorWaitStates,
+    "wait_until": PageLoadStates,
     "cookies": Sequence[SetCookieParam],
     "google_search": bool,
     "wait": int | float,
@@ -76,6 +78,7 @@ _STEALTHY_FETCH_PARAMS = {
     "load_dom": bool,
     "wait_selector": Optional[str],
     "wait_selector_state": SelectorWaitStates,
+    "wait_until": PageLoadStates,
     "cookies": Sequence[SetCookieParam],
     "google_search": bool,
     "wait": int | float,

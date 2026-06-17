@@ -285,6 +285,8 @@ We will go through each command in detail below.
       --network-idle / --no-network-idle          Wait for network idle (default: False)
       --timeout INTEGER                           Timeout in milliseconds (default: 30000)
       --wait INTEGER                              Additional wait time in milliseconds after page load (default: 0)
+      --wait-until [commit|domcontentloaded|load|networkidle]
+                                                  When page navigation is considered complete (default: load)
       -s, --css-selector TEXT                     CSS selector to extract specific content from the page. It returns all matches.
       --wait-selector TEXT                        CSS selector to wait for before proceeding
       --locale TEXT                               Specify user locale. Defaults to the system default locale.
@@ -334,6 +336,8 @@ We will go through each command in detail below.
       --real-chrome/--no-real-chrome              If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
       --timeout INTEGER                           Timeout in milliseconds (default: 30000)
       --wait INTEGER                              Additional wait time in milliseconds after page load (default: 0)
+      --wait-until [commit|domcontentloaded|load|networkidle]
+                                                  When page navigation is considered complete (default: load)
       -s, --css-selector TEXT                     CSS selector to extract specific content from the page. It returns all matches.
       --wait-selector TEXT                        CSS selector to wait for before proceeding
       --hide-canvas / --show-canvas               Add noise to canvas operations (default: False)

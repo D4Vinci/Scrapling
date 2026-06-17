@@ -49,6 +49,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, runs after navigation, and does the automation you need.
         :param page_setup: A function that takes the `page` object, runs before navigation. Use it to register event listeners or routes that must be set up before the page loads.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
@@ -190,6 +191,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, runs after navigation, and does the automation you need.
         :param page_setup: A function that takes the `page` object, runs before navigation. Use it to register event listeners or routes that must be set up before the page loads.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
@@ -244,7 +246,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                         log.error(f"Error executing page_setup: {e}")
 
                 try:
-                    first_response = page.goto(url, referer=referer)
+                    first_response = page.goto(url, referer=referer, wait_until=params.wait_until)
                     self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
                     if not first_response:
@@ -325,6 +327,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, runs after navigation, and does the automation you need.
         :param page_setup: A function that takes the `page` object, runs before navigation. Use it to register event listeners or routes that must be set up before the page loads.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
         :param init_script: An absolute path to a JavaScript file to be executed on page creation for all pages in this session.
         :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
@@ -465,6 +468,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, runs after navigation, and does the automation you need.
         :param page_setup: A function that takes the `page` object, runs before navigation. Use it to register event listeners or routes that must be set up before the page loads.
+        :param wait_until: When page navigation is considered complete. Valid values are `commit`, `domcontentloaded`, `load`, and `networkidle`. Defaults to `load`.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
@@ -520,7 +524,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         log.error(f"Error executing page_setup: {e}")
 
                 try:
-                    first_response = await page.goto(url, referer=referer)
+                    first_response = await page.goto(url, referer=referer, wait_until=params.wait_until)
                     await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
                     if not first_response:
