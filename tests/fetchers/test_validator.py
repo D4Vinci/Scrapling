@@ -46,6 +46,8 @@ class TestValidators:
 
     def test_playwright_config_wait_until(self):
         """Test PlaywrightConfig with navigation completion states"""
+        assert validate({}, PlaywrightConfig).wait_until == "load"
+
         config = validate({"wait_until": "domcontentloaded"}, PlaywrightConfig)
 
         assert config.wait_until == "domcontentloaded"
