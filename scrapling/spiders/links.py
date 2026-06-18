@@ -149,14 +149,6 @@ def _compile_patterns(patterns: Union[str, Pattern[str], PatternInput, None]) ->
     return tuple(p if isinstance(p, re.Pattern) else re.compile(p) for p in patterns)
 
 
-def _url_extension(url: str) -> str:
-    path = urlsplit(url).path
-    _, _, last = path.rpartition("/")
-    if "." not in last:
-        return ""
-    return last.rsplit(".", 1)[1].lower()
-
-
 def _url_extensions(url: str) -> set[str]:
     path = urlsplit(url).path
     _, _, last = path.rpartition("/")
