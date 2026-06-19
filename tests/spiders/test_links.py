@@ -197,7 +197,7 @@ class TestExtensions:
         assert urls == ["https://example.com/a.pdf"]
 
     def test_default_deny_extensions_drops_compound_tar_gz(self):
-        # tar.gz is in IGNORED_EXTENSIONS but the last-dot-only suffix is "gz"
+        # Regression: compound extensions in IGNORED_EXTENSIONS (e.g. "tar.gz") must be dropped
         html = '<a href="/d/dataset.tar.gz">tgz</a><a href="/d/data.tar.bz2">tbz</a><a href="/d">ok</a>'
         resp = _make_response(html)
         urls = LinkExtractor().extract(resp)
@@ -213,6 +213,12 @@ class TestExtensions:
     def test_compound_deny_is_case_insensitive(self):
         ex = LinkExtractor()
         assert ex.matches("https://example.com/archive.TAR.GZ") is False
+
+    def test_trailing_and_double_dots_yield_no_spurious_extension(self):
+        # "file." and "a..zip" must not produce empty or ".zip" suffixes
+        ex = LinkExtractor()
+        assert ex.matches("https://example.com/file.") is True
+        assert ex.matches("https://example.com/a..zip") is False
 
 
 class TestStrip:

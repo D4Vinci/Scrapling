@@ -152,9 +152,9 @@ def _compile_patterns(patterns: Union[str, Pattern[str], PatternInput, None]) ->
 def _url_extension(url: str) -> Set[str]:
     path = urlsplit(url).path
     _, _, last = path.rpartition("/")
-    if "." not in last:
+    parts = [p for p in last.lower().split(".") if p]
+    if len(parts) < 2:
         return set()
-    parts = last.lower().split(".")
     # Return all dot-suffixes so compound extensions like "tar.gz" are matched
     return {".".join(parts[i:]) for i in range(1, len(parts))}
 
