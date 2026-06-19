@@ -196,6 +196,24 @@ class TestExtensions:
         urls = LinkExtractor(deny_extensions=()).extract(resp)
         assert urls == ["https://example.com/a.pdf"]
 
+    def test_default_deny_extensions_drops_compound_tar_gz(self):
+        # tar.gz is in IGNORED_EXTENSIONS but the last-dot-only suffix is "gz"
+        html = '<a href="/d/dataset.tar.gz">tgz</a><a href="/d/data.tar.bz2">tbz</a><a href="/d">ok</a>'
+        resp = _make_response(html)
+        urls = LinkExtractor().extract(resp)
+        assert urls == ["https://example.com/d"]
+
+    def test_custom_compound_deny_extension(self):
+        html = '<a href="/dataset.tar.gz">tgz</a><a href="/plain.gz">gz</a>'
+        resp = _make_response(html)
+        # only the compound ext is denied; a plain .gz must still pass
+        urls = LinkExtractor(deny_extensions=["tar.gz"]).extract(resp)
+        assert urls == ["https://example.com/plain.gz"]
+
+    def test_compound_deny_is_case_insensitive(self):
+        ex = LinkExtractor()
+        assert ex.matches("https://example.com/archive.TAR.GZ") is False
+
 
 class TestStrip:
     def test_strip_removes_whitespace(self):

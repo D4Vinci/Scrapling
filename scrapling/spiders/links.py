@@ -149,12 +149,14 @@ def _compile_patterns(patterns: Union[str, Pattern[str], PatternInput, None]) ->
     return tuple(p if isinstance(p, re.Pattern) else re.compile(p) for p in patterns)
 
 
-def _url_extension(url: str) -> str:
+def _url_extension(url: str) -> set:
     path = urlsplit(url).path
     _, _, last = path.rpartition("/")
     if "." not in last:
-        return ""
-    return last.rsplit(".", 1)[1].lower()
+        return set()
+    parts = last.lower().split(".")
+    # Return all dot-suffixes so compound extensions like "tar.gz" are matched
+    return {".".join(parts[i:]) for i in range(1, len(parts))}
 
 
 def _filler(x):
@@ -277,8 +279,8 @@ class LinkExtractor:
         if url.split("://", 1)[0] not in valid_schemas:
             return False
 
-        ext = _url_extension(url)
-        if ext and ext in self.deny_extensions:
+        exts = _url_extension(url)
+        if exts and exts & self.deny_extensions:
             return False
 
         if self.allow and not any(p.search(url) for p in self.allow):
