@@ -21,7 +21,7 @@ class Scheduler:
         self._queue: asyncio.PriorityQueue[tuple[int, int, Request]] = asyncio.PriorityQueue()
         self._seen: set[bytes] = set()
         self._counter = count()
-        # Mirror dict for snapshot without draining queue
+        # Tracks every enqueued, not-yet-completed request (keyed by id) for snapshots
         self._pending: dict[int, tuple[int, int, Request]] = {}
         self._include_kwargs = include_kwargs
         self._include_headers = include_headers
@@ -40,15 +40,18 @@ class Scheduler:
         # Negative priority so higher priority = dequeued first
         counter = next(self._counter)
         item = (-request.priority, counter, request)
-        self._pending[counter] = item
+        self._pending[id(request)] = item
         await self._queue.put(item)
         return True
 
     async def dequeue(self) -> Request:
-        """Get the next request to process."""
-        _, counter, request = await self._queue.get()
-        self._pending.pop(counter, None)
+        """Get the next request to process (stays tracked until complete())."""
+        _, _, request = await self._queue.get()
         return request
+
+    def complete(self, request: Request) -> None:
+        """Mark a request as finished so it stops being tracked for checkpoints."""
+        self._pending.pop(id(request), None)
 
     def __len__(self) -> int:
         return self._queue.qsize()
@@ -74,7 +77,7 @@ class Scheduler:
         for request in data.requests:
             counter = next(self._counter)
             item = (-request.priority, counter, request)
-            self._pending[counter] = item
+            self._pending[id(request)] = item
             self._queue.put_nowait(item)
 
         log.info(f"Scheduler restored: {len(data.requests)} requests, {len(data.seen)} seen")
