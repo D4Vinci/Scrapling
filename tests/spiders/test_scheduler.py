@@ -360,7 +360,7 @@ class TestSchedulerIntegration:
         for i in range(5):
             await scheduler.enqueue(Request(f"https://example.com/{i}"))
 
-        # Process 2 (mark them completed so they leave the snapshot)
+        # Process 2
         scheduler.complete(await scheduler.dequeue())
         scheduler.complete(await scheduler.dequeue())
 
@@ -403,8 +403,9 @@ class TestSchedulerInFlight:
 
         request = await scheduler.dequeue()
 
-        assert len(scheduler._pending) == 2
-        assert id(request) in scheduler._pending
+        requests, _ = scheduler.snapshot()
+        assert len(requests) == 2
+        assert request.url in {r.url for r in requests}
 
     @pytest.mark.asyncio
     async def test_complete_stops_tracking_request(self):
@@ -415,11 +416,30 @@ class TestSchedulerInFlight:
         request = await scheduler.dequeue()
 
         scheduler.complete(request)
-        assert len(scheduler._pending) == 0
+        requests, _ = scheduler.snapshot()
+        assert requests == []
 
         scheduler.complete(request)
         scheduler.complete(Request("https://example.com/unknown"))
-        assert len(scheduler._pending) == 0
+        requests, _ = scheduler.snapshot()
+        assert requests == []
+
+    @pytest.mark.asyncio
+    async def test_duplicate_instance_tracked_per_enqueue(self):
+        """Re-enqueuing the same Request instance (dont_filter) tracks each copy."""
+        scheduler = Scheduler()
+        request = Request("https://example.com/retry", dont_filter=True)
+
+        await scheduler.enqueue(request)
+        await scheduler.enqueue(request)
+
+        assert len(scheduler) == 2
+        requests, _ = scheduler.snapshot()
+        assert len(requests) == 2
+
+        scheduler.complete(await scheduler.dequeue())
+        requests, _ = scheduler.snapshot()
+        assert len(requests) == 1
 
     @pytest.mark.asyncio
     async def test_in_flight_request_survives_checkpoint_resume(self):

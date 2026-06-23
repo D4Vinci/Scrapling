@@ -21,8 +21,9 @@ class Scheduler:
         self._queue: asyncio.PriorityQueue[tuple[int, int, Request]] = asyncio.PriorityQueue()
         self._seen: set[bytes] = set()
         self._counter = count()
-        # Tracks every enqueued, not-yet-completed request (keyed by id) for snapshots
+        # Mirror dict for snapshot without draining queue
         self._pending: dict[int, tuple[int, int, Request]] = {}
+        self._inflight: dict[int, list[int]] = {}
         self._include_kwargs = include_kwargs
         self._include_headers = include_headers
         self._keep_fragments = keep_fragments
@@ -40,18 +41,25 @@ class Scheduler:
         # Negative priority so higher priority = dequeued first
         counter = next(self._counter)
         item = (-request.priority, counter, request)
-        self._pending[id(request)] = item
+        self._pending[counter] = item
         await self._queue.put(item)
         return True
 
     async def dequeue(self) -> Request:
         """Get the next request to process (stays tracked until complete())."""
-        _, _, request = await self._queue.get()
+        _, counter, request = await self._queue.get()
+        self._inflight.setdefault(id(request), []).append(counter)
         return request
 
     def complete(self, request: Request) -> None:
         """Mark a request as finished so it stops being tracked for checkpoints."""
-        self._pending.pop(id(request), None)
+        counters = self._inflight.get(id(request))
+        if not counters:
+            return
+        counter = counters.pop()
+        if not counters:
+            del self._inflight[id(request)]
+        self._pending.pop(counter, None)
 
     def __len__(self) -> int:
         return self._queue.qsize()
@@ -77,7 +85,7 @@ class Scheduler:
         for request in data.requests:
             counter = next(self._counter)
             item = (-request.priority, counter, request)
-            self._pending[id(request)] = item
+            self._pending[counter] = item
             self._queue.put_nowait(item)
 
         log.info(f"Scheduler restored: {len(data.requests)} requests, {len(data.seen)} seen")
