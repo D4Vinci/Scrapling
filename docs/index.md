@@ -56,6 +56,9 @@ MySpider().start()
 
 <!-- sponsors -->
 <div style="text-align: center;">
+  <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png" class="ad">
+  </a>
   <a href="https://coldproxy.com/" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png" class="ad">
   </a>
