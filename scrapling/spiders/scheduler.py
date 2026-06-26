@@ -23,6 +23,7 @@ class Scheduler:
         self._counter = count()
         # Mirror dict for snapshot without draining queue
         self._pending: dict[int, tuple[int, int, Request]] = {}
+        self._inflight: dict[int, list[int]] = {}
         self._include_kwargs = include_kwargs
         self._include_headers = include_headers
         self._keep_fragments = keep_fragments
@@ -45,10 +46,20 @@ class Scheduler:
         return True
 
     async def dequeue(self) -> Request:
-        """Get the next request to process."""
+        """Get the next request to process (stays tracked until complete())."""
         _, counter, request = await self._queue.get()
-        self._pending.pop(counter, None)
+        self._inflight.setdefault(id(request), []).append(counter)
         return request
+
+    def complete(self, request: Request) -> None:
+        """Mark a request as finished so it stops being tracked for checkpoints."""
+        counters = self._inflight.get(id(request))
+        if not counters:
+            return
+        counter = counters.pop()
+        if not counters:
+            del self._inflight[id(request)]
+        self._pending.pop(counter, None)
 
     def __len__(self) -> int:
         return self._queue.qsize()
