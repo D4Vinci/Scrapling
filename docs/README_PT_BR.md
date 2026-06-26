@@ -87,6 +87,15 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
+      <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png">
+      </a>
+    </td>
+    <td> A <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank"><b>Proxidize</b></a> oferece proxies móveis e residenciais para scraping, automação de navegador, monitoramento de SEO, agentes de IA e coleta de dados. <i>Use o código <b>scrapling20</b> para 20% de desconto</i>.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://coldproxy.com/" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png">
       </a>
@@ -182,12 +191,12 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scrapling" target="_blank" title="Proxies with the Highest IP Scores">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.png">
+      <a href="https://go.nodemaven.com/scraplingjune" target="_blank" title="Proxies with the Highest IP Scores">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.svg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scrapling" target="_blank">NodeMaven</a> - provedor de proxies confiável com a mais alta qualidade de IP do mercado. Use o código promocional SCRAPLING35 para obter 35% de desconto em proxies.
+    <a href="https://go.nodemaven.com/scraplingjune" target="_blank">NodeMaven</a> - provedor de proxies confiável com a mais alta qualidade de IP do mercado. Use o código promocional SCRAPLING35 para obter 35% de desconto em proxies.
     </td>
   </tr>
 </table>

@@ -56,6 +56,9 @@ MySpider().start()
 
 <!-- sponsors -->
 <div style="text-align: center;">
+  <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png" class="ad">
+  </a>
   <a href="https://coldproxy.com/" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png" class="ad">
   </a>
@@ -83,8 +86,8 @@ MySpider().start()
   <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank" title="Top-Tier Residential Proxy Solution for the Highest Success Rate">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/9proxy.jpg" class="ad">
   </a>
-  <a href="https://go.nodemaven.com/scrapling" target="_blank" title="Proxies with the Highest IP Scores">
-    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.png">
+  <a href="https://go.nodemaven.com/scraplingjune" target="_blank" title="Proxies with the Highest IP Scores">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.svg" class="ad">
   </a>
   <br />
   <br />

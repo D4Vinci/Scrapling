@@ -85,6 +85,15 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
+      <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png">
+      </a>
+    </td>
+    <td> <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank"><b>Proxidize</b></a> 提供移动代理和住宅代理，适用于网页抓取、浏览器自动化、SEO 监控、AI 代理和数据收集。<i>使用优惠码 <b>scrapling20</b> 可享 20% 折扣</i>。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://coldproxy.com/" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png">
       </a>
@@ -180,12 +189,12 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scrapling" target="_blank" title="Proxies with the Highest IP Scores">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.png">
+      <a href="https://go.nodemaven.com/scraplingjune" target="_blank" title="Proxies with the Highest IP Scores">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.svg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scrapling" target="_blank">NodeMaven</a> - 市场上 IP 质量最高的可靠代理提供商。使用优惠码 SCRAPLING35 可享代理 35% 折扣。
+    <a href="https://go.nodemaven.com/scraplingjune" target="_blank">NodeMaven</a> - 市场上 IP 质量最高的可靠代理提供商。使用优惠码 SCRAPLING35 可享代理 35% 折扣。
     </td>
   </tr>
 </table>
