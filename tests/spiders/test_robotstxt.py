@@ -172,7 +172,7 @@ class TestGetDelayDirectives:
 
         assert c_delay is None
         assert r_rate is not None
-        assert r_rate == (1, 1)
+        assert r_rate == (1, 10)
 
     @pytest.mark.asyncio
     async def test_returns_both_none_when_not_set(self):
