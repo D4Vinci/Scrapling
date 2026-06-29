@@ -243,6 +243,7 @@ class CrawlerEngine:
         try:
             await self._process_request(request)
         finally:
+            self.scheduler.complete(request)
             self._active_tasks -= 1
 
     def request_pause(self) -> None:
