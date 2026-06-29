@@ -1,6 +1,7 @@
 
 import pytest
 import asyncio
+from pathlib import Path
 
 import pytest_httpbin
 
@@ -77,6 +78,29 @@ class TestAsyncStealthySession:
         ) as session:
             response = await session.fetch(urls["html"])
             assert response.status == 200
+
+    async def test_init_script_is_available_in_page_action(self, urls, tmp_path):
+        """Test init_script state is visible to page_action callbacks."""
+        script_path = tmp_path / "init.js"
+        script_path.write_text(
+            "window.calculateSum = function(a, b) { return a + b; };",
+            encoding="utf-8",
+        )
+        results = []
+
+        async def check_init_script(page):
+            results.append(await page.evaluate("() => window.calculateSum?.(1, 1)"))
+
+        async with AsyncStealthySession(
+            init_script=str(Path(script_path).resolve()),
+            page_action=check_init_script,
+            google_search=False,
+            retries=1,
+        ) as session:
+            response = await session.fetch(urls["html"])
+
+        assert response.status == 200
+        assert results == [2]
 
     async def test_error_handling_in_fetch(self, urls):
         """Test error handling during fetch"""

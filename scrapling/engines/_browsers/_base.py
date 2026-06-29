@@ -1,7 +1,9 @@
 from time import time
 from re import search as re_search
+from json import dumps as json_dumps
 from asyncio import sleep as asyncio_sleep, Lock
 from contextlib import contextmanager, asynccontextmanager
+from pathlib import Path
 
 from playwright.sync_api._generated import Page
 from playwright.sync_api import (
@@ -43,6 +45,41 @@ from scrapling.core._types import (
     AsyncGenerator,
 )
 from scrapling.engines.constants import STEALTH_ARGS, HARMFUL_ARGS, DEFAULT_ARGS
+
+
+__INIT_SCRIPT_MARKER__ = "__scrapling_init_scripts__"
+
+
+def _get_init_script_key(init_script: str) -> str:
+    """Return a stable key for an init script path."""
+    return str(Path(init_script).resolve())
+
+
+def _get_init_script_source(init_script: str) -> tuple[str, str]:
+    """Return a stable key and source for an init script path."""
+    path = Path(init_script).resolve()
+    return str(path), path.read_text(encoding="utf-8")
+
+
+def _get_init_script_marker(init_script: str) -> str:
+    """Return a marker script used to detect whether context init scripts ran."""
+    key = _get_init_script_key(init_script)
+    return (
+        f"globalThis.{__INIT_SCRIPT_MARKER__} = globalThis.{__INIT_SCRIPT_MARKER__} || {{}};\n"
+        f"globalThis.{__INIT_SCRIPT_MARKER__}[{json_dumps(key)}] = true;"
+    )
+
+
+__INIT_SCRIPT_FALLBACK__ = f"""
+(payload) => {{
+    const [key, source] = payload;
+    globalThis.{__INIT_SCRIPT_MARKER__} = globalThis.{__INIT_SCRIPT_MARKER__} || {{}};
+    if (!globalThis.{__INIT_SCRIPT_MARKER__}[key]) {{
+        (0, eval)(source);
+        globalThis.{__INIT_SCRIPT_MARKER__}[key] = true;
+    }}
+}}
+"""
 
 
 class SyncSession:
@@ -93,11 +130,17 @@ class SyncSession:
         """Initialize the browser context."""
         if config.init_script:
             ctx.add_init_script(path=config.init_script)
+            ctx.add_init_script(script=_get_init_script_marker(config.init_script))
 
         if config.cookies:  # pragma: no cover
             ctx.add_cookies(config.cookies)
 
         return ctx
+
+    def _apply_init_script_fallback(self, page: Page) -> None:
+        """Apply init_script to the current page if context-level injection did not run."""
+        if self._config.init_script:
+            page.evaluate(__INIT_SCRIPT_FALLBACK__, _get_init_script_source(self._config.init_script))
 
     def _get_page(
         self,
@@ -266,11 +309,17 @@ class AsyncSession:
         """Initialize the browser context."""
         if config.init_script:  # pragma: no cover
             await ctx.add_init_script(path=config.init_script)
+            await ctx.add_init_script(script=_get_init_script_marker(config.init_script))
 
         if config.cookies:  # pragma: no cover
             await ctx.add_cookies(config.cookies)
 
         return ctx
+
+    async def _apply_init_script_fallback(self, page: AsyncPage) -> None:
+        """Apply init_script to the current page if context-level injection did not run."""
+        if self._config.init_script:
+            await page.evaluate(__INIT_SCRIPT_FALLBACK__, _get_init_script_source(self._config.init_script))
 
     async def _get_page(
         self,

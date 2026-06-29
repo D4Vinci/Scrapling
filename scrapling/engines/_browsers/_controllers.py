@@ -167,6 +167,8 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
                     if not first_response:
                         raise RuntimeError(f"Failed to get response for {url}")
 
+                    self._apply_init_script_fallback(page)
+
                     if params.page_action:
                         try:
                             _ = params.page_action(page)
@@ -355,6 +357,8 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
 
                     if not first_response:
                         raise RuntimeError(f"Failed to get response for {url}")
+
+                    await self._apply_init_script_fallback(page)
 
                     if params.page_action:
                         try:
