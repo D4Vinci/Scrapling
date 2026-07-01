@@ -7,6 +7,7 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from scrapling.parser import Selector, Selectors
     from scrapling.core.custom_types import AttributesHandler, TextHandler
+    from scrapling.extractors.json_extractor import JsonExtractor
     from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
 
 
@@ -17,11 +18,12 @@ _LAZY_IMPORTS = {
     "Selectors": ("scrapling.parser", "Selectors"),
     "AttributesHandler": ("scrapling.core.custom_types", "AttributesHandler"),
     "TextHandler": ("scrapling.core.custom_types", "TextHandler"),
+    "JsonExtractor": ("scrapling.extractors.json_extractor", "JsonExtractor"),
     "AsyncFetcher": ("scrapling.fetchers", "AsyncFetcher"),
     "StealthyFetcher": ("scrapling.fetchers", "StealthyFetcher"),
     "DynamicFetcher": ("scrapling.fetchers", "DynamicFetcher"),
 }
-__all__ = ["Selector", "Fetcher", "AsyncFetcher", "StealthyFetcher", "DynamicFetcher"]
+__all__ = ["Selector", "Fetcher", "AsyncFetcher", "StealthyFetcher", "DynamicFetcher", "JsonExtractor"]
 
 
 def __getattr__(name: str) -> Any:

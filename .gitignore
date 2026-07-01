@@ -108,3 +108,6 @@ output/*/index.html
 docs/_build
 public/
 web/
+
+# e2e artifacts
+e2e/artifacts/

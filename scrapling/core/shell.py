@@ -22,12 +22,13 @@ from logging import (
 )
 
 from lxml.etree import XPath
-from orjson import loads as json_loads, JSONDecodeError
+from orjson import loads as json_loads, dumps as json_dumps, JSONDecodeError
 
 from ._shell_signatures import Signatures_map
 from scrapling import __version__
 from scrapling.core.utils import log
 from scrapling.parser import Selector, Selectors
+from scrapling.extractors.json_extractor import JsonExtractor
 from scrapling.core.custom_types import TextHandler
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.core.utils._shell import _ParseHeaders, _CookieParser
@@ -577,6 +578,7 @@ class Convertor:
         "md": "markdown",
         "html": "html",
         "txt": "text",
+        "json": "json",
     }
 
     @classmethod
@@ -618,6 +620,7 @@ class Convertor:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = False,
+        schema: Optional[Dict] = None,
     ) -> Generator[str, None, None]:
         """Extract the content of a Selector"""
         if not page or not isinstance(page, Selector):  # pragma: no cover
@@ -650,19 +653,26 @@ class Convertor:
                             # Remove consecutive white-spaces
                             txt_content = TextHandler(re_sub(f"[{s}]+", s, txt_content))
                         yield txt_content
+                    case "json":
+                        yield json_dumps(JsonExtractor.resolve(page, schema)).decode()
             yield ""
 
     @classmethod
     def write_content_to_file(
-        cls, page: Selector, filename: str, css_selector: Optional[str] = None, main_content_only: bool = False
+        cls,
+        page: Selector,
+        filename: str,
+        css_selector: Optional[str] = None,
+        main_content_only: bool = False,
+        schema: Optional[Dict] = None,
     ) -> None:
         """Write a Selector's content to a file"""
         if not page or not isinstance(page, Selector):  # pragma: no cover
             raise TypeError("Input must be of type `Selector`")
         elif not filename or not isinstance(filename, str) or not filename.strip():
             raise ValueError("Filename must be provided")
-        elif not filename.endswith((".md", ".html", ".txt")):
-            raise ValueError("Unknown file type: filename must end with '.md', '.html', or '.txt'")
+        elif not filename.endswith((".md", ".html", ".txt", ".json")):
+            raise ValueError("Unknown file type: filename must end with '.md', '.html', '.txt', or '.json'")
         else:
             with open(filename, "w", encoding=page.encoding) as f:
                 extension = filename.split(".")[-1]
@@ -673,6 +683,7 @@ class Convertor:
                             cls._extension_map[extension],
                             css_selector=css_selector,
                             main_content_only=main_content_only,
+                            schema=schema,
                         )
                     )
                 )

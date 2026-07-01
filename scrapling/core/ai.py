@@ -77,6 +77,7 @@ def _translate_response(
     extraction_type: extraction_types,
     css_selector: Optional[str],
     main_content_only: bool,
+    schema: Optional[Dict] = None,
 ) -> ResponseModel:
     """Extract content from a response and translate it to a ResponseModel."""
     content = list(
@@ -85,6 +86,7 @@ def _translate_response(
             css_selector=css_selector,
             extraction_type=extraction_type,
             main_content_only=main_content_only,
+            schema=schema,
         )
     )
     return ResponseModel(status=page.status, content=content, url=page.url)
@@ -332,6 +334,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
+        schema: Optional[Dict] = None,
         params: Optional[Dict] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
         cookies: Optional[Dict[str, str]] = None,
@@ -357,7 +360,9 @@ class ScraplingMCPServer:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
             - Text will return the text content of the page.
+            - JSON will resolve the `schema` argument against the page and return the populated structured data as a JSON string.
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
+        :param schema: Used with `extraction_type="json"` to resolve a declarative schema (per-field `path`/`type`, optional `default`/`properties`/`items`) into structured data.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param params: Query string parameters for the request.
         :param headers: Headers to include in the request.
@@ -382,6 +387,7 @@ class ScraplingMCPServer:
             extraction_type=extraction_type,
             css_selector=css_selector,
             main_content_only=main_content_only,
+            schema=schema,
             params=params,
             headers=headers,
             cookies=cookies,
@@ -406,6 +412,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
+        schema: Optional[Dict] = None,
         params: Optional[Dict] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
         cookies: Optional[Dict[str, str]] = None,
@@ -431,7 +438,9 @@ class ScraplingMCPServer:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
             - Text will return the text content of the page.
+            - JSON will resolve the `schema` argument against the page and return the populated structured data as a JSON string.
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
+        :param schema: Used with `extraction_type="json"` to resolve a declarative schema (per-field `path`/`type`, optional `default`/`properties`/`items`) into structured data.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param params: Query string parameters for the request.
         :param headers: Headers to include in the request.
@@ -476,7 +485,10 @@ class ScraplingMCPServer:
                 for url in urls
             ]
             responses = await gather(*tasks)
-            return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
+            return [
+                _translate_response(page, extraction_type, css_selector, main_content_only, schema)
+                for page in responses
+            ]
 
     async def fetch(
         self,
@@ -484,6 +496,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
+        schema: Optional[Dict] = None,
         headless: bool = True,  # noqa: F821
         google_search: bool = True,
         real_chrome: bool = False,
@@ -513,7 +526,9 @@ class ScraplingMCPServer:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
             - Text will return the text content of the page.
+            - JSON will resolve the `schema` argument against the page and return the populated structured data as a JSON string.
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
+        :param schema: Used with `extraction_type="json"` to resolve a declarative schema (per-field `path`/`type`, optional `default`/`properties`/`items`) into structured data.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
@@ -540,6 +555,7 @@ class ScraplingMCPServer:
             extraction_type=extraction_type,
             css_selector=css_selector,
             main_content_only=main_content_only,
+            schema=schema,
             headless=headless,
             google_search=google_search,
             real_chrome=real_chrome,
@@ -566,6 +582,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
+        schema: Optional[Dict] = None,
         headless: bool = True,  # noqa: F821
         google_search: bool = True,
         real_chrome: bool = False,
@@ -595,7 +612,9 @@ class ScraplingMCPServer:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
             - Text will return the text content of the page.
+            - JSON will resolve the `schema` argument against the page and return the populated structured data as a JSON string.
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
+        :param schema: Used with `extraction_type="json"` to resolve a declarative schema (per-field `path`/`type`, optional `default`/`properties`/`items`) into structured data.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
@@ -659,7 +678,9 @@ class ScraplingMCPServer:
                 tasks = [session.fetch(url) for url in urls]
                 responses = await gather(*tasks)
 
-        return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
+        return [
+            _translate_response(page, extraction_type, css_selector, main_content_only, schema) for page in responses
+        ]
 
     async def stealthy_fetch(
         self,
@@ -667,6 +688,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
+        schema: Optional[Dict] = None,
         headless: bool = True,  # noqa: F821
         google_search: bool = True,
         real_chrome: bool = False,
@@ -701,7 +723,9 @@ class ScraplingMCPServer:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
             - Text will return the text content of the page.
+            - JSON will resolve the `schema` argument against the page and return the populated structured data as a JSON string.
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
+        :param schema: Used with `extraction_type="json"` to resolve a declarative schema (per-field `path`/`type`, optional `default`/`properties`/`items`) into structured data.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
@@ -733,6 +757,7 @@ class ScraplingMCPServer:
             extraction_type=extraction_type,
             css_selector=css_selector,
             main_content_only=main_content_only,
+            schema=schema,
             headless=headless,
             google_search=google_search,
             real_chrome=real_chrome,
@@ -764,6 +789,7 @@ class ScraplingMCPServer:
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
+        schema: Optional[Dict] = None,
         headless: bool = True,  # noqa: F821
         google_search: bool = True,
         real_chrome: bool = False,
@@ -798,7 +824,9 @@ class ScraplingMCPServer:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
             - Text will return the text content of the page.
+            - JSON will resolve the `schema` argument against the page and return the populated structured data as a JSON string.
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
+        :param schema: Used with `extraction_type="json"` to resolve a declarative schema (per-field `path`/`type`, optional `default`/`properties`/`items`) into structured data.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
@@ -872,7 +900,9 @@ class ScraplingMCPServer:
                 tasks = [session.fetch(url) for url in urls]
                 responses = await gather(*tasks)
 
-        return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
+        return [
+            _translate_response(page, extraction_type, css_selector, main_content_only, schema) for page in responses
+        ]
 
     def serve(self, http: bool, host: str, port: int):
         """Serve the MCP server."""
