@@ -38,7 +38,7 @@ ProxyType = Union[str, Dict[str, str]]
 SUPPORTED_HTTP_METHODS = Literal["GET", "POST", "PUT", "DELETE"]
 SelectorWaitStates = Literal["attached", "detached", "hidden", "visible"]
 PageLoadStates = Literal["commit", "domcontentloaded", "load", "networkidle"]
-extraction_types = Literal["text", "html", "markdown"]
+extraction_types = Literal["text", "html", "markdown", "json"]
 StrOrBytes = Union[str, bytes]
 FollowRedirects = Union[bool, Literal["safe", "all", "obeycode", "firstonly"]]
 
