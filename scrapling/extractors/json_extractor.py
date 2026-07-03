@@ -32,7 +32,8 @@ class JsonExtractor:
     def _resolve_field(cls, node: Optional["Selector"], spec: Any) -> Any:
         """Dispatch a field spec, falling back to its default on any failure."""
         if not isinstance(spec, dict):
-            return None
+            return spec
+
         try:
             kind = spec.get("type")
             if kind == "object":
@@ -54,7 +55,12 @@ class JsonExtractor:
             return spec.get("default")
         kind = spec.get("type")
         caster = cls._CASTERS.get(kind) if isinstance(kind, str) else None
-        return caster(raw) if caster else str(raw)
+        val = caster(raw) if caster else raw
+        if isinstance(val, str):
+            val = " ".join(val.split())
+        return val
+
+
 
     @classmethod
     def _resolve_object(cls, node: Optional["Selector"], spec: Dict[str, Any]) -> Dict[str, Any]:

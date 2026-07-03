@@ -200,5 +200,6 @@ class TestEntryPointsAndEdgeCases:
         assert JsonExtractor.resolve(page, {}) == {}
         assert JsonExtractor.resolve(page, None) == {}
 
-    def test_non_dict_spec_is_none(self, page):
-        assert JsonExtractor.resolve(page, {"weird": "not-a-spec"}) == {"weird": None}
+    def test_non_dict_spec_returns_constant(self, page):
+        assert JsonExtractor.resolve(page, {"weird": "not-a-spec"}) == {"weird": "not-a-spec"}
+
