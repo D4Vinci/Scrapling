@@ -122,6 +122,7 @@ class ResponseFactory:
         try:
             if page and "html" in final_response.all_headers().get("content-type", ""):
                 page_content = cls._get_page_content(page).encode("utf-8")
+                encoding = "utf-8"
             else:
                 page_content = final_response.body()
         except Exception as e:  # pragma: no cover
@@ -269,6 +270,7 @@ class ResponseFactory:
         try:
             if page and "html" in (await final_response.all_headers()).get("content-type", ""):
                 page_content = (await cls._get_async_page_content(page)).encode("utf-8")
+                encoding = "utf-8"
             else:
                 page_content = await final_response.body()
         except Exception as e:  # pragma: no cover
