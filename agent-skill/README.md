@@ -15,3 +15,11 @@ clawhub install scrapling-official
 ```
 
 Or go to the [Clawhub](https://docs.openclaw.ai/tools/clawhub) page from [here](https://clawhub.ai/D4Vinci/scrapling-official).
+
+### Skills.sh
+You can install the skill from this repository using the [skills.sh](https://skills.sh) CLI directly:
+```bash
+npx skills add D4Vinci/Scrapling --skill scrapling-official
+```
+
+The CLI will detect the agents you have installed and add the skill to them.

@@ -1,4 +1,5 @@
 from uuid import uuid4
+from os import environ
 from asyncio import gather
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
@@ -33,6 +34,7 @@ from scrapling.core._types import (
 
 SessionType = Literal["dynamic", "stealthy"]
 ScreenshotType = Literal["png", "jpeg"]
+MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
 
 
 class ResponseModel(BaseModel):
@@ -105,8 +107,18 @@ def _normalize_credentials(credentials: Optional[Dict[str, str]]) -> Optional[Tu
 
 
 class ScraplingMCPServer:
-    def __init__(self):
+    def __init__(self, executable_path: Optional[str] = None):
+        """Create a Scrapling MCP server.
+
+        :param executable_path: Optional global Chromium-compatible browser executable path for browser tools.
+            If omitted, the SCRAPLING_EXECUTABLE_PATH environment variable is used when set.
+        """
         self._sessions: Dict[str, _SessionEntry] = {}
+        self._executable_path = executable_path or environ.get(MCP_EXECUTABLE_PATH_ENV) or None
+
+    def _resolve_executable_path(self, executable_path: Optional[str]) -> Optional[str]:
+        """Return a per-call executable path or the server-wide default."""
+        return executable_path or self._executable_path
 
     def _get_session(self, session_id: str, expected_type: Optional[SessionType]) -> _SessionEntry:
         """Look up a session by ID, optionally validating its type. Pass `None` to skip the type check."""
@@ -136,6 +148,7 @@ class ScraplingMCPServer:
         extra_headers: Optional[Dict[str, str]] = None,
         useragent: Optional[str] = None,
         cdp_url: Optional[str] = None,
+        executable_path: Optional[str] = None,
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
@@ -166,6 +179,7 @@ class ScraplingMCPServer:
         :param extra_headers: A dictionary of extra headers to add to the request.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
+        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this session.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
         :param wait_selector: Wait for a specific CSS selector to be in a specific state.
@@ -202,6 +216,7 @@ class ScraplingMCPServer:
             wait_selector=wait_selector,
             google_search=google_search,
             extra_headers=extra_headers,
+            executable_path=self._resolve_executable_path(executable_path),
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
         )
@@ -494,6 +509,7 @@ class ScraplingMCPServer:
         extra_headers: Optional[Dict[str, str]] = None,
         useragent: Optional[str] = None,
         cdp_url: Optional[str] = None,
+        executable_path: Optional[str] = None,
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
@@ -530,6 +546,7 @@ class ScraplingMCPServer:
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
+        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this request.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -550,6 +567,7 @@ class ScraplingMCPServer:
             extra_headers=extra_headers,
             useragent=useragent,
             cdp_url=cdp_url,
+            executable_path=executable_path,
             timeout=timeout,
             disable_resources=disable_resources,
             wait_selector=wait_selector,
@@ -576,6 +594,7 @@ class ScraplingMCPServer:
         extra_headers: Optional[Dict[str, str]] = None,
         useragent: Optional[str] = None,
         cdp_url: Optional[str] = None,
+        executable_path: Optional[str] = None,
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
@@ -612,6 +631,7 @@ class ScraplingMCPServer:
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
+        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this request.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -653,6 +673,7 @@ class ScraplingMCPServer:
                 wait_selector=wait_selector,
                 google_search=google_search,
                 extra_headers=extra_headers,
+                executable_path=self._resolve_executable_path(executable_path),
                 disable_resources=disable_resources,
                 wait_selector_state=wait_selector_state,
             ) as session:
@@ -678,6 +699,7 @@ class ScraplingMCPServer:
         useragent: Optional[str] = None,
         hide_canvas: bool = False,
         cdp_url: Optional[str] = None,
+        executable_path: Optional[str] = None,
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
@@ -722,6 +744,7 @@ class ScraplingMCPServer:
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
+        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this request.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -744,6 +767,7 @@ class ScraplingMCPServer:
             useragent=useragent,
             hide_canvas=hide_canvas,
             cdp_url=cdp_url,
+            executable_path=executable_path,
             timeout=timeout,
             disable_resources=disable_resources,
             wait_selector=wait_selector,
@@ -775,6 +799,7 @@ class ScraplingMCPServer:
         useragent: Optional[str] = None,
         hide_canvas: bool = False,
         cdp_url: Optional[str] = None,
+        executable_path: Optional[str] = None,
         timeout: int | float = 30000,
         disable_resources: bool = False,
         wait_selector: Optional[str] = None,
@@ -819,6 +844,7 @@ class ScraplingMCPServer:
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
+        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this request.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -864,6 +890,7 @@ class ScraplingMCPServer:
                 wait_selector=wait_selector,
                 google_search=google_search,
                 extra_headers=extra_headers,
+                executable_path=self._resolve_executable_path(executable_path),
                 additional_args=additional_args,
                 solve_cloudflare=solve_cloudflare,
                 disable_resources=disable_resources,

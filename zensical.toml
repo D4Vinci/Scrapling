@@ -44,7 +44,8 @@ nav = [
             {"Extract commands" = "cli/extract-commands.md"}
         ]},
         {Integrations = [
-            {"AI MCP server" = "ai/mcp-server.md"}
+            {"AI MCP server" = "ai/mcp-server.md"},
+            {Scrapy = "integrations/scrapy.md"}
         ]}
     ]},
     {Tutorials = [
