@@ -157,10 +157,16 @@ def install(force):  # pragma: no cover
 @option(
     "--port", type=int, default=8000, help="The port to use if streamable-http transport is enabled (Default: 8000)"
 )
-def mcp(http, host, port):
+@option(
+    "--executable-path",
+    type=str,
+    default=None,
+    help="Path to a custom Chromium-compatible browser executable for browser-based MCP tools",
+)
+def mcp(http, host, port, executable_path):
     from scrapling.core.ai import ScraplingMCPServer
 
-    server = ScraplingMCPServer()
+    server = ScraplingMCPServer(executable_path=executable_path)
     server.serve(http, host, port)
 
 

@@ -57,7 +57,19 @@ class TestCLI:
 
             result = runner.invoke(mcp)
             assert result.exit_code == 0
-            mock_instance.serve.assert_called_once()
+            mock_server.assert_called_once_with(executable_path=None)
+            mock_instance.serve.assert_called_once_with(False, "0.0.0.0", 8000)
+
+    def test_mcp_command_with_executable_path(self, runner):
+        """Test MCP command with a custom browser executable"""
+        with patch('scrapling.core.ai.ScraplingMCPServer') as mock_server:
+            mock_instance = MagicMock()
+            mock_server.return_value = mock_instance
+
+            result = runner.invoke(mcp, ['--executable-path', '/opt/custom-chromium'])
+            assert result.exit_code == 0
+            mock_server.assert_called_once_with(executable_path='/opt/custom-chromium')
+            mock_instance.serve.assert_called_once_with(False, "0.0.0.0", 8000)
 
     def test_extract_get_command(self, runner, tmp_path, html_url):
         """Test extract `get` command"""

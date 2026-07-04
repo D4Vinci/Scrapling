@@ -1,5 +1,6 @@
 import base64
 import struct
+from typing import Any
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
@@ -16,6 +17,48 @@ from scrapling.core.ai import (
     SessionClosedModel,
     _normalize_credentials,
 )
+from scrapling.engines.toolbelt.custom import Response
+
+
+class _FakeAsyncBrowserSession:
+    instances: list["_FakeAsyncBrowserSession"] = []
+
+    def __init__(self, **kwargs: Any) -> None:
+        self.kwargs = kwargs
+        self._is_alive = False
+        type(self).instances.append(self)
+
+    async def __aenter__(self):
+        self._is_alive = True
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
+        self._is_alive = False
+
+    async def start(self) -> None:
+        self._is_alive = True
+
+    async def close(self) -> None:
+        self._is_alive = False
+
+    async def fetch(self, url: str, **kwargs: Any) -> Response:
+        return Response(
+            url=url,
+            content="<html><body>ok</body></html>",
+            status=200,
+            reason="OK",
+            cookies={},
+            headers={},
+            request_headers={},
+        )
+
+
+class _FakeDynamicSession(_FakeAsyncBrowserSession):
+    instances = []
+
+
+class _FakeStealthySession(_FakeAsyncBrowserSession):
+    instances = []
 
 
 @pytest_httpbin.use_class_based_httpbin
@@ -202,6 +245,60 @@ class TestSessionManagement:
             await server.open_session(session_type="dynamic", session_id="dupe", headless=True)
 
         await server.close_session("dupe")
+
+
+class TestExecutablePath:
+    """Test custom browser executable path plumbing in the MCP browser tools"""
+
+    @pytest.fixture(autouse=True)
+    def reset_fakes(self):
+        _FakeDynamicSession.instances = []
+        _FakeStealthySession.instances = []
+
+    @pytest.mark.asyncio
+    async def test_open_session_passes_executable_path(self, monkeypatch):
+        """open_session forwards per-session executable_path to the dynamic session"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        server = ScraplingMCPServer()
+
+        created = await server.open_session(session_type="dynamic", executable_path="/tmp/chrome")
+
+        assert _FakeDynamicSession.instances[0].kwargs["executable_path"] == "/tmp/chrome"
+        await server.close_session(created.session_id)
+
+    @pytest.mark.asyncio
+    async def test_open_session_uses_environment_default(self, monkeypatch):
+        """open_session uses SCRAPLING_EXECUTABLE_PATH when no per-call value is provided"""
+        monkeypatch.setenv("SCRAPLING_EXECUTABLE_PATH", "/opt/custom-chromium")
+        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        server = ScraplingMCPServer()
+
+        created = await server.open_session(session_type="stealthy")
+
+        assert _FakeStealthySession.instances[0].kwargs["executable_path"] == "/opt/custom-chromium"
+        await server.close_session(created.session_id)
+
+    @pytest.mark.asyncio
+    async def test_fetch_overrides_global_executable_path(self, monkeypatch):
+        """fetch forwards a per-call executable_path instead of the server default"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        server = ScraplingMCPServer(executable_path="/opt/default-chromium")
+
+        result = await server.fetch(url="https://example.com", executable_path="/opt/request-chromium")
+
+        assert isinstance(result, ResponseModel)
+        assert _FakeDynamicSession.instances[0].kwargs["executable_path"] == "/opt/request-chromium"
+
+    @pytest.mark.asyncio
+    async def test_stealthy_fetch_uses_global_executable_path(self, monkeypatch):
+        """stealthy_fetch forwards the server executable_path default"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        server = ScraplingMCPServer(executable_path="/opt/default-chromium")
+
+        result = await server.stealthy_fetch(url="https://example.com")
+
+        assert isinstance(result, ResponseModel)
+        assert _FakeStealthySession.instances[0].kwargs["executable_path"] == "/opt/default-chromium"
 
 
 def _png_height(data: bytes) -> int:
