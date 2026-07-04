@@ -211,4 +211,33 @@ docker pull pyd4vinci/scrapling
 docker run -i --rm pyd4vinci/scrapling mcp
 ```
 
+## Custom browser executable
+
+Browser-based tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, and `open_session`) can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
+
+To configure it once for the whole MCP server, pass the executable path when starting the server:
+
+```bash
+scrapling mcp --executable-path "/path/to/chromium"
+```
+
+In a Claude Desktop configuration, add the option to the server arguments:
+
+```json
+{
+  "mcpServers": {
+    "ScraplingServer": {
+      "command": "/Users/<MyUsername>/.venv/bin/scrapling",
+      "args": [
+        "mcp",
+        "--executable-path",
+        "/path/to/chromium"
+      ]
+    }
+  }
+}
+```
+
+You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. Tool calls can still pass `executable_path` directly when a single request or session needs a different browser executable.
+
 The MCP server name when registering with a client is `ScraplingServer`. The command is the path to the `scrapling` binary and the argument is `mcp`.

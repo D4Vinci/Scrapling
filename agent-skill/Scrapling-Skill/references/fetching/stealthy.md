@@ -75,6 +75,7 @@ In session classes, all these arguments can be set globally for the session. Sti
 2. The `disable_resources` option made requests ~25% faster in tests for some websites and can help save proxy usage, but be careful with it, as it can cause some websites to never finish loading.
 3. The `google_search` argument is enabled by default for all requests, setting the referer to `https://www.google.com/`. If used together with `extra_headers`, it takes priority over the referer set there.
 4. If you didn't set a user agent and enabled headless mode, the fetcher will generate a real user agent for the same browser version and use it. If you didn't set a user agent and didn't enable headless mode, the fetcher will use the browser's default user agent, which is the same as in standard browsers in the latest versions.
+5. `init_script` is registered with the browser context, so it runs when pages are created. Stealthy mode uses Patchright's isolated execution context by default; if your `page_action` needs to read globals that the script places on `window`, call `page.evaluate(..., isolated_context=False)` from the action.
 
 ## Examples
 

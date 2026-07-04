@@ -396,6 +396,7 @@ You already had a good glimpse of what the library can do. Use the references be
 - `references/parsing` - Everything you need for parsing HTML
 - `references/fetching` - Everything you need to fetch websites and session persistence
 - `references/spiders` - Everything you need to write spiders, proxy rotation, and advanced features. It follows a Scrapy-like format
+- `references/integrations/scrapy.md` - Using Scrapling's parsing API inside existing Scrapy projects through the `scrapling_response` decorator
 - `references/migrating_from_beautifulsoup.md` - A quick API comparison between scrapling and Beautifulsoup
 - `https://github.com/D4Vinci/Scrapling/tree/main/docs` - Full official docs in Markdown for quick access (use only if current references do not look up-to-date).
 
