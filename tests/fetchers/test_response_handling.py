@@ -1,7 +1,55 @@
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
+
+import pytest
 
 from scrapling.parser import Selector
 from scrapling.engines.toolbelt.convertor import ResponseFactory, Response
+
+
+HTML_WITH_ACCENTED_TEXT = "<html><body>Bürger</body></html>"
+LATIN9_CONTENT_TYPE = "text/html; charset=iso-8859-15"
+
+
+def make_sync_playwright_response():
+    response = Mock()
+    response.url = "https://example.com"
+    response.status = 200
+    response.status_text = "OK"
+    response.headers = {"content-type": LATIN9_CONTENT_TYPE}
+    response.all_headers = Mock(return_value={"content-type": LATIN9_CONTENT_TYPE})
+    response.body = Mock(return_value=HTML_WITH_ACCENTED_TEXT.encode("iso-8859-15"))
+    response.request.all_headers = Mock(return_value={})
+    response.request.redirected_from = None
+    return response
+
+
+def make_sync_page():
+    page = Mock()
+    page.url = "https://example.com"
+    page.content = Mock(return_value=HTML_WITH_ACCENTED_TEXT)
+    page.context.cookies = Mock(return_value=[])
+    return page
+
+
+def make_async_playwright_response():
+    response = Mock()
+    response.url = "https://example.com"
+    response.status = 200
+    response.status_text = "OK"
+    response.headers = {"content-type": LATIN9_CONTENT_TYPE}
+    response.all_headers = AsyncMock(return_value={"content-type": LATIN9_CONTENT_TYPE})
+    response.body = AsyncMock(return_value=HTML_WITH_ACCENTED_TEXT.encode("iso-8859-15"))
+    response.request.all_headers = AsyncMock(return_value={})
+    response.request.redirected_from = None
+    return response
+
+
+def make_async_page():
+    page = Mock()
+    page.url = "https://example.com"
+    page.content = AsyncMock(return_value=HTML_WITH_ACCENTED_TEXT)
+    page.context.cookies = AsyncMock(return_value=[])
+    return page
 
 
 class TestResponseFactory:
@@ -30,6 +78,72 @@ class TestResponseFactory:
         assert response.status == 200
         assert response.url == "https://example.com"
         assert isinstance(response, Response)
+
+    def test_playwright_page_content_uses_utf8_encoding(self):
+        """page.content() returns Unicode, so its encoded bytes are UTF-8."""
+        mock_response = make_sync_playwright_response()
+        mock_page = make_sync_page()
+
+        response = ResponseFactory.from_playwright_response(
+            mock_page,
+            mock_response,
+            mock_response,
+            {"adaptive": False},
+            collect_history=False,
+        )
+
+        assert response.encoding == "utf-8"
+        assert "Bürger" in response.html_content
+        assert "BÃ" not in response.html_content
+
+    def test_playwright_raw_response_keeps_header_encoding(self):
+        """Raw response bytes should still use the charset from Content-Type."""
+        mock_response = make_sync_playwright_response()
+
+        response = ResponseFactory.from_playwright_response(
+            None,
+            mock_response,
+            mock_response,
+            {"adaptive": False},
+            collect_history=False,
+        )
+
+        assert response.encoding == "iso-8859-15"
+        assert "Bürger" in response.html_content
+
+    @pytest.mark.asyncio
+    async def test_async_playwright_page_content_uses_utf8_encoding(self):
+        """Async page.content() returns Unicode, so its encoded bytes are UTF-8."""
+        mock_response = make_async_playwright_response()
+        mock_page = make_async_page()
+
+        response = await ResponseFactory.from_async_playwright_response(
+            mock_page,
+            mock_response,
+            mock_response,
+            {"adaptive": False},
+            collect_history=False,
+        )
+
+        assert response.encoding == "utf-8"
+        assert "Bürger" in response.html_content
+        assert "BÃ" not in response.html_content
+
+    @pytest.mark.asyncio
+    async def test_async_playwright_raw_response_keeps_header_encoding(self):
+        """Raw response bytes should still use the charset from Content-Type."""
+        mock_response = make_async_playwright_response()
+
+        response = await ResponseFactory.from_async_playwright_response(
+            None,
+            mock_response,
+            mock_response,
+            {"adaptive": False},
+            collect_history=False,
+        )
+
+        assert response.encoding == "iso-8859-15"
+        assert "Bürger" in response.html_content
 
     def test_response_history_processing(self):
         """Test processing response history"""
