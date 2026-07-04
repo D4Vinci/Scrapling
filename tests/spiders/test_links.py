@@ -183,12 +183,23 @@ class TestExtensions:
         urls = LinkExtractor().extract(resp)
         assert urls == ["https://example.com/d"]
 
+    def test_default_deny_extensions_drops_compound_archive(self):
+        html = '<a href="/dataset.tar.gz">archive</a><a href="/d">ok</a>'
+        resp = _make_response(html)
+        urls = LinkExtractor().extract(resp)
+        assert urls == ["https://example.com/d"]
+
     def test_custom_deny_extensions_overrides_default(self):
         html = '<a href="/a.pdf">pdf</a><a href="/b.zip">zip</a>'
         resp = _make_response(html)
         urls = LinkExtractor(deny_extensions={"zip"}).extract(resp)
         # .pdf now allowed because we replaced the set
         assert urls == ["https://example.com/a.pdf"]
+
+    def test_custom_deny_extensions_honors_compound_extension(self):
+        ex = LinkExtractor(deny_extensions={"tar.gz"})
+        assert ex.matches("https://example.com/dataset.tar.gz") is False
+        assert ex.matches("https://example.com/dataset.gz") is True
 
     def test_empty_deny_extensions_allows_everything(self):
         html = '<a href="/a.pdf">pdf</a>'
