@@ -1117,7 +1117,7 @@ class Selector(SelectorsGeneration):
 
         possible_targets = cast(List, _find_all_elements_with_spaces(self._root))
         if possible_targets:
-            for node in self.__elements_convertor(possible_targets):
+            for node in map(self.__element_convertor, possible_targets):
                 """Check if element matches given text otherwise, traverse the children tree and iterate"""
                 node_text: TextHandler = node.text
                 if clean_match:
@@ -1179,7 +1179,7 @@ class Selector(SelectorsGeneration):
 
         possible_targets = cast(List, _find_all_elements_with_spaces(self._root))
         if possible_targets:
-            for node in self.__elements_convertor(possible_targets):
+            for node in map(self.__element_convertor, possible_targets):
                 """Check if element matches given regex otherwise, traverse the children tree and iterate"""
                 node_text = node.text
                 if node_text.re(
