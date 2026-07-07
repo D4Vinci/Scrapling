@@ -181,16 +181,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank" title="Top-Tier Residential Proxy Solution for the Highest Success Rate">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/9proxy.jpg">
-      </a>
-    </td>
-    <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> oferece proxies residenciais a partir de apenas $0,018/IP ou $0,68/GB. Mais de 20M de IPs em mais de 90 países. Sessões fixas ou rotativas, gerenciadas pelo aplicativo desktop ou móvel.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://go.nodemaven.com/scraplingjune" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.svg" width="240" height="100">
       </a>
