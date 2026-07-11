@@ -9,6 +9,7 @@ import pytest
 import pytest_httpbin
 from mcp.types import ImageContent, TextContent
 
+from scrapling.parser import Selector
 from scrapling.core.ai import (
     ScraplingMCPServer,
     ResponseModel,
@@ -16,7 +17,21 @@ from scrapling.core.ai import (
     SessionCreatedModel,
     SessionClosedModel,
     _normalize_credentials,
+    _translate_response,
 )
+
+
+def test_translate_response_strips_control_characters():
+    """Pages with control chars like U+0008 must not crash the get/fetch path (issue #366)"""
+    html = "<html><body><p>Hello\x08World</p>\t\n<div>Foo\x0cbar</div></body></html>"
+    page = Selector(html, url="https://jfinal.com/doc/1-5")
+    page.status = 200
+
+    result = _translate_response(page, "markdown", None, main_content_only=True)
+
+    joined = "".join(result.content)
+    assert "HelloWorld" in joined and "Foobar" in joined
+    assert not any(ord(c) < 0x20 and c not in "\t\n\r" for c in joined)
 from scrapling.engines.toolbelt.custom import Response
 
 
