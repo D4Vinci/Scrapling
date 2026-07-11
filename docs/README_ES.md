@@ -113,18 +113,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
-      </a>
-    </td>
-    <td>Oye, creamos <a href="https://birdproxies.com/t/scrapling">
-        <b>BirdProxies</b>
-      </a> porque los proxies no deberían ser complicados ni caros. <br /> Proxies residenciales e ISP rápidos en más de 195 ubicaciones, precios justos y soporte real. <br />
-      <b>¡Prueba nuestro juego FlappyBird en la página de inicio para obtener datos gratis!</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
       </a>
@@ -175,16 +163,6 @@ MySpider().start()
     </td>
     <td>
     <a href="https://www.swiftproxy.net/?ref=D4Vinci" target="_blank">Swiftproxy</a> ofrece proxies residenciales escalables con más de 80 millones de IPs en más de 195 países, brindando conexiones rápidas y fiables, rotación automática y un sólido rendimiento anti-bloqueo. Prueba gratuita disponible.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank" title="Top-Tier Residential Proxy Solution for the Highest Success Rate">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/9proxy.jpg">
-      </a>
-    </td>
-    <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> ofrece proxies residenciales desde solo $0,018/IP o $0,68/GB. Más de 20 millones de IPs en más de 90 países. Sesiones fijas o rotativas, gestionadas desde la aplicación de escritorio o móvil.
     </td>
   </tr>
   <tr>

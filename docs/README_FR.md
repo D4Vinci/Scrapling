@@ -113,18 +113,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
-      </a>
-    </td>
-    <td>Nous avons créé <a href="https://birdproxies.com/t/scrapling">
-        <b>BirdProxies</b>
-      </a> parce que les proxies ne devraient pas être compliqués ni trop chers. Des proxies résidentiels et ISP rapides dans plus de 195 localisations, des prix équitables et un vrai support. <br />
-      <b>Essayez notre jeu FlappyBird sur la page d'accueil pour des données gratuites !</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
       </a>
@@ -175,16 +163,6 @@ MySpider().start()
     </td>
     <td>
     <a href="https://www.swiftproxy.net/?ref=D4Vinci" target="_blank">Swiftproxy</a> propose des proxys résidentiels évolutifs avec plus de 80 millions d'IPs dans plus de 195 pays, offrant des connexions rapides et fiables, une rotation automatique et de solides performances anti-blocage. Essai gratuit disponible.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank" title="Top-Tier Residential Proxy Solution for the Highest Success Rate">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/9proxy.jpg">
-      </a>
-    </td>
-    <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> propose des proxys résidentiels à partir de seulement 0,018 $/IP ou 0,68 $/Go. Plus de 20 millions d'IPs dans plus de 90 pays. Sessions fixes ou rotatives, gérées depuis l'application de bureau ou mobile.
     </td>
   </tr>
   <tr>

@@ -115,18 +115,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
-      </a>
-    </td>
-    <td>Nós criamos a <a href="https://birdproxies.com/t/scrapling">
-        <b>BirdProxies</b>
-      </a> porque proxies não deveriam ser complicados nem caros. Proxies residenciais e ISP rápidos em mais de 195 localidades, preços justos e suporte de verdade. <br />
-      <b>Experimente nosso jogo FlappyBird na landing page para ganhar dados grátis!</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
       </a>
@@ -177,16 +165,6 @@ MySpider().start()
     </td>
     <td>
     <a href="https://www.swiftproxy.net/?ref=D4Vinci" target="_blank">Swiftproxy</a> fornece proxies residenciais escaláveis com mais de 80M de IPs em mais de 195 países, entregando conexões rápidas e confiáveis, rotação automática e forte desempenho anti-bloqueio. Teste grátis disponível.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank" title="Top-Tier Residential Proxy Solution for the Highest Success Rate">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/9proxy.jpg">
-      </a>
-    </td>
-    <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> oferece proxies residenciais a partir de apenas $0,018/IP ou $0,68/GB. Mais de 20M de IPs em mais de 90 países. Sessões fixas ou rotativas, gerenciadas pelo aplicativo desktop ou móvel.
     </td>
   </tr>
   <tr>

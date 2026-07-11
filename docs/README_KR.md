@@ -113,18 +113,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
-      </a>
-    </td>
-    <td>프록시는 복잡하거나 비쌀 이유가 없다는 생각으로 <a href="https://birdproxies.com/t/scrapling">
-        <b>BirdProxies</b>
-      </a>를 만들었습니다. <br /> 195개 이상 지역의 빠른 레지덴셜 및 ISP 프록시, 합리적인 가격, 실질적인 지원. <br />
-      <b>랜딩 페이지에서 FlappyBird 게임을 플레이하고 무료 데이터를 받으세요!</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
       </a>
@@ -175,16 +163,6 @@ MySpider().start()
     </td>
     <td>
     <a href="https://www.swiftproxy.net/?ref=D4Vinci" target="_blank">Swiftproxy</a>는 195개국 이상에서 8천만 개 이상의 IP를 갖춘 확장 가능한 주거용 프록시를 제공하며, 빠르고 안정적인 연결, 자동 회전, 강력한 차단 방지 성능을 제공합니다. 무료 체험판 이용 가능.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank" title="Top-Tier Residential Proxy Solution for the Highest Success Rate">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/9proxy.jpg">
-      </a>
-    </td>
-    <td>
-    <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a>는 IP당 $0.018 또는 GB당 $0.68의 저렴한 가격부터 시작하는 주거용 프록시를 제공합니다. 90개국 이상에서 2천만 개 이상의 IP를 보유하고 있으며, 고정 또는 회전 세션을 데스크톱이나 모바일 앱에서 관리할 수 있습니다.
     </td>
   </tr>
   <tr>

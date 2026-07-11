@@ -113,18 +113,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
-      </a>
-    </td>
-    <td>مرحباً، لقد بنينا <a href="https://birdproxies.com/t/scrapling">
-        <b>BirdProxies</b>
-      </a> لأن البروكسيات لا يجب أن تكون معقدة أو باهظة الثمن. <br /> بروكسيات سكنية و ISP سريعة في أكثر من 195 موقعاً، أسعار عادلة، ودعم حقيقي. <br />
-      <b>جرّب لعبة FlappyBird على صفحة الهبوط للحصول على بيانات مجانية!</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://evomi.com?utm_source=github&utm_medium=banner&utm_campaign=d4vinci-scrapling" target="_blank" title="Evomi is your Swiss Quality Proxy Provider, starting at $0.49/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/evomi.png">
       </a>
@@ -175,16 +163,6 @@ MySpider().start()
     </td>
     <td>
     يوفر <a href="https://www.swiftproxy.net/?ref=D4Vinci" target="_blank">Swiftproxy</a> بروكسيات سكنية قابلة للتوسع مع أكثر من 80 مليون عنوان IP في أكثر من 195 دولة، ويقدم اتصالات سريعة وموثوقة، وتدوير تلقائي، وأداء قوي ضد الحظر. تجربة مجانية متاحة.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank" title="Top-Tier Residential Proxy Solution for the Highest Success Rate">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/9proxy.jpg">
-      </a>
-    </td>
-    <td>
-    يوفر <a href="https://9proxy.com/pricing?tab=traffic&utm_source=Github&utm_campaign=D4vinci" target="_blank">9Proxy</a> بروكسيات سكنية بدءًا من 0.018 دولار فقط لكل IP أو 0.68 دولار لكل جيجابايت. أكثر من 20 مليون عنوان IP في أكثر من 90 دولة. جلسات ثابتة أو متناوبة، تتم إدارتها من تطبيق سطح المكتب أو الجوال.
     </td>
   </tr>
   <tr>
