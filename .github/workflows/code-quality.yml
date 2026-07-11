@@ -58,7 +58,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install bandit[toml] ruff vermin mypy pyright
           pip install -e ".[all]"
-          pip install lxml-stubs
+          pip install lxml-stubs scrapy
 
       - name: Run Bandit (Security Linter)
         id: bandit
