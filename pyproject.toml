@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "scrapling"
 # Static version instead of a dynamic version so we can get better layer caching while building docker, check the docker file to understand
-version = "0.4.10"
+version = "0.4.11"
 description = "Scrapling is an undetectable, powerful, flexible, high-performance Python library that makes Web Scraping easy and effortless as it should be!"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
@@ -74,7 +74,7 @@ fetchers = [
     "click>=8.3.0",
     "curl_cffi>=0.15.0",
     "playwright==1.61.0",
-    "patchright==1.61.1",
+    "patchright==1.61.2",
     "browserforge>=1.2.4",
     "apify-fingerprint-datapoints>=0.13.0",
     "msgspec>=0.21.1",
