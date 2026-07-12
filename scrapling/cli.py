@@ -267,6 +267,11 @@ def _common_browser_options(f):
     """Apply shared Click options for browser-based commands (fetch/stealthy_fetch)."""
     decorators = [
         option(
+            "--executable-path",
+            envvar="SCRAPLING_EXECUTABLE_PATH",
+            help="Path to a custom Chromium-compatible browser executable. Can also be set with SCRAPLING_EXECUTABLE_PATH.",
+        ),
+        option(
             "--ai-targeted",
             is_flag=True,
             default=False,
@@ -563,6 +568,7 @@ def fetch(
     ai_targeted,
     dns_over_https,
     block_ads,
+    executable_path,
 ):
     """Opens up a browser and fetch content using DynamicFetcher."""
     parsed_headers, _ = _ParseHeaders(extra_headers, False)
@@ -580,6 +586,8 @@ def fetch(
         dns_over_https,
         block_ads,
     )
+    if executable_path:
+        kwargs["executable_path"] = executable_path
     from scrapling.fetchers import DynamicFetcher
 
     __Request_and_Save(DynamicFetcher.fetch, url, output_file, css_selector, ai_targeted=ai_targeted, **kwargs)
@@ -626,6 +634,7 @@ def stealthy_fetch(
     ai_targeted,
     dns_over_https,
     block_ads,
+    executable_path,
 ):
     """Opens up a browser with advanced stealth features and fetch content using StealthyFetcher."""
     parsed_headers, _ = _ParseHeaders(extra_headers, False)
@@ -643,6 +652,8 @@ def stealthy_fetch(
         dns_over_https,
         block_ads,
     )
+    if executable_path:
+        kwargs["executable_path"] = executable_path
     kwargs.update(
         {
             "block_webrtc": block_webrtc,

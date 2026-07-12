@@ -1,4 +1,6 @@
 import pytest
+import sys
+from types import ModuleType
 from click.testing import CliRunner
 from unittest.mock import patch, MagicMock
 import pytest_httpbin
@@ -178,6 +180,39 @@ class TestCLI:
                 ]
             )
             assert result.exit_code == 0
+
+    def test_extract_fetch_passes_executable_path(self, runner, tmp_path, html_url):
+        output_file = tmp_path / "output.txt"
+
+        fetchers = ModuleType('scrapling.fetchers')
+        fetchers.DynamicFetcher = MagicMock()
+        fetchers.DynamicFetcher.fetch.return_value = configure_selector_mock()
+        with patch.dict(sys.modules, {'scrapling.fetchers': fetchers}):
+
+            result = runner.invoke(
+                fetch,
+                [html_url, str(output_file), '--executable-path', '/opt/custom-chromium'],
+            )
+
+            assert result.exit_code == 0
+            assert fetchers.DynamicFetcher.fetch.call_args.kwargs['executable_path'] == '/opt/custom-chromium'
+
+    def test_extract_stealthy_fetch_uses_executable_path_env(self, runner, tmp_path, html_url):
+        output_file = tmp_path / "output.md"
+
+        fetchers = ModuleType('scrapling.fetchers')
+        fetchers.StealthyFetcher = MagicMock()
+        fetchers.StealthyFetcher.fetch.return_value = configure_selector_mock()
+        with patch.dict(sys.modules, {'scrapling.fetchers': fetchers}):
+
+            result = runner.invoke(
+                stealthy_fetch,
+                [html_url, str(output_file)],
+                env={'SCRAPLING_EXECUTABLE_PATH': '/opt/env-chromium'},
+            )
+
+            assert result.exit_code == 0
+            assert fetchers.StealthyFetcher.fetch.call_args.kwargs['executable_path'] == '/opt/env-chromium'
 
     def test_extract_stealthy_fetch_command(self, runner, tmp_path, html_url):
         """Test extract fetch command"""
