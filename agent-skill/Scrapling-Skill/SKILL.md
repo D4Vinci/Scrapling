@@ -158,6 +158,7 @@ Both (`fetch` / `stealthy-fetch`) share options:
 | -H, --extra-headers                      |    TEXT    | Extra headers in format "Key: Value" (can be used multiple times)                                                                                        |
 | --dns-over-https / --no-dns-over-https   |    None    | Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)                                                              |
 | --block-ads / --no-block-ads             |    None    | Block requests to ~3,500 known ad and tracker domains (default: False)                                                                                   |
+| --executable-path                        |    TEXT    | Path to a custom Chromium-compatible browser executable. Falls back to the SCRAPLING_EXECUTABLE_PATH environment variable when not set.                  |
 | --ai-targeted                            |    None    | Extract only main content and sanitize hidden elements for AI consumption (default: False). Also enables ad blocking automatically.                      |
 
 This option is specific to `fetch` only:
