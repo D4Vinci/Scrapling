@@ -26,15 +26,15 @@ from scrapling.engines._browsers._types import PlaywrightFetchParams, StealthFet
 
 # Custom validators for msgspec
 @lru_cache(8)
-def _is_invalid_file_path(value: str) -> bool | str:  # pragma: no cover
+def _is_invalid_file_path(value: str, label: str = "Init script") -> bool | str:  # pragma: no cover
     """Fast file path validation"""
     path = Path(value)
     if not path.exists():
-        return f"Init script path not found: {value}"
+        return f"{label} path not found: {value}"
     if not path.is_file():
-        return f"Init script is not a file: {value}"
+        return f"{label} is not a file: {value}"
     if not path.is_absolute():
-        return f"Init script is not a absolute path: {value}"
+        return f"{label} is not an absolute path: {value}"
     return False
 
 
@@ -128,7 +128,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
                 raise ValueError(validation_msg)
 
         if self.executable_path is not None:
-            validation_msg = _is_invalid_file_path(self.executable_path)
+            validation_msg = _is_invalid_file_path(self.executable_path, "Browser executable")
             if validation_msg:
                 raise ValueError(validation_msg)
 
