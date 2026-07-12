@@ -5,9 +5,7 @@ import pytest_httpbin
 
 from scrapling.parser import Selector
 from scrapling import __version__
-from scrapling.cli import (
-    main, shell, mcp, get, post, put, delete, fetch, stealthy_fetch
-)
+from scrapling.cli import main, shell, mcp, get, post, put, delete, fetch, stealthy_fetch
 
 
 @pytest_httpbin.use_class_based_httpbin
@@ -35,13 +33,13 @@ class TestCLI:
 
     def test_version_flag(self, runner):
         """Test that the --version flag prints the Scrapling version and exits"""
-        result = runner.invoke(main, ['--version'])
+        result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
-        assert result.output.strip() == f'Scrapling, version {__version__}'
+        assert result.output.strip() == f"Scrapling, version {__version__}"
 
     def test_shell_command(self, runner):
         """Test shell command"""
-        with patch('scrapling.core.shell.CustomShell') as mock_shell:
+        with patch("scrapling.core.shell.CustomShell") as mock_shell:
             mock_instance = MagicMock()
             mock_shell.return_value = mock_instance
 
@@ -51,7 +49,7 @@ class TestCLI:
 
     def test_mcp_command(self, runner):
         """Test MCP command"""
-        with patch('scrapling.core.ai.ScraplingMCPServer') as mock_server:
+        with patch("scrapling.core.ai.ScraplingMCPServer") as mock_server:
             mock_instance = MagicMock()
             mock_server.return_value = mock_instance
 
@@ -62,32 +60,29 @@ class TestCLI:
 
     def test_mcp_command_with_executable_path(self, runner):
         """Test MCP command with a custom browser executable"""
-        with patch('scrapling.core.ai.ScraplingMCPServer') as mock_server:
+        with patch("scrapling.core.ai.ScraplingMCPServer") as mock_server:
             mock_instance = MagicMock()
             mock_server.return_value = mock_instance
 
-            result = runner.invoke(mcp, ['--executable-path', '/opt/custom-chromium'])
+            result = runner.invoke(mcp, ["--executable-path", "/opt/custom-chromium"])
             assert result.exit_code == 0
-            mock_server.assert_called_once_with(executable_path='/opt/custom-chromium')
+            mock_server.assert_called_once_with(executable_path="/opt/custom-chromium")
             mock_instance.serve.assert_called_once_with(False, "0.0.0.0", 8000)
 
     def test_extract_get_command(self, runner, tmp_path, html_url):
         """Test extract `get` command"""
         output_file = tmp_path / "output.md"
 
-        with patch('scrapling.fetchers.Fetcher.get') as mock_get:
+        with patch("scrapling.fetchers.Fetcher.get") as mock_get:
             mock_response = configure_selector_mock()
             mock_response.status = 200
             mock_get.return_value = mock_response
 
-            result = runner.invoke(
-                get,
-                [html_url, str(output_file)]
-            )
+            result = runner.invoke(get, [html_url, str(output_file)])
             assert result.exit_code == 0
 
         # Test with various options
-        with patch('scrapling.fetchers.Fetcher.get') as mock_get:
+        with patch("scrapling.fetchers.Fetcher.get") as mock_get:
             mock_get.return_value = mock_response
 
             result = runner.invoke(
@@ -95,13 +90,19 @@ class TestCLI:
                 [
                     html_url,
                     str(output_file),
-                    '-H', 'User-Agent: Test',
-                    '--cookies', 'session=abc123',
-                    '--timeout', '60',
-                    '--proxy', 'http://proxy:8080',
-                    '-s', '.content',
-                    '-p', 'page=1'
-                ]
+                    "-H",
+                    "User-Agent: Test",
+                    "--cookies",
+                    "session=abc123",
+                    "--timeout",
+                    "60",
+                    "--proxy",
+                    "http://proxy:8080",
+                    "-s",
+                    ".content",
+                    "-p",
+                    "page=1",
+                ],
             )
             assert result.exit_code == 0
 
@@ -109,95 +110,117 @@ class TestCLI:
         """Test extract `post` command"""
         output_file = tmp_path / "output.html"
 
-        with patch('scrapling.fetchers.Fetcher.post') as mock_post:
+        with patch("scrapling.fetchers.Fetcher.post") as mock_post:
             mock_response = configure_selector_mock()
             mock_post.return_value = mock_response
 
-            result = runner.invoke(
-                post,
-                [
-                    html_url,
-                    str(output_file),
-                    '-d', 'key=value',
-                    '-j', '{"data": "test"}'
-                ]
-            )
+            result = runner.invoke(post, [html_url, str(output_file), "-d", "key=value", "-j", '{"data": "test"}'])
             assert result.exit_code == 0
 
     def test_extract_put_command(self, runner, tmp_path, html_url):
         """Test extract `put` command"""
         output_file = tmp_path / "output.html"
 
-        with patch('scrapling.fetchers.Fetcher.put') as mock_put:
+        with patch("scrapling.fetchers.Fetcher.put") as mock_put:
             mock_response = configure_selector_mock()
             mock_put.return_value = mock_response
 
-            result = runner.invoke(
-                put,
-                [
-                    html_url,
-                    str(output_file),
-                    '-d', 'key=value',
-                    '-j', '{"data": "test"}'
-                ]
-            )
+            result = runner.invoke(put, [html_url, str(output_file), "-d", "key=value", "-j", '{"data": "test"}'])
             assert result.exit_code == 0
 
     def test_extract_delete_command(self, runner, tmp_path, html_url):
         """Test extract `delete` command"""
         output_file = tmp_path / "output.html"
 
-        with patch('scrapling.fetchers.Fetcher.delete') as mock_delete:
+        with patch("scrapling.fetchers.Fetcher.delete") as mock_delete:
             mock_response = configure_selector_mock()
             mock_delete.return_value = mock_response
 
-            result = runner.invoke(
-                delete,
-                [
-                    html_url,
-                    str(output_file)
-                ]
-            )
+            result = runner.invoke(delete, [html_url, str(output_file)])
             assert result.exit_code == 0
 
     def test_extract_fetch_command(self, runner, tmp_path, html_url):
         """Test extract fetch command"""
         output_file = tmp_path / "output.txt"
 
-        with patch('scrapling.fetchers.DynamicFetcher.fetch') as mock_fetch:
+        with patch("scrapling.fetchers.DynamicFetcher.fetch") as mock_fetch:
             mock_response = configure_selector_mock()
             mock_fetch.return_value = mock_response
 
-            result = runner.invoke(
-                fetch,
-                [
-                    html_url,
-                    str(output_file),
-                    '--headless',
-                    '--timeout', '60000'
-                ]
-            )
+            result = runner.invoke(fetch, [html_url, str(output_file), "--headless", "--timeout", "60000"])
             assert result.exit_code == 0
 
     def test_extract_stealthy_fetch_command(self, runner, tmp_path, html_url):
         """Test extract fetch command"""
         output_file = tmp_path / "output.md"
 
-        with patch('scrapling.fetchers.StealthyFetcher.fetch') as mock_fetch:
+        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
             mock_response = configure_selector_mock()
             mock_fetch.return_value = mock_response
 
             result = runner.invoke(
                 stealthy_fetch,
-                [
-                    html_url,
-                    str(output_file),
-                    '--headless',
-                    '--css-selector', 'body',
-                    '--timeout', '60000'
-                ]
+                [html_url, str(output_file), "--headless", "--css-selector", "body", "--timeout", "60000"],
             )
             assert result.exit_code == 0
+
+    def test_extract_fetch_with_executable_path(self, runner, tmp_path, html_url, monkeypatch):
+        """Test that --executable-path is passed through to DynamicFetcher and wins over the environment variable"""
+        output_file = tmp_path / "output.html"
+        monkeypatch.setenv("SCRAPLING_EXECUTABLE_PATH", "/opt/env-chromium")
+
+        with patch("scrapling.fetchers.DynamicFetcher.fetch") as mock_fetch:
+            mock_fetch.return_value = configure_selector_mock()
+
+            result = runner.invoke(fetch, [html_url, str(output_file), "--executable-path", "/opt/custom-chromium"])
+            assert result.exit_code == 0
+            assert mock_fetch.call_args.kwargs["executable_path"] == "/opt/custom-chromium"
+
+    def test_extract_fetch_executable_path_env_fallback(self, runner, tmp_path, html_url, monkeypatch):
+        """Test that SCRAPLING_EXECUTABLE_PATH is used when --executable-path is not passed"""
+        output_file = tmp_path / "output.html"
+        monkeypatch.setenv("SCRAPLING_EXECUTABLE_PATH", "/opt/env-chromium")
+
+        with patch("scrapling.fetchers.DynamicFetcher.fetch") as mock_fetch:
+            mock_fetch.return_value = configure_selector_mock()
+
+            result = runner.invoke(fetch, [html_url, str(output_file)])
+            assert result.exit_code == 0
+            assert mock_fetch.call_args.kwargs["executable_path"] == "/opt/env-chromium"
+
+    def test_extract_fetch_without_executable_path(self, runner, tmp_path, html_url, monkeypatch):
+        """Test that executable_path is not passed to the fetcher when neither source is set"""
+        output_file = tmp_path / "output.html"
+        monkeypatch.delenv("SCRAPLING_EXECUTABLE_PATH", raising=False)
+
+        with patch("scrapling.fetchers.DynamicFetcher.fetch") as mock_fetch:
+            mock_fetch.return_value = configure_selector_mock()
+
+            result = runner.invoke(fetch, [html_url, str(output_file)])
+            assert result.exit_code == 0
+            assert "executable_path" not in mock_fetch.call_args.kwargs
+
+    def test_extract_stealthy_fetch_with_executable_path(self, runner, tmp_path, html_url, monkeypatch):
+        """Test that --executable-path and the environment fallback work for stealthy_fetch too"""
+        output_file = tmp_path / "output.html"
+        monkeypatch.delenv("SCRAPLING_EXECUTABLE_PATH", raising=False)
+
+        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
+            mock_fetch.return_value = configure_selector_mock()
+
+            result = runner.invoke(
+                stealthy_fetch, [html_url, str(output_file), "--executable-path", "/opt/custom-chromium"]
+            )
+            assert result.exit_code == 0
+            assert mock_fetch.call_args.kwargs["executable_path"] == "/opt/custom-chromium"
+
+        monkeypatch.setenv("SCRAPLING_EXECUTABLE_PATH", "/opt/env-chromium")
+        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
+            mock_fetch.return_value = configure_selector_mock()
+
+            result = runner.invoke(stealthy_fetch, [html_url, str(output_file)])
+            assert result.exit_code == 0
+            assert mock_fetch.call_args.kwargs["executable_path"] == "/opt/env-chromium"
 
     def test_invalid_arguments(self, runner, html_url):
         """Test invalid arguments handling"""
@@ -205,56 +228,39 @@ class TestCLI:
         result = runner.invoke(get)
         assert result.exit_code != 0
 
-        _ = runner.invoke(
-            get,
-            [html_url, 'output.invalid']
-        )
+        _ = runner.invoke(get, [html_url, "output.invalid"])
         # Should handle the error gracefully
 
     def test_impersonate_comma_separated(self, runner, tmp_path, html_url):
         """Test that comma-separated impersonate values are parsed correctly"""
         output_file = tmp_path / "output.md"
 
-        with patch('scrapling.fetchers.Fetcher.get') as mock_get:
+        with patch("scrapling.fetchers.Fetcher.get") as mock_get:
             mock_response = configure_selector_mock()
             mock_response.status = 200
             mock_get.return_value = mock_response
 
-            result = runner.invoke(
-                get,
-                [
-                    html_url,
-                    str(output_file),
-                    '--impersonate', 'chrome,firefox,safari'
-                ]
-            )
+            result = runner.invoke(get, [html_url, str(output_file), "--impersonate", "chrome,firefox,safari"])
             assert result.exit_code == 0
 
             # Verify that the impersonate argument was converted to a list
             call_kwargs = mock_get.call_args[1]
-            assert isinstance(call_kwargs['impersonate'], list)
-            assert call_kwargs['impersonate'] == ['chrome', 'firefox', 'safari']
+            assert isinstance(call_kwargs["impersonate"], list)
+            assert call_kwargs["impersonate"] == ["chrome", "firefox", "safari"]
 
     def test_impersonate_single_browser(self, runner, tmp_path, html_url):
         """Test that single impersonate value remains as string"""
         output_file = tmp_path / "output.md"
 
-        with patch('scrapling.fetchers.Fetcher.get') as mock_get:
+        with patch("scrapling.fetchers.Fetcher.get") as mock_get:
             mock_response = configure_selector_mock()
             mock_response.status = 200
             mock_get.return_value = mock_response
 
-            result = runner.invoke(
-                get,
-                [
-                    html_url,
-                    str(output_file),
-                    '--impersonate', 'chrome'
-                ]
-            )
+            result = runner.invoke(get, [html_url, str(output_file), "--impersonate", "chrome"])
             assert result.exit_code == 0
 
             # Verify that the impersonate argument remains a string
             call_kwargs = mock_get.call_args[1]
-            assert isinstance(call_kwargs['impersonate'], str)
-            assert call_kwargs['impersonate'] == 'chrome'
+            assert isinstance(call_kwargs["impersonate"], str)
+            assert call_kwargs["impersonate"] == "chrome"

@@ -1,7 +1,7 @@
 ---
 name: scrapling-official
 description: Scrape web pages using Scrapling with anti-bot bypass (like Cloudflare Turnstile), stealth headless browsing, spiders framework, adaptive scraping, and JavaScript rendering. Use when asked to scrape, crawl, or extract data from websites; web_fetch fails; the site has anti-bot protections; write Python code to scrape/crawl; or write spiders.
-version: "0.4.10"
+version: "0.4.11"
 license: Complete terms in LICENSE.txt
 metadata:
   homepage: "https://scrapling.readthedocs.io/en/latest/index.html"
@@ -40,7 +40,7 @@ Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers fo
 
 Create a virtual Python environment through any way available, like `venv`, then inside the environment do:
 
-`pip install "scrapling[all]>=0.4.10"`
+`pip install "scrapling[all]>=0.4.11"`
 
 Then do this to download all the browsers' dependencies:
 
@@ -158,6 +158,7 @@ Both (`fetch` / `stealthy-fetch`) share options:
 | -H, --extra-headers                      |    TEXT    | Extra headers in format "Key: Value" (can be used multiple times)                                                                                        |
 | --dns-over-https / --no-dns-over-https   |    None    | Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)                                                              |
 | --block-ads / --no-block-ads             |    None    | Block requests to ~3,500 known ad and tracker domains (default: False)                                                                                   |
+| --executable-path                        |    TEXT    | Path to a custom Chromium-compatible browser executable. Falls back to the SCRAPLING_EXECUTABLE_PATH environment variable when not set.                  |
 | --ai-targeted                            |    None    | Extract only main content and sanitize hidden elements for AI consumption (default: False). Also enables ad blocking automatically.                      |
 
 This option is specific to `fetch` only:
@@ -324,6 +325,8 @@ class BlogCrawler(CrawlSpider):
         yield {"title": response.css("h1::text").get()}
 ```
 For sitemap-driven crawls, use `SitemapSpider` with the same `rules()` API. It fetches `sitemap_urls`, descends into sitemap indexes, and dispatches each URL through your rules. Put a `robots.txt` URL directly in `sitemap_urls` and the spider extracts each `Sitemap:` directive from it automatically. See `references/spiders/generic-templates.md` for the full reference, including `LinkExtractor`'s allow/deny/restrict_css/canonicalize options.
+
+For Shopify-powered stores, subclass `ShopifySpider` and set `target_website` to the store's domain; it extracts every product variant through Shopify's JSON API without touching the HTML. See `references/spiders/platform-templates.md`.
 
 ### Advanced Parsing & Navigation
 ```python

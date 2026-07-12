@@ -293,6 +293,7 @@ We will go through each command in detail below.
       -H, --extra-headers TEXT                    Extra headers in format "Key: Value" (can be used multiple times)
       --dns-over-https / --no-dns-over-https   Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)
       --block-ads / --no-block-ads               Block requests to known ad and tracker domains (default: False)
+      --executable-path TEXT                      Path to a custom Chromium-compatible browser executable. Falls back to the SCRAPLING_EXECUTABLE_PATH environment variable when not set.
       --ai-targeted                              Extract only main content and sanitize hidden elements for AI consumption (default: False)
       --help                                      Show this message and exit.
     ```
@@ -341,6 +342,7 @@ We will go through each command in detail below.
       -H, --extra-headers TEXT                    Extra headers in format "Key: Value" (can be used multiple times)
       --dns-over-https / --no-dns-over-https   Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)
       --block-ads / --no-block-ads               Block requests to known ad and tracker domains (default: False)
+      --executable-path TEXT                      Path to a custom Chromium-compatible browser executable. Falls back to the SCRAPLING_EXECUTABLE_PATH environment variable when not set.
       --ai-targeted                              Extract only main content and sanitize hidden elements for AI consumption (default: False)
       --help                                      Show this message and exit.
     ```

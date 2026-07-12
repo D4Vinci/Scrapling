@@ -424,14 +424,14 @@ Scrapling no solo es potente, también es ultrarrápido. Los siguientes benchmar
 
 | # |    Biblioteca     | Tiempo (ms) | vs Scrapling |
 |---|:-----------------:|:-----------:|:------------:|
-| 1 |     Scrapling     |    2.02     |     1.0x     |
-| 2 |   Parsel/Scrapy   |    2.04     |     1.01     |
-| 3 |     Raw Lxml      |    2.54     |    1.257     |
-| 4 |      PyQuery      |    24.17    |     ~12x     |
-| 5 |    Selectolax     |    82.63    |     ~41x     |
-| 6 |  MechanicalSoup   |   1549.71   |   ~767.1x    |
-| 7 |   BS4 with Lxml   |   1584.31   |   ~784.3x    |
-| 8 | BS4 with html5lib |   3391.91   |   ~1679.1x   |
+| 1 |     Scrapling     |    1.98     |     1.0x     |
+| 2 |   Parsel/Scrapy   |    1.99     |     1.005    |
+| 3 |     Raw Lxml      |    2.48     |    1.253     |
+| 4 |      PyQuery      |    23.15    |     ~12x     |
+| 5 |    Selectolax     |    196.09   |     ~99x     |
+| 6 |  MechanicalSoup   |   1531.24   |   ~773.4x    |
+| 7 |   BS4 with Lxml   |   1535.19   |   ~775.3x    |
+| 8 | BS4 with html5lib |   3388.16   |   ~1711.2x   |
 
 
 ### Rendimiento de Similitud de Elementos y Búsqueda de Texto
@@ -440,8 +440,8 @@ Las capacidades de búsqueda adaptativa de elementos de Scrapling superan signif
 
 | Biblioteca  | Tiempo (ms) | vs Scrapling |
 |-------------|:-----------:|:------------:|
-| Scrapling   |    2.39     |     1.0x     |
-| AutoScraper |    12.45    |    5.209x    |
+| Scrapling   |    2.29     |     1.0x     |
+| AutoScraper |    12.46    |    5.441x    |
 
 
 > Todos los benchmarks representan promedios de más de 100 ejecuciones. Ver [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) para la metodología.
