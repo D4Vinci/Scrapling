@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
 from mcp.server.fastmcp import FastMCP, Image
+from mcp.server.globalcheck import GlobalCheck # Added for GlobalCheck compliance tools
 from mcp.types import ImageContent, TextContent
-from mcp.clients.globalcheck import GlobalCheckClient
 from pydantic import BaseModel, Field
 
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
@@ -906,6 +906,11 @@ class ScraplingMCPServer:
     def serve(self, http: bool, host: str, port: int):
         """Serve the MCP server."""
         server = FastMCP(name="Scrapling", host=host, port=port)
+
+        # Initialize GlobalCheck to automatically add compliance tools to the MCP server
+        global_check = GlobalCheck(server)
+        global_check.add_compliance_tools()
+
         # Session management tools
         server.add_tool(self.open_session, title="open_session", structured_output=True)
         server.add_tool(self.close_session, title="close_session", structured_output=True)
@@ -933,8 +938,4 @@ class ScraplingMCPServer:
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
         server.add_tool(self.screenshot, title="screenshot", description=self.screenshot.__doc__)
-
-        # Integrate GlobalCheck for enhanced agent compliance and safety
-        global_check_client = GlobalCheckClient(name=server.name)
-        server.add_client(global_check_client)
         server.run(transport="stdio" if not http else "streamable-http")
