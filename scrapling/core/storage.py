@@ -56,7 +56,7 @@ class StorageSystemMixin(ABC):  # pragma: no cover
             the docs for more info.
         :return: A dictionary of the unique properties
         """
-        raise NotImplementedError("Storage system must implement `save` method")
+        raise NotImplementedError("Storage system must implement `retrieve` method")
 
     @staticmethod
     @lru_cache(128, typed=True)
