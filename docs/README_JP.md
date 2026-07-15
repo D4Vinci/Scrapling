@@ -94,11 +94,11 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://coldproxy.com/" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
+      <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=github&utm_campaign=coldproxy&utm_content=platinum_sponsor" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png">
       </a>
     </td>
-    <td> <a href="https://coldproxy.com/" target="_blank"><b>ColdProxy</b></a> は、安定したウェブスクレイピング、公開データ収集、195以上の国・地域でのジオターゲティングテストのために、レジデンシャルおよびデータセンタープロキシを提供します。
+    <td> <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=github&utm_campaign=coldproxy&utm_content=platinum_sponsor" target="_blank"><b>ColdProxy</b></a> は、安定したウェブスクレイピング、公開データ収集、195以上の国・地域でのジオターゲティングテストのために、レジデンシャルおよびデータセンタープロキシを提供します。
     </td>
   </tr>
   <tr>
