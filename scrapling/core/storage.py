@@ -123,7 +123,6 @@ class SQLiteStorageSystem(StorageSystemMixin):
             """,
                 (url, identifier, dumps(element_data)),
             )
-            self.cursor.fetchall()
             self.connection.commit()
 
     def retrieve(self, identifier: str) -> Optional[Dict[str, Any]]:
