@@ -301,7 +301,8 @@ class Selector(SelectorsGeneration):
         ignored_elements: set[Any] = set()
         if ignore_tags:
             for element in self._root.iter(*ignore_tags):
-                ignored_elements.update(element.iter())
+                if element not in ignored_elements:
+                    ignored_elements.update(element.iter())
 
         _all_strings = []
 
