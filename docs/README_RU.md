@@ -85,6 +85,16 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
+      <a href="https://go.nodemaven.com/scraplingjuly" target="_blank" title="Proxies with the Highest IP Scores">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://go.nodemaven.com/scraplingjuly" target="_blank">NodeMaven</a> - надёжный провайдер прокси с самым высоким качеством IP на рынке. Используйте промокод SCRAPLING35 для получения скидки 35% на прокси.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png">
       </a>
@@ -165,16 +175,6 @@ MySpider().start()
     </td>
     <td>
     <a href="https://www.swiftproxy.net/?ref=D4Vinci" target="_blank">Swiftproxy</a> предоставляет масштабируемые резидентные прокси с более чем 80 млн IP в 195+ странах, обеспечивая быстрые и надёжные соединения, автоматическую ротацию и высокую устойчивость к блокировкам. Доступна бесплатная пробная версия.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://go.nodemaven.com/scraplingjune" target="_blank" title="Proxies with the Highest IP Scores">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.svg" width="240" height="100">
-      </a>
-    </td>
-    <td>
-    <a href="https://go.nodemaven.com/scraplingjune" target="_blank">NodeMaven</a> - надёжный провайдер прокси с самым высоким качеством IP на рынке. Используйте промокод SCRAPLING35 для получения скидки 35% на прокси.
     </td>
   </tr>
 </table>
