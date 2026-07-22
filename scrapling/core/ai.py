@@ -930,6 +930,14 @@ class ScraplingMCPServer:
             description=self.bulk_stealthy_fetch.__doc__,
             structured_output=True,
         )
-        # Screenshot tool (returns image + url content blocks, not structured JSON)
-        server.add_tool(self.screenshot, title="screenshot", description=self.screenshot.__doc__)
+        # Screenshot tool (returns image + url content blocks, not structured JSON).
+        # `structured_output` must be explicitly False: the default (None) still derives
+        # an output schema from the return annotation, which serializes the image a
+        # second time into `structuredContent`.
+        server.add_tool(
+            self.screenshot,
+            title="screenshot",
+            description=self.screenshot.__doc__,
+            structured_output=False,
+        )
         server.run(transport="stdio" if not http else "streamable-http")

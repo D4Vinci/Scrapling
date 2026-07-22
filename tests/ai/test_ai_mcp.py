@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import struct
 from typing import Any
@@ -7,6 +8,7 @@ from threading import Thread
 
 import pytest
 import pytest_httpbin
+from mcp.server.fastmcp import FastMCP
 from mcp.types import ImageContent, TextContent
 
 from scrapling.parser import Selector
@@ -448,3 +450,35 @@ class TestNormalizeCredentials:
     def test_missing_username_raises(self):
         with pytest.raises(ValueError, match="username"):
             _normalize_credentials({"password": "pass"})
+
+
+class TestToolRegistration:
+    """Test how tools are registered on the MCP server"""
+
+    @staticmethod
+    def _registered_tools(monkeypatch) -> dict:
+        captured: dict = {}
+
+        def _capture(self, transport: str = "stdio") -> None:
+            captured["server"] = self
+
+        monkeypatch.setattr(FastMCP, "run", _capture)
+        ScraplingMCPServer().serve(http=False, host="127.0.0.1", port=0)
+        tools = asyncio.run(captured["server"].list_tools())
+        return {tool.name: tool for tool in tools}
+
+    def test_screenshot_tool_has_no_output_schema(self, monkeypatch):
+        """The screenshot tool returns content blocks, so it must not declare an output
+        schema. With one, FastMCP serializes the return value into `structuredContent`
+        as well, and the base64 image is sent twice — once as an image block and once as
+        JSON text, which is enormously expensive in an LLM's context window."""
+        tools = self._registered_tools(monkeypatch)
+
+        assert tools["screenshot"].outputSchema is None
+
+    def test_data_tools_keep_their_output_schema(self, monkeypatch):
+        """Tools returning models still expose structured output"""
+        tools = self._registered_tools(monkeypatch)
+
+        assert tools["get"].outputSchema is not None
+        assert tools["open_session"].outputSchema is not None
