@@ -22,6 +22,7 @@ To ensure that your PR gets accepted, please make sure that your PR is based on 
 - **Make your changes, keep the code clean with an explanation of any part that might be vague, and remember to create a separate virtual environment for this project.**
 - If you are adding a new feature, please add tests for it.
 - If you are fixing a bug, please add code with the PR that reproduces the bug.
+- Spider platform templates are welcome when the platform exposes a uniform structure across many independent domains; single-site scrapers never belong in the library.
 - Please follow the rules and coding style rules we explain below.
 
 

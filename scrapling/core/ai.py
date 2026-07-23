@@ -8,7 +8,7 @@ from mcp.server.fastmcp import FastMCP, Image
 from mcp.types import ImageContent, TextContent
 from pydantic import BaseModel, Field
 
-from scrapling.core.shell import Convertor
+from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.engines.static import ImpersonateType
 from scrapling.fetchers import (
@@ -81,14 +81,15 @@ def _translate_response(
     main_content_only: bool,
 ) -> ResponseModel:
     """Extract content from a response and translate it to a ResponseModel."""
-    content = list(
-        Convertor._extract_content(
+    content = [
+        _CONTROL_CHARS_PATTERN.sub("", chunk)
+        for chunk in Convertor._extract_content(
             page,
             css_selector=css_selector,
             extraction_type=extraction_type,
             main_content_only=main_content_only,
         )
-    )
+    ]
     return ResponseModel(status=page.status, content=content, url=page.url)
 
 

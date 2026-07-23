@@ -36,6 +36,7 @@ nav = [
             {"Sessions" = "spiders/sessions.md"},
             {"Proxy management & Blocking" = "spiders/proxy-blocking.md"},
             {"Generic crawlers" = "spiders/generic-templates.md"},
+            {"Platform crawlers" = "spiders/platform-templates.md"},
             {"Advanced features" = "spiders/advanced.md"}
         ]},
         {"Command Line Interface" = [
