@@ -14,14 +14,19 @@ from scrapling.engines.toolbelt.custom import Response
 from scrapling.core._types import Any, Dict, Set, AsyncGenerator
 
 
-def _make_response(url: str = "https://example.com", body: bytes = b"<html>hello</html>", status: int = 200) -> Response:
+def _make_response(
+    url: str = "https://example.com",
+    body: bytes = b"<html>hello</html>",
+    status: int = 200,
+    cookies: Any = None,
+) -> Response:
     return Response(
         url=url,
         content=body,
         status=status,
         reason="OK",
         encoding="utf-8",
-        cookies={},
+        cookies={} if cookies is None else cookies,
         headers={"content-type": "text/html"},
         request_headers={"user-agent": "test"},
         method="GET",
@@ -48,6 +53,66 @@ class TestResponseCacheManager:
             assert restored.encoding == original.encoding
             assert dict(restored.headers) == dict(original.headers)
             assert dict(restored.request_headers) == dict(original.request_headers)
+
+    @pytest.mark.anyio
+    async def test_put_get_roundtrip_preserves_browser_engine_cookies(self):
+        """Regression test for #376.
+
+        Browser engines (Playwright) populate ``Response.cookies`` as a ``tuple`` of
+        full cookie dicts (see ``engines/toolbelt/convertor.py``), unlike the flat
+        ``dict`` the static engine uses. The cache previously only recognized the
+        ``dict`` shape and silently discarded any other cookies, so a cached
+        browser-engine response replayed with no cookies at all.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache = ResponseCacheManager(tmpdir)
+            fp = b"\x06" * 20
+            browser_cookies = (
+                {
+                    "name": "session",
+                    "value": "abc123",
+                    "domain": "example.com",
+                    "path": "/",
+                    "expires": -1,
+                    "httpOnly": True,
+                    "secure": True,
+                    "sameSite": "Lax",
+                },
+                {
+                    "name": "csrftoken",
+                    "value": "xyz789",
+                    "domain": "example.com",
+                    "path": "/",
+                    "expires": -1,
+                    "httpOnly": False,
+                    "secure": True,
+                    "sameSite": "Strict",
+                },
+            )
+            original = _make_response(cookies=browser_cookies)
+
+            await cache.put(fp, original, "GET")
+            restored = await cache.get(fp)
+
+            assert restored is not None
+            assert restored.cookies == browser_cookies
+            assert isinstance(restored.cookies, tuple)
+
+    @pytest.mark.anyio
+    async def test_put_get_roundtrip_preserves_static_engine_cookies(self):
+        """Flat-dict cookies (static engine) must still round-trip as a ``dict``."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache = ResponseCacheManager(tmpdir)
+            fp = b"\x07" * 20
+            static_cookies = {"session": "abc123", "csrftoken": "xyz789"}
+            original = _make_response(cookies=static_cookies)
+
+            await cache.put(fp, original, "GET")
+            restored = await cache.get(fp)
+
+            assert restored is not None
+            assert restored.cookies == static_cookies
+            assert isinstance(restored.cookies, dict)
 
     @pytest.mark.anyio
     async def test_put_overwrites_existing_entry(self):
