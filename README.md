@@ -1,5 +1,8 @@
 <!-- mcp-name: io.github.D4Vinci/Scrapling -->
 
+[![mcpindex](https://mcpindex.ai/api/v1/badge/io-github-d4vinci-scrapling)](https://mcpindex.ai/server/io-github-d4vinci-scrapling)
+
+
 <h1 align="center">
     <a href="https://scrapling.readthedocs.io">
         <picture>
