@@ -1,4 +1,7 @@
+from unittest.mock import patch
+
 import pytest
+
 from scrapling.engines._browsers._validators import (
     validate,
     StealthConfig,
@@ -24,6 +27,20 @@ class TestValidators:
         assert config.headless is True
         assert config.timeout == 30000
         assert isinstance(config.proxy, dict)
+
+    def test_playwright_config_defaults_to_system_locale(self):
+        """Test the system locale is normalized for Playwright."""
+        with patch("locale.getlocale", return_value=("pt_BR", "UTF-8")):
+            config = validate({}, PlaywrightConfig)
+
+        assert config.locale == "pt-BR"
+
+    def test_playwright_config_preserves_explicit_locale(self):
+        """Test an explicit locale takes precedence over the system locale."""
+        with patch("locale.getlocale", return_value=("pt_BR", "UTF-8")):
+            config = validate({"locale": "de-DE"}, PlaywrightConfig)
+
+        assert config.locale == "de-DE"
 
     def test_playwright_config_invalid_max_pages(self):
         """Test PlaywrightConfig with invalid max_pages"""

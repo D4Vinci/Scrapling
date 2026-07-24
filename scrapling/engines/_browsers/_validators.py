@@ -1,3 +1,4 @@
+import locale
 from pathlib import Path
 from typing import Annotated
 from functools import lru_cache
@@ -95,6 +96,10 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
 
     def __post_init__(self):  # pragma: no cover
         """Custom validation after msgspec validation"""
+        if self.locale is None:
+            system_locale = locale.getlocale()[0]
+            if system_locale:
+                self.locale = system_locale.replace("_", "-")
         if self.page_action and not callable(self.page_action):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
         if self.page_setup and not callable(self.page_setup):
