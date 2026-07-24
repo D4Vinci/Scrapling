@@ -19,6 +19,7 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     permissions:
       contents: read
       packages: write
@@ -26,6 +27,19 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
+
+    - name: Extract release version from PR title
+      id: version
+      if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+      env:
+        PR_TITLE: ${{ github.event.pull_request.title }}
+      run: |
+        if [[ $PR_TITLE =~ ^v ]]; then
+          echo "version=$PR_TITLE" >> "$GITHUB_OUTPUT"
+          echo "Release version detected from PR title: $PR_TITLE"
+        else
+          echo "PR title '$PR_TITLE' is not a version; skipping semver tags."
+        fi
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -56,9 +70,8 @@ jobs:
         tags: |
           type=ref,event=branch
           type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
+          type=semver,pattern={{version}},value=${{ steps.version.outputs.version }},enable=${{ steps.version.outputs.version != '' }}
+          type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }},enable=${{ steps.version.outputs.version != '' }}
           type=raw,value=latest,enable={{is_default_branch}}
         labels: |
           org.opencontainers.image.title=Scrapling
@@ -70,6 +83,7 @@ jobs:
           org.opencontainers.image.documentation=https://scrapling.readthedocs.io/en/latest/
 
     - name: Build and push Docker image
+      id: build
       uses: docker/build-push-action@v6
       with:
         context: .
