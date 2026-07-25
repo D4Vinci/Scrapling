@@ -6,7 +6,7 @@ import anyio
 from anyio import Path as AsyncPath
 
 from scrapling.core.utils import log
-from scrapling.core._types import Dict, Optional, Any
+from scrapling.core._types import Dict, Optional, Any, Tuple
 from scrapling.engines.toolbelt.custom import Response
 
 
@@ -28,13 +28,21 @@ class ResponseCacheManager:
             async with await anyio.open_file(path, "rb") as f:
                 data: Dict[str, Any] = orjson.loads(await f.read())
 
+            # Browser-engine cookies are cached as a JSON array (see `put`) and come back
+            # as a `list`; restore the `tuple` shape `Response` expects. Static-engine
+            # cookies are cached as a JSON object and come back as a `dict` already.
+            cached_cookies = data["cookies"]
+            cookies: Tuple[Dict[str, str], ...] | Dict[str, str] = (
+                tuple(cached_cookies) if isinstance(cached_cookies, list) else cached_cookies
+            )
+
             return Response(
                 url=data["url"],
                 content=b64decode(data["content"]),
                 status=data["status"],
                 reason=data["reason"],
                 encoding=data["encoding"],
-                cookies=data["cookies"],
+                cookies=cookies,
                 headers=data["headers"],
                 request_headers=data["request_headers"],
                 method=data["method"],
@@ -55,7 +63,13 @@ class ResponseCacheManager:
                     "status": response.status,
                     "reason": response.reason,
                     "encoding": response.encoding,
-                    "cookies": dict(response.cookies) if isinstance(response.cookies, dict) else {},
+                    # Browser-engine responses store cookies as a `tuple` of full cookie
+                    # dicts; static-engine responses store a flat `dict`. Preserve whichever
+                    # shape it is instead of collapsing non-dict cookies to `{}`, which was
+                    # silently dropping every cookie from browser-engine responses.
+                    "cookies": list(response.cookies)
+                    if isinstance(response.cookies, tuple)
+                    else dict(response.cookies),
                     "headers": dict(response.headers),
                     "request_headers": dict(response.request_headers),
                     "method": method,
