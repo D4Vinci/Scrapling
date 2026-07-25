@@ -10,6 +10,25 @@ from scrapling.core._types import Dict, Optional, Any
 from scrapling.engines.toolbelt.custom import Response
 
 
+def _serialize_cookies(cookies: Any) -> Any:
+    """Return a JSON-serializable form of ``Response.cookies``.
+
+    Static-engine responses carry a flat ``dict``; browser-engine responses
+    carry a tuple of full cookie dicts. Both shapes are preserved as-is so the
+    replayed response is identical to the original.
+    """
+    if isinstance(cookies, dict):
+        return dict(cookies)
+    if isinstance(cookies, (tuple, list)):
+        return [dict(cookie) for cookie in cookies]
+    return {}
+
+
+def _deserialize_cookies(cookies: Any) -> Any:
+    """Restore the original ``Response.cookies`` shape written by ``_serialize_cookies``."""
+    return tuple(cookies) if isinstance(cookies, list) else cookies
+
+
 class ResponseCacheManager:
     """Caches HTTP responses to disk for replay during spider development."""
 
@@ -34,7 +53,7 @@ class ResponseCacheManager:
                 status=data["status"],
                 reason=data["reason"],
                 encoding=data["encoding"],
-                cookies=data["cookies"],
+                cookies=_deserialize_cookies(data["cookies"]),
                 headers=data["headers"],
                 request_headers=data["request_headers"],
                 method=data["method"],
@@ -55,7 +74,7 @@ class ResponseCacheManager:
                     "status": response.status,
                     "reason": response.reason,
                     "encoding": response.encoding,
-                    "cookies": dict(response.cookies) if isinstance(response.cookies, dict) else {},
+                    "cookies": _serialize_cookies(response.cookies),
                     "headers": dict(response.headers),
                     "request_headers": dict(response.request_headers),
                     "method": method,

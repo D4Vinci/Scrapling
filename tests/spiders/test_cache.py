@@ -14,14 +14,19 @@ from scrapling.engines.toolbelt.custom import Response
 from scrapling.core._types import Any, Dict, Set, AsyncGenerator
 
 
-def _make_response(url: str = "https://example.com", body: bytes = b"<html>hello</html>", status: int = 200) -> Response:
+def _make_response(
+    url: str = "https://example.com",
+    body: bytes = b"<html>hello</html>",
+    status: int = 200,
+    cookies: Any = None,
+) -> Response:
     return Response(
         url=url,
         content=body,
         status=status,
         reason="OK",
         encoding="utf-8",
-        cookies={},
+        cookies={} if cookies is None else cookies,
         headers={"content-type": "text/html"},
         request_headers={"user-agent": "test"},
         method="GET",
@@ -48,6 +53,29 @@ class TestResponseCacheManager:
             assert restored.encoding == original.encoding
             assert dict(restored.headers) == dict(original.headers)
             assert dict(restored.request_headers) == dict(original.request_headers)
+
+    @pytest.mark.anyio
+    async def test_roundtrip_preserves_cookies(self):
+        """Cookies must survive the cache round-trip for both engine shapes.
+
+        Browser-engine responses expose ``cookies`` as a tuple of full cookie
+        dicts, which the serializer used to discard entirely, so a replayed
+        response came back with no cookies at all.
+        """
+        browser_cookies = ({"name": "sid", "value": "abc", "domain": "example.com", "path": "/"},)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache = ResponseCacheManager(tmpdir)
+            fp = b"\x07" * 20
+
+            await cache.put(fp, _make_response(cookies=browser_cookies), "GET")
+            restored = await cache.get(fp)
+            assert restored is not None
+            assert restored.cookies == browser_cookies
+
+            await cache.put(fp, _make_response(cookies={"sid": "abc"}), "GET")
+            restored = await cache.get(fp)
+            assert restored is not None
+            assert restored.cookies == {"sid": "abc"}
 
     @pytest.mark.anyio
     async def test_put_overwrites_existing_entry(self):
