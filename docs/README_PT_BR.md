@@ -18,6 +18,8 @@
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>
     <a href="https://badge.fury.io/py/Scrapling" alt="PyPI version">
         <img alt="PyPI version" src="https://badge.fury.io/py/Scrapling.svg"></a>
+    <a href="https://hub.docker.com/r/pyd4vinci/scrapling" target="_blank">
+        <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/pyd4vinci/scrapling?labelColor=%20%23FDB062&logo=Docker&labelColor=%20%23528bff"></a>
     <a href="https://clickpy.clickhouse.com/dashboard/scrapling" rel="nofollow"><img src="https://img.shields.io/pypi/dm/scrapling" alt="PyPI package downloads"></a>
     <a href="https://github.com/D4Vinci/Scrapling/tree/main/agent-skill" alt="AI Agent Skill directory">
         <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fgithub.com%2FD4Vinci%2FScrapling%2Ftree%2Fmain%2Fagent-skill"></a>
@@ -96,11 +98,11 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://coldproxy.com/" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
+      <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=github&utm_campaign=coldproxy&utm_content=platinum_sponsor" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png">
       </a>
     </td>
-    <td> A <a href="https://coldproxy.com/" target="_blank"><b>ColdProxy</b></a> oferece proxies residenciais e de datacenter para web scraping estável, coleta de dados públicos e testes com segmentação geográfica em mais de 195 países.
+    <td> A <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=github&utm_campaign=coldproxy&utm_content=platinum_sponsor" target="_blank"><b>ColdProxy</b></a> oferece proxies residenciais e de datacenter para web scraping estável, coleta de dados públicos e testes com segmentação geográfica em mais de 195 países.
     </td>
   </tr>
   <tr>
