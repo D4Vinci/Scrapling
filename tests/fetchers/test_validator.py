@@ -11,12 +11,7 @@ class TestValidators:
 
     def test_playwright_config_valid(self):
         """Test valid PlaywrightConfig"""
-        params = {
-            "max_pages": 2,
-            "headless": True,
-            "timeout": 30000,
-            "proxy": "http://proxy.example.com:8080"
-        }
+        params = {"max_pages": 2, "headless": True, "timeout": 30000, "proxy": "http://proxy.example.com:8080"}
 
         config = validate(params, PlaywrightConfig)
 
@@ -51,14 +46,23 @@ class TestValidators:
         with pytest.raises(TypeError):
             validate(params, PlaywrightConfig)
 
+        for cdp_url in ("ftp://localhost:9222", "localhost:9222", "http://"):
+            with pytest.raises(TypeError):
+                validate({"cdp_url": cdp_url}, PlaywrightConfig)
+
+    def test_playwright_config_cdp_url_schemes(self):
+        """Test PlaywrightConfig accepts both WebSocket and HTTP CDP endpoints"""
+        for cdp_url in (
+            "ws://localhost:9222",
+            "wss://cdp.example.com/session",
+            "http://localhost:9222",
+            "https://cdp.example.com",
+        ):
+            assert validate({"cdp_url": cdp_url}, PlaywrightConfig).cdp_url == cdp_url
+
     def test_stealth_config_valid(self):
         """Test valid StealthConfig"""
-        params = {
-            "max_pages": 1,
-            "headless": True,
-            "solve_cloudflare": False,
-            "timeout": 30000
-        }
+        params = {"max_pages": 1, "headless": True, "solve_cloudflare": False, "timeout": 30000}
 
         config = validate(params, StealthConfig)
 
@@ -71,7 +75,7 @@ class TestValidators:
         """Test StealthConfig timeout adjustment for Cloudflare"""
         params = {
             "solve_cloudflare": True,
-            "timeout": 10000  # Less than the required 60,000
+            "timeout": 10000,  # Less than the required 60,000
         }
 
         config = validate(params, StealthConfig)
