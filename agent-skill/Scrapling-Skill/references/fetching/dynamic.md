@@ -41,6 +41,8 @@ DynamicFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
 ```
 Instead of launching a browser locally (Chromium/Google Chrome), you can connect to a remote browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/).
 
+The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port` (`http://localhost:9222`).
+
 
 **Notes:**
 * There was a `stealth` option here, but it was moved to the `StealthyFetcher` class, as explained on the next page, with additional features since version 0.3.13.

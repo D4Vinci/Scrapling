@@ -29,6 +29,65 @@ When `concurrent_requests_per_domain` is set, each domain gets its own concurren
 
 **Tip:** The `download_delay` parameter adds a fixed wait before every request, regardless of the domain. Use it for simple rate limiting.
 
+## AutoThrottle
+
+A fixed `download_delay` is a guess: too low and you get banned, too high and the crawl takes all night. AutoThrottle replaces the guess by watching how fast the website actually answers, then adjusting the delay of each domain on its own, so it speeds up on fast servers and backs off on slow or hostile ones.
+
+| Attribute                          | Default | Description                                                       |
+|------------------------------------|---------|-------------------------------------------------------------------|
+| `autothrottle_enabled`             | `False` | Turn the adaptive delay on                                        |
+| `autothrottle_start_delay`         | `5.0`   | The delay used for the first request to a domain                  |
+| `autothrottle_max_delay`           | `60.0`  | The highest delay the throttle is allowed to reach                |
+| `autothrottle_target_concurrency`  | `None`  | How many requests to aim for per domain (see below)               |
+| `autothrottle_block_backoff`       | `True`  | Double the delay of a domain every time it blocks you             |
+
+```python
+class AdaptiveSpider(Spider):
+    name = "adaptive"
+    start_urls = ["https://example.com"]
+
+    concurrent_requests = 8
+    concurrent_requests_per_domain = 1
+
+    autothrottle_enabled = True
+    autothrottle_start_delay = 2.0
+    autothrottle_max_delay = 30.0
+
+    async def parse(self, response: Response):
+        yield {"title": response.css("title::text").get("")}
+```
+
+After every response, the delay moves toward the time the server itself took to answer, so a site responding in 0.5 seconds settles around a 0.5-second delay, which is roughly one request in flight at a time. How many requests it aims for per domain is resolved in this order: `autothrottle_target_concurrency` when you set it, otherwise `concurrent_requests_per_domain`, otherwise 1. So you usually don't set it at all, since the per-domain limit you already configured is used as the target, and the delay is divided by it. Latency spikes apply immediately instead of being averaged in, so the spider backs off the moment a server starts struggling and only speeds up gradually.
+
+### Backing off when blocked
+
+Latency alone can't see rate limiting. A `429`, a `403`, or a captcha page usually comes back *faster* than real content, which on latency alone looks like an invitation to go quicker. So anything that isn't a healthy response, meaning a non-2xx status or a response your `is_blocked()` flags, **doubles** that domain's delay instead:
+
+```
+0.5s -> 1s -> 2s -> 4s -> 8s ...   (up to autothrottle_max_delay)
+```
+
+The spider keeps slowing down for as long as the website keeps refusing it, and once healthy responses come back the normal averaging walks the delay down again toward the server's real speed, so it recovers on its own without you restarting anything.
+
+When the website says exactly how long to wait with a `Retry-After` header, on either a `429` or a `503`, that value is used instead of the doubling. Both the numeric form (`Retry-After: 120`) and the HTTP-date form are understood.
+
+Set `autothrottle_block_backoff = False` to turn this off and go back to plain latency-driven throttling, where a block can only stop the spider from speeding up.
+
+The final delay per domain is available in the stats:
+
+```python
+result = AdaptiveSpider().start()
+print(result.stats.autothrottle_delays)  # {'example.com': 0.62}
+```
+
+**Notes:**
+
+- `download_delay` and any `Crawl-delay` from robots.txt act as a floor. AutoThrottle only ever adjusts the delay above them, so politeness settings are never undercut.
+- `concurrent_requests_per_domain` does double duty here: it caps how many requests may be in flight to a domain and doubles as AutoThrottle's target, so there's usually no separate target to configure. Setting it is recommended, because while a throttled domain sleeps it holds a slot of the global limiter, and leaving the per-domain limit unlimited means those sleeping slots come out of the budget shared with every other domain.
+- The measured latency is the full fetch, so it includes any internal retries and, for browser sessions, the page render time.
+- `autothrottle_max_delay` caps everything, including `Retry-After`. If a website asks for longer than your ceiling, raise `autothrottle_max_delay` to honor it.
+- The learned delays are not checkpointed. After a pause and resume, each domain starts again from `autothrottle_start_delay`.
+
 ### Using uvloop
 
 The `start()` method accepts a `use_uvloop` parameter to use the faster [uvloop](https://github.com/MagicStack/uvloop)/[winloop](https://github.com/nicktimko/winloop) event loop implementation, if available:
@@ -307,6 +366,10 @@ print(stats.download_delay)   # The download delay used (seconds)
 # Concurrency settings used
 print(stats.concurrent_requests)             # Global concurrency limit
 print(stats.concurrent_requests_per_domain)  # Per-domain concurrency limit
+
+# AutoThrottle
+print(stats.autothrottle_enabled)  # Whether the adaptive delay was on
+print(stats.autothrottle_delays)   # Final delay per domain, {'example.com': 0.62}
 
 # Custom stats (set by your spider code)
 print(stats.custom_stats)

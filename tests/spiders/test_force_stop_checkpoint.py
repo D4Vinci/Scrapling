@@ -71,6 +71,11 @@ class SlowSpider:
         self.concurrent_requests_per_domain = 0
         self.download_delay = 0.0
         self.max_blocked_retries = 3
+        self.autothrottle_enabled = False
+        self.autothrottle_start_delay = 5.0
+        self.autothrottle_max_delay = 60.0
+        self.autothrottle_target_concurrency = None
+        self.autothrottle_block_backoff = True
         self.allowed_domains = set()
         self.fp_include_kwargs = False
         self.fp_include_headers = False

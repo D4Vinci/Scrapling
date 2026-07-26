@@ -78,6 +78,11 @@ class MockSpider:
         concurrent_requests_per_domain: int = 0,
         download_delay: float = 0.0,
         max_blocked_retries: int = 3,
+        autothrottle_enabled: bool = False,
+        autothrottle_start_delay: float = 5.0,
+        autothrottle_max_delay: float = 60.0,
+        autothrottle_target_concurrency: float | None = None,
+        autothrottle_block_backoff: bool = True,
         allowed_domains: Set[str] | None = None,
         fp_include_kwargs: bool = False,
         fp_include_headers: bool = False,
@@ -92,6 +97,11 @@ class MockSpider:
         self.concurrent_requests_per_domain = concurrent_requests_per_domain
         self.download_delay = download_delay
         self.max_blocked_retries = max_blocked_retries
+        self.autothrottle_enabled = autothrottle_enabled
+        self.autothrottle_start_delay = autothrottle_start_delay
+        self.autothrottle_max_delay = autothrottle_max_delay
+        self.autothrottle_target_concurrency = autothrottle_target_concurrency
+        self.autothrottle_block_backoff = autothrottle_block_backoff
         self.allowed_domains = allowed_domains or set()
         self.fp_include_kwargs = fp_include_kwargs
         self.fp_include_headers = fp_include_headers

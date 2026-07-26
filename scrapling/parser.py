@@ -300,7 +300,9 @@ class Selector(SelectorsGeneration):
 
         ignored_elements: set[Any] = set()
         if ignore_tags:
-            ignored_elements.update(self._root.iter(*ignore_tags))
+            for element in self._root.iter(*ignore_tags):
+                if element not in ignored_elements:
+                    ignored_elements.update(element.iter())
 
         _all_strings = []
 
@@ -315,11 +317,7 @@ class Selector(SelectorsGeneration):
                 return False
 
             owner = parent.getparent() if text_node.is_tail else parent
-            while owner is not None:
-                if owner in ignored_elements:
-                    return False
-                owner = owner.getparent()
-            return True
+            return owner not in ignored_elements
 
         for text_node in cast(list[_ElementUnicodeResult], _find_all_text_nodes(self._root)):
             text = str(text_node)

@@ -1,12 +1,19 @@
 """Tests for the result module (ItemList, CrawlStats, CrawlResult)."""
 
+import csv
 import json
 import tempfile
 from pathlib import Path
+from xml.etree import ElementTree  # nosec B405 - only used to read back files these tests just wrote
 
 import pytest
 
 from scrapling.spiders.result import ItemList, CrawlStats, CrawlResult
+
+
+def _read_xml(path):
+    """Parse a file the test itself just wrote."""
+    return ElementTree.parse(path).getroot()  # nosec B314 - trusted local file, not untrusted input
 
 
 class TestItemList:
@@ -67,6 +74,174 @@ class TestItemList:
             content = path.read_text()
             # Indented JSON should have newlines
             assert "\n" in content
+
+    def test_to_csv_creates_file(self):
+        """Test to_csv writes a header and one row per item."""
+        items = ItemList()
+        items.append({"name": "first", "price": 10})
+        items.append({"name": "second", "price": 20})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "output.csv"
+            items.to_csv(path)
+
+            assert path.exists()
+
+            rows = list(csv.DictReader(path.open(newline="", encoding="utf-8")))
+            assert len(rows) == 2
+            assert rows[0] == {"name": "first", "price": "10"}
+            assert rows[1]["name"] == "second"
+
+    def test_to_csv_unions_the_keys_of_every_item(self):
+        """Items with different keys must all be written, with the missing cells left empty."""
+        items = ItemList()
+        items.append({"name": "first"})
+        items.append({"price": 20, "name": "second"})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "output.csv"
+            items.to_csv(path)
+
+            reader = csv.DictReader(path.open(newline="", encoding="utf-8"))
+            assert reader.fieldnames == ["name", "price"]
+            rows = list(reader)
+            assert rows[0] == {"name": "first", "price": ""}
+            assert rows[1] == {"name": "second", "price": "20"}
+
+    def test_to_csv_serializes_nested_values(self):
+        items = ItemList()
+        items.append({"name": "first", "tags": ["a", "b"], "meta": {"x": 1}, "empty": None})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "output.csv"
+            items.to_csv(path)
+
+            row = next(csv.DictReader(path.open(newline="", encoding="utf-8")))
+            assert json.loads(row["tags"]) == ["a", "b"]
+            assert json.loads(row["meta"]) == {"x": 1}
+            assert row["empty"] == ""
+
+    def test_to_csv_accepts_explicit_fields_and_delimiter(self):
+        items = ItemList()
+        items.append({"name": "first", "price": 10, "skipped": "yes"})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "output.tsv"
+            items.to_csv(path, fields=["price", "name"], delimiter="\t")
+
+            lines = path.read_text(encoding="utf-8").splitlines()
+            assert lines[0] == "price\tname"
+            assert lines[1] == "10\tfirst"
+
+    def test_to_csv_handles_no_items(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "empty.csv"
+            ItemList().to_csv(path)
+
+            assert path.exists()
+            assert path.read_text(encoding="utf-8").strip() == ""
+
+    def test_to_csv_creates_parent_directory(self):
+        items = ItemList()
+        items.append({"data": "test"})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "nested" / "dir" / "output.csv"
+            items.to_csv(path)
+
+            assert path.exists()
+
+    def test_to_xml_creates_file(self):
+        """Test to_xml writes one element per item with the keys as children."""
+        items = ItemList()
+        items.append({"name": "first", "price": 10})
+        items.append({"name": "second", "price": 20})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "output.xml"
+            items.to_xml(path)
+
+            assert path.exists()
+
+            root = _read_xml(path)
+            assert root.tag == "items"
+            assert len(root) == 2
+            assert [child.tag for child in root] == ["item", "item"]
+            assert root[0].find("name").text == "first"
+            assert root[0].find("price").text == "10"
+
+    def test_to_xml_custom_tags(self):
+        items = ItemList()
+        items.append({"name": "first"})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "output.xml"
+            items.to_xml(path, root_tag="products", item_tag="product")
+
+            root = _read_xml(path)
+            assert root.tag == "products"
+            assert root[0].tag == "product"
+
+    def test_to_xml_sanitizes_keys_that_are_not_valid_tags(self):
+        """Scraped keys can be anything, but XML names can't"""
+        items = ItemList()
+        items.append({"product name": "first", "2nd": "x", "ok_key": "y"})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "output.xml"
+            items.to_xml(path)
+
+            item = _read_xml(path)[0]
+            tags = {child.tag: child for child in item}
+            assert tags["product_name"].text == "first"
+            assert tags["product_name"].get("name") == "product name"
+            assert tags["_2nd"].get("name") == "2nd"
+            assert tags["ok_key"].get("name") is None
+
+    def test_to_xml_strips_characters_that_xml_forbids(self):
+        """Control characters in scraped text would produce a file no parser can read"""
+        items = ItemList()
+        items.append({"text": "bad\x08char\x0bhere", "kept": "tab\tnewline\n"})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "output.xml"
+            items.to_xml(path)
+
+            item = _read_xml(path)[0]
+            assert item.find("text").text == "badcharhere"
+            assert item.find("kept").text == "tab\tnewline\n"
+
+    def test_to_xml_serializes_nested_values(self):
+        items = ItemList()
+        items.append({"tags": ["a", "b"], "meta": {"x": 1}, "empty": None})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "output.xml"
+            items.to_xml(path)
+
+            item = _read_xml(path)[0]
+            assert json.loads(item.find("tags").text) == ["a", "b"]
+            assert json.loads(item.find("meta").text) == {"x": 1}
+            assert item.find("empty").text in (None, "")
+
+    def test_to_xml_handles_no_items(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "empty.xml"
+            ItemList().to_xml(path)
+
+            root = _read_xml(path)
+            assert root.tag == "items"
+            assert len(root) == 0
+
+    def test_to_xml_creates_parent_directory(self):
+        items = ItemList()
+        items.append({"data": "test"})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "nested" / "dir" / "output.xml"
+            items.to_xml(path)
+
+            assert path.exists()
 
     def test_to_jsonl_creates_file(self):
         """Test to_jsonl creates JSON Lines file."""

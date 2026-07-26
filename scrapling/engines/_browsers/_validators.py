@@ -41,8 +41,8 @@ def _is_invalid_file_path(value: str, label: str = "Init script") -> bool | str:
 @lru_cache(2)
 def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
     """Fast CDP URL validation"""
-    if not cdp_url.startswith(("ws://", "wss://")):
-        return "CDP URL must use 'ws://' or 'wss://' scheme"
+    if not cdp_url.startswith(("ws://", "wss://", "http://", "https://")):
+        return "CDP URL must use 'ws://', 'wss://', 'http://', or 'https://' scheme"
 
     netloc = urlparse(cdp_url).netloc
     if not netloc:  # pragma: no cover

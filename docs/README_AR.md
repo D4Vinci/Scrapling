@@ -16,6 +16,8 @@
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>
     <a href="https://badge.fury.io/py/Scrapling" alt="PyPI version">
         <img alt="PyPI version" src="https://badge.fury.io/py/Scrapling.svg"></a>
+    <a href="https://hub.docker.com/r/pyd4vinci/scrapling" target="_blank">
+        <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/pyd4vinci/scrapling?labelColor=%20%23FDB062&logo=Docker&labelColor=%20%23528bff"></a>
     <a href="https://clickpy.clickhouse.com/dashboard/scrapling" rel="nofollow"><img src="https://img.shields.io/pypi/dm/scrapling" alt="PyPI package downloads"></a>
     <a href="https://github.com/D4Vinci/Scrapling/tree/main/agent-skill" alt="AI Agent Skill directory">
         <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fgithub.com%2FD4Vinci%2FScrapling%2Ftree%2Fmain%2Fagent-skill"></a>
@@ -205,9 +207,12 @@ MySpider().start()
 - 💾 **إيقاف واستئناف**: استمرارية الزحف القائمة على Checkpoint. اضغط Ctrl+C للإيقاف بسلاسة؛ أعد التشغيل للاستئناف من حيث توقفت.
 - 📡 **وضع Streaming**: بث العناصر المستخرجة فور وصولها عبر `async for item in spider.stream()` مع إحصائيات فورية - مثالي لواجهات المستخدم وخطوط الأنابيب وعمليات الزحف الطويلة.
 - 🛡️ **كشف الطلبات المحظورة**: كشف تلقائي وإعادة محاولة للطلبات المحظورة مع منطق قابل للتخصيص.
+- 🎚️ **AutoThrottle**: لا داعي لتخمين التأخير. يضبط Spider تأخير كل نطاق تلقائياً حسب سرعة استجابة الموقع، ثم يضاعفه (أو ينتظر ما يطلبه `Retry-After`) عندما يبدأ الموقع في حظرك أو تحديد معدل طلباتك، ويعود للتسريع عندما يتوقف عن ذلك.
 - 🤖 **الامتثال لـ robots.txt**: خيار `robots_txt_obey` الاختياري الذي يحترم توجيهات `Disallow` و `Crawl-delay` و `Request-rate` مع التخزين المؤقت لكل نطاق.
 - 🧪 **وضع التطوير**: تخزين الاستجابات على القرص في التشغيل الأول وإعادة تشغيلها في التشغيلات اللاحقة - كرّر العمل على منطق `parse()` دون الحاجة لإرسال طلبات جديدة إلى الخوادم المستهدفة.
-- 📦 **تصدير مدمج**: صدّر النتائج عبر الخطافات وخط الأنابيب الخاص بك أو JSON/JSONL المدمج مع `result.items.to_json()` / `result.items.to_jsonl()` على التوالي.
+- 🧩 **قوالب Spider جاهزة**: تخطَّ الكود المتكرر مع `CrawlSpider` لتتبع الروابط بقواعد، و`SitemapSpider` للزحف المعتمد على sitemap/robots.txt، و`ShopifySpider` لسحب كل منتج من أي متجر Shopify عبر واجهة JSON الخاصة به، مع عنصر لكل variant.
+- 🔗 **استخراج الروابط**: أداة `LinkExtractor` مستقلة مع أنماط allow/deny، وفلاتر النطاقات، وتحديد النطاق عبر CSS/XPath، وتصفية الامتدادات، وتوحيد الروابط - استخدمها داخل القوالب أو بمفردها.
+- 📦 **تصدير مدمج**: صدّر النتائج عبر الخطافات وخط الأنابيب الخاص بك أو المصدّرات المدمجة JSON/JSONL/CSV/XML عبر `result.items.to_json()` و`to_jsonl()` و`to_csv()` و`to_xml()`.
 
 ### جلب متقدم للمواقع مع دعم الجلسات
 - **طلبات HTTP**: طلبات HTTP سريعة وخفية مع فئة `Fetcher`. يمكنها تقليد بصمة TLS للمتصفح والرؤوس واستخدام HTTP/3.
@@ -217,13 +222,16 @@ MySpider().start()
 - **تدوير Proxy**: `ProxyRotator` مدمج مع استراتيجيات التدوير الدوري أو المخصصة عبر جميع أنواع الجلسات، بالإضافة إلى تجاوزات Proxy لكل طلب.
 - **حظر النطاقات والإعلانات**: حظر الطلبات إلى نطاقات محددة (ونطاقاتها الفرعية) أو تفعيل حظر الإعلانات المدمج (~3,500 نطاق إعلانات/تتبع معروف) في الجوالب المعتمدة على المتصفح.
 - **منع تسرب DNS**: دعم اختياري لـ DNS-over-HTTPS لتوجيه استعلامات DNS عبر Cloudflare DoH، مما يمنع تسرب DNS عند استخدام Proxy.
+- **متصفحات بعيدة**: بدلاً من تشغيل متصفح محلياً، اتصل بمتصفح يعمل بالفعل عبر CDP باستخدام `cdp_url`، سواء كان على نفس الجهاز أو على خادم آخر أو لدى مزود متصفحات مُدار. يمكنك أيضاً توجيه أي جالب معتمد على المتصفح إلى نسخة Chromium الخاصة بك عبر `executable_path`.
+- **التقاط طلبات API في الخلفية**: مرر نمط URL إلى `capture_xhr`، وسيتم جمع كل استجابات XHR/fetch المطابقة التي تصدرها الصفحة أثناء التحميل ككائنات `Response` في `response.captured_xhr` - احصل على بيانات API الموقع دون الحاجة لتحليل الطلبات بنفسك.
 - **دعم Async**: دعم async كامل عبر جميع الجوالب وفئات الجلسات async المخصصة.
 
 ### الاستخراج التكيفي والتكامل مع الذكاء الاصطناعي
 - 🔄 **تتبع العناصر الذكي**: إعادة تحديد موقع العناصر بعد تغييرات الموقع باستخدام خوارزميات التشابه الذكية.
 - 🎯 **الاختيار المرن الذكي**: محددات CSS، محددات XPath، البحث القائم على الفلاتر، البحث النصي، البحث بالتعبيرات العادية والمزيد.
 - 🔍 **البحث عن عناصر مشابهة**: تحديد العناصر المشابهة للعناصر الموجودة تلقائياً.
-- 🤖 **خادم MCP للاستخدام مع الذكاء الاصطناعي**: خادم MCP مدمج لـ Web Scraping بمساعدة الذكاء الاصطناعي واستخراج البيانات. يتميز خادم MCP بقدرات قوية مخصصة تستفيد من Scrapling لاستخراج المحتوى المستهدف قبل تمريره إلى الذكاء الاصطناعي (Claude/Cursor/إلخ)، وبالتالي تسريع العمليات وتقليل التكاليف عن طريق تقليل استخدام الرموز. ([فيديو توضيحي](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **خادم MCP للاستخدام مع الذكاء الاصطناعي**: خادم MCP مدمج لـ Web Scraping بمساعدة الذكاء الاصطناعي واستخراج البيانات. يتميز خادم MCP بقدرات قوية مخصصة تستفيد من Scrapling لاستخراج المحتوى المستهدف قبل تمريره إلى الذكاء الاصطناعي (Claude/Cursor/إلخ)، وبالتالي تسريع العمليات وتقليل التكاليف عن طريق تقليل استخدام الرموز. ([فيديو توضيحي](https://www.youtube.com/watch?v=qyFk3ZNwOxE)) كما يمكنه إبقاء جلسات المتصفح مفتوحة عبر عدة استدعاءات، والتقاط صور للصفحات، والتحكم في متصفحات بعيدة عبر CDP.
+- 🧠 **Agent Skill**: [مهارة جاهزة للتثبيت](https://github.com/D4Vinci/Scrapling/tree/main/agent-skill) تُعلّم وكلاء البرمجة المكتبة بالكامل، حتى يكون الكود الذي يكتبونه بـ Scrapling مطابقاً للواجهة الحالية بدلاً من التخمين.
 
 ### بنية عالية الأداء ومختبرة ميدانياً
 - 🚀 **سريع كالبرق**: أداء محسّن يتفوق على معظم مكتبات Web Scraping في Python.
@@ -238,6 +246,7 @@ MySpider().start()
 - 🧬 **معالجة نصوص محسّنة**: تعبيرات عادية مدمجة وطرق تنظيف وعمليات نصية محسّنة.
 - 📝 **إنشاء محددات تلقائي**: إنشاء محددات CSS/XPath قوية لأي عنصر.
 - 🔌 **واجهة مألوفة**: مشابه لـ Scrapy/BeautifulSoup مع نفس العناصر الزائفة المستخدمة في Scrapy/Parsel.
+- 🤝 **تكامل مباشر مع Scrapy**: تستخدم Scrapy بالفعل؟ زيّن أي callback بـ `scrapling_response` لتحليل الاستجابات التي تجلبها أصلاً بمحلل Scrapling، دون إعادة كتابة المشروع.
 - 📘 **تغطية كاملة للأنواع**: تلميحات نوع كاملة لدعم IDE ممتاز وإكمال الكود. يتم فحص قاعدة الكود بالكامل تلقائياً بواسطة **PyRight** و**MyPy** مع كل تغيير.
 - 🔋 **صورة Docker جاهزة**: مع كل إصدار، يتم بناء ودفع صورة Docker تحتوي على جميع المتصفحات تلقائياً.
 
@@ -334,6 +343,16 @@ class MultiSessionSpider(Spider):
 QuotesSpider(crawldir="./crawl_data").start()
 ```
 اضغط Ctrl+C للإيقاف بسلاسة - يتم حفظ التقدم تلقائياً. لاحقاً، عند تشغيل Spider مرة أخرى، مرر نفس `crawldir`، وسيستأنف من حيث توقف.
+
+أو تخطَّ كتابة منطق الزحف تماماً باستخدام القوالب الجاهزة، مثل سحب كتالوج متجر Shopify بالكامل:
+```python
+from scrapling.spiders import ShopifySpider
+
+class MyStore(ShopifySpider):
+    target_website = "example.com"
+
+result = MyStore().start()  # كل منتج في المتجر، عنصر لكل variant
+```
 
 ### التحليل المتقدم والتنقل
 ```python

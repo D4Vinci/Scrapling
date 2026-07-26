@@ -11,12 +11,14 @@ from mcp.types import ImageContent, TextContent
 
 from scrapling.parser import Selector
 from scrapling.core.ai import (
+    MCP_AUTH_TOKEN_ENV,
     ScraplingMCPServer,
     ResponseModel,
     SessionInfo,
     SessionCreatedModel,
     SessionClosedModel,
     _normalize_credentials,
+    _StaticTokenVerifier,
     _translate_response,
 )
 
@@ -448,3 +450,80 @@ class TestNormalizeCredentials:
     def test_missing_username_raises(self):
         with pytest.raises(ValueError, match="username"):
             _normalize_credentials({"password": "pass"})
+
+
+SHARED_KEY = "s3cret"
+UNICODE_KEY = "ünïcode-tökén"
+
+
+class TestStaticTokenVerifier:
+    """Test the shared bearer token verifier"""
+
+    @pytest.mark.asyncio
+    async def test_correct_token_is_accepted(self):
+        result = await _StaticTokenVerifier(SHARED_KEY).verify_token(SHARED_KEY)
+
+        assert result is not None
+        assert result.token == SHARED_KEY
+        assert result.scopes == []
+        assert result.expires_at is None
+
+    @pytest.mark.asyncio
+    async def test_wrong_tokens_are_rejected(self):
+        verifier = _StaticTokenVerifier(SHARED_KEY)
+
+        for token in ("", "wrong", "s3cre", "s3cret ", "S3CRET"):
+            assert await verifier.verify_token(token) is None
+
+    @pytest.mark.asyncio
+    async def test_non_ascii_token(self):
+        """Tokens are compared as bytes, so non-ASCII characters must not raise"""
+        verifier = _StaticTokenVerifier(UNICODE_KEY)
+
+        assert await verifier.verify_token(UNICODE_KEY) is not None
+        assert await verifier.verify_token("unicode-token") is None
+
+
+class TestMCPServerAuthentication:
+    """Test how the authentication token and transport security reach the FastMCP server"""
+
+    def test_no_token_leaves_auth_disabled(self, monkeypatch):
+        monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
+        server = ScraplingMCPServer()
+
+        assert server._auth_token is None
+        assert server._build_server("127.0.0.1", 8000).settings.auth is None
+
+    def test_token_enables_auth(self, monkeypatch):
+        monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
+        built = ScraplingMCPServer(auth_token=SHARED_KEY)._build_server("127.0.0.1", 8000)
+
+        assert built.settings.auth is not None
+        assert str(built.settings.auth.issuer_url) == "http://127.0.0.1:8000/"
+        assert str(built.settings.auth.resource_server_url) == "http://127.0.0.1:8000/"
+
+    def test_token_read_from_environment(self, monkeypatch):
+        env_key, explicit_key = "from-env", "explicit"
+        monkeypatch.setenv(MCP_AUTH_TOKEN_ENV, env_key)
+
+        assert ScraplingMCPServer()._auth_token == env_key
+        assert ScraplingMCPServer(auth_token=explicit_key)._auth_token == explicit_key
+
+    def test_all_tools_are_registered_with_auth_enabled(self, monkeypatch):
+        """FastMCP raises when `auth` and `token_verifier` are mismatched, so building must stay valid"""
+        monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
+        built = ScraplingMCPServer(auth_token=SHARED_KEY)._build_server("0.0.0.0", 8000)
+
+        assert len(built._tool_manager.list_tools()) == 10
+
+    def test_allowed_hosts_enable_dns_rebinding_protection(self, monkeypatch):
+        monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
+        server = ScraplingMCPServer()
+
+        assert server._build_server("0.0.0.0", 8000).settings.transport_security is None
+
+        security = server._build_server("0.0.0.0", 8000, ("mcp.example.com:8000",)).settings.transport_security
+        assert security is not None
+        assert security.enable_dns_rebinding_protection is True
+        assert security.allowed_hosts == ["mcp.example.com:8000"]
+        assert security.allowed_origins == ["http://mcp.example.com:8000", "https://mcp.example.com:8000"]

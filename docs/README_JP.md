@@ -16,6 +16,8 @@
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>
     <a href="https://badge.fury.io/py/Scrapling" alt="PyPI version">
         <img alt="PyPI version" src="https://badge.fury.io/py/Scrapling.svg"></a>
+    <a href="https://hub.docker.com/r/pyd4vinci/scrapling" target="_blank">
+        <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/pyd4vinci/scrapling?labelColor=%20%23FDB062&logo=Docker&labelColor=%20%23528bff"></a>
     <a href="https://clickpy.clickhouse.com/dashboard/scrapling" rel="nofollow"><img src="https://img.shields.io/pypi/dm/scrapling" alt="PyPI package downloads"></a>
     <a href="https://github.com/D4Vinci/Scrapling/tree/main/agent-skill" alt="AI Agent Skill directory">
         <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fgithub.com%2FD4Vinci%2FScrapling%2Ftree%2Fmain%2Fagent-skill"></a>
@@ -205,9 +207,12 @@ MySpider().start()
 - 💾 **Pause & Resume**：Checkpoint ベースのクロール永続化。Ctrl+C で正常にシャットダウン；再起動すると中断したところから再開。
 - 📡 **Streaming モード**：`async for item in spider.stream()` でリアルタイム統計とともにスクレイプされたアイテムを Streaming で受信 - UI、パイプライン、長時間実行クロールに最適。
 - 🛡️ **ブロックされたリクエストの検出**：カスタマイズ可能なロジックによるブロックされたリクエストの自動検出とリトライ。
+- 🎚️ **AutoThrottle**：待ち時間を勘で決める必要はありません。Spider がサイトの応答速度からドメインごとの待ち時間を自動調整し、ブロックやレート制限が始まると待ち時間を 2 倍に（または `Retry-After` が求める時間だけ待機）して、収まればまた加速します。
 - 🤖 **robots.txt 準拠**：オプションの `robots_txt_obey` フラグで `Disallow`、`Crawl-delay`、`Request-rate` ディレクティブをドメインごとのキャッシュで遵守。
 - 🧪 **開発モード**：初回実行時にレスポンスをディスクにキャッシュし、以降の実行ではそれを再生 - ターゲットサーバーに再リクエストすることなく `parse()` ロジックを反復開発できます。
-- 📦 **組み込みエクスポート**：フックや独自のパイプライン、または組み込みの JSON/JSONL で結果をエクスポート。それぞれ`result.items.to_json()` / `result.items.to_jsonl()`を使用。
+- 🧩 **すぐに使える Spider テンプレート**：定型コードは不要です。ルールベースのリンク追跡には `CrawlSpider`、sitemap/robots.txt を起点としたクロールには `SitemapSpider`、そして `ShopifySpider` を使えば任意の Shopify ストアの全商品を JSON API 経由で取得できます（バリエーションごとに 1 アイテム）。
+- 🔗 **リンク抽出**：allow/deny パターン、ドメインフィルタ、CSS/XPath による範囲指定、拡張子フィルタ、正規化に対応した独立した `LinkExtractor` を提供。テンプレート内でも単体でも使用できます。
+- 📦 **組み込みエクスポート**：フックや独自のパイプライン、または組み込みの JSON/JSONL/CSV/XML で結果をエクスポート。`result.items.to_json()`、`to_jsonl()`、`to_csv()`、`to_xml()` が使えます。
 
 ### Session サポート付き高度なウェブサイト取得
 - **HTTP リクエスト**：`Fetcher` クラスで高速かつステルスな HTTP リクエスト。ブラウザの TLS fingerprint、ヘッダーを模倣し、HTTP/3 を使用可能。
@@ -217,13 +222,16 @@ MySpider().start()
 - **Proxy 回転**：すべての Session タイプに対応したラウンドロビンまたはカスタム戦略の組み込み `ProxyRotator`、さらにリクエストごとの Proxy オーバーライド。
 - **ドメイン＆広告ブロック**：ブラウザベースの Fetcher で特定のドメイン（およびそのサブドメイン）へのリクエストをブロック、または内蔵広告ブロック（約3,500の既知の広告/トラッカードメイン）を有効化。
 - **DNS リーク防止**：Proxy 使用時の DNS リークを防ぐため、Cloudflare の DoH 経由で DNS クエリをルーティングするオプションの DNS-over-HTTPS サポート。
+- **リモートブラウザ**：ローカルでブラウザを起動する代わりに、`cdp_url` を使って CDP 経由で既に起動しているブラウザに接続できます。同じマシン上でも、別のホストでも、マネージドブラウザサービスでも構いません。`executable_path` を使えば、任意のブラウザ Fetcher を独自ビルドの Chromium に向けることもできます。
+- **バックグラウンド API キャプチャ**：`capture_xhr` に URL パターンを渡すと、読み込み中にページが発行した該当の XHR/fetch レスポンスがすべて `Response` オブジェクトとして `response.captured_xhr` に収集されます。リクエストを自分でリバースエンジニアリングすることなく、サイトの API データを取得できます。
 - **async サポート**：すべての Fetcher および専用 async Session クラス全体での完全な async サポート。
 
 ### 適応型スクレイピングと AI 統合
 - 🔄 **スマート要素追跡**：インテリジェントな類似性アルゴリズムを使用してウェブサイトの変更後に要素を再配置。
 - 🎯 **スマート柔軟選択**：CSS セレクタ、XPath セレクタ、フィルタベース検索、テキスト検索、正規表現検索など。
 - 🔍 **類似要素の検出**：見つかった要素に類似した要素を自動的に特定。
-- 🤖 **AI と使用する MCP サーバー**：AI 支援 Web Scraping とデータ抽出のための組み込み MCP サーバー。MCP サーバーは、AI（Claude/Cursor など）に渡す前に Scrapling を活用してターゲットコンテンツを抽出する強力でカスタムな機能を備えており、操作を高速化し、トークン使用量を最小限に抑えることでコストを削減します。（[デモ動画](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
+- 🤖 **AI と使用する MCP サーバー**：AI 支援 Web Scraping とデータ抽出のための組み込み MCP サーバー。MCP サーバーは、AI（Claude/Cursor など）に渡す前に Scrapling を活用してターゲットコンテンツを抽出する強力でカスタムな機能を備えており、操作を高速化し、トークン使用量を最小限に抑えることでコストを削減します。（[デモ動画](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）さらに、複数の呼び出しにまたがってブラウザセッションを維持したり、ページのスクリーンショットを撮ったり、CDP 経由でリモートブラウザを操作したりできます。
+- 🧠 **Agent Skill**：ライブラリ全体をコーディングエージェントに教える、インストールするだけの [Agent Skill](https://github.com/D4Vinci/Scrapling/tree/main/agent-skill)。エージェントが Scrapling で書くコードが、推測ではなく現在の API に沿ったものになります。
 
 ### 高性能で実戦テスト済みのアーキテクチャ
 - 🚀 **超高速**：ほとんどの Python スクレイピングライブラリを上回る最適化されたパフォーマンス。
@@ -238,6 +246,7 @@ MySpider().start()
 - 🧬 **強化されたテキスト処理**：組み込みの正規表現、クリーニングメソッド、最適化された文字列操作。
 - 📝 **自動セレクタ生成**：任意の要素に対して堅牢な CSS/XPath セレクタを生成。
 - 🔌 **馴染みのある API**：Scrapy/Parsel で使用されている同じ疑似要素を持つ Scrapy/BeautifulSoup に似た設計。
+- 🤝 **Scrapy とのシームレスな統合**：すでに Scrapy を使っていますか？任意のコールバックを `scrapling_response` でデコレートするだけで、既に取得しているレスポンスを Scrapling のパーサーで解析できます。書き直しは不要です。
 - 📘 **完全な型カバレッジ**：優れた IDE サポートとコード補完のための完全な型ヒント。コードベース全体が変更のたびに**PyRight**と**MyPy**で自動的にスキャンされます。
 - 🔋 **すぐに使える Docker イメージ**：各リリースで、すべてのブラウザを含む Docker イメージが自動的にビルドおよびプッシュされます。
 
@@ -334,6 +343,16 @@ Checkpoint を使用して長時間のクロールをPause & Resume：
 QuotesSpider(crawldir="./crawl_data").start()
 ```
 Ctrl+C を押すと正常に一時停止し、進捗は自動的に保存されます。後で Spider を再度起動する際に同じ`crawldir`を渡すと、中断したところから再開します。
+
+あるいは、すぐに使えるテンプレートでクロールのロジックを書くこと自体を省略できます。たとえば Shopify ストアのカタログ全体を取得する場合：
+```python
+from scrapling.spiders import ShopifySpider
+
+class MyStore(ShopifySpider):
+    target_website = "example.com"
+
+result = MyStore().start()  # ストア内の全商品、バリエーションごとに 1 アイテム
+```
 
 ### 高度なパースとナビゲーション
 ```python

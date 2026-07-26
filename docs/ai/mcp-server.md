@@ -183,8 +183,27 @@ In a Claude Desktop configuration, add the option to the server arguments:
 
 You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. Tool calls can still pass `executable_path` directly when a single request or session needs a different browser executable.
 
+### Connecting to Remote Browsers
+
+`open_session` doesn't have to launch a browser locally. Pass a CDP url and it will connect to an already-running browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/), whether that browser is on the same machine, another host, or a managed browser provider:
+```
+Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
+```
+Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with the fetch and screenshot tools as usual.
+
+The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
+```commandline
+chrome --remote-debugging-port=9222
+```
+That one is reached with `cdp_url="http://localhost:9222"`, or with the host's address if the browser is running on another machine.
+
+!!! note "Notes:"
+
+    * The browser is already running, so options that only apply while launching one are ignored for CDP sessions: `headless`, `real_chrome`, and `executable_path` (including the server-wide default above).<br/>
+    * Everything else still applies (`locale`, `useragent`, `proxy`, `cookies`, `timezone_id`, and so on), as each session creates its own browser context on the remote browser.
+
 ### Streamable HTTP
-As per version 0.3.6, we have added the ability to make the MCP server use the 'Streamable HTTP' transport mode instead of the traditional 'stdio' transport.
+Since version 0.3.6, we have added the ability to make the MCP server use the 'Streamable HTTP' transport mode instead of the traditional 'stdio' transport.
 
 So instead of using the following command (the 'stdio' one):
 ```bash
@@ -198,6 +217,42 @@ Hence, the default value for the host the server is listening to is '0.0.0.0' an
 ```bash
 scrapling mcp --http --host '127.0.0.1' --port 8000
 ```
+
+### Authentication
+
+The 'stdio' transport is only reachable by the program that started it, but the moment you switch to 'Streamable HTTP', anyone who can reach the port can call every tool, and that includes fetching any URL from the machine running the server. So if the server is listening on anything other than localhost, give it a token:
+```bash
+scrapling mcp --http --auth-token "$(openssl rand -hex 32)"
+```
+Clients then have to send that token in an `Authorization` header, and any request without it is rejected with a `401`:
+```json
+{
+  "mcpServers": {
+    "ScraplingServer": {
+      "url": "https://your-server.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-token>"
+      }
+    }
+  }
+}
+```
+Passing the token on the command line leaves it in your shell history and in the process list, so prefer the `SCRAPLING_MCP_AUTH_TOKEN` environment variable:
+```bash
+export SCRAPLING_MCP_AUTH_TOKEN="<your-token>"
+scrapling mcp --http
+```
+When the server listens on a public address, you should also tell it which host names to accept, which turns on protection against DNS-rebinding attacks (a website your browser visits trying to talk to your server). The option can be repeated:
+```bash
+scrapling mcp --http --allowed-host 'your-server.example.com:8000'
+```
+
+!!! note "Notes:"
+
+    * Authentication applies to the 'Streamable HTTP' transport only. It's ignored with 'stdio', and the server logs a warning to tell you so.<br/>
+    * Plain HTTP sends the token in cleartext, so put the server behind a reverse proxy that terminates TLS before exposing it to the internet.<br/>
+    * This is a single shared key, not per-client credentials, so every client uses the same token, and rotating it means restarting the server.<br/>
+    * Starting the server with `--http` and no token still works for local use, but it logs a warning telling you that it's unauthenticated.
 
 ## Examples
 
