@@ -408,6 +408,6 @@ This skill encapsulates almost all the published documentation in Markdown, so d
 ## Guardrails (Always)
 - Only scrape content you're authorized to access.
 - Respect robots.txt and ToS. Use `robots_txt_obey = True` on spiders to enforce this automatically.
-- Add delays (`download_delay`) for large crawls.
+- Add delays (`download_delay`) for large crawls, or set `autothrottle_enabled = True` to let the spider pick the delay per domain and back off when the website starts blocking.
 - Don't bypass paywalls or authentication without permission.
 - Never scrape personal/sensitive data.

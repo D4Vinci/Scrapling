@@ -174,6 +174,8 @@ Robots.txt files are fetched using the spider's default session and cached per d
 
 **Note:** `robots_txt_obey` is turned off by default to avoid surprising behavior. If you enable it, it does not affect your concurrency settings (`concurrent_requests`, `concurrent_requests_per_domain`) -- only the delay between requests is adjusted.
 
+If you don't want to pick a `download_delay` by hand, set `autothrottle_enabled = True` and the spider will tune the delay of every domain on its own from how fast it responds, backing off when it gets blocked. See [AutoThrottle](advanced.md#autothrottle).
+
 ## What's Next
 
 Now that you have the basics, you can explore:
@@ -181,4 +183,4 @@ Now that you have the basics, you can explore:
 - [Requests & Responses](requests-responses.md) - learn about request priority, deduplication, metadata, and more.
 - [Sessions](sessions.md) - use multiple fetcher types (HTTP, browser, stealth) in a single spider.
 - [Proxy management & blocking](proxy-blocking.md) - rotate proxies across requests and how to handle blocking in the spider.
-- [Advanced features](advanced.md) - concurrency control, pause/resume, streaming, lifecycle hooks, and logging.
+- [Advanced features](advanced.md) - concurrency control, AutoThrottle, pause/resume, streaming, lifecycle hooks, and logging.

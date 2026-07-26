@@ -162,3 +162,5 @@ Robots.txt files are fetched using the spider's default session and cached per d
 
 **Note:** `robots_txt_obey` is turned off by default. It does not affect your concurrency settings -- only the delay between requests is adjusted.
 
+If you don't want to pick a `download_delay` by hand, set `autothrottle_enabled = True` and the spider will tune the delay of every domain on its own from how fast it responds, backing off when it gets blocked. See [AutoThrottle](advanced.md#autothrottle).
+
