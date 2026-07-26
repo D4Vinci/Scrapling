@@ -338,6 +338,49 @@ async with AsyncStealthySession(solve_cloudflare=True, headless=True) as session
 
 Enjoy! :)
 
+## Using invisible_playwright as an engine
+
+[invisible_playwright](https://github.com/feder-cr/invisible_playwright) is a Firefox patched at the C++ source level and driven by stock Playwright. If you would rather have a Firefox engine here than the default one, it wires in the same way as the Camoufox example above, through the package's public config helpers.
+
+First install the library. The browser binary is downloaded on first use and cached:
+```commandline
+pip install invisible-playwright
+```
+Then inherit from `StealthySession` and set it as below:
+```python
+from scrapling.fetchers import StealthySession
+from playwright.sync_api import sync_playwright
+from invisible_playwright import ensure_binary, get_default_args, get_default_stealth_prefs
+
+class StealthySession(StealthySession):
+    def start(self):
+        """Create a browser for this instance and context."""
+        if not self.playwright:
+            self.playwright = sync_playwright().start()
+            self.context = self.playwright.firefox.launch_persistent_context(
+                user_data_dir=self._user_data_dir,
+                executable_path=str(ensure_binary()),
+                args=get_default_args(),
+                # The seed pins the whole fingerprint, so the same seed gives the
+                # same machine on every run. Leave it out for a fresh identity
+                # per session.
+                firefox_user_prefs=get_default_stealth_prefs(seed=42, humanize=True),
+                headless=self._config.headless,
+                proxy=self._config.proxy,
+            )
+            self.context = self._initialize_context(self._config, self.context)
+            self._is_alive = True
+        else:
+            raise RuntimeError("Session has been already started")
+```
+After that, you can use it normally as before:
+```python
+with StealthySession(headless=True) as session:
+    page = session.fetch('https://quotes.toscrape.com/')
+```
+
+Two notes on the arguments. `hide_canvas`, `block_webrtc` and `allow_webgl` are not needed with this engine, since canvas, WebRTC and WebGL are already handled inside the patched build, and setting them here would layer a second spoof on top of the first. And `useragent` is best left alone, because the user agent is derived from the same seeded profile as the rest of the fingerprint, so overriding only that string is what makes the set inconsistent.
+
 ## When to Use
 
 Use StealthyFetcher when:
