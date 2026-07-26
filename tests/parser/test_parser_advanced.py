@@ -210,6 +210,23 @@ class TestAdvancedSelectors:
 
         assert node.get_all_text("\n", strip=True) == "string1\nstring2\nstring3\nstring4\nstring5\nstring6\nstring7"
 
+    def test_get_all_text_keeps_text_after_comment(self):
+        """Tail text following a comment or PI node must still be collected"""
+        html = "<div>before<!-- c -->after<p>x</p></div>"
+        assert Selector(html, keep_comments=True).get_all_text() == "before\nafter\nx"
+
+    def test_get_all_text_deep_nesting(self):
+        """Deeply nested trees collect every visible text node and skip ignored subtrees"""
+        depth = 500
+        html = "<div>" + "".join(f"<span>t{i}" for i in range(depth)) + "leaf" + "</span>" * depth + "end</div>"
+        text = Selector(html).get_all_text(strip=True)
+        assert text.startswith("t0\nt1\n")
+        assert "leaf" in text and text.endswith("end")
+        assert text.count("\n") == depth
+
+        ignored = "<div>keep<script>" + "<b>x</b>" * depth + "</script>done</div>"
+        assert Selector(ignored).get_all_text(strip=True) == "keep\ndone"
+
 
 class TestTextHandlerAdvanced:
     """Test advanced TextHandler functionality"""

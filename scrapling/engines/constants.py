@@ -41,14 +41,12 @@ STEALTH_ARGS = (
     # Generally this will make the browser faster and less detectable
     # "--incognito",
     "--test-type",
-    "--lang=en-US",
     "--mute-audio",
     "--disable-sync",
     "--hide-scrollbars",
     "--disable-logging",
     "--start-maximized",  # For headless check bypass
     "--enable-async-dns",
-    "--accept-lang=en-US",
     "--use-mock-keychain",
     "--disable-translate",
     "--disable-voice-input",
