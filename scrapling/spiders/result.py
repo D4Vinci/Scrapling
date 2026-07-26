@@ -56,7 +56,9 @@ class CrawlStats:
     start_time: float = 0.0
     end_time: float = 0.0
     download_delay: float = 0.0
+    autothrottle_enabled: bool = False
     blocked_requests_count: int = 0
+    autothrottle_delays: Dict = field(default_factory=dict)
     custom_stats: Dict = field(default_factory=dict)
     response_status_count: Dict = field(default_factory=dict)
     domains_response_bytes: Dict = field(default_factory=dict)
@@ -91,6 +93,8 @@ class CrawlStats:
             "items_dropped": self.items_dropped,
             "elapsed_seconds": round(self.elapsed_seconds, 2),
             "download_delay": round(self.download_delay, 2),
+            "autothrottle_enabled": self.autothrottle_enabled,
+            "autothrottle_delays": {domain: round(delay, 2) for domain, delay in self.autothrottle_delays.items()},
             "concurrent_requests": self.concurrent_requests,
             "concurrent_requests_per_domain": self.concurrent_requests_per_domain,
             "requests_count": self.requests_count,
