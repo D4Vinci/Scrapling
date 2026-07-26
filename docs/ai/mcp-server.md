@@ -218,6 +218,42 @@ Hence, the default value for the host the server is listening to is '0.0.0.0' an
 scrapling mcp --http --host '127.0.0.1' --port 8000
 ```
 
+### Authentication
+
+The 'stdio' transport is only reachable by the program that started it, but the moment you switch to 'Streamable HTTP', anyone who can reach the port can call every tool, and that includes fetching any URL from the machine running the server. So if the server is listening on anything other than localhost, give it a token:
+```bash
+scrapling mcp --http --auth-token "$(openssl rand -hex 32)"
+```
+Clients then have to send that token in an `Authorization` header, and any request without it is rejected with a `401`:
+```json
+{
+  "mcpServers": {
+    "ScraplingServer": {
+      "url": "https://your-server.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <your-token>"
+      }
+    }
+  }
+}
+```
+Passing the token on the command line leaves it in your shell history and in the process list, so prefer the `SCRAPLING_MCP_AUTH_TOKEN` environment variable:
+```bash
+export SCRAPLING_MCP_AUTH_TOKEN="<your-token>"
+scrapling mcp --http
+```
+When the server listens on a public address, you should also tell it which host names to accept, which turns on protection against DNS-rebinding attacks (a website your browser visits trying to talk to your server). The option can be repeated:
+```bash
+scrapling mcp --http --allowed-host 'your-server.example.com:8000'
+```
+
+!!! note "Notes:"
+
+    * Authentication applies to the 'Streamable HTTP' transport only. It's ignored with 'stdio', and the server logs a warning to tell you so.<br/>
+    * Plain HTTP sends the token in cleartext, so put the server behind a reverse proxy that terminates TLS before exposing it to the internet.<br/>
+    * This is a single shared key, not per-client credentials, so every client uses the same token, and rotating it means restarting the server.<br/>
+    * Starting the server with `--http` and no token still works for local use, but it logs a warning telling you that it's unauthenticated.
+
 ## Examples
 
 Now we will show you some examples of prompts we used while testing the MCP server, but you are probably more creative than we are and better at prompt engineering than we are :)

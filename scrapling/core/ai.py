@@ -1,13 +1,18 @@
 from uuid import uuid4
 from os import environ
+from hmac import compare_digest
 from asyncio import gather
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
 from mcp.server.fastmcp import FastMCP, Image
+from mcp.server.auth.provider import AccessToken, TokenVerifier
+from mcp.server.auth.settings import AuthSettings
+from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ImageContent, TextContent
-from pydantic import BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field
 
+from scrapling.core.utils import log
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.engines.static import ImpersonateType
@@ -35,6 +40,7 @@ from scrapling.core._types import (
 SessionType = Literal["dynamic", "stealthy"]
 ScreenshotType = Literal["png", "jpeg"]
 MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
+MCP_AUTH_TOKEN_ENV = "SCRAPLING_MCP_AUTH_TOKEN"  # nosec B105 - the name of the variable, not a token
 
 
 class ResponseModel(BaseModel):
@@ -107,15 +113,31 @@ def _normalize_credentials(credentials: Optional[Dict[str, str]]) -> Optional[Tu
     return username, password
 
 
+class _StaticTokenVerifier(TokenVerifier):
+    """Verifies requests against a single shared bearer token."""
+
+    def __init__(self, token: str):
+        self._token = token.encode()
+
+    async def verify_token(self, token: str) -> Optional[AccessToken]:
+        if compare_digest(token.encode(), self._token):
+            return AccessToken(token=token, client_id="scrapling-mcp", scopes=[])
+        return None
+
+
 class ScraplingMCPServer:
-    def __init__(self, executable_path: Optional[str] = None):
+    def __init__(self, executable_path: Optional[str] = None, auth_token: Optional[str] = None):
         """Create a Scrapling MCP server.
 
         :param executable_path: Optional global Chromium-compatible browser executable path for browser tools.
             If omitted, the SCRAPLING_EXECUTABLE_PATH environment variable is used when set.
+        :param auth_token: Optional shared token that clients must send as `Authorization: Bearer <token>`.
+            If omitted, the SCRAPLING_MCP_AUTH_TOKEN environment variable is used when set. It only applies
+            to the streamable-http transport.
         """
         self._sessions: Dict[str, _SessionEntry] = {}
         self._executable_path = executable_path or environ.get(MCP_EXECUTABLE_PATH_ENV) or None
+        self._auth_token = auth_token or environ.get(MCP_AUTH_TOKEN_ENV) or None
 
     def _resolve_executable_path(self, executable_path: Optional[str]) -> Optional[str]:
         """Return a per-call executable path or the server-wide default."""
@@ -902,9 +924,22 @@ class ScraplingMCPServer:
 
         return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
 
-    def serve(self, http: bool, host: str, port: int):
-        """Serve the MCP server."""
-        server = FastMCP(name="Scrapling", host=host, port=port)
+    def _build_server(self, host: str, port: int, allowed_hosts: Sequence[str] = ()) -> FastMCP:
+        """Build the FastMCP server with all tools registered and the optional security settings applied."""
+        settings: Dict[str, Any] = {}
+        if self._auth_token:
+            base_url = AnyHttpUrl(f"http://{host}:{port}")
+            settings["token_verifier"] = _StaticTokenVerifier(self._auth_token)
+            settings["auth"] = AuthSettings(issuer_url=base_url, resource_server_url=base_url)
+
+        if allowed_hosts:
+            settings["transport_security"] = TransportSecuritySettings(
+                enable_dns_rebinding_protection=True,
+                allowed_hosts=list(allowed_hosts),
+                allowed_origins=[f"{scheme}://{host_}" for host_ in allowed_hosts for scheme in ("http", "https")],
+            )
+
+        server = FastMCP(name="Scrapling", host=host, port=port, **settings)
         # Session management tools
         server.add_tool(self.open_session, title="open_session", structured_output=True)
         server.add_tool(self.close_session, title="close_session", structured_output=True)
@@ -932,4 +967,19 @@ class ScraplingMCPServer:
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
         server.add_tool(self.screenshot, title="screenshot", description=self.screenshot.__doc__)
-        server.run(transport="stdio" if not http else "streamable-http")
+        return server
+
+    def serve(self, http: bool, host: str, port: int, allowed_hosts: Sequence[str] = ()):
+        """Serve the MCP server."""
+        if http and not self._auth_token:
+            log.warning(
+                f"The MCP server is running over HTTP without authentication, so anyone who can reach "
+                f"{host}:{port} can use every tool, including fetching arbitrary URLs from this machine. "
+                f"Pass `--auth-token` (or set the {MCP_AUTH_TOKEN_ENV} environment variable) to require a bearer token."
+            )
+        elif self._auth_token and not http:
+            log.warning(
+                "The authentication token only applies to the streamable-http transport, so it's ignored with stdio."
+            )
+
+        self._build_server(host, port, allowed_hosts).run(transport="stdio" if not http else "streamable-http")

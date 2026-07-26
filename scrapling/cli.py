@@ -164,11 +164,25 @@ def install(force):  # pragma: no cover
     default=None,
     help="Path to a custom Chromium-compatible browser executable for browser-based MCP tools",
 )
-def mcp(http, host, port, executable_path):
+@option(
+    "--auth-token",
+    type=str,
+    default=None,
+    help="Require clients to send this token as `Authorization: Bearer <token>` (streamable-http only). "
+    "Setting the SCRAPLING_MCP_AUTH_TOKEN environment variable instead keeps it out of the process list",
+)
+@option(
+    "--allowed-host",
+    type=str,
+    multiple=True,
+    help="Enable DNS-rebinding protection and accept requests for this host only, like 'mcp.example.com:8000' "
+    "(repeatable). Recommended whenever the server listens on a public address",
+)
+def mcp(http, host, port, executable_path, auth_token, allowed_host):
     from scrapling.core.ai import ScraplingMCPServer
 
-    server = ScraplingMCPServer(executable_path=executable_path)
-    server.serve(http, host, port)
+    server = ScraplingMCPServer(executable_path=executable_path, auth_token=auth_token)
+    server.serve(http, host, port, allowed_hosts=allowed_host)
 
 
 @command(help="Interactive scraping console")
