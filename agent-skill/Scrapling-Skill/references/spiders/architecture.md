@@ -66,7 +66,7 @@ An optional cache that, when development mode is enabled, stores every fetched r
 
 ### Output
 
-Scraped items are collected in an `ItemList` (a list subclass with `to_json()` and `to_jsonl()` export methods). Crawl statistics are tracked in a `CrawlStats` dataclass which contains a lot of useful info.
+Scraped items are collected in an `ItemList` (a list subclass with `to_json()`, `to_jsonl()`, `to_csv()`, and `to_xml()` export methods). Crawl statistics are tracked in a `CrawlStats` dataclass which contains a lot of useful info.
 
 
 ## Comparison with Scrapy
@@ -88,7 +88,7 @@ If you're coming from Scrapy, here's how Scrapling's spider system maps:
 | Domain filtering   | `allowed_domains`             | `allowed_domains`                                               |
 | Robots.txt         | `ROBOTSTXT_OBEY` setting      | `robots_txt_obey` class attribute                               |
 | Pause/Resume       | `JOBDIR` setting              | `crawldir` constructor argument                                 |
-| Export             | Feed exports                  | `result.items.to_json()` / `to_jsonl()` or custom through hooks |
+| Export             | Feed exports                  | `result.items.to_json()` / `to_jsonl()` / `to_csv()` / `to_xml()` or custom through hooks |
 | Running            | `scrapy crawl spider_name`    | `MySpider().start()`                                            |
 | Streaming          | N/A                           | `async for item in spider.stream()`                             |
 | Multi-session      | N/A                           | Multiple sessions with different types per spider               |

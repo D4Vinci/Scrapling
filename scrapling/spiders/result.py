@@ -1,10 +1,37 @@
+import csv
+import re
 from pathlib import Path
 from dataclasses import dataclass, field
+from xml.etree.ElementTree import (  # nosec B405 - we only serialize items, nothing here parses XML
+    Element,
+    ElementTree,
+    SubElement,
+    indent as indent_tree,
+)
 
 import orjson
 
 from scrapling.core.utils import log
-from scrapling.core._types import Any, Iterator, Dict, List, Tuple, Union
+from scrapling.core._types import Any, Iterable, Iterator, Dict, List, Optional, Tuple, Union
+
+# Anything outside these ranges can't be represented in XML, and scraped pages are full of control characters
+_XML_FORBIDDEN_CHARS = re.compile(r"[^\x09\x0a\x0d\x20-퟿-�\U00010000-\U0010ffff]")
+_XML_FORBIDDEN_TAG_CHARS = re.compile(r"[^\w.-]", re.UNICODE)
+
+
+def _stringify(value: Any) -> str:
+    """Turn an item's value into text, serializing containers to JSON so no data is silently dropped."""
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list, tuple)):
+        return orjson.dumps(value, option=orjson.OPT_SERIALIZE_NUMPY).decode()
+    return str(value)
+
+
+def _xml_tag(key: Any) -> str:
+    """Turn an item's key into a usable XML tag name."""
+    tag = _XML_FORBIDDEN_TAG_CHARS.sub("_", str(key))
+    return tag if tag and (tag[0].isalpha() or tag[0] == "_") else f"_{tag}"
 
 
 class ItemList(list):
@@ -35,6 +62,59 @@ class ItemList(list):
             for item in self:
                 f.write(orjson.dumps(item, option=orjson.OPT_SERIALIZE_NUMPY))
                 f.write(b"\n")
+        log.info("Saved %d items to %s", len(self), path)
+
+    def to_csv(self, path: Union[str, Path], *, fields: Optional[Iterable[str]] = None, delimiter: str = ","):
+        """Export items to a CSV file.
+
+        Items that don't share the same keys are still written, with the missing cells left empty, and any value
+        that isn't a scalar (a nested dictionary or a list) is written as JSON.
+
+        :param path: Path to the output file
+        :param fields: The columns to write, defaulting to every key found in the items, in the order they appeared
+        :param delimiter: The character separating the columns
+        """
+        columns = list(fields) if fields is not None else list({key: None for item in self for key in item})
+
+        file = Path(path)
+        file.parent.mkdir(parents=True, exist_ok=True)
+        with open(file, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=columns, delimiter=delimiter, extrasaction="ignore")
+            writer.writeheader()
+            for item in self:
+                writer.writerow({column: _stringify(item.get(column)) for column in columns})
+
+        log.info("Saved %d items to %s", len(self), path)
+
+    def to_xml(self, path: Union[str, Path], *, root_tag: str = "items", item_tag: str = "item", indent: bool = True):
+        """Export items to an XML file.
+
+        Each item becomes an element whose children are named after the item's keys. Keys that aren't valid XML
+        names are rewritten and keep the original in a `name` attribute, and any value that isn't a scalar
+        (a nested dictionary or a list) is written as JSON.
+
+        :param path: Path to the output file
+        :param root_tag: The name of the element wrapping all the items
+        :param item_tag: The name of the element wrapping every item
+        :param indent: Pretty-print the file instead of writing it on a single line
+        """
+        root = Element(root_tag)
+        for item in self:
+            element = SubElement(root, item_tag)
+            for key, value in item.items():
+                tag = _xml_tag(key)
+                child = SubElement(element, tag)
+                if tag != str(key):
+                    child.set("name", _XML_FORBIDDEN_CHARS.sub("", str(key)))
+                child.text = _XML_FORBIDDEN_CHARS.sub("", _stringify(value))
+
+        tree = ElementTree(root)
+        if indent:
+            indent_tree(tree, space="  ")
+
+        file = Path(path)
+        file.parent.mkdir(parents=True, exist_ok=True)
+        tree.write(file, encoding="utf-8", xml_declaration=True)
         log.info("Saved %d items to %s", len(self), path)
 
 

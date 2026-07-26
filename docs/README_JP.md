@@ -212,7 +212,7 @@ MySpider().start()
 - 🧪 **開発モード**：初回実行時にレスポンスをディスクにキャッシュし、以降の実行ではそれを再生 - ターゲットサーバーに再リクエストすることなく `parse()` ロジックを反復開発できます。
 - 🧩 **すぐに使える Spider テンプレート**：定型コードは不要です。ルールベースのリンク追跡には `CrawlSpider`、sitemap/robots.txt を起点としたクロールには `SitemapSpider`、そして `ShopifySpider` を使えば任意の Shopify ストアの全商品を JSON API 経由で取得できます（バリエーションごとに 1 アイテム）。
 - 🔗 **リンク抽出**：allow/deny パターン、ドメインフィルタ、CSS/XPath による範囲指定、拡張子フィルタ、正規化に対応した独立した `LinkExtractor` を提供。テンプレート内でも単体でも使用できます。
-- 📦 **組み込みエクスポート**：フックや独自のパイプライン、または組み込みの JSON/JSONL で結果をエクスポート。それぞれ`result.items.to_json()` / `result.items.to_jsonl()`を使用。
+- 📦 **組み込みエクスポート**：フックや独自のパイプライン、または組み込みの JSON/JSONL/CSV/XML で結果をエクスポート。`result.items.to_json()`、`to_jsonl()`、`to_csv()`、`to_xml()` が使えます。
 
 ### Session サポート付き高度なウェブサイト取得
 - **HTTP リクエスト**：`Fetcher` クラスで高速かつステルスな HTTP リクエスト。ブラウザの TLS fingerprint、ヘッダーを模倣し、HTTP/3 を使用可能。

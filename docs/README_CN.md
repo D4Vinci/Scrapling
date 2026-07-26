@@ -212,7 +212,7 @@ MySpider().start()
 - 🧪 **开发模式**：首次运行时将响应缓存到磁盘，后续运行时直接回放 - 在不重新请求目标服务器的情况下迭代你的 `parse()` 逻辑。
 - 🧩 **现成的 Spider 模板**：跳过样板代码--使用 `CrawlSpider` 基于规则跟踪链接，`SitemapSpider` 基于 sitemap/robots.txt 爬取，以及 `ShopifySpider` 通过 JSON API 抓取任意 Shopify 商店的全部商品，每个变体一条数据。
 - 🔗 **链接提取**：独立的 `LinkExtractor` 组件，支持 allow/deny 模式、域名过滤、CSS/XPath 范围限定、扩展名过滤和链接规范化--可在模板中使用，也可单独使用。
-- 📦 **内置导出**：通过钩子和您自己的管道导出结果，或使用内置的 JSON/JSONL，分别通过 `result.items.to_json()`/`result.items.to_jsonl()`。
+- 📦 **内置导出**：通过钩子和您自己的管道导出结果，或使用内置的 JSON/JSONL/CSV/XML 导出器：`result.items.to_json()`、`to_jsonl()`、`to_csv()` 和 `to_xml()`。
 
 ### 支持 Session 的高级网站获取
 - **HTTP 请求**：使用 `Fetcher` 类进行快速和隐秘的 HTTP 请求。可以模拟浏览器的 TLS fingerprint、标头并使用 HTTP/3。

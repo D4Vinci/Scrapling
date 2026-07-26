@@ -212,7 +212,7 @@ MySpider().start()
 - 🧪 **개발 모드**: 첫 실행 시 응답을 디스크에 캐싱하고 이후 실행에서는 캐시된 응답을 재생합니다 - 대상 서버에 다시 요청하지 않고 `parse()` 로직을 반복 개발할 수 있습니다.
 - 🧩 **바로 쓰는 Spider 템플릿**: 반복적인 코드는 건너뛰세요. 규칙 기반 링크 추적에는 `CrawlSpider`, sitemap/robots.txt 기반 크롤링에는 `SitemapSpider`, 그리고 `ShopifySpider`로 어떤 Shopify 스토어든 JSON API를 통해 모든 상품을 가져올 수 있습니다(변형별로 항목 하나).
 - 🔗 **링크 추출**: allow/deny 패턴, 도메인 필터, CSS/XPath 범위 지정, 확장자 필터링, 정규화를 지원하는 독립형 `LinkExtractor`. 템플릿 안에서도, 단독으로도 사용할 수 있습니다.
-- 📦 **내장 내보내기**: 훅이나 자체 파이프라인, 또는 내장 JSON/JSONL로 결과를 내보냅니다. 각각 `result.items.to_json()` / `result.items.to_jsonl()`을 사용합니다.
+- 📦 **내장 내보내기**: 훅이나 자체 파이프라인, 또는 내장 JSON/JSONL/CSV/XML로 결과를 내보냅니다. `result.items.to_json()`, `to_jsonl()`, `to_csv()`, `to_xml()`을 사용합니다.
 
 ### 세션을 지원하는 고급 웹사이트 가져오기
 - **HTTP 요청**: `Fetcher` 클래스로 빠르고 은밀한 HTTP 요청. 브라우저의 TLS fingerprint, 헤더를 모방하고, HTTP/3를 사용할 수 있습니다.

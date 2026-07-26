@@ -212,7 +212,7 @@ MySpider().start()
 - 🧪 **Mode développement** : Mettez les réponses en cache sur le disque lors de la première exécution et rejouez-les lors des exécutions suivantes - itérez sur votre logique `parse()` sans solliciter à nouveau les serveurs cibles.
 - 🧩 **Modèles de Spider prêts à l'emploi** : Évitez le code répétitif avec `CrawlSpider` pour le suivi de liens par règles, `SitemapSpider` pour les crawls pilotés par sitemap/robots.txt, et `ShopifySpider` pour récupérer tous les produits de n'importe quelle boutique Shopify via son API JSON, un item par variante.
 - 🔗 **Extraction de liens** : Un primitif `LinkExtractor` autonome avec motifs allow/deny, filtres de domaines, délimitation CSS/XPath, filtrage des extensions et canonicalisation - utilisable dans les modèles ou seul.
-- 📦 **Export intégré** : Exportez les résultats via des hooks et votre propre pipeline ou l'export JSON/JSONL intégré avec `result.items.to_json()` / `result.items.to_jsonl()` respectivement.
+- 📦 **Export intégré** : Exportez les résultats via des hooks et votre propre pipeline ou les exports JSON/JSONL/CSV/XML intégrés avec `result.items.to_json()`, `to_jsonl()`, `to_csv()` et `to_xml()`.
 
 ### Récupération avancée de sites web avec support de sessions
 - **Requêtes HTTP** : Requêtes HTTP rapides et furtives avec la classe `Fetcher`. Peut imiter l'empreinte TLS des navigateurs, les headers et utiliser HTTP/3.

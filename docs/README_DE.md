@@ -212,7 +212,7 @@ MySpider().start()
 - 🧪 **Entwicklungsmodus**: Antworten beim ersten Lauf auf der Festplatte zwischenspeichern und bei weiteren Läufen erneut abspielen - iterieren Sie an Ihrer `parse()`-Logik, ohne die Zielserver erneut abzufragen.
 - 🧩 **Fertige Spider-Vorlagen**: Sparen Sie sich den Boilerplate-Code mit `CrawlSpider` für regelbasiertes Link-Following, `SitemapSpider` für Sitemap-/robots.txt-gesteuerte Crawls und `ShopifySpider`, um über die JSON-API jedes Produkt aus einem beliebigen Shopify-Shop zu ziehen -- ein Item pro Variante.
 - 🔗 **Link-Extraktion**: Ein eigenständiges `LinkExtractor`-Primitiv mit Allow-/Deny-Mustern, Domain-Filtern, CSS-/XPath-Eingrenzung, Erweiterungsfilterung und Kanonisierung -- nutzbar innerhalb der Vorlagen oder für sich allein.
-- 📦 **Integrierter Export**: Ergebnisse über Hooks und Ihre eigene Pipeline oder den integrierten JSON/JSONL-Export mit `result.items.to_json()` / `result.items.to_jsonl()` exportieren.
+- 📦 **Integrierter Export**: Ergebnisse über Hooks und Ihre eigene Pipeline oder die integrierten JSON/JSONL/CSV/XML-Exporte mit `result.items.to_json()`, `to_jsonl()`, `to_csv()` und `to_xml()` exportieren.
 
 ### Erweitertes Website-Abrufen mit Session-Unterstützung
 - **HTTP-Anfragen**: Schnelle und heimliche HTTP-Anfragen mit der `Fetcher`-Klasse. Kann Browser-TLS-Fingerprints und Header imitieren und HTTP/3 verwenden.
