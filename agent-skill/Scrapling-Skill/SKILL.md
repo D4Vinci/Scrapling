@@ -395,7 +395,7 @@ async with AsyncDynamicSession(capture_xhr=r"https://api\.example\.com/.*") as s
 
 ## References
 You already had a good glimpse of what the library can do. Use the references below to dig deeper when needed
-- `references/mcp-server.md` - MCP server tools, persistent session management, and capabilities
+- `references/mcp-server.md` - MCP server tools, persistent session management, remote browsers over CDP, authentication, and capabilities
 - `references/parsing` - Everything you need for parsing HTML
 - `references/fetching` - Everything you need to fetch websites and session persistence
 - `references/spiders` - Everything you need to write spiders, proxy rotation, and advanced features. It follows a Scrapy-like format
