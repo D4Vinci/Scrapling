@@ -209,6 +209,8 @@ MySpider().start()
 - 🛡️ **被阻止请求检测**：自动检测并重试被阻止的请求，支持自定义逻辑。
 - 🤖 **robots.txt 合规**：可选的 `robots_txt_obey` 标志，支持 `Disallow`、`Crawl-delay` 和 `Request-rate` 指令，并按域名缓存。
 - 🧪 **开发模式**：首次运行时将响应缓存到磁盘，后续运行时直接回放 - 在不重新请求目标服务器的情况下迭代你的 `parse()` 逻辑。
+- 🧩 **现成的 Spider 模板**：跳过样板代码--使用 `CrawlSpider` 基于规则跟踪链接，`SitemapSpider` 基于 sitemap/robots.txt 爬取，以及 `ShopifySpider` 通过 JSON API 抓取任意 Shopify 商店的全部商品，每个变体一条数据。
+- 🔗 **链接提取**：独立的 `LinkExtractor` 组件，支持 allow/deny 模式、域名过滤、CSS/XPath 范围限定、扩展名过滤和链接规范化--可在模板中使用，也可单独使用。
 - 📦 **内置导出**：通过钩子和您自己的管道导出结果，或使用内置的 JSON/JSONL，分别通过 `result.items.to_json()`/`result.items.to_jsonl()`。
 
 ### 支持 Session 的高级网站获取
@@ -219,13 +221,16 @@ MySpider().start()
 - **Proxy 轮换**：内置 `ProxyRotator`，支持轮询或自定义策略，适用于所有 Session 类型，并支持按请求覆盖 Proxy。
 - **域名和广告屏蔽**：在基于浏览器的 Fetcher 中屏蔽对特定域名（及其子域名）的请求，或启用内置广告屏蔽（约 3,500 个已知广告/追踪域名）。
 - **DNS 泄漏防护**：可选的 DNS-over-HTTPS 支持，通过 Cloudflare 的 DoH 路由 DNS 查询，防止使用代理时的 DNS 泄漏。
+- **远程浏览器**：无需在本地启动浏览器，通过 `cdp_url` 用 CDP 连接到已在运行的浏览器，无论它在同一台机器、另一台主机，还是托管的浏览器服务商。您也可以通过 `executable_path` 让任意浏览器 Fetcher 使用您自己的 Chromium 构建版本。
+- **后台 API 捕获**：向 `capture_xhr` 传入 URL 模式，页面加载过程中所有匹配的 XHR/fetch 响应都会作为 `Response` 对象收集到 `response.captured_xhr` 中--无需自己逆向分析请求即可获取网站的 API 数据。
 - **Async 支持**：所有 Fetcher 和专用 async Session 类的完整 async 支持。
 
 ### 自适应抓取和 AI 集成
 - 🔄 **智能元素跟踪**：使用智能相似性算法在网站更改后重新定位元素。
 - 🎯 **智能灵活选择**：CSS 选择器、XPath 选择器、基于过滤器的搜索、文本搜索、正则表达式搜索等。
 - 🔍 **查找相似元素**：自动定位与已找到元素相似的元素。
-- 🤖 **与 AI 一起使用的 MCP 服务器**：内置 MCP 服务器用于 AI 辅助 Web Scraping 和数据提取。MCP 服务器具有强大的自定义功能，利用 Scrapling 在将内容传递给 AI（Claude/Cursor 等）之前提取目标内容，从而加快操作并通过最小化 token 使用来降低成本。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
+- 🤖 **与 AI 一起使用的 MCP 服务器**：内置 MCP 服务器用于 AI 辅助 Web Scraping 和数据提取。MCP 服务器具有强大的自定义功能，利用 Scrapling 在将内容传递给 AI（Claude/Cursor 等）之前提取目标内容，从而加快操作并通过最小化 token 使用来降低成本。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）它还可以在多次调用之间保持浏览器会话、截取页面截图，并通过 CDP 驱动远程浏览器。
+- 🧠 **Agent Skill**：[开箱即用的 Agent Skill](https://github.com/D4Vinci/Scrapling/tree/main/agent-skill)，让编码智能体全面掌握本库，使它们用 Scrapling 写出的代码符合当前 API，而不是靠猜测。
 
 ### 高性能和经过实战测试的架构
 - 🚀 **闪电般快速**：优化性能超越大多数 Python 抓取库。
@@ -240,6 +245,7 @@ MySpider().start()
 - 🧬 **增强的文本处理**：内置正则表达式、清理方法和优化的字符串操作。
 - 📝 **自动选择器生成**：为任何元素生成强大的 CSS/XPath 选择器。
 - 🔌 **熟悉的 API**：类似于 Scrapy/BeautifulSoup，使用与 Scrapy/Parsel 相同的伪元素。
+- 🤝 **无缝集成 Scrapy**：已经在用 Scrapy？用 `scrapling_response` 装饰任意回调，即可用 Scrapling 的解析器解析您本来就抓取到的响应，无需重写项目。
 - 📘 **完整的类型覆盖**：完整的类型提示，出色的 IDE 支持和代码补全。整个代码库在每次更改时都会自动使用**PyRight**和**MyPy**扫描。
 - 🔋 **现成的 Docker 镜像**：每次发布时，包含所有浏览器的 Docker 镜像会自动构建和推送。
 
@@ -336,6 +342,16 @@ class MultiSessionSpider(Spider):
 QuotesSpider(crawldir="./crawl_data").start()
 ```
 按 Ctrl+C 优雅暂停--进度会自动保存。之后，当您再次启动 Spider 时，传递相同的 `crawldir`，它将从上次停止的地方继续。
+
+或者使用现成的模板，完全跳过爬取逻辑的编写，例如抓取整个 Shopify 商店的商品目录：
+```python
+from scrapling.spiders import ShopifySpider
+
+class MyStore(ShopifySpider):
+    target_website = "example.com"
+
+result = MyStore().start()  # 商店中的每件商品，每个变体一条数据
+```
 
 ### 高级解析与导航
 ```python
