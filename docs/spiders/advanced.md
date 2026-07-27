@@ -17,7 +17,7 @@ The spider system uses three class attributes to control how aggressively it cra
 | `concurrent_requests`            | `4`     | Maximum number of requests being processed at the same time      |
 | `concurrent_requests_per_domain` | `0`     | Maximum concurrent requests per domain (0 = no per-domain limit) |
 | `download_delay`                 | `0.0`   | Seconds to wait before each request                              |
-| `robots_txt_obey`               | `False` | Respect robots.txt rules (Disallow, Crawl-delay, Request-rate)   |
+| `robots_txt_obey`                | `False` | Respect robots.txt rules (Disallow, Crawl-delay, Request-rate)   |
 
 ```python
 class PoliteSpider(Spider):
@@ -98,7 +98,7 @@ print(result.stats.autothrottle_delays)  # {'example.com': 0.62}
     * `autothrottle_max_delay` caps everything, including `Retry-After`. If a website asks for longer than your ceiling, raise `autothrottle_max_delay` to honor it.<br/>
     * The learned delays are not checkpointed. After a pause and resume, each domain starts again from `autothrottle_start_delay`.
 
-### Using uvloop
+## Using uvloop
 
 The `start()` method accepts a `use_uvloop` parameter to use the faster [uvloop](https://github.com/MagicStack/uvloop)/[winloop](https://github.com/nicktimko/winloop) event loop implementation, if available:
 
