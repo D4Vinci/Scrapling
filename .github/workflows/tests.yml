@@ -73,7 +73,7 @@ jobs:
     - name: Install all browsers dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install playwright==1.61.0 patchright==1.61.1
+        python3 -m pip install playwright==1.61.0 patchright==1.61.2
 
     - name: Get Playwright version
       id: playwright-version
@@ -84,7 +84,7 @@ jobs:
 
     - name: Retrieve Playwright browsers from cache if any
       id: playwright-cache
-      uses: actions/cache@v5
+      uses: actions/cache/restore@v5
       with:
         path: |
           ~/.cache/ms-playwright
@@ -105,13 +105,13 @@ jobs:
         fi
         python3 -m playwright install-deps chromium
 
-    # Cache tox environments
-    - name: Cache tox environments
-      uses: actions/cache@v5
+    - name: Retrieve tox environments from cache if any
+      id: tox-cache
+      uses: actions/cache/restore@v5
       with:
         path: .tox
         # Include python version and os in the cache key
-        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('/Users/runner/work/Scrapling/pyproject.toml') }}
+        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}
         restore-keys: |
           tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-
           tox-v1-${{ runner.os }}-
@@ -122,3 +122,20 @@ jobs:
     - name: Run tests
       env: ${{ matrix.env }}
       run: tox
+
+    - name: Save Playwright browsers to cache
+      if: github.ref == 'refs/heads/main' && steps.playwright-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: |
+          ~/.cache/ms-playwright
+          ~/Library/Caches/ms-playwright
+          ~/.ms-playwright
+        key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+
+    - name: Save tox environments to cache
+      if: github.ref == 'refs/heads/main' && steps.tox-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: .tox
+        key: ${{ steps.tox-cache.outputs.cache-primary-key }}

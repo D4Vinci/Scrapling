@@ -7,10 +7,10 @@ on:
       - main
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Docker image tag'
-        required: true
-        default: 'latest'
+      version:
+        description: "Release version to tag the images with, like 'v0.4.12'. Leave it empty to only push 'latest'"
+        required: false
+        default: ''
 
 env:
   DOCKERHUB_IMAGE: pyd4vinci/scrapling
@@ -28,17 +28,20 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
 
-    - name: Extract release version from PR title
+    # Releases come from the merged PR's title, the same source `release-and-publish.yml` uses, while a manual
+    # run can pass the version itself to republish an image the release build failed to push.
+    - name: Resolve the release version
       id: version
-      if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
       env:
         PR_TITLE: ${{ github.event.pull_request.title }}
+        INPUT_VERSION: ${{ inputs.version }}
       run: |
-        if [[ $PR_TITLE =~ ^v ]]; then
-          echo "version=$PR_TITLE" >> "$GITHUB_OUTPUT"
-          echo "Release version detected from PR title: $PR_TITLE"
+        VERSION="${INPUT_VERSION:-$PR_TITLE}"
+        if [[ $VERSION =~ ^v[0-9] ]]; then
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Tagging the images with $VERSION"
         else
-          echo "PR title '$PR_TITLE' is not a version; skipping semver tags."
+          echo "No release version given ('$VERSION'); skipping the version tags."
         fi
 
     - name: Set up Docker Buildx
@@ -92,7 +95,7 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
-        cache-to: type=gha,mode=min
+        cache-to: type=gha,mode=min,ignore-error=true
         build-args: |
           BUILDKIT_INLINE_CACHE=1
 
