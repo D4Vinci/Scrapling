@@ -207,7 +207,7 @@ MySpider().start()
 - 💾 **暂停与恢复**：基于 Checkpoint 的爬取持久化。按 Ctrl+C 优雅关闭；重启后从上次停止的地方继续。
 - 📡 **Streaming 模式**：通过 `async for item in spider.stream()` 以实时统计 Streaming 抓取的数据--非常适合 UI、管道和长时间运行的爬取。
 - 🛡️ **被阻止请求检测**：自动检测并重试被阻止的请求，支持自定义逻辑。
-- 🎚️ **AutoThrottle 自动限速**：不用再猜延迟。Spider 会根据网站的响应速度自动调整每个域名的延迟，当网站开始封禁或限流时把延迟翻倍（或按 `Retry-After` 要求等待），并在恢复正常后重新提速。
+- 🚦 **AutoThrottle 自动限速**：不用再猜延迟。Spider 会根据网站的响应速度自动调整每个域名的延迟，当网站开始封禁或限流时把延迟翻倍（或按 `Retry-After` 要求等待），并在恢复正常后重新提速。
 - 🤖 **robots.txt 合规**：可选的 `robots_txt_obey` 标志，支持 `Disallow`、`Crawl-delay` 和 `Request-rate` 指令，并按域名缓存。
 - 🧪 **开发模式**：首次运行时将响应缓存到磁盘，后续运行时直接回放 - 在不重新请求目标服务器的情况下迭代你的 `parse()` 逻辑。
 - 🧩 **现成的 Spider 模板**：跳过样板代码--使用 `CrawlSpider` 基于规则跟踪链接，`SitemapSpider` 基于 sitemap/robots.txt 爬取，以及 `ShopifySpider` 通过 JSON API 抓取任意 Shopify 商店的全部商品，每个变体一条数据。

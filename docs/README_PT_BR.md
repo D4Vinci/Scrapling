@@ -209,7 +209,7 @@ MySpider().start()
 - 💾 **Pausa e Retomada**: Persistência de crawl baseada em checkpoints. Pressione Ctrl+C para um encerramento gracioso; reinicie para continuar de onde parou.
 - 📡 **Modo Streaming**: Faça streaming dos itens extraídos conforme chegam com `async for item in spider.stream()` e estatísticas em tempo real - ideal para UI, pipelines e crawls de longa duração.
 - 🛡️ **Detecção de Requisições Bloqueadas**: Detecção automática e retry de requisições bloqueadas com lógica personalizável.
-- 🎚️ **AutoThrottle**: Pare de adivinhar os atrasos. A spider ajusta sozinha o atraso de cada domínio conforme a velocidade de resposta do site, dobra esse atraso (ou espera o que o `Retry-After` pedir) quando o site começa a bloquear ou limitar você, e volta a acelerar quando isso passa.
+- 🚦 **AutoThrottle**: Pare de adivinhar os atrasos. A spider ajusta sozinha o atraso de cada domínio conforme a velocidade de resposta do site, dobra esse atraso (ou espera o que o `Retry-After` pedir) quando o site começa a bloquear ou limitar você, e volta a acelerar quando isso passa.
 - 🤖 **Conformidade com robots.txt**: Flag opcional `robots_txt_obey` que respeita as diretivas `Disallow`, `Crawl-delay` e `Request-rate` com cache por domínio.
 - 🧪 **Modo de Desenvolvimento**: Armazene respostas em disco na primeira execução e reproduza-as nas seguintes - itere sobre sua lógica de `parse()` sem reenviar requisições aos servidores-alvo.
 - 🧩 **Templates de Spider Prontos**: Pule o código repetitivo com `CrawlSpider` para seguir links por regras, `SitemapSpider` para crawls guiados por sitemap/robots.txt e `ShopifySpider` para extrair todos os produtos de qualquer loja Shopify através da sua API JSON, um item por variação.
