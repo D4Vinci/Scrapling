@@ -185,6 +185,33 @@ def mcp(http, host, port, executable_path, auth_token, allowed_host):
     server.serve(http, host, port, allowed_hosts=allowed_host)
 
 
+@command(help="Run Scrapling's local Web UI.")
+@option("--host", type=str, default="127.0.0.1", show_default=True, help="Host address for the Web UI")
+@option("--port", type=int, default=8001, show_default=True, help="Port for the Web UI")
+@option(
+    "--database",
+    type=str,
+    default=None,
+    help="SQLite history database path (default: ~/.scrapling/ui.db)",
+)
+@option(
+    "--allow-private-targets",
+    is_flag=True,
+    default=False,
+    help="Allow scraping localhost and private-network URLs (unsafe on shared systems)",
+)
+def ui(host, port, database, allow_private_targets):
+    """Start the optional browser-based interface."""
+    try:
+        from scrapling.core.ui import ScraplingWebUI
+    except (ImportError, ModuleNotFoundError) as error:
+        raise ModuleNotFoundError(
+            'You need to install Scrapling with the UI extra first: pip install "scrapling[ui]"'
+        ) from error
+
+    ScraplingWebUI(database=database, allow_private_targets=allow_private_targets).serve(host, port)
+
+
 @command(help="Interactive scraping console")
 @option(
     "-c",
@@ -696,3 +723,4 @@ main.add_command(install)
 main.add_command(shell)
 main.add_command(extract)
 main.add_command(mcp)
+main.add_command(ui)

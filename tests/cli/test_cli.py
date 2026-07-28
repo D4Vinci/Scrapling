@@ -5,7 +5,7 @@ import pytest_httpbin
 
 from scrapling.parser import Selector
 from scrapling import __version__
-from scrapling.cli import main, shell, mcp, get, post, put, delete, fetch, stealthy_fetch
+from scrapling.cli import main, shell, mcp, ui, get, post, put, delete, fetch, stealthy_fetch
 
 
 @pytest_httpbin.use_class_based_httpbin
@@ -94,6 +94,29 @@ class TestCLI:
             mock_instance.serve.assert_called_once_with(
                 True, "0.0.0.0", 8000, allowed_hosts=("mcp.example.com:8000", "127.0.0.1:8000")
             )
+
+    def test_ui_command(self, runner):
+        """Test Web UI command options."""
+        with patch("scrapling.core.ui.ScraplingWebUI") as mock_ui:
+            mock_instance = MagicMock()
+            mock_ui.return_value = mock_instance
+
+            result = runner.invoke(
+                ui,
+                [
+                    "--host",
+                    "127.0.0.1",
+                    "--port",
+                    "9000",
+                    "--database",
+                    "/tmp/scrapling-ui.db",
+                    "--allow-private-targets",
+                ],
+            )
+
+            assert result.exit_code == 0
+            mock_ui.assert_called_once_with(database="/tmp/scrapling-ui.db", allow_private_targets=True)
+            mock_instance.serve.assert_called_once_with("127.0.0.1", 9000)
 
     def test_extract_get_command(self, runner, tmp_path, html_url):
         """Test extract `get` command"""

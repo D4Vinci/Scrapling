@@ -91,8 +91,14 @@ shell = [
     "markdownify>=1.2.0",
     "scrapling[fetchers]",
 ]
+ui = [
+    "starlette>=0.27",
+    "uvicorn>=0.31.1",
+    "markdownify>=1.2.0",
+    "scrapling[fetchers]",
+]
 all = [
-    "scrapling[ai,shell]",
+    "scrapling[ai,shell,ui]",
 ]
 
 [project.urls]
@@ -114,6 +120,9 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["scrapling*"]
+
+[tool.setuptools.package-data]
+scrapling = ["webui/*.html", "webui/*.css", "webui/*.js"]
 
 [tool.mypy]
 python_version = "3.10"

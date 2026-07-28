@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A local visual workspace for Scrapling">
+  <title>Scrapling Studio</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Scrapling Studio home">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span><strong>Scrapling</strong><small>STUDIO</small></span>
+    </a>
+    <div class="status"><i></i><span>Local workspace</span></div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">VISUAL EXTRACTION WORKSPACE</p>
+      <h1>Turn any page into<br><em>structured data.</em></h1>
+      <p class="intro">Fetch, inspect, select, and export—without writing a scraper first.</p>
+    </section>
+
+    <section class="workspace" aria-label="Extraction workspace">
+      <form id="extract-form" class="control-panel">
+        <div class="panel-heading">
+          <span>01</span>
+          <div><h2>New extraction</h2><p>Configure how Scrapling should read the page.</p></div>
+        </div>
+
+        <label class="field field-wide">
+          <span>Target URL</span>
+          <div class="url-control">
+            <span>↗</span>
+            <input id="url" name="url" type="url" placeholder="https://example.com/products" required>
+          </div>
+        </label>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Fetch engine</span>
+            <select id="mode" name="mode">
+              <option value="http">HTTP · Fast</option>
+              <option value="dynamic">Dynamic · JavaScript</option>
+              <option value="stealth">Stealth · Protected</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Output</span>
+            <select id="output-format" name="output_format">
+              <option value="text">Clean text</option>
+              <option value="html">HTML</option>
+              <option value="markdown">Markdown</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="selector-row">
+          <label class="field selector-field">
+            <span>Selector <small>optional</small></span>
+            <input id="selector" name="selector" placeholder=".product-card">
+          </label>
+          <div class="segmented" aria-label="Selector type">
+            <button type="button" class="active" data-selector-type="css">CSS</button>
+            <button type="button" data-selector-type="xpath">XPath</button>
+          </div>
+        </div>
+
+        <details>
+          <summary>Browser options <span>＋</span></summary>
+          <div class="option-grid">
+            <label><input id="headless" type="checkbox" checked> Headless browser</label>
+            <label><input id="network-idle" type="checkbox"> Wait for network idle</label>
+            <label class="timeout">Timeout <input id="timeout" type="number" value="30" min="1" max="120"> sec</label>
+          </div>
+        </details>
+
+        <button id="run-button" class="primary-button" type="submit">
+          <span>Run extraction</span><b>→</b>
+        </button>
+        <p id="form-error" class="form-error" role="alert"></p>
+      </form>
+
+      <section class="result-panel">
+        <div class="panel-heading result-heading">
+          <span>02</span>
+          <div><h2>Results</h2><p id="result-subtitle">Your extracted values appear here.</p></div>
+          <div id="export-actions" class="export-actions" hidden>
+            <a id="export-json" href="#">JSON</a>
+            <a id="export-csv" href="#">CSV</a>
+          </div>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+          <div class="radar"><span></span><i></i></div>
+          <h3>Ready when you are</h3>
+          <p>Enter a public URL and run your first extraction.</p>
+        </div>
+
+        <div id="loading-state" class="loading-state" hidden>
+          <div class="loader"></div>
+          <h3>Reading the page…</h3>
+          <p>Fetching, parsing, and indexing results.</p>
+        </div>
+
+        <div id="result-state" hidden>
+          <div class="metrics">
+            <div><span>Status</span><strong id="metric-status">—</strong></div>
+            <div><span>Values</span><strong id="metric-count">—</strong></div>
+            <div><span>Time</span><strong id="metric-time">—</strong></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Extracted value</th></tr></thead>
+              <tbody id="result-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="history-section">
+      <div class="section-title">
+        <div><p class="eyebrow">LOCAL INDEX</p><h2>Recent extractions</h2></div>
+        <button id="refresh-history" class="text-button">Refresh ↻</button>
+      </div>
+      <div id="history-list" class="history-list">
+        <p class="history-empty">No indexed jobs yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Scrapling Studio · Local-first</span>
+    <span>Public URLs only by default</span>
+  </footer>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>
