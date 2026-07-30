@@ -41,6 +41,12 @@ SessionType = Literal["dynamic", "stealthy"]
 ScreenshotType = Literal["png", "jpeg"]
 MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
 MCP_AUTH_TOKEN_ENV = "SCRAPLING_MCP_AUTH_TOKEN"  # nosec B105 - the name of the variable, not a token
+_MAX_POOL_PAGES = 50  # Upper bound of `PagesCount` in scrapling/engines/_browsers/_validators.py
+
+
+def _page_pool_size(urls: Sequence[str]) -> int:
+    """Return a page pool size that covers the batch without leaving the validator's bounds."""
+    return min(max(len(urls), 1), _MAX_POOL_PAGES)
 
 
 class ResponseModel(BaseModel):
@@ -632,7 +638,7 @@ class ScraplingMCPServer:
         Note: If a `session_id` is provided (from open_session), the browser session will be reused instead of creating a new one.
             When using a session, browser-level params (headless, proxy, locale, etc.) are ignored since they were set at session creation time.
 
-        :param urls: A list of the URLs to request.
+        :param urls: A list of the URLs to request. Batches bigger than 50 URLs are fetched through a pool of 50 concurrent pages.
         :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
@@ -688,7 +694,7 @@ class ScraplingMCPServer:
                 cdp_url=cdp_url,
                 headless=headless,
                 block_ads=True,
-                max_pages=len(urls),
+                max_pages=_page_pool_size(urls),
                 useragent=useragent,
                 timezone_id=timezone_id,
                 real_chrome=real_chrome,
@@ -841,7 +847,7 @@ class ScraplingMCPServer:
         Note: If a `session_id` is provided (from open_session), the browser session will be reused instead of creating a new one.
             When using a session, browser-level params (headless, proxy, locale, etc.) are ignored since they were set at session creation time.
 
-        :param urls: A list of the URLs to request.
+        :param urls: A list of the URLs to request. Batches bigger than 50 URLs are fetched through a pool of 50 concurrent pages.
         :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
             - Markdown will convert the page content to Markdown format.
             - HTML will return the raw HTML content of the page.
@@ -903,6 +909,7 @@ class ScraplingMCPServer:
                 cookies=cookies,
                 headless=headless,
                 block_ads=True,
+                max_pages=_page_pool_size(urls),
                 useragent=useragent,
                 timezone_id=timezone_id,
                 real_chrome=real_chrome,

@@ -18,9 +18,11 @@ from scrapling.core.ai import (
     SessionCreatedModel,
     SessionClosedModel,
     _normalize_credentials,
+    _page_pool_size,
     _StaticTokenVerifier,
     _translate_response,
 )
+from scrapling.fetchers import AsyncDynamicSession
 
 
 def test_translate_response_strips_control_characters():
@@ -316,6 +318,54 @@ class TestExecutablePath:
 
         assert isinstance(result, ResponseModel)
         assert _FakeStealthySession.instances[0].kwargs["executable_path"] == "/opt/default-chromium"
+
+
+class TestBulkPagePool:
+    """Test the page pool sizing of the bulk browser tools"""
+
+    @pytest.fixture(autouse=True)
+    def reset_fakes(self):
+        _FakeDynamicSession.instances = []
+        _FakeStealthySession.instances = []
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("url_count,expected_pages", [(3, 3), (60, 50), (0, 1)])
+    async def test_bulk_fetch_sizes_pool_within_validator_bounds(self, monkeypatch, url_count, expected_pages):
+        """bulk_fetch opens a pool that covers the batch but stays inside the 1..50 `PagesCount` range"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        server = ScraplingMCPServer()
+        urls = [f"https://example.com/{index}" for index in range(url_count)]
+
+        results = await server.bulk_fetch(urls=urls)
+
+        max_pages = _FakeDynamicSession.instances[0].kwargs["max_pages"]
+        assert max_pages == expected_pages, f"Expected max_pages {expected_pages} for {url_count} URLs, got {max_pages}"
+        assert len(results) == url_count, f"Expected {url_count} responses, got {len(results)}"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("url_count,expected_pages", [(4, 4), (60, 50), (0, 1)])
+    async def test_bulk_stealthy_fetch_sizes_pool_within_validator_bounds(self, monkeypatch, url_count, expected_pages):
+        """bulk_stealthy_fetch sizes its pool to the batch instead of leaving it at the default of 1"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        server = ScraplingMCPServer()
+        urls = [f"https://example.com/{index}" for index in range(url_count)]
+
+        results = await server.bulk_stealthy_fetch(urls=urls)
+
+        max_pages = _FakeStealthySession.instances[0].kwargs["max_pages"]
+        assert max_pages == expected_pages, f"Expected max_pages {expected_pages} for {url_count} URLs, got {max_pages}"
+        assert len(results) == url_count, f"Expected {url_count} responses, got {len(results)}"
+
+    @pytest.mark.parametrize("url_count", [0, 1, 50, 60, 500])
+    def test_page_pool_size_is_accepted_by_session_validation(self, url_count):
+        """The computed pool size always passes the real session validation without launching a browser"""
+        urls = [f"https://example.com/{index}" for index in range(url_count)]
+
+        session = AsyncDynamicSession(max_pages=_page_pool_size(urls))
+
+        assert session.max_pages == _page_pool_size(urls), (
+            f"Expected the session to keep max_pages {_page_pool_size(urls)}, got {session.max_pages}"
+        )
 
 
 def _png_height(data: bytes) -> int:
