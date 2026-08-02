@@ -20,7 +20,7 @@ from playwright._impl._errors import Error as PlaywrightError
 from scrapling.parser import Selector
 from scrapling.engines._browsers._page import PageInfo, PagePool
 from scrapling.engines._browsers._validators import validate, PlaywrightConfig, StealthConfig
-from scrapling.engines._browsers._config_tools import __default_chrome_useragent__, __default_useragent__
+from scrapling.engines._browsers._config_tools import get_default_useragent
 from scrapling.engines.toolbelt.navigation import (
     construct_proxy_dict,
     create_intercept_handler,
@@ -446,9 +446,7 @@ class BaseSessionMixin:
         if config.useragent:
             self._context_options["user_agent"] = config.useragent
         elif not config.useragent and config.headless:
-            self._context_options["user_agent"] = (
-                __default_chrome_useragent__ if config.real_chrome else __default_useragent__
-            )
+            self._context_options["user_agent"] = get_default_useragent("chrome" if config.real_chrome else True)
 
         if not config.cdp_url:
             flags = self._browser_options["args"]
