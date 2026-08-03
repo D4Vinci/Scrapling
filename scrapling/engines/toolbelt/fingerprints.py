@@ -53,7 +53,20 @@ def generate_headers(browser_mode: bool | str = False) -> Dict:
                 Browser(name="edge", min_version=140),
             ]
         )
-    return HeaderGenerator(browser=browsers, os=os_name, device="desktop").generate()
+    try:
+        return HeaderGenerator(browser=browsers, os=os_name, device="desktop").generate()
+    except ValueError:
+        # Fallback if the requested browser version constraint is not present in browserforge's dataset
+        fallback_browsers = [Browser(name="chrome")]
+        if not browser_mode:
+            fallback_browsers.extend(
+                [
+                    Browser(name="firefox"),
+                    Browser(name="edge"),
+                ]
+            )
+        return HeaderGenerator(browser=fallback_browsers, os=os_name, device="desktop").generate()
 
 
 __default_useragent__ = generate_headers(browser_mode=False).get("User-Agent")
+
