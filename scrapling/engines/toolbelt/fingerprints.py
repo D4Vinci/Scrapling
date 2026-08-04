@@ -2,9 +2,11 @@
 Functions related to generating headers and fingerprints generally
 """
 
+import json
 from functools import lru_cache
 from platform import system as platform_system
 
+from apify_fingerprint_datapoints import get_browser_helper_file
 from browserforge.headers import Browser, HeaderGenerator
 from browserforge.headers.generator import SUPPORTED_OPERATING_SYSTEMS
 
@@ -12,9 +14,30 @@ from scrapling.core._types import Dict, Literal, Tuple
 
 __OS_NAME__ = platform_system()
 OSName = Literal["linux", "macos", "windows"]
-# Current versions hardcoded for now (Playwright doesn't allow to know the version of a browser without launching it)
-chromium_version = 149
-chrome_version = 149
+
+
+# The installed `apify-fingerprint-datapoints` release only ships fingerprint data up to a
+# certain browser version. Playwright doesn't expose the real installed browser version without
+# launching it, so we ask the datapack itself what the newest version it actually has data for is,
+# instead of hardcoding a version number that can drift ahead of the installed datapack and make
+# browserforge's HeaderGenerator raise `ValueError: No headers based on this input can be
+# generated` at import time (see https://github.com/D4Vinci/Scrapling/issues/396).
+@lru_cache(1, typed=True)
+def _max_supported_version(browser: str) -> int:
+    """Get the newest major version of `browser` that the installed fingerprint datapack has data for.
+
+    :param browser: Browser name as used in the datapack, e.g. ``"chrome"``.
+    :return: Newest supported major version number.
+    """
+    entries = json.loads(get_browser_helper_file().read_bytes())
+    versions = [int(entry.split("/")[1].split(".")[0]) for entry in entries if entry.startswith(f"{browser}/")]
+    if not versions:
+        raise ValueError(f"The installed fingerprint datapack has no entries for browser {browser!r}")
+    return max(versions)
+
+
+chromium_version = _max_supported_version("chrome")
+chrome_version = chromium_version
 
 
 @lru_cache(1, typed=True)

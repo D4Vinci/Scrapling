@@ -8,7 +8,13 @@ from scrapling.engines.toolbelt.navigation import (
     create_async_intercept_handler,
     _is_domain_blocked,
 )
-from scrapling.engines.toolbelt.fingerprints import get_os_name, generate_headers
+from scrapling.engines.toolbelt.fingerprints import (
+    get_os_name,
+    generate_headers,
+    chrome_version,
+    chromium_version,
+    _max_supported_version,
+)
 
 
 @pytest.fixture
@@ -234,6 +240,26 @@ class TestFingerprintFunctions:
 
         assert isinstance(headers, dict)
         assert "User-Agent" in headers
+
+    def test_chrome_version_within_installed_datapack_range(self):
+        """Regression test for #396: the module-level chrome/chromium version constants
+        must never exceed the newest version the installed `apify-fingerprint-datapoints`
+        release actually has fingerprint data for. A hardcoded version above that range
+        makes browserforge's HeaderGenerator raise ValueError as soon as headers are
+        generated (including at Scrapling import time, since `__default_useragent__` is
+        computed at module load)."""
+        assert chrome_version == chromium_version
+        assert chrome_version == _max_supported_version("chrome")
+
+    def test_generate_headers_chrome_mode_does_not_raise(self):
+        """Regression test for #396: generating headers for the 'chrome' browser mode
+        must not raise ValueError('No headers based on this input can be generated'),
+        which is what happened when the hardcoded version constant was newer than
+        anything the installed datapack could produce a matching fingerprint for."""
+        headers = generate_headers(browser_mode="chrome")
+
+        assert isinstance(headers, dict)
+        assert "User-Agent" in headers or "user-agent" in headers
 
 
 class TestResponse:
