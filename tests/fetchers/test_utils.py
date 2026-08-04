@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from scrapling.engines.toolbelt.convertor import ResponseFactory
@@ -8,6 +10,7 @@ from scrapling.engines.toolbelt.navigation import (
     create_async_intercept_handler,
     _is_domain_blocked,
 )
+from scrapling.engines.toolbelt import fingerprints
 from scrapling.engines.toolbelt.fingerprints import get_os_name, generate_headers
 
 
@@ -234,6 +237,42 @@ class TestFingerprintFunctions:
 
         assert isinstance(headers, dict)
         assert "User-Agent" in headers
+
+    def test_browser_default_useragents(self):
+        """Test that importing the browser fetchers works and exposes usable default user agents"""
+        from scrapling.engines._browsers._config_tools import (
+            __default_chrome_useragent__,
+            __default_useragent__,
+        )
+
+        for useragent in (__default_useragent__, __default_chrome_useragent__):
+            assert isinstance(useragent, str)
+            assert len(useragent) > 0
+
+    @pytest.mark.parametrize("browser_mode", [False, True, "chrome"])
+    def test_generate_headers_with_unsupported_version(self, browser_mode, monkeypatch):
+        """Test that headers are still generated when the pinned version is newer than browserforge's dataset"""
+        monkeypatch.setattr(fingerprints, "chromium_version", 999)
+        monkeypatch.setattr(fingerprints, "chrome_version", 999)
+
+        headers = generate_headers(browser_mode=browser_mode)
+
+        assert isinstance(headers, dict)
+        assert len(headers.get("User-Agent", "")) > 0
+
+    def test_generate_headers_keeps_supported_version(self, monkeypatch):
+        """Test that a version the dataset does support is used as-is without falling back"""
+        # Discover the newest supported version through the fallback itself, so nothing is hardcoded here
+        monkeypatch.setattr(fingerprints, "chrome_version", 999)
+        supported = int(re.search(r"Chrome/(\d+)", generate_headers(browser_mode="chrome")["User-Agent"]).group(1))
+
+        fallbacks = []
+        monkeypatch.setattr(fingerprints, "chrome_version", supported)
+        monkeypatch.setattr(fingerprints, "_newest_supported_version", lambda *args: fallbacks.append(args))
+        headers = generate_headers(browser_mode="chrome")
+
+        assert not fallbacks, "The fallback ran for a version browserforge already supports"
+        assert f"Chrome/{supported}." in headers["User-Agent"]
 
 
 class TestResponse:
