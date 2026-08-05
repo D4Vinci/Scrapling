@@ -1,3 +1,5 @@
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.D4Vinci%2FScrapling.svg)](https://mcptoplist.com/server/io.github.D4Vinci%2FScrapling)
+
 <!-- mcp-name: io.github.D4Vinci/Scrapling -->
 
 <h1 align="center">
