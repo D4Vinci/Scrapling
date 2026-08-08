@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from scrapling.engines.toolbelt.convertor import ResponseFactory
@@ -8,7 +10,14 @@ from scrapling.engines.toolbelt.navigation import (
     create_async_intercept_handler,
     _is_domain_blocked,
 )
-from scrapling.engines.toolbelt.fingerprints import get_os_name, generate_headers
+from browserforge.headers.generator import SUPPORTED_OPERATING_SYSTEMS
+
+from scrapling.engines.toolbelt import fingerprints
+from scrapling.engines.toolbelt.fingerprints import (
+    get_os_name,
+    generate_headers,
+    driven_browser_version,
+)
 
 
 @pytest.fixture
@@ -216,9 +225,7 @@ class TestFingerprintFunctions:
         """Test OS name detection"""
         result = get_os_name()
 
-        # Should return one of the known OS names or None
-        valid_names = ["linux", "macos", "windows", "ios"]
-        assert result is None or result in valid_names
+        assert result in SUPPORTED_OPERATING_SYSTEMS or result == SUPPORTED_OPERATING_SYSTEMS
 
     def test_generate_headers_basic(self):
         """Test basic header generation"""
@@ -234,6 +241,65 @@ class TestFingerprintFunctions:
 
         assert isinstance(headers, dict)
         assert "User-Agent" in headers
+
+    def test_driven_browser_version(self):
+        """Test that the driven Chromium version is read from the installed automation package"""
+        assert isinstance(driven_browser_version("playwright"), int)
+        assert driven_browser_version("not_a_real_package") is None
+
+    @pytest.mark.parametrize("browser_mode", [True, "chrome"])
+    def test_browser_useragent_follows_the_driven_browser(self, monkeypatch, browser_mode):
+        """Test that both browser-facing User-Agents track the real driven version, not the fingerprints data"""
+        monkeypatch.setattr(fingerprints, "get_os_name", lambda: "macos")
+        # A version far above anything the fingerprints data ships, to prove the data no longer caps it
+        monkeypatch.setattr(fingerprints, "driven_browser_version", lambda *args: 999)
+
+        assert "Chrome/999.0.0.0" in generate_headers(browser_mode=browser_mode)["User-Agent"]
+
+    def test_http_mode_useragent_is_not_rewritten(self, monkeypatch):
+        """Test that the HTTP-mode User-Agent keeps its fingerprints version since it isn't fed to a browser"""
+        monkeypatch.setattr(fingerprints, "get_os_name", lambda: "macos")
+        monkeypatch.setattr(fingerprints, "driven_browser_version", lambda *args: 999)
+
+        assert "999" not in generate_headers(browser_mode=False)["User-Agent"]
+
+    def test_browser_mode_useragent_falls_back_without_a_driven_version(self, monkeypatch):
+        """Test that the User-Agent still generates on the minimum version when the driven version can't be read"""
+        monkeypatch.setattr(fingerprints, "get_os_name", lambda: "macos")
+        monkeypatch.setattr(fingerprints, "driven_browser_version", lambda *args: None)
+
+        major = int(re.search(r"Chrome/(\d+)", generate_headers(browser_mode=True)["User-Agent"]).group(1))
+        assert major >= fingerprints.MINIMUM_VERSION
+
+    def test_generate_headers_survives_unavailable_minimum(self, monkeypatch):
+        """Test that generation falls back instead of crashing when the data has nothing at or above the minimum"""
+        monkeypatch.setattr(fingerprints, "get_os_name", lambda: "macos")
+        monkeypatch.setattr(fingerprints, "MINIMUM_VERSION", 9999)
+
+        assert "Chrome/" in generate_headers(browser_mode=True)["User-Agent"]
+
+    @pytest.mark.parametrize("os_name", ["linux", "macos", "windows"])
+    def test_generate_headers_desktop_os_stays_desktop(self, monkeypatch, os_name):
+        """Test that desktop OSes never get a mobile User-Agent"""
+        monkeypatch.setattr(fingerprints, "get_os_name", lambda: os_name)
+        useragent = generate_headers(browser_mode=True)["User-Agent"]
+
+        assert "Android" not in useragent
+        assert "Mobile" not in useragent
+
+    def test_generate_headers_android_is_mobile(self, monkeypatch):
+        """Test that Android hosts get a mobile User-Agent instead of a desktop one"""
+        monkeypatch.setattr(fingerprints, "get_os_name", lambda: "android")
+
+        for browser_mode in (False, True, "chrome"):
+            assert "Android" in generate_headers(browser_mode=browser_mode)["User-Agent"]
+
+    def test_generate_headers_unknown_os(self, monkeypatch):
+        """Test that header generation still works when the OS can't be detected"""
+        monkeypatch.setattr(fingerprints, "get_os_name", lambda: SUPPORTED_OPERATING_SYSTEMS)
+        headers = generate_headers(browser_mode=True)
+
+        assert len(headers["User-Agent"]) > 0
 
 
 class TestResponse:
