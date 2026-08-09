@@ -18,6 +18,7 @@ from scrapling.core._types import Dict, Literal, Tuple
 __OS_NAME__ = platform_system()
 OSName = Literal["linux", "macos", "windows", "android", "ios"]
 DESKTOP_OS = ("linux", "macos", "windows")
+MINIMUM_VERSION = 149
 
 
 @lru_cache(1, typed=True)
@@ -74,7 +75,7 @@ def generate_headers(browser_mode: bool | str = False) -> Dict:
     )
     if not browser_mode and os_name in DESKTOP_OS:
         os_name = DESKTOP_OS
-    browsers = [Browser(name="chrome", min_version=149)]
+    browsers = [Browser(name="chrome", min_version=MINIMUM_VERSION)]
     if not browser_mode:
         browsers.extend([Browser(name="firefox", min_version=147), Browser(name="edge", min_version=145)])
     try:
