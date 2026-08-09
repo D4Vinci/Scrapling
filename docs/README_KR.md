@@ -213,7 +213,7 @@ MySpider().start()
 - 🚦 **AutoThrottle**: 지연 시간을 추측할 필요가 없습니다. Spider가 사이트의 응답 속도에 맞춰 도메인별 지연 시간을 스스로 조정하고, 차단이나 속도 제한이 시작되면 지연을 두 배로 늘리거나 `Retry-After`가 요구하는 만큼 기다렸다가, 상황이 풀리면 다시 속도를 올립니다.
 - 🤖 **robots.txt 준수**: 선택적 `robots_txt_obey` 플래그로 `Disallow`, `Crawl-delay`, `Request-rate` 지시문을 도메인별 캐싱과 함께 준수합니다.
 - 🧪 **개발 모드**: 첫 실행 시 응답을 디스크에 캐싱하고 이후 실행에서는 캐시된 응답을 재생합니다 - 대상 서버에 다시 요청하지 않고 `parse()` 로직을 반복 개발할 수 있습니다.
-- 🧩 **바로 쓰는 Spider 템플릿**: 반복적인 코드는 건너뛰세요. 규칙 기반 링크 추적에는 `CrawlSpider`, sitemap/robots.txt 기반 크롤링에는 `SitemapSpider`, 그리고 `ShopifySpider`로 어떤 Shopify 스토어든 JSON API를 통해 모든 상품을 가져올 수 있습니다(변형별로 항목 하나).
+- 🧩 **바로 쓰는 Spider 템플릿**: 반복적인 코드는 건너뛰세요. 규칙 기반 링크 추적에는 `CrawlSpider`, sitemap/robots.txt 기반 크롤링에는 `SitemapSpider`, XML/RSS 및 CSV 피드 순회에는 `XMLFeedSpider`/`CSVFeedSpider`, 그리고 `ShopifySpider`로 어떤 Shopify 스토어든 JSON API를 통해 모든 상품을 가져올 수 있습니다(변형별로 항목 하나).
 - 🔗 **링크 추출**: allow/deny 패턴, 도메인 필터, CSS/XPath 범위 지정, 확장자 필터링, 정규화를 지원하는 독립형 `LinkExtractor`. 템플릿 안에서도, 단독으로도 사용할 수 있습니다.
 - 📦 **내장 내보내기**: 훅이나 자체 파이프라인, 또는 내장 JSON/JSONL/CSV/XML로 결과를 내보냅니다. `result.items.to_json()`, `to_jsonl()`, `to_csv()`, `to_xml()`을 사용합니다.
 

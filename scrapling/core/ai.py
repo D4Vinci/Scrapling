@@ -52,6 +52,7 @@ def _page_pool_size(urls: Sequence[str]) -> int:
     """Return a page pool size that covers the batch without leaving the validator's bounds."""
     return min(max(len(urls), 1), _MAX_POOL_PAGES)
 
+
 _FETCH_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=True)
 _SESSION_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=True)
 _LIST_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=False)
