@@ -942,7 +942,7 @@ class ScraplingMCPServer:
 7. For browser-based tools, if a `session_id` is provided (from open_session), the browser session will be reused instead of creating a new one.
     When using a session, browser-level params (headless, proxy, locale, etc.) are ignored since they were set at session creation time.
 8. If you are making multiple requests, use the bulk version of the tool to be more efficient.
-9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time.
+9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
 10. The user can pass a CDP URL to connect to a remote browser session through the `open_session` tool, then use it in the rest of the tools.
 """,
         }
