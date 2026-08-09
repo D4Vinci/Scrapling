@@ -5,6 +5,7 @@ from csv import DictReader
 from io import StringIO
 
 from lxml import etree
+from lxml.etree import _Element
 
 from scrapling.core._types import (
     TYPE_CHECKING,
@@ -64,7 +65,7 @@ class XMLFeedSpider(Spider):
                 yield result
 
     async def parse_node(
-        self, response: "Response", node: Any
+        self, response: "Response", node: _Element
     ) -> AsyncGenerator[Union[Dict[str, Any], Request, None], None]:
         """Override to process one feed node; `node` is a namespace-stripped `lxml` element."""
         raise NotImplementedError(f"{self.__class__.__name__} must implement parse_node() method")
@@ -80,7 +81,7 @@ class XMLFeedSpider(Spider):
             raise ValueError(f"`itertag` prefix {prefix!r} is not defined in `namespaces`")
         return uri, name
 
-    def _iter_nodes(self, root: Any) -> Iterator[Any]:
+    def _iter_nodes(self, root: _Element) -> Iterator[_Element]:
         uri, name = self._wanted_tag()
         for el in root.iter():
             if isinstance(el.tag, str):
@@ -89,14 +90,14 @@ class XMLFeedSpider(Spider):
                     yield self._strip_namespaces(el)
 
     @staticmethod
-    def _strip_namespaces(node: Any) -> Any:
+    def _strip_namespaces(node: _Element) -> _Element:
         """Return a copy of `node` with namespaces removed from every tag and attribute."""
         node = deepcopy(node)
         for el in node.iter():
             if isinstance(el.tag, str):
                 el.tag = etree.QName(el.tag).localname
             for key in list(el.attrib):
-                if key.startswith("{"):
+                if isinstance(key, str) and key.startswith("{"):
                     el.attrib[etree.QName(key).localname] = el.attrib.pop(key)
         etree.cleanup_namespaces(node)
         return node
