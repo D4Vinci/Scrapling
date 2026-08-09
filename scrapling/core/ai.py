@@ -913,7 +913,7 @@ class ScraplingMCPServer:
         settings: Dict[str, Any] = {
             "title": "Scrapling",
             "version": __version__,
-            "website_url": "https://scrapling.readthedocs.io/en/latest/",
+            "website_url": "https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html",
             "icons": [
                 Icon(
                     src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/logo.png",
