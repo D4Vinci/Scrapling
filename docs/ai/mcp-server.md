@@ -72,6 +72,9 @@ docker pull ghcr.io/d4vinci/scrapling:latest
 
 Here we will explain how to add Scrapling MCP Server to [Claude Desktop](https://claude.ai/download) and [Claude Code](https://www.anthropic.com/claude-code), but the same logic applies to any other chatbot that supports MCP:
 
+!!! note "Note:"
+    The `scrapling-mcp` command used below was added in v0.4.13 as a shortcut that maps directly to `scrapling mcp`, making it easier to add Scrapling to MCP registries and clients that expect a single command. If you are on an older version, use the `scrapling` command with `mcp` as the first argument instead.
+
 ### Claude Desktop
 
 1. Open Claude Desktop
@@ -79,10 +82,7 @@ Here we will explain how to add Scrapling MCP Server to [Claude Desktop](https:/
 3. Add the Scrapling MCP server configuration:
 ```json
 "ScraplingServer": {
-  "command": "scrapling",
-  "args": [
-    "mcp"
-  ]
+  "command": "scrapling-mcp"
 }
 ```
 If that's the first MCP server you're adding, set the content of the file to this: 
@@ -90,10 +90,7 @@ If that's the first MCP server you're adding, set the content of the file to thi
 {
   "mcpServers": {
     "ScraplingServer": {
-      "command": "scrapling",
-      "args": [
-        "mcp"
-      ]
+      "command": "scrapling-mcp"
     }
   }
 }
@@ -103,20 +100,17 @@ As per the [official article](https://modelcontextprotocol.io/quickstart/user), 
 1. **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 2. **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-To ensure it's working, use the full path to the `scrapling` executable. Open the terminal and execute the following command:
+To ensure it's working, use the full path to the `scrapling-mcp` executable. Open the terminal and execute the following command:
 
-1. **MacOS**: `which scrapling`
-2. **Windows**: `where scrapling`
+1. **MacOS**: `which scrapling-mcp`
+2. **Windows**: `where scrapling-mcp`
 
-For me, on my Mac, it returned `/Users/<MyUsername>/.venv/bin/scrapling`, so the config I used in the end is:
+For me, on my Mac, it returned `/Users/<MyUsername>/.venv/bin/scrapling-mcp`, so the config I used in the end is:
 ```json
 {
   "mcpServers": {
     "ScraplingServer": {
-      "command": "/Users/<MyUsername>/.venv/bin/scrapling",
-      "args": [
-        "mcp"
-      ]
+      "command": "/Users/<MyUsername>/.venv/bin/scrapling-mcp"
     }
   }
 }
@@ -142,12 +136,12 @@ The same logic applies to [Cursor](https://cursor.com/docs/context/mcp), [WindSu
 Here it's much simpler to do. If you have [Claude Code](https://www.anthropic.com/claude-code) installed, open the terminal and execute the following command:
 
 ```bash
-claude mcp add ScraplingServer "/Users/<MyUsername>/.venv/bin/scrapling" mcp
+claude mcp add ScraplingServer "/Users/<MyUsername>/.venv/bin/scrapling-mcp"
 ```
 Same as above, to get Scrapling's executable path, open the terminal and execute the following command:
 
-1. **MacOS**: `which scrapling`
-2. **Windows**: `where scrapling`
+1. **MacOS**: `which scrapling-mcp`
+2. **Windows**: `where scrapling-mcp`
 
 Here's the main article from Anthropic on [how to add MCP servers to Claude code](https://docs.anthropic.com/en/docs/claude-code/mcp#option-1%3A-add-a-local-stdio-server) for further details.
 
@@ -161,7 +155,7 @@ Browser-based tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fet
 To configure it once for the whole MCP server, pass the executable path when starting the server:
 
 ```bash
-scrapling mcp --executable-path "/path/to/chromium"
+scrapling-mcp --executable-path "/path/to/chromium"
 ```
 
 In a Claude Desktop configuration, add the option to the server arguments:
@@ -170,9 +164,8 @@ In a Claude Desktop configuration, add the option to the server arguments:
 {
   "mcpServers": {
     "ScraplingServer": {
-      "command": "/Users/<MyUsername>/.venv/bin/scrapling",
+      "command": "/Users/<MyUsername>/.venv/bin/scrapling-mcp",
       "args": [
-        "mcp",
         "--executable-path",
         "/path/to/chromium"
       ]
@@ -207,22 +200,22 @@ Since version 0.3.6, we have added the ability to make the MCP server use the 'S
 
 So instead of using the following command (the 'stdio' one):
 ```bash
-scrapling mcp
+scrapling-mcp
 ```
 Use the following to enable 'Streamable HTTP' transport mode:
 ```bash
-scrapling mcp --http
+scrapling-mcp --http
 ```
 Hence, the default value for the host the server is listening to is '0.0.0.0' and the port is 8000, which both can be configured as below:
 ```bash
-scrapling mcp --http --host '127.0.0.1' --port 8000
+scrapling-mcp --http --host '127.0.0.1' --port 8000
 ```
 
 ### Authentication
 
 The 'stdio' transport is only reachable by the program that started it, but the moment you switch to 'Streamable HTTP', anyone who can reach the port can call every tool, and that includes fetching any URL from the machine running the server. So if the server is listening on anything other than localhost, give it a token:
 ```bash
-scrapling mcp --http --auth-token "$(openssl rand -hex 32)"
+scrapling-mcp --http --auth-token "$(openssl rand -hex 32)"
 ```
 Clients then have to send that token in an `Authorization` header, and any request without it is rejected with a `401`:
 ```json
@@ -240,11 +233,11 @@ Clients then have to send that token in an `Authorization` header, and any reque
 Passing the token on the command line leaves it in your shell history and in the process list, so prefer the `SCRAPLING_MCP_AUTH_TOKEN` environment variable:
 ```bash
 export SCRAPLING_MCP_AUTH_TOKEN="<your-token>"
-scrapling mcp --http
+scrapling-mcp --http
 ```
 When the server listens on a public address, you should also tell it which host names to accept, which turns on protection against DNS-rebinding attacks (a website your browser visits trying to talk to your server). The option can be repeated:
 ```bash
-scrapling mcp --http --allowed-host 'your-server.example.com:8000'
+scrapling-mcp --http --allowed-host 'your-server.example.com:8000'
 ```
 
 !!! note "Notes:"

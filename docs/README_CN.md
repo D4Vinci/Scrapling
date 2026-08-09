@@ -213,7 +213,7 @@ MySpider().start()
 - 🚦 **AutoThrottle 自动限速**：不用再猜延迟。Spider 会根据网站的响应速度自动调整每个域名的延迟，当网站开始封禁或限流时把延迟翻倍（或按 `Retry-After` 要求等待），并在恢复正常后重新提速。
 - 🤖 **robots.txt 合规**：可选的 `robots_txt_obey` 标志，支持 `Disallow`、`Crawl-delay` 和 `Request-rate` 指令，并按域名缓存。
 - 🧪 **开发模式**：首次运行时将响应缓存到磁盘，后续运行时直接回放 - 在不重新请求目标服务器的情况下迭代你的 `parse()` 逻辑。
-- 🧩 **现成的 Spider 模板**：跳过样板代码--使用 `CrawlSpider` 基于规则跟踪链接，`SitemapSpider` 基于 sitemap/robots.txt 爬取，以及 `ShopifySpider` 通过 JSON API 抓取任意 Shopify 商店的全部商品，每个变体一条数据。
+- 🧩 **现成的 Spider 模板**：跳过样板代码--使用 `CrawlSpider` 基于规则跟踪链接，`SitemapSpider` 基于 sitemap/robots.txt 爬取，`XMLFeedSpider`/`CSVFeedSpider` 用于遍历 XML/RSS 和 CSV 数据源，以及 `ShopifySpider` 通过 JSON API 抓取任意 Shopify 商店的全部商品，每个变体一条数据。
 - 🔗 **链接提取**：独立的 `LinkExtractor` 组件，支持 allow/deny 模式、域名过滤、CSS/XPath 范围限定、扩展名过滤和链接规范化--可在模板中使用，也可单独使用。
 - 📦 **内置导出**：通过钩子和您自己的管道导出结果，或使用内置的 JSON/JSONL/CSV/XML 导出器：`result.items.to_json()`、`to_jsonl()`、`to_csv()` 和 `to_xml()`。
 
@@ -446,14 +446,14 @@ Scrapling 不仅功能强大--它还速度极快。以下基准测试将 Scrapli
 
 | # |         库         | 时间 (ms)  | vs Scrapling |
 |---|:-----------------:|:---------:|:------------:|
-| 1 |     Scrapling     |   1.98    |     1.0x     |
-| 2 |   Parsel/Scrapy   |   1.99    |    1.005     |
-| 3 |     Raw Lxml      |   2.48    |    1.253     |
-| 4 |      PyQuery      |   23.15   |     ~12x     |
-| 5 |    Selectolax     |  196.09   |     ~99x     |
-| 6 |  MechanicalSoup   |  1531.24  |   ~773.4x    |
-| 7 |   BS4 with Lxml   |  1535.19  |   ~775.3x    |
-| 8 | BS4 with html5lib |  3388.16  |   ~1711.2x   |
+| 1 |     Scrapling     |   1.99    |     1.0x     |
+| 2 |   Parsel/Scrapy   |   2.06    |    1.035     |
+| 3 |     Raw Lxml      |   2.56    |    1.286     |
+| 4 |      PyQuery      |   23.98   |     ~12x     |
+| 5 |    Selectolax     |  197.02   |     ~99x     |
+| 6 |  MechanicalSoup   |  1545.15  |   ~776.5x    |
+| 7 |   BS4 with Lxml   |  1562.1  |   ~785.0x    |
+| 8 | BS4 with html5lib |  3412.73  |   ~1714.9x   |
 
 
 ### 元素相似性和文本搜索性能
@@ -462,8 +462,8 @@ Scrapling 的自适应元素查找功能明显优于替代方案：
 
 | 库           | 时间 (ms) | vs Scrapling |
 |-------------|:---------:|:------------:|
-| Scrapling   |   2.29    |     1.0x     |
-| AutoScraper |   12.46   |    5.441x    |
+| Scrapling   |   2.3    |     1.0x     |
+| AutoScraper |   12.58   |    5.47x    |
 
 
 > 所有基准测试代表 100+ 次运行的平均值。请参阅 [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) 了解方法。

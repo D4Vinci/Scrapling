@@ -213,7 +213,7 @@ MySpider().start()
 - 🚦 **AutoThrottle**：待ち時間を勘で決める必要はありません。Spider がサイトの応答速度からドメインごとの待ち時間を自動調整し、ブロックやレート制限が始まると待ち時間を 2 倍に（または `Retry-After` が求める時間だけ待機）して、収まればまた加速します。
 - 🤖 **robots.txt 準拠**：オプションの `robots_txt_obey` フラグで `Disallow`、`Crawl-delay`、`Request-rate` ディレクティブをドメインごとのキャッシュで遵守。
 - 🧪 **開発モード**：初回実行時にレスポンスをディスクにキャッシュし、以降の実行ではそれを再生 - ターゲットサーバーに再リクエストすることなく `parse()` ロジックを反復開発できます。
-- 🧩 **すぐに使える Spider テンプレート**：定型コードは不要です。ルールベースのリンク追跡には `CrawlSpider`、sitemap/robots.txt を起点としたクロールには `SitemapSpider`、そして `ShopifySpider` を使えば任意の Shopify ストアの全商品を JSON API 経由で取得できます（バリエーションごとに 1 アイテム）。
+- 🧩 **すぐに使える Spider テンプレート**：定型コードは不要です。ルールベースのリンク追跡には `CrawlSpider`、sitemap/robots.txt を起点としたクロールには `SitemapSpider`、XML/RSS や CSV フィードの走査には `XMLFeedSpider`/`CSVFeedSpider`、そして `ShopifySpider` を使えば任意の Shopify ストアの全商品を JSON API 経由で取得できます（バリエーションごとに 1 アイテム）。
 - 🔗 **リンク抽出**：allow/deny パターン、ドメインフィルタ、CSS/XPath による範囲指定、拡張子フィルタ、正規化に対応した独立した `LinkExtractor` を提供。テンプレート内でも単体でも使用できます。
 - 📦 **組み込みエクスポート**：フックや独自のパイプライン、または組み込みの JSON/JSONL/CSV/XML で結果をエクスポート。`result.items.to_json()`、`to_jsonl()`、`to_csv()`、`to_xml()` が使えます。
 
@@ -446,14 +446,14 @@ Scrapling は強力であるだけでなく、超高速です。以下のベン�
 
 | # |      ライブラリ      | 時間 (ms) | vs Scrapling |
 |---|:-----------------:|:---------:|:------------:|
-| 1 |     Scrapling     |   1.98    |     1.0x     |
-| 2 |   Parsel/Scrapy   |   1.99    |    1.005     |
-| 3 |     Raw Lxml      |   2.48    |    1.253     |
-| 4 |      PyQuery      |   23.15   |     ~12x     |
-| 5 |    Selectolax     |  196.09   |     ~99x     |
-| 6 |  MechanicalSoup   |  1531.24  |   ~773.4x    |
-| 7 |   BS4 with Lxml   |  1535.19  |   ~775.3x    |
-| 8 | BS4 with html5lib |  3388.16  |   ~1711.2x   |
+| 1 |     Scrapling     |   1.99    |     1.0x     |
+| 2 |   Parsel/Scrapy   |   2.06    |    1.035     |
+| 3 |     Raw Lxml      |   2.56    |    1.286     |
+| 4 |      PyQuery      |   23.98   |     ~12x     |
+| 5 |    Selectolax     |  197.02   |     ~99x     |
+| 6 |  MechanicalSoup   |  1545.15  |   ~776.5x    |
+| 7 |   BS4 with Lxml   |  1562.1  |   ~785.0x    |
+| 8 | BS4 with html5lib |  3412.73  |   ~1714.9x   |
 
 
 ### 要素類似性とテキスト検索のパフォーマンス
@@ -462,8 +462,8 @@ Scrapling の適応型要素検索機能は代替手段を大幅に上回りま�
 
 | ライブラリ     | 時間 (ms) | vs Scrapling |
 |-------------|:---------:|:------------:|
-| Scrapling   |   2.29    |     1.0x     |
-| AutoScraper |   12.46   |    5.441x    |
+| Scrapling   |   2.3    |     1.0x     |
+| AutoScraper |   12.58   |    5.47x    |
 
 
 > すべてのベンチマークは 100 回以上の実行の平均を表します。方法論については[benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py)を参照してください。

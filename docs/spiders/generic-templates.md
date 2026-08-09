@@ -122,6 +122,76 @@ class MySitemap(SitemapSpider):
 
 Set `sitemap_alternate_links = True` to also dispatch `<xhtml:link rel="alternate" hreflang="...">` URLs through your rules.
 
+## XMLFeedSpider
+
+`XMLFeedSpider` iterates over the nodes of an XML feed (RSS, Atom, product feeds, etc.). Set `itertag` to the node name you want (default: `"item"`) and override `parse_node()`, which is called once per matching node:
+
+```python
+from scrapling.spiders import XMLFeedSpider
+
+class RSSSpider(XMLFeedSpider):
+    name = "rss"
+    start_urls = ["https://example.com/feed.xml"]
+    itertag = "item"
+
+    async def parse_node(self, response, node):
+        yield {
+            "title": node.findtext("title"),
+            "link": node.findtext("link"),
+            "date": node.findtext("pubDate"),
+        }
+
+result = RSSSpider().start()
+```
+
+Like the other callbacks, `parse_node()` can also yield `Request` objects (for example, `response.follow(node.findtext("link"), callback=self.parse_post)`) to crawl into the pages the feed points to.
+
+### How nodes are matched and parsed
+
+Each node passed to `parse_node()` is an `lxml` element with all namespaces stripped, so `node.findtext("title")`, `node.find("thumbnail").get("url")`, and case-sensitive `node.xpath(...)` work on any feed without namespace maps. A plain `itertag` like `"entry"` matches nodes by name regardless of their namespace, which is what you want for Atom and most namespaced feeds. To match a node in one specific namespace, use a prefixed `itertag` and define the prefix in `namespaces`:
+
+```python
+class ThumbnailSpider(XMLFeedSpider):
+    name = "thumbs"
+    start_urls = ["https://example.com/feed.xml"]
+    itertag = "media:thumbnail"
+    namespaces = (("media", "http://search.yahoo.com/mrss/"),)
+
+    async def parse_node(self, response, node):
+        yield {"thumbnail": node.get("url")}
+```
+
+Gzipped feeds (`.xml.gz` or served with a gzip content-type) are decompressed automatically with the same protections the sitemap spider uses, and malformed XML logs a warning instead of crashing the crawl.
+
+## CSVFeedSpider
+
+`CSVFeedSpider` iterates over the rows of a CSV feed. Override `parse_row()`, which receives each row as a dictionary keyed by the column names:
+
+```python
+from scrapling.spiders import CSVFeedSpider
+
+class PriceSpider(CSVFeedSpider):
+    name = "prices"
+    start_urls = ["https://example.com/products.csv"]
+
+    async def parse_row(self, response, row):
+        yield {"product": row["title"], "price": float(row["price"])}
+
+result = PriceSpider().start()
+```
+
+By default, the first row of the feed is used as the header. If the feed has no header row, set `headers` to the column names yourself, and use `delimiter`/`quotechar` for feeds that don't follow the standard comma format:
+
+```python
+class PriceSpider(CSVFeedSpider):
+    name = "prices"
+    start_urls = ["https://example.com/products.csv"]
+    headers = ["title", "price", "url"]
+    delimiter = ";"
+```
+
+Gzipped feeds are decompressed automatically here as well, as shown above for **XMLFeedSpider**.
+
 ## Using `LinkExtractor` directly
 
 You don't have to use the templates. `LinkExtractor` works inside any plain `Spider`:

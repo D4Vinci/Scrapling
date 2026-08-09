@@ -215,7 +215,7 @@ MySpider().start()
 - 🚦 **AutoThrottle**: Pare de adivinhar os atrasos. A spider ajusta sozinha o atraso de cada domínio conforme a velocidade de resposta do site, dobra esse atraso (ou espera o que o `Retry-After` pedir) quando o site começa a bloquear ou limitar você, e volta a acelerar quando isso passa.
 - 🤖 **Conformidade com robots.txt**: Flag opcional `robots_txt_obey` que respeita as diretivas `Disallow`, `Crawl-delay` e `Request-rate` com cache por domínio.
 - 🧪 **Modo de Desenvolvimento**: Armazene respostas em disco na primeira execução e reproduza-as nas seguintes - itere sobre sua lógica de `parse()` sem reenviar requisições aos servidores-alvo.
-- 🧩 **Templates de Spider Prontos**: Pule o código repetitivo com `CrawlSpider` para seguir links por regras, `SitemapSpider` para crawls guiados por sitemap/robots.txt e `ShopifySpider` para extrair todos os produtos de qualquer loja Shopify através da sua API JSON, um item por variação.
+- 🧩 **Templates de Spider Prontos**: Pule o código repetitivo com `CrawlSpider` para seguir links por regras, `SitemapSpider` para crawls guiados por sitemap/robots.txt, `XMLFeedSpider`/`CSVFeedSpider` para iterar feeds XML/RSS e CSV, e `ShopifySpider` para extrair todos os produtos de qualquer loja Shopify através da sua API JSON, um item por variação.
 - 🔗 **Extração de Links**: Um primitivo `LinkExtractor` independente com padrões allow/deny, filtros de domínio, delimitação por CSS/XPath, filtragem de extensões e canonicalização - use dentro dos templates ou sozinho.
 - 📦 **Exportação Nativa**: Exporte resultados via hooks, seu próprio pipeline ou os exportadores nativos JSON/JSONL/CSV/XML com `result.items.to_json()`, `to_jsonl()`, `to_csv()` e `to_xml()`.
 
@@ -448,14 +448,14 @@ O Scrapling não é apenas poderoso - ele também é extremamente rápido. Os be
 
 | # |    Biblioteca     | Tempo (ms) | vs Scrapling | 
 |---|:-----------------:|:----------:|:------------:|
-| 1 |     Scrapling     |    1.98    |     1.0x     |
-| 2 |   Parsel/Scrapy   |    1.99    |     1.005    |
-| 3 |     Raw Lxml      |    2.48    |    1.253     |
-| 4 |      PyQuery      |   23.15    |     ~12x     |
-| 5 |    Selectolax     |   196.09   |     ~99x     |
-| 6 |  MechanicalSoup   |  1531.24   |   ~773.4x    |
-| 7 |   BS4 with Lxml   |  1535.19   |   ~775.3x    |
-| 8 | BS4 with html5lib |  3388.16   |   ~1711.2x   |
+| 1 |     Scrapling     |    1.99    |     1.0x     |
+| 2 |   Parsel/Scrapy   |    2.06    |     1.035    |
+| 3 |     Raw Lxml      |    2.56    |    1.286     |
+| 4 |      PyQuery      |   23.98    |     ~12x     |
+| 5 |    Selectolax     |   197.02   |     ~99x     |
+| 6 |  MechanicalSoup   |  1545.15   |   ~776.5x    |
+| 7 |   BS4 with Lxml   |  1562.1   |   ~785.0x    |
+| 8 | BS4 with html5lib |  3412.73   |   ~1714.9x   |
 
 
 ### Desempenho de Similaridade de Elementos e Busca por Texto
@@ -464,8 +464,8 @@ Os recursos de localização adaptativa de elementos do Scrapling superam signif
 
 | Biblioteca  | Tempo (ms) | vs Scrapling |
 |-------------|:----------:|:------------:|
-| Scrapling   |    2.29    |     1.0x     |
-| AutoScraper |   12.46    |    5.441x    |
+| Scrapling   |    2.3    |     1.0x     |
+| AutoScraper |   12.58    |    5.47x    |
 
 
 > Todos os benchmarks representam médias de 100+ execuções. Veja [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) para a metodologia.
