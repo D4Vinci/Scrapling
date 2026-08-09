@@ -19,6 +19,7 @@ To ensure that your PR gets accepted, please make sure that your PR is based on 
 - **The PR must be made against the [**dev**](https://github.com/D4Vinci/Scrapling/tree/dev) branch of Scrapling. Any PR made against the main branch will be rejected.**
 - **The code should be passing all available tests. We use tox with GitHub's CI to run the current tests on all supported Python versions for every code-related commit.**
 - **The code should be passing all code quality checks like `mypy` and `pyright`. We are using GitHub's CI to enforce code style checks as well.**
+- **Read our [AI Contribution Policy](AI_POLICY.md) before submitting. Any contribution made with AI assistance must disclose that in the PR or issue.**
 - **Make your changes, keep the code clean with an explanation of any part that might be vague, and remember to create a separate virtual environment for this project.**
 - If you are adding a new feature, please add tests for it.
 - If you are fixing a bug, please add code with the PR that reproduces the bug.
