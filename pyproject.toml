@@ -82,7 +82,7 @@ fetchers = [
     "protego>=0.6.2",
 ]
 ai = [
-    "mcp>=1.27.0",
+    "mcp>=2.0.0",
     "markdownify>=1.2.0",
     "scrapling[fetchers]",
 ]

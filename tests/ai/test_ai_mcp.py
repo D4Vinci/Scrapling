@@ -7,9 +7,10 @@ from threading import Thread
 
 import pytest
 import pytest_httpbin
+from mcp.client import Client
 from mcp.types import ImageContent, TextContent
 
-from scrapling.parser import Selector
+from scrapling.engines.toolbelt.custom import Response
 from scrapling.core.ai import (
     MCP_AUTH_TOKEN_ENV,
     ScraplingMCPServer,
@@ -26,15 +27,21 @@ from scrapling.core.ai import (
 def test_translate_response_strips_control_characters():
     """Pages with control chars like U+0008 must not crash the get/fetch path (issue #366)"""
     html = "<html><body><p>Hello\x08World</p>\t\n<div>Foo\x0cbar</div></body></html>"
-    page = Selector(html, url="https://jfinal.com/doc/1-5")
-    page.status = 200
+    page = Response(
+        url="https://jfinal.com/doc/1-5",
+        content=html,
+        status=200,
+        reason="OK",
+        cookies={},
+        headers={},
+        request_headers={},
+    )
 
     result = _translate_response(page, "markdown", None, main_content_only=True)
 
     joined = "".join(result.content)
     assert "HelloWorld" in joined and "Foobar" in joined
     assert not any(ord(c) < 0x20 and c not in "\t\n\r" for c in joined)
-from scrapling.engines.toolbelt.custom import Response
 
 
 class _FakeAsyncBrowserSession:
@@ -368,7 +375,7 @@ class TestScreenshot:
             result = await server.screenshot(url=test_url, session_id=opened.session_id)
             assert isinstance(result, list) and len(result) == 2
             assert isinstance(result[0], ImageContent)
-            assert result[0].mimeType == "image/png"
+            assert result[0].mime_type == "image/png"
             assert isinstance(result[1], TextContent)
             assert result[1].text == test_url
         finally:
@@ -381,7 +388,7 @@ class TestScreenshot:
         try:
             result = await server.screenshot(url=test_url, session_id=opened.session_id, image_type="jpeg", quality=80)
             assert isinstance(result[0], ImageContent)
-            assert result[0].mimeType == "image/jpeg"
+            assert result[0].mime_type == "image/jpeg"
         finally:
             await server.close_session(opened.session_id)
 
@@ -392,7 +399,7 @@ class TestScreenshot:
         try:
             result = await server.screenshot(url=test_url, session_id=opened.session_id)
             assert isinstance(result[0], ImageContent)
-            assert result[0].mimeType == "image/png"
+            assert result[0].mime_type == "image/png"
         finally:
             await server.close_session(opened.session_id)
 
@@ -485,7 +492,7 @@ class TestStaticTokenVerifier:
 
 
 class TestMCPServerAuthentication:
-    """Test how the authentication token and transport security reach the FastMCP server"""
+    """Test how the authentication token and transport security reach the MCP server"""
 
     def test_no_token_leaves_auth_disabled(self, monkeypatch):
         monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
@@ -510,20 +517,32 @@ class TestMCPServerAuthentication:
         assert ScraplingMCPServer(auth_token=explicit_key)._auth_token == explicit_key
 
     def test_all_tools_are_registered_with_auth_enabled(self, monkeypatch):
-        """FastMCP raises when `auth` and `token_verifier` are mismatched, so building must stay valid"""
+        """MCPServer raises when `auth` and `token_verifier` are mismatched, so building must stay valid"""
         monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
         built = ScraplingMCPServer(auth_token=SHARED_KEY)._build_server("0.0.0.0", 8000)
 
         assert len(built._tool_manager.list_tools()) == 10
 
-    def test_allowed_hosts_enable_dns_rebinding_protection(self, monkeypatch):
-        monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
-        server = ScraplingMCPServer()
+    def test_allowed_hosts_enable_dns_rebinding_protection(self):
+        assert ScraplingMCPServer._transport_security(()) is None
 
-        assert server._build_server("0.0.0.0", 8000).settings.transport_security is None
-
-        security = server._build_server("0.0.0.0", 8000, ("mcp.example.com:8000",)).settings.transport_security
+        security = ScraplingMCPServer._transport_security(("mcp.example.com:8000",))
         assert security is not None
         assert security.enable_dns_rebinding_protection is True
         assert security.allowed_hosts == ["mcp.example.com:8000"]
         assert security.allowed_origins == ["http://mcp.example.com:8000", "https://mcp.example.com:8000"]
+
+
+class TestServerToolRegistration:
+    """Test the built server end-to-end through an in-memory MCP client"""
+
+    @pytest.mark.asyncio
+    async def test_tools_are_listed_with_expected_schemas(self):
+        """All 10 tools are advertised, and only the screenshot tool skips the structured output schema"""
+        server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
+        async with Client(server) as client:
+            tools = {tool.name: tool for tool in (await client.list_tools()).tools}
+
+        assert len(tools) == 10
+        assert tools["screenshot"].output_schema is None
+        assert all(tool.output_schema is not None for name, tool in tools.items() if name != "screenshot")

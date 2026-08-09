@@ -5,7 +5,8 @@ from asyncio import gather
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
-from mcp.server.fastmcp import FastMCP, Image
+from mcp.server import MCPServer
+from mcp.server.mcpserver import Image
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.transport_security import TransportSecuritySettings
@@ -924,22 +925,26 @@ class ScraplingMCPServer:
 
         return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
 
-    def _build_server(self, host: str, port: int, allowed_hosts: Sequence[str] = ()) -> FastMCP:
-        """Build the FastMCP server with all tools registered and the optional security settings applied."""
+    @staticmethod
+    def _transport_security(allowed_hosts: Sequence[str]) -> Optional[TransportSecuritySettings]:
+        """Build the DNS-rebinding protection settings for the streamable-http transport."""
+        if not allowed_hosts:
+            return None
+        return TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=list(allowed_hosts),
+            allowed_origins=[f"{scheme}://{host_}" for host_ in allowed_hosts for scheme in ("http", "https")],
+        )
+
+    def _build_server(self, host: str, port: int) -> MCPServer:
+        """Build the MCPServer with all tools registered and the optional authentication settings applied."""
         settings: Dict[str, Any] = {}
         if self._auth_token:
             base_url = AnyHttpUrl(f"http://{host}:{port}")
             settings["token_verifier"] = _StaticTokenVerifier(self._auth_token)
             settings["auth"] = AuthSettings(issuer_url=base_url, resource_server_url=base_url)
 
-        if allowed_hosts:
-            settings["transport_security"] = TransportSecuritySettings(
-                enable_dns_rebinding_protection=True,
-                allowed_hosts=list(allowed_hosts),
-                allowed_origins=[f"{scheme}://{host_}" for host_ in allowed_hosts for scheme in ("http", "https")],
-            )
-
-        server = FastMCP(name="Scrapling", host=host, port=port, **settings)
+        server = MCPServer(name="Scrapling", **settings)
         # Session management tools
         server.add_tool(self.open_session, title="open_session", structured_output=True)
         server.add_tool(self.close_session, title="close_session", structured_output=True)
@@ -966,7 +971,9 @@ class ScraplingMCPServer:
             structured_output=True,
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
-        server.add_tool(self.screenshot, title="screenshot", description=self.screenshot.__doc__)
+        server.add_tool(
+            self.screenshot, title="screenshot", description=self.screenshot.__doc__, structured_output=False
+        )
         return server
 
     def serve(self, http: bool, host: str, port: int, allowed_hosts: Sequence[str] = ()):
@@ -982,4 +989,13 @@ class ScraplingMCPServer:
                 "The authentication token only applies to the streamable-http transport, so it's ignored with stdio."
             )
 
-        self._build_server(host, port, allowed_hosts).run(transport="stdio" if not http else "streamable-http")
+        server = self._build_server(host, port)
+        if http:
+            server.run(
+                transport="streamable-http",
+                host=host,
+                port=port,
+                transport_security=self._transport_security(allowed_hosts),
+            )
+        else:
+            server.run()
