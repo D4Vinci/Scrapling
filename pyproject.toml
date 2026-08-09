@@ -106,6 +106,7 @@ Repository = "https://github.com/D4Vinci/Scrapling"
 
 [project.scripts]
 scrapling = "scrapling.cli:main"
+scrapling-mcp = "scrapling.cli:mcp"
 
 [tool.setuptools]
 zip-safe = false
