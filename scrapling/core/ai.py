@@ -9,10 +9,12 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver import Image
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
+from mcp.server.caching import CacheHint
 from mcp.server.transport_security import TransportSecuritySettings
-from mcp.types import ImageContent, TextContent
+from mcp.types import Icon, ImageContent, TextContent, ToolAnnotations
 from pydantic import AnyHttpUrl, BaseModel, Field
 
+from scrapling import __version__
 from scrapling.core.utils import log
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
@@ -42,6 +44,9 @@ SessionType = Literal["dynamic", "stealthy"]
 ScreenshotType = Literal["png", "jpeg"]
 MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
 MCP_AUTH_TOKEN_ENV = "SCRAPLING_MCP_AUTH_TOKEN"  # nosec B105 - the name of the variable, not a token
+_FETCH_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=True)
+_SESSION_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=True)
+_LIST_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=False)
 
 
 class ResponseModel(BaseModel):
@@ -906,6 +911,16 @@ class ScraplingMCPServer:
     def _build_server(self, host: str, port: int) -> MCPServer:
         """Build the MCPServer with all tools registered and the optional authentication settings applied."""
         settings: Dict[str, Any] = {
+            "title": "Scrapling",
+            "version": __version__,
+            "website_url": "https://scrapling.readthedocs.io/en/latest/",
+            "icons": [
+                Icon(
+                    src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/logo.png",
+                    mime_type="image/png",
+                )
+            ],
+            "cache_hints": {"tools/list": CacheHint(ttl_ms=3_600_000, scope="public")},
             "instructions": """Follow these instructions precisely:
 1. When the `open_session` tool is used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions.
 2. If the user didn't specify which tool to use, start with the `get` tool, then escalate. The `get` tool and the bulk version are only suitable for low-mid protection levels.
@@ -919,7 +934,7 @@ class ScraplingMCPServer:
 8. If you are making multiple requests, use the bulk version of the tool to be more efficient.
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time.
 10. The user can pass a CDP URL to connect to a remote browser session through the `open_session` tool, then use it in the rest of the tools.
-"""
+""",
         }
         if self._auth_token:
             base_url = AnyHttpUrl(f"http://{host}:{port}")
@@ -928,16 +943,44 @@ class ScraplingMCPServer:
 
         server = MCPServer(name="Scrapling", **settings)
         # Session management tools
-        server.add_tool(self.open_session, title="open_session", structured_output=True)
-        server.add_tool(self.close_session, title="close_session", structured_output=True)
-        server.add_tool(self.list_sessions, title="list_sessions", structured_output=True)
-        # HTTP tools
-        server.add_tool(self.get, title="get", description=self.get.__doc__, structured_output=True)
-        server.add_tool(self.bulk_get, title="bulk_get", description=self.bulk_get.__doc__, structured_output=True)
-        # Dynamic browser tools
-        server.add_tool(self.fetch, title="fetch", description=self.fetch.__doc__, structured_output=True)
         server.add_tool(
-            self.bulk_fetch, title="bulk_fetch", description=self.bulk_fetch.__doc__, structured_output=True
+            self.open_session, title="open_session", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
+        )
+        server.add_tool(
+            self.close_session, title="close_session", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
+        )
+        server.add_tool(
+            self.list_sessions, title="list_sessions", structured_output=True, annotations=_LIST_TOOL_ANNOTATIONS
+        )
+        # HTTP tools
+        server.add_tool(
+            self.get,
+            title="get",
+            description=self.get.__doc__,
+            structured_output=True,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.bulk_get,
+            title="bulk_get",
+            description=self.bulk_get.__doc__,
+            structured_output=True,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        # Dynamic browser tools
+        server.add_tool(
+            self.fetch,
+            title="fetch",
+            description=self.fetch.__doc__,
+            structured_output=True,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.bulk_fetch,
+            title="bulk_fetch",
+            description=self.bulk_fetch.__doc__,
+            structured_output=True,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         # Stealthy browser tools
         server.add_tool(
@@ -945,16 +988,22 @@ class ScraplingMCPServer:
             title="stealthy_fetch",
             description=self.stealthy_fetch.__doc__,
             structured_output=True,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
             self.bulk_stealthy_fetch,
             title="bulk_stealthy_fetch",
             description=self.bulk_stealthy_fetch.__doc__,
             structured_output=True,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
         server.add_tool(
-            self.screenshot, title="screenshot", description=self.screenshot.__doc__, structured_output=False
+            self.screenshot,
+            title="screenshot",
+            description=self.screenshot.__doc__,
+            structured_output=False,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         return server
 

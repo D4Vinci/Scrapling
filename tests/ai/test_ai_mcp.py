@@ -10,6 +10,7 @@ import pytest_httpbin
 from mcp.client import Client
 from mcp.types import ImageContent, TextContent
 
+from scrapling import __version__ as scrapling_version
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.core.ai import (
     MCP_AUTH_TOKEN_ENV,
@@ -547,3 +548,29 @@ class TestServerToolRegistration:
         assert len(tools) == 10
         assert tools["screenshot"].output_schema is None
         assert all(tool.output_schema is not None for name, tool in tools.items() if name != "screenshot")
+
+    @pytest.mark.asyncio
+    async def test_server_metadata_and_tool_annotations(self):
+        """Server card metadata, cache hints, and tool annotations are advertised to clients"""
+        server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
+        async with Client(server) as client:
+            info = client.server_info
+            result = await client.list_tools()
+
+        assert info is not None
+        assert info.title == "Scrapling"
+        assert info.version == scrapling_version
+        assert info.website_url and info.icons
+        assert result.ttl_ms == 3_600_000 and result.cache_scope == "public"
+
+        annotations = {tool.name: tool.annotations for tool in result.tools if tool.annotations is not None}
+        assert len(annotations) == 10
+        for name in ("get", "bulk_get", "fetch", "bulk_fetch", "stealthy_fetch", "bulk_stealthy_fetch", "screenshot"):
+            assert annotations[name].read_only_hint is True
+            assert annotations[name].open_world_hint is True
+        for name in ("open_session", "close_session"):
+            assert annotations[name].read_only_hint is False
+            assert annotations[name].destructive_hint is False
+            assert annotations[name].open_world_hint is True
+        assert annotations["list_sessions"].read_only_hint is True
+        assert annotations["list_sessions"].open_world_hint is False
