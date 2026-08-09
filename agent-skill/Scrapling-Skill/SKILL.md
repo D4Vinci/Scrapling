@@ -326,6 +326,8 @@ class BlogCrawler(CrawlSpider):
 ```
 For sitemap-driven crawls, use `SitemapSpider` with the same `rules()` API. It fetches `sitemap_urls`, descends into sitemap indexes, and dispatches each URL through your rules. Put a `robots.txt` URL directly in `sitemap_urls` and the spider extracts each `Sitemap:` directive from it automatically. See `references/spiders/generic-templates.md` for the full reference, including `LinkExtractor`'s allow/deny/restrict_css/canonicalize options.
 
+For XML feeds (RSS, Atom, product feeds), use `XMLFeedSpider`: set `itertag` to the node name and override `parse_node(response, node)`, which receives each matching node as a namespace-stripped `lxml` element (`node.findtext("title")`). For CSV feeds, use `CSVFeedSpider`: override `parse_row(response, row)`, which receives each row as a dictionary, with `headers`/`delimiter`/`quotechar` for non-standard feeds. Both decompress gzipped feeds automatically. See `references/spiders/generic-templates.md`.
+
 For Shopify-powered stores, subclass `ShopifySpider` and set `target_website` to the store's domain; it extracts every product variant through Shopify's JSON API without touching the HTML. See `references/spiders/platform-templates.md`.
 
 ### Advanced Parsing & Navigation

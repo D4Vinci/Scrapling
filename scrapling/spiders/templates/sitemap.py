@@ -1,8 +1,6 @@
 """Sitemap template spider."""
 
 from dataclasses import dataclass, field
-from gzip import GzipFile
-from io import BytesIO
 from urllib.parse import urlsplit
 
 from lxml import etree
@@ -21,16 +19,13 @@ from scrapling.spiders.links import LinkExtractor
 from scrapling.spiders.request import Request
 from scrapling.spiders.spider import Spider
 from scrapling.spiders.templates.crawler import CrawlRule
+from scrapling.spiders.templates._utils import _decompress
 
 if TYPE_CHECKING:
     from scrapling.engines.toolbelt.custom import Response
 
 
 __all__ = ["SitemapSpider"]
-
-
-_GZIP_MAGIC = b"\x1f\x8b"
-_GUNZIP_MAX_SIZE = 64 * 1024 * 1024  # 64 MiB cap, defends against gzip bombs
 
 
 @dataclass
@@ -90,18 +85,6 @@ class SitemapSpider(Spider):
             return []
         return list(parser.sitemaps)
 
-    @staticmethod
-    def _decompress(body: bytes, content_type: Optional[str]) -> bytes:
-        if (content_type and ("gzip" in content_type.lower())) or (body[:2] == _GZIP_MAGIC):
-            out = bytearray()
-            with GzipFile(fileobj=BytesIO(body)) as f:
-                while chunk := f.read1(8192):
-                    out.extend(chunk)
-                    if len(out) > _GUNZIP_MAX_SIZE:
-                        raise OSError(f"gzip output exceeds {_GUNZIP_MAX_SIZE} bytes")
-            return bytes(out)
-        return body
-
     def _extract_urls(self, root: Any) -> List[str]:
         urls: List[str] = []
         for url_el in root:
@@ -125,7 +108,7 @@ class SitemapSpider(Spider):
     def _sm_body(self, body: bytes, content_type: Optional[str] = None) -> SitemapResult:
         """Parse a sitemap body and return its URLs and any child sitemaps."""
         try:
-            body = self._decompress(body, content_type)
+            body = _decompress(body, content_type)
         except OSError as e:
             self.logger.warning(f"Failed to decompress sitemap: {e}")
             return SitemapResult()
