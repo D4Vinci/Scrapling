@@ -189,7 +189,6 @@ class ScraplingMCPServer:
     ) -> SessionCreatedModel:
         """Open a persistent browser session that can be reused across multiple fetch calls.
         This avoids the overhead of launching a new browser for each request.
-        Use close_session to close the session when done, and list_sessions to see all active sessions.
 
         :param session_type: The type of session to open. Use "dynamic" for standard Playwright browser, or "stealthy" for anti-bot bypass with fingerprint spoofing.
         :param session_id: Optional custom session ID. If not provided, a random 12-character hex ID will be generated. Useful for naming sessions for easier management.
@@ -387,15 +386,11 @@ class ScraplingMCPServer:
         stealthy_headers: Optional[bool] = True,
     ) -> ResponseModel:
         """Make GET HTTP request to a URL and return a structured output of the result.
-        Note: This is only suitable for low-mid protection levels. For high-protection levels or websites that require JS loading, use the other tools directly.
-        Note: If the `css_selector` resolves to more than one element, all the elements will be returned.
+        Only suitable for low-mid protection levels.
 
         :param url: The URL to request.
         :param impersonate: Browser version to impersonate its fingerprint. It's using the latest chrome version by default.
-        :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
-            - Markdown will convert the page content to Markdown format.
-            - HTML will return the raw HTML content of the page.
-            - Text will return the text content of the page.
+        :param extraction_type: The type of content to extract from the page: "markdown" (default), "html", or "text".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param params: Query string parameters for the request.
@@ -461,15 +456,11 @@ class ScraplingMCPServer:
         stealthy_headers: Optional[bool] = True,
     ) -> List[ResponseModel]:
         """Make GET HTTP request to a group of URLs and for each URL, return a structured output of the result.
-        Note: This is only suitable for low-mid protection levels. For high-protection levels or websites that require JS loading, use the other tools directly.
-        Note: If the `css_selector` resolves to more than one element, all the elements will be returned.
+        Only suitable for low-mid protection levels.
 
         :param urls: A list of the URLs to request.
         :param impersonate: Browser version to impersonate its fingerprint. It's using the latest chrome version by default.
-        :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
-            - Markdown will convert the page content to Markdown format.
-            - HTML will return the raw HTML content of the page.
-            - Text will return the text content of the page.
+        :param extraction_type: The type of content to extract from the page: "markdown" (default), "html", or "text".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param params: Query string parameters for the request.
@@ -543,16 +534,10 @@ class ScraplingMCPServer:
         session_id: Optional[str] = None,
     ) -> ResponseModel:
         """Use playwright to open a browser to fetch a URL and return a structured output of the result.
-        Note: This is only suitable for low-mid protection levels.
-        Note: If the `css_selector` resolves to more than one element, all the elements will be returned.
-        Note: If a `session_id` is provided (from open_session), the browser session will be reused instead of creating a new one.
-            When using a session, browser-level params (headless, proxy, locale, etc.) are ignored since they were set at session creation time.
+        Only suitable for low-mid protection levels.
 
         :param url: The URL to request.
-        :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
-            - Markdown will convert the page content to Markdown format.
-            - HTML will return the raw HTML content of the page.
-            - Text will return the text content of the page.
+        :param extraction_type: The type of content to extract from the page: "markdown" (default), "html", or "text".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
@@ -628,16 +613,10 @@ class ScraplingMCPServer:
         session_id: Optional[str] = None,
     ) -> List[ResponseModel]:
         """Use playwright to open a browser, then fetch a group of URLs at the same time, and for each page return a structured output of the result.
-        Note: This is only suitable for low-mid protection levels.
-        Note: If the `css_selector` resolves to more than one element, all the elements will be returned.
-        Note: If a `session_id` is provided (from open_session), the browser session will be reused instead of creating a new one.
-            When using a session, browser-level params (headless, proxy, locale, etc.) are ignored since they were set at session creation time.
+        Only suitable for low-mid protection levels.
 
         :param urls: A list of the URLs to request.
-        :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
-            - Markdown will convert the page content to Markdown format.
-            - HTML will return the raw HTML content of the page.
-            - Text will return the text content of the page.
+        :param extraction_type: The type of content to extract from the page: "markdown" (default), "html", or "text".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
@@ -737,16 +716,10 @@ class ScraplingMCPServer:
         session_id: Optional[str] = None,
     ) -> ResponseModel:
         """Use the stealthy fetcher to fetch a URL and return a structured output of the result.
-        Note: This is the only suitable fetcher for high protection levels.
-        Note: If the `css_selector` resolves to more than one element, all the elements will be returned.
-        Note: If a `session_id` is provided (from open_session), the browser session will be reused instead of creating a new one.
-            When using a session, browser-level params (headless, proxy, locale, etc.) are ignored since they were set at session creation time.
+        The only fetcher suitable for high-protection websites.
 
         :param url: The URL to request.
-        :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
-            - Markdown will convert the page content to Markdown format.
-            - HTML will return the raw HTML content of the page.
-            - Text will return the text content of the page.
+        :param extraction_type: The type of content to extract from the page: "markdown" (default), "html", or "text".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
@@ -837,16 +810,10 @@ class ScraplingMCPServer:
         session_id: Optional[str] = None,
     ) -> List[ResponseModel]:
         """Use the stealthy fetcher to fetch a group of URLs at the same time, and for each page return a structured output of the result.
-        Note: This is the only suitable fetcher for high protection levels.
-        Note: If the `css_selector` resolves to more than one element, all the elements will be returned.
-        Note: If a `session_id` is provided (from open_session), the browser session will be reused instead of creating a new one.
-            When using a session, browser-level params (headless, proxy, locale, etc.) are ignored since they were set at session creation time.
+        The only fetcher suitable for high-protection websites.
 
         :param urls: A list of the URLs to request.
-        :param extraction_type: The type of content to extract from the page. Defaults to "markdown". Options are:
-            - Markdown will convert the page content to Markdown format.
-            - HTML will return the raw HTML content of the page.
-            - Text will return the text content of the page.
+        :param extraction_type: The type of content to extract from the page: "markdown" (default), "html", or "text".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
@@ -938,7 +905,22 @@ class ScraplingMCPServer:
 
     def _build_server(self, host: str, port: int) -> MCPServer:
         """Build the MCPServer with all tools registered and the optional authentication settings applied."""
-        settings: Dict[str, Any] = {}
+        settings: Dict[str, Any] = {
+            "instructions": """Follow these instructions precisely:
+1. When the `open_session` tool is used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions.
+2. If the user didn't specify which tool to use, start with the `get` tool, then escalate. The `get` tool and the bulk version are only suitable for low-mid protection levels.
+    For high-protection levels or websites that require JS loading, use the other tools directly.
+3. For all tools, if the `css_selector` resolves to more than one element, all the elements will be returned.
+4. For all fetch tools, the `extraction_type` parameter controls the format of the returned content: "markdown" (default) converts the page content to Markdown, "html" returns the raw HTML, and "text" returns the text content of the page.
+5. For all fetch tools, `main_content_only` is enabled by default and returns only the content inside the page's `<body>` tag. Pass `main_content_only=False` when you need the full page instead.
+6. If the task consists of multiple requests to the same website, open a session to be more efficient.
+7. For browser-based tools, if a `session_id` is provided (from open_session), the browser session will be reused instead of creating a new one.
+    When using a session, browser-level params (headless, proxy, locale, etc.) are ignored since they were set at session creation time.
+8. If you are making multiple requests, use the bulk version of the tool to be more efficient.
+9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time.
+10. The user can pass a CDP URL to connect to a remote browser session through the `open_session` tool, then use it in the rest of the tools.
+"""
+        }
         if self._auth_token:
             base_url = AnyHttpUrl(f"http://{host}:{port}")
             settings["token_verifier"] = _StaticTokenVerifier(self._auth_token)

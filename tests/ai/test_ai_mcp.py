@@ -541,6 +541,7 @@ class TestServerToolRegistration:
         """All 10 tools are advertised, and only the screenshot tool skips the structured output schema"""
         server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
         async with Client(server) as client:
+            assert client.instructions
             tools = {tool.name: tool for tool in (await client.list_tools()).tools}
 
         assert len(tools) == 10
