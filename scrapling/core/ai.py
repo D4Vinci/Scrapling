@@ -44,6 +44,14 @@ SessionType = Literal["dynamic", "stealthy"]
 ScreenshotType = Literal["png", "jpeg"]
 MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
 MCP_AUTH_TOKEN_ENV = "SCRAPLING_MCP_AUTH_TOKEN"  # nosec B105 - the name of the variable, not a token
+
+_MAX_POOL_PAGES = 50  # Upper bound of `PagesCount` in scrapling/engines/_browsers/_validators.py
+
+
+def _page_pool_size(urls: Sequence[str]) -> int:
+    """Return a page pool size that covers the batch without leaving the validator's bounds."""
+    return min(max(len(urls), 1), _MAX_POOL_PAGES)
+
 _FETCH_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=True)
 _SESSION_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=True)
 _LIST_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=False)
@@ -620,7 +628,7 @@ class ScraplingMCPServer:
         """Use playwright to open a browser, then fetch a group of URLs at the same time, and for each page return a structured output of the result.
         Only suitable for low-mid protection levels.
 
-        :param urls: A list of the URLs to request.
+        :param urls: A list of the URLs to request. Batches bigger than 50 URLs are fetched through a pool of 50 concurrent pages.
         :param extraction_type: The type of content to extract from the page: "markdown" (default), "html", or "text".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
@@ -673,7 +681,7 @@ class ScraplingMCPServer:
                 cdp_url=cdp_url,
                 headless=headless,
                 block_ads=True,
-                max_pages=len(urls),
+                max_pages=_page_pool_size(urls),
                 useragent=useragent,
                 timezone_id=timezone_id,
                 real_chrome=real_chrome,
@@ -817,7 +825,7 @@ class ScraplingMCPServer:
         """Use the stealthy fetcher to fetch a group of URLs at the same time, and for each page return a structured output of the result.
         The only fetcher suitable for high-protection websites.
 
-        :param urls: A list of the URLs to request.
+        :param urls: A list of the URLs to request. Batches bigger than 50 URLs are fetched through a pool of 50 concurrent pages.
         :param extraction_type: The type of content to extract from the page: "markdown" (default), "html", or "text".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
         :param main_content_only: Whether to extract only the main content of the page. Defaults to True. The main content here is the data inside the `<body>` tag.
@@ -876,6 +884,7 @@ class ScraplingMCPServer:
                 cookies=cookies,
                 headless=headless,
                 block_ads=True,
+                max_pages=_page_pool_size(urls),
                 useragent=useragent,
                 timezone_id=timezone_id,
                 real_chrome=real_chrome,
