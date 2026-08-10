@@ -154,9 +154,9 @@ MySpider().start()
 ## Star History
 Scrapling’s GitHub stars have grown steadily since its release (see chart below).
 
-<div id="chartContainer">
+<div>
   <a href="https://www.star-history.com/?repos=D4vinci%2FScrapling&type=date&legend=top-left">
-    <img id="chartImage" alt="Star History Chart" loading="lazy" src="assets/star-history.png" height="400"/>
+    <img alt="Star History Chart" loading="lazy" src="assets/star-history.png" style="height: 400px;"/>
   </a>
 </div>
 
