@@ -177,6 +177,16 @@ MySpider().start()
     يوفر <a href="https://www.swiftproxy.net/?ref=D4Vinci" target="_blank">Swiftproxy</a> بروكسيات سكنية قابلة للتوسع مع أكثر من 80 مليون عنوان IP في أكثر من 195 دولة، ويقدم اتصالات سريعة وموثوقة، وتدوير تلقائي، وأداء قوي ضد الحظر. تجربة مجانية متاحة.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.coreclaw.com/?utm_source=github&utm_medium=cpc&utm_campaign=scraping&utm_term=&utm_id=scraping" target="_blank" title="Real-Time Public Data, Ready to Use">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/CoreClaw.jpg">
+      </a>
+    </td>
+    <td>
+    يوفر <a href="https://www.coreclaw.com/?utm_source=github&utm_medium=cpc&utm_campaign=scraping&utm_term=&utm_id=scraping" target="_blank">CoreClaw</a> واجهات برمجة تطبيقات لبيانات الويب مخصصة لوكلاء الذكاء الاصطناعي. احصل على بيانات منظمة من خرائط Google وLinkedIn وInstagram وYouTube وAmazon والمزيد.
+    </td>
+  </tr>
 </table>
 
 <i><sub>هل تريد عرض إعلانك هنا؟ انقر [هنا](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
