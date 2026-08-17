@@ -1,0 +1,49 @@
+name: Scrape DevConsole Consulting
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - setup-devconsole-scraper
+    paths:
+      - "custom/devconsole_spider.py"
+      - ".github/workflows/devconsole-scrape.yml"
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Scrapling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[all]"
+          scrapling install --force
+
+      - name: Scrape homepage to AI-safe Markdown
+        run: |
+          mkdir -p scrape-output
+          scrapling extract get "https://devconsoleconsulting.com/" "scrape-output/home.md" --ai-targeted --timeout 60
+
+      - name: Crawl internal pages
+        run: |
+          python custom/devconsole_spider.py
+          mv devconsoleconsulting-scrape.json scrape-output/devconsoleconsulting-scrape.json
+
+      - name: Upload scrape results
+        uses: actions/upload-artifact@v4
+        with:
+          name: devconsoleconsulting-scrape
+          path: scrape-output/
+          if-no-files-found: error
+          retention-days: 7
