@@ -6,7 +6,8 @@ from statistics import mean
 import requests
 from autoscraper import AutoScraper
 from bs4 import BeautifulSoup
-from lxml import etree, html
+import defusedxml.lxml
+
 from mechanicalsoup import StatefulBrowser
 from parsel import Selector
 from pyquery import PyQuery as pq
@@ -47,10 +48,10 @@ def benchmark(func):
 def test_lxml():
     return [
         e.text
-        for e in etree.fromstring(
+        for e in defusedxml.lxml.fromstring(
             large_html,
             # Scrapling and Parsel use the same parser inside, so this is just to make it fair
-            parser=html.HTMLParser(recover=True, huge_tree=True),
+            parser=defusedxml.lxml._etree.HTMLParser(recover=True, huge_tree=True),
         ).cssselect(".item")
     ]
 
@@ -135,7 +136,7 @@ if __name__ == "__main__":
 
     display(results1)
     print("\n" + "=" * 25)
-    req = requests.get("https://books.toscrape.com/index.html")
+    req = requests.get("https://books.toscrape.com/index.html", timeout=30)
     print(
         " Benchmark: Speed of searching for an element by text content, and retrieving the text of similar elements\n"
     )
