@@ -57,7 +57,7 @@ class TestCLI:
             assert result.exit_code == 0
             mock_server.assert_called_once_with(executable_path=None, auth_token=None)
             mock_instance.serve.assert_called_once_with(
-                False, "0.0.0.0", 8000, allowed_hosts=(), allow_unauthenticated=False
+                False, "127.0.0.1", 8000, allowed_hosts=(), allow_unauthenticated=False
             )
 
     def test_mcp_command_with_executable_path(self, runner):
@@ -70,7 +70,7 @@ class TestCLI:
             assert result.exit_code == 0
             mock_server.assert_called_once_with(executable_path="/opt/custom-chromium", auth_token=None)
             mock_instance.serve.assert_called_once_with(
-                False, "0.0.0.0", 8000, allowed_hosts=(), allow_unauthenticated=False
+                False, "127.0.0.1", 8000, allowed_hosts=(), allow_unauthenticated=False
             )
 
     def test_mcp_command_with_auth_token(self, runner):
@@ -84,7 +84,7 @@ class TestCLI:
             assert result.exit_code == 0
             mock_server.assert_called_once_with(executable_path=None, auth_token=shared_key)
             mock_instance.serve.assert_called_once_with(
-                True, "0.0.0.0", 8000, allowed_hosts=(), allow_unauthenticated=False
+                True, "127.0.0.1", 8000, allowed_hosts=(), allow_unauthenticated=False
             )
 
     def test_mcp_command_with_no_auth(self, runner):
@@ -96,8 +96,21 @@ class TestCLI:
             result = runner.invoke(mcp, ["--http", "--no-auth"])
             assert result.exit_code == 0
             mock_instance.serve.assert_called_once_with(
-                True, "0.0.0.0", 8000, allowed_hosts=(), allow_unauthenticated=True
+                True, "127.0.0.1", 8000, allowed_hosts=(), allow_unauthenticated=True
             )
+
+    def test_mcp_command_binds_loopback_unless_asked_otherwise(self, runner):
+        """`--http` stays off the network by default, so `--no-auth` can't expose the tools by accident"""
+        with patch("scrapling.core.ai.ScraplingMCPServer") as mock_server:
+            mock_instance = MagicMock()
+            mock_server.return_value = mock_instance
+
+            runner.invoke(mcp, ["--http", "--no-auth"])
+            assert mock_instance.serve.call_args.args[1] == "127.0.0.1"
+
+            mock_instance.serve.reset_mock()
+            runner.invoke(mcp, ["--http", "--no-auth", "--host", "0.0.0.0"])
+            assert mock_instance.serve.call_args.args[1] == "0.0.0.0"
 
     def test_mcp_command_reports_the_unauthenticated_refusal(self, runner):
         """The refusal raised by `serve` is shown as a CLI usage error instead of a traceback"""
@@ -122,7 +135,7 @@ class TestCLI:
             assert result.exit_code == 0
             mock_instance.serve.assert_called_once_with(
                 True,
-                "0.0.0.0",
+                "127.0.0.1",
                 8000,
                 allowed_hosts=("mcp.example.com:8000", "127.0.0.1:8000"),
                 allow_unauthenticated=False,

@@ -152,8 +152,9 @@ def install(force):  # pragma: no cover
 @option(
     "--host",
     type=str,
-    default="0.0.0.0",
-    help="The host to use if streamable-http transport is enabled (Default: '0.0.0.0')",
+    default="127.0.0.1",
+    help="The host to use if streamable-http transport is enabled. Pass '0.0.0.0' to accept connections from "
+    "the network (Default: '127.0.0.1')",
 )
 @option(
     "--port", type=int, default=8000, help="The port to use if streamable-http transport is enabled (Default: 8000)"

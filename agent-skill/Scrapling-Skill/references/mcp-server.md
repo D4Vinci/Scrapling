@@ -203,8 +203,10 @@ Or with Streamable HTTP transport:
 
 ```bash
 scrapling-mcp --http
-scrapling-mcp --http --host 127.0.0.1 --port 8000
+scrapling-mcp --http --host 0.0.0.0 --port 8000
 ```
+
+The host defaults to `127.0.0.1`, so the server only accepts connections from the same machine. Pass `--host 0.0.0.0` to make it reachable from the network.
 
 Docker alternative:
 
@@ -284,11 +286,13 @@ export SCRAPLING_MCP_AUTH_TOKEN="<your-token>"
 scrapling-mcp --http
 ```
 
-If you really want an unauthenticated server, for example while testing locally, you have to ask for it with `--no-auth`:
+If you really want an unauthenticated server, for example while testing locally on the default `127.0.0.1`, you have to ask for it with `--no-auth`:
 
 ```bash
 scrapling-mcp --http --no-auth
 ```
+
+Combining `--no-auth` with `--host 0.0.0.0` leaves every tool open to anyone who can reach the port, so avoid that pair outside a trusted network.
 
 When the server listens on a public address, also tell it which host names to accept, which turns on protection against DNS-rebinding attacks. The option can be repeated:
 

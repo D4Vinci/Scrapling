@@ -206,10 +206,11 @@ Use the following to enable 'Streamable HTTP' transport mode:
 ```bash
 scrapling-mcp --http
 ```
-Hence, the default value for the host the server is listening to is '0.0.0.0' and the port is 8000, which both can be configured as below:
+Hence, the default value for the host the server is listening to is '127.0.0.1' and the port is 8000, which both can be configured as below:
 ```bash
-scrapling-mcp --http --host '127.0.0.1' --port 8000
+scrapling-mcp --http --host '0.0.0.0' --port 8000
 ```
+The default only accepts connections from the same machine. Pass `--host '0.0.0.0'` when you want the server to be reachable from the network, which is a separate decision from authentication below.
 
 ### Authentication
 
@@ -235,10 +236,11 @@ Passing the token on the command line leaves it in your shell history and in the
 export SCRAPLING_MCP_AUTH_TOKEN="<your-token>"
 scrapling-mcp --http
 ```
-If you really want an unauthenticated server, for example while testing locally, you have to ask for it with `--no-auth`:
+If you really want an unauthenticated server, for example while testing locally on the default '127.0.0.1', you have to ask for it with `--no-auth`:
 ```bash
 scrapling-mcp --http --no-auth
 ```
+Combining `--no-auth` with `--host '0.0.0.0'` leaves every tool open to anyone who can reach the port, so avoid that pair outside a trusted network.
 
 When the server listens on a public address, you should also tell it which host names to accept, which turns on protection against DNS-rebinding attacks (a website your browser visits trying to talk to your server). The option can be repeated:
 ```bash
