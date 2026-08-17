@@ -256,7 +256,7 @@ The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed br
 
 ## Authentication
 
-The stdio transport is only reachable by the program that started it, but with Streamable HTTP anyone who can reach the port can call every tool, including fetching any URL from the machine running the server. If the server listens on anything other than localhost, give it a token:
+The stdio transport is only reachable by the program that started it, but with Streamable HTTP anyone who can reach the port can call every tool, including fetching any URL from the machine running the server. That's why Streamable HTTP requires authentication, so `--http` on its own refuses to start and asks you for a token:
 
 ```bash
 scrapling-mcp --http --auth-token "$(openssl rand -hex 32)"
@@ -284,6 +284,12 @@ export SCRAPLING_MCP_AUTH_TOKEN="<your-token>"
 scrapling-mcp --http
 ```
 
+If you really want an unauthenticated server, for example while testing locally, you have to ask for it with `--no-auth`:
+
+```bash
+scrapling-mcp --http --no-auth
+```
+
 When the server listens on a public address, also tell it which host names to accept, which turns on protection against DNS-rebinding attacks. The option can be repeated:
 
 ```bash
@@ -295,4 +301,5 @@ scrapling-mcp --http --allowed-host 'your-server.example.com:8000'
 - Authentication applies to the Streamable HTTP transport only. It's ignored with stdio, and the server logs a warning to say so.
 - Plain HTTP sends the token in cleartext, so put the server behind a reverse proxy that terminates TLS before exposing it to the internet.
 - This is a single shared key, not per-client credentials, so every client uses the same token and rotating it means restarting the server.
-- Starting with `--http` and no token still works for local use, but logs a warning that it's unauthenticated.
+- Starting with `--http --no-auth` still logs a warning that it's unauthenticated.
+- Passing both `--auth-token` and `--no-auth` keeps the token, so the server stays authenticated instead of quietly dropping it.
