@@ -1017,17 +1017,44 @@ class ScraplingMCPServer:
         )
         return server
 
-    def serve(self, http: bool, host: str, port: int, allowed_hosts: Sequence[str] = ()):
-        """Serve the MCP server."""
-        if http and not self._auth_token:
+    def serve(
+        self,
+        http: bool,
+        host: str,
+        port: int,
+        allowed_hosts: Sequence[str] = (),
+        allow_unauthenticated: bool = False,
+    ):
+        """Serve the MCP server.
+
+        :param http: Serve over the streamable-http transport instead of stdio.
+        :param host: The host to bind to when `http` is enabled.
+        :param port: The port to bind to when `http` is enabled.
+        :param allowed_hosts: Host names to accept, which turns on DNS-rebinding protection.
+        :param allow_unauthenticated: Start the streamable-http transport without a token. The transport
+            requires authentication by default, so this is the explicit opt-out.
+        """
+        if not http:
+            if self._auth_token:
+                log.warning(
+                    "The authentication token only applies to the streamable-http transport, so it's ignored with stdio."
+                )
+        elif self._auth_token:
+            if allow_unauthenticated:
+                log.warning(
+                    "An authentication token was given, so it takes precedence and the server still requires it."
+                )
+        elif not allow_unauthenticated:
+            raise ValueError(
+                f"Refusing to serve the MCP server over HTTP without authentication because anyone who can reach "
+                f"{host}:{port} would be able to use every tool, including fetching arbitrary URLs from this machine. "
+                f"Pass `--auth-token` (or set the {MCP_AUTH_TOKEN_ENV} environment variable) to require a bearer "
+                f"token, or `--no-auth` to serve it unauthenticated anyway."
+            )
+        else:
             log.warning(
                 f"The MCP server is running over HTTP without authentication, so anyone who can reach "
-                f"{host}:{port} can use every tool, including fetching arbitrary URLs from this machine. "
-                f"Pass `--auth-token` (or set the {MCP_AUTH_TOKEN_ENV} environment variable) to require a bearer token."
-            )
-        elif self._auth_token and not http:
-            log.warning(
-                "The authentication token only applies to the streamable-http transport, so it's ignored with stdio."
+                f"{host}:{port} can use every tool, including fetching arbitrary URLs from this machine."
             )
 
         server = self._build_server(host, port)

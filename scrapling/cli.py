@@ -12,7 +12,7 @@ from scrapling.core._types import List, Optional, Dict, Tuple, Any, Callable
 from orjson import loads as json_loads, JSONDecodeError
 
 try:
-    from click import command, option, Choice, group, argument, version_option
+    from click import command, option, Choice, group, argument, version_option, UsageError
 except (ImportError, ModuleNotFoundError) as e:
     raise ModuleNotFoundError(
         "You need to install scrapling with any of the extras to enable Shell commands. See: https://scrapling.readthedocs.io/en/latest/#installation"
@@ -152,8 +152,9 @@ def install(force):  # pragma: no cover
 @option(
     "--host",
     type=str,
-    default="0.0.0.0",
-    help="The host to use if streamable-http transport is enabled (Default: '0.0.0.0')",
+    default="127.0.0.1",
+    help="The host to use if streamable-http transport is enabled. Pass '0.0.0.0' to accept connections from "
+    "the network (Default: '127.0.0.1')",
 )
 @option(
     "--port", type=int, default=8000, help="The port to use if streamable-http transport is enabled (Default: 8000)"
@@ -178,11 +179,22 @@ def install(force):  # pragma: no cover
     help="Enable DNS-rebinding protection and accept requests for this host only, like 'mcp.example.com:8000' "
     "(repeatable). Recommended whenever the server listens on a public address",
 )
-def mcp(http, host, port, executable_path, auth_token, allowed_host):
+@option(
+    "--no-auth",
+    is_flag=True,
+    default=False,
+    help="Serve the streamable-http transport without authentication (not recommended). Without it, `--http` "
+    "refuses to start unless a token is given",
+)
+def mcp(http, host, port, executable_path, auth_token, allowed_host, no_auth):
     from scrapling.core.ai import ScraplingMCPServer
 
     server = ScraplingMCPServer(executable_path=executable_path, auth_token=auth_token)
-    server.serve(http, host, port, allowed_hosts=allowed_host)
+    try:
+        server.serve(http, host, port, allowed_hosts=allowed_host, allow_unauthenticated=no_auth)
+    except ValueError as e:
+        # Turn the unauthenticated-HTTP refusal into a clean CLI error instead of a traceback
+        raise UsageError(str(e)) from e
 
 
 @command(help="Interactive scraping console")

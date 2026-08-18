@@ -4,10 +4,12 @@ from typing import Any
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
+from unittest.mock import patch
 
 import pytest
 import pytest_httpbin
 from mcp.client import Client
+from mcp.server import MCPServer
 from mcp.types import ImageContent, TextContent
 
 from scrapling import __version__ as scrapling_version
@@ -573,6 +575,46 @@ class TestMCPServerAuthentication:
         built = ScraplingMCPServer(auth_token=SHARED_KEY)._build_server("0.0.0.0", 8000)
 
         assert len(built._tool_manager.list_tools()) == 10
+
+    def test_http_without_a_token_refuses_to_serve(self, monkeypatch):
+        """The streamable-http transport requires authentication unless the caller explicitly opts out"""
+        monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
+        server = ScraplingMCPServer()
+
+        with pytest.raises(ValueError, match="without authentication"):
+            server.serve(True, "0.0.0.0", 8000)
+
+    def test_stdio_without_a_token_still_serves(self, monkeypatch):
+        """stdio is only reachable by the program that started it, so it stays unauthenticated"""
+        monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
+        server = ScraplingMCPServer()
+
+        with patch.object(MCPServer, "run") as mocked_run:
+            server.serve(False, "0.0.0.0", 8000)
+
+        mocked_run.assert_called_once_with()
+
+    def test_http_serves_unauthenticated_when_explicitly_allowed(self, monkeypatch):
+        """`--no-auth` is the opt-out, and the server still warns that it's unprotected"""
+        monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
+        server = ScraplingMCPServer()
+
+        with patch.object(MCPServer, "run") as mocked_run:
+            server.serve(True, "0.0.0.0", 8000, allow_unauthenticated=True)
+
+        assert mocked_run.call_args.kwargs["transport"] == "streamable-http"
+        assert server._build_server("0.0.0.0", 8000).settings.auth is None
+
+    def test_token_wins_over_the_opt_out(self, monkeypatch):
+        """Passing both keeps authentication on instead of silently dropping the token"""
+        monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
+        server = ScraplingMCPServer(auth_token=SHARED_KEY)
+
+        with patch.object(MCPServer, "run") as mocked_run:
+            server.serve(True, "0.0.0.0", 8000, allow_unauthenticated=True)
+
+        assert mocked_run.call_args.kwargs["transport"] == "streamable-http"
+        assert server._build_server("0.0.0.0", 8000).settings.auth is not None
 
     def test_allowed_hosts_enable_dns_rebinding_protection(self):
         assert ScraplingMCPServer._transport_security(()) is None
