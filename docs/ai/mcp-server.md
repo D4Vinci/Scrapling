@@ -212,6 +212,11 @@ scrapling-mcp --http --host '0.0.0.0' --port 8000
 ```
 The default only accepts connections from the same machine. Pass `--host '0.0.0.0'` when you want the server to be reachable from the network, which is a separate decision from authentication below.
 
+If you run the 'Streamable HTTP' transport inside Docker, you have to bind to '0.0.0.0' yourself and set a token, otherwise the published port can't reach the server (the container's '127.0.0.1' is only visible inside the container):
+```bash
+docker run -p 8000:8000 -e SCRAPLING_MCP_AUTH_TOKEN="<your-token>" pyd4vinci/scrapling mcp --http --host '0.0.0.0'
+```
+
 ### Authentication
 
 The 'stdio' transport is only reachable by the program that started it, but the moment you switch to 'Streamable HTTP', anyone who can reach the port can call every tool, and that includes fetching any URL from the machine running the server. That's why 'Streamable HTTP' requires authentication, so `--http` on its own refuses to start and asks you for a token:
