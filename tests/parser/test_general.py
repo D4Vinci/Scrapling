@@ -162,6 +162,20 @@ class TestSimilarElements:
         assert len(similar_high_rated_reviews) == 1
 
 
+class TestFindByClass:
+    def test_find_all_matches_multi_class_element(self, page):
+        """A single class token should match elements that carry other classes too"""
+        assert len(page.find_all("div", class_="stock")) == 3
+        assert len(page.find_all("div", class_="hidden")) == 3
+        assert page.find("div", class_="stock") is not None
+
+    def test_find_all_matches_all_of_multiple_tokens(self, page):
+        """Multiple class tokens all have to be present, regardless of order"""
+        assert len(page.find_all("div", class_="hidden stock")) == 3
+        assert len(page.find_all("div", class_="stock hidden")) == 3
+        assert page.find_all("div", class_="hidden nonexistent") == []
+
+
 # Error Handling Tests
 class TestErrorHandling:
     def test_invalid_selector_initialization(self):

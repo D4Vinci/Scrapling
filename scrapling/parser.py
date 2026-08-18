@@ -762,7 +762,11 @@ class Selector(SelectorsGeneration):
             for key, value in attributes.items():
                 value = value.replace('"', r"\"")  # Escape double quotes in user input
                 # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
-                selector += '[{}="{}"]'.format(key, value)
+                if key == "class":
+                    # `class` is a space-separated list, so exact-match [class="x"] misses class="x y"; match each name with ~=
+                    selector += "".join('[class~="{}"]'.format(t) for t in value.split())
+                else:
+                    selector += '[{}="{}"]'.format(key, value)
             if selector != "*":
                 selectors.append(selector)
 
