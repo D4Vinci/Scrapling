@@ -6,6 +6,7 @@ local_tests/*
 # AI related files
 .claude/*
 CLAUDE.md
+tasks/*
 
 # cached files
 __pycache__/
