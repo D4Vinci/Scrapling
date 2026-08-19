@@ -3,6 +3,7 @@ from re import compile as re_compile
 
 from curl_cffi.requests import Response as CurlResponse
 from playwright._impl._errors import Error as PlaywrightError
+from patchright._impl._errors import Error as PatchrightError
 from playwright.sync_api import Page as SyncPage, Response as SyncResponse
 from playwright.async_api import Page as AsyncPage, Response as AsyncResponse
 
@@ -206,7 +207,7 @@ class ResponseFactory:
         for _ in range(max_retries):
             try:
                 return page.content() or ""
-            except PlaywrightError:
+            except (PlaywrightError, PatchrightError):
                 page.wait_for_timeout(500)
         raise RuntimeError(f"Failed to retrieve the page content after retrying for {max_retries * 500}ms.")
 
@@ -221,7 +222,7 @@ class ResponseFactory:
         for _ in range(max_retries):
             try:
                 return (await page.content()) or ""
-            except PlaywrightError:
+            except (PlaywrightError, PatchrightError):
                 await page.wait_for_timeout(500)
         raise RuntimeError(f"Failed to retrieve the page content after retrying for {max_retries * 500}ms.")
 

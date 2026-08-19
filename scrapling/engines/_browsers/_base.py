@@ -437,11 +437,13 @@ class BaseSessionMixin:
         self._context_options.update(
             {
                 "proxy": config.proxy,
-                "locale": config.locale,
                 "timezone_id": config.timezone_id,
                 "extra_http_headers": config.extra_headers,
             }
         )
+        if config.locale and config.cdp_url:
+            # Launch flags can't be set on remote browsers, so the detectable context option is the best effort left
+            self._context_options["locale"] = config.locale
         # The default useragent in the headful is always correct now in the current versions of Playwright
         if config.useragent:
             self._context_options["user_agent"] = config.useragent
@@ -461,6 +463,17 @@ class BaseSessionMixin:
                     flags.append(doh_flag)
                 else:
                     flags = list(flags) + [doh_flag]
+
+            if config.locale:
+                # The context `locale` option patches the main thread only, so Web Workers keep the browser's real
+                # language and WAFs like Cloudflare flag the mismatch. Launch flags set it browser-wide instead,
+                # so workers, `Intl`, and the `Accept-Language` header all follow natively.
+                base_lang = config.locale.split("-")[0].lower()
+                accept_lang = f"{config.locale},{base_lang}" if base_lang != config.locale.lower() else config.locale
+                flags = (flags if isinstance(flags, list) else list(flags)) + [
+                    f"--lang={config.locale}",
+                    f"--accept-lang={accept_lang}",
+                ]
 
             self._browser_options.update(
                 {
@@ -575,3 +588,17 @@ class StealthySessionMixin(BaseSessionMixin):
             return "embedded"
 
         return None
+
+    @classmethod
+    def _challenge_cleared(cls, page_content: str, challenge_type: str) -> bool:
+        """
+        Check whether the Cloudflare challenge is no longer present in the page content.
+
+        Args:
+            page_content (str): The content of the page to analyze.
+            challenge_type (str): The challenge type returned by `_detect_cloudflare`.
+
+        Returns:
+            bool: True if the challenge is gone from the page, False otherwise.
+        """
+        return challenge_type == "embedded" or cls._detect_cloudflare(page_content) is None
