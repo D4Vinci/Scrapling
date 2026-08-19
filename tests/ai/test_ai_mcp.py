@@ -24,9 +24,11 @@ from scrapling.core.ai import (
     _normalize_credentials,
     _page_pool_size,
     _StaticTokenVerifier,
+    _supplied_params,
     _translate_response,
 )
-from scrapling.fetchers import AsyncDynamicSession
+from scrapling.engines._browsers._validators import PlaywrightConfig, StealthConfig, validate_fetch
+from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession
 
 
 def test_translate_response_strips_control_characters():
@@ -49,11 +51,21 @@ def test_translate_response_strips_control_characters():
     assert not any(ord(c) < 0x20 and c not in "\t\n\r" for c in joined)
 
 
+class _FakePage:
+    """The page object a fake session hands to a `page_action`."""
+
+    url = "https://example.com/captured"
+
+    async def screenshot(self, **kwargs: Any) -> bytes:
+        return b"fake-png-bytes"
+
+
 class _FakeAsyncBrowserSession:
     instances: list["_FakeAsyncBrowserSession"] = []
 
     def __init__(self, **kwargs: Any) -> None:
         self.kwargs = kwargs
+        self.fetch_calls: list[dict[str, Any]] = []
         self._is_alive = False
         type(self).instances.append(self)
 
@@ -71,6 +83,9 @@ class _FakeAsyncBrowserSession:
         self._is_alive = False
 
     async def fetch(self, url: str, **kwargs: Any) -> Response:
+        self.fetch_calls.append(kwargs)
+        if kwargs.get("page_action") is not None:
+            await kwargs["page_action"](_FakePage())
         return Response(
             url=url,
             content="<html><body>ok</body></html>",
@@ -376,6 +391,257 @@ class TestBulkPagePool:
         assert session.max_pages == _page_pool_size(urls), (
             f"Expected the session to keep max_pages {_page_pool_size(urls)}, got {session.max_pages}"
         )
+
+
+async def _noop_page_action(page: Any) -> None:
+    """Stand-in for the `page_action` the screenshot tool always sends."""
+
+
+class TestSessionSettingsSurviveFetchKwargs:
+    """The kwargs the tools send on the session path must not overwrite the settings of the session"""
+
+    def test_dynamic_session_settings_survive_bulk_fetch_kwargs(self):
+        """Options left out of a `bulk_fetch` call keep the values `open_session` was given"""
+        session = AsyncDynamicSession(
+            wait=1500,
+            timeout=45000,
+            network_idle=True,
+            disable_resources=True,
+            google_search=False,
+            wait_selector="#main",
+            wait_selector_state="visible",
+            extra_headers={"x-test": "1"},
+        )
+
+        params = validate_fetch(
+            _supplied_params(
+                wait=None,
+                timeout=None,
+                google_search=None,
+                extra_headers=None,
+                disable_resources=None,
+                wait_selector=None,
+                wait_selector_state=None,
+                network_idle=None,
+            ),
+            session,
+            PlaywrightConfig,
+        )
+
+        assert params.wait == 1500, f"Expected the session's wait 1500, got {params.wait}"
+        assert params.timeout == 45000, f"Expected the session's timeout 45000, got {params.timeout}"
+        assert params.network_idle is True, f"Expected the session's network_idle True, got {params.network_idle}"
+        assert params.disable_resources is True, (
+            f"Expected the session's disable_resources True, got {params.disable_resources}"
+        )
+        assert params.google_search is False, f"Expected the session's google_search False, got {params.google_search}"
+        assert params.wait_selector == "#main", (
+            f"Expected the session's wait_selector '#main', got {params.wait_selector}"
+        )
+        assert params.wait_selector_state == "visible", (
+            f"Expected the session's wait_selector_state 'visible', got {params.wait_selector_state}"
+        )
+        assert params.extra_headers == {"x-test": "1"}, (
+            f"Expected the session's extra_headers, got {params.extra_headers}"
+        )
+
+    def test_stealthy_session_keeps_solving_cloudflare(self):
+        """A session opened with `solve_cloudflare` keeps solving, and keeps the timeout that comes with it"""
+        session = AsyncStealthySession(solve_cloudflare=True)
+
+        assert session._config.timeout == 60_000, (
+            f"Expected solve_cloudflare to raise the session timeout to 60,000, got {session._config.timeout}"
+        )
+
+        params = validate_fetch(
+            _supplied_params(
+                wait=None,
+                timeout=None,
+                google_search=None,
+                extra_headers=None,
+                disable_resources=None,
+                wait_selector=None,
+                wait_selector_state=None,
+                network_idle=None,
+                solve_cloudflare=None,
+            ),
+            session,
+            StealthConfig,
+        )
+
+        assert params.solve_cloudflare is True, (
+            f"Expected the session's solve_cloudflare True, got {params.solve_cloudflare}"
+        )
+        assert params.timeout == 60_000, f"Expected the session's timeout 60,000, got {params.timeout}"
+
+    def test_screenshot_kwargs_keep_session_settings(self):
+        """The screenshot tool only has a session path, so its unset options must defer to the session too"""
+        session = AsyncDynamicSession(wait=1500, timeout=45000, network_idle=True, wait_selector="#main")
+
+        params = validate_fetch(
+            {
+                "page_action": _noop_page_action,
+                **_supplied_params(
+                    wait=None,
+                    timeout=None,
+                    network_idle=None,
+                    wait_selector=None,
+                    wait_selector_state=None,
+                ),
+            },
+            session,
+            PlaywrightConfig,
+        )
+
+        assert params.page_action is _noop_page_action, "Expected the capture callback to stay on the fetch params"
+        assert params.wait == 1500, f"Expected the session's wait 1500, got {params.wait}"
+        assert params.timeout == 45000, f"Expected the session's timeout 45000, got {params.timeout}"
+        assert params.network_idle is True, f"Expected the session's network_idle True, got {params.network_idle}"
+        assert params.wait_selector == "#main", (
+            f"Expected the session's wait_selector '#main', got {params.wait_selector}"
+        )
+
+    def test_supplied_values_still_override_the_session(self):
+        """Deferring to the session must not cost the caller the ability to override it per request"""
+        session = AsyncDynamicSession(wait=1500, timeout=45000, network_idle=True)
+
+        params = validate_fetch(
+            _supplied_params(wait=None, timeout=15000, network_idle=False),
+            session,
+            PlaywrightConfig,
+        )
+
+        assert params.timeout == 15000, f"Expected the supplied timeout 15000, got {params.timeout}"
+        assert params.network_idle is False, f"Expected the supplied network_idle False, got {params.network_idle}"
+        assert params.wait == 1500, f"Expected the untouched wait to stay 1500, got {params.wait}"
+
+
+class TestSessionParameterForwarding:
+    """What the tools actually hand to a session's `fetch`, and what they hand to a fresh session"""
+
+    @pytest.fixture(autouse=True)
+    def reset_fakes(self):
+        _FakeDynamicSession.instances = []
+        _FakeStealthySession.instances = []
+
+    @staticmethod
+    def _session_fetch_calls(fake: type[_FakeAsyncBrowserSession]) -> list[dict[str, Any]]:
+        return fake.instances[0].fetch_calls
+
+    @pytest.mark.asyncio
+    async def test_bulk_fetch_forwards_nothing_it_was_not_given(self, monkeypatch):
+        """An option the caller didn't pass must not reach the session as the tool's own default"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        server = ScraplingMCPServer()
+        opened = await server.open_session(session_type="dynamic")
+
+        await server.bulk_fetch(urls=["https://example.com/1"], session_id=opened.session_id)
+
+        forwarded = self._session_fetch_calls(_FakeDynamicSession)[0]
+        assert forwarded == {"proxy": None}, f"Expected only the proxy override to be forwarded, got {forwarded}"
+
+    @pytest.mark.asyncio
+    async def test_bulk_fetch_forwards_what_it_was_given(self, monkeypatch):
+        """Options the caller did pass still reach the session"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        server = ScraplingMCPServer()
+        opened = await server.open_session(session_type="dynamic")
+
+        await server.bulk_fetch(
+            urls=["https://example.com/1"], session_id=opened.session_id, network_idle=True, timeout=45000
+        )
+
+        forwarded = self._session_fetch_calls(_FakeDynamicSession)[0]
+        assert forwarded == {"proxy": None, "network_idle": True, "timeout": 45000}, (
+            f"Expected only the supplied options to be forwarded, got {forwarded}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_fetch_forwards_nothing_it_was_not_given(self, monkeypatch):
+        """The single-URL wrapper passes the unset options through to `bulk_fetch` untouched"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        server = ScraplingMCPServer()
+        opened = await server.open_session(session_type="dynamic")
+
+        await server.fetch(url="https://example.com/1", session_id=opened.session_id)
+
+        forwarded = self._session_fetch_calls(_FakeDynamicSession)[0]
+        assert forwarded == {"proxy": None}, f"Expected only the proxy override to be forwarded, got {forwarded}"
+
+    @pytest.mark.asyncio
+    async def test_bulk_stealthy_fetch_leaves_solve_cloudflare_to_the_session(self, monkeypatch):
+        """`solve_cloudflare` is kept on the fetch params even when it is False, so it must not be sent unasked"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        server = ScraplingMCPServer()
+        opened = await server.open_session(session_type="stealthy", solve_cloudflare=True)
+
+        await server.bulk_stealthy_fetch(urls=["https://example.com/1"], session_id=opened.session_id)
+
+        forwarded = self._session_fetch_calls(_FakeStealthySession)[0]
+        assert "solve_cloudflare" not in forwarded, (
+            f"Expected solve_cloudflare to be left to the session, got {forwarded}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_bulk_stealthy_fetch_forwards_an_explicit_solve_cloudflare(self, monkeypatch):
+        """A caller can still turn Cloudflare solving on for a single request"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        server = ScraplingMCPServer()
+        opened = await server.open_session(session_type="stealthy")
+
+        await server.bulk_stealthy_fetch(
+            urls=["https://example.com/1"], session_id=opened.session_id, solve_cloudflare=True
+        )
+
+        forwarded = self._session_fetch_calls(_FakeStealthySession)[0]
+        assert forwarded.get("solve_cloudflare") is True, (
+            f"Expected the supplied solve_cloudflare to be forwarded, got {forwarded}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_screenshot_forwards_only_the_capture_callback(self, monkeypatch):
+        """The screenshot tool needs the capture callback, and nothing else the caller didn't ask for"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        server = ScraplingMCPServer()
+        opened = await server.open_session(session_type="dynamic")
+
+        result = await server.screenshot(url="https://example.com/1", session_id=opened.session_id)
+
+        forwarded = self._session_fetch_calls(_FakeDynamicSession)[0]
+        assert set(forwarded) == {"page_action"}, f"Expected only the capture callback to be forwarded, got {forwarded}"
+        assert isinstance(result[0], ImageContent), f"Expected an image content block, got {type(result[0]).__name__}"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "tool,fake,fake_name",
+        [
+            ("bulk_fetch", _FakeDynamicSession, "AsyncDynamicSession"),
+            ("bulk_stealthy_fetch", _FakeStealthySession, "AsyncStealthySession"),
+        ],
+    )
+    async def test_a_fresh_session_is_built_with_the_same_settings_as_before(self, monkeypatch, tool, fake, fake_name):
+        """Without a session ID the tools still build a session with the fetcher defaults they always used"""
+        monkeypatch.setattr(f"scrapling.core.ai.{fake_name}", fake)
+        server = ScraplingMCPServer()
+
+        await getattr(server, tool)(urls=["https://example.com/1"])
+
+        real_session_type = AsyncDynamicSession if fake is _FakeDynamicSession else AsyncStealthySession
+        config = real_session_type(**fake.instances[0].kwargs)._config
+        expected = {
+            "wait": 0,
+            "timeout": 30000,
+            "google_search": True,
+            "extra_headers": None,
+            "disable_resources": False,
+            "wait_selector": None,
+            "wait_selector_state": "attached",
+            "network_idle": False,
+        }
+        for name, value in expected.items():
+            assert getattr(config, name) == value, (
+                f"Expected {tool} to keep building a session with {name}={value}, got {getattr(config, name)}"
+            )
 
 
 def _png_height(data: bytes) -> int:
