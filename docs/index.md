@@ -89,6 +89,9 @@ MySpider().start()
   <a href="https://www.coreclaw.com/?utm_source=github&utm_medium=cpc&utm_campaign=scraping&utm_term=&utm_id=scraping" target="_blank" title="Real-Time Public Data, Ready to Use">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/CoreClaw.jpg" class="ad">
   </a>
+  <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank" title="Affordable Residential in 190+ Countries">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png">
+  </a>
   <br />
   <br />
     <a href="https://www.novada.com/?d4vinci-scrapling" target="_blank" title="The All-in-One Solution for Every Data Scraping Scenario"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/novada.jpg"></a>

@@ -199,6 +199,16 @@ MySpider().start()
     <a href="https://www.coreclaw.com/?utm_source=github&utm_medium=cpc&utm_campaign=scraping&utm_term=&utm_id=scraping" target="_blank">CoreClaw</a> 为 AI 智能体提供网络数据 API。获取来自 Google 地图、LinkedIn、Instagram、YouTube、Amazon 等平台的结构化数据。
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank" title="Affordable Residential in 190+ Countries">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank">NiuProxy</a> 提供每 GB 低至 $0.35 的动态住宅代理。使用 Scrapling 专属优惠码 PAY2,充值立减 10%。
+    </td>
+  </tr>
 </table>
 
 <i><sub>想在这里展示您的广告吗？点击 [这里](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>

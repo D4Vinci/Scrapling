@@ -199,6 +199,16 @@ MySpider().start()
     <a href="https://www.coreclaw.com/?utm_source=github&utm_medium=cpc&utm_campaign=scraping&utm_term=&utm_id=scraping" target="_blank">CoreClaw</a> はAIエージェント向けのWebデータAPIを提供します。Googleマップ、LinkedIn、Instagram、YouTube、Amazonなどの構造化データにアクセスできます。
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank" title="Affordable Residential in 190+ Countries">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank">NiuProxy</a> は$0.35/GBから利用できるローテーション型住宅用プロキシを提供します。Scrapling限定コードPAY2を使うと、チャージが10%オフになります。
+    </td>
+  </tr>
 </table>
 
 <i><sub>ここに広告を表示したいですか？[こちら](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)をクリック</sub></i>
