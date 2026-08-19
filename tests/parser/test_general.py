@@ -175,6 +175,22 @@ class TestFindByClass:
         assert len(page.find_all("div", class_="stock hidden")) == 3
         assert page.find_all("div", class_="hidden nonexistent") == []
 
+    def test_find_all_keeps_filtering_on_a_blank_class(self):
+        """A blank class has no names to match, so it must match `class=""` instead of being dropped"""
+        blank_class = Selector('<div class="">empty</div><div class="a">a</div><div>none</div>')
+
+        assert [element.get_all_text() for element in blank_class.find_all("div", class_="")] == ["empty"]
+        assert blank_class.find_all("div", class_="   ") == []
+
+
+class TestFindByEscapedAttributes:
+    def test_find_all_matches_values_needing_css_escapes(self):
+        """Quotes and line breaks can't appear literally inside a CSS string, so they have to be escaped"""
+        page = Selector('<a title=\'say "hi"\'>quoted</a><a title="one\ntwo">broken</a>')
+
+        assert page.find("a", title='say "hi"').get_all_text() == "quoted"
+        assert page.find("a", title="one\ntwo").get_all_text() == "broken"
+
 
 # Error Handling Tests
 class TestErrorHandling:
