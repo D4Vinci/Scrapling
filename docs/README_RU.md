@@ -202,6 +202,16 @@ MySpider().start()
     <a href="https://www.coreclaw.com/?utm_source=github&utm_medium=cpc&utm_campaign=scraping&utm_term=&utm_id=scraping" target="_blank">CoreClaw</a> предоставляет API веб-данных для ИИ-агентов. Получайте структурированные данные из Google Карт, LinkedIn, Instagram, YouTube, Amazon и других источников.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank" title="Affordable Residential in 190+ Countries">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank">NiuProxy</a> предлагает ротационные резидентные прокси от $0.35/GB. Используйте эксклюзивный код Scrapling PAY2, чтобы получить скидку 10% на пополнение.
+    </td>
+  </tr>
 </table>
 
 <i><sub>Хотите показать здесь свою рекламу? Нажмите [здесь](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
