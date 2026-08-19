@@ -53,6 +53,11 @@ def _page_pool_size(urls: Sequence[str]) -> int:
     return min(max(len(urls), 1), _MAX_POOL_PAGES)
 
 
+def _supplied_params(**params: Any) -> Dict[str, Any]:
+    """Keep only the parameters the caller set, so the unset ones fall back to the session/fetcher defaults."""
+    return {name: value for name, value in params.items() if value is not None}
+
+
 _FETCH_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=True)
 _SESSION_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=True)
 _LIST_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=False)
@@ -321,11 +326,11 @@ class ScraplingMCPServer:
         image_type: ScreenshotType = "png",
         full_page: bool = False,
         quality: Optional[int] = None,
-        wait: int | float = 0,
+        wait: int | float | None = None,
         wait_selector: Optional[str] = None,
-        wait_selector_state: SelectorWaitStates = "attached",
-        network_idle: bool = False,
-        timeout: int | float = 30000,
+        wait_selector_state: Optional[SelectorWaitStates] = None,
+        network_idle: bool | None = None,
+        timeout: int | float | None = None,
     ) -> List[ImageContent | TextContent]:
         """Capture a screenshot of a web page using an existing browser session and return it as an image.
         A browser session must be opened first with `open_session` (either `dynamic` or `stealthy`); the session ID is then passed here.
@@ -335,11 +340,11 @@ class ScraplingMCPServer:
         :param image_type: Image format. Defaults to "png". Use "jpeg" for smaller file sizes.
         :param full_page: When True, captures the full scrollable page instead of just the viewport. Defaults to False.
         :param quality: Image quality (0-100) for JPEG only. Raises if passed with `image_type="png"`.
-        :param wait: Time in milliseconds to wait after page load before capturing. Defaults to 0.
-        :param wait_selector: Optional CSS selector to wait for before capturing.
-        :param wait_selector_state: State to wait for the selector. Defaults to "attached".
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: Timeout in milliseconds for page operations. Defaults to 30,000.
+        :param wait: Time in milliseconds to wait after page load before capturing. Uses the session's setting when omitted.
+        :param wait_selector: Optional CSS selector to wait for before capturing. Uses the session's setting when omitted.
+        :param wait_selector_state: State to wait for the selector. Uses the session's setting when omitted.
+        :param network_idle: Wait for the page until there are no network connections for at least 500 ms. Uses the session's setting when omitted.
+        :param timeout: Timeout in milliseconds for page operations. Uses the session's setting when omitted.
         """
         if quality is not None and image_type != "jpeg":
             raise ValueError("'quality' is only valid when 'image_type' is 'jpeg'.")
@@ -361,12 +366,14 @@ class ScraplingMCPServer:
 
         await entry.session.fetch(
             url,
-            wait=wait,
-            timeout=timeout,
-            network_idle=network_idle,
-            wait_selector=wait_selector,
-            wait_selector_state=wait_selector_state,
             page_action=_capture,
+            **_supplied_params(
+                wait=wait,
+                timeout=timeout,
+                network_idle=network_idle,
+                wait_selector=wait_selector,
+                wait_selector_state=wait_selector_state,
+            ),
         )
 
         if "error" in captured:
@@ -529,9 +536,9 @@ class ScraplingMCPServer:
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
         headless: bool = True,  # noqa: F821
-        google_search: bool = True,
+        google_search: bool | None = None,
         real_chrome: bool = False,
-        wait: int | float = 0,
+        wait: int | float | None = None,
         proxy: Optional[str | Dict[str, str]] = None,
         timezone_id: str | None = None,
         locale: str | None = None,
@@ -539,12 +546,12 @@ class ScraplingMCPServer:
         useragent: Optional[str] = None,
         cdp_url: Optional[str] = None,
         executable_path: Optional[str] = None,
-        timeout: int | float = 30000,
-        disable_resources: bool = False,
+        timeout: int | float | None = None,
+        disable_resources: bool | None = None,
         wait_selector: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
-        network_idle: bool = False,
-        wait_selector_state: SelectorWaitStates = "attached",
+        network_idle: bool | None = None,
+        wait_selector_state: Optional[SelectorWaitStates] = None,
         session_id: Optional[str] = None,
     ) -> ResponseModel:
         """Use playwright to open a browser to fetch a URL and return a structured output of the result.
@@ -573,7 +580,7 @@ class ScraplingMCPServer:
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
+        :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one, and every option you leave out here keeps the value the session was opened with.
         """
         results = await self.bulk_fetch(
             urls=[url],
@@ -608,9 +615,9 @@ class ScraplingMCPServer:
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
         headless: bool = True,  # noqa: F821
-        google_search: bool = True,
+        google_search: bool | None = None,
         real_chrome: bool = False,
-        wait: int | float = 0,
+        wait: int | float | None = None,
         proxy: Optional[str | Dict[str, str]] = None,
         timezone_id: str | None = None,
         locale: str | None = None,
@@ -618,12 +625,12 @@ class ScraplingMCPServer:
         useragent: Optional[str] = None,
         cdp_url: Optional[str] = None,
         executable_path: Optional[str] = None,
-        timeout: int | float = 30000,
-        disable_resources: bool = False,
+        timeout: int | float | None = None,
+        disable_resources: bool | None = None,
         wait_selector: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
-        network_idle: bool = False,
-        wait_selector_state: SelectorWaitStates = "attached",
+        network_idle: bool | None = None,
+        wait_selector_state: Optional[SelectorWaitStates] = None,
         session_id: Optional[str] = None,
     ) -> List[ResponseModel]:
         """Use playwright to open a browser, then fetch a group of URLs at the same time, and for each page return a structured output of the result.
@@ -652,32 +659,26 @@ class ScraplingMCPServer:
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
+        :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one, and every option you leave out here keeps the value the session was opened with.
         """
+        fetch_params = _supplied_params(
+            wait=wait,
+            timeout=timeout,
+            google_search=google_search,
+            extra_headers=extra_headers,
+            disable_resources=disable_resources,
+            wait_selector=wait_selector,
+            wait_selector_state=wait_selector_state,
+            network_idle=network_idle,
+        )
         if session_id:
             entry = self._get_session(session_id, "dynamic")
-            tasks = [
-                entry.session.fetch(
-                    url,
-                    wait=wait,
-                    timeout=timeout,
-                    google_search=google_search,
-                    extra_headers=extra_headers,
-                    disable_resources=disable_resources,
-                    wait_selector=wait_selector,
-                    wait_selector_state=wait_selector_state,
-                    network_idle=network_idle,
-                    proxy=proxy,
-                )
-                for url in urls
-            ]
+            tasks = [entry.session.fetch(url, proxy=proxy, **fetch_params) for url in urls]
             responses = await gather(*tasks)
         else:
             async with AsyncDynamicSession(
-                wait=wait,
                 proxy=proxy,
                 locale=locale,
-                timeout=timeout,
                 cookies=cookies,
                 cdp_url=cdp_url,
                 headless=headless,
@@ -686,13 +687,8 @@ class ScraplingMCPServer:
                 useragent=useragent,
                 timezone_id=timezone_id,
                 real_chrome=real_chrome,
-                network_idle=network_idle,
-                wait_selector=wait_selector,
-                google_search=google_search,
-                extra_headers=extra_headers,
                 executable_path=self._resolve_executable_path(executable_path),
-                disable_resources=disable_resources,
-                wait_selector_state=wait_selector_state,
+                **fetch_params,
             ) as session:
                 tasks = [session.fetch(url) for url in urls]
                 responses = await gather(*tasks)
@@ -706,9 +702,9 @@ class ScraplingMCPServer:
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
         headless: bool = True,  # noqa: F821
-        google_search: bool = True,
+        google_search: bool | None = None,
         real_chrome: bool = False,
-        wait: int | float = 0,
+        wait: int | float | None = None,
         proxy: Optional[str | Dict[str, str]] = None,
         timezone_id: str | None = None,
         locale: str | None = None,
@@ -717,15 +713,15 @@ class ScraplingMCPServer:
         hide_canvas: bool = False,
         cdp_url: Optional[str] = None,
         executable_path: Optional[str] = None,
-        timeout: int | float = 30000,
-        disable_resources: bool = False,
+        timeout: int | float | None = None,
+        disable_resources: bool | None = None,
         wait_selector: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
-        network_idle: bool = False,
-        wait_selector_state: SelectorWaitStates = "attached",
+        network_idle: bool | None = None,
+        wait_selector_state: Optional[SelectorWaitStates] = None,
         block_webrtc: bool = False,
         allow_webgl: bool = True,
-        solve_cloudflare: bool = False,
+        solve_cloudflare: bool | None = None,
         additional_args: Optional[Dict] = None,
         session_id: Optional[str] = None,
     ) -> ResponseModel:
@@ -760,7 +756,7 @@ class ScraplingMCPServer:
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
-        :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
+        :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one, and every option you leave out here keeps the value the session was opened with.
         """
         results = await self.bulk_stealthy_fetch(
             urls=[url],
@@ -800,9 +796,9 @@ class ScraplingMCPServer:
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
         headless: bool = True,  # noqa: F821
-        google_search: bool = True,
+        google_search: bool | None = None,
         real_chrome: bool = False,
-        wait: int | float = 0,
+        wait: int | float | None = None,
         proxy: Optional[str | Dict[str, str]] = None,
         timezone_id: str | None = None,
         locale: str | None = None,
@@ -811,15 +807,15 @@ class ScraplingMCPServer:
         hide_canvas: bool = False,
         cdp_url: Optional[str] = None,
         executable_path: Optional[str] = None,
-        timeout: int | float = 30000,
-        disable_resources: bool = False,
+        timeout: int | float | None = None,
+        disable_resources: bool | None = None,
         wait_selector: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
-        network_idle: bool = False,
-        wait_selector_state: SelectorWaitStates = "attached",
+        network_idle: bool | None = None,
+        wait_selector_state: Optional[SelectorWaitStates] = None,
         block_webrtc: bool = False,
         allow_webgl: bool = True,
-        solve_cloudflare: bool = False,
+        solve_cloudflare: bool | None = None,
         additional_args: Optional[Dict] = None,
         session_id: Optional[str] = None,
     ) -> List[ResponseModel]:
@@ -854,34 +850,28 @@ class ScraplingMCPServer:
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
-        :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one.
+        :param session_id: Optional session ID from open_session. If provided, reuses the existing browser session instead of creating a new one, and every option you leave out here keeps the value the session was opened with.
         """
+        fetch_params = _supplied_params(
+            wait=wait,
+            timeout=timeout,
+            google_search=google_search,
+            extra_headers=extra_headers,
+            disable_resources=disable_resources,
+            wait_selector=wait_selector,
+            wait_selector_state=wait_selector_state,
+            network_idle=network_idle,
+            solve_cloudflare=solve_cloudflare,
+        )
         if session_id:
             entry = self._get_session(session_id, "stealthy")
-            tasks = [
-                entry.session.fetch(
-                    url,
-                    wait=wait,
-                    timeout=timeout,
-                    google_search=google_search,
-                    extra_headers=extra_headers,
-                    disable_resources=disable_resources,
-                    wait_selector=wait_selector,
-                    wait_selector_state=wait_selector_state,
-                    network_idle=network_idle,
-                    proxy=proxy,
-                    solve_cloudflare=solve_cloudflare,
-                )
-                for url in urls
-            ]
+            tasks = [entry.session.fetch(url, proxy=proxy, **fetch_params) for url in urls]
             responses = await gather(*tasks)
         else:
             async with AsyncStealthySession(
-                wait=wait,
                 proxy=proxy,
                 locale=locale,
                 cdp_url=cdp_url,
-                timeout=timeout,
                 cookies=cookies,
                 headless=headless,
                 block_ads=True,
@@ -891,16 +881,10 @@ class ScraplingMCPServer:
                 real_chrome=real_chrome,
                 hide_canvas=hide_canvas,
                 allow_webgl=allow_webgl,
-                network_idle=network_idle,
                 block_webrtc=block_webrtc,
-                wait_selector=wait_selector,
-                google_search=google_search,
-                extra_headers=extra_headers,
                 executable_path=self._resolve_executable_path(executable_path),
                 additional_args=additional_args,
-                solve_cloudflare=solve_cloudflare,
-                disable_resources=disable_resources,
-                wait_selector_state=wait_selector_state,
+                **fetch_params,
             ) as session:
                 tasks = [session.fetch(url) for url in urls]
                 responses = await gather(*tasks)
@@ -940,7 +924,7 @@ class ScraplingMCPServer:
 5. For all fetch tools, `main_content_only` is enabled by default and returns only the content inside the page's `<body>` tag. Pass `main_content_only=False` when you need the full page instead.
 6. If the task consists of multiple requests to the same website, open a session to be more efficient.
 7. For browser-based tools, if a `session_id` is provided (from open_session), the browser session will be reused instead of creating a new one.
-    When using a session, browser-level params (headless, proxy, locale, etc.) are ignored since they were set at session creation time.
+    When using a session, browser-level params (headless, locale, useragent, etc.) are ignored since they were set at session creation time, and any per-request param you leave out keeps the value the session was opened with.
 8. If you are making multiple requests, use the bulk version of the tool to be more efficient.
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
 10. The user can pass a CDP URL to connect to a remote browser session through the `open_session` tool, then use it in the rest of the tools.
