@@ -60,3 +60,28 @@ class TestFetcherSession:
 
             proxies_used = [call.kwargs["proxy"] for call in mocked_request.call_args_list]
             assert proxies_used == ["http://p1:8080", "http://p2:8080"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("retries", [0, -1, None])
+    async def test_retries_below_one_still_sends_the_request(self, retries):
+        """A session-level retries below 1 must still send the request once instead of skipping it"""
+        async with AsyncFetcherSession(retries=retries, retry_delay=0) as session:
+            with (
+                patch.object(session._async_curl_session, "request", new=AsyncMock()) as mocked_request,
+                patch("scrapling.engines.static.ResponseFactory.from_http_request", return_value=MagicMock()),
+            ):
+                await session.get("http://example.com")
+
+            assert mocked_request.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_per_request_retries_below_one_still_sends_the_request(self):
+        """A per-request retries of 0 must override the session default without skipping the request"""
+        async with AsyncFetcherSession(retries=3, retry_delay=0) as session:
+            with (
+                patch.object(session._async_curl_session, "request", new=AsyncMock()) as mocked_request,
+                patch("scrapling.engines.static.ResponseFactory.from_http_request", return_value=MagicMock()),
+            ):
+                await session.get("http://example.com", retries=0)
+
+            assert mocked_request.call_count == 1

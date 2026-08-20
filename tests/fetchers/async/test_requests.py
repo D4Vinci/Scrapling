@@ -160,3 +160,8 @@ class TestAsyncFetcher:
         )
         assert response._storage is not None
         assert response.url == "from-request.test"
+
+    async def test_retries_below_one_still_performs_the_request(self, fetcher, urls):
+        """``retries`` below 1 means "send the request once", not "send nothing"."""
+        assert (await fetcher.get(urls["status_200"], retries=0)).status == 200
+        assert (await fetcher.get(urls["status_200"], retries=-1)).status == 200
