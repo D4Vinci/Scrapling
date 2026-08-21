@@ -60,7 +60,7 @@ def _typed_dict_keys(typed_dict: Any) -> frozenset:
     return frozenset(typed_dict.__required_keys__ | typed_dict.__optional_keys__)
 
 
-_EXCLUDED_FETCH_KEYS = frozenset({"page_action", "page_setup", "selector_config"})
+_EXCLUDED_FETCH_KEYS = frozenset({"page_action", "page_setup", "selector_config", "proxy"})
 _PLAYWRIGHT_FETCH_KEYS = _typed_dict_keys(PlaywrightFetchParams) - _EXCLUDED_FETCH_KEYS
 _STEALTH_FETCH_KEYS = _typed_dict_keys(StealthFetchParams) - _EXCLUDED_FETCH_KEYS
 
@@ -208,6 +208,7 @@ class ScraplingMCPServer:
         timezone_id: str | None = None,
         locale: str | None = None,
         useragent: Optional[str] = None,
+        proxy: Optional[str | Dict[str, str]] = None,
         cdp_url: Optional[str] = None,
         executable_path: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
@@ -228,6 +229,7 @@ class ScraplingMCPServer:
         :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
         :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
+        :param proxy: The proxy used for every request in this session, as a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this session.
         :param cookies: Set cookies for the session. It should be in a dictionary format that Playwright accepts.
@@ -243,6 +245,7 @@ class ScraplingMCPServer:
             )
 
         common_kwargs: Dict[str, Any] = dict(
+            proxy=proxy,
             locale=locale,
             cookies=cookies,
             cdp_url=cdp_url,
@@ -872,7 +875,6 @@ class ScraplingMCPServer:
         wait_selector_state: SelectorWaitStates = "attached",
         extra_headers: Optional[Dict[str, str]] = None,
         blocked_domains: Optional[Set[str]] = None,
-        proxy: Optional[str | Dict[str, str]] = None,
         solve_cloudflare: bool = False,
     ) -> ResponseModel:
         """Fetch a URL through a browser session previously opened with `open_session` and return a structured output of the result.
@@ -894,7 +896,6 @@ class ScraplingMCPServer:
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param blocked_domains: A list of domain names to block requests to for this request. Subdomains are also matched.
-        :param proxy: The proxy to be used with this request, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
         :param solve_cloudflare: (Stealthy sessions only) Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response.
         """
         entry = self._get_session(session_id, expected_type=None)
@@ -916,7 +917,6 @@ class ScraplingMCPServer:
             wait_selector_state=wait_selector_state,
             extra_headers=extra_headers,
             blocked_domains=blocked_domains,
-            proxy=proxy,
             solve_cloudflare=solve_cloudflare,
         )
         page = await entry.session.fetch(

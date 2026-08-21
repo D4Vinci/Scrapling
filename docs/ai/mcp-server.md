@@ -60,7 +60,8 @@ Since version 0.4.15, the MCP server is reworked. If you are upgrading, note:
 
 1. **The Streamable HTTP transport now requires authentication and binds to localhost.** `scrapling-mcp --http` on its own refuses to start; pass `--auth-token` (or the `SCRAPLING_MCP_AUTH_TOKEN` environment variable), or `--no-auth` to serve it unauthenticated on purpose. The default host is now `127.0.0.1` instead of `0.0.0.0`; pass `--host 0.0.0.0` to accept connections from the network.
 2. **The one-shot fetch tools no longer accept `session_id`.** `fetch`, `bulk_fetch`, `stealthy_fetch`, and `bulk_stealthy_fetch` always launch their own browser. To fetch through a session, use the new **`session_fetch`** tool (one URL per call, works with dynamic and stealthy sessions).
-3. **`open_session` takes browser-level parameters only.** The per-request options (`wait`, `timeout`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `proxy`, `solve_cloudflare`) moved to `session_fetch` and are supplied on each call. `max_pages` was removed too, since a session manages a single page per call now.
+3. **`open_session` takes browser-level parameters only.** The per-request options (`wait`, `timeout`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `solve_cloudflare`) moved to `session_fetch` and are supplied on each call. `proxy` stays on `open_session` (it applies to the whole session, which runs a single tab). `max_pages` was removed too, since a session manages a single page per call now.
+4. **The `get` tool is renamed to `make_request`.** It now takes a `method` parameter and supports GET (default), POST, PUT, and DELETE, with `data`/`json` for request bodies. `bulk_get` is unchanged.
 
 ## Installation
 
