@@ -87,12 +87,12 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingjuly" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingaugust" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingjuly" target="_blank">NodeMaven</a> - 시장에서 가장 높은 품질의 IP를 제공하는 신뢰할 수 있는 프록시 제공업체입니다. 프로모 코드 SCRAPLING35를 사용하면 프록시 35% 할인을 받을 수 있습니다.
+    <a href="https://go.nodemaven.com/scraplingaugust" target="_blank">NodeMaven</a> - 웹 스크래핑과 자동화를 위한 가장 효율적인 프록시 제공업체로, 시장에서 가장 높은 품질의 IP를 제공합니다. 코드 SCRAPLING35를 사용하면 35% 할인을 받을 수 있습니다.
     </td>
   </tr>
   <tr>
@@ -217,6 +217,7 @@ MySpider().start()
 <!-- sponsors -->
 
 <a href="https://www.novada.com/?d4vinci-scrapling" target="_blank" title="The All-in-One Solution for Every Data Scraping Scenario"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/novada.jpg"></a>
+<a href="https://cloro.dev/?utm_source=referral&utm_medium=scrapling" target="_blank" title="The search API for the AI era"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/cloro.jpg"></a>
 
 <br/>
 
