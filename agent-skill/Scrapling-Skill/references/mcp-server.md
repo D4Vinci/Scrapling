@@ -6,15 +6,18 @@ All scraping tools return a `ResponseModel` with fields: `status` (int), `conten
 
 ## One-shot tools
 
-### `get` -- HTTP request (single URL)
+### `make_request` -- HTTP request, any method (single URL)
 
-Fast HTTP GET with browser fingerprint impersonation (TLS, headers). Suitable for static pages with no/low bot protection.
+Fast HTTP request with browser fingerprint impersonation (TLS, headers). Supports GET (default), POST, PUT, and DELETE via the `method` parameter. Suitable for static pages with no/low bot protection.
 
 **Key parameters:**
 
 | Parameter           | Type                               | Default      | Description                                                        |
 |---------------------|------------------------------------|--------------|--------------------------------------------------------------------|
 | `url`               | str                                | required     | URL to fetch                                                       |
+| `method`            | `"GET"` / `"POST"` / `"PUT"` / `"DELETE"` | `"GET"` | HTTP method                                                    |
+| `data`              | dict or str or null                | null         | Request body (form data). POST/PUT/DELETE only                    |
+| `json`              | dict or list or null               | null         | Request body (JSON). POST/PUT/DELETE only                         |
 | `extraction_type`   | `"markdown"` / `"html"` / `"text"` | `"markdown"` | Output format                                                      |
 | `css_selector`      | str or null                        | null         | CSS selector to narrow content (applied after `main_content_only`) |
 | `main_content_only` | bool                               | true         | Restrict to `<body>` content                                       |
@@ -34,9 +37,9 @@ Fast HTTP GET with browser fingerprint impersonation (TLS, headers). Suitable fo
 | `params`            | dict or null                       | null         | Query string parameters                                            |
 | `verify`            | bool                               | true         | Verify HTTPS certificates                                          |
 
-### `bulk_get` -- HTTP request (multiple URLs)
+### `bulk_get` -- HTTP GET request (multiple URLs)
 
-Async concurrent version of `get`. Same parameters except `url` is replaced by `urls` (list of strings). All URLs are fetched in parallel. Returns a list of `ResponseModel`.
+Async concurrent GET-only version of `make_request`. Same parameters except `url` is replaced by `urls` (list of strings) and there are no `method`/`data`/`json` parameters. All URLs are fetched in parallel. Returns a list of `ResponseModel`.
 
 ### `fetch` -- Browser fetch (single URL)
 
@@ -110,7 +113,7 @@ Opens a browser session that stays alive across multiple `session_fetch` calls, 
 | `block_webrtc`     | bool                        | false        | (Stealthy only) Block WebRTC IP leak                                                                  |
 | `allow_webgl`      | bool                        | true         | (Stealthy only) Keep WebGL enabled                                                                    |
 
-Plus the other browser-level session parameters (`real_chrome`, `cdp_url`, `locale`, `timezone_id`, `useragent`, `cookies`, `executable_path`, `additional_args`). Per-request options (`timeout`, `wait`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `proxy`, `solve_cloudflare`) are not set here; pass them to `session_fetch`.
+Plus the other browser-level session parameters (`proxy`, `real_chrome`, `cdp_url`, `locale`, `timezone_id`, `useragent`, `cookies`, `executable_path`, `additional_args`). Per-request options (`timeout`, `wait`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `solve_cloudflare`) are not set here; pass them to `session_fetch`.
 
 One `session_fetch` works with either session type; `solve_cloudflare` only applies to a stealthy session.
 
@@ -135,7 +138,6 @@ Fetches one URL through a session opened with `open_session` (dynamic or stealth
 | `wait_selector_state` | str                 | `"attached"` | State for wait_selector: `"attached"` / `"visible"` / `"hidden"` / `"detached"` |
 | `extra_headers`       | dict or null        | null         | Additional request headers                                                      |
 | `blocked_domains`     | list or null        | null         | Domain names to block for this request (subdomains matched too)                 |
-| `proxy`               | str or dict or null | null         | Proxy for this request                                                          |
 | `solve_cloudflare`    | bool                | false        | (Stealthy sessions only) Auto-solve Cloudflare challenges; errors on a dynamic session |
 
 ### `close_session` -- Close a persistent browser session
@@ -177,8 +179,8 @@ Requires an open browser session. Call `open_session` first, then pass the `sess
 
 | Scenario                                 | Tool                                                          |
 |------------------------------------------|---------------------------------------------------------------|
-| Static page, no bot protection           | `get`                                                         |
-| Multiple static pages                    | `bulk_get`                                                    |
+| Static page, no bot protection           | `make_request`                                               |
+| Multiple static pages                    | `bulk_get`                                                   |
 | JavaScript-rendered / SPA page           | `fetch`                                                       |
 | Multiple JS-rendered pages               | `bulk_fetch`                                                  |
 | Cloudflare or strong anti-bot protection | `stealthy_fetch` (with `solve_cloudflare=true` for Turnstile) |
@@ -186,7 +188,7 @@ Requires an open browser session. Call `open_session` first, then pass the `sess
 | Multiple pages from the same site        | `open_session` + `session_fetch` per page                    |
 | Need a screenshot of a page              | `open_session` + `screenshot` with `session_id`              |
 
-Start with `get` (fastest, lowest resource cost). Escalate to `fetch` if content requires JS rendering. Escalate to `stealthy_fetch` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
+Start with `make_request` (fastest, lowest resource cost). Escalate to `fetch` if content requires JS rendering. Escalate to `stealthy_fetch` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
 
 ## Content extraction tips
 

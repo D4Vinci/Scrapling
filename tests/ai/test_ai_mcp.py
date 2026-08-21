@@ -34,7 +34,7 @@ from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession
 
 
 def test_translate_response_strips_control_characters():
-    """Pages with control chars like U+0008 must not crash the get/fetch path (issue #366)"""
+    """Pages with control chars like U+0008 must not crash the request/fetch path (issue #366)"""
     html = "<html><body><p>Hello\x08World</p>\t\n<div>Foo\x0cbar</div></body></html>"
     page = Response(
         url="https://jfinal.com/doc/1-5",
@@ -126,12 +126,21 @@ class TestMCPServer:
         return ScraplingMCPServer()
 
     @pytest.mark.asyncio
-    async def test_get_tool(self, server, test_url):
-        """Test the get tool method"""
-        result = await server.get(url=test_url, extraction_type="markdown")
+    async def test_make_request_tool(self, server, test_url):
+        """Test the make_request tool method with a default GET"""
+        result = await server.make_request(url=test_url, extraction_type="markdown")
         assert isinstance(result, ResponseModel)
         assert result.status == 200
         assert result.url == test_url
+
+    @pytest.mark.asyncio
+    async def test_make_request_post_tool(self, server, httpbin):
+        """Test the make_request tool method with a POST body"""
+        result = await server.make_request(
+            url=f"{httpbin.url}/post", method="POST", json={"key": "value"}, extraction_type="text"
+        )
+        assert isinstance(result, ResponseModel)
+        assert result.status == 200
 
     @pytest.mark.asyncio
     async def test_bulk_get_tool(self, server, test_url):
@@ -422,9 +431,9 @@ class TestSessionFetchForwarding:
             "wait_selector_state": "attached",
             "extra_headers": None,
             "blocked_domains": None,
-            "proxy": None,
         }, forwarded
         assert "solve_cloudflare" not in forwarded, "solve_cloudflare must not reach a dynamic session"
+        assert "proxy" not in forwarded, "proxy is session-level (open_session), never forwarded per request"
 
     @pytest.mark.asyncio
     async def test_stealthy_session_fetch_forwards_solve_cloudflare(self, monkeypatch):
@@ -514,6 +523,23 @@ class TestModeSplitContract:
         assert params.isdisjoint(_STEALTH_FETCH_KEYS), (
             f"open_session still carries per-request params: {params & set(_STEALTH_FETCH_KEYS)}"
         )
+
+    def test_proxy_is_session_level_not_per_request(self):
+        """A session runs one tab, so proxy is set once on open_session, never per request"""
+        assert "proxy" in inspect.signature(ScraplingMCPServer.open_session).parameters
+        assert "proxy" not in inspect.signature(ScraplingMCPServer.session_fetch).parameters
+        assert "proxy" not in _STEALTH_FETCH_KEYS
+
+    @pytest.mark.asyncio
+    async def test_open_session_forwards_proxy_to_the_session(self, monkeypatch):
+        """The session-level proxy reaches the underlying session so it applies to every fetch"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        _FakeDynamicSession.instances = []
+        server = ScraplingMCPServer()
+
+        await server.open_session(session_type="dynamic", proxy="http://user:pass@host:8080")
+
+        assert _FakeDynamicSession.instances[0].kwargs["proxy"] == "http://user:pass@host:8080"
 
 
 class TestSessionSettingsReceipt:
@@ -822,6 +848,11 @@ class TestServerToolRegistration:
             assert props["timeout"]["default"] == 30000, f"{name} hides the real timeout default"
             assert props["google_search"]["default"] is True
 
+        request_props = tools["make_request"].input_schema["properties"]
+        assert request_props["method"]["default"] == "GET"
+        assert "data" in request_props and "json" in request_props
+        assert "method" not in tools["bulk_get"].input_schema["properties"]
+
         session_props = tools["session_fetch"].input_schema["properties"]
         assert session_props["timeout"]["default"] == 30000
         assert "solve_cloudflare" in session_props
@@ -849,7 +880,7 @@ class TestServerToolRegistration:
         annotations = {tool.name: tool.annotations for tool in result.tools if tool.annotations is not None}
         assert len(annotations) == 11
         for name in (
-            "get",
+            "make_request",
             "bulk_get",
             "fetch",
             "bulk_fetch",

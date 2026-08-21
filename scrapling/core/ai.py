@@ -40,6 +40,7 @@ from scrapling.core._types import (
     extraction_types,
     SelectorWaitStates,
     FollowRedirects,
+    SUPPORTED_HTTP_METHODS,
 )
 
 SessionType = Literal["dynamic", "stealthy"]
@@ -378,13 +379,16 @@ class ScraplingMCPServer:
         return [image, TextContent(type="text", text=captured["url"])]
 
     @staticmethod
-    async def get(
+    async def make_request(
         url: str,
+        method: SUPPORTED_HTTP_METHODS = "GET",
         impersonate: ImpersonateType = "chrome",
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
         params: Optional[Dict] = None,
+        data: Optional[Dict[str, str] | str] = None,
+        json: Optional[Dict | List] = None,
         headers: Optional[Mapping[str, Optional[str]]] = None,
         cookies: Optional[Dict[str, str]] = None,
         timeout: Optional[int | float] = 30,
@@ -399,15 +403,18 @@ class ScraplingMCPServer:
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
     ) -> ResponseModel:
-        """Make GET HTTP request to a URL and return a structured output of the result.
+        """Make an HTTP request to a URL with any method (GET, POST, PUT, DELETE) and return a structured output of the result.
         Only suitable for low-mid protection levels.
 
         :param url: The URL to request.
+        :param method: The HTTP method to use: "GET" (default), "POST", "PUT", or "DELETE".
         :param impersonate: Browser version to impersonate its fingerprint. It's using the latest chrome version by default.
         :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
         :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
         :param params: Query string parameters for the request.
+        :param data: Form data for the request body. Used with "POST", "PUT", and "DELETE" only.
+        :param json: A JSON-serializable object for the request body. Used with "POST", "PUT", and "DELETE" only.
         :param headers: Headers to include in the request.
         :param cookies: Cookies to use in the request.
         :param timeout: Number of seconds to wait before timing out.
@@ -424,28 +431,32 @@ class ScraplingMCPServer:
         :param http3: Whether to use HTTP3. It might be problematic if used it with `impersonate`.
         :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
         """
-        results = await ScraplingMCPServer.bulk_get(
-            urls=[url],
-            impersonate=impersonate,
-            extraction_type=extraction_type,
-            css_selector=css_selector,
-            main_content_only=main_content_only,
+        normalized_proxy_auth = _normalize_credentials(proxy_auth)
+        normalized_auth = _normalize_credentials(auth)
+
+        request_kwargs: Dict[str, Any] = dict(
+            auth=normalized_auth,
+            proxy=proxy,
+            http3=http3,
+            verify=verify,
             params=params,
             headers=headers,
             cookies=cookies,
             timeout=timeout,
-            follow_redirects=follow_redirects,
-            max_redirects=max_redirects,
             retries=retries,
+            proxy_auth=normalized_proxy_auth,
             retry_delay=retry_delay,
-            proxy=proxy,
-            proxy_auth=proxy_auth,
-            auth=auth,
-            verify=verify,
-            http3=http3,
+            impersonate=impersonate,
+            max_redirects=max_redirects,
+            follow_redirects=follow_redirects,
             stealthy_headers=stealthy_headers,
         )
-        return results[0]
+        if method != "GET":
+            request_kwargs.update(data=data, json=json)
+
+        async with FetcherSession() as session:
+            page = await getattr(session, method.lower())(url, **request_kwargs)
+            return _translate_response(page, extraction_type, css_selector, main_content_only)
 
     @staticmethod
     async def bulk_get(
@@ -950,7 +961,7 @@ class ScraplingMCPServer:
             "cache_hints": {"tools/list": CacheHint(ttl_ms=3_600_000, scope="public")},
             "instructions": """Follow these instructions precisely:
 1. When the `open_session` tool is used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions or their effective settings.
-2. If the user didn't specify which tool to use, start with the `get` tool, then escalate. The `get` tool and the bulk version are suitable only for low-to-mid protection levels.
+2. If the user didn't specify which tool to use, start with the `make_request` tool (a plain HTTP request, defaulting to GET; set `method` for POST/PUT/DELETE), then escalate. The `make_request` tool and `bulk_get` (its GET-only bulk version) are suitable only for low-to-mid protection levels.
     For high-protection levels or websites that require JS loading, use the other tools directly.
 3. For all tools, if the `css_selector` resolves to more than one element, all the elements will be returned.
 4. For all fetch tools, the `extraction_type` parameter controls the format of the returned content: "markdown" (default) converts the page content to Markdown, "html" returns the raw HTML, and "text" returns the text content of the page.
@@ -981,9 +992,9 @@ class ScraplingMCPServer:
         )
         # HTTP tools
         server.add_tool(
-            self.get,
-            title="get",
-            description=self.get.__doc__,
+            self.make_request,
+            title="make_request",
+            description=self.make_request.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )

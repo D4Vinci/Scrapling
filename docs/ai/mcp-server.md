@@ -11,8 +11,8 @@ The Scrapling MCP Server provides eleven powerful tools for web scraping, split 
 ### One-shot tools
 
 #### 🚀 Basic HTTP Scraping
-- **`get`**: Fast HTTP requests with browser fingerprint impersonation, generating real browser headers matching the TLS version, HTTP/3, and more!
-- **`bulk_get`**: An async version of the above tool that allows scraping of multiple URLs at the same time!
+- **`make_request`**: Fast HTTP requests with any method (GET, POST, PUT, DELETE) and browser fingerprint impersonation, generating real browser headers matching the TLS version, HTTP/3, and more!
+- **`bulk_get`**: An async GET-only version of the above tool that allows scraping of multiple URLs at the same time!
 
 #### 🌐 Dynamic Content Scraping
 - **`fetch`**: Rapidly fetch dynamic content with Chromium/Chrome browser with complete control over the request/browser, and more!
@@ -290,7 +290,7 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
     Scrape the main content from https://example.com and convert it to markdown format.
     ```
     
-    Claude will use the `get` tool to fetch the page and return clean, readable content. If it fails, it will continue retrying every second for 3 attempts, unless you instruct it otherwise. If it fails to retrieve content for any reason, such as protection or if it's a dynamic website, it will automatically try the other tools. If Claude didn't do that automatically for some reason, you can add that to the prompt.
+    Claude will use the `make_request` tool to fetch the page and return clean, readable content. If it fails, it will continue retrying every second for 3 attempts, unless you instruct it otherwise. If it fails to retrieve content for any reason, such as protection or if it's a dynamic website, it will automatically try the other tools. If Claude didn't do that automatically for some reason, you can add that to the prompt.
     
     A more optimized version of the same prompt would be:
     ```
@@ -404,7 +404,7 @@ And so on, you get the idea. Your creativity is the key here.
 Here is some technical advice for you.
 
 ### 1. Choose the Right Tool
-- **`get`**: Fast, simple websites
+- **`make_request`**: Fast, simple websites
 - **`fetch`**: Sites with JavaScript/dynamic content  
 - **`stealthy_fetch`**: Protected sites, Cloudflare, anti-bot systems
 
