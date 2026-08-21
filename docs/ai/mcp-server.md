@@ -6,27 +6,34 @@ The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful W
 
 ## Features
 
-The Scrapling MCP Server provides ten powerful tools for web scraping:
+The Scrapling MCP Server provides eleven powerful tools for web scraping, split into two modes: one-shot tools that each launch and close their own browser, and session tools that open a browser once and then work through it.
 
-### 🚀 Basic HTTP Scraping
+### One-shot tools
+
+#### 🚀 Basic HTTP Scraping
 - **`get`**: Fast HTTP requests with browser fingerprint impersonation, generating real browser headers matching the TLS version, HTTP/3, and more!
 - **`bulk_get`**: An async version of the above tool that allows scraping of multiple URLs at the same time!
 
-### 🌐 Dynamic Content Scraping
+#### 🌐 Dynamic Content Scraping
 - **`fetch`**: Rapidly fetch dynamic content with Chromium/Chrome browser with complete control over the request/browser, and more!
 - **`bulk_fetch`**: An async version of the above tool that allows scraping of multiple URLs in different browser tabs at the same time!
 
-### 🔒 Stealth Scraping
+#### 🔒 Stealth Scraping
 - **`stealthy_fetch`**: Uses our Stealthy browser to bypass Cloudflare Turnstile/Interstitial and other anti-bot systems with complete control over the request/browser!
 - **`bulk_stealthy_fetch`**: An async version of the above tool that allows stealth scraping of multiple URLs in different browser tabs at the same time!
 
-### 📸 Screenshots
-- **`screenshot`**: Capture a PNG or JPEG screenshot of a page using an open browser session, returned as an image content block the model can actually see (not a base64 string blob). Supports full-page captures, JPEG quality, and the usual readiness controls (`wait`, `wait_selector`, `network_idle`).
+### Session tools
 
-### 🔌 Session Management
-- **`open_session`**: Create a persistent browser session (dynamic or stealthy) that stays open across multiple fetch calls, avoiding the overhead of launching a new browser each time.
+#### 🔌 Session Management
+- **`open_session`**: Create a persistent browser session (dynamic or stealthy) that stays open across multiple `session_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns the session's effective `settings` for the AI agent (empty for CDP sessions).
 - **`close_session`**: Close a persistent browser session and free its resources.
-- **`list_sessions`**: List all active browser sessions with their details.
+- **`list_sessions`**: List all active browser sessions with their details and `settings`.
+
+#### 🎯 Fetching Through a Session
+- **`session_fetch`**: Fetch a single URL through an open session (dynamic or stealthy), carrying the per-request options for that call. This is the session counterpart of `fetch`/`stealthy_fetch`.
+
+#### 📸 Screenshots
+- **`screenshot`**: Capture a PNG or JPEG screenshot of a page using an open browser session, returned as an image content block the model can actually see (not a base64 string blob). Supports full-page captures, JPEG quality, and the usual readiness controls (`wait`, `wait_selector`, `network_idle`).
 
 ### Key Capabilities
 - **Smart Content Extraction**: Convert web pages/elements to Markdown, HTML, or extract a clean version of the text content
@@ -46,6 +53,14 @@ Aside from its stealth capabilities and ability to bypass Cloudflare Turnstile/I
 The way other servers work is that they extract the content, then pass it all to the AI to extract the fields you want. This causes the AI to consume far more tokens than needed (from irrelevant content). Scrapling solves this problem by allowing you to pass a CSS selector to narrow down the content you want before passing it to the AI, which makes the whole process much faster and more efficient.
 
 If you don't know how to write/use CSS selectors, don't worry. You can tell the AI in the prompt to write selectors to match possible fields for you and watch it try different combinations until it finds the right one, as we will show in the examples section.
+
+## Breaking changes
+
+Since version 0.4.15, the MCP server is reworked. If you are upgrading, note:
+
+1. **The Streamable HTTP transport now requires authentication and binds to localhost.** `scrapling-mcp --http` on its own refuses to start; pass `--auth-token` (or the `SCRAPLING_MCP_AUTH_TOKEN` environment variable), or `--no-auth` to serve it unauthenticated on purpose. The default host is now `127.0.0.1` instead of `0.0.0.0`; pass `--host 0.0.0.0` to accept connections from the network.
+2. **The one-shot fetch tools no longer accept `session_id`.** `fetch`, `bulk_fetch`, `stealthy_fetch`, and `bulk_stealthy_fetch` always launch their own browser. To fetch through a session, use the new **`session_fetch`** tool (one URL per call, works with dynamic and stealthy sessions).
+3. **`open_session` takes browser-level parameters only.** The per-request options (`wait`, `timeout`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `proxy`, `solve_cloudflare`) moved to `session_fetch` and are supplied on each call. `max_pages` was removed too, since a session manages a single page per call now.
 
 ## Installation
 
@@ -182,7 +197,7 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with the fetch and screenshot tools as usual.
+Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `session_fetch` and `screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline
@@ -357,9 +372,9 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
 
     When scraping multiple pages from the same site, use a persistent browser session to avoid the overhead of launching a new browser for each request:
     ```
-    Open a stealthy browser session with 5 pages maximum pool, then use it to scrape the main details in bulk from the first 5 product pages on https://shop.example.com. Close the session when you're done.
+    Open a stealthy browser session, then use it to scrape the main details from the first 5 product pages on https://shop.example.com. Close the session when you're done.
     ```
-    Claude will use `open_session` to create a persistent browser, pass the `session_id` to `bulk_stealthy_fetch` call while opening all pages at the same time, and then call `close_session` at the end. This is significantly faster than launching a new browser for each page.
+    Claude will use `open_session` to create a persistent browser, call `session_fetch` for each product page through that session, and then call `close_session` at the end. This is significantly faster than launching a new browser for each page.
 
     !!! danger
     
@@ -419,11 +434,12 @@ The MCP server automatically sanitizes scraped content when `main_content_only` 
 This protection runs automatically on all MCP tool responses. Keep `main_content_only=true` (the default) for maximum protection.
 
 ### 6. Use Sessions for Multiple Requests
-- Use `open_session` to create a persistent browser session when scraping multiple pages
-- Pass the `session_id` to `fetch` or `stealthy_fetch` calls to reuse the same browser
+- Use `open_session` to create a persistent browser session when scraping multiple pages, then call `session_fetch` for each page through that session
+- `open_session` holds the browser-level configuration (headless, locale, cookies, stealth toggles, etc.); the per-request options (timeout, wait_selector, network_idle, solve_cloudflare, etc.) are passed to `session_fetch` on each call, with their defaults shown in the tool schema
+- One `session_fetch` works with both session types; `solve_cloudflare` only applies to a stealthy session and raises a clear error on a dynamic one
+- The one-shot tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) never take a session; they always launch and close their own browser
 - Always close sessions with `close_session` when done to free resources
-- Use `list_sessions` to check which sessions are still active
-- A `session_id` from a dynamic session can only be used with `fetch`/`bulk_fetch`, and a stealthy session can only be used with `stealthy_fetch`/`bulk_stealthy_fetch`
+- Use `list_sessions` to check which sessions are still active and see the `settings` each was created with (returned for the AI agent; empty for CDP sessions)
 - Pass a custom `session_id` to `open_session` to give sessions meaningful names (e.g. `"search"`, `"checkout"`) instead of the random hex default. `open_session` raises if the chosen ID is already in use, so you can detect collisions up front
 
 ### 7. Capturing Screenshots
