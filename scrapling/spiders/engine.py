@@ -200,6 +200,8 @@ class CrawlerEngine:
             cached = await self._cache_manager.get(request._fp)
             if cached is not None:
                 cached.request = request
+                # Cached responses are rebuilt without meta, so merge the request's in as the live path does
+                cached.meta = {**request.meta, **cached.meta}
                 self.stats.cache_hits += 1
                 self.stats.increment_requests_count(request.sid or self.session_manager.default_session_id)
                 self.stats.increment_response_bytes(request.domain, len(cached.body))

@@ -34,7 +34,6 @@ def _make_response(
 
 
 class TestResponseCacheManager:
-
     @pytest.mark.anyio
     async def test_put_get_roundtrip(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -268,7 +267,6 @@ class MockSpider:
 
 
 class TestDevelopmentModeIntegration:
-
     @pytest.mark.anyio
     async def test_first_run_fetches_and_caches(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -317,3 +315,36 @@ class TestDevelopmentModeIntegration:
         sm.add("default", MockSession())
         engine = CrawlerEngine(spider, sm)
         assert engine._cache_manager is None
+
+    @pytest.mark.anyio
+    async def test_cached_run_keeps_the_request_meta(self):
+        """A cache hit must hand the callback the same meta the live fetch did, not an empty one"""
+
+        class MetaSpider(MockSpider):
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield {"meta": dict(response.meta)}
+
+            async def start_requests(self) -> AsyncGenerator[Request, None]:
+                yield Request("https://example.com/page1", sid="default", meta={"page": 7})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            spider = MetaSpider(cache_dir=tmpdir)
+            sm = SessionManager()
+            sm.add("default", MockSession())
+            await CrawlerEngine(spider, sm).crawl()
+
+            cached_spider = MetaSpider(cache_dir=tmpdir)
+            cached_sm = SessionManager()
+            cached_sm.add("default", MockSession())
+            cached_engine = CrawlerEngine(cached_spider, cached_sm)
+            await cached_engine.crawl()
+
+            assert cached_engine.stats.cache_hits == 1, (
+                f"Expected the second run to be served from the cache, got {cached_engine.stats.cache_hits} hits"
+            )
+            assert spider.scraped_items == [{"meta": {"page": 7}}], (
+                f"Expected the live run to see the request meta, got {spider.scraped_items}"
+            )
+            assert cached_spider.scraped_items == [{"meta": {"page": 7}}], (
+                f"Expected the cached run to see the request meta too, got {cached_spider.scraped_items}"
+            )
