@@ -228,7 +228,8 @@ class _SyncSessionLogic(_ConfigurationLogic):
         stealth = self._stealth if stealth is None else stealth
 
         selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
-        max_retries = self._get_param(kwargs, "retries", self._default_retries)
+        # Always attempt the request once; `retries` below 1 (or `None`) means "send it, but don't retry"
+        max_retries = max(1, self._get_param(kwargs, "retries", self._default_retries) or 1)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
         static_proxy = kwargs.pop("proxy", None)
 
@@ -443,7 +444,8 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         stealth = self._stealth if stealth is None else stealth
 
         selector_config = self._get_param(kwargs, "selector_config", self.selector_config) or self.selector_config
-        max_retries = self._get_param(kwargs, "retries", self._default_retries)
+        # Always attempt the request once; `retries` below 1 (or `None`) means "send it, but don't retry"
+        max_retries = max(1, self._get_param(kwargs, "retries", self._default_retries) or 1)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
         static_proxy = kwargs.pop("proxy", None)
 
