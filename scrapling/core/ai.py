@@ -43,7 +43,8 @@ from scrapling.core._types import (
     SUPPORTED_HTTP_METHODS,
 )
 
-SessionType = Literal["dynamic", "stealthy"]
+SessionType = Literal["dynamic", "stealthy", "static"]
+BrowserSessionType = Literal["dynamic", "stealthy"]
 ScreenshotType = Literal["png", "jpeg"]
 MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
 MCP_AUTH_TOKEN_ENV = "SCRAPLING_MCP_AUTH_TOKEN"  # nosec B105 - the name of the variable, not a token
@@ -66,8 +67,18 @@ _PLAYWRIGHT_FETCH_KEYS = _typed_dict_keys(PlaywrightFetchParams) - _EXCLUDED_FET
 _STEALTH_FETCH_KEYS = _typed_dict_keys(StealthFetchParams) - _EXCLUDED_FETCH_KEYS
 
 
-def _session_settings(config: Any) -> Dict[str, Any]:
-    """Extract the JSON-safe effective settings of a validated session config struct, for the AI agent."""
+def _session_settings(session: Any) -> Dict[str, Any]:
+    """Extract the JSON-safe effective settings of a session, for the AI agent."""
+    if isinstance(session, FetcherSession):
+        fields = {"stealthy_headers": session._stealth} | {
+            f.removeprefix("_default_"): getattr(session, f)
+            for f in FetcherSession.__slots__
+            if f.startswith("_default")
+        }
+        return {
+            name: value for name, value in fields.items() if isinstance(value, (str, int, float, bool)) or value is None
+        }
+    config = session._config
     if config.cdp_url:
         return {}
     return {
@@ -94,7 +105,7 @@ class SessionInfo(BaseModel):
     """Information about an open browser session."""
 
     session_id: str = Field(description="The unique identifier of the session.")
-    session_type: SessionType = Field(description="The type of the session: 'dynamic' or 'stealthy'.")
+    session_type: SessionType = Field(description="The type of the session: 'dynamic', 'stealthy', or 'static'.")
     created_at: str = Field(description="ISO timestamp of when the session was created.")
     is_alive: bool = Field(description="Whether the session is still alive and usable.")
     settings: Dict[str, Any] = Field(
@@ -118,7 +129,7 @@ class SessionClosedModel(BaseModel):
 
 @dataclass
 class _SessionEntry:
-    session: Any  # AsyncDynamicSession | AsyncStealthySession
+    session: Any  # AsyncDynamicSession | AsyncStealthySession | FetcherSession
     session_type: SessionType
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -200,9 +211,31 @@ class ScraplingMCPServer:
             )
         return entry
 
+    def _new_session_id(self, session_id: Optional[str]) -> str:
+        """Generate a session ID when none is given, and reject duplicates."""
+        session_id = session_id or uuid4().hex[:12]
+        if session_id in self._sessions:
+            raise ValueError(
+                f"Session '{session_id}' already exists. Use a different ID or close the existing session first."
+            )
+        return session_id
+
+    def _register_session(self, session_id: str, session: Any, session_type: SessionType) -> SessionCreatedModel:
+        """Store a started session and build its creation receipt."""
+        entry = _SessionEntry(session=session, session_type=session_type)
+        self._sessions[session_id] = entry
+        return SessionCreatedModel(
+            session_id=session_id,
+            session_type=session_type,
+            created_at=entry.created_at,
+            is_alive=True,
+            settings=_session_settings(session),
+            message=f"Session '{session_id}' ({session_type}) created successfully.",
+        )
+
     async def open_session(
         self,
-        session_type: SessionType,
+        session_type: BrowserSessionType,
         session_id: Optional[str] = None,
         headless: bool = True,
         real_chrome: bool = False,
@@ -239,12 +272,7 @@ class ScraplingMCPServer:
         :param allow_webgl: (Stealthy only) Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param additional_args: (Stealthy only) Additional arguments to be passed to Playwright's context as additional settings.
         """
-        session_id = session_id or uuid4().hex[:12]
-        if session_id in self._sessions:
-            raise ValueError(
-                f"Session '{session_id}' already exists. Use a different ID or close the existing session first."
-            )
-
+        session_id = self._new_session_id(session_id)
         common_kwargs: Dict[str, Any] = dict(
             proxy=proxy,
             locale=locale,
@@ -271,24 +299,33 @@ class ScraplingMCPServer:
             session = AsyncDynamicSession(**common_kwargs)
 
         await session.start()
+        return self._register_session(session_id, session, session_type)
 
-        entry = _SessionEntry(session=session, session_type=session_type)
-        self._sessions[session_id] = entry
+    async def open_request_session(
+        self,
+        session_id: Optional[str] = None,
+        impersonate: ImpersonateType = "chrome",
+        proxy: Optional[str] = None,
+    ) -> SessionCreatedModel:
+        """Open a persistent HTTP requests session (no browser) that can be reused across multiple
+        `session_make_request` calls, keeping cookies, connections, and the browser fingerprint between requests.
+        The session holds this configuration only; per-request options are passed to `session_make_request` on each call.
+        It shares `close_session`/`list_sessions` with the browser sessions and shows there as a 'static' session.
 
-        return SessionCreatedModel(
-            session_id=session_id,
-            session_type=session_type,
-            created_at=entry.created_at,
-            is_alive=True,
-            settings=_session_settings(session._config),
-            message=f"Session '{session_id}' ({session_type}) created successfully.",
-        )
+        :param session_id: Optional custom session ID. If not provided, a random 12-character hex ID will be generated. Useful for naming sessions for easier management.
+        :param impersonate: Browser version to impersonate its fingerprint on every request. It's using the latest chrome version by default.
+        :param proxy: The proxy URL used for every request in this session. Format: "http://username:password@localhost:8030".
+        """
+        session_id = self._new_session_id(session_id)
+        session = FetcherSession(impersonate=impersonate, proxy=proxy)
+        await session.__aenter__()
+        return self._register_session(session_id, session, "static")
 
     async def close_session(
         self,
         session_id: str,
     ) -> SessionClosedModel:
-        """Close a persistent browser session and free its resources.
+        """Close a persistent session and free its resources.
 
         :param session_id: The unique identifier of the session to close. Use list_sessions to see active sessions.
         """
@@ -296,21 +333,24 @@ class ScraplingMCPServer:
         if entry is None:
             raise ValueError(f"Session '{session_id}' not found. Use list_sessions to see active sessions.")
 
-        await entry.session.close()
+        if entry.session_type == "static":
+            await entry.session.__aexit__(None, None, None)
+        else:
+            await entry.session.close()
         return SessionClosedModel(
             session_id=session_id,
             message=f"Session '{session_id}' closed successfully.",
         )
 
     async def list_sessions(self) -> List[SessionInfo]:
-        """List all active browser sessions with their details, including the effective settings each one was created with."""
+        """List all active sessions with their details, including the effective settings each one was created with."""
         return [
             SessionInfo(
                 session_id=sid,
                 session_type=entry.session_type,
                 created_at=entry.created_at,
                 is_alive=entry.session._is_alive,
-                settings=_session_settings(entry.session._config),
+                settings=_session_settings(entry.session),
             )
             for sid, entry in self._sessions.items()
         ]
@@ -346,6 +386,11 @@ class ScraplingMCPServer:
             raise ValueError("'quality' is only valid when 'image_type' is 'jpeg'.")
 
         entry = self._get_session(session_id, expected_type=None)
+        if entry.session_type == "static":
+            raise ValueError(
+                f"Session '{session_id}' is a 'static' session, so it can't take screenshots. "
+                f"Open a 'dynamic' or 'stealthy' session for that."
+            )
 
         screenshot_kwargs: Dict[str, Any] = {"type": image_type, "full_page": full_page}
         if quality is not None:
@@ -910,6 +955,10 @@ class ScraplingMCPServer:
         :param solve_cloudflare: (Stealthy sessions only) Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response.
         """
         entry = self._get_session(session_id, expected_type=None)
+        if entry.session_type == "static":
+            raise ValueError(
+                f"Session '{session_id}' is a 'static' session. Use `session_make_request` with it instead."
+            )
         if solve_cloudflare and entry.session_type != "stealthy":
             raise ValueError(
                 f"Session '{session_id}' is a '{entry.session_type}' session, so it can't solve Cloudflare "
@@ -933,6 +982,77 @@ class ScraplingMCPServer:
         page = await entry.session.fetch(
             url, **{name: value for name, value in fetch_params.items() if name in fetch_keys}
         )
+        return _translate_response(page, extraction_type, css_selector, main_content_only)
+
+    async def session_make_request(
+        self,
+        url: str,
+        session_id: str,
+        method: SUPPORTED_HTTP_METHODS = "GET",
+        extraction_type: extraction_types = "markdown",
+        css_selector: Optional[str] = None,
+        main_content_only: bool = True,
+        params: Optional[Dict] = None,
+        data: Optional[Dict[str, str] | str] = None,
+        json: Optional[Dict | List] = None,
+        headers: Optional[Mapping[str, Optional[str]]] = None,
+        cookies: Optional[Dict[str, str]] = None,
+        timeout: Optional[int | float] = 30,
+        follow_redirects: FollowRedirects = "safe",
+        max_redirects: int = 30,
+        retries: Optional[int] = 3,
+        retry_delay: Optional[int] = 1,
+        auth: Optional[Dict[str, str]] = None,
+        verify: Optional[bool] = True,
+        http3: Optional[bool] = False,
+        stealthy_headers: Optional[bool] = True,
+    ) -> ResponseModel:
+        """Make an HTTP request with any method (GET, POST, PUT, DELETE) through a requests session previously opened
+        with `open_request_session`, keeping its cookies, connections, and browser fingerprint across calls. The session
+        holds the impersonation and proxy configuration; every option here applies to this request only, with the defaults shown.
+
+        :param url: The URL to request.
+        :param session_id: ID of an open requests session created with `open_request_session`.
+        :param method: The HTTP method to use: "GET" (default), "POST", "PUT", or "DELETE".
+        :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
+        :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
+        :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
+        :param params: Query string parameters for the request.
+        :param data: Form data for the request body. Used with "POST", "PUT", and "DELETE" only.
+        :param json: A JSON-serializable object for the request body. Used with "POST", "PUT", and "DELETE" only.
+        :param headers: Headers to include in the request.
+        :param cookies: Cookies to use in the request.
+        :param timeout: Number of seconds to wait before timing out.
+        :param follow_redirects: Whether to follow redirects. Defaults to "safe", which follows redirects but rejects those targeting internal/private IPs (SSRF protection).
+            Pass True to follow all redirects without restriction.
+        :param max_redirects: Maximum number of redirects. Use -1 for unlimited.
+        :param retries: Number of retry attempts.
+        :param retry_delay: Number of seconds to wait between retry attempts.
+        :param auth: HTTP basic auth in dictionary format with `username` and `password` keys.
+        :param verify: Whether to verify HTTPS certificates.
+        :param http3: Whether to use HTTP3. It might be problematic if used it with `impersonate`.
+        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
+        """
+        entry = self._get_session(session_id, expected_type="static")
+
+        request_kwargs: Dict[str, Any] = dict(
+            auth=_normalize_credentials(auth),
+            http3=http3,
+            verify=verify,
+            params=params,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
+            retries=retries,
+            retry_delay=retry_delay,
+            max_redirects=max_redirects,
+            follow_redirects=follow_redirects,
+            stealthy_headers=stealthy_headers,
+        )
+        if method != "GET":
+            request_kwargs.update(data=data, json=json)
+
+        page = await getattr(entry.session._client, method.lower())(url, **request_kwargs)
         return _translate_response(page, extraction_type, css_selector, main_content_only)
 
     @staticmethod
@@ -960,15 +1080,16 @@ class ScraplingMCPServer:
             ],
             "cache_hints": {"tools/list": CacheHint(ttl_ms=3_600_000, scope="public")},
             "instructions": """Follow these instructions precisely:
-1. When the `open_session` tool is used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions or their effective settings.
+1. When the `open_session` or `open_request_session` tools are used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions or their effective settings.
 2. If the user didn't specify which tool to use, start with the `make_request` tool (a plain HTTP request, defaulting to GET; set `method` for POST/PUT/DELETE), then escalate. The `make_request` tool and `bulk_get` (its GET-only bulk version) are suitable only for low-to-mid protection levels.
     For high-protection levels or websites that require JS loading, use the other tools directly.
 3. For all tools, if the `css_selector` resolves to more than one element, all the elements will be returned.
 4. For all fetch tools, the `extraction_type` parameter controls the format of the returned content: "markdown" (default) converts the page content to Markdown, "html" returns the raw HTML, and "text" returns the text content of the page.
 5. For all fetch tools, `main_content_only` is enabled by default and returns only the content inside the page's `<body>` tag. Pass `main_content_only=False` when you need the full page instead.
-6. If the task consists of multiple sequential requests to the same website, open a session with `open_session` once, then call `session_fetch` per page to be more efficient.
-7. Sessions hold the browser-level configuration set at `open_session`, while `session_fetch` carries the per-request options and applies them on each call with the defaults shown in its schema.
-    The one-shot tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) never touch sessions and always launch their own browser.
+6. If the task consists of multiple sequential requests to the same website, open a session once, then fetch through it to be more efficient:
+    `open_session` + `session_fetch` per page for browsers, or `open_request_session` + `session_make_request` per request for plain HTTP.
+7. Sessions hold the session-level configuration set when opened, while `session_fetch`/`session_make_request` carry the per-request options and apply them on each call with the defaults shown in their schemas.
+    The one-shot tools (`make_request`, `bulk_get`, `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) never touch sessions.
 8. If you are making multiple parallel one-shot requests, use the bulk version of the tool to be more efficient.
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
 10. The user can pass a CDP URL to connect to a remote browser session through the `open_session` tool, then use it with the session tools.
@@ -983,6 +1104,12 @@ class ScraplingMCPServer:
         # Session management tools
         server.add_tool(
             self.open_session, title="open_session", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
+        )
+        server.add_tool(
+            self.open_request_session,
+            title="open_request_session",
+            structured_output=True,
+            annotations=_SESSION_TOOL_ANNOTATIONS,
         )
         server.add_tool(
             self.close_session, title="close_session", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
@@ -1035,11 +1162,18 @@ class ScraplingMCPServer:
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
-        # Session-scoped fetch tool
+        # Session-scoped fetch tools
         server.add_tool(
             self.session_fetch,
             title="session_fetch",
             description=self.session_fetch.__doc__,
+            structured_output=True,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.session_make_request,
+            title="session_make_request",
+            description=self.session_make_request.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )

@@ -1,6 +1,6 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes eleven tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) each launch and close their own browser, while `session_fetch` fetches through a session opened with `open_session`.
+The Scrapling MCP server exposes thirteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) each launch and close their own browser, while `session_fetch` and `session_make_request` work through sessions opened with `open_session`/`open_request_session`.
 
 All scraping tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). The `screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL).
 
@@ -100,7 +100,7 @@ Concurrent stealth version. Same parameters as `stealthy_fetch` except `url` is 
 
 ### `open_session` -- Create a persistent browser session
 
-Opens a browser session that stays alive across multiple `session_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration only; per-request options are passed to `session_fetch`. Returns a `SessionCreatedModel` with `session_id`, `session_type`, `created_at`, `is_alive`, `settings` (the session's effective configuration for the AI agent; empty for CDP sessions), and `message`.
+Opens a browser session that stays alive across multiple `session_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration only; per-request options are passed to `session_fetch`. For plain HTTP requests without a browser, use `open_request_session` instead. Returns a `SessionCreatedModel` with `session_id`, `session_type`, `created_at`, `is_alive`, `settings` (the session's effective configuration for the AI agent; empty for CDP sessions), and `message`.
 
 **Key parameters:**
 
@@ -115,11 +115,21 @@ Opens a browser session that stays alive across multiple `session_fetch` calls, 
 
 Plus the other browser-level session parameters (`proxy`, `real_chrome`, `cdp_url`, `locale`, `timezone_id`, `useragent`, `cookies`, `executable_path`, `additional_args`). Per-request options (`timeout`, `wait`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `solve_cloudflare`) are not set here; pass them to `session_fetch`.
 
-One `session_fetch` works with either session type; `solve_cloudflare` only applies to a stealthy session.
+One `session_fetch` works with either browser session type; `solve_cloudflare` only applies to a stealthy session.
 
-### `session_fetch` -- Fetch through an open session (single URL)
+### `open_request_session` -- Create a persistent HTTP requests session
 
-Fetches one URL through a session opened with `open_session` (dynamic or stealthy). The session holds the browser-level configuration; every parameter here applies to this request only.
+Opens an HTTP session (no browser) that stays alive across multiple `session_make_request` calls, keeping cookies, connections, and the browser fingerprint between requests. Returns the same `SessionCreatedModel` receipt and shows in `list_sessions` as a `static` session.
+
+| Parameter     | Type        | Default    | Description                                                                                           |
+|---------------|-------------|------------|-------------------------------------------------------------------------------------------------------|
+| `session_id`  | str or null | null       | Custom ID for the session. If omitted, a random 12-char hex ID is generated. Raises if already in use |
+| `impersonate` | str         | `"chrome"` | Browser fingerprint to impersonate on every request                                                   |
+| `proxy`       | str or null | null       | Proxy URL used for every request, e.g. `"http://user:pass@host:port"`                                 |
+
+### `session_fetch` -- Fetch through an open browser session (single URL)
+
+Fetches one URL through a browser session opened with `open_session` (dynamic or stealthy). The session holds the browser-level configuration; every parameter here applies to this request only. Raises on a requests session; use `session_make_request` there instead.
 
 | Parameter             | Type                | Default      | Description                                                                     |
 |-----------------------|---------------------|--------------|---------------------------------------------------------------------------------|
@@ -140,9 +150,13 @@ Fetches one URL through a session opened with `open_session` (dynamic or stealth
 | `blocked_domains`     | list or null        | null         | Domain names to block for this request (subdomains matched too)                 |
 | `solve_cloudflare`    | bool                | false        | (Stealthy sessions only) Auto-solve Cloudflare challenges; errors on a dynamic session |
 
-### `close_session` -- Close a persistent browser session
+### `session_make_request` -- HTTP request through an open requests session
 
-Closes a session and frees its browser resources. Always close sessions when done.
+Makes an HTTP request (any method) through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint across calls. Same parameters as `make_request` plus a required `session_id`, minus the session-level `impersonate`, `proxy`, and `proxy_auth`. Raises on a browser session.
+
+### `close_session` -- Close a persistent session
+
+Closes a session (browser or requests) and frees its resources. Always close sessions when done.
 
 | Parameter    | Type | Default  | Description                      |
 |--------------|------|----------|----------------------------------|
@@ -186,6 +200,7 @@ Requires an open browser session. Call `open_session` first, then pass the `sess
 | Cloudflare or strong anti-bot protection | `stealthy_fetch` (with `solve_cloudflare=true` for Turnstile) |
 | Multiple protected pages                 | `bulk_stealthy_fetch`                                         |
 | Multiple pages from the same site        | `open_session` + `session_fetch` per page                    |
+| Multiple plain HTTP requests to one site | `open_request_session` + `session_make_request` per request  |
 | Need a screenshot of a page              | `open_session` + `screenshot` with `session_id`              |
 
 Start with `make_request` (fastest, lowest resource cost). Escalate to `fetch` if content requires JS rendering. Escalate to `stealthy_fetch` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.

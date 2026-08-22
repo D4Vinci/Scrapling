@@ -6,7 +6,7 @@ The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful W
 
 ## Features
 
-The Scrapling MCP Server provides eleven powerful tools for web scraping, split into two modes: one-shot tools that each launch and close their own browser, and session tools that open a browser once and then work through it.
+The Scrapling MCP Server provides thirteen powerful tools for web scraping, split into two modes: one-shot tools that each launch and close their own browser/client, and session tools that open a browser or an HTTP session once and then work through it.
 
 ### One-shot tools
 
@@ -26,11 +26,13 @@ The Scrapling MCP Server provides eleven powerful tools for web scraping, split 
 
 #### 🔌 Session Management
 - **`open_session`**: Create a persistent browser session (dynamic or stealthy) that stays open across multiple `session_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns the session's effective `settings` for the AI agent (empty for CDP sessions).
-- **`close_session`**: Close a persistent browser session and free its resources.
-- **`list_sessions`**: List all active browser sessions with their details and `settings`.
+- **`open_request_session`**: Create a persistent HTTP requests session (no browser) used with `session_make_request`, keeping cookies, connections, and the browser fingerprint (`impersonate`) between requests. It returns the same `settings` receipt and shows in `list_sessions` as a `static` session.
+- **`close_session`**: Close a persistent session (browser or requests) and free its resources.
+- **`list_sessions`**: List all active sessions with their details and `settings`.
 
 #### 🎯 Fetching Through a Session
-- **`session_fetch`**: Fetch a single URL through an open session (dynamic or stealthy), carrying the per-request options for that call. This is the session counterpart of `fetch`/`stealthy_fetch`.
+- **`session_fetch`**: Fetch a single URL through an open browser session (dynamic or stealthy), carrying the per-request options for that call. This is the session counterpart of `fetch`/`stealthy_fetch`.
+- **`session_make_request`**: Make an HTTP request with any method through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint. This is the session counterpart of `make_request`.
 
 #### 📸 Screenshots
 - **`screenshot`**: Capture a PNG or JPEG screenshot of a page using an open browser session, returned as an image content block the model can actually see (not a base64 string blob). Supports full-page captures, JPEG quality, and the usual readiness controls (`wait`, `wait_selector`, `network_idle`).
@@ -198,7 +200,7 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `session_fetch` and `screenshot` as usual.
+Both browser session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `session_fetch` and `screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline
@@ -436,12 +438,13 @@ This protection runs automatically on all MCP tool responses. Keep `main_content
 
 ### 6. Use Sessions for Multiple Requests
 - Use `open_session` to create a persistent browser session when scraping multiple pages, then call `session_fetch` for each page through that session
-- `open_session` holds the browser-level configuration (headless, locale, cookies, stealth toggles, etc.); the per-request options (timeout, wait_selector, network_idle, solve_cloudflare, etc.) are passed to `session_fetch` on each call, with their defaults shown in the tool schema
-- One `session_fetch` works with both session types; `solve_cloudflare` only applies to a stealthy session and raises a clear error on a dynamic one
-- The one-shot tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) never take a session; they always launch and close their own browser
+- For multiple plain HTTP requests, use `open_request_session` instead and call `session_make_request` per request; it keeps cookies, connections, and the browser fingerprint (`impersonate`) across calls without a browser
+- Sessions hold the session-level configuration set when opened (headless, locale, cookies, stealth toggles, etc. for browsers; `impersonate` and `proxy` for requests sessions); the per-request options (timeout, wait_selector, network_idle, solve_cloudflare, etc.) are passed to `session_fetch`/`session_make_request` on each call, with their defaults shown in the tool schemas
+- One `session_fetch` works with both browser session types; `solve_cloudflare` only applies to a stealthy session and raises a clear error on a dynamic one
+- The one-shot tools (`make_request`, `bulk_get`, `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) never take a session
 - Always close sessions with `close_session` when done to free resources
 - Use `list_sessions` to check which sessions are still active and see the `settings` each was created with (returned for the AI agent; empty for CDP sessions)
-- Pass a custom `session_id` to `open_session` to give sessions meaningful names (e.g. `"search"`, `"checkout"`) instead of the random hex default. `open_session` raises if the chosen ID is already in use, so you can detect collisions up front
+- Pass a custom `session_id` to the open tools to give sessions meaningful names (e.g. `"search"`, `"checkout"`) instead of the random hex default. They raise if the chosen ID is already in use, so you can detect collisions up front
 
 ### 7. Capturing Screenshots
 - `screenshot` only works through an existing browser session, so call `open_session` first (either `dynamic` or `stealthy` works)

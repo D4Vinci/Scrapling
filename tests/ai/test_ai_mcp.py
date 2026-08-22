@@ -30,7 +30,7 @@ from scrapling.core.ai import (
     _translate_response,
 )
 from scrapling.engines._browsers._validators import PlaywrightConfig, StealthConfig, models_default_values, validate
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession
+from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, FetcherSession
 
 
 def test_translate_response_strips_control_characters():
@@ -296,6 +296,85 @@ class TestSessionManagement:
         await server.close_session("dupe")
 
 
+class TestStaticSessionManagement:
+    """Test persistent requests (HTTP) session management"""
+
+    @pytest.fixture
+    def server(self):
+        return ScraplingMCPServer()
+
+    @pytest.mark.asyncio
+    async def test_static_session_lifecycle(self, server, httpbin):
+        """Open a requests session, make GET and POST requests through it, then close it"""
+        created = await server.open_request_session(session_id="st")
+        assert isinstance(created, SessionCreatedModel)
+        assert created.session_type == "static"
+        assert created.is_alive is True
+        assert created.settings["impersonate"] == "chrome"
+
+        response = await server.session_make_request(url=f"{httpbin.url}/html", session_id="st")
+        assert isinstance(response, ResponseModel)
+        assert response.status == 200
+
+        posted = await server.session_make_request(
+            url=f"{httpbin.url}/post", session_id="st", method="POST", json={"key": "value"}, extraction_type="text"
+        )
+        assert posted.status == 200
+
+        listed = await server.list_sessions()
+        assert listed[0].session_type == "static"
+        assert listed[0].settings == created.settings
+
+        session = server._sessions["st"].session
+        closed = await server.close_session("st")
+        assert closed.session_id == "st"
+        assert session._is_alive is False
+
+    @pytest.mark.asyncio
+    async def test_static_session_keeps_cookies(self, server, httpbin):
+        """Cookies set by one request are sent with the next request of the same session"""
+        await server.open_request_session(session_id="jar")
+        await server.session_make_request(
+            url=f"{httpbin.url}/cookies/set/test/value",
+            session_id="jar",
+            follow_redirects=True,
+            extraction_type="text",
+        )
+        response = await server.session_make_request(
+            url=f"{httpbin.url}/cookies", session_id="jar", extraction_type="text"
+        )
+        assert "test" in "".join(response.content)
+        await server.close_session("jar")
+
+    @pytest.mark.asyncio
+    async def test_session_ids_are_shared_across_both_open_tools(self, server, monkeypatch):
+        """A requests session and a browser session can't share the same ID"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        await server.open_request_session(session_id="shared")
+        with pytest.raises(ValueError, match="already exists"):
+            await server.open_session(session_type="dynamic", session_id="shared")
+        await server.close_session("shared")
+
+    @pytest.mark.asyncio
+    async def test_session_make_request_requires_a_static_session(self, server, monkeypatch):
+        """session_make_request rejects browser sessions"""
+        monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
+        await server.open_session(session_type="dynamic", session_id="browser")
+        with pytest.raises(ValueError, match="requires a 'static' session"):
+            await server.session_make_request(url="https://example.com", session_id="browser")
+        await server.close_session("browser")
+
+    @pytest.mark.asyncio
+    async def test_session_fetch_and_screenshot_reject_static_sessions(self, server):
+        """The browser session tools refuse a static session with a clear error"""
+        await server.open_request_session(session_id="st2")
+        with pytest.raises(ValueError, match="session_make_request"):
+            await server.session_fetch(url="https://example.com", session_id="st2")
+        with pytest.raises(ValueError, match="can't take screenshots"):
+            await server.screenshot(url="https://example.com", session_id="st2")
+        await server.close_session("st2")
+
+
 class TestExecutablePath:
     """Test custom browser executable path plumbing in the MCP browser tools"""
 
@@ -547,8 +626,7 @@ class TestSessionSettingsReceipt:
 
     def test_session_settings_extracts_json_safe_fields(self):
         """The helper keeps JSON primitives and drops the rest (callables, structs, sequences)"""
-        config = AsyncStealthySession(headless=True)._config
-        settings = _session_settings(config)
+        settings = _session_settings(AsyncStealthySession(headless=True))
         assert settings["headless"] is True
         assert settings["timeout"] == 30000
         assert "cookies" not in settings, "non-primitive fields (list) must be dropped"
@@ -556,8 +634,17 @@ class TestSessionSettingsReceipt:
 
     def test_cdp_session_reports_empty_settings(self):
         """A CDP session drives a remote browser, so the local config is not reported as its settings"""
-        config = AsyncDynamicSession(cdp_url="ws://127.0.0.1:9222/devtools/browser/x")._config
-        assert _session_settings(config) == {}
+        assert _session_settings(AsyncDynamicSession(cdp_url="ws://127.0.0.1:9222/devtools/browser/x")) == {}
+
+    def test_static_session_settings_extracts_json_safe_fields(self):
+        """A static session reports its HTTP defaults (impersonate, proxy, timeout, ...)"""
+        settings = _session_settings(FetcherSession(impersonate="chrome", proxy=None))
+        assert settings["impersonate"] == "chrome"
+        assert settings["proxy"] is None
+        assert settings["timeout"] == 30
+        assert settings["stealthy_headers"] is True
+        assert "headers" not in settings, "non-primitive fields (dict) must be dropped"
+        assert all(isinstance(v, (str, int, float, bool)) or v is None for v in settings.values()), settings
 
     @pytest.mark.asyncio
     async def test_open_session_and_list_report_the_receipt(self, monkeypatch):
@@ -768,7 +855,7 @@ class TestMCPServerAuthentication:
         monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
         built = ScraplingMCPServer(auth_token=SHARED_KEY)._build_server("0.0.0.0", 8000)
 
-        assert len(built._tool_manager.list_tools()) == 11
+        assert len(built._tool_manager.list_tools()) == 13
 
     def test_http_without_a_token_refuses_to_serve(self, monkeypatch):
         """The streamable-http transport requires authentication unless the caller explicitly opts out"""
@@ -825,13 +912,13 @@ class TestServerToolRegistration:
 
     @pytest.mark.asyncio
     async def test_tools_are_listed_with_expected_schemas(self):
-        """All 11 tools are advertised, and only the screenshot tool skips the structured output schema"""
+        """All 13 tools are advertised, and only the screenshot tool skips the structured output schema"""
         server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
         async with Client(server) as client:
             assert client.instructions
             tools = {tool.name: tool for tool in (await client.list_tools()).tools}
 
-        assert len(tools) == 11
+        assert len(tools) == 13
         assert tools["screenshot"].output_schema is None
         assert all(tool.output_schema is not None for name, tool in tools.items() if name != "screenshot")
 
@@ -852,6 +939,12 @@ class TestServerToolRegistration:
         assert request_props["method"]["default"] == "GET"
         assert "data" in request_props and "json" in request_props
         assert "method" not in tools["bulk_get"].input_schema["properties"]
+
+        static_props = tools["session_make_request"].input_schema["properties"]
+        assert static_props["method"]["default"] == "GET"
+        assert "proxy" not in static_props and "impersonate" not in static_props, "session-level params leaked"
+        assert set(tools["session_make_request"].input_schema["required"]) >= {"url", "session_id"}
+        assert set(tools["open_request_session"].input_schema["properties"]) == {"session_id", "impersonate", "proxy"}
 
         session_props = tools["session_fetch"].input_schema["properties"]
         assert session_props["timeout"]["default"] == 30000
@@ -878,7 +971,7 @@ class TestServerToolRegistration:
         assert result.ttl_ms == 3_600_000 and result.cache_scope == "public"
 
         annotations = {tool.name: tool.annotations for tool in result.tools if tool.annotations is not None}
-        assert len(annotations) == 11
+        assert len(annotations) == 13
         for name in (
             "make_request",
             "bulk_get",
@@ -887,11 +980,12 @@ class TestServerToolRegistration:
             "stealthy_fetch",
             "bulk_stealthy_fetch",
             "session_fetch",
+            "session_make_request",
             "screenshot",
         ):
             assert annotations[name].read_only_hint is True
             assert annotations[name].open_world_hint is True
-        for name in ("open_session", "close_session"):
+        for name in ("open_session", "open_request_session", "close_session"):
             assert annotations[name].read_only_hint is False
             assert annotations[name].destructive_hint is False
             assert annotations[name].open_world_hint is True
