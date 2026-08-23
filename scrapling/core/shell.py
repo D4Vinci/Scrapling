@@ -583,7 +583,12 @@ class Convertor:
     @classmethod
     def _convert_to_markdown(cls, body: TextHandler) -> str:
         """Convert HTML content to Markdown"""
-        from markdownify import markdownify
+        try:
+            from markdownify import markdownify
+        except (ImportError, ModuleNotFoundError) as e:
+            raise ModuleNotFoundError(
+                'Markdown conversion requires the "markdownify" package. Install it with: pip install "scrapling[rag]"'
+            ) from e
 
         return markdownify(body)
 

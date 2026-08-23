@@ -151,14 +151,19 @@ async def scrape_multiple_sites():
         return pages
 ```
 
-You may have noticed the `max_pages` argument. This is a new argument that enables the fetcher to create a **rotating pool of Browser tabs**. Instead of using a single tab for all your requests, you set a limit on the maximum number of pages that can be displayed at once. With each request, the library will close all tabs that have finished their task and check if the number of the current tabs is lower than the maximum allowed number of pages/tabs, then:
+You may have noticed the `max_pages` argument. It enables the fetcher to keep a **pool of Browser tabs**, and you set the maximum number of tabs that can be open at once. Tabs stay open after their request finishes, so with each request, the library will:
 
-1. If you are within the allowed range, the fetcher will create a new tab for you, and then all is as normal.
-2. Otherwise, it will keep checking every subsecond if creating a new tab is allowed or not for 60 seconds, then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive.
+1. Reuse a free tab if there's one. Every request applies its own tab-level settings (`timeout`, `extra_headers`, `disable_resources`, `blocked_domains`, etc.) to the tab it gets, so nothing leaks from the previous request.
+2. Otherwise, open a new tab if the number of open tabs is lower than `max_pages`.
+3. Otherwise, keep checking every subsecond for a tab to become free for 60 seconds, then raise `TimeoutError`. This can happen when the website you are fetching becomes unresponsive.
+
+Tabs that hit an error are closed and replaced, and you can close all the open tabs yourself at any point with `session.close_pages()`, then the next request opens a fresh one.
 
 This logic allows for multiple URLs to be fetched at the same time in the same browser, which saves a lot of resources, but most importantly, is so fast :)
 
-In versions 0.3 and 0.3.1, the pool was reusing finished tabs to save more resources/time. That logic proved flawed, as it's nearly impossible to protect pages/tabs from contamination by the previous configuration used in the request before this one.
+Keeping the tabs open also means the page you fetched is still there for the next request, so a `page_setup` function on the next request runs on it before navigating away. That's the building block for chaining automation across requests.
+
+Versions 0.3.2 to 0.4.14 closed every tab after its request because reusing tabs used to leak settings between requests. Since 0.4.15, the settings are reset on every reuse, so the tabs stay open.
 
 ### Session Benefits
 

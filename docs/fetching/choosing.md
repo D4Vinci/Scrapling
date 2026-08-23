@@ -81,6 +81,12 @@ page.captured_xhr    # List of captured XHR/fetch responses (when capture_xhr is
 ```
 All fetchers return the `Response` object.
 
+The `Response` object can also convert the page to clean, LLM-ready Markdown in one line:
+```python
+markdown = Fetcher.get('https://example.com').markdown(main_content_only=True)
+```
+Scripts, styles, and hidden/prompt-injection content are always removed before conversion, and you can pass `css_selector` to convert specific elements only. It requires the `rag` extra (included in `ai`/`shell`/`all` too), and the [Building RAG systems](../ai/building-rag-systems.md) page covers it in detail.
+
 !!! note
 
     Unlike the [Selector](../parsing/main_classes.md#selector) class, the `Response` class's body is always bytes since v0.4.

@@ -27,6 +27,10 @@ class TestPageInfo:
         page_info.mark_error()
         assert page_info.state == "error"
 
+        page_info.mark_ready()
+        assert page_info.state == "ready"
+        assert page_info.url == ""
+
     def test_page_info_equality(self):
         """Test PageInfo equality comparison"""
         mock_page1 = Mock()
@@ -70,8 +74,9 @@ class TestPagePool:
 
         assert isinstance(page_info, PageInfo)
         assert page_info.page == mock_page
-        assert page_info.state == "ready"
+        assert page_info.state == "busy", "a new page is busy for the request that opened it"
         assert pool.pages_count == 1
+        assert pool.busy_count == 1
 
     def test_add_page_limit_exceeded(self):
         """Test adding page when limit exceeded"""
@@ -88,28 +93,39 @@ class TestPagePool:
         pool = PagePool(max_pages=1)
         page_info = pool.add_page(Mock())
         assert pool.pages_count == 1
-        pool.pages.remove(page_info)
+        pool.remove_page(page_info)
         assert pool.pages_count == 0
         pool.add_page(Mock())
         assert pool.pages_count == 1
 
-
-
-    def test_cleanup_error_pages(self):
-        """Test cleaning up error pages"""
+    def test_get_ready_page_skips_busy_and_error_pages(self):
         pool = PagePool(max_pages=3)
+        busy = pool.add_page(Mock())
+        errored = pool.add_page(Mock())
+        errored.mark_error()
+        assert pool.get_ready_page() is None
 
-        # Add pages
-        page1 = pool.add_page(Mock())
-        _ = pool.add_page(Mock())
-        page3 = pool.add_page(Mock())
+        busy.mark_ready()
+        taken = pool.get_ready_page()
+        assert taken is busy
+        assert taken.state == "busy", "the returned page is reserved for the caller"
+        assert pool.get_ready_page() is None
 
-        # Mark some as error
-        page1.mark_error()
-        page3.mark_error()
+    def test_remove_page_ignores_unknown_pages(self):
+        pool = PagePool(max_pages=2)
+        page_info = pool.add_page(Mock())
+        pool.remove_page(page_info)
+        pool.remove_page(page_info)
+        assert pool.pages_count == 0
 
-        assert pool.pages_count == 3
+    def test_clear_returns_every_page_and_empties_the_pool(self):
+        pool = PagePool(max_pages=3)
+        pages = [pool.add_page(Mock()) for _ in range(3)]
+        pages[1].mark_ready()
 
-        pool.cleanup_error_pages()
+        cleared = pool.clear()
 
-        assert pool.pages_count == 1  # Only 2 should remain
+        assert cleared == pages
+        assert pool.pages_count == 0
+        pool.add_page(Mock())
+        assert pool.pages_count == 1

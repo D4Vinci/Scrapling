@@ -53,6 +53,19 @@ _whitelisted = {
     "for_": "for",
 }
 _T = TypeVar("_T")
+
+
+def _escape_css_string(value: str) -> str:
+    """Escape the characters that can't appear literally inside a CSS double-quoted string.
+
+    Line breaks have to be written as hexadecimal escapes, the trailing space ends the escape.
+    Backslashes are left alone on purpose: `cssselect` drops characters while unescaping them
+    (both `\\\\` and `\\5C ` lose the backslash and the character after it), so no form we could
+    emit here would match them anyway.
+    """
+    return value.replace('"', r"\"").replace("\n", r"\A ").replace("\r", r"\D ").replace("\f", r"\C ")
+
+
 # Pre-compiled selectors for efficiency
 _find_all_elements = XPath(".//*")
 _find_all_elements_with_spaces = XPath(
@@ -760,13 +773,13 @@ class Selector(SelectorsGeneration):
         for tag in tags:
             selector = tag
             for key, value in attributes.items():
-                value = value.replace('"', r"\"")  # Escape double quotes in user input
                 # Not escaping anything with the key so the user can pass patterns like {'href*': '/p/'} or get errors :)
-                if key == "class":
+                if key == "class" and (class_names := value.split()):
                     # `class` is a space-separated list, so exact-match [class="x"] misses class="x y"; match each name with ~=
-                    selector += "".join('[class~="{}"]'.format(t) for t in value.split())
+                    # An empty/blank value has no names to match, so it falls through to the exact match below
+                    selector += "".join('[class~="{}"]'.format(_escape_css_string(name)) for name in class_names)
                 else:
-                    selector += '[{}="{}"]'.format(key, value)
+                    selector += '[{}="{}"]'.format(key, _escape_css_string(value))
             if selector != "*":
                 selectors.append(selector)
 

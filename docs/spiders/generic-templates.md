@@ -192,6 +192,24 @@ class PriceSpider(CSVFeedSpider):
 
 Gzipped feeds are decompressed automatically here as well, as shown above for **XMLFeedSpider**.
 
+## SiteToMarkdownSpider
+
+`SiteToMarkdownSpider` builds on **CrawlSpider** to crawl a website and convert every page to clean, LLM-ready Markdown, yielding one item per page and optionally writing one Markdown file per page:
+
+```python
+from scrapling.spiders import SiteToMarkdownSpider
+
+class DocsSpider(SiteToMarkdownSpider):
+    name = "docs"
+    start_urls = ["https://example.com/docs/"]
+    allowed_domains = {"example.com"}
+    output_dir = "docs_markdown"
+
+result = DocsSpider().start()
+```
+
+It requires `allowed_domains` to keep the crawl bound to the target website. The full guide, including all its options and how to feed the output to RAG pipelines, is on the [Building RAG systems](../ai/building-rag-systems.md) page.
+
 ## Using `LinkExtractor` directly
 
 You don't have to use the templates. `LinkExtractor` works inside any plain `Spider`:

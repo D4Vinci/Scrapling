@@ -44,14 +44,18 @@ nav = [
             {"Interactive shell" = "cli/interactive-shell.md"},
             {"Extract commands" = "cli/extract-commands.md"}
         ]},
-        {Integrations = [
-            {"AI MCP server" = "ai/mcp-server.md"},
-            {Scrapy = "integrations/scrapy.md"}
+        {"Using with AI" = [
+            {"MCP server" = "ai/mcp-server.md"},
+            {"Agent skill" = "ai/agent-skill.md"},
+            {"Building RAG systems" = "ai/building-rag-systems.md"}
+        ]},
+        {"Integrations and migrations" = [
+            {"Integrating into Scrapy" = "integrations/scrapy.md"},
+            {"Migrating from BeautifulSoup" = "tutorials/migrating_from_beautifulsoup.md"}
         ]}
     ]},
     {Tutorials = [
-        {"A Free Alternative to AI for Robust Web Scraping" = "tutorials/replacing_ai.md"},
-        {"Migrating from BeautifulSoup" = "tutorials/migrating_from_beautifulsoup.md"}
+        {"A Free Alternative to AI for Robust Web Scraping" = "tutorials/replacing_ai.md"}
     ]},
     {Development = [
         {"API Reference" = [

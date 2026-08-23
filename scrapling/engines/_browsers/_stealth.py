@@ -17,6 +17,7 @@ from scrapling.engines._browsers._base import SyncSession, AsyncSession, Stealth
 from scrapling.engines._browsers._validators import validate_fetch as _validate, StealthConfig
 
 __CF_PATTERN__ = re_compile(r"^https?://challenges\.cloudflare\.com/cdn-cgi/challenge-platform/.*")
+__CF_MAX_SOLVE_ATTEMPTS__ = 3
 
 
 class StealthySession(SyncSession, StealthySessionMixin):
@@ -104,10 +105,11 @@ class StealthySession(SyncSession, StealthySessionMixin):
         else:
             raise RuntimeError("Session has been already started")
 
-    def _cloudflare_solver(self, page: Page) -> None:  # pragma: no cover
+    def _cloudflare_solver(self, page: Page, _attempts: int = 0) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
 
         :param page: The targeted page
+        :param _attempts: The number of solve attempts done so far, used internally to cap the retries.
         :return:
         """
         self._wait_for_networkidle(page, timeout=5000)
@@ -115,22 +117,31 @@ class StealthySession(SyncSession, StealthySessionMixin):
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
             return None
+        elif _attempts >= __CF_MAX_SOLVE_ATTEMPTS__:
+            log.error(f"Failed to solve the Cloudflare challenge after {_attempts} attempts, returning the page as is")
+            return None
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":
-                while "<title>Just a moment...</title>" in (ResponseFactory._get_page_content(page)):
+                while self._detect_cloudflare(ResponseFactory._get_page_content(page)) == "non-interactive":
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     page.wait_for_timeout(1000)
                     page.wait_for_load_state()
-                log.info("Cloudflare captcha is solved")
-                return None
+                if self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
+                    log.info("Cloudflare captcha is solved")
+                    return None
+                return self._cloudflare_solver(page, _attempts + 1)
 
             else:
                 box_selector = "#cf_turnstile div, #cf-turnstile div, .turnstile>div>div"
                 if challenge_type != "embedded":
                     box_selector = ".main-content p+div>div>div"
-                    while "Verifying you are human." in ResponseFactory._get_page_content(page):
-                        # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
+                    for _ in range(20):
+                        # Waiting for the verify spinner to resolve into the widget iframe or pass on its own
+                        if page.frame(url=__CF_PATTERN__) is not None or self._challenge_cleared(
+                            ResponseFactory._get_page_content(page), challenge_type
+                        ):
+                            break
                         page.wait_for_timeout(500)
 
                 outer_box: Any = {}
@@ -146,11 +157,14 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     outer_box = iframe.frame_element().bounding_box()
 
                 if not iframe or not outer_box:
-                    if "<title>Just a moment...</title>" not in (ResponseFactory._get_page_content(page)):
+                    if self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
                         log.info("Cloudflare captcha is solved")
                         return None
 
                     outer_box = page.locator(box_selector).last.bounding_box()
+                    if not outer_box:
+                        page.wait_for_timeout(1000)
+                        return self._cloudflare_solver(page, _attempts + 1)
 
                 # Calculate the Captcha coordinates for any viewport
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
@@ -161,7 +175,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
 
                 if challenge_type != "embedded":
                     attempts = 0
-                    while "<title>Just a moment...</title>" in ResponseFactory._get_page_content(page):
+                    while not self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
                         # Wait for the page
                         if attempts >= 100:
                             log.info("Cloudflare page didn't disappear after 10s, continuing...")
@@ -169,17 +183,14 @@ class StealthySession(SyncSession, StealthySessionMixin):
                         page.wait_for_timeout(100)
                         attempts += 1
 
-                    # page.locator(box_selector).last.wait_for(state="detached")
-                    # page.locator(".zone-name-title").wait_for(state="hidden")
-
                 self._wait_for_page_stability(page, True, False)
 
-                if "<title>Just a moment...</title>" not in (ResponseFactory._get_page_content(page)):
+                if self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
                     log.info("Cloudflare captcha is solved")
                     return None
                 else:
                     log.info("Looks like Cloudflare captcha is still present, solving again")
-                    return self._cloudflare_solver(page)
+                    return self._cloudflare_solver(page, _attempts + 1)
 
     def fetch(self, url: str, **kwargs: Unpack[StealthFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -227,75 +238,75 @@ class StealthySession(SyncSession, StealthySessionMixin):
                 final_response: List = [None]
                 xhr_captured: List = []
                 page = page_info.page
-                page.on(
-                    "response",
-                    self._create_response_handler(
-                        page_info,
-                        final_response,
-                        xhr_pattern=self._config.capture_xhr,
-                        xhr_container=xhr_captured,
-                    ),
+                handler = self._create_response_handler(
+                    page_info,
+                    final_response,
+                    xhr_pattern=self._config.capture_xhr,
+                    xhr_container=xhr_captured,
                 )
-
-                if params.page_setup:
-                    try:
-                        params.page_setup(page)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error executing page_setup: {e}")
-
+                page.on("response", handler)
                 try:
-                    first_response = page.goto(url, referer=referer)
-                    self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                    if params.page_setup:
+                        try:
+                            params.page_setup(page)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error executing page_setup: {e}")
 
-                    if not first_response:
-                        raise RuntimeError(f"Failed to get response for {url}")
-
-                    if params.solve_cloudflare:
-                        self._cloudflare_solver(page)
-                        # Make sure the page is fully loaded after the captcha
+                    try:
+                        first_response = page.goto(url, referer=referer)
                         self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-                    if params.page_action:
-                        try:
-                            _ = params.page_action(page)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing page_action: {e}")
+                        if not first_response:
+                            raise RuntimeError(f"Failed to get response for {url}")
 
-                    if params.wait_selector:
-                        try:
-                            waiter: Locator = page.locator(params.wait_selector)
-                            waiter.first.wait_for(state=params.wait_selector_state)
+                        if params.solve_cloudflare:
+                            self._cloudflare_solver(page)
+                            # Make sure the page is fully loaded after the captcha
                             self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-                    page.wait_for_timeout(params.wait)
+                        if params.page_action:
+                            try:
+                                _ = params.page_action(page)
+                            except Exception as e:  # pragma: no cover
+                                log.error(f"Error executing page_action: {e}")
 
-                    response = ResponseFactory.from_playwright_response(
-                        page,
-                        first_response,
-                        final_response[0],
-                        params.selector_config,
-                        meta={"proxy": proxy},
-                        xhr_captured=xhr_captured,
-                    )
-                    return response
+                        if params.wait_selector:
+                            try:
+                                waiter: Locator = page.locator(params.wait_selector)
+                                waiter.first.wait_for(state=params.wait_selector_state)
+                                self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                            except Exception as e:  # pragma: no cover
+                                log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-                except Exception as e:
-                    page_info.mark_error()
-                    if attempt < self._config.retries - 1:
-                        if is_proxy_error(e):
-                            log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
-                            )
+                        page.wait_for_timeout(params.wait)
+
+                        response = ResponseFactory.from_playwright_response(
+                            page,
+                            first_response,
+                            final_response[0],
+                            params.selector_config,
+                            meta={"proxy": proxy},
+                            xhr_captured=xhr_captured,
+                        )
+                        return response
+
+                    except Exception as e:
+                        page_info.mark_error()
+                        if attempt < self._config.retries - 1:
+                            if is_proxy_error(e):
+                                log.warning(
+                                    f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                                )
+                            else:
+                                log.warning(
+                                    f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
+                                )
+                            time_sleep(self._config.retry_delay)
                         else:
-                            log.warning(
-                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
-                            )
-                        time_sleep(self._config.retry_delay)
-                    else:
-                        log.error(f"Failed after {self._config.retries} attempts: {e}")
-                        raise
+                            log.error(f"Failed after {self._config.retries} attempts: {e}")
+                            raise
+                finally:
+                    page.remove_listener("response", handler)
 
         raise RuntimeError("Request failed")  # pragma: no cover
 
@@ -379,10 +390,11 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         else:
             raise RuntimeError("Session has been already started")
 
-    async def _cloudflare_solver(self, page: async_Page) -> None:  # pragma: no cover
+    async def _cloudflare_solver(self, page: async_Page, _attempts: int = 0) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
 
         :param page: The targeted page
+        :param _attempts: The number of solve attempts done so far, used internally to cap the retries.
         :return:
         """
         await self._wait_for_networkidle(page, timeout=5000)
@@ -390,22 +402,31 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         if not challenge_type:
             log.error("No Cloudflare challenge found.")
             return None
+        elif _attempts >= __CF_MAX_SOLVE_ATTEMPTS__:
+            log.error(f"Failed to solve the Cloudflare challenge after {_attempts} attempts, returning the page as is")
+            return None
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":
-                while "<title>Just a moment...</title>" in (await ResponseFactory._get_async_page_content(page)):
+                while self._detect_cloudflare(await ResponseFactory._get_async_page_content(page)) == "non-interactive":
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     await page.wait_for_timeout(1000)
                     await page.wait_for_load_state()
-                log.info("Cloudflare captcha is solved")
-                return None
+                if self._challenge_cleared(await ResponseFactory._get_async_page_content(page), challenge_type):
+                    log.info("Cloudflare captcha is solved")
+                    return None
+                return await self._cloudflare_solver(page, _attempts + 1)
 
             else:
                 box_selector = "#cf_turnstile div, #cf-turnstile div, .turnstile>div>div"
                 if challenge_type != "embedded":
                     box_selector = ".main-content p+div>div>div"
-                    while "Verifying you are human." in (await ResponseFactory._get_async_page_content(page)):
-                        # Waiting for the verify spinner to disappear, checking every 1s if it disappeared
+                    for _ in range(20):
+                        # Waiting for the verify spinner to resolve into the widget iframe or pass on its own
+                        if page.frame(url=__CF_PATTERN__) is not None or self._challenge_cleared(
+                            await ResponseFactory._get_async_page_content(page), challenge_type
+                        ):
+                            break
                         await page.wait_for_timeout(500)
 
                 outer_box: Any = {}
@@ -421,11 +442,14 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     outer_box = await (await iframe.frame_element()).bounding_box()
 
                 if not iframe or not outer_box:
-                    if "<title>Just a moment...</title>" not in (await ResponseFactory._get_async_page_content(page)):
+                    if self._challenge_cleared(await ResponseFactory._get_async_page_content(page), challenge_type):
                         log.info("Cloudflare captcha is solved")
                         return None
 
                     outer_box = await page.locator(box_selector).last.bounding_box()
+                    if not outer_box:
+                        await page.wait_for_timeout(1000)
+                        return await self._cloudflare_solver(page, _attempts + 1)
 
                 # Calculate the Captcha coordinates for any viewport
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
@@ -436,7 +460,9 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
 
                 if challenge_type != "embedded":
                     attempts = 0
-                    while "<title>Just a moment...</title>" in (await ResponseFactory._get_async_page_content(page)):
+                    while not self._challenge_cleared(
+                        await ResponseFactory._get_async_page_content(page), challenge_type
+                    ):
                         # Wait for the page
                         if attempts >= 100:
                             log.info("Cloudflare page didn't disappear after 10s, continuing...")
@@ -444,17 +470,14 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         await page.wait_for_timeout(100)
                         attempts += 1
 
-                    # await page.locator(box_selector).last.wait_for(state="detached")
-                    # await page.locator(".zone-name-title").wait_for(state="hidden")
-
                 await self._wait_for_page_stability(page, True, False)
 
-                if "<title>Just a moment...</title>" not in (await ResponseFactory._get_async_page_content(page)):
+                if self._challenge_cleared(await ResponseFactory._get_async_page_content(page), challenge_type):
                     log.info("Cloudflare captcha is solved")
                     return None
                 else:
                     log.info("Looks like Cloudflare captcha is still present, solving again")
-                    return await self._cloudflare_solver(page)
+                    return await self._cloudflare_solver(page, _attempts + 1)
 
     async def fetch(self, url: str, **kwargs: Unpack[StealthFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -503,74 +526,74 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                 final_response: List = [None]
                 xhr_captured: List = []
                 page = page_info.page
-                page.on(
-                    "response",
-                    self._create_response_handler(
-                        page_info,
-                        final_response,
-                        xhr_pattern=self._config.capture_xhr,
-                        xhr_container=xhr_captured,
-                    ),
+                handler = self._create_response_handler(
+                    page_info,
+                    final_response,
+                    xhr_pattern=self._config.capture_xhr,
+                    xhr_container=xhr_captured,
                 )
-
-                if params.page_setup:
-                    try:
-                        await params.page_setup(page)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error executing page_setup: {e}")
-
+                page.on("response", handler)
                 try:
-                    first_response = await page.goto(url, referer=referer)
-                    await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                    if params.page_setup:
+                        try:
+                            await params.page_setup(page)
+                        except Exception as e:  # pragma: no cover
+                            log.error(f"Error executing page_setup: {e}")
 
-                    if not first_response:
-                        raise RuntimeError(f"Failed to get response for {url}")
-
-                    if params.solve_cloudflare:
-                        await self._cloudflare_solver(page)
-                        # Make sure the page is fully loaded after the captcha
+                    try:
+                        first_response = await page.goto(url, referer=referer)
                         await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-                    if params.page_action:
-                        try:
-                            _ = await params.page_action(page)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing page_action: {e}")
+                        if not first_response:
+                            raise RuntimeError(f"Failed to get response for {url}")
 
-                    if params.wait_selector:
-                        try:
-                            waiter: AsyncLocator = page.locator(params.wait_selector)
-                            await waiter.first.wait_for(state=params.wait_selector_state)
+                        if params.solve_cloudflare:
+                            await self._cloudflare_solver(page)
+                            # Make sure the page is fully loaded after the captcha
                             await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-                    await page.wait_for_timeout(params.wait)
+                        if params.page_action:
+                            try:
+                                _ = await params.page_action(page)
+                            except Exception as e:  # pragma: no cover
+                                log.error(f"Error executing page_action: {e}")
 
-                    response = await ResponseFactory.from_async_playwright_response(
-                        page,
-                        first_response,
-                        final_response[0],
-                        params.selector_config,
-                        meta={"proxy": proxy},
-                        xhr_captured=xhr_captured,
-                    )
-                    return response
+                        if params.wait_selector:
+                            try:
+                                waiter: AsyncLocator = page.locator(params.wait_selector)
+                                await waiter.first.wait_for(state=params.wait_selector_state)
+                                await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                            except Exception as e:  # pragma: no cover
+                                log.error(f"Error waiting for selector {params.wait_selector}: {e}")
 
-                except Exception as e:
-                    page_info.mark_error()
-                    if attempt < self._config.retries - 1:
-                        if is_proxy_error(e):
-                            log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
-                            )
+                        await page.wait_for_timeout(params.wait)
+
+                        response = await ResponseFactory.from_async_playwright_response(
+                            page,
+                            first_response,
+                            final_response[0],
+                            params.selector_config,
+                            meta={"proxy": proxy},
+                            xhr_captured=xhr_captured,
+                        )
+                        return response
+
+                    except Exception as e:
+                        page_info.mark_error()
+                        if attempt < self._config.retries - 1:
+                            if is_proxy_error(e):
+                                log.warning(
+                                    f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                                )
+                            else:
+                                log.warning(
+                                    f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
+                                )
+                            await asyncio_sleep(self._config.retry_delay)
                         else:
-                            log.warning(
-                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
-                            )
-                        await asyncio_sleep(self._config.retry_delay)
-                    else:
-                        log.error(f"Failed after {self._config.retries} attempts: {e}")
-                        raise
+                            log.error(f"Failed after {self._config.retries} attempts: {e}")
+                            raise
+                finally:
+                    page.remove_listener("response", handler)
 
         raise RuntimeError("Request failed")  # pragma: no cover
