@@ -81,6 +81,10 @@ fetchers = [
     "anyio>=4.14.0",
     "protego>=0.6.2",
 ]
+rag = [
+    "markdownify>=1.2.0",
+    "scrapling[fetchers]",
+]
 ai = [
     "mcp>=2.0.0",
     "markdownify>=1.2.0",

@@ -92,3 +92,9 @@ class TestStealthySession:
             result = StealthySession._detect_cloudflare(page_content)
             assert result is None
             assert session.fetch(self.status_200).status == 200
+            assert session.page_pool.pages_count == 1
+            page = session.page_pool.pages[0].page
+            assert session.fetch(self.status_200).status == 200
+            assert session.page_pool.pages[0].page is page, "sync sessions reuse their single tab"
+            session.close_pages()
+            assert session.page_pool.pages_count == 0

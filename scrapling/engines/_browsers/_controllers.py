@@ -144,70 +144,70 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
                 final_response: List = [None]
                 xhr_captured: List = []
                 page = page_info.page
-                page.on(
-                    "response",
-                    self._create_response_handler(
-                        page_info,
-                        final_response,
-                        xhr_pattern=self._config.capture_xhr,
-                        xhr_container=xhr_captured,
-                    ),
+                handler = self._create_response_handler(
+                    page_info,
+                    final_response,
+                    xhr_pattern=self._config.capture_xhr,
+                    xhr_container=xhr_captured,
                 )
-
-                if params.page_setup:
-                    try:
-                        params.page_setup(page)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error executing page_setup: {e}")
-
+                page.on("response", handler)
                 try:
-                    first_response = page.goto(url, referer=referer)
-                    self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-
-                    if not first_response:
-                        raise RuntimeError(f"Failed to get response for {url}")
-
-                    if params.page_action:
+                    if params.page_setup:
                         try:
-                            _ = params.page_action(page)
+                            params.page_setup(page)
                         except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing page_action: {e}")
+                            log.error(f"Error executing page_setup: {e}")
 
-                    if params.wait_selector:
-                        try:
-                            waiter: Locator = page.locator(params.wait_selector)
-                            waiter.first.wait_for(state=params.wait_selector_state)
-                            self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+                    try:
+                        first_response = page.goto(url, referer=referer)
+                        self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-                    page.wait_for_timeout(params.wait)
+                        if not first_response:
+                            raise RuntimeError(f"Failed to get response for {url}")
 
-                    response = ResponseFactory.from_playwright_response(
-                        page,
-                        first_response,
-                        final_response[0],
-                        params.selector_config,
-                        meta={"proxy": proxy},
-                        xhr_captured=xhr_captured,
-                    )
-                    return response
+                        if params.page_action:
+                            try:
+                                _ = params.page_action(page)
+                            except Exception as e:  # pragma: no cover
+                                log.error(f"Error executing page_action: {e}")
 
-                except Exception as e:
-                    page_info.mark_error()
-                    if attempt < self._config.retries - 1:
-                        if is_proxy_error(e):
-                            log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
-                            )
+                        if params.wait_selector:
+                            try:
+                                waiter: Locator = page.locator(params.wait_selector)
+                                waiter.first.wait_for(state=params.wait_selector_state)
+                                self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                            except Exception as e:  # pragma: no cover
+                                log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+
+                        page.wait_for_timeout(params.wait)
+
+                        response = ResponseFactory.from_playwright_response(
+                            page,
+                            first_response,
+                            final_response[0],
+                            params.selector_config,
+                            meta={"proxy": proxy},
+                            xhr_captured=xhr_captured,
+                        )
+                        return response
+
+                    except Exception as e:
+                        page_info.mark_error()
+                        if attempt < self._config.retries - 1:
+                            if is_proxy_error(e):
+                                log.warning(
+                                    f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                                )
+                            else:
+                                log.warning(
+                                    f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
+                                )
+                            time_sleep(self._config.retry_delay)
                         else:
-                            log.warning(
-                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
-                            )
-                        time_sleep(self._config.retry_delay)
-                    else:
-                        log.error(f"Failed after {self._config.retries} attempts: {e}")
-                        raise
+                            log.error(f"Failed after {self._config.retries} attempts: {e}")
+                            raise
+                finally:
+                    page.remove_listener("response", handler)
 
         raise RuntimeError("Request failed")  # pragma: no cover
 
@@ -333,69 +333,69 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
                 final_response: List = [None]
                 xhr_captured: List = []
                 page = page_info.page
-                page.on(
-                    "response",
-                    self._create_response_handler(
-                        page_info,
-                        final_response,
-                        xhr_pattern=self._config.capture_xhr,
-                        xhr_container=xhr_captured,
-                    ),
+                handler = self._create_response_handler(
+                    page_info,
+                    final_response,
+                    xhr_pattern=self._config.capture_xhr,
+                    xhr_container=xhr_captured,
                 )
-
-                if params.page_setup:
-                    try:
-                        await params.page_setup(page)
-                    except Exception as e:  # pragma: no cover
-                        log.error(f"Error executing page_setup: {e}")
-
+                page.on("response", handler)
                 try:
-                    first_response = await page.goto(url, referer=referer)
-                    await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-
-                    if not first_response:
-                        raise RuntimeError(f"Failed to get response for {url}")
-
-                    if params.page_action:
+                    if params.page_setup:
                         try:
-                            _ = await params.page_action(page)
+                            await params.page_setup(page)
                         except Exception as e:  # pragma: no cover
-                            log.error(f"Error executing page_action: {e}")
+                            log.error(f"Error executing page_setup: {e}")
 
-                    if params.wait_selector:
-                        try:
-                            waiter: AsyncLocator = page.locator(params.wait_selector)
-                            await waiter.first.wait_for(state=params.wait_selector_state)
-                            await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
-                        except Exception as e:  # pragma: no cover
-                            log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+                    try:
+                        first_response = await page.goto(url, referer=referer)
+                        await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
-                    await page.wait_for_timeout(params.wait)
+                        if not first_response:
+                            raise RuntimeError(f"Failed to get response for {url}")
 
-                    response = await ResponseFactory.from_async_playwright_response(
-                        page,
-                        first_response,
-                        final_response[0],
-                        params.selector_config,
-                        meta={"proxy": proxy},
-                        xhr_captured=xhr_captured,
-                    )
-                    return response
+                        if params.page_action:
+                            try:
+                                _ = await params.page_action(page)
+                            except Exception as e:  # pragma: no cover
+                                log.error(f"Error executing page_action: {e}")
 
-                except Exception as e:
-                    page_info.mark_error()
-                    if attempt < self._config.retries - 1:
-                        if is_proxy_error(e):
-                            log.warning(
-                                f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
-                            )
+                        if params.wait_selector:
+                            try:
+                                waiter: AsyncLocator = page.locator(params.wait_selector)
+                                await waiter.first.wait_for(state=params.wait_selector_state)
+                                await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
+                            except Exception as e:  # pragma: no cover
+                                log.error(f"Error waiting for selector {params.wait_selector}: {e}")
+
+                        await page.wait_for_timeout(params.wait)
+
+                        response = await ResponseFactory.from_async_playwright_response(
+                            page,
+                            first_response,
+                            final_response[0],
+                            params.selector_config,
+                            meta={"proxy": proxy},
+                            xhr_captured=xhr_captured,
+                        )
+                        return response
+
+                    except Exception as e:
+                        page_info.mark_error()
+                        if attempt < self._config.retries - 1:
+                            if is_proxy_error(e):
+                                log.warning(
+                                    f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {self._config.retry_delay}s..."
+                                )
+                            else:
+                                log.warning(
+                                    f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
+                                )
+                            await asyncio_sleep(self._config.retry_delay)
                         else:
-                            log.warning(
-                                f"Attempt {attempt + 1} failed: {e}. Retrying in {self._config.retry_delay}s..."
-                            )
-                        await asyncio_sleep(self._config.retry_delay)
-                    else:
-                        log.error(f"Failed after {self._config.retries} attempts: {e}")
-                        raise
+                            log.error(f"Failed after {self._config.retries} attempts: {e}")
+                            raise
+                finally:
+                    page.remove_listener("response", handler)
 
         raise RuntimeError("Request failed")  # pragma: no cover

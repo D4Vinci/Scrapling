@@ -85,6 +85,22 @@ class Response(Selector):
         """Return the raw body of the response as bytes."""
         return cast(bytes, cast(Sequence, self._raw_body))
 
+    def markdown(self, css_selector: Optional[str] = None, main_content_only: bool = False) -> str:
+        """Convert the response content to clean Markdown.
+
+        Scripts, styles, and hidden/prompt-injection content are always removed before conversion, which is
+        the same cleaning the MCP server does. Requires the "markdownify" package (`pip install "scrapling[rag]"`).
+
+        :param css_selector: CSS selector to convert only the matching elements. All matches are concatenated.
+        :param main_content_only: Convert only the content inside the `<body>` tag.
+        """
+        from scrapling.core.shell import Convertor
+
+        page = (cast(Selector, self.css("body").first) or self) if main_content_only else self
+        page = Convertor._sanitize_for_ai(Convertor._strip_noise_tags(page))
+        pages = [page] if not css_selector else page.css(css_selector)
+        return "".join(Convertor._convert_to_markdown(element.html_content) for element in pages)
+
     def follow(
         self,
         url: str,

@@ -19,8 +19,8 @@
     <a href="https://hub.docker.com/r/pyd4vinci/scrapling" target="_blank">
         <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/pyd4vinci/scrapling?labelColor=%20%23FDB062&logo=Docker&labelColor=%20%23528bff"></a>
     <a href="https://clickpy.clickhouse.com/dashboard/scrapling" rel="nofollow"><img src="https://img.shields.io/pypi/dm/scrapling" alt="PyPI package downloads"></a>
-    <a href="https://github.com/D4Vinci/Scrapling/tree/main/agent-skill" alt="AI Agent Skill directory">
-        <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fgithub.com%2FD4Vinci%2FScrapling%2Ftree%2Fmain%2Fagent-skill"></a>
+    <a href="https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html" alt="AI Agent Skill">
+        <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Fen%2Flatest%2Fai%2Fagent-skill.html"></a>
     <a href="https://clawhub.ai/D4Vinci/scrapling-official" alt="OpenClaw Skill">
         <img alt="OpenClaw Skill" src="https://img.shields.io/badge/Clawhub-darkred?style=flat&label=OpenClaw&link=https%3A%2F%2Fclawhub.ai%2FD4Vinci%2Fscrapling-official"></a>
     <br/>
@@ -51,7 +51,7 @@
 
 Scrapling은 단일 요청부터 대규모 크롤링까지 모든 것을 처리하는 적응형 Web Scraping 프레임워크입니다.
 
-파서는 웹사이트 변경 사항을 학습하고, 페이지가 업데이트되면 요소를 자동으로 재배치합니다. Fetcher는 Cloudflare Turnstile 같은 안티봇 시스템을 별도 설정 없이 우회합니다. Spider 프레임워크를 사용하면 일시정지/재개 및 자동 프록시 로테이션을 갖춘 동시 멀티 세션 크롤링으로 확장할 수 있습니다 - 모두 Python 몇 줄이면 됩니다. 하나의 라이브러리, 타협 없는 성능.
+파서는 웹사이트 변경 사항을 학습하고, 페이지가 업데이트되면 요소를 자동으로 재배치합니다. Fetcher는 Cloudflare Turnstile 같은 안티봇 시스템을 별도 설정 없이 우회합니다. Spider 프레임워크를 사용하면 일시정지/재개, 자동 프록시 로테이션, 그리고 각 웹사이트의 응답 속도에 맞춰 조절되고 차단이 시작되면 속도를 늦추는 크롤링 속도를 갖춘 동시 멀티 세션 크롤링으로 확장할 수 있습니다 - 모두 Python 몇 줄이면 됩니다. 하나의 라이브러리, 타협 없는 성능.
 
 실시간 통계와 스트리밍을 통한 초고속 크롤링. Web Scraper가 만들고, Web Scraper와 일반 사용자 모두를 위해 설계했습니다.
 
@@ -87,12 +87,12 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingjuly" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingaugust" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingjuly" target="_blank">NodeMaven</a> - 시장에서 가장 높은 품질의 IP를 제공하는 신뢰할 수 있는 프록시 제공업체입니다. 프로모 코드 SCRAPLING35를 사용하면 프록시 35% 할인을 받을 수 있습니다.
+    <a href="https://go.nodemaven.com/scraplingaugust" target="_blank">NodeMaven</a> - 웹 스크래핑과 자동화를 위한 가장 효율적인 프록시 제공업체로, 시장에서 가장 높은 품질의 IP를 제공합니다. 코드 SCRAPLING35를 사용하면 35% 할인을 받을 수 있습니다.
     </td>
   </tr>
   <tr>
@@ -217,6 +217,7 @@ MySpider().start()
 <!-- sponsors -->
 
 <a href="https://www.novada.com/?d4vinci-scrapling" target="_blank" title="The All-in-One Solution for Every Data Scraping Scenario"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/novada.jpg"></a>
+<a href="https://cloro.dev/?utm_source=referral&utm_medium=scrapling" target="_blank" title="The search API for the AI era"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/cloro.jpg"></a>
 
 <br/>
 
@@ -261,12 +262,15 @@ MySpider().start()
 - **백그라운드 API 캡처**: `capture_xhr`에 URL 패턴을 전달하면, 페이지가 로드되는 동안 발생한 일치하는 XHR/fetch 응답이 모두 `Response` 객체로 `response.captured_xhr`에 수집됩니다. 요청을 직접 리버스 엔지니어링하지 않고도 사이트의 API 데이터를 얻을 수 있습니다.
 - **비동기 지원**: 모든 Fetcher와 전용 비동기 세션 클래스에서 완전한 비동기를 지원합니다.
 
-### 적응형 스크레이핑 & AI 통합
+### 적응형 스크레이핑
 - 🔄 **스마트 요소 추적**: 지능적인 유사도 알고리즘으로 웹사이트 변경 후에도 요소를 재배치합니다.
 - 🎯 **유연한 스마트 선택**: CSS selector, XPath selector, 필터 기반 검색, 텍스트 검색, 정규식 검색 등을 지원합니다.
 - 🔍 **유사 요소 찾기**: 발견된 요소와 유사한 요소를 자동으로 찾아냅니다.
-- 🤖 **AI와 함께 사용하는 MCP 서버**: AI 기반 Web Scraping과 데이터 추출을 위한 내장 MCP 서버. AI(Claude/Cursor 등)에 전달하기 전에 Scrapling을 활용해 대상 콘텐츠를 추출하는 강력한 커스텀 기능을 갖추고 있어, 작업 속도를 높이고 토큰 사용량을 최소화해 비용을 절감합니다. ([데모 영상](https://www.youtube.com/watch?v=qyFk3ZNwOxE)) 또한 여러 호출에 걸쳐 브라우저 세션을 유지하고, 페이지 스크린샷을 찍고, CDP로 원격 브라우저를 제어할 수도 있습니다.
-- 🧠 **Agent Skill**: 설치만 하면 되는 [Agent Skill](https://github.com/D4Vinci/Scrapling/tree/main/agent-skill)이 코딩 에이전트에게 라이브러리 전체를 가르쳐, 에이전트가 Scrapling으로 작성하는 코드가 추측이 아니라 현재 API에 맞도록 해줍니다.
+
+### AI 기능
+- 🤖 **MCP 서버**: AI 챗봇과 에이전트(Claude/Cursor 등)가 Scrapling을 통해 스크래핑하도록 해줍니다. 일회성 도구와 세션 기반 도구가 일반 HTTP 요청(모든 메서드), 브라우저 가져오기, Cloudflare를 우회하는 스텔스 가져오기를 모두 지원합니다. 페이지는 AI에 전달되기 전에 CSS 선택자로 범위가 좁혀지고 프롬프트 인젝션 콘텐츠가 제거되므로, 에이전트는 더 적게 읽고 더 적게 비용을 쓰며 숨겨진 텍스트에 탈취당하지 않습니다. 스크린샷, CDP를 통한 원격 브라우저, 기본적으로 안전한 HTTP 전송도 포함됩니다. ([데모 영상](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🧠 **Agent Skill**: 설치만 하면 되는 [Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html)이 코딩 에이전트에게 라이브러리 전체를 가르쳐, 에이전트가 Scrapling으로 작성하는 코드가 추측이 아니라 현재 API에 맞도록 해줍니다.
+- 📚 **RAG용 Markdown**: 한 줄(`page.markdown()`)로 어떤 페이지든 깨끗하고 정제된 LLM용 Markdown으로 변환하거나, `SiteToMarkdownSpider` 템플릿으로 웹사이트 전체를 Markdown 코퍼스로 크롤링할 수 있습니다. 과정에 LLM을 전혀 사용하지 않습니다. ([문서](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
 
 ### 고성능 & 실전 검증된 아키텍처
 - 🚀 **초고속**: 대부분의 Python 스크레이핑 라이브러리를 능가하는 최적화된 성능.
@@ -535,6 +539,10 @@ pip install scrapling
    - MCP 서버 기능 설치:
        ```bash
        pip install "scrapling[ai]"
+       ```
+   - ([RAG 시스템 구축](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))을 위한 의존성 설치:
+       ```bash
+       pip install "scrapling[rag]"
        ```
    - Shell 기능 (Web Scraping Shell 및 `extract` 명령어) 설치:
        ```bash

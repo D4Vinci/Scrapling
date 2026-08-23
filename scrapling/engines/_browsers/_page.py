@@ -24,6 +24,11 @@ class PageInfo(Generic[PageType]):
         self.state = "busy"
         self.url = url
 
+    def mark_ready(self):
+        """Mark the page as ready to be reused by the next request"""
+        self.state = "ready"
+        self.url = ""
+
     def mark_error(self):
         """Mark the page as having an error"""
         self.state = "error"
@@ -55,20 +60,41 @@ class PagePool:
     def add_page(self, page: AsyncPage) -> PageInfo[AsyncPage]: ...
 
     def add_page(self, page: SyncPage | AsyncPage) -> PageInfo[SyncPage] | PageInfo[AsyncPage]:
-        """Add a new page to the pool"""
+        """Add a new page to the pool, marked busy for the request that created it"""
         with self._lock:
             if len(self.pages) >= self.max_pages:
                 raise RuntimeError(f"Maximum page limit ({self.max_pages}) reached")
 
             if isinstance(page, AsyncPage):
                 page_info: PageInfo[SyncPage] | PageInfo[AsyncPage] = cast(
-                    PageInfo[AsyncPage], PageInfo(page, "ready", "")
+                    PageInfo[AsyncPage], PageInfo(page, "busy", "")
                 )
             else:
-                page_info = cast(PageInfo[SyncPage], PageInfo(page, "ready", ""))
+                page_info = cast(PageInfo[SyncPage], PageInfo(page, "busy", ""))
 
             self.pages.append(page_info)
             return page_info
+
+    def get_ready_page(self) -> Optional[PageInfo[SyncPage] | PageInfo[AsyncPage]]:
+        """Take the first ready page out of the pool's free pages, marking it busy, or return None"""
+        with self._lock:
+            for page_info in self.pages:
+                if page_info.state == "ready":
+                    page_info.mark_busy()
+                    return page_info
+            return None
+
+    def remove_page(self, page_info: PageInfo[SyncPage] | PageInfo[AsyncPage]):
+        """Forget a page, whether it's still in the pool or not"""
+        with self._lock:
+            if page_info in self.pages:
+                self.pages.remove(page_info)
+
+    def clear(self) -> List[PageInfo[SyncPage] | PageInfo[AsyncPage]]:
+        """Forget every page and return them so the caller can close them"""
+        with self._lock:
+            pages, self.pages = self.pages, []
+            return pages
 
     @property
     def pages_count(self) -> int:
@@ -80,8 +106,3 @@ class PagePool:
         """Get the number of busy pages"""
         with self._lock:
             return sum(1 for p in self.pages if p.state == "busy")
-
-    def cleanup_error_pages(self):
-        """Remove pages in error state"""
-        with self._lock:
-            self.pages = [p for p in self.pages if p.state != "error"]

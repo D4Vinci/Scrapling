@@ -53,20 +53,73 @@ class TestAsyncStealthySession:
     async def test_page_pool_management(self, urls):
         """Test page pool creation and reuse"""
         async with AsyncStealthySession() as session:
-            # The first request creates a page
+            # The first request creates a page, and it stays open afterwards
             response = await session.fetch(urls["basic"])
             assert response.status == 200
-            assert session.page_pool.pages_count == 0
+            assert session.page_pool.pages_count == 1
+            page = session.page_pool.pages[0].page
+            assert session.page_pool.pages[0].state == "ready"
 
-            # The second request should reuse the page
+            # The second request reuses the same tab
             response = await session.fetch(urls["html"])
             assert response.status == 200
-            assert session.page_pool.pages_count == 0
+            assert session.page_pool.pages_count == 1
+            assert session.page_pool.pages[0].page is page
 
             # Check pool stats
             stats = session.get_pool_stats()
-            assert stats["total_pages"] == 0
+            assert stats["total_pages"] == 1
+            assert stats["busy_pages"] == 0
             assert stats["max_pages"] == 1
+
+    async def test_close_pages(self, urls):
+        """Closing the tabs empties the pool, and the next request opens a fresh one"""
+        async with AsyncStealthySession() as session:
+            await session.fetch(urls["basic"])
+            page = session.page_pool.pages[0].page
+
+            await session.close_pages()
+            assert session.page_pool.pages_count == 0
+            assert page.is_closed()
+
+            response = await session.fetch(urls["html"])
+            assert response.status == 200
+            assert session.page_pool.pages_count == 1
+            assert session.page_pool.pages[0].page is not page
+
+    async def test_per_request_headers_do_not_leak_into_the_next_request(self, httpbin):
+        """A reused tab gets its settings reset, so headers from the previous request are gone"""
+        async with AsyncStealthySession() as session:
+            response = await session.fetch(f"{httpbin.url}/headers", extra_headers={"X-Scrapling-First": "1"})
+            assert "X-Scrapling-First" in response.get_all_text()
+
+            response = await session.fetch(f"{httpbin.url}/headers", extra_headers={"X-Scrapling-Second": "2"})
+            assert "X-Scrapling-Second" in response.get_all_text()
+            assert "X-Scrapling-First" not in response.get_all_text(), "the new headers must replace the old ones"
+
+            response = await session.fetch(f"{httpbin.url}/headers")
+            assert "X-Scrapling-Second" not in response.get_all_text()
+            assert "X-Scrapling-First" not in response.get_all_text()
+
+    async def test_resource_blocking_does_not_leak_into_the_next_request(self, httpbin):
+        """Routes registered for one request are removed before the tab is reused"""
+        js = """async () => {
+            const img = document.createElement('img');
+            const done = new Promise(r => { img.onload = () => r('loaded'); img.onerror = () => r('blocked'); });
+            img.src = '/image/png?' + Math.random();
+            document.body.appendChild(img);
+            return await done;
+        }"""
+        results = []
+
+        async def probe(page):
+            results.append(await page.evaluate(js))
+
+        async with AsyncStealthySession() as session:
+            await session.fetch(f"{httpbin.url}/html", disable_resources=True, page_action=probe)
+            await session.fetch(f"{httpbin.url}/html", page_action=probe)
+            assert results == ["blocked", "loaded"]
+            assert session.page_pool.pages_count == 1
 
     async def test_stealthy_session_with_options(self, urls):
         """Test AsyncStealthySession with various options"""
@@ -84,3 +137,4 @@ class TestAsyncStealthySession:
             # Test with invalid URL
             with pytest.raises(Exception):
                 await session.fetch("invalid://url")
+            assert session.page_pool.pages_count == 0, "errored tabs are closed and evicted"

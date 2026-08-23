@@ -19,8 +19,8 @@
     <a href="https://hub.docker.com/r/pyd4vinci/scrapling" target="_blank">
         <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/pyd4vinci/scrapling?labelColor=%20%23FDB062&logo=Docker&labelColor=%20%23528bff"></a>
     <a href="https://clickpy.clickhouse.com/dashboard/scrapling" rel="nofollow"><img src="https://img.shields.io/pypi/dm/scrapling" alt="PyPI package downloads"></a>
-    <a href="https://github.com/D4Vinci/Scrapling/tree/main/agent-skill" alt="AI Agent Skill directory">
-        <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fgithub.com%2FD4Vinci%2FScrapling%2Ftree%2Fmain%2Fagent-skill"></a>
+    <a href="https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html" alt="AI Agent Skill">
+        <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Fen%2Flatest%2Fai%2Fagent-skill.html"></a>
     <a href="https://clawhub.ai/D4Vinci/scrapling-official" alt="OpenClaw Skill">
         <img alt="OpenClaw Skill" src="https://img.shields.io/badge/Clawhub-darkred?style=flat&label=OpenClaw&link=https%3A%2F%2Fclawhub.ai%2FD4Vinci%2Fscrapling-official"></a>
     <br/>
@@ -51,7 +51,7 @@
 
 Scrapling est un framework de Web Scraping adaptatif qui gère tout, d'une simple requête à un crawl à grande échelle.
 
-Son parser apprend des modifications de sites web et relocalise automatiquement vos éléments lorsque les pages sont mises à jour. Ses fetchers contournent les systèmes anti-bot comme Cloudflare Turnstile nativement. Et son framework Spider vous permet de monter en charge vers des crawls concurrents multi-sessions avec pause/reprise et rotation automatique de proxy - le tout en quelques lignes de Python. Une seule bibliothèque, zéro compromis.
+Son parser apprend des modifications de sites web et relocalise automatiquement vos éléments lorsque les pages sont mises à jour. Ses fetchers contournent les systèmes anti-bot comme Cloudflare Turnstile nativement. Et son framework Spider vous permet de monter en charge vers des crawls concurrents multi-sessions avec pause/reprise, rotation automatique de proxy et une vitesse de crawl qui s'adapte à la rapidité de réponse de chaque site et ralentit dès qu'il commence à vous bloquer - le tout en quelques lignes de Python. Une seule bibliothèque, zéro compromis.
 
 Des crawls ultra-rapides avec des statistiques en temps réel et du streaming. Conçu par des Web Scrapers pour des Web Scrapers et des utilisateurs réguliers, il y en a pour tout le monde.
 
@@ -87,12 +87,12 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingjuly" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingaugust" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingjuly" target="_blank">NodeMaven</a> - fournisseur de proxys fiable offrant la meilleure qualité d'IP du marché. Utilisez le code promo SCRAPLING35 pour obtenir 35% de réduction sur les proxys.
+    <a href="https://go.nodemaven.com/scraplingaugust" target="_blank">NodeMaven</a> - le fournisseur de proxys le plus efficace pour le Web Scraping et l'automatisation, avec la meilleure qualité d'IP du marché. Utilisez le code SCRAPLING35 pour obtenir 35% de réduction.
     </td>
   </tr>
   <tr>
@@ -217,6 +217,7 @@ MySpider().start()
 <!-- sponsors -->
 
 <a href="https://www.novada.com/?d4vinci-scrapling" target="_blank" title="The All-in-One Solution for Every Data Scraping Scenario"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/novada.jpg"></a>
+<a href="https://cloro.dev/?utm_source=referral&utm_medium=scrapling" target="_blank" title="The search API for the AI era"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/cloro.jpg"></a>
 
 <br/>
 
@@ -261,12 +262,15 @@ MySpider().start()
 - **Capture des API en arrière-plan** : Passez un motif d'URL à `capture_xhr`, et toutes les réponses XHR/fetch correspondantes émises par la page pendant le chargement sont collectées sous forme d'objets `Response` dans `response.captured_xhr` - récupérez les données de l'API d'un site sans avoir à rétro-concevoir les requêtes vous-même.
 - **Support async** : Support async complet sur tous les fetchers et classes de sessions async dédiées.
 
-### Scraping adaptatif & Intégration IA
+### Scraping adaptatif
 - 🔄 **Suivi intelligent des éléments** : Relocalisez les éléments après des modifications de site web en utilisant des algorithmes de similarité intelligents.
 - 🎯 **Sélection flexible intelligente** : Sélecteurs CSS, sélecteurs XPath, recherche par filtres, recherche textuelle, recherche regex et plus encore.
 - 🔍 **Trouver des éléments similaires** : Localisez automatiquement des éléments similaires aux éléments trouvés.
-- 🤖 **Serveur MCP pour utilisation avec l'IA** : Serveur MCP intégré pour le Web Scraping et l'extraction de données assistés par IA. Le serveur MCP dispose de capacités puissantes et personnalisées qui exploitent Scrapling pour extraire du contenu ciblé avant de le transmettre à l'IA (Claude/Cursor/etc.), accélérant ainsi les opérations et réduisant les coûts en minimisant l'utilisation de tokens. ([vidéo de démonstration](https://www.youtube.com/watch?v=qyFk3ZNwOxE)) Il peut aussi garder des sessions de navigateur ouvertes entre les appels, prendre des captures d'écran des pages et piloter des navigateurs distants via CDP.
-- 🧠 **Agent Skill** : Un [Agent Skill](https://github.com/D4Vinci/Scrapling/tree/main/agent-skill) prêt à installer qui enseigne toute la bibliothèque aux agents de codage, pour que le code qu'ils écrivent avec Scrapling corresponde à l'API actuelle au lieu d'être deviné.
+
+### Fonctionnalités IA
+- 🤖 **Serveur MCP** : Laissez les chatbots et agents IA (Claude/Cursor/etc.) scraper via Scrapling avec des outils ponctuels ou basés sur des sessions couvrant les requêtes HTTP simples (toute méthode), les chargements par navigateur et les chargements furtifs qui contournent Cloudflare. Les pages sont réduites avec des sélecteurs CSS et nettoyées du contenu d'injection de prompt avant que l'IA ne les voie, donc l'agent lit moins, coûte moins et ne peut pas être détourné par du texte caché. Captures d'écran, navigateurs distants via CDP et transport HTTP sécurisé par défaut sont inclus. ([vidéo de démonstration](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🧠 **Agent Skill** : Un [Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html) prêt à installer qui enseigne toute la bibliothèque aux agents de codage, pour que le code qu'ils écrivent avec Scrapling corresponde à l'API actuelle au lieu d'être deviné.
+- 📚 **Markdown prêt pour le RAG** : Transformez n'importe quelle page en Markdown propre, assaini et prêt pour les LLM en une ligne (`page.markdown()`), ou crawlez un site entier en un corpus Markdown avec le template `SiteToMarkdownSpider`, le tout sans LLM dans la boucle. ([documentation](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
 
 ### Architecture haute performance et éprouvée
 - 🚀 **Ultra rapide** : Performance optimisée surpassant la plupart des bibliothèques de scraping Python.
@@ -535,6 +539,10 @@ pip install scrapling
    - Installer la fonctionnalité serveur MCP :
        ```bash
        pip install "scrapling[ai]"
+       ```
+   - Installer les dépendances pour ([construire des systèmes RAG](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html)) :
+       ```bash
+       pip install "scrapling[rag]"
        ```
    - Installer les fonctionnalités shell (shell de Web Scraping et la commande `extract`) :
        ```bash
