@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
+from curl_cffi import CurlECode
 from curl_cffi.curl import CurlError
 
 from scrapling.engines.static import _ASyncSessionLogic as AsyncFetcherSession, AsyncFetcherClient
@@ -85,3 +86,69 @@ class TestFetcherSession:
                 await session.get("http://example.com", retries=0)
 
             assert mocked_request.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_certificate_failure_is_not_retried(self):
+        """Repeating the identical request cannot change the certificate verification result (#426)"""
+        async with AsyncFetcherSession(retries=3, retry_delay=0) as session:
+            with (
+                patch.object(session._async_curl_session, "request", new=AsyncMock()) as mocked_request,
+                patch("scrapling.engines.static.ResponseFactory.from_http_request", return_value=MagicMock()),
+            ):
+                mocked_request.side_effect = CurlError(
+                    "SSL peer certificate was not OK", CurlECode.PEER_FAILED_VERIFICATION
+                )
+                with pytest.raises(CurlError):
+                    await session.get("https://expired.badssl.com/")
+
+            assert mocked_request.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_certificate_failure_is_retried_while_rotating(self):
+        """A rotator makes the next attempt a different exit, so a route-caused certificate failure is worth retrying"""
+        rotator = ProxyRotator(["http://p1:8080", "http://p2:8080"])
+
+        async with AsyncFetcherSession(proxy_rotator=rotator, retries=2, retry_delay=0) as session:
+            with (
+                patch.object(session._async_curl_session, "request", new=AsyncMock()) as mocked_request,
+                patch("scrapling.engines.static.ResponseFactory.from_http_request", return_value=MagicMock()),
+            ):
+                mocked_request.side_effect = [
+                    CurlError("SSL peer certificate was not OK", CurlECode.PEER_FAILED_VERIFICATION),
+                    MagicMock(),
+                ]
+                await session.get("https://example.com")
+
+            assert mocked_request.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_client_side_error_is_not_retried_even_while_rotating(self):
+        """A malformed URL holds on every exit, so rotation does not make it worth repeating"""
+        rotator = ProxyRotator(["http://p1:8080", "http://p2:8080"])
+
+        async with AsyncFetcherSession(proxy_rotator=rotator, retries=3, retry_delay=0) as session:
+            with (
+                patch.object(session._async_curl_session, "request", new=AsyncMock()) as mocked_request,
+                patch("scrapling.engines.static.ResponseFactory.from_http_request", return_value=MagicMock()),
+            ):
+                mocked_request.side_effect = CurlError("URL using bad/illegal format", CurlECode.URL_MALFORMAT)
+                with pytest.raises(CurlError):
+                    await session.get("http://example.com")
+
+            assert mocked_request.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_transient_error_is_still_retried(self):
+        """Errors that are not classified as deterministic must keep their existing retry behaviour"""
+        async with AsyncFetcherSession(retries=3, retry_delay=0) as session:
+            with (
+                patch.object(session._async_curl_session, "request", new=AsyncMock()) as mocked_request,
+                patch("scrapling.engines.static.ResponseFactory.from_http_request", return_value=MagicMock()),
+            ):
+                mocked_request.side_effect = [
+                    CurlError("Connection timed out", CurlECode.OPERATION_TIMEDOUT),
+                    MagicMock(),
+                ]
+                await session.get("http://example.com")
+
+            assert mocked_request.call_count == 2

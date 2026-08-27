@@ -4,7 +4,7 @@ from time import sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
 from curl_cffi.curl import CurlError
-from curl_cffi import CurlHttpVersion
+from curl_cffi import CurlECode, CurlHttpVersion
 from curl_cffi.requests import (
     BrowserTypeLiteral,
     Session as CurlSession,
@@ -31,6 +31,47 @@ from ._browsers._types import RequestsSession, GetRequestParams, DataRequestPara
 from .toolbelt.fingerprints import generate_headers, __default_useragent__
 
 _NO_SESSION: Any = object()
+
+# libcurl codes that describe the client's own configuration or the URL it was
+# given. Sending the identical request again cannot turn any of them into a
+# success, so a retry only adds `retry_delay` to the time before the caller
+# learns what went wrong.
+_FATAL_CURL_CODES = frozenset(
+    {
+        CurlECode.UNSUPPORTED_PROTOCOL,
+        CurlECode.URL_MALFORMAT,
+        CurlECode.BAD_FUNCTION_ARGUMENT,
+        CurlECode.SSL_ENGINE_NOTFOUND,
+        CurlECode.SSL_ENGINE_SETFAILED,
+        CurlECode.SSL_CERTPROBLEM,
+        CurlECode.SSL_CIPHER,
+        CurlECode.SSL_CACERT_BADFILE,
+    }
+)
+
+# Verification failures for the certificate the peer presented. Deterministic
+# for that peer, but a rotator hands out a different exit on the next attempt,
+# and a TLS-intercepting middlebox on one route is a real cause of these - so
+# they are only worth failing fast on when the request would be identical.
+_PEER_CERTIFICATE_CURL_CODES = frozenset(
+    {
+        CurlECode.PEER_FAILED_VERIFICATION,
+        CurlECode.SSL_ISSUER_ERROR,
+    }
+)
+
+
+def _is_retryable(error: CurlError, rotating: bool) -> bool:
+    """Whether sending the same request again could plausibly return something else.
+
+    `rotating` says whether a proxy rotator will pick a different exit for the
+    next attempt, which is what decides the peer-certificate cases.
+    """
+    if error.code in _FATAL_CURL_CODES:
+        return False
+    if error.code in _PEER_CERTIFICATE_CURL_CODES:
+        return rotating
+    return True
 
 
 def _select_random_browser(impersonate: ImpersonateType) -> Optional[BrowserTypeLiteral]:
@@ -244,6 +285,8 @@ class _SyncSessionLogic(_ConfigurationLogic):
         if not session:
             raise RuntimeError("No active session available.")  # pragma: no cover
 
+        rotating = self._proxy_rotator is not None and static_proxy is None
+
         try:
             for attempt in range(max_retries):
                 proxy: Optional[ProxyType]
@@ -259,6 +302,9 @@ class _SyncSessionLogic(_ConfigurationLogic):
                     result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": proxy})
                     return result
                 except CurlError as e:  # pragma: no cover
+                    if not _is_retryable(e, rotating):
+                        log.error(f"Request failed with an error that a retry cannot change: {e}")
+                        raise
                     if attempt < max_retries - 1:
                         # Now if the rotator is enabled, we will try again with the new proxy
                         # If it's not enabled, then we will try again with the same proxy
@@ -462,6 +508,8 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         if not session:
             raise RuntimeError("No active session available.")  # pragma: no cover
 
+        rotating = self._proxy_rotator is not None and static_proxy is None
+
         try:
             # Determine if we should use proxy rotation
             for attempt in range(max_retries):
@@ -477,6 +525,9 @@ class _ASyncSessionLogic(_ConfigurationLogic):
                     result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": proxy})
                     return result
                 except CurlError as e:  # pragma: no cover
+                    if not _is_retryable(e, rotating):
+                        log.error(f"Request failed with an error that a retry cannot change: {e}")
+                        raise
                     if attempt < max_retries - 1:
                         # Now if the rotator is enabled, we will try again with the new proxy
                         # If it's not enabled, then we will try again with the same proxy
