@@ -12,6 +12,7 @@ from scrapling.cli import main, shell, mcp, get, post, put, delete, fetch, steal
 def configure_selector_mock():
     """Helper function to create a properly configured Selector mock"""
     mock_response = MagicMock(spec=Selector)
+    mock_response.status = 200
     mock_response.body = "<html><body>Test content</body></html>"
     mock_response.html_content = "<html><body>Test content</body></html>"
     mock_response.encoding = "utf-8"
@@ -177,6 +178,22 @@ class TestCLI:
                 ],
             )
             assert result.exit_code == 0
+
+    def test_extract_get_rejects_non_success_response(self, runner, tmp_path, html_url):
+        """A failed HTTP response is not saved as successful output"""
+        output_file = tmp_path / "output.md"
+
+        with patch("scrapling.fetchers.Fetcher.get") as mock_get:
+            mock_response = configure_selector_mock()
+            mock_response.status = 403
+            mock_get.return_value = mock_response
+
+            result = runner.invoke(get, [html_url, str(output_file)])
+
+        assert result.exit_code == 1
+        assert "Error: Request failed with status 403" in result.output
+        assert "Content successfully saved" not in result.output
+        assert not output_file.exists()
 
     def test_extract_post_command(self, runner, tmp_path, html_url):
         """Test extract `post` command"""

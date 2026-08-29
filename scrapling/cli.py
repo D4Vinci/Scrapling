@@ -12,7 +12,7 @@ from scrapling.core._types import List, Optional, Dict, Tuple, Any, Callable
 from orjson import loads as json_loads, JSONDecodeError
 
 try:
-    from click import command, option, Choice, group, argument, version_option, UsageError
+    from click import command, option, Choice, group, argument, version_option, UsageError, ClickException
 except (ImportError, ModuleNotFoundError) as e:
     raise ModuleNotFoundError(
         "You need to install scrapling with any of the extras to enable Shell commands. See: https://scrapling.readthedocs.io/en/latest/#installation"
@@ -58,6 +58,8 @@ def __Request_and_Save(
     if ai_targeted:
         kwargs.setdefault("block_ads", True)
     response = fetcher_func(url, **kwargs)
+    if not 200 <= response.status < 300:
+        raise ClickException(f"Request failed with status {response.status}")
     Convertor.write_content_to_file(response, str(output_path), css_selector, main_content_only=ai_targeted)
     log.info(f"Content successfully saved to '{output_path}'")
 
