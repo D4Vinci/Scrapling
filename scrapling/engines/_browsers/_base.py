@@ -479,7 +479,15 @@ class BaseSessionMixin:
         if not config.cdp_url:
             flags = self._browser_options["args"]
             if config.extra_flags or extra_flags:
-                flags = list(set(tuple(flags) + tuple(config.extra_flags or extra_flags or ())))
+                # `extra_flags` is the caller's bundle - for a stealth session it is the
+                # whole hardening set - and `config.extra_flags` is the user's own. Both
+                # have to be kept; `a or b` used to pick one and silently drop the other,
+                # so a user passing a single flag lost every stealth flag with it.
+                # The user's flags go last, so they win the switches Chrome parses
+                # last-wins (`--disable-features`, `--lang`, ...).
+                # Order is preserved on purpose: `set()` here made the flag list differ
+                # from run to run, which decides those last-wins switches by coin flip.
+                flags = list(dict.fromkeys(tuple(flags) + tuple(extra_flags or ()) + tuple(config.extra_flags or ())))
 
             if config.dns_over_https:
                 doh_flag = "--dns-over-https-templates=https://cloudflare-dns.com/dns-query"
