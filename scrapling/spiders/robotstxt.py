@@ -17,12 +17,12 @@ class RobotsTxtManager:
     async def _get_parser(self, url: str, sid: str) -> Protego:
         parsed = urlparse(url)
         domain = parsed.netloc
-
-        if domain in self._cache:
-            return self._cache[domain]
-
         scheme = parsed.scheme or "https"
         robots_url = f"{scheme}://{domain}/robots.txt"
+
+        if robots_url in self._cache:
+            return self._cache[robots_url]
+
         content = ""
         try:
             response = await self._fetch_fn(robots_url, sid)
@@ -37,11 +37,11 @@ class RobotsTxtManager:
             log.warning(f"Failed to parse robots.txt for {domain}: {e}")
             parser = Protego.parse("")
 
-        self._cache[domain] = parser
+        self._cache[robots_url] = parser
         return parser
 
     async def can_fetch(self, url: str, sid: str) -> bool:
-        """Check if a URL can be fetched according to the domain's robots.txt.
+        """Check if a URL can be fetched according to the origin's robots.txt.
 
         :param url: The full URL to check
         :param sid: Session ID for fetching robots.txt if not yet cached
@@ -52,7 +52,7 @@ class RobotsTxtManager:
     async def get_delay_directives(self, url: str, sid: str) -> tuple[Optional[float], Optional[tuple[int, int]]]:
         """Return both crawl-delay and request-rate in a single parser lookup.
 
-        :param url: Any URL on the domain to check
+        :param url: Any URL on the origin to check
         :param sid: Session ID for fetching robots.txt if not yet cached
         """
         parser = await self._get_parser(url, sid)
@@ -66,12 +66,12 @@ class RobotsTxtManager:
     async def prefetch(self, urls: list[str], sid: str) -> None:
         """Pre-warm the robots.txt cache for a list of seed URLs concurrently.
 
-        :param urls: Seed URLs whose domains should be pre-fetched (one per domain).
+        :param urls: Seed URLs whose origins should be pre-fetched (one per origin).
         :param sid: Session ID to use for the robots.txt fetch requests.
         """
         if not urls:
             return
-        log.debug(f"Pre-fetching robots.txt for {len(urls)} domain(s)")
+        log.debug(f"Pre-fetching robots.txt for {len(urls)} origin(s)")
         async with create_task_group() as tg:
             for url in urls:
                 tg.start_soon(self._get_parser, url, sid)

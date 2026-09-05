@@ -174,11 +174,11 @@ class PoliteSpider(Spider):
 
 When enabled, the spider will:
 
-1. **Pre-fetch robots.txt** for all domains in `start_urls` before the crawl begins (concurrently).
-2. **Check every request** against the domain's robots.txt `Disallow` rules. Disallowed requests are silently dropped and counted in `stats.robots_disallowed_count`.
+1. **Pre-fetch robots.txt** for all origins in `start_urls` before the crawl begins (concurrently).
+2. **Check every request** against the origin's robots.txt `Disallow` rules. Disallowed requests are silently dropped and counted in `stats.robots_disallowed_count`.
 3. **Respect `Crawl-delay` and `Request-rate` directives** by taking the maximum of the directive and your configured `download_delay`. This means robots.txt delays never reduce your configured delay, only increase it when needed.
 
-Robots.txt files are fetched using the spider's default session and cached per domain for the entire crawl. Domains discovered mid-crawl (not in `start_urls`) have their robots.txt fetched on the first request to that domain.
+Robots.txt files are fetched using the spider's default session and cached per origin (scheme, hostname, and port) for the entire crawl. HTTP and HTTPS URLs on the same hostname have separate rules and delays. Origins discovered mid-crawl (not in `start_urls`) have their robots.txt fetched on the first request to that origin.
 
 **Note:** `robots_txt_obey` is turned off by default to avoid surprising behavior. If you enable it, it does not affect your concurrency settings (`concurrent_requests`, `concurrent_requests_per_domain`) -- only the delay between requests is adjusted.
 
