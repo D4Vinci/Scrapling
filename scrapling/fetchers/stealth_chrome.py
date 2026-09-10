@@ -49,6 +49,7 @@ class StealthyFetcher(BaseFetcher):
         :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
+        :param pierce_shadow: Disabled by default. If enabled, open shadow roots are inlined into the returned page content as `<template shadowrootmode="open">` elements, so shadow DOM content becomes queryable with regular selectors. Closed shadow roots can't be read and are left out.
         :return: A `Response` object.
         """
         selector_config = kwargs.get("selector_config", {}) or kwargs.get(
@@ -101,6 +102,7 @@ class StealthyFetcher(BaseFetcher):
         :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
+        :param pierce_shadow: Disabled by default. If enabled, open shadow roots are inlined into the returned page content as `<template shadowrootmode="open">` elements, so shadow DOM content becomes queryable with regular selectors. Closed shadow roots can't be read and are left out.
         :return: A `Response` object.
         """
         selector_config = kwargs.get("selector_config", {}) or kwargs.get(

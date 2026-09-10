@@ -92,6 +92,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     capture_xhr: str | None = None
     executable_path: Optional[str] = None
     dns_over_https: bool = False
+    pierce_shadow: bool = False
 
     def __post_init__(self):  # pragma: no cover
         """Custom validation after msgspec validation"""
@@ -173,6 +174,7 @@ class _fetch_params:
     blocked_domains: Optional[Set[str]]
     solve_cloudflare: bool
     selector_config: Dict
+    pierce_shadow: bool
 
 
 def validate_fetch(
@@ -211,6 +213,7 @@ def validate_fetch(
     # solve_cloudflare defaults to False for models that don't have it (PlaywrightConfig)
     result.setdefault("solve_cloudflare", False)
     result.setdefault("blocked_domains", None)
+    result.setdefault("pierce_shadow", False)
 
     return _fetch_params(**result)
 

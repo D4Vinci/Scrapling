@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<title>Shadow DOM 嵌套测试页 · Scrapling 实测 T5</title>
+<style>
+  body { font-family: sans-serif; background: #f4f4f4; margin: 20px; }
+  .light-baseline { padding: 8px; background: #fff8dc; border: 1px dashed #ccc; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+
+<div class="light-baseline">
+  <span id="light-price" data-gt="price">¥1,299.00</span>
+</div>
+
+
+<shop-app id="app"><template shadowrootmode="open">
+      <main class="app-main">
+        <shop-header><template shadowrootmode="open">
+      <header><h1 class="site-name" data-gt="site" data-depth="2">示例商城</h1></header></template></shop-header>
+        <product-detail><template shadowrootmode="open">
+      <section class="detail">
+        <h2 class="goods-title" data-gt="title" data-depth="2">旗舰智能手机 Pro Max</h2>
+        <price-block><template shadowrootmode="open">
+      <div class="price-wrap">
+        <span class="current-price" data-gt="price-shadow" data-depth="3">¥1,299.00</span>
+        <del class="original-price" data-gt="original-price" data-depth="3">¥1,899.00</del>
+        <discount-badge><template shadowrootmode="open">
+      <em class="badge-text" data-gt="discount" data-depth="4">限时8折</em></template></discount-badge>
+      </div></template></price-block>
+        <sku-selector><template shadowrootmode="open">
+      <div class="sku-wrap">
+        <label>规格：</label>
+        <slot name="sku-option"></slot>
+        <span class="sku-selected" data-gt="sku" data-depth="3">曜石黑 / 256GB</span>
+      </div></template>
+          <i slot="sku-option" data-gt="slot-value">.slot 投影值：曜石黑.</i>
+        </sku-selector>
+        <stock-indicator><template shadowrootmode="open">
+      <span class="stock-num" data-gt="stock" data-depth="3">库存 42 件</span></template></stock-indicator>
+      </section></template></product-detail>
+        <review-list><template shadowrootmode="open">
+      <section class="reviews">
+        <review-item author="数码老王" score="5"><template shadowrootmode="open">
+      <div class="review">
+        <b class="reviewer" data-gt="reviewer" data-depth="3">数码老王</b>
+        <span class="score" data-gt="score" data-depth="3">5 分</span>
+      </div></template></review-item>
+        <review-item author="匿名用户" score="4"><template shadowrootmode="open">
+      <div class="review">
+        <b class="reviewer" data-gt="reviewer" data-depth="3">匿名用户</b>
+        <span class="score" data-gt="score" data-depth="3">4 分</span>
+      </div></template></review-item>
+      </section></template></review-list>
+        <secure-widget></secure-widget>
+      </main></template></shop-app>
+
+
+<iframe id="embedded-frame"><template data-frame="same-origin"><head></head><body>
+    <captcha-widget id="cap"><template shadowrootmode="open"><div class="captcha-box">
+              <span class="captcha-token" data-gt="captcha">TOKEN-9F3K2</span>
+            </div></template></captcha-widget>
+    <script>
+      customElements.define("captcha-widget", class extends HTMLElement {
+        connectedCallback() {
+          const root = this.attachShadow({mode: "open"});
+          root.innerHTML = `&lt;div class="captcha-box"&gt;
+              &lt;span class="captcha-token" data-gt="captcha"&gt;TOKEN-9F3K2&lt;/span&gt;
+            &lt;/div&gt;`;
+        }
+      });
+    </script>
+  </body></template></iframe>
+
+<script>
+/* ============================================================
+ * 组件树（全部死数据，目标值带 data-gt 埋点用于自动判定）：
+ *
+ * shop-app                        [L1 open]
+ *  ├─ shop-header                 [L2 open]  → 站点标题
+ *  ├─ product-detail              [L2 open]
+ *  │   ├─ price-block             [L3 open]  → 现价 ¥1,299.00 / 原价
+ *  │   │   └─ discount-badge      [L4 open]  → "限时8折"（最深目标值）
+ *  │   ├─ sku-selector            [L3 open]  → 含 &lt;slot&gt; 分发
+ *  │   └─ stock-indicator         [L3 open]  → 库存 42 件
+ *  ├─ review-list                 [L2 open]
+ *  │   └─ review-item ×2          [L3 open]  → 作者/评分
+ *  └─ secure-widget               [L2 CLOSED] → "CLOSED-SECRET-7788"（不可读边界）
+ * ============================================================ */
+
+// 最深第 4 层：折扣徽章
+customElements.define('discount-badge', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'open'});
+    root.innerHTML = `
+      &lt;em class="badge-text" data-gt="discount" data-depth="4"&gt;限时8折&lt;/em&gt;`;
+  }
+});
+
+// 第 3 层：价格区块（内含第 4 层组件）
+customElements.define('price-block', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'open'});
+    root.innerHTML = `
+      &lt;div class="price-wrap"&gt;
+        &lt;span class="current-price" data-gt="price-shadow" data-depth="3"&gt;¥1,299.00&lt;/span&gt;
+        &lt;del class="original-price" data-gt="original-price" data-depth="3"&gt;¥1,899.00&lt;/del&gt;
+        &lt;discount-badge&gt;&lt;/discount-badge&gt;
+      &lt;/div&gt;`;
+  }
+});
+
+// 第 3 层：SKU 选择器（演示 slot 分发：light DOM 内容投影进 shadow）
+customElements.define('sku-selector', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'open'});
+    root.innerHTML = `
+      &lt;div class="sku-wrap"&gt;
+        &lt;label&gt;规格：&lt;/label&gt;
+        &lt;slot name="sku-option"&gt;&lt;/slot&gt;
+        &lt;span class="sku-selected" data-gt="sku" data-depth="3"&gt;曜石黑 / 256GB&lt;/span&gt;
+      &lt;/div&gt;`;
+  }
+});
+
+// 第 3 层：库存指示
+customElements.define('stock-indicator', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'open'});
+    root.innerHTML = `
+      &lt;span class="stock-num" data-gt="stock" data-depth="3"&gt;库存 42 件&lt;/span&gt;`;
+  }
+});
+
+// 第 2 层：商品详情
+customElements.define('product-detail', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'open'});
+    root.innerHTML = `
+      &lt;section class="detail"&gt;
+        &lt;h2 class="goods-title" data-gt="title" data-depth="2"&gt;旗舰智能手机 Pro Max&lt;/h2&gt;
+        &lt;price-block&gt;&lt;/price-block&gt;
+        &lt;sku-selector&gt;
+          &lt;i slot="sku-option" data-gt="slot-value"&gt;.slot 投影值：曜石黑.&lt;/i&gt;
+        &lt;/sku-selector&gt;
+        &lt;stock-indicator&gt;&lt;/stock-indicator&gt;
+      &lt;/section&gt;`;
+  }
+});
+
+// 第 2 层：页头
+customElements.define('shop-header', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'open'});
+    root.innerHTML = `
+      &lt;header&gt;&lt;h1 class="site-name" data-gt="site" data-depth="2"&gt;示例商城&lt;/h1&gt;&lt;/header&gt;`;
+  }
+});
+
+// 第 3 层：评论项
+customElements.define('review-item', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'open'});
+    const author = this.getAttribute('author');
+    const score  = this.getAttribute('score');
+    root.innerHTML = `
+      &lt;div class="review"&gt;
+        &lt;b class="reviewer" data-gt="reviewer" data-depth="3"&gt;${author}&lt;/b&gt;
+        &lt;span class="score" data-gt="score" data-depth="3"&gt;${score} 分&lt;/span&gt;
+      &lt;/div&gt;`;
+  }
+});
+
+// 第 2 层：评论列表
+customElements.define('review-list', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'open'});
+    root.innerHTML = `
+      &lt;section class="reviews"&gt;
+        &lt;review-item author="数码老王" score="5"&gt;&lt;/review-item&gt;
+        &lt;review-item author="匿名用户" score="4"&gt;&lt;/review-item&gt;
+      &lt;/section&gt;`;
+  }
+});
+
+// 第 2 层：CLOSED shadow root（硬边界：JS 也无法从外部读取）
+customElements.define('secure-widget', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'closed'});
+    root.innerHTML = `&lt;code data-gt="closed-secret" data-depth="2"&gt;CLOSED-SECRET-7788&lt;/code&gt;`;
+  }
+});
+
+// 第 1 层：应用壳
+customElements.define('shop-app', class extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({mode: 'open'});
+    root.innerHTML = `
+      &lt;main class="app-main"&gt;
+        &lt;shop-header&gt;&lt;/shop-header&gt;
+        &lt;product-detail&gt;&lt;/product-detail&gt;
+        &lt;review-list&gt;&lt;/review-list&gt;
+        &lt;secure-widget&gt;&lt;/secure-widget&gt;
+      &lt;/main&gt;`;
+  }
+});
+</script>
+
+
+
+</body></html>

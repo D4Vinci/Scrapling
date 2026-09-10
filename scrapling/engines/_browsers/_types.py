@@ -95,6 +95,7 @@ class PlaywrightSession(TypedDict, total=False):
     capture_xhr: str | None
     executable_path: Optional[str]
     dns_over_https: bool
+    pierce_shadow: bool
 
 
 class PlaywrightFetchParams(TypedDict, total=False):
@@ -112,6 +113,7 @@ class PlaywrightFetchParams(TypedDict, total=False):
     wait_selector_state: SelectorWaitStates
     blocked_domains: Optional[Set[str]]
     proxy: Optional[str | Dict[str, str]]
+    pierce_shadow: bool
 
 
 class StealthSession(PlaywrightSession, total=False):

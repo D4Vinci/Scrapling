@@ -70,6 +70,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
+        :param pierce_shadow: Disabled by default. If enabled, open shadow roots are inlined into the returned page content as `<template shadowrootmode="open">` elements, so shadow DOM content becomes queryable with regular selectors. Closed shadow roots can't be read and are left out.
         """
         self.__validate__(**kwargs)
         super().__init__()
@@ -212,6 +213,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
+        :param pierce_shadow: Disabled by default. If enabled, open shadow roots are inlined into the returned page content as `<template shadowrootmode="open">` elements, so shadow DOM content becomes queryable with regular selectors. Closed shadow roots can't be read and are left out.
         :return: A `Response` object.
         """
         static_proxy = kwargs.pop("proxy", None)
@@ -287,6 +289,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                             params.selector_config,
                             meta={"proxy": proxy},
                             xhr_captured=xhr_captured,
+                            pierce_shadow=params.pierce_shadow,
                         )
                         return response
 
@@ -356,6 +359,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param extra_flags: A list of additional browser flags to pass to the browser on launch.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
+        :param pierce_shadow: Disabled by default. If enabled, open shadow roots are inlined into the returned page content as `<template shadowrootmode="open">` elements, so shadow DOM content becomes queryable with regular selectors. Closed shadow roots can't be read and are left out.
         """
         self.__validate__(**kwargs)
         super().__init__(max_pages=self._config.max_pages)
@@ -499,6 +503,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
+        :param pierce_shadow: Disabled by default. If enabled, open shadow roots are inlined into the returned page content as `<template shadowrootmode="open">` elements, so shadow DOM content becomes queryable with regular selectors. Closed shadow roots can't be read and are left out.
         :return: A `Response` object.
         """
         static_proxy = kwargs.pop("proxy", None)
@@ -575,6 +580,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                             params.selector_config,
                             meta={"proxy": proxy},
                             xhr_captured=xhr_captured,
+                            pierce_shadow=params.pierce_shadow,
                         )
                         return response
 

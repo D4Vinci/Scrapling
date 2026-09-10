@@ -9,6 +9,7 @@ from playwright.async_api import Page as AsyncPage, Response as AsyncResponse
 
 from scrapling.core.utils import log
 from .custom import Response, StatusText
+from ._shadow_pierce import SHADOW_PIERCE_JS
 from scrapling.core._types import Dict, List, Optional
 
 __CHARSET_RE__ = re_compile(r"""charset=["']?([\w-]+)""")
@@ -89,6 +90,7 @@ class ResponseFactory:
         meta: Optional[Dict] = None,
         xhr_captured: Optional[List[SyncResponse]] = None,
         collect_history: bool = True,
+        pierce_shadow: bool = False,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -107,6 +109,7 @@ class ResponseFactory:
         :param meta: Additional meta data to be saved with the response.
         :param xhr_captured: Optional list of captured Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
+        :param pierce_shadow: If True and the response is HTML, serialize the page with open shadow roots inlined as `<template shadowrootmode="open">` elements instead of the plain `page.content()` output. Falls back to `page.content()` if piercing fails.
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
         """
@@ -122,7 +125,7 @@ class ResponseFactory:
         history = cls._process_response_history(first_response, parser_arguments) if collect_history else []
         try:
             if page and "html" in final_response.all_headers().get("content-type", ""):
-                page_content = cls._get_page_content(page).encode("utf-8")
+                page_content = cls._get_page_content(page, pierce_shadow=pierce_shadow).encode("utf-8")
                 encoding = "utf-8"
             else:
                 page_content = final_response.body()
@@ -196,31 +199,72 @@ class ResponseFactory:
 
         return history
 
+    @staticmethod
+    def _get_shadow_pierced_content(page: SyncPage) -> Optional[str]:
+        """Serialize the page with open shadow roots inlined as `<template shadowrootmode="open">` elements.
+
+        Returns `None` on any failure so the caller can fall back to the regular `page.content()` path —
+        shadow piercing is an enhancement, never a single point of failure.
+
+        :param page: The page to extract content from.
+        :return: The flattened serialization or `None`.
+        """
+        try:
+            return page.evaluate(SHADOW_PIERCE_JS) or None
+        except Exception as e:
+            log.error(f"Error piercing shadow DOM, falling back to page.content(): {e}")
+            return None
+
     @classmethod
-    def _get_page_content(cls, page: SyncPage, max_retries: int = 20) -> str:
+    def _get_page_content(cls, page: SyncPage, max_retries: int = 20, pierce_shadow: bool = False) -> str:
         """
         A workaround for the Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
         :param page: The page to extract content from.
         :param max_retries: Maximum number of retry attempts before raising `RuntimeError`.
+        :param pierce_shadow: If True, try the shadow-piercing serialization first and fall back to `page.content()` when it fails or returns nothing.
         :return:
         """
         for _ in range(max_retries):
             try:
+                if pierce_shadow:
+                    content = cls._get_shadow_pierced_content(page)
+                    if content:
+                        return content
+                    log.error("Shadow piercing returned empty content, falling back to page.content()")
                 return page.content() or ""
             except (PlaywrightError, PatchrightError):
                 page.wait_for_timeout(500)
         raise RuntimeError(f"Failed to retrieve the page content after retrying for {max_retries * 500}ms.")
 
+    @staticmethod
+    async def _get_async_shadow_pierced_content(page: AsyncPage) -> Optional[str]:
+        """Async version of `_get_shadow_pierced_content`.
+
+        :param page: The page to extract content from.
+        :return: The flattened serialization or `None`.
+        """
+        try:
+            return (await page.evaluate(SHADOW_PIERCE_JS)) or None
+        except Exception as e:
+            log.error(f"Error piercing shadow DOM, falling back to page.content(): {e}")
+            return None
+
     @classmethod
-    async def _get_async_page_content(cls, page: AsyncPage, max_retries: int = 20) -> str:
+    async def _get_async_page_content(cls, page: AsyncPage, max_retries: int = 20, pierce_shadow: bool = False) -> str:
         """
         A workaround for the Playwright issue with `page.content()` on Windows. Ref.: https://github.com/microsoft/playwright/issues/16108
         :param page: The page to extract content from.
         :param max_retries: Maximum number of retry attempts before raising `RuntimeError`.
+        :param pierce_shadow: If True, try the shadow-piercing serialization first and fall back to `page.content()` when it fails or returns nothing.
         :return:
         """
         for _ in range(max_retries):
             try:
+                if pierce_shadow:
+                    content = await cls._get_async_shadow_pierced_content(page)
+                    if content:
+                        return content
+                    log.error("Shadow piercing returned empty content, falling back to page.content()")
                 return (await page.content()) or ""
             except (PlaywrightError, PatchrightError):
                 await page.wait_for_timeout(500)
@@ -236,6 +280,7 @@ class ResponseFactory:
         meta: Optional[Dict] = None,
         xhr_captured: Optional[List[AsyncResponse]] = None,
         collect_history: bool = True,
+        pierce_shadow: bool = False,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -254,6 +299,7 @@ class ResponseFactory:
         :param meta: Additional meta data to be saved with the response.
         :param xhr_captured: Optional list of captured async Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
+        :param pierce_shadow: If True and the response is HTML, serialize the page with open shadow roots inlined as `<template shadowrootmode="open">` elements instead of the plain `page.content()` output. Falls back to `page.content()` if piercing fails.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -270,7 +316,7 @@ class ResponseFactory:
         history = await cls._async_process_response_history(first_response, parser_arguments) if collect_history else []
         try:
             if page and "html" in (await final_response.all_headers()).get("content-type", ""):
-                page_content = (await cls._get_async_page_content(page)).encode("utf-8")
+                page_content = (await cls._get_async_page_content(page, pierce_shadow=pierce_shadow)).encode("utf-8")
                 encoding = "utf-8"
             else:
                 page_content = await final_response.body()
