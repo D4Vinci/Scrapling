@@ -14,7 +14,15 @@
 <p align="center">
     <a href="https://trendshift.io/repositories/14244" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14244" alt="D4Vinci%2FScrapling | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
     <br/>
-    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_AR.md">العربيه</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_ES.md">Español</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_PT_BR.md">Português (Brasil)</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_FR.md">Français</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_DE.md">Deutsch</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_CN.md">简体中文</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_JP.md">日本語</a> |  <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_RU.md">Русский</a> | <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_KR.md">한국어</a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_AR.md"><img alt="README بالعربية" title="README بالعربية" src="https://img.shields.io/badge/Arabic-DFE0E5"></a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_ES.md"><img alt="README en Español" src="https://img.shields.io/badge/Español-DFE0E5"></a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_PT_BR.md"><img alt="README em Português (Brasil)" src="https://img.shields.io/badge/Português%20(Brasil)-DFE0E5"></a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_FR.md"><img alt="README en Français" src="https://img.shields.io/badge/Français-DFE0E5"></a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_DE.md"><img alt="README auf Deutsch" src="https://img.shields.io/badge/Deutsch-DFE0E5"></a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_CN.md"><img alt="简体中文版自述文件" src="https://img.shields.io/badge/简体中文-DFE0E5"></a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_JP.md"><img alt="日本語のREADME" src="https://img.shields.io/badge/日本語-DFE0E5"></a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_RU.md"><img alt="Русская версия README" src="https://img.shields.io/badge/Русский-DFE0E5"></a>
+    <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_KR.md"><img alt="한국어 README" src="https://img.shields.io/badge/한국어-DFE0E5"></a>
     <br/>
     <a href="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml" alt="Tests">
         <img alt="Tests" src="https://github.com/D4Vinci/Scrapling/actions/workflows/tests.yml/badge.svg"></a>
