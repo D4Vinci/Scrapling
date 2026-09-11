@@ -1,7 +1,8 @@
 from os import environ
 from pathlib import Path
+from shutil import which as shutil_which
 from subprocess import check_output
-from sys import executable as python_executable
+from sys import executable as python_executable, platform as sys_platform
 
 from scrapling import __version__
 from scrapling.core.utils import log
@@ -117,22 +118,28 @@ def __BuildRequest(headers: List[str], cookies: str, params: str, json: Optional
     type=bool,
     help="Force Scrapling to reinstall all Fetchers dependencies",
 )
-def install(force):  # pragma: no cover
+def install(force):
     if force or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists():
         __Execute(
             [python_executable, "-m", "playwright", "install", "chromium"],
             "Playwright browsers",
         )
-        __Execute(
-            [
-                python_executable,
-                "-m",
-                "playwright",
-                "install-deps",
-                "chromium",
-            ],
-            "Playwright dependencies",
-        )
+        if sys_platform.startswith("linux") and not shutil_which("apt-get"):
+            print(
+                "Skipping automatic system dependencies installation: 'apt-get' not found. "
+                "Please install any missing Chromium system dependencies using your distribution's package manager if needed."
+            )
+        else:
+            __Execute(
+                [
+                    python_executable,
+                    "-m",
+                    "playwright",
+                    "install-deps",
+                    "chromium",
+                ],
+                "Playwright dependencies",
+            )
         from tld.utils import update_tld_names
 
         update_tld_names(fail_silently=True)

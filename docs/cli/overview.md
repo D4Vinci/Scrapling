@@ -28,3 +28,6 @@ and the installation of the fetchers' dependencies with the following command
 scrapling install
 ```
 This downloads all browsers, along with their system dependencies and fingerprint manipulation dependencies.
+
+!!! note "Non-Debian Linux distributions (Arch Linux, Fedora, Alpine, etc.)"
+    On Linux systems where `apt-get` is unavailable, `scrapling install` downloads the Chromium browser and completes the setup, but skips automatic system package installation. If Chromium fails to launch, install any missing system libraries using your distribution's package manager.

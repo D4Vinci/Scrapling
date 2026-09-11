@@ -5,7 +5,7 @@ import pytest_httpbin
 
 from scrapling.parser import Selector
 from scrapling import __version__
-from scrapling.cli import main, shell, mcp, get, post, put, delete, fetch, stealthy_fetch
+from scrapling.cli import main, shell, mcp, get, post, put, delete, fetch, stealthy_fetch, install, python_executable
 
 
 @pytest_httpbin.use_class_based_httpbin
@@ -336,3 +336,47 @@ class TestCLI:
             call_kwargs = mock_get.call_args[1]
             assert isinstance(call_kwargs["impersonate"], str)
             assert call_kwargs["impersonate"] == "chrome"
+
+    def test_install_skips_apt_dependencies_when_unsupported(self, runner, tmp_path):
+        """On Linux systems without apt-get, install should download browsers but skip install-deps."""
+        marker_file = tmp_path / ".scrapling_dependencies_installed"
+        with (
+            patch("scrapling.cli.__PACKAGE_DIR__", tmp_path),
+            patch("scrapling.cli.sys_platform", "linux"),
+            patch("scrapling.cli.shutil_which", return_value=None),
+            patch("scrapling.cli.__Execute") as mock_execute,
+            patch("tld.utils.update_tld_names") as mock_tld,
+        ):
+            result = runner.invoke(install, ["--force"])
+            assert result.exit_code == 0
+            assert "Skipping automatic system dependencies installation: 'apt-get' not found" in result.output
+            assert mock_execute.call_count == 1
+            assert mock_execute.call_args[0][0] == [python_executable, "-m", "playwright", "install", "chromium"]
+            mock_tld.assert_called_once_with(fail_silently=True)
+            assert marker_file.exists()
+
+    def test_install_runs_apt_dependencies_when_supported(self, runner, tmp_path):
+        """On Linux systems with apt-get (or non-Linux systems), install should run install-deps."""
+        marker_file = tmp_path / ".scrapling_dependencies_installed"
+        with (
+            patch("scrapling.cli.__PACKAGE_DIR__", tmp_path),
+            patch("scrapling.cli.sys_platform", "linux"),
+            patch("scrapling.cli.shutil_which", return_value="/usr/bin/apt-get"),
+            patch("scrapling.cli.__Execute") as mock_execute,
+            patch("tld.utils.update_tld_names") as mock_tld,
+        ):
+            result = runner.invoke(install, ["--force"])
+            assert result.exit_code == 0
+            assert mock_execute.call_count == 2
+            mock_tld.assert_called_once_with(fail_silently=True)
+            assert marker_file.exists()
+
+    def test_install_already_installed(self, runner, tmp_path):
+        """When dependencies are already installed and --force is not passed, install should be a no-op."""
+        marker_file = tmp_path / ".scrapling_dependencies_installed"
+        marker_file.touch()
+        with patch("scrapling.cli.__PACKAGE_DIR__", tmp_path), patch("scrapling.cli.__Execute") as mock_execute:
+            result = runner.invoke(install)
+            assert result.exit_code == 0
+            assert "The dependencies are already installed" in result.output
+            mock_execute.assert_not_called()
