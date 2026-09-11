@@ -26,7 +26,7 @@ from scrapling.core._types import (
 
 from .toolbelt.custom import Response
 from .toolbelt.convertor import ResponseFactory
-from .toolbelt.proxy_rotation import ProxyRotator, is_proxy_error
+from .toolbelt.proxy_rotation import ProxyRotator, is_proxy_error, is_ssl_verification_error
 from ._browsers._types import RequestsSession, GetRequestParams, DataRequestParams, ImpersonateType
 from .toolbelt.fingerprints import generate_headers, __default_useragent__
 
@@ -258,10 +258,13 @@ class _SyncSessionLogic(_ConfigurationLogic):
                     assert response is not None
                     result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": proxy})
                     return result
-                except CurlError as e:  # pragma: no cover
+                except CurlError as e:
                     if attempt < max_retries - 1:
-                        # Now if the rotator is enabled, we will try again with the new proxy
-                        # If it's not enabled, then we will try again with the same proxy
+                        # TLS certificate failures are deterministic: the same cert
+                        # will produce the same error on every attempt. Fail fast.
+                        if is_ssl_verification_error(e):
+                            log.error(f"TLS certificate verification failed (not retrying): {e}")
+                            raise
                         if is_proxy_error(e):
                             log.warning(
                                 f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."
@@ -476,10 +479,13 @@ class _ASyncSessionLogic(_ConfigurationLogic):
                     response = await session.request(method, **request_args)
                     result = ResponseFactory.from_http_request(response, selector_config, meta={"proxy": proxy})
                     return result
-                except CurlError as e:  # pragma: no cover
+                except CurlError as e:
                     if attempt < max_retries - 1:
-                        # Now if the rotator is enabled, we will try again with the new proxy
-                        # If it's not enabled, then we will try again with the same proxy
+                        # TLS certificate failures are deterministic: the same cert
+                        # will produce the same error on every attempt. Fail fast.
+                        if is_ssl_verification_error(e):
+                            log.error(f"TLS certificate verification failed (not retrying): {e}")
+                            raise
                         if is_proxy_error(e):
                             log.warning(
                                 f"Proxy '{proxy}' failed (attempt {attempt + 1}) | Retrying in {retry_delay} seconds..."

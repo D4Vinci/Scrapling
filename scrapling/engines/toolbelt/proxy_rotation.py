@@ -14,6 +14,28 @@ _PROXY_ERROR_INDICATORS = {
     "could not resolve proxy",
 }
 
+# curl_cffi TLS certificate verification error codes.
+# CURLE_SSL_PEER_CERTIFICATE / CURLE_PEER_FAILED_VERIFICATION = 60
+# These are deterministic: retrying the same request with the same cert
+# will always produce the same result. Fail fast.
+_SSL_CERT_ERROR_INDICATORS = {
+    "curl: (60)",  # expired / invalid / untrusted certificate
+    "certificate has expired",
+    "certificate verify failed",
+    "ssl: certificate_verify_failed",
+    "peer certificate cannot be authenticated",
+}
+
+
+def is_ssl_verification_error(error: Exception) -> bool:
+    """Return True when the error is a deterministic TLS certificate failure.
+
+    These cannot be resolved by retrying, so the caller should raise
+    immediately rather than sleeping and trying again.
+    """
+    error_msg = str(error).lower()
+    return any(indicator in error_msg for indicator in _SSL_CERT_ERROR_INDICATORS)
+
 
 def _get_proxy_key(proxy: ProxyType) -> str:
     """Generate a unique key for a proxy (for dicts it's server plus username)."""

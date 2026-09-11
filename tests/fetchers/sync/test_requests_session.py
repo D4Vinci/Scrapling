@@ -105,3 +105,26 @@ class TestFetcherSession:
                 session.get("http://example.com", retries=0)
 
             assert mocked_request.call_count == 1
+
+    def test_ssl_cert_failure_does_not_retry(self):
+        """A TLS certificate verification error must fail immediately without retrying."""
+        ssl_error = CurlError("curl: (60) SSL certificate problem: certificate has expired")
+
+        with FetcherSession(retries=3, retry_delay=0) as session:
+            with patch.object(session._curl_session, "request", side_effect=ssl_error) as mock_req:
+                with pytest.raises(CurlError, match="certificate has expired"):
+                    session.get("https://expired.badssl.com/")
+
+            # Must have been called exactly ONCE — no retries
+            assert mock_req.call_count == 1
+
+    def test_transient_network_error_still_retries(self):
+        """Non-TLS errors (e.g., connection refused) still benefit from retry."""
+        transient_error = CurlError("curl: (7) Failed to connect to host")
+
+        with FetcherSession(retries=3, retry_delay=0) as session:
+            with patch.object(session._curl_session, "request", side_effect=[transient_error, MagicMock()]) as mock_req:
+                with patch("scrapling.engines.static.ResponseFactory.from_http_request", return_value=MagicMock()):
+                    session.get("https://example.com/")
+
+            assert mock_req.call_count == 2  # First failed, second succeeded
