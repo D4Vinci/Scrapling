@@ -619,6 +619,21 @@ class Convertor:
         return Selector(root=clean_root, url=page.url, keep_comments=False)
 
     @classmethod
+    def _clean_for_ai(cls, page: Selector) -> Selector:
+        """Single-pass stripping of noise tags and hidden prompt-injection content."""
+        clean_root = deepcopy(page._root)
+        for element in clean_root.iter(*{"script", "style", "noscript", "svg"}):
+            element.drop_tree()
+        for element in cast(list, _HIDDEN_XPATH(clean_root)):
+            element.drop_tree()
+        for element in clean_root.iter():
+            if element.text:
+                element.text = _CONTROL_CHARS_PATTERN.sub("", _ZWC_PATTERN.sub("", element.text))
+            if element.tail:
+                element.tail = _CONTROL_CHARS_PATTERN.sub("", _ZWC_PATTERN.sub("", element.tail))
+        return Selector(root=clean_root, url=page.url, keep_comments=False)
+
+    @classmethod
     def _extract_content(
         cls,
         page: Selector,
@@ -634,8 +649,7 @@ class Convertor:
         else:
             if main_content_only:
                 page = cast(Selector, page.css("body").first) or page
-                page = cls._strip_noise_tags(page)
-                page = cls._sanitize_for_ai(page)
+                page = cls._clean_for_ai(page)
 
             pages = [page] if not css_selector else cast(Selectors, page.css(css_selector))
             for page in pages:

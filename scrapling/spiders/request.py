@@ -81,6 +81,22 @@ class Request:
         if self._fp is not None:
             return self._fp
 
+        if (
+            not include_kwargs
+            and not include_headers
+            and "data" not in self._session_kwargs
+            and "json" not in self._session_kwargs
+        ):
+            fast_data = {
+                "body": "",
+                "method": self._session_kwargs.get("method", "GET"),
+                "sid": self.sid,
+                "url": canonicalize_url(self.url, keep_fragments=keep_fragments),
+            }
+            fp = hashlib.sha1(orjson.dumps(fast_data), usedforsecurity=False).digest()
+            self._fp = fp
+            return fp
+
         post_data = self._session_kwargs.get("data", {})
         body = b""
         if post_data:

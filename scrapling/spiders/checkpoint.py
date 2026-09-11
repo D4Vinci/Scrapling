@@ -46,7 +46,7 @@ class CheckpointManager:
         temp_path = self._checkpoint_path.with_suffix(".tmp")
 
         try:
-            serialized = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
+            serialized = await anyio.to_thread.run_sync(pickle.dumps, data, pickle.HIGHEST_PROTOCOL)
             async with await anyio.open_file(temp_path, "wb") as f:
                 await f.write(serialized)
 
@@ -71,7 +71,7 @@ class CheckpointManager:
         try:
             async with await anyio.open_file(self._checkpoint_path, "rb") as f:
                 content = await f.read()
-                data: CheckpointData = pickle.loads(content)
+                data: CheckpointData = await anyio.to_thread.run_sync(pickle.loads, content)
 
             log.info(f"Checkpoint loaded: {len(data.requests)} requests, {len(data.seen)} seen URLs")
             return data

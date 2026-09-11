@@ -3,6 +3,7 @@ from inspect import signature
 from urllib.parse import urljoin
 from difflib import SequenceMatcher
 from re import Pattern as re_Pattern
+from functools import lru_cache
 
 from lxml.html import HtmlElement, HTMLParser
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
@@ -53,6 +54,21 @@ _whitelisted = {
     "for_": "for",
 }
 _T = TypeVar("_T")
+
+
+def _fast_ratio(s1: Any, s2: Any) -> float:
+    """Fast similarity ratio check with short-circuits for exact equality and empty values."""
+    if s1 == s2:
+        return 1.0
+    if not s1 or not s2:
+        return 0.0
+    return SequenceMatcher(None, s1, s2).ratio()
+
+
+@lru_cache(maxsize=1024)
+def _compile_xpath(selector: str) -> XPath:
+    """Compile and cache XPath expressions for accelerated evaluation."""
+    return XPath(selector)
 
 
 def _escape_css_string(value: str) -> str:
@@ -240,17 +256,19 @@ class Selector(SelectorsGeneration):
         huge_tree = self.__huge_tree_enabled
 
         return Selectors(
-            Selector(
-                root=el,
-                url=url,
-                encoding=encoding,
-                adaptive=adaptive,
-                _storage=storage,
-                keep_comments=comments,
-                keep_cdata=cdata,
-                huge_tree=huge_tree,
-            )
-            for el in elements
+            [
+                Selector(
+                    root=el,
+                    url=url,
+                    encoding=encoding,
+                    adaptive=adaptive,
+                    _storage=storage,
+                    keep_comments=comments,
+                    keep_cdata=cdata,
+                    huge_tree=huge_tree,
+                )
+                for el in elements
+            ]
         )
 
     def __handle_elements(self, result: List[HtmlElement | _ElementUnicodeResult]) -> "Selectors":
@@ -550,12 +568,27 @@ class Selector(SelectorsGeneration):
         if issubclass(type(element), HtmlElement):
             element = _StorageTools.element_to_dict(element)
 
-        for node in cast(List, _find_all_elements(self._root)):
-            # Collect all elements in the page, then for each element get the matching score of it against the node.
-            # Hence: the code doesn't stop even if the score was 100%
-            # because there might be another element(s) left in page with the same score
-            score = self.__calculate_similarity_score(cast(Dict, element), node)
+        target_dict = cast(Dict, element)
+        target_tag = target_dict.get("tag")
+        all_nodes = cast(List, _find_all_elements(self._root))
+
+        # Two-stage candidate evaluation: evaluate matching tags first to prune >90% of diffs
+        if target_tag:
+            tag_matches = [n for n in all_nodes if getattr(n, "tag", None) == target_tag]
+            other_nodes = [n for n in all_nodes if getattr(n, "tag", None) != target_tag]
+        else:
+            tag_matches = all_nodes
+            other_nodes = []
+
+        for node in tag_matches:
+            score = self.__calculate_similarity_score(target_dict, node)
             score_table.setdefault(score, []).append(node)
+
+        # Fall back to remaining nodes only if no matching tag satisfies the threshold
+        if not (score_table and max(score_table.keys()) >= percentage) and other_nodes:
+            for node in other_nodes:
+                score = self.__calculate_similarity_score(target_dict, node)
+                score_table.setdefault(score, []).append(node)
 
         if score_table:
             highest_probability = max(score_table.keys())
@@ -668,7 +701,7 @@ class Selector(SelectorsGeneration):
             return Selectors()
 
         try:
-            if elements := self._root.xpath(selector, **kwargs):
+            if elements := _compile_xpath(selector)(self._root, **kwargs):
                 if not self.__adaptive_enabled and auto_save:
                     log.warning(
                         "Argument `auto_save` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
@@ -834,7 +867,7 @@ class Selector(SelectorsGeneration):
         checks += 1
 
         if original["text"]:
-            score += SequenceMatcher(None, original["text"], data.get("text") or "").ratio()
+            score += _fast_ratio(original["text"], data.get("text") or "")
             checks += 1
 
         # if both don't have attributes, it still counts for something!
@@ -849,38 +882,36 @@ class Selector(SelectorsGeneration):
             "src",
         ):
             if original["attributes"].get(attrib):
-                score += SequenceMatcher(
-                    None,
+                score += _fast_ratio(
                     original["attributes"][attrib],
                     data["attributes"].get(attrib) or "",
-                ).ratio()
+                )
                 checks += 1
 
-        score += SequenceMatcher(None, original["path"], data["path"]).ratio()
+        score += _fast_ratio(original["path"], data["path"])
         checks += 1
 
         if original.get("parent_name"):
             # Then we start comparing parents' data
             if data.get("parent_name"):
-                score += SequenceMatcher(None, original["parent_name"], data.get("parent_name") or "").ratio()
+                score += _fast_ratio(original["parent_name"], data.get("parent_name") or "")
                 checks += 1
 
                 score += self.__calculate_dict_diff(original["parent_attribs"], data.get("parent_attribs") or {})
                 checks += 1
 
                 if original["parent_text"]:
-                    score += SequenceMatcher(
-                        None,
+                    score += _fast_ratio(
                         original["parent_text"],
                         data.get("parent_text") or "",
-                    ).ratio()
+                    )
                     checks += 1
             # else:
             #     # The original element has a parent and this one not, this is not a good sign
             #     score -= 0.1
 
         if original.get("siblings"):
-            score += SequenceMatcher(None, original["siblings"], data.get("siblings") or []).ratio()
+            score += _fast_ratio(original["siblings"], data.get("siblings") or [])
             checks += 1
 
         # How % sure? let's see
@@ -889,8 +920,16 @@ class Selector(SelectorsGeneration):
     @staticmethod
     def __calculate_dict_diff(dict1: Dict, dict2: Dict) -> float:
         """Used internally to calculate similarity between two dictionaries as SequenceMatcher doesn't accept dictionaries"""
-        score = SequenceMatcher(None, tuple(dict1.keys()), tuple(dict2.keys())).ratio() * 0.5
-        score += SequenceMatcher(None, tuple(dict1.values()), tuple(dict2.values())).ratio() * 0.5
+        if dict1 == dict2:
+            return 1.0
+        if not dict1 and not dict2:
+            return 1.0
+        if not dict1 or not dict2:
+            return 0.0
+        keys1, keys2 = tuple(dict1.keys()), tuple(dict2.keys())
+        score = 0.5 if keys1 == keys2 else _fast_ratio(keys1, keys2) * 0.5
+        vals1, vals2 = tuple(dict1.values()), tuple(dict2.values())
+        score += 0.5 if vals1 == vals2 else _fast_ratio(vals1, vals2) * 0.5
         return score
 
     def save(self, element: HtmlElement, identifier: str) -> None:
@@ -1002,10 +1041,7 @@ class Selector(SelectorsGeneration):
         checks: int = 0
 
         if original_attributes:
-            score += sum(
-                SequenceMatcher(None, v, candidate_attributes.get(k, "")).ratio()
-                for k, v in original_attributes.items()
-            )
+            score += sum(_fast_ratio(v, candidate_attributes.get(k, "")) for k, v in original_attributes.items())
             # Using `max` so candidates with extra attributes are penalized and candidates
             # with fewer attributes don't get inflated scores from a smaller denominator
             checks += max(len(original_attributes), len(candidate_attributes))
@@ -1016,11 +1052,10 @@ class Selector(SelectorsGeneration):
                 checks += 1
 
         if match_text:
-            score += SequenceMatcher(
-                None,
+            score += _fast_ratio(
                 clean_spaces(original.text or ""),
                 clean_spaces(candidate.text or ""),
-            ).ratio()
+            )
             checks += 1
 
         if checks:

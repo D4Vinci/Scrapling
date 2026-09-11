@@ -91,6 +91,7 @@ class CrawlerEngine:
         self._pause_requested: bool = False
         self._force_stop: bool = False
         self.paused: bool = False
+        self._state_changed: anyio.Event = anyio.Event()
 
     def _is_domain_allowed(self, request: Request) -> bool:
         """Check if the request's domain is in allowed_domains."""
@@ -160,6 +161,7 @@ class CrawlerEngine:
                     if self._is_domain_allowed(result):
                         self._normalize_request(result)
                         await self.scheduler.enqueue(result)
+                        self._state_changed.set()
                     else:
                         self.stats.offsite_requests_count += 1
                         log.debug(f"Filtered offsite request to: {result.url}")
@@ -273,6 +275,7 @@ class CrawlerEngine:
         finally:
             self.scheduler.complete(request)
             self._active_tasks -= 1
+            self._state_changed.set()
 
     def request_pause(self) -> None:
         """Request a graceful pause of the crawl.
@@ -406,7 +409,9 @@ class CrawlerEngine:
                                 break
 
                             # Wait briefly and check again
-                            await anyio.sleep(0.05)
+                            with anyio.move_on_after(0.05):
+                                await self._state_changed.wait()
+                            self._state_changed = anyio.Event()
                             continue
 
                         if self._checkpoint_system_enabled and self._is_checkpoint_time():
@@ -419,14 +424,18 @@ class CrawlerEngine:
                                 log.debug("Spider idle")
                                 break
 
-                            # Brief wait for callbacks to enqueue new requests
-                            await anyio.sleep(0.05)
+                            # Event-driven wait for callbacks to enqueue new requests
+                            with anyio.move_on_after(0.05):
+                                await self._state_changed.wait()
+                            self._state_changed = anyio.Event()
                             continue
 
                         # Only spawn tasks up to concurrent_requests limit
                         # This prevents spawning thousands of waiting tasks
                         if self._active_tasks >= self.spider.concurrent_requests:
-                            await anyio.sleep(0.01)
+                            with anyio.move_on_after(0.01):
+                                await self._state_changed.wait()
+                            self._state_changed = anyio.Event()
                             continue
 
                         request = await self.scheduler.dequeue()

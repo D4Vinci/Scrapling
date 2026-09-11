@@ -97,7 +97,7 @@ class Response(Selector):
         from scrapling.core.shell import Convertor
 
         page = (cast(Selector, self.css("body").first) or self) if main_content_only else self
-        page = Convertor._sanitize_for_ai(Convertor._strip_noise_tags(page))
+        page = Convertor._clean_for_ai(page)
         pages = [page] if not css_selector else page.css(css_selector)
         return "".join(Convertor._convert_to_markdown(element.html_content) for element in pages)
 

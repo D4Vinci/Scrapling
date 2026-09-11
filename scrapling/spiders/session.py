@@ -1,12 +1,16 @@
 from asyncio import Lock
 
 from scrapling.spiders.request import Request
-from scrapling.engines.static import _ASyncSessionLogic
+from scrapling.engines.static import _ASyncSessionLogic, FetcherSession
 from scrapling.engines.toolbelt.convertor import Response
-from scrapling.core._types import Set, cast, SUPPORTED_HTTP_METHODS
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, FetcherSession
+from scrapling.core._types import Set, cast, SUPPORTED_HTTP_METHODS, TYPE_CHECKING, Any
 
-Session = FetcherSession | AsyncDynamicSession | AsyncStealthySession
+if TYPE_CHECKING:
+    from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession
+
+    Session = FetcherSession | AsyncDynamicSession | AsyncStealthySession
+else:
+    Session = Any
 
 
 class SessionManager:

@@ -1,4 +1,4 @@
-from time import time
+from time import time, sleep as time_sleep
 from re import search as re_search
 from asyncio import sleep as asyncio_sleep, Lock
 from contextlib import contextmanager, asynccontextmanager, suppress
@@ -116,6 +116,18 @@ class SyncSession:
     ) -> PageInfo[Page]:  # pragma: no cover
         """Get a ready page from the pool, or open a new one"""
         page_info = self.page_pool.get_ready_page() if context is None else None
+        if page_info is None and context is None and self.page_pool.pages_count >= self.max_pages:
+            start_time = time()
+            while time() - start_time < self._max_wait_for_page:
+                time_sleep(0.02)
+                page_info = self.page_pool.get_ready_page()
+                if page_info is not None:
+                    break
+            else:
+                raise TimeoutError(
+                    f"No pages finished to clear place in the pool within the {self._max_wait_for_page}s timeout period"
+                )
+
         if page_info is None:
             ctx = context if context is not None else self.context
             assert ctx is not None, "Browser context not initialized"
@@ -303,32 +315,29 @@ class AsyncSession:
         if TYPE_CHECKING:
             assert ctx is not None, "Browser context not initialized"
 
-        async with self._lock:
-            page_info = self.page_pool.get_ready_page() if context is None else None
-            if page_info is None and context is None and self.page_pool.pages_count >= self.max_pages:
-                # At max capacity with the persistent context, so wait for a busy page to become ready
-                start_time = time()
-                while time() - start_time < self._max_wait_for_page:
-                    await asyncio_sleep(0.05)
-                    page_info = self.page_pool.get_ready_page()
-                    if page_info is not None:
-                        break
-                else:
+        start_time = time()
+        while True:
+            async with self._lock:
+                page_info = self.page_pool.get_ready_page() if context is None else None
+                if page_info is not None:
+                    break
+                if context is not None or self.page_pool.pages_count < self.max_pages:
+                    page_info = self.page_pool.add_page(await ctx.new_page())
+                    break
+                if time() - start_time >= self._max_wait_for_page:
                     raise TimeoutError(
                         f"No pages finished to clear place in the pool within the {self._max_wait_for_page}s timeout period"
                     )
+            await asyncio_sleep(0.02)
 
-            if page_info is None:
-                page_info = self.page_pool.add_page(await ctx.new_page())
-
-            page = cast(AsyncPage, page_info.page)
-            page.set_default_navigation_timeout(timeout)
-            page.set_default_timeout(timeout)
-            await page.set_extra_http_headers(extra_headers or {})
-            await page.unroute_all(behavior="ignoreErrors")
-            if disable_resources or blocked_domains:
-                await page.route("**/*", create_async_intercept_handler(disable_resources, blocked_domains))
-            return cast(PageInfo[AsyncPage], page_info)
+        page = cast(AsyncPage, page_info.page)
+        page.set_default_navigation_timeout(timeout)
+        page.set_default_timeout(timeout)
+        await page.set_extra_http_headers(extra_headers or {})
+        await page.unroute_all(behavior="ignoreErrors")
+        if disable_resources or blocked_domains:
+            await page.route("**/*", create_async_intercept_handler(disable_resources, blocked_domains))
+        return cast(PageInfo[AsyncPage], page_info)
 
     def get_pool_stats(self) -> Dict[str, int]:
         """Get statistics about the current page pool"""
