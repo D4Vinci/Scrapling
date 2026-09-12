@@ -231,6 +231,38 @@ class TestGetDelayDirectives:
 
 class TestCachingBehaviour:
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("warm_cache", ["http", "https", "prefetch"])
+    async def test_http_and_https_keep_separate_policies(self, warm_cache: str) -> None:
+        """Each scheme retains its own rules and delays, regardless of fetch order."""
+        calls: list[str] = []
+        policies = {
+            "http://example.com/robots.txt": "User-agent: *\nDisallow: /http-only/\nCrawl-delay: 2\nRequest-rate: 1/4\n",
+            "https://example.com/robots.txt": "User-agent: *\nDisallow: /https-only/\nCrawl-delay: 7\nRequest-rate: 1/9\n",
+        }
+
+        async def fetch(url: str, sid: str) -> MockResponse:
+            """Serve independent policies and allow concurrent prefetches to overlap."""
+            calls.append(url)
+            await asyncio.sleep(0)
+            return MockResponse(body=policies[url].encode())
+
+        mgr = RobotsTxtManager(fetch)
+        if warm_cache == "prefetch":
+            await mgr.prefetch(["http://example.com/", "https://example.com/"], "s1")
+        else:
+            await mgr.can_fetch(f"{warm_cache}://example.com/", "s1")
+
+        for _ in range(2):
+            assert await mgr.can_fetch("http://example.com/http-only/page", "s1") is False
+            assert await mgr.can_fetch("http://example.com/https-only/page", "s1") is True
+            assert await mgr.can_fetch("https://example.com/http-only/page", "s1") is True
+            assert await mgr.can_fetch("https://example.com/https-only/page", "s1") is False
+            assert await mgr.get_delay_directives("http://example.com/page", "s1") == (2.0, (1, 4))
+            assert await mgr.get_delay_directives("https://example.com/page", "s1") == (7.0, (1, 9))
+
+        assert sorted(calls) == sorted(policies)
+
+    @pytest.mark.asyncio
     async def test_second_call_same_domain_uses_cache(self):
         fetch_fn = make_fetch_fn(content=ROBOTS_BASIC)
         mgr = RobotsTxtManager(fetch_fn)

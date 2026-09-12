@@ -940,6 +940,29 @@ class TestPauseDuringCrawl:
 class TestPrefetchRobotsTxt:
     """_prefetch_robots_txt warms the robots.txt cache before the crawl loop."""
 
+    @pytest.mark.asyncio
+    async def test_prefetch_deduplicates_by_scheme_and_authority(self) -> None:
+        """Preload both schemes once when start URLs repeat paths on each origin."""
+        fetch_fn, calls = self._make_counting_fetch()
+        spider = MockSpider(
+            robots_txt_obey=True,
+            start_urls=[
+                "http://example.com/a",
+                "https://example.com/a",
+                "http://example.com/b",
+                "https://example.com/b",
+            ],
+        )
+        engine = _make_engine(spider=spider)
+        engine._robots_manager = RobotsTxtManager(fetch_fn)
+
+        await engine._prefetch_robots_txt()
+
+        assert sorted(calls) == [
+            ("http://example.com/robots.txt", "default"),
+            ("https://example.com/robots.txt", "default"),
+        ]
+
     @staticmethod
     def _make_counting_fetch():
         """Return (fetch_fn, calls_list) where calls_list records every (url, sid) pair."""
@@ -998,3 +1021,34 @@ class TestPrefetchRobotsTxt:
         # set of Request.domain values deduplicates to one task per domain
         assert len(calls) == 1
         assert calls[0][0] == "https://example.com/robots.txt"
+
+
+class TestRobotsTxtDelay:
+    """Robots.txt delays are resolved and cached per origin."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("schemes", [("http", "https"), ("https", "http")])
+    async def test_download_delays_are_cached_separately_by_scheme(
+        self, schemes: tuple[str, str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The engine must not reuse one scheme's resolved delay for the other."""
+        calls: list[str] = []
+        directives = {
+            "http://example.com/page": (2.0, None),
+            "https://example.com/page": (7.0, (1, 9)),
+        }
+
+        async def get_directives(url: str, sid: str) -> tuple[float, tuple[int, int] | None]:
+            """Return different directives for each origin independently of parser caching."""
+            calls.append(url)
+            return directives[url]
+
+        engine = _make_engine(spider=MockSpider(robots_txt_obey=True, download_delay=3.0))
+        monkeypatch.setattr(engine._robots_manager, "get_delay_directives", get_directives)
+
+        for path in ("page", "another-page"):
+            for scheme in schemes:
+                request = Request(f"{scheme}://example.com/{path}", sid="default")
+                assert await engine._get_domain_delay(request) == (3.0 if scheme == "http" else 9.0)
+
+        assert sorted(calls) == sorted(directives)

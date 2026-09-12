@@ -104,22 +104,23 @@ class CrawlerEngine:
         return False
 
     async def _get_domain_delay(self, request: Request) -> float:
-        """Resolve the effective download delay for a domain.
+        """Resolve the effective download delay for an origin.
 
         Takes the max of the spider's configured delay and any robots.txt
-        directives (Crawl-delay / Request-rate). Result is cached per domain.
+        directives (Crawl-delay / Request-rate). Result is cached per origin.
         """
         robots_manager = self._robots_manager
         if robots_manager is None:
             return self.spider.download_delay
 
-        domain = request.domain
+        parsed = urlparse(request.url)
+        origin = f"{parsed.scheme or 'https'}://{parsed.netloc}"
 
-        if domain in self._domain_delays:
-            return self._domain_delays[domain]
+        if origin in self._domain_delays:
+            return self._domain_delays[origin]
 
-        # For domains covered by _prefetch_robots_txt this is a local parser read.
-        # Domains discovered mid-crawl (not in start_urls) will fetch here.
+        # For origins covered by _prefetch_robots_txt this is a local parser read.
+        # Origins discovered mid-crawl (not in start_urls) will fetch here.
         c_delay, r_rate = await robots_manager.get_delay_directives(request.url, request.sid)
 
         delay = self.spider.download_delay
@@ -132,7 +133,7 @@ class CrawlerEngine:
         if c_delay is not None:
             delay = max(delay, c_delay)
 
-        self._domain_delays[domain] = delay
+        self._domain_delays[origin] = delay
         return delay
 
     def _rate_limiter(self, domain: str) -> CapacityLimiter:
@@ -334,19 +335,20 @@ class CrawlerEngine:
     async def _prefetch_robots_txt(self) -> None:
         """Pre-warm the robots.txt cache before the crawl loop starts.
 
-        Extracts unique domains from start_urls, preserving the original scheme.
+        Extracts unique origins from start_urls, preserving the original scheme.
         """
         if not self._robots_manager or not self.spider.start_urls:
             return
 
-        # Deduplicate by netloc, preserving the scheme from the first URL per domain
+        # Different schemes on the same authority can serve different robots.txt policies.
         seen: set[str] = set()
         seed_urls: list[str] = []
         for url in self.spider.start_urls:
             parsed = urlparse(url)
-            if parsed.netloc not in seen:
-                seen.add(parsed.netloc)
-                seed_urls.append(f"{parsed.scheme}://{parsed.netloc}/")
+            origin = f"{parsed.scheme or 'https'}://{parsed.netloc}"
+            if origin not in seen:
+                seen.add(origin)
+                seed_urls.append(f"{origin}/")
 
         await self._robots_manager.prefetch(seed_urls, self.session_manager.default_session_id)
 
