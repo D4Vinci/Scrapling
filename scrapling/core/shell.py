@@ -673,13 +673,10 @@ class Convertor:
         else:
             with open(filename, "w", encoding=page.encoding) as f:
                 extension = filename.split(".")[-1]
-                f.write(
-                    "".join(
-                        cls._extract_content(
-                            page,
-                            cls._extension_map[extension],
-                            css_selector=css_selector,
-                            main_content_only=main_content_only,
-                        )
-                    )
+                content = cls._extract_content(
+                    page,
+                    cls._extension_map[extension],
+                    css_selector=css_selector,
+                    main_content_only=main_content_only,
                 )
+                f.write(("\n\n" if extension == "md" else "").join(filter(None, content)))
