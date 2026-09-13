@@ -4,6 +4,11 @@ The Scrapling MCP server exposes thirteen tools over the MCP protocol. It suppor
 
 All scraping tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). The `screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL).
 
+## Shadow DOM
+
+Set `pierce_shadow=true` on `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, or `session_fetch` to include open Shadow DOM content. It defaults to `false`. For persistent sessions, pass it on each `session_fetch` call. See [Shadow DOM](fetching/dynamic.md#shadow-dom) for selector examples and limits.
+
+
 ## One-shot tools
 
 ### `make_request` -- HTTP request, any method (single URL)
@@ -12,30 +17,30 @@ Fast HTTP request with browser fingerprint impersonation (TLS, headers). Support
 
 **Key parameters:**
 
-| Parameter           | Type                               | Default      | Description                                                        |
-|---------------------|------------------------------------|--------------|--------------------------------------------------------------------|
-| `url`               | str                                | required     | URL to fetch                                                       |
-| `method`            | `"GET"` / `"POST"` / `"PUT"` / `"DELETE"` | `"GET"` | HTTP method                                                    |
-| `data`              | dict or str or null                | null         | Request body (form data). POST/PUT/DELETE only                    |
-| `json`              | dict or list or null               | null         | Request body (JSON). POST/PUT/DELETE only                         |
-| `extraction_type`   | `"markdown"` / `"html"` / `"text"` | `"markdown"` | Output format                                                      |
-| `css_selector`      | str or null                        | null         | CSS selector to narrow content (applied after `main_content_only`) |
-| `main_content_only` | bool                               | true         | Restrict to `<body>` content                                       |
-| `impersonate`       | str                                | `"chrome"`   | Browser fingerprint to impersonate                                 |
-| `proxy`             | str or null                        | null         | Proxy URL, e.g. `"http://user:pass@host:port"`                     |
-| `proxy_auth`        | dict or null                       | null         | `{"username": "...", "password": "..."}`                           |
-| `auth`              | dict or null                       | null         | HTTP basic auth, same format as proxy_auth                         |
-| `timeout`           | number                             | 30           | Seconds before timeout                                             |
-| `retries`           | int                                | 3            | Retry attempts on failure                                          |
-| `retry_delay`       | int                                | 1            | Seconds between retries                                            |
-| `stealthy_headers`  | bool                               | true         | Generate realistic browser headers and Google referer       |
-| `http3`             | bool                               | false        | Use HTTP/3 (may conflict with `impersonate`)                       |
-| `follow_redirects`  | bool or "safe"                     | "safe"       | Follow redirects. "safe" rejects redirects to internal/private IPs |
-| `max_redirects`     | int                                | 30           | Max redirects (-1 for unlimited)                                   |
-| `headers`           | dict or null                       | null         | Custom request headers                                             |
-| `cookies`           | dict or null                       | null         | Request cookies                                                    |
-| `params`            | dict or null                       | null         | Query string parameters                                            |
-| `verify`            | bool                               | true         | Verify HTTPS certificates                                          |
+| Parameter           | Type                                      | Default      | Description                                                        |
+|---------------------|-------------------------------------------|--------------|--------------------------------------------------------------------|
+| `url`               | str                                       | required     | URL to fetch                                                       |
+| `method`            | `"GET"` / `"POST"` / `"PUT"` / `"DELETE"` | `"GET"`      | HTTP method                                                        |
+| `data`              | dict or str or null                       | null         | Request body (form data). POST/PUT/DELETE only                     |
+| `json`              | dict or list or null                      | null         | Request body (JSON). POST/PUT/DELETE only                          |
+| `extraction_type`   | `"markdown"` / `"html"` / `"text"`        | `"markdown"` | Output format                                                      |
+| `css_selector`      | str or null                               | null         | CSS selector to narrow content (applied after `main_content_only`) |
+| `main_content_only` | bool                                      | true         | Restrict to `<body>` content                                       |
+| `impersonate`       | str                                       | `"chrome"`   | Browser fingerprint to impersonate                                 |
+| `proxy`             | str or null                               | null         | Proxy URL, e.g. `"http://user:pass@host:port"`                     |
+| `proxy_auth`        | dict or null                              | null         | `{"username": "...", "password": "..."}`                           |
+| `auth`              | dict or null                              | null         | HTTP basic auth, same format as proxy_auth                         |
+| `timeout`           | number                                    | 30           | Seconds before timeout                                             |
+| `retries`           | int                                       | 3            | Retry attempts on failure                                          |
+| `retry_delay`       | int                                       | 1            | Seconds between retries                                            |
+| `stealthy_headers`  | bool                                      | true         | Generate realistic browser headers and Google referer              |
+| `http3`             | bool                                      | false        | Use HTTP/3 (may conflict with `impersonate`)                       |
+| `follow_redirects`  | bool or "safe"                            | "safe"       | Follow redirects. "safe" rejects redirects to internal/private IPs |
+| `max_redirects`     | int                                       | 30           | Max redirects (-1 for unlimited)                                   |
+| `headers`           | dict or null                              | null         | Custom request headers                                             |
+| `cookies`           | dict or null                              | null         | Request cookies                                                    |
+| `params`            | dict or null                              | null         | Query string parameters                                            |
+| `verify`            | bool                                      | true         | Verify HTTPS certificates                                          |
 
 ### `bulk_get` -- HTTP GET request (multiple URLs)
 
@@ -60,8 +65,9 @@ Opens a Chromium browser via Playwright to render JavaScript. Suitable for dynam
 | `wait_selector`       | str or null         | null         | CSS selector to wait for before extraction                                      |
 | `wait_selector_state` | str                 | `"attached"` | State for wait_selector: `"attached"` / `"visible"` / `"hidden"` / `"detached"` |
 | `network_idle`        | bool                | false        | Wait until no network activity for 500ms                                        |
+| `pierce_shadow`       | bool                | false        | Include open Shadow DOM content in this request.                                |
 | `disable_resources`   | bool                | false        | Block fonts, images, media, stylesheets, etc. for speed                         |
-| `google_search`       | bool                | true         | Set a Google referer header                                            |
+| `google_search`       | bool                | true         | Set a Google referer header                                                     |
 | `real_chrome`         | bool                | false        | Use locally installed Chrome instead of bundled Chromium                        |
 | `cdp_url`             | str or null         | null         | Connect to existing browser via CDP URL                                         |
 | `extra_headers`       | dict or null        | null         | Additional request headers                                                      |
@@ -131,24 +137,25 @@ Opens an HTTP session (no browser) that stays alive across multiple `session_mak
 
 Fetches one URL through a browser session opened with `open_session` (dynamic or stealthy). The session holds the browser-level configuration; every parameter here applies to this request only. Raises on a requests session; use `session_make_request` there instead.
 
-| Parameter             | Type                | Default      | Description                                                                     |
-|-----------------------|---------------------|--------------|---------------------------------------------------------------------------------|
-| `url`                 | str                 | required     | URL to fetch                                                                    |
-| `session_id`          | str                 | required     | ID of an open session created with `open_session`                              |
-| `extraction_type`     | str                 | `"markdown"` | `"markdown"` / `"html"` / `"text"`                                              |
-| `css_selector`        | str or null         | null         | Narrow content before extraction                                                |
-| `main_content_only`   | bool                | true         | Restrict to `<body>`                                                            |
-| `wait`                | number              | 0            | Extra wait (ms) after page load before extraction                               |
-| `timeout`             | number              | 30000        | Timeout in **milliseconds**                                                     |
-| `google_search`       | bool                | true         | Set a Google referer header                                                     |
-| `network_idle`        | bool                | false        | Wait until no network activity for 500ms                                        |
-| `load_dom`            | bool                | true         | Wait for the page's JavaScript to fully load and execute                        |
-| `disable_resources`   | bool                | false        | Block fonts, images, media, stylesheets, etc. for speed                         |
-| `wait_selector`       | str or null         | null         | CSS selector to wait for before extraction                                      |
-| `wait_selector_state` | str                 | `"attached"` | State for wait_selector: `"attached"` / `"visible"` / `"hidden"` / `"detached"` |
-| `extra_headers`       | dict or null        | null         | Additional request headers                                                      |
-| `blocked_domains`     | list or null        | null         | Domain names to block for this request (subdomains matched too)                 |
-| `solve_cloudflare`    | bool                | false        | (Stealthy sessions only) Auto-solve Cloudflare challenges; errors on a dynamic session |
+| Parameter             | Type         | Default      | Description                                                                            |
+|-----------------------|--------------|--------------|----------------------------------------------------------------------------------------|
+| `url`                 | str          | required     | URL to fetch                                                                           |
+| `session_id`          | str          | required     | ID of an open session created with `open_session`                                      |
+| `extraction_type`     | str          | `"markdown"` | `"markdown"` / `"html"` / `"text"`                                                     |
+| `css_selector`        | str or null  | null         | Narrow content before extraction                                                       |
+| `main_content_only`   | bool         | true         | Restrict to `<body>`                                                                   |
+| `wait`                | number       | 0            | Extra wait (ms) after page load before extraction                                      |
+| `timeout`             | number       | 30000        | Timeout in **milliseconds**                                                            |
+| `google_search`       | bool         | true         | Set a Google referer header                                                            |
+| `network_idle`        | bool         | false        | Wait until no network activity for 500ms                                               |
+| `pierce_shadow`       | bool         | false        | Include open Shadow DOM content in this request.                                       |
+| `load_dom`            | bool         | true         | Wait for the page's JavaScript to fully load and execute                               |
+| `disable_resources`   | bool         | false        | Block fonts, images, media, stylesheets, etc. for speed                                |
+| `wait_selector`       | str or null  | null         | CSS selector to wait for before extraction                                             |
+| `wait_selector_state` | str          | `"attached"` | State for wait_selector: `"attached"` / `"visible"` / `"hidden"` / `"detached"`        |
+| `extra_headers`       | dict or null | null         | Additional request headers                                                             |
+| `blocked_domains`     | list or null | null         | Domain names to block for this request (subdomains matched too)                        |
+| `solve_cloudflare`    | bool         | false        | (Stealthy sessions only) Auto-solve Cloudflare challenges; errors on a dynamic session |
 
 ### `session_make_request` -- HTTP request through an open requests session
 
@@ -193,15 +200,15 @@ Requires an open browser session. Call `open_session` first, then pass the `sess
 
 | Scenario                                 | Tool                                                          |
 |------------------------------------------|---------------------------------------------------------------|
-| Static page, no bot protection           | `make_request`                                               |
-| Multiple static pages                    | `bulk_get`                                                   |
+| Static page, no bot protection           | `make_request`                                                |
+| Multiple static pages                    | `bulk_get`                                                    |
 | JavaScript-rendered / SPA page           | `fetch`                                                       |
 | Multiple JS-rendered pages               | `bulk_fetch`                                                  |
 | Cloudflare or strong anti-bot protection | `stealthy_fetch` (with `solve_cloudflare=true` for Turnstile) |
 | Multiple protected pages                 | `bulk_stealthy_fetch`                                         |
-| Multiple pages from the same site        | `open_session` + `session_fetch` per page                    |
-| Multiple plain HTTP requests to one site | `open_request_session` + `session_make_request` per request  |
-| Need a screenshot of a page              | `open_session` + `screenshot` with `session_id`              |
+| Multiple pages from the same site        | `open_session` + `session_fetch` per page                     |
+| Multiple plain HTTP requests to one site | `open_request_session` + `session_make_request` per request   |
+| Need a screenshot of a page              | `open_session` + `screenshot` with `session_id`               |
 
 Start with `make_request` (fastest, lowest resource cost). Escalate to `fetch` if content requires JS rendering. Escalate to `stealthy_fetch` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
 
