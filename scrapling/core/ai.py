@@ -601,6 +601,7 @@ class ScraplingMCPServer:
         cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
+        pierce_shadow: bool = False,
     ) -> ResponseModel:
         """Use playwright to open a browser to fetch a URL and return a structured output of the result.
         Only suitable for low-mid protection levels.
@@ -614,6 +615,7 @@ class ScraplingMCPServer:
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request. It should be in a dictionary format that Playwright accepts.
+        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
@@ -650,6 +652,7 @@ class ScraplingMCPServer:
             wait_selector=wait_selector,
             cookies=cookies,
             network_idle=network_idle,
+            pierce_shadow=pierce_shadow,
             wait_selector_state=wait_selector_state,
         )
         return results[0]
@@ -677,6 +680,7 @@ class ScraplingMCPServer:
         cookies: Sequence[SetCookieParam] | None = None,
         network_idle: bool = False,
         wait_selector_state: SelectorWaitStates = "attached",
+        pierce_shadow: bool = False,
     ) -> List[ResponseModel]:
         """Use playwright to open a browser, then fetch a group of URLs at the same time, and for each page return a structured output of the result.
         Only suitable for low-mid protection levels.
@@ -690,6 +694,7 @@ class ScraplingMCPServer:
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
         :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
         :param cookies: Set cookies for the next request. It should be in a dictionary format that Playwright accepts.
+        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
@@ -719,6 +724,7 @@ class ScraplingMCPServer:
             timezone_id=timezone_id,
             real_chrome=real_chrome,
             network_idle=network_idle,
+            pierce_shadow=pierce_shadow,
             wait_selector=wait_selector,
             google_search=google_search,
             extra_headers=extra_headers,
@@ -759,6 +765,7 @@ class ScraplingMCPServer:
         allow_webgl: bool = True,
         solve_cloudflare: bool = False,
         additional_args: Optional[Dict] = None,
+        pierce_shadow: bool = False,
     ) -> ResponseModel:
         """Use the stealthy fetcher to fetch a URL and return a structured output of the result.
         The only fetcher suitable for high-protection websites.
@@ -774,6 +781,7 @@ class ScraplingMCPServer:
         :param cookies: Set cookies for the next request.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
+        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
@@ -814,6 +822,7 @@ class ScraplingMCPServer:
             wait_selector=wait_selector,
             cookies=cookies,
             network_idle=network_idle,
+            pierce_shadow=pierce_shadow,
             wait_selector_state=wait_selector_state,
             block_webrtc=block_webrtc,
             allow_webgl=allow_webgl,
@@ -850,6 +859,7 @@ class ScraplingMCPServer:
         allow_webgl: bool = True,
         solve_cloudflare: bool = False,
         additional_args: Optional[Dict] = None,
+        pierce_shadow: bool = False,
     ) -> List[ResponseModel]:
         """Use the stealthy fetcher to fetch a group of URLs at the same time, and for each page return a structured output of the result.
         The only fetcher suitable for high-protection websites.
@@ -865,6 +875,7 @@ class ScraplingMCPServer:
         :param cookies: Set cookies for the next request.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
+        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
@@ -899,6 +910,7 @@ class ScraplingMCPServer:
             hide_canvas=hide_canvas,
             allow_webgl=allow_webgl,
             network_idle=network_idle,
+            pierce_shadow=pierce_shadow,
             block_webrtc=block_webrtc,
             wait_selector=wait_selector,
             google_search=google_search,
@@ -932,6 +944,7 @@ class ScraplingMCPServer:
         extra_headers: Optional[Dict[str, str]] = None,
         blocked_domains: Optional[Set[str]] = None,
         solve_cloudflare: bool = False,
+        pierce_shadow: bool = False,
     ) -> ResponseModel:
         """Fetch a URL through a browser session previously opened with `open_session` and return a structured output of the result.
         The session (dynamic or stealthy) holds the browser-level configuration; every option here applies to this request only, with the defaults shown.
@@ -944,6 +957,7 @@ class ScraplingMCPServer:
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the `Response` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
+        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on the page to fully load and execute.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
@@ -971,6 +985,7 @@ class ScraplingMCPServer:
             timeout=timeout,
             google_search=google_search,
             network_idle=network_idle,
+            pierce_shadow=pierce_shadow,
             load_dom=load_dom,
             disable_resources=disable_resources,
             wait_selector=wait_selector,

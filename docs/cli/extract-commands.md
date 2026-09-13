@@ -252,6 +252,13 @@ We will go through each command in detail below.
 
 ### Browsers fetching
 
+Both `fetch` and `stealthy-fetch` support `--pierce-shadow` to include open Shadow DOM content. It is off by default; use `--no-pierce-shadow` to disable it explicitly. See [Shadow DOM](../fetching/dynamic.md#shadow-dom) for selector examples and limits.
+
+```bash
+scrapling extract fetch "https://example.com" content.md --pierce-shadow
+scrapling extract stealthy-fetch "https://example.com" content.md --pierce-shadow
+```
+
 1. **fetch - Handle Dynamic Content**
 
     For websites that load content with dynamic content or have slight protection
@@ -282,6 +289,7 @@ We will go through each command in detail below.
     Options:
       --headless / --no-headless                  Run browser in headless mode (default: True)
       --disable-resources / --enable-resources    Drop unnecessary resources for speed boost (default: False)
+      --pierce-shadow / --no-pierce-shadow        Include open Shadow DOM content (default: False)
       --network-idle / --no-network-idle          Wait for network idle (default: False)
       --timeout INTEGER                           Timeout in milliseconds (default: 30000)
       --wait INTEGER                              Additional wait time in milliseconds after page load (default: 0)
@@ -331,6 +339,7 @@ We will go through each command in detail below.
       --block-webrtc / --allow-webrtc             Block WebRTC entirely (default: False)
       --solve-cloudflare / --no-solve-cloudflare  Solve Cloudflare challenges (default: False)
       --allow-webgl / --block-webgl               Allow WebGL (default: True)
+      --pierce-shadow / --no-pierce-shadow        Include open Shadow DOM content (default: False)
       --network-idle / --no-network-idle          Wait for network idle (default: False)
       --real-chrome/--no-real-chrome              If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
       --timeout INTEGER                           Timeout in milliseconds (default: 30000)

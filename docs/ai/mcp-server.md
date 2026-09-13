@@ -37,6 +37,10 @@ The Scrapling MCP Server provides thirteen powerful tools for web scraping, spli
 #### 📸 Screenshots
 - **`screenshot`**: Capture a PNG or JPEG screenshot of a page using an open browser session, returned as an image content block the model can actually see (not a base64 string blob). Supports full-page captures, JPEG quality, and the usual readiness controls (`wait`, `wait_selector`, `network_idle`).
 
+### Shadow DOM
+
+Set `pierce_shadow=true` on `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, or `session_fetch` to include open Shadow DOM content. It defaults to `false`. For persistent sessions, pass it on each `session_fetch` call. See [Shadow DOM](../fetching/dynamic.md#shadow-dom) for selector examples and limits.
+
 ### Key Capabilities
 - **Smart Content Extraction**: Convert web pages/elements to Markdown, HTML, or extract a clean version of the text content
 - **CSS Selector Support**: Use the Scrapling engine to target specific elements with precision before handing the content to the AI
