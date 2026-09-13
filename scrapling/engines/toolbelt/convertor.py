@@ -14,6 +14,43 @@ from scrapling.core._types import Dict, List, Optional
 __CHARSET_RE__ = re_compile(r"""charset=["']?([\w-]+)""")
 
 
+SHADOW_SNAPSHOT_JS = r"""
+() => {
+    if (!Array.from(document.querySelectorAll('*')).some(node => node.shadowRoot)) return null;
+    const documentCopy = document.implementation.createHTMLDocument('');
+    let roots = 0;
+    function copy(node, pierce = true) {
+        if (node.nodeType !== Node.ELEMENT_NODE) return node.cloneNode(true);
+        const name = node.prefix ? `${node.prefix}:${node.localName}` : node.localName;
+        const target = documentCopy.createElementNS(node.namespaceURI, name);
+        for (const attr of node.attributes) target.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
+        if (pierce && node instanceof HTMLSlotElement && node.getRootNode() instanceof ShadowRoot) {
+            const assigned = node.assignedNodes();
+            for (const child of assigned.length ? assigned : node.childNodes) target.append(copy(child));
+            return target;
+        }
+        if (pierce && node.shadowRoot) {
+            roots++;
+            const shadow = documentCopy.createElement('shadow-root');
+            for (const child of node.shadowRoot.childNodes) shadow.append(copy(child));
+            target.append(shadow);
+        } else {
+            const template = node instanceof HTMLTemplateElement;
+            const source = template ? node.content : node;
+            const destination = template ? target.content : target;
+            for (const child of source.childNodes) destination.append(copy(child, pierce && !template));
+        }
+        return target;
+    }
+    const root = copy(document.documentElement);
+    if (!roots) return null;
+    document.adoptNode(root);
+    const doctype = document.doctype ? new XMLSerializer().serializeToString(document.doctype) : '';
+    return doctype + root.outerHTML;
+}
+"""
+
+
 class ResponseFactory:
     """
     Factory class for creating `Response` objects from various sources.
@@ -89,6 +126,7 @@ class ResponseFactory:
         meta: Optional[Dict] = None,
         xhr_captured: Optional[List[SyncResponse]] = None,
         collect_history: bool = True,
+        pierce_shadow: bool = False,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -107,6 +145,7 @@ class ResponseFactory:
         :param meta: Additional meta data to be saved with the response.
         :param xhr_captured: Optional list of captured Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
+        :param pierce_shadow: Include open shadow roots in the HTML snapshot. Disabled by default.
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
         """
@@ -120,9 +159,15 @@ class ResponseFactory:
         status_text = final_response.status_text or StatusText.get(final_response.status)
 
         history = cls._process_response_history(first_response, parser_arguments) if collect_history else []
+        snapshot = None
         try:
             if page and "html" in final_response.all_headers().get("content-type", ""):
-                page_content = cls._get_page_content(page).encode("utf-8")
+                if pierce_shadow:
+                    try:
+                        snapshot = page.evaluate(SHADOW_SNAPSHOT_JS)
+                    except Exception as e:
+                        log.warning(f"Failed to extract shadow roots, using page HTML: {e}")
+                page_content = (snapshot or cls._get_page_content(page)).encode("utf-8")
                 encoding = "utf-8"
             else:
                 page_content = final_response.body()
@@ -236,6 +281,7 @@ class ResponseFactory:
         meta: Optional[Dict] = None,
         xhr_captured: Optional[List[AsyncResponse]] = None,
         collect_history: bool = True,
+        pierce_shadow: bool = False,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -254,6 +300,7 @@ class ResponseFactory:
         :param meta: Additional meta data to be saved with the response.
         :param xhr_captured: Optional list of captured async Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
+        :param pierce_shadow: Include open shadow roots in the HTML snapshot. Disabled by default.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -268,9 +315,15 @@ class ResponseFactory:
         status_text = final_response.status_text or StatusText.get(final_response.status)
 
         history = await cls._async_process_response_history(first_response, parser_arguments) if collect_history else []
+        snapshot = None
         try:
             if page and "html" in (await final_response.all_headers()).get("content-type", ""):
-                page_content = (await cls._get_async_page_content(page)).encode("utf-8")
+                if pierce_shadow:
+                    try:
+                        snapshot = await page.evaluate(SHADOW_SNAPSHOT_JS)
+                    except Exception as e:
+                        log.warning(f"Failed to extract shadow roots, using page HTML: {e}")
+                page_content = (snapshot or await cls._get_async_page_content(page)).encode("utf-8")
                 encoding = "utf-8"
             else:
                 page_content = await final_response.body()

@@ -62,6 +62,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
@@ -209,6 +210,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
@@ -287,6 +289,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                             params.selector_config,
                             meta={"proxy": proxy},
                             xhr_captured=xhr_captured,
+                            pierce_shadow=params.pierce_shadow,
                         )
                         return response
 
@@ -348,6 +351,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
@@ -496,6 +500,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
@@ -575,6 +580,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                             params.selector_config,
                             meta={"proxy": proxy},
                             xhr_captured=xhr_captured,
+                            pierce_shadow=params.pierce_shadow,
                         )
                         return response
 

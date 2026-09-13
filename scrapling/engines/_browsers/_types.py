@@ -67,6 +67,7 @@ class PlaywrightSession(TypedDict, total=False):
     disable_resources: bool
     network_idle: bool
     load_dom: bool
+    pierce_shadow: bool
     wait_selector: Optional[str]
     wait_selector_state: SelectorWaitStates
     cookies: Sequence[SetCookieParam] | None
@@ -99,6 +100,7 @@ class PlaywrightSession(TypedDict, total=False):
 
 class PlaywrightFetchParams(TypedDict, total=False):
     load_dom: bool
+    pierce_shadow: bool
     wait: int | float
     network_idle: bool
     google_search: bool
