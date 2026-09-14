@@ -118,20 +118,30 @@ class TestCanFetch:
         assert await mgr.can_fetch("https://example.com/admin/secret", "s1") is True
 
     @pytest.mark.asyncio
-    async def test_non_200_response_allows_everything(self):
-        for status in [403, 404, 500, 503]:
+    async def test_4xx_response_allows_everything(self):
+        # Per RFC 9309 §2.3.1.3, a 4xx means no robots.txt restrictions exist.
+        for status in [400, 403, 404, 410, 451]:
             mgr = RobotsTxtManager(make_fetch_fn(status=status))
             result = await mgr.can_fetch("https://example.com/page", "s1")
             assert result is True, f"Expected True for HTTP {status}"
 
     @pytest.mark.asyncio
-    async def test_fetch_error_allows_everything(self):
+    async def test_5xx_response_disallows_everything(self):
+        # Per RFC 9309 §2.3.1.3, server errors are "unavailable" and should
+        # be treated as a full disallow while the failure lasts.
+        for status in [500, 502, 503, 504]:
+            mgr = RobotsTxtManager(make_fetch_fn(status=status))
+            result = await mgr.can_fetch("https://example.com/page", "s1")
+            assert result is False, f"Expected False for HTTP {status}"
+
+    @pytest.mark.asyncio
+    async def test_fetch_error_disallows_everything(self):
         async def failing_fetch(url: str, sid: str) -> MockResponse:
             raise ConnectionError("network failure")
 
         mgr = RobotsTxtManager(failing_fetch)
 
-        assert await mgr.can_fetch("https://example.com/page", "s1") is True
+        assert await mgr.can_fetch("https://example.com/page", "s1") is False
 
     @pytest.mark.asyncio
     async def test_wildcard_path_pattern(self):
@@ -146,6 +156,64 @@ class TestCanFetch:
         mgr = RobotsTxtManager(make_fetch_fn(content=ROBOTS_BASIC))
         result = await mgr.can_fetch("https://example.com/", "s1")
         assert isinstance(result, bool)
+
+
+class TestFailureCaching:
+    """A transient failure to fetch robots.txt must not be cached, so a later
+    call for the same domain gets a chance to fetch it again - see issue #437.
+    """
+
+    @pytest.mark.asyncio
+    async def test_5xx_response_is_not_cached(self):
+        fetch_fn = make_fetch_fn(status=503)
+        mgr = RobotsTxtManager(fetch_fn)
+
+        await mgr.can_fetch("https://example.com/page1", "s1")
+        await mgr.can_fetch("https://example.com/page2", "s1")
+
+        assert len(fetch_fn.calls) == 2
+
+    @pytest.mark.asyncio
+    async def test_fetch_exception_is_not_cached(self):
+        calls = []
+
+        async def failing_fetch(url: str, sid: str) -> MockResponse:
+            calls.append((url, sid))
+            raise TimeoutError("timed out")
+
+        mgr = RobotsTxtManager(failing_fetch)
+
+        await mgr.can_fetch("https://example.com/page1", "s1")
+        await mgr.can_fetch("https://example.com/page2", "s1")
+
+        assert len(calls) == 2
+
+    @pytest.mark.asyncio
+    async def test_recovers_once_fetch_succeeds(self):
+        """After a transient failure, a later successful fetch is cached and used."""
+        responses = iter([MockResponse(status=503), MockResponse(status=200, body=ROBOTS_DISALLOW_ALL.encode())])
+
+        async def flaky_fetch(url: str, sid: str) -> MockResponse:
+            return next(responses)
+
+        mgr = RobotsTxtManager(flaky_fetch)
+
+        # First call: 503 -> disallow, not cached.
+        assert await mgr.can_fetch("https://example.com/page", "s1") is False
+        # Second call: succeeds and gets cached.
+        assert await mgr.can_fetch("https://example.com/page", "s1") is False
+        assert "example.com" in mgr._cache
+
+    @pytest.mark.asyncio
+    async def test_404_response_is_cached(self):
+        # A 4xx is a durable fact (no robots.txt exists), unlike a 5xx/error.
+        fetch_fn = make_fetch_fn(status=404)
+        mgr = RobotsTxtManager(fetch_fn)
+
+        await mgr.can_fetch("https://example.com/page1", "s1")
+        await mgr.can_fetch("https://example.com/page2", "s1")
+
+        assert len(fetch_fn.calls) == 1
 
 
 # ---------------------------------------------------------------------------
