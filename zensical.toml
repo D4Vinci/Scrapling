@@ -3,6 +3,7 @@ site_name = "Scrapling"
 site_description = "Scrapling - Effortless Web Scraping for the Modern Web!"
 site_author = "Karim Shoair"
 repo_url = "https://github.com/D4Vinci/Scrapling"
+edit_uri = "edit/main/docs/"
 site_url = "https://scrapling.readthedocs.io/en/latest/"
 repo_name = "D4Vinci/Scrapling"
 copyright = "Copyright &copy; 2025 Karim Shoair - <a href=\"#__consent\">Change cookie settings</a>"
@@ -97,6 +98,7 @@ features = [
     "search.share",
     "search.suggest",
     "search.highlight",
+    "content.action.view",
     "content.code.copy",
 ]
 
