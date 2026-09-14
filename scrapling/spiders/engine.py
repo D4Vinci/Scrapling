@@ -202,13 +202,14 @@ class CrawlerEngine:
                 cached.request = request
                 # Cached responses are rebuilt without meta, so merge the request's in as the live path does
                 cached.meta = {**request.meta, **cached.meta}
-                self.stats.cache_hits += 1
-                self.stats.increment_requests_count(request.sid or self.session_manager.default_session_id)
-                self.stats.increment_response_bytes(request.domain, len(cached.body))
-                self.stats.increment_status(cached.status)
-                log.debug(f"Cache hit: {request.url}")
-                await self._run_callbacks(request, cached)
-                return
+                if not await self.spider.is_blocked(cached):
+                    self.stats.cache_hits += 1
+                    self.stats.increment_requests_count(request.sid or self.session_manager.default_session_id)
+                    self.stats.increment_response_bytes(request.domain, len(cached.body))
+                    self.stats.increment_status(cached.status)
+                    log.debug(f"Cache hit: {request.url}")
+                    await self._run_callbacks(request, cached)
+                    return
 
         async with self._rate_limiter(request.domain):
             if self._autothrottle:
@@ -236,7 +237,6 @@ class CrawlerEngine:
 
         if self._cache_manager and request._fp is not None:
             self.stats.cache_misses += 1
-            await self._cache_manager.put(request._fp, response, request._session_kwargs.get("method", "GET"))
 
         blocked = await self.spider.is_blocked(response)
         if self._autothrottle:
@@ -263,6 +263,9 @@ class CrawlerEngine:
             else:
                 log.warning(f"Max retries exceeded for blocked request: {request.url}")
             return
+
+        if self._cache_manager and request._fp is not None:
+            await self._cache_manager.put(request._fp, response, request._session_kwargs.get("method", "GET"))
 
         await self._run_callbacks(request, response)
 
