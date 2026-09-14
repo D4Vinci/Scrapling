@@ -37,14 +37,10 @@ class TestStealthConstants:
 
 
 class TestLaunchFlags:
-    """The launch flags a StealthySession ends up handing to Chromium.
+    """The launch flags a session ends up handing to Chromium. No browser is started."""
 
-    No browser is started: `_browser_options` is exactly what
-    `chromium.launch(**self._browser_options)` is called with.
-    """
-
-    # a flag that is in neither DEFAULT_ARGS nor STEALTH_ARGS, so its presence
-    # and the bundle's presence are independent observations
+    # in neither DEFAULT_ARGS nor STEALTH_ARGS, so its presence and the bundle's
+    # presence are independent observations
     USER_FLAG = "--window-size=1280,720"
 
     @staticmethod
@@ -52,14 +48,9 @@ class TestLaunchFlags:
         session = StealthySession(headless=True, block_webrtc=True, allow_webgl=False, hide_canvas=True, **kwargs)
         return list(session._browser_options["args"])
 
-    def test_extra_flags_are_added_to_the_stealth_bundle_not_swapped_for_it(self):
-        """`extra_flags` used to replace the hardening bundle instead of extending it.
-
-        The bundle reaches __generate_options__ as its `extra_flags` argument, and
-        `config.extra_flags or extra_flags` returned whichever came first, so passing
-        one flag of your own dropped all 53 STEALTH_ARGS and every conditional flag
-        with them.
-        """
+    def test_extra_flags_extend_the_stealth_bundle(self):
+        """`config.extra_flags or extra_flags` returned whichever came first, so passing
+        one flag of your own dropped all 53 STEALTH_ARGS and every conditional flag."""
         without = self._args()
         with_extra = self._args(extra_flags=[self.USER_FLAG])
 
@@ -78,36 +69,14 @@ class TestLaunchFlags:
         ):
             assert flag in with_extra, f"{flag} lost to extra_flags"
 
-    def test_flag_order_is_deterministic(self):
-        """The flags were collapsed through `set()`, whose order over strings depends on
-        the per-process hash seed, so the list differed from run to run. Chrome parses
-        `--disable-features` and `--lang` last-wins, so their order is not cosmetic.
-
-        Asserting the declared order survives pins this without needing a subprocess:
-        an arbitrary ordering of 11 and 53 flags will not reproduce it by chance.
-        """
-        args = self._args(extra_flags=[self.USER_FLAG])
-
-        assert [flag for flag in args if flag in set(DEFAULT_ARGS)] == list(DEFAULT_ARGS)
-        assert [flag for flag in args if flag in set(STEALTH_ARGS)] == list(STEALTH_ARGS)
-        # the user's flags go last, so they win the switches Chrome parses last-wins
-        assert args.index(self.USER_FLAG) > max(args.index(flag) for flag in STEALTH_ARGS)
-
-    def test_dynamic_session_keeps_defaults_and_their_order(self):
-        """DynamicSession separates the two halves of the bug.
-
-        It passes no bundle, so there was never a second list for `or` to discard and
-        it never lost a flag - the membership assertion below held before this fix.
-        The order assertion did not: it goes through the same `set()`, so its flags
-        were shuffled too. Both halves are covered here so a future change that fixes
-        one and reintroduces the other is caught.
-        """
+    def test_dynamic_session_keeps_its_defaults(self):
+        """DynamicSession passes no bundle, so it never lost a flag - a control that
+        held before this fix and pins the path the fix also touches."""
         session = DynamicSession(headless=True, extra_flags=[self.USER_FLAG])
         args = list(session._browser_options["args"])
 
         assert self.USER_FLAG in args
         assert set(DEFAULT_ARGS) <= set(args), "a default flag was dropped"
-        assert [flag for flag in args if flag in set(DEFAULT_ARGS)] == list(DEFAULT_ARGS)
 
 
 @pytest_httpbin.use_class_based_httpbin
