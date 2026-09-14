@@ -96,11 +96,19 @@ class Request:
             post_data = self._session_kwargs.get("json", {})
             body = orjson.dumps(post_data) if post_data else b""
 
+        params = self._session_kwargs.get("params")
+        if params:
+            separator = "&" if "?" in self.url else "?"
+            query_string = urlencode(params, doseq=True)
+            url = f"{self.url}{separator}{query_string}"
+        else:
+            url = self.url
+
         data: Dict[str, str | Tuple] = {
             "sid": self.sid,
             "body": body.hex(),
             "method": self._session_kwargs.get("method", "GET"),
-            "url": canonicalize_url(self.url, keep_fragments=keep_fragments),
+            "url": canonicalize_url(url, keep_fragments=keep_fragments),
         }
 
         if include_kwargs:

@@ -131,6 +131,14 @@ class TestRequestProperties:
 
         assert r1.update_fingerprint(include_headers=True) != r2.update_fingerprint(include_headers=True)
 
+    def test_fingerprint_includes_params(self):
+        r1 = Request("https://example.com/p?a=1", params={"skip": 1})
+        r2 = Request("https://example.com/p?a=1", params={"skip": 2})
+        r3 = Request("https://example.com/p?skip=2&a=1")
+
+        assert r1.update_fingerprint() != r2.update_fingerprint()
+        assert r2.update_fingerprint() == r3.update_fingerprint()
+
 
 class TestRequestCopy:
     """Test Request copy functionality."""
