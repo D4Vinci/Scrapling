@@ -2,7 +2,7 @@
 from sys import stderr
 from copy import deepcopy
 from functools import wraps
-from re import sub as re_sub, compile as re_compile
+from re import DOTALL, sub as re_sub, compile as re_compile
 from collections import namedtuple
 from shlex import split as shlex_split
 from inspect import signature, Parameter
@@ -73,6 +73,7 @@ _HIDDEN_XPATH = XPath(".//*[@style] | .//*[@aria-hidden='true'] | .//slot[@hidde
 _HIDING_DECLARATIONS = frozenset({("display", "none"), ("visibility", "hidden")})
 _ZERO_HIDING_PROPERTIES = frozenset({"opacity", "font-size", "height", "width", "max-height", "max-width"})
 _ZERO_VALUE_PATTERN = re_compile(r"0(?:\.0+)?[a-z%]*")
+_CSS_COMMENT_PATTERN = re_compile(r"/\*.*?\*/", DOTALL)
 _ZWC_PATTERN = re_compile(r"[\u200b\u200c\u200d\ufeff\u2060\u180e]")
 _CONTROL_CHARS_PATTERN = re_compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
@@ -83,14 +84,16 @@ def _is_hidden_element(element: Any) -> bool:
     `_HIDDEN_XPATH` selects the candidates, and this confirms them. Inline styles are compared
     declaration by declaration instead of by substring, so a value that merely starts with a zero
     (`opacity:0.95`, `font-size:0.9rem`) or a different property ending with a matching name
-    (`line-height:0.9`) is not treated as hidden.
+    (`line-height:0.9`) is not treated as hidden, while CSS comments are ignored the way browsers do.
     """
     if element.get("aria-hidden") == "true" or element.tag == "template":
         return True
     if element.tag == "slot" and element.get("hidden") is not None:
         return True
 
-    for declaration in (element.get("style") or "").split(";"):
+    # Browsers drop `/* ... */` before parsing, so `display:none/*hidden*/` still hides the element
+    style = _CSS_COMMENT_PATTERN.sub("", element.get("style") or "")
+    for declaration in style.split(";"):
         prop, separator, value = declaration.partition(":")
         if not separator:
             continue
