@@ -89,6 +89,7 @@ STYLED_BUT_VISIBLE_HTML = """
     <p style="width:0.5em">Narrow but visible.</p>
     <p style="min-height:0">Flexbox child.</p>
     <p style="opacity:0.95/*hidden*/">Commented but almost opaque.</p>
+    <p style="opacity:0.95 ! important">Important but almost opaque.</p>
   </body>
 </html>
 """
@@ -107,6 +108,9 @@ HIDDEN_HTML = """
     <p style="width:0">Hidden by width</p>
     <p style="font-size:0">Hidden by font size</p>
     <p style="display:none !important">Hidden by important</p>
+    <p style="display:none ! important">Hidden by spaced important</p>
+    <p style="opacity:0 ! important">Hidden by spaced important opacity</p>
+    <p style="visibility:hidden!important">Hidden by unspaced important</p>
     <p style="display:none/*hidden*/">Hidden by commented display</p>
     <p style="opacity:0/*hidden*/">Hidden by commented opacity</p>
     <p style="display:/* keep */none;">Hidden by comment inside declaration</p>
@@ -130,6 +134,7 @@ class TestResponseMarkdownSanitizerPrecision:
             "Narrow but visible.",
             "Flexbox child.",
             "Commented but almost opaque.",
+            "Important but almost opaque.",
         ):
             assert expected in md
 
@@ -147,6 +152,9 @@ class TestResponseMarkdownSanitizerPrecision:
             "Hidden by width",
             "Hidden by font size",
             "Hidden by important",
+            "Hidden by spaced important",
+            "Hidden by spaced important opacity",
+            "Hidden by unspaced important",
             "Hidden by commented display",
             "Hidden by commented opacity",
             "Hidden by comment inside declaration",

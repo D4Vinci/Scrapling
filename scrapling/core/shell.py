@@ -74,6 +74,7 @@ _HIDING_DECLARATIONS = frozenset({("display", "none"), ("visibility", "hidden")}
 _ZERO_HIDING_PROPERTIES = frozenset({"opacity", "font-size", "height", "width", "max-height", "max-width"})
 _ZERO_VALUE_PATTERN = re_compile(r"0(?:\.0+)?[a-z%]*")
 _CSS_COMMENT_PATTERN = re_compile(r"/\*.*?\*/", DOTALL)
+_IMPORTANT_SUFFIX_PATTERN = re_compile(r"!\s*important$")
 _ZWC_PATTERN = re_compile(r"[\u200b\u200c\u200d\ufeff\u2060\u180e]")
 _CONTROL_CHARS_PATTERN = re_compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
@@ -99,7 +100,8 @@ def _is_hidden_element(element: Any) -> bool:
             continue
 
         prop = prop.strip().lower()
-        value = value.strip().lower().removesuffix("!important").strip()
+        # `! important` is valid CSS, so the whitespace between the two is optional
+        value = _IMPORTANT_SUFFIX_PATTERN.sub("", value.strip().lower()).strip()
         if (prop, value) in _HIDING_DECLARATIONS or (
             prop in _ZERO_HIDING_PROPERTIES and _ZERO_VALUE_PATTERN.fullmatch(value)
         ):
