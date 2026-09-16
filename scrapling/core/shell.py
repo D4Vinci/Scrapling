@@ -77,6 +77,7 @@ _HIDDEN_XPATH = XPath(
     ' or contains(@style,"height:0") or contains(@style,"height: 0")'
     ' or contains(@style,"width:0") or contains(@style,"width: 0")]'
     " | .//*[@aria-hidden='true']"
+    " | .//slot[@hidden]"
     " | .//template"
 )
 _ZWC_PATTERN = re_compile(r"[\u200b\u200c\u200d\ufeff\u2060\u180e]")
@@ -604,7 +605,7 @@ class Convertor:
     def _sanitize_for_ai(cls, page: Selector) -> Selector:
         """Strip hidden content that could be used for prompt injection.
 
-        Removes CSS-hidden elements, aria-hidden elements, <template> tags,
+        Removes CSS-hidden elements, hidden slots, aria-hidden elements, <template> tags,
         HTML comments, zero-width Unicode characters, and XML-incompatible
         control characters.
         """
@@ -673,13 +674,10 @@ class Convertor:
         else:
             with open(filename, "w", encoding=page.encoding) as f:
                 extension = filename.split(".")[-1]
-                f.write(
-                    "".join(
-                        cls._extract_content(
-                            page,
-                            cls._extension_map[extension],
-                            css_selector=css_selector,
-                            main_content_only=main_content_only,
-                        )
-                    )
+                content = cls._extract_content(
+                    page,
+                    cls._extension_map[extension],
+                    css_selector=css_selector,
+                    main_content_only=main_content_only,
                 )
+                f.write(("\n\n" if extension == "md" else "").join(filter(None, content)))

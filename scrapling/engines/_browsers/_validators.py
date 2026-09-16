@@ -64,6 +64,7 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     disable_resources: bool = False
     network_idle: bool = False
     load_dom: bool = True
+    pierce_shadow: bool = False
     wait_selector: Optional[str] = None
     wait_selector_state: SelectorWaitStates = "attached"
     cookies: Sequence[SetCookieParam] | None = []
@@ -170,6 +171,7 @@ class _fetch_params:
     wait_selector_state: SelectorWaitStates
     network_idle: bool
     load_dom: bool
+    pierce_shadow: bool
     blocked_domains: Optional[Set[str]]
     solve_cloudflare: bool
     selector_config: Dict

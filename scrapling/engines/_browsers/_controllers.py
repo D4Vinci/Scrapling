@@ -57,6 +57,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
@@ -116,6 +117,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
         :return: A `Response` object.
@@ -188,6 +190,7 @@ class DynamicSession(SyncSession, DynamicSessionMixin):
                             params.selector_config,
                             meta={"proxy": proxy},
                             xhr_captured=xhr_captured,
+                            pierce_shadow=params.pierce_shadow,
                         )
                         return response
 
@@ -234,6 +237,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
         :param page_action: Added for automation. A function that takes the `page` object, runs after navigation, and does the automation you need.
@@ -304,6 +308,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
         :return: A `Response` object.
@@ -377,6 +382,7 @@ class AsyncDynamicSession(AsyncSession, DynamicSessionMixin):
                             params.selector_config,
                             meta={"proxy": proxy},
                             xhr_captured=xhr_captured,
+                            pierce_shadow=params.pierce_shadow,
                         )
                         return response
 

@@ -72,6 +72,7 @@ Scrapling provides many options with this fetcher and its session classes. To ma
 |      useragent      | Pass a useragent string to be used. **Otherwise, the fetcher will generate and use a real Useragent of the same browser and version.**                                                                                              |    ✔️    |
 |    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                       |    ✔️    |
 |      load_dom       | Enabled by default, wait for all JavaScript on page(s) to fully load and execute (wait for the `domcontentloaded` state).                                                                                                           |    ✔️    |
+|    pierce_shadow    | Include open Shadow DOM content in the response HTML. Defaults to `False`. Can be set for the session or overridden for each request. |    ✔️    |
 |       timeout       | The timeout (milliseconds) used in all operations and waits through the page. The default is 30,000 ms (30 seconds).                                                                                                                |    ✔️    |
 |        wait         | The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the `Response` object.                                                                                                |    ✔️    |
 |     page_action     | Added for automation. Pass a function that takes the `page` object, runs after navigation, and does the necessary automation.                                                                                                       |    ✔️    |
@@ -99,7 +100,7 @@ Scrapling provides many options with this fetcher and its session classes. To ma
 |     capture_xhr     | Pass a regex URL pattern string to capture XHR/fetch requests matching it during page load. Captured responses are available via `response.captured_xhr`. Defaults to `None` (disabled).                                            |    ✔️    |
 |   executable_path   | Absolute path to a custom browser executable to use instead of the bundled Chromium. Useful for non-standard installations or custom browser builds.                                                                                |    ✔️    |
 
-In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `page_setup`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `blocked_domains`, `proxy`, and `selector_config`.
+In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `page_setup`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `pierce_shadow`, `blocked_domains`, `proxy`, and `selector_config`.
 
 !!! note "Notes:"
 
@@ -182,6 +183,54 @@ It's easier to understand with examples, so let's take a look.
 # Disable unnecessary resources
 page = DynamicFetcher.fetch('https://example.com', disable_resources=True)  # Blocks fonts, images, media, etc.
 ```
+
+### Shadow DOM
+
+Some pages keep content inside open shadow roots, which are not included in the page's normal HTML. Enable `pierce_shadow` to include that content in the response, then use CSS or XPath selectors as usual:
+
+```python
+from scrapling.fetchers import DynamicFetcher
+
+page = DynamicFetcher.fetch('https://example.com', pierce_shadow=True)
+titles = page.css('product-card .title::text').getall()
+```
+
+The option defaults to `False`. You can also enable it for a session and disable it for an individual request:
+
+```python
+from scrapling.fetchers import DynamicSession
+
+with DynamicSession(pierce_shadow=True) as session:
+    page = session.fetch('https://example.com')
+    plain_page = session.fetch('https://example.com', pierce_shadow=False)
+```
+
+The same option works with `async_fetch`, async sessions, and stealth fetchers.
+
+Only open shadow roots are included. Closed roots and iframe documents are not traversed. Use `wait_selector` when a component loads after the page.
+
+Each open root becomes a `<shadow-root>` wrapper in the response. Slots keep their tags and attributes and contain their assigned nodes, or fallback content when nothing is assigned. Unassigned light children are omitted. The live page is unchanged.
+
+```html
+<product-card>
+  <shadow-root>
+    <div class="title">Product name</div>
+    <slot name="price"><span class="price">20</span></slot>
+  </shadow-root>
+</product-card>
+```
+
+Descendant selectors work across these elements. Direct-child selectors must include the wrappers and slots:
+
+```python
+titles = page.css('product-card .title::text').getall()
+titles = page.css('product-card > shadow-root > .title::text').getall()
+prices = page.css('product-card > shadow-root > slot[name="price"] > .price::text').getall()
+```
+
+The wrappers and slots appear in XPath paths, `.children`, `response.body`, and HTML exports. Markdown and text extraction return their content without printing the tags. Hidden slot attributes remain available to content cleaning.
+
+The snapshot follows content order, but it does not calculate CSS visibility or layout. Selectors containing `<shadow-root>` apply to the Scrapling response, not the live browser page. Other HTML parsers can handle unusual nesting differently.
 
 ### Domain Blocking
 
