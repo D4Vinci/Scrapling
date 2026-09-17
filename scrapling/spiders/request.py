@@ -4,6 +4,7 @@ from functools import cached_property
 from urllib.parse import urlparse, urlencode
 
 import orjson
+from curl_cffi.requests.utils import update_url_params
 from w3lib.url import canonicalize_url
 
 from scrapling.engines.toolbelt.custom import Response
@@ -96,11 +97,14 @@ class Request:
             post_data = self._session_kwargs.get("json", {})
             body = orjson.dumps(post_data) if post_data else b""
 
+        params = self._session_kwargs.get("params")
+        url = update_url_params(self.url, params) if params else self.url
+
         data: Dict[str, str | Tuple] = {
             "sid": self.sid,
             "body": body.hex(),
             "method": self._session_kwargs.get("method", "GET"),
-            "url": canonicalize_url(self.url, keep_fragments=keep_fragments),
+            "url": canonicalize_url(url, keep_fragments=keep_fragments),
         }
 
         if include_kwargs:
