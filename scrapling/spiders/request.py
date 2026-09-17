@@ -4,6 +4,7 @@ from functools import cached_property
 from urllib.parse import urlparse, urlencode
 
 import orjson
+from curl_cffi.requests.utils import update_url_params
 from w3lib.url import canonicalize_url
 
 from scrapling.engines.toolbelt.custom import Response
@@ -97,12 +98,7 @@ class Request:
             body = orjson.dumps(post_data) if post_data else b""
 
         params = self._session_kwargs.get("params")
-        if params:
-            separator = "&" if "?" in self.url else "?"
-            query_string = urlencode(params, doseq=True)
-            url = f"{self.url}{separator}{query_string}"
-        else:
-            url = self.url
+        url = update_url_params(self.url, params) if params else self.url
 
         data: Dict[str, str | Tuple] = {
             "sid": self.sid,
