@@ -236,7 +236,6 @@ class CrawlerEngine:
 
         if self._cache_manager and request._fp is not None:
             self.stats.cache_misses += 1
-            await self._cache_manager.put(request._fp, response, request._session_kwargs.get("method", "GET"))
 
         blocked = await self.spider.is_blocked(response)
         if self._autothrottle:
@@ -263,6 +262,9 @@ class CrawlerEngine:
             else:
                 log.warning(f"Max retries exceeded for blocked request: {request.url}")
             return
+
+        if self._cache_manager and request._fp is not None:
+            await self._cache_manager.put(request._fp, response, request._session_kwargs.get("method", "GET"))
 
         await self._run_callbacks(request, response)
 

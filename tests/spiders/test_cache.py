@@ -268,6 +268,83 @@ class MockSpider:
 
 class TestDevelopmentModeIntegration:
     @pytest.mark.anyio
+    @pytest.mark.parametrize("blocked_status", [403, 200])
+    async def test_blocked_response_is_not_replayed_for_retry(self, tmp_path: Path, blocked_status: int) -> None:
+        """Retries fetch again, and only the accepted response is replayed later."""
+
+        class RecoveringSession(MockSession):
+            async def fetch(self, url: str, **kwargs: Any) -> Response:
+                """Return a blocked response followed by an accepted response."""
+                self.fetch_count += 1
+                response = _make_response(
+                    url=url,
+                    body=b"blocked" if self.fetch_count == 1 else b"success",
+                    status=blocked_status if self.fetch_count == 1 else 200,
+                )
+                response.meta["live_only"] = True
+                return response
+
+        class RetryingSpider(MockSpider):
+            async def is_blocked(self, response: Response) -> bool:
+                """Recognize blocked content independently of the HTTP status."""
+                # Custom hooks may rely on live metadata that the disk cache omits.
+                assert response.meta["live_only"] is True
+                return response.body == b"blocked"
+
+            async def parse(self, response: Response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                """Expose the body actually delivered to the callback."""
+                yield {"body": response.body}
+
+        session = RecoveringSession()
+        spider = RetryingSpider(cache_dir=str(tmp_path))
+        sm = SessionManager()
+        sm.add("default", session)
+        engine = CrawlerEngine(spider, sm)
+
+        await engine.crawl()
+
+        assert session.fetch_count == 2
+        assert spider.scraped_items == [{"body": b"success"}]
+        assert engine.stats.blocked_requests_count == 1
+        assert engine.stats.cache_hits == 0
+        assert engine.stats.cache_misses == 2
+
+        # A later run should still replay the successful response.
+        cached_session = MockSession()
+        cached_spider = RetryingSpider(cache_dir=str(tmp_path))
+        cached_sm = SessionManager()
+        cached_sm.add("default", cached_session)
+        cached_engine = CrawlerEngine(cached_spider, cached_sm)
+        await cached_engine.crawl()
+
+        assert cached_session.fetch_count == 0
+        assert cached_spider.scraped_items == [{"body": b"success"}]
+        assert cached_engine.stats.cache_hits == 1
+
+    @pytest.mark.anyio
+    async def test_exhausted_blocked_response_is_not_cached(self, tmp_path: Path) -> None:
+        """Exhausting retries must not leave a blocked response on disk."""
+
+        class BlockedSpider(MockSpider):
+            async def is_blocked(self, response: Response) -> bool:
+                """Reject every response for this crawl."""
+                return True
+
+        session = MockSession()
+        spider = BlockedSpider(cache_dir=str(tmp_path))
+        spider.max_blocked_retries = 0
+        sm = SessionManager()
+        sm.add("default", session)
+        engine = CrawlerEngine(spider, sm)
+        await engine.crawl()
+
+        assert session.fetch_count == 1
+        assert engine.stats.blocked_requests_count == 1
+        assert engine.stats.cache_misses == 1
+        assert not spider.scraped_items
+        assert not list(tmp_path.glob("*.json"))
+
+    @pytest.mark.anyio
     async def test_first_run_fetches_and_caches(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             session = MockSession()
