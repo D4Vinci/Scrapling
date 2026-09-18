@@ -118,20 +118,46 @@ class TestCanFetch:
         assert await mgr.can_fetch("https://example.com/admin/secret", "s1") is True
 
     @pytest.mark.asyncio
-    async def test_non_200_response_allows_everything(self):
-        for status in [403, 404, 500, 503]:
+    async def test_unavailable_status_allows_everything(self):
+        """RFC 9309 2.3.1.2: 4xx means there are no restrictions."""
+        for status in [401, 403, 404, 410]:
             mgr = RobotsTxtManager(make_fetch_fn(status=status))
             result = await mgr.can_fetch("https://example.com/page", "s1")
             assert result is True, f"Expected True for HTTP {status}"
 
     @pytest.mark.asyncio
-    async def test_fetch_error_allows_everything(self):
+    async def test_unreachable_status_disallows_everything(self):
+        """RFC 9309 2.3.1.3: a server error means assume complete disallow."""
+        for status in [500, 502, 503]:
+            mgr = RobotsTxtManager(make_fetch_fn(status=status))
+            result = await mgr.can_fetch("https://example.com/page", "s1")
+            assert result is False, f"Expected False for HTTP {status}"
+
+    @pytest.mark.asyncio
+    async def test_fetch_error_disallows_everything(self):
         async def failing_fetch(url: str, sid: str) -> MockResponse:
             raise ConnectionError("network failure")
 
         mgr = RobotsTxtManager(failing_fetch)
 
+        assert await mgr.can_fetch("https://example.com/page", "s1") is False
+
+    @pytest.mark.asyncio
+    async def test_unreachable_robots_is_not_cached(self):
+        """A transient failure must not disallow the domain for the whole run."""
+        calls = []
+
+        async def flaky_fetch(url: str, sid: str) -> MockResponse:
+            calls.append(url)
+            if len(calls) == 1:
+                raise ConnectionError("network failure")
+            return MockResponse(status=200, body=b"")
+
+        mgr = RobotsTxtManager(flaky_fetch)
+
+        assert await mgr.can_fetch("https://example.com/page", "s1") is False
         assert await mgr.can_fetch("https://example.com/page", "s1") is True
+        assert len(calls) == 2
 
     @pytest.mark.asyncio
     async def test_wildcard_path_pattern(self):

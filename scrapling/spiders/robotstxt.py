@@ -7,6 +7,9 @@ from scrapling.core._types import Dict, Optional, Callable, Awaitable
 from scrapling.core.utils import log
 
 
+_DISALLOW_ALL = "User-agent: *\nDisallow: /"
+
+
 class RobotsTxtManager:
     """Manages fetching, parsing, and caching of robots.txt files."""
 
@@ -24,12 +27,25 @@ class RobotsTxtManager:
         scheme = parsed.scheme or "https"
         robots_url = f"{scheme}://{domain}/robots.txt"
         content = ""
+        reachable = True
         try:
             response = await self._fetch_fn(robots_url, sid)
             if response.status == 200:
                 content = response.body.decode(response.encoding, errors="replace")
+            elif response.status >= 500:
+                # RFC 9309 2.3.1.3: a server error is "unreachable", and a
+                # crawler should assume complete disallow while it lasts. Only
+                # 4xx (2.3.1.2, "unavailable") means everything is allowed.
+                reachable = False
+                log.warning(f"robots.txt for {domain} returned {response.status}; assuming disallow")
         except Exception as e:
+            reachable = False
             log.warning(f"Failed to fetch robots.txt for {domain}: {e}")
+
+        if not reachable:
+            # Not cached: the next request retries rather than disallowing the
+            # domain for the rest of the run on one transient failure.
+            return Protego.parse(_DISALLOW_ALL)
 
         try:
             parser = Protego.parse(content)
