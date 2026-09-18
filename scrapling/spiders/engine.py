@@ -202,14 +202,13 @@ class CrawlerEngine:
                 cached.request = request
                 # Cached responses are rebuilt without meta, so merge the request's in as the live path does
                 cached.meta = {**request.meta, **cached.meta}
-                if not await self.spider.is_blocked(cached):
-                    self.stats.cache_hits += 1
-                    self.stats.increment_requests_count(request.sid or self.session_manager.default_session_id)
-                    self.stats.increment_response_bytes(request.domain, len(cached.body))
-                    self.stats.increment_status(cached.status)
-                    log.debug(f"Cache hit: {request.url}")
-                    await self._run_callbacks(request, cached)
-                    return
+                self.stats.cache_hits += 1
+                self.stats.increment_requests_count(request.sid or self.session_manager.default_session_id)
+                self.stats.increment_response_bytes(request.domain, len(cached.body))
+                self.stats.increment_status(cached.status)
+                log.debug(f"Cache hit: {request.url}")
+                await self._run_callbacks(request, cached)
+                return
 
         async with self._rate_limiter(request.domain):
             if self._autothrottle:

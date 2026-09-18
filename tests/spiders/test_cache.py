@@ -276,13 +276,19 @@ class TestDevelopmentModeIntegration:
             async def fetch(self, url: str, **kwargs: Any) -> Response:
                 """Return a blocked response followed by an accepted response."""
                 self.fetch_count += 1
-                if self.fetch_count == 1:
-                    return _make_response(url=url, body=b"blocked", status=blocked_status)
-                return _make_response(url=url, body=b"success")
+                response = _make_response(
+                    url=url,
+                    body=b"blocked" if self.fetch_count == 1 else b"success",
+                    status=blocked_status if self.fetch_count == 1 else 200,
+                )
+                response.meta["live_only"] = True
+                return response
 
         class RetryingSpider(MockSpider):
             async def is_blocked(self, response: Response) -> bool:
                 """Recognize blocked content independently of the HTTP status."""
+                # Custom hooks may rely on live metadata that the disk cache omits.
+                assert response.meta["live_only"] is True
                 return response.body == b"blocked"
 
             async def parse(self, response: Response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
@@ -337,40 +343,6 @@ class TestDevelopmentModeIntegration:
         assert engine.stats.cache_misses == 1
         assert not spider.scraped_items
         assert not list(tmp_path.glob("*.json"))
-
-    @pytest.mark.anyio
-    async def test_existing_blocked_cache_entry_is_refetched(self, tmp_path: Path) -> None:
-        """A blocked entry from an earlier run must fall back to a live fetch."""
-
-        class RetryingSpider(MockSpider):
-            async def is_blocked(self, response: Response) -> bool:
-                """Check the cached response after its request is restored."""
-                assert response.request is not None
-                return response.body == b"blocked"
-
-            async def parse(self, response: Response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
-                """Expose the body actually delivered to the callback."""
-                yield {"body": response.body}
-
-        request = Request("https://example.com/page1", sid="default")
-        fingerprint = request.update_fingerprint(False, False, False)
-        cache = ResponseCacheManager(tmp_path)
-        await cache.put(fingerprint, _make_response(url=request.url, body=b"blocked", status=403))
-
-        session = MockSession()
-        spider = RetryingSpider(cache_dir=str(tmp_path))
-        sm = SessionManager()
-        sm.add("default", session)
-        engine = CrawlerEngine(spider, sm)
-        await engine.crawl()
-
-        assert session.fetch_count == 1
-        assert spider.scraped_items == [{"body": b"<html>fetched</html>"}]
-        assert engine.stats.cache_hits == 0
-        assert engine.stats.cache_misses == 1
-        cached = await cache.get(fingerprint)
-        assert cached is not None
-        assert cached.body == b"<html>fetched</html>"
 
     @pytest.mark.anyio
     async def test_first_run_fetches_and_caches(self):
