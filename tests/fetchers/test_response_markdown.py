@@ -90,6 +90,9 @@ STYLED_BUT_VISIBLE_HTML = """
     <p style="min-height:0">Flexbox child.</p>
     <p style="opacity:0.95/*hidden*/">Commented but almost opaque.</p>
     <p style="opacity:0.95 ! important">Important but almost opaque.</p>
+    <p style="opacity:5e-1">Half opaque note.</p>
+    <p style='--note:"a;display:none;b"'>Quoted separator note.</p>
+    <p style="background:url(a;display:none;b)">Unquoted url note.</p>
   </body>
 </html>
 """
@@ -115,6 +118,12 @@ HIDDEN_HTML = """
     <p style="opacity:0/*hidden*/">Hidden by commented opacity</p>
     <p style="display:/* keep */none;">Hidden by comment inside declaration</p>
     <p style="color:red/*;*/;visibility:hidden">Hidden after commented separator</p>
+    <p style="opacity:00">Hidden by double zero</p>
+    <p style="opacity:0e0">Hidden by exponent zero</p>
+    <p style="opacity:.0">Hidden by leading dot zero</p>
+    <p style="display:none/*unfinished">Hidden by unterminated comment</p>
+    <p style='--a:"/*";display:none;--b:"*/"'>Hidden between quoted comment markers</p>
+    <p style="background:url(/*);display:none;color:url(*/)">Hidden between url comment markers</p>
     <p aria-hidden="true">Hidden by aria</p>
     <template><p>Hidden by template</p></template>
   </body>
@@ -135,6 +144,9 @@ class TestResponseMarkdownSanitizerPrecision:
             "Flexbox child.",
             "Commented but almost opaque.",
             "Important but almost opaque.",
+            "Half opaque note.",
+            "Quoted separator note.",
+            "Unquoted url note.",
         ):
             assert expected in md
 
@@ -159,6 +171,12 @@ class TestResponseMarkdownSanitizerPrecision:
             "Hidden by commented opacity",
             "Hidden by comment inside declaration",
             "Hidden after commented separator",
+            "Hidden by double zero",
+            "Hidden by exponent zero",
+            "Hidden by leading dot zero",
+            "Hidden by unterminated comment",
+            "Hidden between quoted comment markers",
+            "Hidden between url comment markers",
             "Hidden by aria",
             "Hidden by template",
         ):
