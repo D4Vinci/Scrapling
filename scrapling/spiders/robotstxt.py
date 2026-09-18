@@ -29,25 +29,13 @@ class RobotsTxtManager:
             if response.status == 200:
                 content = response.body.decode(response.encoding, errors="replace")
             elif 400 <= response.status < 500:
-                # RFC 9309 §2.3.1.3: a 4xx means no robots.txt restrictions
-                # exist for this domain, i.e. allow-all. This is a durable
-                # fact about the domain, so it's safe to cache.
                 content = ""
             else:
-                # Server errors (5xx) and any other unexpected status are a
-                # temporary failure to fetch, not proof that no rules exist.
-                # RFC 9309 §2.3.1.3 says to assume full disallow while the
-                # failure lasts. Don't cache this - it's not a fact about the
-                # domain, just a transient condition - so the next call retries.
-                log.warning(
-                    f"robots.txt for {domain} returned status {response.status}; assuming full disallow until it can be fetched"
-                )
-                return Protego.parse("User-agent: *\nDisallow: /")
+                log.warning(f"robots.txt for {domain} returned status {response.status}; assuming full disallow")
+                content = "User-agent: *\nDisallow: /"
         except Exception as e:
-            # Same reasoning as the 5xx branch above: a network/timeout
-            # failure is transient, so disallow for now but don't cache it.
-            log.warning(f"Failed to fetch robots.txt for {domain}: {e}; assuming full disallow until it can be fetched")
-            return Protego.parse("User-agent: *\nDisallow: /")
+            log.warning(f"Failed to fetch robots.txt for {domain}: {e}; assuming full disallow")
+            content = "User-agent: *\nDisallow: /"
 
         try:
             parser = Protego.parse(content)

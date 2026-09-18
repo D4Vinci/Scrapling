@@ -159,22 +159,26 @@ class TestCanFetch:
 
 
 class TestFailureCaching:
-    """A transient failure to fetch robots.txt must not be cached, so a later
-    call for the same domain gets a chance to fetch it again - see issue #437.
+    """A deny-all result from a fetch failure is cached like any other
+    result, so queued pages on the same domain reuse it instead of
+    re-fetching robots.txt - see issue #437.
     """
 
     @pytest.mark.asyncio
-    async def test_5xx_response_is_not_cached(self):
+    async def test_5xx_response_is_cached(self):
         fetch_fn = make_fetch_fn(status=503)
         mgr = RobotsTxtManager(fetch_fn)
 
-        await mgr.can_fetch("https://example.com/page1", "s1")
-        await mgr.can_fetch("https://example.com/page2", "s1")
+        first = await mgr.can_fetch("https://example.com/page1", "s1")
+        second = await mgr.can_fetch("https://example.com/page2", "s1")
 
-        assert len(fetch_fn.calls) == 2
+        assert first is False
+        assert second is False
+        assert len(fetch_fn.calls) == 1
+        assert "example.com" in mgr._cache
 
     @pytest.mark.asyncio
-    async def test_fetch_exception_is_not_cached(self):
+    async def test_fetch_exception_is_cached(self):
         calls = []
 
         async def failing_fetch(url: str, sid: str) -> MockResponse:
@@ -183,30 +187,15 @@ class TestFailureCaching:
 
         mgr = RobotsTxtManager(failing_fetch)
 
-        await mgr.can_fetch("https://example.com/page1", "s1")
-        await mgr.can_fetch("https://example.com/page2", "s1")
+        first = await mgr.can_fetch("https://example.com/page1", "s1")
+        second = await mgr.can_fetch("https://example.com/page2", "s1")
 
-        assert len(calls) == 2
-
-    @pytest.mark.asyncio
-    async def test_recovers_once_fetch_succeeds(self):
-        """After a transient failure, a later successful fetch is cached and used."""
-        responses = iter([MockResponse(status=503), MockResponse(status=200, body=ROBOTS_DISALLOW_ALL.encode())])
-
-        async def flaky_fetch(url: str, sid: str) -> MockResponse:
-            return next(responses)
-
-        mgr = RobotsTxtManager(flaky_fetch)
-
-        # First call: 503 -> disallow, not cached.
-        assert await mgr.can_fetch("https://example.com/page", "s1") is False
-        # Second call: succeeds and gets cached.
-        assert await mgr.can_fetch("https://example.com/page", "s1") is False
-        assert "example.com" in mgr._cache
+        assert first is False
+        assert second is False
+        assert len(calls) == 1
 
     @pytest.mark.asyncio
     async def test_404_response_is_cached(self):
-        # A 4xx is a durable fact (no robots.txt exists), unlike a 5xx/error.
         fetch_fn = make_fetch_fn(status=404)
         mgr = RobotsTxtManager(fetch_fn)
 
