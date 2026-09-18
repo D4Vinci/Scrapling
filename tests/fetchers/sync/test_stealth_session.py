@@ -2,6 +2,8 @@ import re
 import pytest
 import pytest_httpbin
 
+from scrapling.engines.constants import DEFAULT_ARGS, STEALTH_ARGS
+from scrapling.engines._browsers._controllers import DynamicSession
 from scrapling.engines._browsers._stealth import StealthySession, __CF_PATTERN__
 
 
@@ -32,6 +34,49 @@ class TestStealthConstants:
 
         for url in non_matching_urls:
             assert __CF_PATTERN__.search(url) is None
+
+
+class TestLaunchFlags:
+    """The launch flags a session ends up handing to Chromium. No browser is started."""
+
+    # in neither DEFAULT_ARGS nor STEALTH_ARGS, so its presence and the bundle's
+    # presence are independent observations
+    USER_FLAG = "--window-size=1280,720"
+
+    @staticmethod
+    def _args(**kwargs):
+        session = StealthySession(headless=True, block_webrtc=True, allow_webgl=False, hide_canvas=True, **kwargs)
+        return list(session._browser_options["args"])
+
+    def test_extra_flags_extend_the_stealth_bundle(self):
+        """`config.extra_flags or extra_flags` returned whichever came first, so passing
+        one flag of your own dropped all 53 STEALTH_ARGS and every conditional flag."""
+        without = self._args()
+        with_extra = self._args(extra_flags=[self.USER_FLAG])
+
+        assert self.USER_FLAG not in without, "test flag must not already ship"
+        assert self.USER_FLAG in with_extra, "the user's own flag was dropped"
+
+        missing = [flag for flag in STEALTH_ARGS if flag not in with_extra]
+        assert missing == [], f"extra_flags displaced {len(missing)} stealth flags"
+        assert [flag for flag in DEFAULT_ARGS if flag not in with_extra] == []
+
+        # the conditional flags are built in the same place and were lost the same way
+        for flag in (
+            "--webrtc-ip-handling-policy=disable_non_proxied_udp",
+            "--disable-webgl",
+            "--fingerprinting-canvas-image-data-noise",
+        ):
+            assert flag in with_extra, f"{flag} lost to extra_flags"
+
+    def test_dynamic_session_keeps_its_defaults(self):
+        """DynamicSession passes no bundle, so it never lost a flag - a control that
+        held before this fix and pins the path the fix also touches."""
+        session = DynamicSession(headless=True, extra_flags=[self.USER_FLAG])
+        args = list(session._browser_options["args"])
+
+        assert self.USER_FLAG in args
+        assert set(DEFAULT_ARGS) <= set(args), "a default flag was dropped"
 
 
 @pytest_httpbin.use_class_based_httpbin

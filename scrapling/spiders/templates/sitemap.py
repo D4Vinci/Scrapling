@@ -103,6 +103,8 @@ class SitemapSpider(Spider):
 
     @staticmethod
     def _get_type(el: Any) -> str:
+        if not isinstance(el.tag, str):
+            return ""
         return etree.QName(el.tag).localname
 
     def _sm_body(self, body: bytes, content_type: Optional[str] = None) -> SitemapResult:
