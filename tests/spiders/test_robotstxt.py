@@ -385,6 +385,20 @@ class TestEncoding:
         assert await mgr.can_fetch("https://example.com/private/", "s1") is False
         assert await mgr.can_fetch("https://example.com/public/", "s1") is True
 
+    @pytest.mark.asyncio
+    async def test_leading_byte_order_mark_is_ignored(self):
+        body = b"\xef\xbb\xbf" + ROBOTS_BASIC.encode("utf-8")
+
+        async def fetch_fn(url: str, sid: str) -> MockResponse:
+            return MockResponse(status=200, body=body, encoding="utf-8")
+
+        mgr = RobotsTxtManager(fetch_fn)
+
+        assert await mgr.can_fetch("https://example.com/admin/", "s1") is False
+        assert await mgr.can_fetch("https://example.com/products", "s1") is True
+        c_delay, _ = await mgr.get_delay_directives("https://example.com/", "s1")
+        assert c_delay == 2.0
+
 
 
 # ---------------------------------------------------------------------------

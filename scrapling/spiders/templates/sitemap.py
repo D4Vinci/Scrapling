@@ -79,7 +79,8 @@ class SitemapSpider(Spider):
         """Extract `Sitemap` directives from a robots.txt body via protego."""
         try:
             text = response.body.decode(response.encoding, errors="replace")
-            parser = Protego.parse(text)
+            # Left in place, a BOM hides the first directive from protego
+            parser = Protego.parse(text.removeprefix("\N{BYTE ORDER MARK}"))
         except Exception as e:
             self.logger.warning(f"Failed to parse robots.txt: {e}")
             return []
