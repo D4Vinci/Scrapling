@@ -38,7 +38,8 @@ class RobotsTxtManager:
             content = "User-agent: *\nDisallow: /"
 
         try:
-            parser = Protego.parse(content)
+            # Left in place, a BOM hides the first line (usually `User-agent: *`) from protego
+            parser = Protego.parse(content.removeprefix("\N{BYTE ORDER MARK}"))
         except Exception as e:
             log.warning(f"Failed to parse robots.txt for {domain}: {e}")
             parser = Protego.parse("")

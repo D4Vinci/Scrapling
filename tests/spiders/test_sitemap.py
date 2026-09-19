@@ -215,6 +215,18 @@ class TestRobotsTxt:
         assert out[0].callback == spider._parse_sitemap
 
     @pytest.mark.asyncio
+    async def test_parse_sitemap_robots_with_leading_byte_order_mark(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/robots.txt"]
+
+        spider = S()
+        body = b"\xef\xbb\xbfSitemap: https://example.com/sitemap.xml\nUser-agent: *\nDisallow: /admin/\n"
+        resp = _make_response(body, url="https://example.com/robots.txt")
+        out = await _collect(spider._parse_sitemap(resp))
+        assert [req.url for req in out] == ["https://example.com/sitemap.xml"]
+
+    @pytest.mark.asyncio
     async def test_parse_sitemap_robots_with_no_directives_warns(self):
         # Spider's logger has propagate=False, so we attach our own handler to it.
         import logging
