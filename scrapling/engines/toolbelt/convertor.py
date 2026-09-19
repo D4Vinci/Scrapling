@@ -16,29 +16,50 @@ __CHARSET_RE__ = re_compile(r"""charset=["']?([\w-]+)""")
 
 SHADOW_SNAPSHOT_JS = r"""
 () => {
-    if (!Array.from(document.querySelectorAll('*')).some(node => node.shadowRoot)) return null;
+    const anyShadow = root => Array.from(root.querySelectorAll('*')).some(node => node.shadowRoot);
+    if (!anyShadow(document) && ![...document.querySelectorAll('iframe')].some(f => {
+        try { return f.contentDocument && anyShadow(f.contentDocument); } catch (e) { return false; }
+    })) return null;
     const documentCopy = document.implementation.createHTMLDocument('');
     let roots = 0;
+    // Realm-safe type checks: elements from same-origin frame documents are instances
+    // of the frame window's constructors, so `instanceof` fails across realms.
+    const isEl = (node, name) => node.localName === name;
+    const inShadow = node => { const r = node.getRootNode(); return r && !!r.host; };
     function copy(node, pierce = true) {
         if (node.nodeType !== Node.ELEMENT_NODE) return node.cloneNode(true);
         const name = node.prefix ? `${node.prefix}:${node.localName}` : node.localName;
         const target = documentCopy.createElementNS(node.namespaceURI, name);
         for (const attr of node.attributes) target.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
-        if (pierce && node instanceof HTMLSlotElement && node.getRootNode() instanceof ShadowRoot) {
+        if (pierce && isEl(node, 'slot') && inShadow(node)) {
             const assigned = node.assignedNodes();
             for (const child of assigned.length ? assigned : node.childNodes) target.append(copy(child));
             return target;
         }
+        const appendPierced = (dest, child, pierceNext) => {
+            dest.append(copy(child, pierceNext));
+            if (pierceNext && child.nodeType === Node.ELEMENT_NODE && isEl(child, 'iframe')) {
+                try {  // Same-origin only; cross-origin frames are a documented boundary
+                    const doc = child.contentDocument;
+                    if (doc && doc.documentElement) {
+                        roots++;
+                        const frame = documentCopy.createElement('iframe-document');
+                        for (const fc of doc.documentElement.childNodes) frame.append(copy(fc));
+                        dest.append(frame);
+                    }
+                } catch (e) { /* cross-origin frame: skipped by design */ }
+            }
+        };
         if (pierce && node.shadowRoot) {
             roots++;
             const shadow = documentCopy.createElement('shadow-root');
             for (const child of node.shadowRoot.childNodes) shadow.append(copy(child));
             target.append(shadow);
         } else {
-            const template = node instanceof HTMLTemplateElement;
+            const template = isEl(node, 'template');
             const source = template ? node.content : node;
             const destination = template ? target.content : target;
-            for (const child of source.childNodes) destination.append(copy(child, pierce && !template));
+            for (const child of source.childNodes) appendPierced(destination, child, pierce && !template);
         }
         return target;
     }
