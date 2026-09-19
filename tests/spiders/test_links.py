@@ -135,6 +135,18 @@ class TestRestrict:
         urls = LinkExtractor(restrict_xpath='//div[@id="content"]').extract(resp)
         assert urls == ["https://example.com/c"]
 
+    def test_restrict_matching_nothing_extracts_nothing(self):
+        html = """
+        <html><body>
+            <nav><a href="/nav-link">n</a></nav>
+            <main><a href="/main-link">m</a></main>
+        </body></html>
+        """
+        resp = _make_response(html)
+        assert LinkExtractor(restrict_css=".pagination").extract(resp) == []
+        assert LinkExtractor(restrict_xpath='//div[@class="pagination"]').extract(resp) == []
+        assert LinkExtractor(restrict_css=".pagination", restrict_xpath="//aside").extract(resp) == []
+
 
 class TestTagsAttrs:
     def test_custom_tags_and_attrs_for_stylesheets(self):
