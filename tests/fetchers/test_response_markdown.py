@@ -21,10 +21,20 @@ HTML = """
 """
 
 
-def _make_response(url: str = "https://example.com/") -> Response:
+SECTIONS_HTML = """
+<html>
+  <body>
+    <article><h2>First section</h2><p>Body one.</p></article>
+    <article><h2>Second section</h2><p>Body two.</p></article>
+  </body>
+</html>
+"""
+
+
+def _make_response(url: str = "https://example.com/", content: str = HTML) -> Response:
     return Response(
         url=url,
-        content=HTML,
+        content=content,
         status=200,
         reason="OK",
         cookies={},
@@ -55,9 +65,14 @@ class TestResponseMarkdown:
 
     def test_css_selector_concatenates_all_matches(self):
         md = _make_response().markdown(css_selector=".a")
-        assert "First" in md
-        assert "Second" in md
+        assert "First\n\nSecond" in md
         assert "Visible content." not in md
+
+    def test_css_selector_matches_do_not_bleed_into_each_other(self):
+        """Each match is a separate Markdown block, so the last line of one can't join the next"""
+        md = _make_response(content=SECTIONS_HTML).markdown(css_selector="article")
+        assert "Body one.\n\nSecond section" in md
+        assert "Body one.Second section" not in md
 
     def test_missing_markdownify_raises_friendly_error(self, monkeypatch):
         monkeypatch.setitem(sys.modules, "markdownify", None)

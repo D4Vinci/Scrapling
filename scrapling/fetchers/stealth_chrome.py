@@ -41,6 +41,7 @@ class StealthyFetcher(BaseFetcher):
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
@@ -93,6 +94,7 @@ class StealthyFetcher(BaseFetcher):
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._

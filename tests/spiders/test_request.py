@@ -131,6 +131,34 @@ class TestRequestProperties:
 
         assert r1.update_fingerprint(include_headers=True) != r2.update_fingerprint(include_headers=True)
 
+    def test_fingerprint_includes_params(self):
+        r1 = Request("https://example.com/p?a=1", params={"skip": 1})
+        r2 = Request("https://example.com/p?a=1", params={"skip": 2})
+        r3 = Request("https://example.com/p?skip=2&a=1")
+
+        assert r1.update_fingerprint() != r2.update_fingerprint()
+        assert r2.update_fingerprint() == r3.update_fingerprint()
+
+    def test_fingerprint_params_override_existing_query_key(self):
+        r1 = Request("https://example.com/p?skip=0", params={"skip": 1})
+        r2 = Request("https://example.com/p?skip=1")
+
+        assert r1.update_fingerprint() == r2.update_fingerprint()
+
+    def test_fingerprint_params_keep_fragment(self):
+        r1 = Request("https://example.com/p#top", params={"skip": 1})
+        r2 = Request("https://example.com/p?skip=1#top")
+        r3 = Request("https://example.com/p#top")
+
+        assert r1.update_fingerprint(keep_fragments=True) == r2.update_fingerprint(keep_fragments=True)
+        assert r1.update_fingerprint() != r3.update_fingerprint()
+
+    def test_fingerprint_params_bool_and_list_values(self):
+        r1 = Request("https://example.com/p", params={"flag": True, "tag": ["x", "y"]})
+        r2 = Request("https://example.com/p?flag=true&tag=x&tag=y")
+
+        assert r1.update_fingerprint() == r2.update_fingerprint()
+
 
 class TestRequestCopy:
     """Test Request copy functionality."""

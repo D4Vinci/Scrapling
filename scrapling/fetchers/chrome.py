@@ -21,6 +21,7 @@ class DynamicFetcher(BaseFetcher):
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the Response object.
         :param page_action: Added for automation. A function that takes the `page` object, runs after navigation, and does the automation you need.
@@ -64,6 +65,7 @@ class DynamicFetcher(BaseFetcher):
         :param cookies: Set cookies for the next request.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page. The default is 30,000
         :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the Response object.
         :param page_action: Added for automation. A function that takes the `page` object, runs after navigation, and does the automation you need.

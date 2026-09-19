@@ -505,6 +505,7 @@ class TestSessionFetchForwarding:
             "google_search": True,
             "network_idle": False,
             "load_dom": True,
+            "pierce_shadow": False,
             "disable_resources": False,
             "wait_selector": None,
             "wait_selector_state": "attached",
@@ -934,6 +935,8 @@ class TestServerToolRegistration:
             assert "session_id" not in props, f"{name} still exposes session_id"
             assert props["timeout"]["default"] == 30000, f"{name} hides the real timeout default"
             assert props["google_search"]["default"] is True
+            assert props["pierce_shadow"]["type"] == "boolean"
+            assert props["pierce_shadow"]["default"] is False
 
         request_props = tools["make_request"].input_schema["properties"]
         assert request_props["method"]["default"] == "GET"
@@ -948,6 +951,8 @@ class TestServerToolRegistration:
 
         session_props = tools["session_fetch"].input_schema["properties"]
         assert session_props["timeout"]["default"] == 30000
+        assert session_props["pierce_shadow"]["type"] == "boolean"
+        assert session_props["pierce_shadow"]["default"] is False
         assert "solve_cloudflare" in session_props
         assert set(tools["session_fetch"].input_schema["required"]) >= {"url", "session_id"}
 
@@ -991,3 +996,42 @@ class TestServerToolRegistration:
             assert annotations[name].open_world_hint is True
         assert annotations["list_sessions"].read_only_hint is True
         assert annotations["list_sessions"].open_world_hint is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize("tool", ["fetch", "bulk_fetch", "stealthy_fetch", "bulk_stealthy_fetch"])
+async def test_shadow_option_reaches_browser_session(monkeypatch, tool, enabled):
+    fake = _FakeStealthySession if "stealthy" in tool else _FakeDynamicSession
+    target = "AsyncStealthySession" if "stealthy" in tool else "AsyncDynamicSession"
+    monkeypatch.setattr("scrapling.core.ai." + target, fake)
+    server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
+    args: dict[str, Any] = (
+        {"urls": ["https://example.com"]} if tool.startswith("bulk_") else {"url": "https://example.com"}
+    )
+    async with Client(server) as client:
+        result = await client.call_tool(tool, {**args, "pierce_shadow": enabled})
+    assert not result.is_error
+    assert fake.instances[-1].kwargs["pierce_shadow"] is enabled
+    assert not fake.instances[-1]._is_alive
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
+async def test_shadow_option_changes_per_session_request(monkeypatch, session_type):
+    fake = _FakeStealthySession if session_type == "stealthy" else _FakeDynamicSession
+    target = "AsyncStealthySession" if session_type == "stealthy" else "AsyncDynamicSession"
+    monkeypatch.setattr("scrapling.core.ai." + target, fake)
+    server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
+    async with Client(server) as client:
+        await client.call_tool("open_session", {"session_type": session_type, "session_id": "shadow-test"})
+        try:
+            for args, expected in [({"pierce_shadow": True}, True), ({"pierce_shadow": False}, False), ({}, False)]:
+                result = await client.call_tool(
+                    "session_fetch", {"url": "https://example.com", "session_id": "shadow-test", **args}
+                )
+                assert not result.is_error
+                assert fake.instances[-1].fetch_calls[-1]["pierce_shadow"] is expected
+        finally:
+            await client.call_tool("close_session", {"session_id": "shadow-test"})
+    assert not fake.instances[-1]._is_alive

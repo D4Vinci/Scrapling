@@ -479,7 +479,7 @@ class BaseSessionMixin:
         if not config.cdp_url:
             flags = self._browser_options["args"]
             if config.extra_flags or extra_flags:
-                flags = list(set(tuple(flags) + tuple(config.extra_flags or extra_flags or ())))
+                flags = list(set(tuple(flags) + tuple(extra_flags or ()) + tuple(config.extra_flags or ())))
 
             if config.dns_over_https:
                 doh_flag = "--dns-over-https-templates=https://cloudflare-dns.com/dns-query"

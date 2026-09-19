@@ -148,6 +148,7 @@ Both (`fetch` / `stealthy-fetch`) share options:
 |:-----------------------------------------|:----------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | --headless / --no-headless               |    None    | Run browser in headless mode (default: True)                                                                                                             |
 | --disable-resources / --enable-resources |    None    | Drop unnecessary resources for speed boost (default: False)                                                                                              |
+| --pierce-shadow / --no-pierce-shadow     |    None    | Include open Shadow DOM content (default: False).                                                                                                        |
 | --network-idle / --no-network-idle       |    None    | Wait for network idle (default: False)                                                                                                                   |
 | --real-chrome / --no-real-chrome         |    None    | If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False) |
 | --timeout                                |  INTEGER   | Timeout in milliseconds (default: 30000)                                                                                                                 |
@@ -251,6 +252,19 @@ with DynamicSession(headless=True, disable_resources=False, network_idle=True) a
 page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
+
+### Shadow DOM
+
+Use `pierce_shadow=True` with dynamic or stealth Python fetchers and sessions to include open shadow roots. It defaults to `False` and can be overridden per request. For MCP, pass `pierce_shadow=true` to `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, or each `session_fetch` call.
+
+Both browser CLI commands accept `--pierce-shadow` and `--no-pierce-shadow`:
+
+```bash
+scrapling extract fetch "https://example.com" content.md --pierce-shadow --ai-targeted
+scrapling extract stealthy-fetch "https://example.com" content.md --pierce-shadow --ai-targeted
+```
+
+The response includes `<shadow-root>` wrappers and `<slot>` elements. Use descendant selectors, or include those elements in direct-child paths. See [Shadow DOM](references/fetching/dynamic.md#shadow-dom) for assigned content, hidden slots, and extraction limits.
 
 ### Spiders
 Build full crawlers with concurrent requests, multiple session types, and pause/resume:
