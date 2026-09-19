@@ -34,6 +34,7 @@ from scrapling.core.utils._shell import _ParseHeaders, _CookieParser
 from scrapling.core._types import (
     Callable,
     Dict,
+    List,
     Any,
     cast,
     Optional,
@@ -69,19 +70,87 @@ Request = namedtuple(
 )
 
 # Precompiled for the prompt injection sanitizer
-_HIDDEN_XPATH = XPath(
-    './/*[contains(@style,"display:none") or contains(@style,"display: none")'
-    ' or contains(@style,"visibility:hidden") or contains(@style,"visibility: hidden")'
-    ' or contains(@style,"opacity:0") or contains(@style,"opacity: 0")'
-    ' or contains(@style,"font-size:0") or contains(@style,"font-size: 0")'
-    ' or contains(@style,"height:0") or contains(@style,"height: 0")'
-    ' or contains(@style,"width:0") or contains(@style,"width: 0")]'
-    " | .//*[@aria-hidden='true']"
-    " | .//slot[@hidden]"
-    " | .//template"
-)
+_HIDDEN_XPATH = XPath(".//*[@style] | .//*[@aria-hidden='true'] | .//slot[@hidden] | .//template")
+_HIDING_DECLARATIONS = frozenset({("display", "none"), ("visibility", "hidden")})
+_ZERO_HIDING_PROPERTIES = frozenset({"opacity", "font-size", "height", "width", "max-height", "max-width"})
+# A CSS `<number>` token (`00`, `.0`, `+0`, `0e0` are all zero) followed by an optional unit
+_CSS_NUMBER_PATTERN = re_compile(r"([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)")
+_IMPORTANT_SUFFIX_PATTERN = re_compile(r"!\s*important$")
 _ZWC_PATTERN = re_compile(r"[\u200b\u200c\u200d\ufeff\u2060\u180e]")
 _CONTROL_CHARS_PATTERN = re_compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def _split_style_declarations(style: str) -> List[str]:
+    """Split an inline style on `;` the way the CSS tokenizer does.
+
+    Comments are dropped, including one that runs to the end of the attribute, while quoted
+    strings and unquoted `url(...)` tokens are copied as they are, so a `;` or a `/*` inside
+    them neither ends the declaration nor starts a comment.
+    """
+    declarations: List[str] = []
+    current: List[str] = []
+    index, length = 0, len(style)
+    while index < length:
+        char = style[index]
+        if style.startswith("/*", index):
+            end = style.find("*/", index + 2)
+            index = length if end == -1 else end + 2
+        elif char in "\"'":
+            end = index + 1
+            while end < length and style[end] not in (char, "\n"):
+                end += 2 if style[end] == "\\" else 1
+            end = min(end + 1, length)
+            current.append(style[index:end])
+            index = end
+        elif style[index : index + 4].lower() == "url(" and style[index + 4 :].lstrip()[:1] not in ('"', "'"):
+            end = style.find(")", index + 4)
+            end = length if end == -1 else end + 1
+            current.append(style[index:end])
+            index = end
+        elif char == ";":
+            declarations.append("".join(current))
+            current = []
+            index += 1
+        else:
+            current.append(char)
+            index += 1
+
+    declarations.append("".join(current))
+    return declarations
+
+
+def _is_zero_value(value: str) -> bool:
+    """Check if a style value is a zero number, with or without a unit"""
+    match = _CSS_NUMBER_PATTERN.fullmatch(value)
+    return match is not None and float(match[1]) == 0
+
+
+def _is_hidden_element(element: Any) -> bool:
+    """Check if an element is hidden from the page's readers.
+
+    `_HIDDEN_XPATH` selects the candidates, and this confirms them. Inline styles are compared
+    declaration by declaration instead of by substring, so a value that merely starts with a zero
+    (`opacity:0.95`, `font-size:0.9rem`) or a different property ending with a matching name
+    (`line-height:0.9`) is not treated as hidden, while comments, strings and `url()` tokens are
+    read the way browsers do.
+    """
+    if element.get("aria-hidden") == "true" or element.tag == "template":
+        return True
+    if element.tag == "slot" and element.get("hidden") is not None:
+        return True
+
+    for declaration in _split_style_declarations(element.get("style") or ""):
+        prop, separator, value = declaration.partition(":")
+        if not separator:
+            continue
+
+        prop = prop.strip().lower()
+        # `! important` is valid CSS, so the whitespace between the two is optional
+        value = _IMPORTANT_SUFFIX_PATTERN.sub("", value.strip().lower()).strip()
+        if (prop, value) in _HIDING_DECLARATIONS or (prop in _ZERO_HIDING_PROPERTIES and _is_zero_value(value)):
+            return True
+
+    return False
 
 
 # Suppress exit on error to handle parsing errors gracefully
@@ -611,7 +680,8 @@ class Convertor:
         """
         clean_root = deepcopy(page._root)
         for element in cast(list, _HIDDEN_XPATH(clean_root)):
-            element.drop_tree()
+            if _is_hidden_element(element):
+                element.drop_tree()
         for element in clean_root.iter():
             if element.text:
                 element.text = _CONTROL_CHARS_PATTERN.sub("", _ZWC_PATTERN.sub("", element.text))
