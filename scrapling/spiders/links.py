@@ -232,7 +232,8 @@ class LinkExtractor:
         if self.restrict_css:
             for cs in self.restrict_css:
                 scopes.extend(response.css(cs))
-        if not scopes:
+        # Only an unrestricted extractor reads the whole page; a restriction that matches nothing yields no links
+        if not self.restrict_xpath and not self.restrict_css:
             scopes = [response]
 
         out: List[str] = []
