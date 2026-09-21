@@ -73,7 +73,7 @@ nav = [
     ]},
     {"Support and Advertisement" = "donate.md"},
     {Contributing = "https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md"},
-    {Changelog = "https://github.com/D4Vinci/Scrapling/releases"}
+    {Changelog = "https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md"}
 ]
 
 [project.theme]
