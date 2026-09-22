@@ -3,12 +3,38 @@
 // renders (fetched via GET /api/options-schema instead of duplicated in JS).
 
 export const FETCHER_TYPES = {
-  get: { kind: "http", label: "GET" },
-  post: { kind: "http", label: "POST", supportsBody: true },
-  put: { kind: "http", label: "PUT", supportsBody: true },
-  delete: { kind: "http", label: "DELETE" },
-  fetch: { kind: "browser", label: "Fetch (browser)" },
-  stealthy_fetch: { kind: "browser", label: "Stealthy fetch (anti-bot)" },
+  get: {
+    kind: "http",
+    label: "GET",
+    hint: "Plain HTTP GET request. Fastest option — no browser, no JavaScript rendering. Good for static pages and APIs.",
+  },
+  post: {
+    kind: "http",
+    label: "POST",
+    supportsBody: true,
+    hint: "Plain HTTP POST request with an optional JSON or form body. Use this to submit a form or hit an API endpoint.",
+  },
+  put: {
+    kind: "http",
+    label: "PUT",
+    supportsBody: true,
+    hint: "Plain HTTP PUT request with an optional JSON or form body.",
+  },
+  delete: {
+    kind: "http",
+    label: "DELETE",
+    hint: "Plain HTTP DELETE request. No body support.",
+  },
+  fetch: {
+    kind: "browser",
+    label: "Fetch (browser)",
+    hint: "Loads the page in a real headless browser (Playwright/Patchright), so JavaScript-rendered content works. Slower than GET, especially on a Pi.",
+  },
+  stealthy_fetch: {
+    kind: "browser",
+    label: "Stealthy fetch (anti-bot)",
+    hint: "Same as Fetch, but with anti-bot evasion (Cloudflare Turnstile bypass, fingerprint spoofing). Slowest option — use it when GET/Fetch get blocked.",
+  },
 };
 
 // Internal fetcher-type keys use underscores; the actual `scrapling extract`
@@ -24,9 +50,30 @@ export const CLI_COMMAND_NAME = {
 };
 
 export const OUTPUT_FORMATS = [
-  { value: "html", label: "HTML", extension: "html" },
-  { value: "md", label: "Markdown", extension: "md" },
-  { value: "txt", label: "Text", extension: "txt" },
+  {
+    value: "html",
+    label: "HTML",
+    extension: "html",
+    hint: "Saves the page's raw HTML to a single .html file, unmodified aside from the CSS selector scope.",
+  },
+  {
+    value: "md",
+    label: "Markdown",
+    extension: "md",
+    hint: "Converts the HTML to Markdown and saves it to a single .md file. Good for feeding into an LLM or reading as plain text with structure.",
+  },
+  {
+    value: "txt",
+    label: "Text",
+    extension: "txt",
+    hint: "Strips all HTML tags and saves just the visible text to a single .txt file.",
+  },
+  {
+    value: "images",
+    label: "Images",
+    kind: "images",
+    hint: "Instead of one file, downloads every image found on the page (or inside the CSS selector, if set) into its own folder. Includes lazy-loaded images (data-src/srcset) and resolves relative URLs automatically.",
+  },
 ];
 
 // curl_cffi's fixed set of impersonable browser families (see docs/fetching/static.md);
@@ -43,7 +90,14 @@ export const IMPERSONATE_CHOICES = [
 ];
 
 const COMMON_HTTP_OPTIONS = [
-  { name: "ai_targeted", flag: "--ai-targeted", type: "boolean", default: false, label: "AI-targeted extraction" },
+  {
+    name: "ai_targeted",
+    flag: "--ai-targeted",
+    type: "boolean",
+    default: false,
+    label: "AI-targeted extraction",
+    hint: "On: keeps only the page's main content (article/body text), stripping nav, ads, and boilerplate — closer to what an LLM would want. Off: saves the full page as-is.",
+  },
   {
     name: "stealthy_headers",
     flag: "--stealthy-headers",
@@ -51,6 +105,7 @@ const COMMON_HTTP_OPTIONS = [
     type: "boolean",
     default: true,
     label: "Stealthy headers",
+    hint: "On (default): sends a realistic, randomized browser-like header set instead of a generic HTTP client signature, making the request look less like a bot.",
   },
   {
     name: "impersonate",
@@ -58,9 +113,17 @@ const COMMON_HTTP_OPTIONS = [
     type: "multiselect",
     choices: IMPERSONATE_CHOICES,
     label: "Impersonate browser(s)",
-    hint: "Pick more than one to have each request randomly use one of them.",
+    hint: "Makes the TLS/HTTP fingerprint match a real browser instead of a generic HTTP client. Pick one for a fixed fingerprint, or several to have each request randomly use one of them. Leave empty to use the library default.",
   },
-  { name: "verify", flag: "--verify", negFlag: "--no-verify", type: "boolean", default: true, label: "Verify SSL" },
+  {
+    name: "verify",
+    flag: "--verify",
+    negFlag: "--no-verify",
+    type: "boolean",
+    default: true,
+    label: "Verify SSL",
+    hint: "On (default): rejects invalid/self-signed TLS certificates, like a normal browser would. Turn off only for trusted internal/dev sites with broken certs.",
+  },
   {
     name: "follow_redirects",
     flag: "--follow-redirects",
@@ -68,6 +131,7 @@ const COMMON_HTTP_OPTIONS = [
     type: "boolean",
     default: true,
     label: "Follow redirects",
+    hint: "On (default): automatically follows HTTP 3xx redirects to the final URL. Off: saves whatever the first response is, redirect or not.",
   },
   {
     name: "params",
@@ -93,7 +157,14 @@ const COMMON_HTTP_OPTIONS = [
     placeholder: "http://username:password@host:port",
     hint: "Routes this request through an HTTP(S) proxy.",
   },
-  { name: "timeout", flag: "--timeout", type: "number", default: 30, label: "Timeout (seconds)" },
+  {
+    name: "timeout",
+    flag: "--timeout",
+    type: "number",
+    default: 30,
+    label: "Timeout (seconds)",
+    hint: "How long to wait for a response before giving up and marking the job as failed.",
+  },
   {
     name: "cookies",
     flag: "--cookies",
@@ -132,7 +203,14 @@ const DATA_OPTIONS = [
 ];
 
 const COMMON_BROWSER_OPTIONS = [
-  { name: "ai_targeted", flag: "--ai-targeted", type: "boolean", default: false, label: "AI-targeted extraction" },
+  {
+    name: "ai_targeted",
+    flag: "--ai-targeted",
+    type: "boolean",
+    default: false,
+    label: "AI-targeted extraction",
+    hint: "On: keeps only the page's main content (article/body text), stripping nav, ads, and boilerplate. Off: saves the full page as-is.",
+  },
   {
     name: "executable_path",
     flag: "--executable-path",
@@ -164,6 +242,7 @@ const COMMON_BROWSER_OPTIONS = [
     type: "boolean",
     default: false,
     label: "Use real installed Chrome",
+    hint: "On: launches your system's installed Google Chrome instead of the bundled Chromium. Requires Chrome to actually be installed on the Pi.",
   },
   {
     name: "locale",
@@ -189,8 +268,22 @@ const COMMON_BROWSER_OPTIONS = [
     placeholder: ".product-title, article p",
     hint: "Only content matching this selector is saved; leave blank to save the whole page.",
   },
-  { name: "wait", flag: "--wait", type: "number", default: 0, label: "Extra wait after load (ms)" },
-  { name: "timeout", flag: "--timeout", type: "number", default: 30000, label: "Timeout (ms)" },
+  {
+    name: "wait",
+    flag: "--wait",
+    type: "number",
+    default: 0,
+    label: "Extra wait after load (ms)",
+    hint: "Fixed pause after the page loads, before saving — useful for content that fades/animates in a bit after load.",
+  },
+  {
+    name: "timeout",
+    flag: "--timeout",
+    type: "number",
+    default: 30000,
+    label: "Timeout (ms)",
+    hint: "How long to wait for the page to load before giving up and marking the job as failed.",
+  },
   {
     name: "network_idle",
     flag: "--network-idle",
@@ -198,6 +291,7 @@ const COMMON_BROWSER_OPTIONS = [
     type: "boolean",
     default: false,
     label: "Wait for network idle",
+    hint: "On: waits until network requests quiet down before saving, useful for pages that keep loading data (infinite scroll, lazy images) after the initial render.",
   },
   {
     name: "disable_resources",
@@ -206,8 +300,17 @@ const COMMON_BROWSER_OPTIONS = [
     type: "boolean",
     default: false,
     label: "Disable resources (speed boost)",
+    hint: "On: skips loading images/fonts/stylesheets for a faster page load. Turn off if you're using the Images output format, since it needs images to actually load.",
   },
-  { name: "headless", flag: "--headless", negFlag: "--no-headless", type: "boolean", default: true, label: "Headless" },
+  {
+    name: "headless",
+    flag: "--headless",
+    negFlag: "--no-headless",
+    type: "boolean",
+    default: true,
+    label: "Headless",
+    hint: "On (default): runs the browser with no visible window (required on a headless Pi). Off opens a real window — only useful if the Pi has a display attached.",
+  },
   {
     name: "dns_over_https",
     flag: "--dns-over-https",
@@ -215,6 +318,7 @@ const COMMON_BROWSER_OPTIONS = [
     type: "boolean",
     default: false,
     label: "DNS over HTTPS",
+    hint: "On: resolves domains via encrypted DNS-over-HTTPS instead of the system resolver, hiding DNS lookups from the local network.",
   },
   {
     name: "block_ads",
@@ -223,6 +327,7 @@ const COMMON_BROWSER_OPTIONS = [
     type: "boolean",
     default: false,
     label: "Block ads/trackers",
+    hint: "On: blocks known ad/tracker domains while the page loads, which also speeds things up.",
   },
 ];
 
@@ -234,6 +339,7 @@ const STEALTH_ONLY_OPTIONS = [
     type: "boolean",
     default: false,
     label: "Block WebRTC",
+    hint: "On: disables WebRTC, which sites can otherwise use to leak your real IP address even behind a proxy.",
   },
   {
     name: "solve_cloudflare",
@@ -242,8 +348,17 @@ const STEALTH_ONLY_OPTIONS = [
     type: "boolean",
     default: false,
     label: "Solve Cloudflare challenges",
+    hint: "On: automatically attempts to solve Cloudflare Turnstile/JS challenges before saving the page. Adds time but is often required for protected sites.",
   },
-  { name: "allow_webgl", flag: "--allow-webgl", negFlag: "--block-webgl", type: "boolean", default: true, label: "Allow WebGL" },
+  {
+    name: "allow_webgl",
+    flag: "--allow-webgl",
+    negFlag: "--block-webgl",
+    type: "boolean",
+    default: true,
+    label: "Allow WebGL",
+    hint: "On (default): leaves WebGL enabled, which is what a real browser does — disabling it can itself look suspicious to anti-bot systems.",
+  },
   {
     name: "hide_canvas",
     flag: "--hide-canvas",
@@ -251,6 +366,7 @@ const STEALTH_ONLY_OPTIONS = [
     type: "boolean",
     default: false,
     label: "Hide canvas (add noise)",
+    hint: "On: adds subtle noise to canvas rendering to defeat canvas-fingerprinting anti-bot checks.",
   },
 ];
 

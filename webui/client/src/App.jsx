@@ -8,7 +8,10 @@ export default function App() {
   return (
     <div className="app">
       <nav className="nav">
-        <span className="brand">Scrapling</span>
+        <span className="brand">
+          <span className="brand-dot" />
+          Scrapling
+        </span>
         <NavLink to="/" end>
           New job
         </NavLink>

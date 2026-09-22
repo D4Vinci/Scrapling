@@ -1,12 +1,72 @@
 :root {
   color-scheme: light dark;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  --bg: #f3f4f8;
+  --surface: #ffffff;
+  --surface-alt: #f8f9fc;
+  --border: #e1e4ec;
+  --text: #1a1d29;
+  --text-muted: #6b7080;
+  --accent: #5b5ce0;
+  --accent-hover: #4a4bd1;
+  --accent-soft: #eeeeff;
+  --accent-contrast: #ffffff;
+  --success: #1f9d55;
+  --error: #d13a3a;
+  --error-soft: #fdecec;
+  --warning: #b26a00;
+  --warning-soft: #fff6e5;
+  --pending: #8a8fa3;
+  --running: #2f7de1;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-sm: 0 1px 2px rgba(20, 22, 40, 0.06);
+  --shadow-md: 0 4px 16px rgba(20, 22, 40, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161f;
+    --surface: #1c1f2b;
+    --surface-alt: #232636;
+    --border: #313548;
+    --text: #eceef5;
+    --text-muted: #9297ab;
+    --accent: #8385f5;
+    --accent-hover: #9698ff;
+    --accent-soft: #2a2b4a;
+    --accent-contrast: #101223;
+    --success: #3ecb74;
+    --error: #f2685f;
+    --error-soft: #3a2222;
+    --warning: #e3a23e;
+    --warning-soft: #3a2f13;
+    --pending: #7d8299;
+    --running: #5b9dff;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: #f6f7f9;
-  color: #1a1a1a;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 1.25rem;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.75rem;
 }
 
 .app {
@@ -14,43 +74,153 @@ body {
   min-height: 100vh;
 }
 
+/* --- Nav --- */
+
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  width: 180px;
+  gap: 0.25rem;
+  width: 200px;
+  flex-shrink: 0;
   padding: 1.5rem 1rem;
-  background: #1a2233;
+  background: linear-gradient(180deg, #1e2030, #171826);
   color: #fff;
 }
 
 .nav .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 700;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
+  margin-bottom: 1.25rem;
+  color: #fff;
+}
+
+.nav .brand-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
 }
 
 .nav a {
-  color: #cfd8ea;
+  color: #b7bad0;
   text-decoration: none;
+  font-size: 0.92rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
 }
 
 .nav a.active {
   color: #fff;
   font-weight: 600;
+  background: var(--accent);
 }
 
 .content {
   flex: 1;
-  padding: 2rem;
-  max-width: 900px;
+  padding: 2.5rem 3rem;
+  max-width: 960px;
 }
+
+/* --- Cards / layout --- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+details.card {
+  padding: 0;
+}
+
+details.card summary {
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+details.card summary::-webkit-details-marker {
+  display: none;
+}
+
+details.card summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 0.5rem;
+  transition: transform 0.15s ease;
+  color: var(--text-muted);
+}
+
+details.card[open] summary::before {
+  transform: rotate(90deg);
+}
+
+details.card > .options-grid {
+  padding: 0 1.5rem 1.5rem;
+  margin-top: 0;
+}
+
+/* --- Fields --- */
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field > span:first-child {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+input[type="text"],
+input[type="url"],
+input[type="number"],
+input[type="password"],
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  resize: vertical;
 }
 
 .field input[type="checkbox"] {
@@ -63,17 +233,121 @@ body {
   gap: 0.5rem;
 }
 
+/* Custom-styled <select>: native appearance stripped so it matches the rest
+   of the form instead of looking like an unstyled browser default, with our
+   own chevron drawn so there's still a clear "this opens a menu" affordance. */
+.select-wrap {
+  position: relative;
+}
+
+.select-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 2.2rem 0.5rem 0.7rem;
+  width: 100%;
+  cursor: pointer;
+}
+
+.select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 0.85rem;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 1.6px solid var(--text-muted);
+  border-bottom: 1.6px solid var(--text-muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
 .options-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem 1.5rem;
+  gap: 1.1rem 1.5rem;
   margin-top: 0.75rem;
 }
 
 .hint {
-  color: #666;
-  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
+
+/* --- Toggle switch (boolean options) --- */
+
+.field-toggle {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  order: -1;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  width: 34px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+
+.toggle-track::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+
+.toggle-switch input:checked + .toggle-track {
+  background: var(--accent);
+}
+
+.toggle-switch input:checked + .toggle-track::before {
+  transform: translateX(14px);
+}
+
+.toggle-switch input:focus-visible + .toggle-track {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* --- Multiselect pills --- */
 
 .choice-row {
   display: flex;
@@ -84,17 +358,118 @@ body {
 .choice-pill {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   flex-direction: row;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 0.2rem 0.7rem;
+  padding: 0.3rem 0.75rem 0.3rem 0.6rem;
   font-size: 0.85rem;
-  background: #fff;
+  background: var(--surface-alt);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.choice-pill:hover {
+  border-color: var(--accent);
+}
+
+/* The actual bug fix: previously a checked pill looked identical to an
+   unchecked one apart from a tiny native checkbox, easy to miss entirely.
+   Now a selected pill gets its own filled color plus a checkmark icon. */
+.choice-pill.is-selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
 }
 
 .choice-pill input {
-  width: auto;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.choice-pill-check {
+  width: 0;
+  opacity: 0;
+  transition: width 0.15s ease, opacity 0.15s ease;
+}
+
+.choice-pill.is-selected .choice-pill-check {
+  width: 10px;
+  opacity: 1;
+}
+
+/* --- Folder combobox --- */
+
+.combobox {
+  position: relative;
+}
+
+.combobox-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.combobox-row input {
+  flex: 1;
+}
+
+.combobox-toggle {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: 0 0.7rem;
+  cursor: pointer;
+}
+
+.combobox-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.combobox-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
+.combobox-menu li button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.combobox-menu li button:hover,
+.combobox-menu li[aria-selected="true"] button {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.combobox-hint {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .url-row {
@@ -109,9 +484,6 @@ body {
   min-width: 220px;
 }
 
-/* Makes UrlPreview's own wrapper div disappear from the box model so its
-   button sits inline with the URL input, while its details block (which
-   sets flex-basis: 100%) drops to its own full-width row underneath. */
 .url-preview {
   display: contents;
 }
@@ -122,19 +494,20 @@ body {
 
 .preview-panel {
   margin-top: 0.5rem;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fff;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
 }
 
 .link-button {
   background: none;
   border: none;
-  color: #0077cc;
+  color: var(--accent);
   padding: 0 0 0 0.75rem;
   font-size: 0.9rem;
   text-decoration: underline;
+  cursor: pointer;
 }
 
 .snippet {
@@ -142,49 +515,96 @@ body {
   margin: 0.4rem 0;
 }
 
+/* --- Buttons --- */
+
 button {
-  background: #0077cc;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-contrast);
   border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 1.35rem;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
+/* --- Status badges --- */
+
 .status-badge {
   display: inline-block;
-  padding: 0.15rem 0.6rem;
+  padding: 0.2rem 0.7rem;
   border-radius: 999px;
   color: #fff;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .error {
-  color: #c62828;
+  color: var(--error);
+  background: var(--error-soft);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
   white-space: pre-wrap;
 }
 
 .warning {
-  color: #b45309;
+  color: var(--warning);
+  background: var(--warning-soft);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
 }
+
+/* --- History table --- */
 
 .history-table {
   width: 100%;
   border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .history-table th,
 .history-table td {
   text-align: left;
-  padding: 0.5rem;
-  border-bottom: 1px solid #ddd;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.history-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--surface-alt);
+}
+
+.history-table tbody tr:hover {
+  background: var(--surface-alt);
+}
+
+.history-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .url-cell {
@@ -197,7 +617,8 @@ button:disabled {
 .preview-frame {
   width: 100%;
   height: 60vh;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   background: #fff;
 }
 
@@ -206,7 +627,50 @@ button:disabled {
   background: #10131a;
   color: #d5d9e0;
   padding: 1rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow-x: auto;
   white-space: pre-wrap;
+  font-size: 0.85rem;
+}
+
+/* --- Image gallery --- */
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.image-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.image-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.image-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  background: var(--surface-alt);
+}
+
+.image-card-name {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
