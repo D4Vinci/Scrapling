@@ -23,6 +23,7 @@ db.exec(`
     status TEXT NOT NULL DEFAULT 'pending',
     output_path TEXT,
     error TEXT,
+    logs TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     started_at TEXT,
     finished_at TEXT,
@@ -30,12 +31,14 @@ db.exec(`
   )
 `);
 
-// Lightweight migration for dev DBs created before the folder column existed;
-// a no-op (caught) on a fresh DB where CREATE TABLE above already has it.
-try {
-  db.exec("ALTER TABLE jobs ADD COLUMN folder TEXT NOT NULL DEFAULT ''");
-} catch {
-  // column already exists
+// Lightweight migrations for dev DBs created before these columns existed;
+// each is a no-op (caught) on a fresh DB where CREATE TABLE above already has it.
+for (const ddl of ["ALTER TABLE jobs ADD COLUMN folder TEXT NOT NULL DEFAULT ''", "ALTER TABLE jobs ADD COLUMN logs TEXT NOT NULL DEFAULT ''"]) {
+  try {
+    db.exec(ddl);
+  } catch {
+    // column already exists
+  }
 }
 
 export function insertJob(job) {
@@ -43,6 +46,10 @@ export function insertJob(job) {
     `INSERT INTO jobs (id, fetcher_type, url, output_format, folder, options_json, status, created_at)
      VALUES (@id, @fetcher_type, @url, @output_format, @folder, @options_json, 'pending', @created_at)`,
   ).run(job);
+}
+
+export function appendJobLog(id, chunk) {
+  db.prepare("UPDATE jobs SET logs = logs || @chunk WHERE id = @id").run({ id, chunk });
 }
 
 export function updateJob(id, fields) {

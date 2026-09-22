@@ -5,11 +5,19 @@ function toggleInArray(array, item) {
   return [...set];
 }
 
-export default function DynamicOptionsForm({ options, values, onChange }) {
+export default function DynamicOptionsForm({ options, values, onChange, onHint }) {
+  const hoverProps = (opt) =>
+    onHint
+      ? {
+          onMouseEnter: () => onHint({ title: opt.label, hint: opt.hint }),
+          onMouseLeave: () => onHint(null),
+        }
+      : {};
+
   return (
     <div className="options-grid">
       {options.map((opt) => (
-        <label key={opt.name} className={`field${opt.type === "boolean" ? " field-toggle" : ""}`}>
+        <label key={opt.name} className={`field${opt.type === "boolean" ? " field-toggle" : ""}`} {...hoverProps(opt)}>
           {opt.type === "boolean" ? (
             <span className="toggle-row">
               <span className="toggle-switch">
@@ -72,7 +80,6 @@ export default function DynamicOptionsForm({ options, values, onChange }) {
             />
           )}
 
-          {opt.hint && <small className="hint">{opt.hint}</small>}
         </label>
       ))}
     </div>

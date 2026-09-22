@@ -34,7 +34,7 @@ export default function History() {
               <td>{new Date(job.created_at).toLocaleString()}</td>
               <td>{job.fetcher_type}</td>
               <td className="url-cell">{job.url}</td>
-              <td>{job.folder || "(default)"}</td>
+              <td>{job.status === "discarded" ? "(discarded)" : job.status === "success" ? job.folder || "(default)" : "—"}</td>
               <td>
                 <Link to={`/jobs/${job.id}`}>
                   <StatusBadge status={job.status} />

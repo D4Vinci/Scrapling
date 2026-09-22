@@ -2,15 +2,19 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import fs from "node:fs";
-import { getJob, insertJob, listJobs } from "../db.js";
+import { getJob, insertJob, listJobs, updateJob } from "../db.js";
 import { runImageJob, runJob } from "../services/scraplingRunner.js";
-import { resolveOutputDir } from "../services/outputFolders.js";
+import { subscribe } from "../services/jobEvents.js";
+import { deleteJobOutput, isValidFolderName, moveJobOutput, resolveOutputDir } from "../services/outputFolders.js";
 import { FETCHER_TYPES, OUTPUT_FORMATS } from "../optionsSchema.js";
 
 const router = Router();
 
+// A job always runs into the default output folder first — where to actually
+// file it away is a decision made on the Current Job page, after you've seen
+// the result (see POST /:id/save below), not up front.
 router.post("/", (req, res) => {
-  const { fetcherType, url, outputFormat, folder = "", options = {} } = req.body ?? {};
+  const { fetcherType, url, outputFormat, options = {} } = req.body ?? {};
 
   if (!FETCHER_TYPES[fetcherType]) {
     return res.status(400).json({ error: `Unknown fetcher type '${fetcherType}'` });
@@ -23,14 +27,7 @@ router.post("/", (req, res) => {
     return res.status(400).json({ error: `Unknown output format '${outputFormat}'` });
   }
 
-  const trimmedFolder = typeof folder === "string" ? folder.trim() : "";
-  let outputDir;
-  try {
-    outputDir = resolveOutputDir(trimmedFolder);
-  } catch (err) {
-    return res.status(400).json({ error: err.message });
-  }
-
+  const outputDir = resolveOutputDir("");
   const id = randomUUID();
   const isImages = format.kind === "images";
   const outputPath = isImages ? path.join(outputDir, id) : path.join(outputDir, `${id}.${format.extension}`);
@@ -41,7 +38,7 @@ router.post("/", (req, res) => {
     fetcher_type: fetcherType,
     url,
     output_format: outputFormat,
-    folder: trimmedFolder,
+    folder: "",
     options_json: JSON.stringify(options),
     created_at: createdAt,
   });
@@ -69,6 +66,75 @@ router.get("/:id", (req, res) => {
   const job = getJob(req.params.id);
   if (!job) return res.status(404).json({ error: "Job not found" });
   res.json({ ...job, options: JSON.parse(job.options_json) });
+});
+
+const ACTIVE_STATUSES = new Set(["pending", "running"]);
+
+// Server-Sent Events: sends whatever's already logged as a first burst, then
+// streams new lines as the CLI produces them, and closes once the job's
+// done. A client that connects to an already-finished job just gets the
+// backlog immediately followed by a close — same code path either way.
+router.get("/:id/logs/stream", (req, res) => {
+  const job = getJob(req.params.id);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+
+  res.set({
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+  res.flushHeaders();
+
+  if (job.logs) res.write(`event: log\ndata: ${JSON.stringify(job.logs)}\n\n`);
+
+  if (!ACTIVE_STATUSES.has(job.status)) {
+    res.write(`event: done\ndata: ${JSON.stringify(job.status)}\n\n`);
+    return res.end();
+  }
+
+  const unsubscribe = subscribe(req.params.id, {
+    onLog: (chunk) => res.write(`event: log\ndata: ${JSON.stringify(chunk)}\n\n`),
+    onDone: (status) => {
+      res.write(`event: done\ndata: ${JSON.stringify(status)}\n\n`);
+      res.end();
+    },
+  });
+  req.on("close", unsubscribe);
+});
+
+// Files a successful job's already-written output into the chosen folder —
+// the folder picker lives on the Current Job page, not the New Job form, so
+// this is the only place a job's storage location is decided.
+router.post("/:id/save", (req, res) => {
+  const job = getJob(req.params.id);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  if (job.status !== "success") return res.status(400).json({ error: "Only a successful job can be saved" });
+
+  const folder = typeof req.body?.folder === "string" ? req.body.folder.trim() : "";
+  if (folder && !isValidFolderName(folder)) {
+    return res.status(400).json({ error: `Invalid folder name '${folder}' (letters, numbers, spaces, - and _ only)` });
+  }
+
+  try {
+    const newPath = moveJobOutput(job.output_path, folder);
+    updateJob(job.id, { folder, output_path: newPath });
+    res.json({ folder, output_path: newPath });
+  } catch (err) {
+    res.status(500).json({ error: String(err.message || err) });
+  }
+});
+
+// Deletes a job's output instead of filing it anywhere. The job stays in
+// History (for the URL/log record) but its status flips to "discarded" and
+// there's no file/folder backing it any more.
+router.post("/:id/discard", (req, res) => {
+  const job = getJob(req.params.id);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  if (job.status !== "success") return res.status(400).json({ error: "Only a successful job can be discarded" });
+
+  if (job.output_path) deleteJobOutput(job.output_path);
+  updateJob(job.id, { status: "discarded", output_path: null });
+  res.json({ status: "discarded" });
 });
 
 router.get("/:id/output", (req, res) => {
