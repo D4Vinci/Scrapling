@@ -1,0 +1,212 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f6f7f9;
+  color: #1a1a1a;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 180px;
+  padding: 1.5rem 1rem;
+  background: #1a2233;
+  color: #fff;
+}
+
+.nav .brand {
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.nav a {
+  color: #cfd8ea;
+  text-decoration: none;
+}
+
+.nav a.active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 900px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.field input[type="checkbox"] {
+  width: fit-content;
+}
+
+.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.hint {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.choice-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-direction: row;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+.choice-pill input {
+  width: auto;
+}
+
+.url-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.url-row input[type="url"] {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* Makes UrlPreview's own wrapper div disappear from the box model so its
+   button sits inline with the URL input, while its details block (which
+   sets flex-basis: 100%) drops to its own full-width row underneath. */
+.url-preview {
+  display: contents;
+}
+
+.url-preview-details {
+  flex-basis: 100%;
+}
+
+.preview-panel {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #0077cc;
+  padding: 0 0 0 0.75rem;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+
+.snippet {
+  font-size: 0.8rem;
+  margin: 0.4rem 0;
+}
+
+button {
+  background: #0077cc;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.error {
+  color: #c62828;
+  white-space: pre-wrap;
+}
+
+.warning {
+  color: #b45309;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.url-cell {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-frame {
+  width: 100%;
+  height: 60vh;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.preview-text,
+.logs {
+  background: #10131a;
+  color: #d5d9e0;
+  padding: 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
