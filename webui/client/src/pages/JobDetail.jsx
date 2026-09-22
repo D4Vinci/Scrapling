@@ -41,7 +41,7 @@ export default function JobDetail() {
     <div className="job-detail">
       <h1>Job</h1>
       <p>
-        <StatusBadge status={job.status} /> · {job.fetcher_type} ·{" "}
+        <StatusBadge status={job.status} /> · {job.fetcher_type} · folder: {job.folder || "(default)"} ·{" "}
         <a href={job.url} target="_blank" rel="noreferrer">
           {job.url}
         </a>

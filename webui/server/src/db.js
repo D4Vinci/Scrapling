@@ -18,6 +18,7 @@ db.exec(`
     fetcher_type TEXT NOT NULL,
     url TEXT NOT NULL,
     output_format TEXT NOT NULL,
+    folder TEXT NOT NULL DEFAULT '',
     options_json TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     output_path TEXT,
@@ -29,10 +30,18 @@ db.exec(`
   )
 `);
 
+// Lightweight migration for dev DBs created before the folder column existed;
+// a no-op (caught) on a fresh DB where CREATE TABLE above already has it.
+try {
+  db.exec("ALTER TABLE jobs ADD COLUMN folder TEXT NOT NULL DEFAULT ''");
+} catch {
+  // column already exists
+}
+
 export function insertJob(job) {
   db.prepare(
-    `INSERT INTO jobs (id, fetcher_type, url, output_format, options_json, status, created_at)
-     VALUES (@id, @fetcher_type, @url, @output_format, @options_json, 'pending', @created_at)`,
+    `INSERT INTO jobs (id, fetcher_type, url, output_format, folder, options_json, status, created_at)
+     VALUES (@id, @fetcher_type, @url, @output_format, @folder, @options_json, 'pending', @created_at)`,
   ).run(job);
 }
 

@@ -25,6 +25,8 @@ export const listJobs = (params = {}) => {
 
 export const previewUrl = (url) => request("/preview", { method: "POST", body: JSON.stringify({ url }) });
 
+export const listOutputFolders = () => request("/output-folders");
+
 export const getMcpStatus = () => request("/mcp/status");
 
 export const startMcp = (payload) => request("/mcp/start", { method: "POST", body: JSON.stringify(payload) });

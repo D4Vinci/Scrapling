@@ -2,14 +2,15 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import fs from "node:fs";
-import { getJob, insertJob, listJobs, OUTPUTS_DIR } from "../db.js";
+import { getJob, insertJob, listJobs } from "../db.js";
 import { runJob } from "../services/scraplingRunner.js";
+import { resolveOutputDir } from "../services/outputFolders.js";
 import { FETCHER_TYPES, OUTPUT_FORMATS } from "../optionsSchema.js";
 
 const router = Router();
 
 router.post("/", (req, res) => {
-  const { fetcherType, url, outputFormat, options = {} } = req.body ?? {};
+  const { fetcherType, url, outputFormat, folder = "", options = {} } = req.body ?? {};
 
   if (!FETCHER_TYPES[fetcherType]) {
     return res.status(400).json({ error: `Unknown fetcher type '${fetcherType}'` });
@@ -22,8 +23,16 @@ router.post("/", (req, res) => {
     return res.status(400).json({ error: `Unknown output format '${outputFormat}'` });
   }
 
+  const trimmedFolder = typeof folder === "string" ? folder.trim() : "";
+  let outputDir;
+  try {
+    outputDir = resolveOutputDir(trimmedFolder);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+
   const id = randomUUID();
-  const outputPath = path.join(OUTPUTS_DIR, `${id}.${format.extension}`);
+  const outputPath = path.join(outputDir, `${id}.${format.extension}`);
   const createdAt = new Date().toISOString();
 
   insertJob({
@@ -31,6 +40,7 @@ router.post("/", (req, res) => {
     fetcher_type: fetcherType,
     url,
     output_format: outputFormat,
+    folder: trimmedFolder,
     options_json: JSON.stringify(options),
     created_at: createdAt,
   });

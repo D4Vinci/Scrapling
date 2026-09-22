@@ -24,6 +24,7 @@ export default function History() {
             <th>Created</th>
             <th>Fetcher</th>
             <th>URL</th>
+            <th>Folder</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -33,6 +34,7 @@ export default function History() {
               <td>{new Date(job.created_at).toLocaleString()}</td>
               <td>{job.fetcher_type}</td>
               <td className="url-cell">{job.url}</td>
+              <td>{job.folder || "(default)"}</td>
               <td>
                 <Link to={`/jobs/${job.id}`}>
                   <StatusBadge status={job.status} />
@@ -42,7 +44,7 @@ export default function History() {
           ))}
           {jobs.length === 0 && (
             <tr>
-              <td colSpan={4}>No jobs yet.</td>
+              <td colSpan={5}>No jobs yet.</td>
             </tr>
           )}
         </tbody>

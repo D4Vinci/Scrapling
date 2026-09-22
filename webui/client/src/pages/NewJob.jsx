@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createJob, getOptionsSchema } from "../api.js";
+import { createJob, getOptionsSchema, listOutputFolders } from "../api.js";
 import DynamicOptionsForm from "../components/DynamicOptionsForm.jsx";
 import UrlPreview from "../components/UrlPreview.jsx";
 
@@ -9,6 +9,8 @@ export default function NewJob() {
   const [fetcherType, setFetcherType] = useState("get");
   const [url, setUrl] = useState("");
   const [outputFormat, setOutputFormat] = useState("md");
+  const [folder, setFolder] = useState("");
+  const [folders, setFolders] = useState([]);
   const [values, setValues] = useState({});
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -18,6 +20,9 @@ export default function NewJob() {
     getOptionsSchema()
       .then(setSchema)
       .catch((e) => setError(e.message));
+    listOutputFolders()
+      .then(setFolders)
+      .catch(() => {}); // non-critical: the folder field just falls back to free text
   }, []);
 
   if (error && !schema) return <p className="error">{error}</p>;
@@ -46,7 +51,7 @@ export default function NewJob() {
         if (opt.type === "multiselect" && (!Array.isArray(raw) || raw.length === 0)) continue;
         cleanedOptions[opt.name] = opt.type === "list" ? raw.split("\n").filter(Boolean) : raw;
       }
-      const job = await createJob({ fetcherType, url, outputFormat, options: cleanedOptions });
+      const job = await createJob({ fetcherType, url, outputFormat, folder, options: cleanedOptions });
       navigate(`/jobs/${job.id}`);
     } catch (err) {
       setError(err.message);
@@ -87,6 +92,25 @@ export default function NewJob() {
             </option>
           ))}
         </select>
+      </label>
+
+      <label className="field">
+        <span>Save to folder</span>
+        <input
+          list="output-folders"
+          value={folder}
+          onChange={(e) => setFolder(e.target.value)}
+          placeholder="(default output folder)"
+        />
+        <datalist id="output-folders">
+          {folders.map((f) => (
+            <option key={f} value={f} />
+          ))}
+        </datalist>
+        <small className="hint">
+          Pick an existing folder from the list or type a new name to create one. Leave blank to save directly in the
+          default output folder.
+        </small>
       </label>
 
       <details open>
