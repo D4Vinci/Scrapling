@@ -90,7 +90,6 @@ MySpider().start()
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png" class="ad">
   </a>
   <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png" class="ad">
   </a>
   <br />
