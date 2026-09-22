@@ -198,17 +198,17 @@ class ScraplingMCPServer:
         """Return a per-call executable path or the server-wide default."""
         return executable_path or self._executable_path
 
-    def _get_session(self, session_id: str, expected_type: Optional[SessionType]) -> _SessionEntry:
-        """Look up a session by ID, optionally validating its type. Pass `None` to skip the type check."""
+    def _get_session(self, session_id: str, expected_type: List[SessionType]) -> _SessionEntry:
+        """Look up an active session by ID and validate its type against the allowed types."""
         entry = self._sessions.get(session_id)
         if entry is None:
             raise ValueError(f"Session '{session_id}' not found. Use list_sessions to see active sessions.")
         if not entry.session._is_alive:
             raise ValueError(f"Session '{session_id}' is no longer alive. Open a new session.")
-        if expected_type is not None and entry.session_type != expected_type:
+        if entry.session_type not in expected_type:
             raise ValueError(
                 f"Session '{session_id}' is a '{entry.session_type}' session, but this tool requires a "
-                f"'{expected_type}' session. Use the matching fetch tool for your session type."
+                f"{' or '.join(map(repr, expected_type))} session. Use the matching fetch tool for your session type."
             )
         return entry
 
@@ -234,7 +234,7 @@ class ScraplingMCPServer:
             message=f"Session '{session_id}' ({session_type}) created successfully.",
         )
 
-    async def open_session(
+    async def browser_open(
         self,
         session_type: BrowserSessionType,
         session_id: Optional[str] = None,
@@ -253,9 +253,9 @@ class ScraplingMCPServer:
         allow_webgl: bool = True,
         additional_args: Optional[Dict] = None,
     ) -> SessionCreatedModel:
-        """Open a persistent browser session that can be reused across multiple `session_fetch` calls.
+        """Open a persistent browser session that can be reused across multiple `browser_fetch` calls.
         This avoids the overhead of launching a new browser for each request. Sessions hold the browser-level
-        configuration only; per-request options are passed to `session_fetch` on each call.
+        configuration only; per-request options are passed to `browser_fetch` on each call.
 
         :param session_type: The type of session to open. Use "dynamic" for standard Playwright browser, or "stealthy" for anti-bot bypass with fingerprint spoofing.
         :param session_id: Optional custom session ID. If not provided, a random 12-character hex ID will be generated. Useful for naming sessions for easier management.
@@ -363,9 +363,9 @@ class ScraplingMCPServer:
         boxes: bool = False,
     ) -> str:
         """Return the AI ARIA snapshot of the current page in an open browser session as plain text.
-        Fetch a page with `session_fetch` first. The snapshot includes element references and preserves the current page.
+        Fetch a page with `browser_fetch` first. The snapshot includes element references and preserves the current page.
 
-        :param session_id: ID of an open browser session created with `open_session`.
+        :param session_id: ID of an open browser session created with `browser_open`.
         :param depth: Limit the snapshot tree depth. Defaults to no limit.
         :param boxes: Include element bounding boxes in viewport CSS pixels.
         """
@@ -379,23 +379,18 @@ class ScraplingMCPServer:
         boxes: bool = False,
     ) -> str:
         """Reserve the current page and return its AI ARIA snapshot."""
-        entry = self._get_session(session_id, expected_type=None)
-        if entry.session_type == "static":
-            raise ValueError(
-                f"Session '{session_id}' is a 'static' session, so it can't take snapshots. "
-                f"Open a 'dynamic' or 'stealthy' session for that."
-            )
+        entry = self._get_session(session_id, expected_type=["dynamic", "stealthy"])
 
         pool = entry.session.page_pool
         if not pool.pages_count:
-            raise ValueError(f"Session '{session_id}' has no page to snapshot. Use session_fetch first.")
+            raise ValueError(f"Session '{session_id}' has no page to snapshot. Use browser_fetch first.")
         page_info = pool.get_ready_page()
         if page_info is None:
             raise RuntimeError(f"Session '{session_id}' has a busy page. Wait for the current request to finish.")
 
         try:
             if page_info.page.is_closed():
-                raise RuntimeError(f"Session '{session_id}' has a closed page. Use session_fetch to open a new one.")
+                raise RuntimeError(f"Session '{session_id}' has a closed page. Use browser_fetch to open a new one.")
             return await entry.session._snapshot(page_info.page, depth=depth, boxes=boxes, css_selector=css_selector)
         finally:
             if page_info.page.is_closed():
@@ -403,7 +398,7 @@ class ScraplingMCPServer:
             else:
                 page_info.mark_ready()
 
-    async def screenshot(
+    async def browser_screenshot(
         self,
         url: str,
         session_id: str,
@@ -417,10 +412,10 @@ class ScraplingMCPServer:
         timeout: int | float = 30000,
     ) -> List[ImageContent | TextContent]:
         """Capture a screenshot of a web page using an existing browser session and return it as an image.
-        A browser session must be opened first with `open_session` (either `dynamic` or `stealthy`); the session ID is then passed here.
+        A browser session must be opened first with `browser_open` (either `dynamic` or `stealthy`); the session ID is then passed here.
 
         :param url: The URL to navigate to and capture.
-        :param session_id: ID of an open browser session created with `open_session`.
+        :param session_id: ID of an open browser session created with `browser_open`.
         :param image_type: Image format. Defaults to "png". Use "jpeg" for smaller file sizes.
         :param full_page: When True, captures the full scrollable page instead of just the viewport.
         :param quality: Image quality (0-100) for JPEG only. Raises if passed with `image_type="png"`.
@@ -433,12 +428,7 @@ class ScraplingMCPServer:
         if quality is not None and image_type != "jpeg":
             raise ValueError("'quality' is only valid when 'image_type' is 'jpeg'.")
 
-        entry = self._get_session(session_id, expected_type=None)
-        if entry.session_type == "static":
-            raise ValueError(
-                f"Session '{session_id}' is a 'static' session, so it can't take screenshots. "
-                f"Open a 'dynamic' or 'stealthy' session for that."
-            )
+        entry = self._get_session(session_id, expected_type=["dynamic", "stealthy"])
 
         screenshot_kwargs: Dict[str, Any] = {"type": image_type, "full_page": full_page}
         if quality is not None:
@@ -974,7 +964,7 @@ class ScraplingMCPServer:
 
         return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
 
-    async def session_fetch(
+    async def browser_fetch(
         self,
         url: str,
         session_id: str,
@@ -994,11 +984,11 @@ class ScraplingMCPServer:
         solve_cloudflare: bool = False,
         pierce_shadow: bool = False,
     ) -> ResponseModel:
-        """Fetch a URL through a browser session previously opened with `open_session` and return a structured output of the result.
+        """Fetch a URL through a browser session previously opened with `browser_open` and return a structured output of the result.
         The session (dynamic or stealthy) holds the browser-level configuration; every option here applies to this request only, with the defaults shown.
 
         :param url: The URL to request.
-        :param session_id: ID of an open browser session created with `open_session`.
+        :param session_id: ID of an open browser session created with `browser_open`.
         :param extraction_type: The type of content to extract from the page: "markdown", "html", "text", or "snapshot".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
         :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
@@ -1016,11 +1006,7 @@ class ScraplingMCPServer:
         :param blocked_domains: A list of domain names to block requests to for this request. Subdomains are also matched.
         :param solve_cloudflare: (Stealthy sessions only) Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response.
         """
-        entry = self._get_session(session_id, expected_type=None)
-        if entry.session_type == "static":
-            raise ValueError(
-                f"Session '{session_id}' is a 'static' session. Use `session_make_request` with it instead."
-            )
+        entry = self._get_session(session_id, expected_type=["dynamic", "stealthy"])
         if solve_cloudflare and entry.session_type != "stealthy":
             raise ValueError(
                 f"Session '{session_id}' is a '{entry.session_type}' session, so it can't solve Cloudflare "
@@ -1100,7 +1086,7 @@ class ScraplingMCPServer:
         :param http3: Whether to use HTTP3. It might be problematic if used it with `impersonate`.
         :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
         """
-        entry = self._get_session(session_id, expected_type="static")
+        entry = self._get_session(session_id, expected_type=["static"])
 
         request_kwargs: Dict[str, Any] = dict(
             auth=_normalize_credentials(auth),
@@ -1147,20 +1133,20 @@ class ScraplingMCPServer:
             ],
             "cache_hints": {"tools/list": CacheHint(ttl_ms=3_600_000, scope="public")},
             "instructions": """Follow these instructions precisely:
-1. When the `open_session` or `open_request_session` tools are used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions or their effective settings.
+1. When the `browser_open` or `open_request_session` tools are used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions or their effective settings.
 2. If the user didn't specify which tool to use, start with the `make_request` tool (a plain HTTP request, defaulting to GET; set `method` for POST/PUT/DELETE), then escalate. The `make_request` tool and `bulk_get` (its GET-only bulk version) are suitable only for low-to-mid protection levels.
     For high-protection levels or websites that require JS loading, use the other tools directly.
 3. For HTML, Markdown, and text extraction, if the `css_selector` resolves to more than one element, all the elements will be returned. Snapshot extraction requires a selector matching exactly one element, or no selector for the whole page.
 4. For all fetch tools, the `extraction_type` parameter controls the format of the returned content: "markdown" (default) converts the page content to Markdown, "html" returns the raw HTML, and "text" returns the text content of the page.
 5. For HTML, Markdown, and text extraction, `main_content_only` is enabled by default and returns only the content inside the page's `<body>` tag. Pass `main_content_only=False` when you need the full page instead.
 6. If the task consists of multiple sequential requests to the same website, open a session once, then fetch through it to be more efficient:
-    `open_session` + `session_fetch` per page for browsers, or `open_request_session` + `session_make_request` per request for plain HTTP.
-7. Sessions hold the session-level configuration set when opened, while `session_fetch`/`session_make_request` carry the per-request options and apply them on each call with the defaults shown in their schemas.
+    `browser_open` + `browser_fetch` per page for browsers, or `open_request_session` + `session_make_request` per request for plain HTTP.
+7. Sessions hold the session-level configuration set when opened, while `browser_fetch`/`session_make_request` carry the per-request options and apply them on each call with the defaults shown in their schemas.
     The one-shot tools (`make_request`, `bulk_get`, `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) never touch sessions.
 8. If you are making multiple parallel one-shot requests, use the bulk version of the tool to be more efficient.
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
-10. The user can pass a CDP URL to connect to a remote browser session through the `open_session` tool, then use it with the session tools.
-11. Set `extraction_type="snapshot"` on `session_fetch` to get an AI ARIA snapshot with element references in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page again without navigating; it returns plain text. Its `depth` and `boxes` options limit the tree or include element bounding boxes.
+10. The user can pass a CDP URL to connect to a remote browser session through the `browser_open` tool, then use it with the session tools.
+11. Set `extraction_type="snapshot"` on `browser_fetch` to get an AI ARIA snapshot with element references in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page again without navigating; it returns plain text. Its `depth` and `boxes` options limit the tree or include element bounding boxes.
 """,
         }
         if self._auth_token:
@@ -1171,7 +1157,7 @@ class ScraplingMCPServer:
         server = MCPServer(name="Scrapling", **settings)
         # Session management tools
         server.add_tool(
-            self.open_session, title="open_session", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
+            self.browser_open, title="browser_open", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
         )
         server.add_tool(
             self.open_request_session,
@@ -1232,9 +1218,9 @@ class ScraplingMCPServer:
         )
         # Session-scoped fetch tools
         server.add_tool(
-            self.session_fetch,
-            title="session_fetch",
-            description=self.session_fetch.__doc__,
+            self.browser_fetch,
+            title="browser_fetch",
+            description=self.browser_fetch.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
@@ -1254,9 +1240,9 @@ class ScraplingMCPServer:
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
         server.add_tool(
-            self.screenshot,
-            title="screenshot",
-            description=self.screenshot.__doc__,
+            self.browser_screenshot,
+            title="browser_screenshot",
+            description=self.browser_screenshot.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )

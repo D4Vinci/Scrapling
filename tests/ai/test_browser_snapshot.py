@@ -45,7 +45,7 @@ async def test_browser_snapshot_returns_plain_mcp_text(session_type: SessionType
         assert tool.output_schema is None
         assert set(tool.input_schema["properties"]) == {"session_id", "depth", "boxes"}
         assert tool.input_schema["required"] == ["session_id"]
-        fetch_props = tools["session_fetch"].input_schema["properties"]
+        fetch_props = tools["browser_fetch"].input_schema["properties"]
         assert set(fetch_props["extraction_type"]["enum"]) == {"markdown", "html", "text", "snapshot"}
         assert "depth" not in fetch_props and "boxes" not in fetch_props
         assert "snapshot" not in tools["fetch"].input_schema["properties"]["extraction_type"]["enum"]
@@ -70,7 +70,7 @@ async def test_browser_snapshot_returns_plain_mcp_text(session_type: SessionType
         ("missing", "not found"),
         ("dead", "no longer alive"),
         ("static", "'static'"),
-        ("empty", "session_fetch"),
+        ("empty", "browser_fetch"),
         ("busy", "busy"),
         ("closed", "closed"),
     ],
@@ -128,13 +128,13 @@ async def test_browser_snapshot_live_mcp_round_trip(session_type: SessionType, c
         )
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("open_session", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
             await session.context.route("**/*", serve)
             fetched = await client.call_tool(
-                "session_fetch",
+                "browser_fetch",
                 {
                     "session_id": "browser",
                     "url": "https://snapshot.test/",
@@ -180,7 +180,7 @@ async def test_browser_snapshot_live_mcp_round_trip(session_type: SessionType, c
             for selector in ("#missing", "button", "["):
                 previous_count = len(requests)
                 failed = await client.call_tool(
-                    "session_fetch",
+                    "browser_fetch",
                     {
                         "session_id": "browser",
                         "url": "https://snapshot.test/",
@@ -228,7 +228,7 @@ async def test_browser_snapshot_reserves_and_releases_the_page_on_cancel() -> No
 @pytest.mark.parametrize(
     "extraction_type, expected", [("markdown", ["Hello", ""]), ("html", ["<p>Hello</p>", ""]), ("text", ["Hello", ""])]
 )
-async def test_session_fetch_keeps_existing_formats(extraction_type: Any, expected: list[str]) -> None:
+async def test_browser_fetch_keeps_existing_formats(extraction_type: Any, expected: list[str]) -> None:
     server, session, page = _server()
     response = Response(
         url="https://snapshot.test/final",
@@ -241,7 +241,7 @@ async def test_session_fetch_keeps_existing_formats(extraction_type: Any, expect
     )
     fetch = AsyncMock(return_value=response)
     setattr(session, "fetch", fetch)
-    result = await server.session_fetch("https://snapshot.test/", "browser", extraction_type, "p")
+    result = await server.browser_fetch("https://snapshot.test/", "browser", extraction_type, "p")
     assert result.content == expected
     assert result.status == 201
     assert result.url == "https://snapshot.test/final"
@@ -250,7 +250,7 @@ async def test_session_fetch_keeps_existing_formats(extraction_type: Any, expect
 
 
 @pytest.mark.asyncio
-async def test_session_fetch_snapshot_keeps_raw_content_and_response_metadata() -> None:
+async def test_browser_fetch_snapshot_keeps_raw_content_and_response_metadata() -> None:
     server, session, page = _server()
     snapshot = '\n- button "Save" [ref=e2]\n'
     page.aria_snapshot.return_value = snapshot
@@ -265,7 +265,7 @@ async def test_session_fetch_snapshot_keeps_raw_content_and_response_metadata() 
     )
     fetch = AsyncMock(return_value=response)
     setattr(session, "fetch", fetch)
-    result = await server.session_fetch("https://snapshot.test/start", "browser", extraction_type="snapshot")
+    result = await server.browser_fetch("https://snapshot.test/start", "browser", extraction_type="snapshot")
     assert result.content == [snapshot]
     assert result.status == 202
     assert result.url == "https://snapshot.test/redirected"
@@ -274,7 +274,7 @@ async def test_session_fetch_snapshot_keeps_raw_content_and_response_metadata() 
 
 
 @pytest.mark.asyncio
-async def test_session_fetch_snapshot_error_does_not_refetch() -> None:
+async def test_browser_fetch_snapshot_error_does_not_refetch() -> None:
     server, session, page = _server()
     response = Response(
         url="https://snapshot.test/final",
@@ -289,7 +289,7 @@ async def test_session_fetch_snapshot_error_does_not_refetch() -> None:
     setattr(session, "fetch", fetch)
     page.locator.return_value.aria_snapshot = AsyncMock(side_effect=TimeoutError("snapshot timeout"))
     with pytest.raises(TimeoutError, match="snapshot timeout"):
-        await server.session_fetch("https://snapshot.test/", "browser", extraction_type="snapshot", css_selector="main")
+        await server.browser_fetch("https://snapshot.test/", "browser", extraction_type="snapshot", css_selector="main")
     fetch.assert_awaited_once()
     assert {"extraction_type", "css_selector", "depth", "boxes"}.isdisjoint(fetch.call_args.kwargs)
     page.aria_snapshot.assert_not_awaited()
