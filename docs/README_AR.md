@@ -96,12 +96,12 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingaugust" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingaugust" target="_blank">NodeMaven</a> - أكفأ مزود بروكسيات للـ Web Scraping والأتمتة، مع أعلى جودة IP في السوق. استخدم الكود SCRAPLING35 للحصول على خصم 35%.
+    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> - أكفأ مزود بروكسيات للـ Web Scraping والأتمتة، مع أعلى جودة IP في السوق. استخدم الكود SCRAPLING35 للحصول على خصم 35%.
     </td>
   </tr>
   <tr>
