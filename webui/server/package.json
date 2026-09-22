@@ -1,0 +1,15 @@
+{
+  "name": "scrapling-webui-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Express API that runs Scrapling's CLI as jobs and manages the MCP server, for the Scrapling web UI.",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "express": "^5.2.1"
+  }
+}
