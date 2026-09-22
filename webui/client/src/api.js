@@ -18,6 +18,8 @@ export const createJob = (payload) => request("/jobs", { method: "POST", body: J
 
 export const getJob = (id) => request(`/jobs/${id}`);
 
+export const getJobImages = (id) => request(`/jobs/${id}/images`);
+
 export const listJobs = (params = {}) => {
   const qs = new URLSearchParams(params).toString();
   return request(`/jobs${qs ? `?${qs}` : ""}`);

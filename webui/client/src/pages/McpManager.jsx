@@ -74,7 +74,7 @@ export default function McpManager() {
       <h1>MCP server</h1>
 
       {status && (
-        <div className="mcp-status">
+        <div className="mcp-status card">
           <p>
             Status: <strong>{status.running ? "running" : "stopped"}</strong>
             {status.running && ` (pid ${status.pid}, since ${new Date(status.startedAt).toLocaleTimeString()})`}
@@ -88,13 +88,15 @@ export default function McpManager() {
       )}
 
       {!status?.running && (
-        <form onSubmit={handleStart} className="mcp-form">
+        <form onSubmit={handleStart} className="mcp-form card">
           <label className="field">
             <span>Transport</span>
-            <select value={form.http ? "http" : "stdio"} onChange={(e) => set("http", e.target.value === "http")}>
-              <option value="stdio">stdio</option>
-              <option value="http">streamable-http</option>
-            </select>
+            <div className="select-wrap">
+              <select value={form.http ? "http" : "stdio"} onChange={(e) => set("http", e.target.value === "http")}>
+                <option value="stdio">stdio</option>
+                <option value="http">streamable-http</option>
+              </select>
+            </div>
           </label>
 
           {form.http && (

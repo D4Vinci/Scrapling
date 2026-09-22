@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.3.0",
+    "cheerio": "^1.0.0",
     "express": "^5.2.1"
   }
 }

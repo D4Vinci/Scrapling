@@ -9,15 +9,21 @@ export default function DynamicOptionsForm({ options, values, onChange }) {
   return (
     <div className="options-grid">
       {options.map((opt) => (
-        <label key={opt.name} className="field">
-          <span>{opt.label}</span>
-
-          {opt.type === "boolean" && (
-            <input
-              type="checkbox"
-              checked={values[opt.name] ?? opt.default ?? false}
-              onChange={(e) => onChange(opt.name, e.target.checked)}
-            />
+        <label key={opt.name} className={`field${opt.type === "boolean" ? " field-toggle" : ""}`}>
+          {opt.type === "boolean" ? (
+            <span className="toggle-row">
+              <span className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={values[opt.name] ?? opt.default ?? false}
+                  onChange={(e) => onChange(opt.name, e.target.checked)}
+                />
+                <span className="toggle-track" aria-hidden="true" />
+              </span>
+              <span>{opt.label}</span>
+            </span>
+          ) : (
+            <span>{opt.label}</span>
           )}
 
           {opt.type === "number" && (
@@ -43,12 +49,13 @@ export default function DynamicOptionsForm({ options, values, onChange }) {
                 const selected = values[opt.name] ?? [];
                 const checked = selected.includes(choice);
                 return (
-                  <label key={choice} className="choice-pill">
+                  <label key={choice} className={`choice-pill${checked ? " is-selected" : ""}`}>
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => onChange(opt.name, toggleInArray(selected, choice))}
                     />
+                    <CheckIcon />
                     {choice}
                   </label>
                 );
@@ -69,5 +76,13 @@ export default function DynamicOptionsForm({ options, values, onChange }) {
         </label>
       ))}
     </div>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg className="choice-pill-check" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+      <path d="M1.5 5l2.5 2.5L8.5 2" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
