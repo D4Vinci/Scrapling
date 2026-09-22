@@ -57,7 +57,9 @@ export default function JobDetail() {
             <a href={`/api/jobs/${job.id}/output?download=1`}>Download result</a>
           </p>
           {job.output_format === "html" ? (
-            <iframe title="result" src={`/api/jobs/${job.id}/output`} className="preview-frame" />
+            // sandbox with no "allow-scripts"/"allow-same-origin" tokens: the scraped
+            // page's own <script> tags must never execute against our app's origin.
+            <iframe title="result" src={`/api/jobs/${job.id}/output`} className="preview-frame" sandbox="" />
           ) : (
             <PreviewText jobId={job.id} />
           )}

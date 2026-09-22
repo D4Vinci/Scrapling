@@ -28,6 +28,14 @@ export function buildArgs(fetcherType, url, outputFile, options) {
       continue;
     }
 
+    if (opt.type === "multiselect") {
+      // The CLI takes one --impersonate value; comma-joining several tells
+      // Scrapling to pick a random one per request (see cli.py's __BuildRequest).
+      const items = Array.isArray(value) ? value : [value];
+      if (items.length) args.push(opt.flag, items.join(","));
+      continue;
+    }
+
     args.push(opt.flag, String(value));
   }
 

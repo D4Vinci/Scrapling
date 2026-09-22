@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createJob, getOptionsSchema } from "../api.js";
 import DynamicOptionsForm from "../components/DynamicOptionsForm.jsx";
+import UrlPreview from "../components/UrlPreview.jsx";
 
 export default function NewJob() {
   const [schema, setSchema] = useState(null);
@@ -42,6 +43,7 @@ export default function NewJob() {
       for (const opt of options) {
         const raw = values[opt.name];
         if (raw === undefined || raw === "") continue;
+        if (opt.type === "multiselect" && (!Array.isArray(raw) || raw.length === 0)) continue;
         cleanedOptions[opt.name] = opt.type === "list" ? raw.split("\n").filter(Boolean) : raw;
       }
       const job = await createJob({ fetcherType, url, outputFormat, options: cleanedOptions });
@@ -70,7 +72,10 @@ export default function NewJob() {
 
       <label className="field">
         <span>URL</span>
-        <input type="url" required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com" />
+        <div className="url-row">
+          <input type="url" required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com" />
+          <UrlPreview url={url} onUseSelector={(selector) => handleOptionChange("css_selector", selector)} />
+        </div>
       </label>
 
       <label className="field">

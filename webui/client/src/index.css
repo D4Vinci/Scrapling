@@ -70,6 +70,78 @@ body {
   margin-top: 0.75rem;
 }
 
+.hint {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.choice-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-direction: row;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+.choice-pill input {
+  width: auto;
+}
+
+.url-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.url-row input[type="url"] {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* Makes UrlPreview's own wrapper div disappear from the box model so its
+   button sits inline with the URL input, while its details block (which
+   sets flex-basis: 100%) drops to its own full-width row underneath. */
+.url-preview {
+  display: contents;
+}
+
+.url-preview-details {
+  flex-basis: 100%;
+}
+
+.preview-panel {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #0077cc;
+  padding: 0 0 0 0.75rem;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+
+.snippet {
+  font-size: 0.8rem;
+  margin: 0.4rem 0;
+}
+
 button {
   background: #0077cc;
   color: #fff;

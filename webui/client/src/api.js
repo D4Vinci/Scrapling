@@ -23,6 +23,8 @@ export const listJobs = (params = {}) => {
   return request(`/jobs${qs ? `?${qs}` : ""}`);
 };
 
+export const previewUrl = (url) => request("/preview", { method: "POST", body: JSON.stringify({ url }) });
+
 export const getMcpStatus = () => request("/mcp/status");
 
 export const startMcp = (payload) => request("/mcp/start", { method: "POST", body: JSON.stringify(payload) });

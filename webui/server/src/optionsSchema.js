@@ -29,6 +29,19 @@ export const OUTPUT_FORMATS = [
   { value: "txt", label: "Text", extension: "txt" },
 ];
 
+// curl_cffi's fixed set of impersonable browser families (see docs/fetching/static.md);
+// exact per-version strings like "chrome110" change with each curl_cffi release, so
+// the picker offers the stable family names and lets --impersonate pick the latest.
+export const IMPERSONATE_CHOICES = [
+  "chrome",
+  "chrome_android",
+  "edge",
+  "safari",
+  "safari_ios",
+  "firefox",
+  "tor",
+];
+
 const COMMON_HTTP_OPTIONS = [
   { name: "ai_targeted", flag: "--ai-targeted", type: "boolean", default: false, label: "AI-targeted extraction" },
   {
@@ -42,8 +55,10 @@ const COMMON_HTTP_OPTIONS = [
   {
     name: "impersonate",
     flag: "--impersonate",
-    type: "string",
-    label: "Impersonate browser(s) (comma-separated for random)",
+    type: "multiselect",
+    choices: IMPERSONATE_CHOICES,
+    label: "Impersonate browser(s)",
+    hint: "Pick more than one to have each request randomly use one of them.",
   },
   { name: "verify", flag: "--verify", negFlag: "--no-verify", type: "boolean", default: true, label: "Verify SSL" },
   {
@@ -54,24 +69,94 @@ const COMMON_HTTP_OPTIONS = [
     default: true,
     label: "Follow redirects",
   },
-  { name: "params", flag: "--params", type: "list", label: "Query params (key=value, one per line)" },
-  { name: "css_selector", flag: "--css-selector", type: "string", label: "CSS selector" },
-  { name: "proxy", flag: "--proxy", type: "string", label: "Proxy URL" },
+  {
+    name: "params",
+    flag: "--params",
+    type: "list",
+    label: "Query params",
+    placeholder: "q=web scraping",
+    hint: "One key=value per line. Appended to the URL's query string.",
+  },
+  {
+    name: "css_selector",
+    flag: "--css-selector",
+    type: "string",
+    label: "CSS selector",
+    placeholder: ".product-title, article p",
+    hint: "Only content matching this selector is saved; leave blank to save the whole page.",
+  },
+  {
+    name: "proxy",
+    flag: "--proxy",
+    type: "string",
+    label: "Proxy URL",
+    placeholder: "http://username:password@host:port",
+    hint: "Routes this request through an HTTP(S) proxy.",
+  },
   { name: "timeout", flag: "--timeout", type: "number", default: 30, label: "Timeout (seconds)" },
-  { name: "cookies", flag: "--cookies", type: "string", label: 'Cookies ("name1=value1; name2=value2")' },
-  { name: "headers", flag: "--headers", type: "list", label: "Headers (Key: Value, one per line)" },
+  {
+    name: "cookies",
+    flag: "--cookies",
+    type: "string",
+    label: "Cookies",
+    placeholder: "session=abc123; user=john",
+    hint: "Semicolon-separated name=value pairs, exactly like a browser's Cookie header.",
+  },
+  {
+    name: "headers",
+    flag: "--headers",
+    type: "list",
+    label: "Headers",
+    placeholder: "User-Agent: MyBot/1.0",
+    hint: 'One "Key: Value" per line.',
+  },
 ];
 
 const DATA_OPTIONS = [
-  { name: "json", flag: "--json", type: "string", label: "JSON body" },
-  { name: "data", flag: "--data", type: "string", label: "Form data (param1=value1&param2=value2)" },
+  {
+    name: "json",
+    flag: "--json",
+    type: "string",
+    label: "JSON body",
+    placeholder: '{"username": "test", "action": "search"}',
+    hint: "Raw JSON, sent as the request body with a JSON content type.",
+  },
+  {
+    name: "data",
+    flag: "--data",
+    type: "string",
+    label: "Form data",
+    placeholder: "key1=value1&key2=value2",
+    hint: "URL-encoded form body (like a plain HTML form submit). Ignored if JSON body is set.",
+  },
 ];
 
 const COMMON_BROWSER_OPTIONS = [
   { name: "ai_targeted", flag: "--ai-targeted", type: "boolean", default: false, label: "AI-targeted extraction" },
-  { name: "executable_path", flag: "--executable-path", type: "string", label: "Custom browser executable path" },
-  { name: "extra_headers", flag: "--extra-headers", type: "list", label: "Extra headers (Key: Value, one per line)" },
-  { name: "proxy", flag: "--proxy", type: "string", label: "Proxy URL" },
+  {
+    name: "executable_path",
+    flag: "--executable-path",
+    type: "string",
+    label: "Custom browser executable path",
+    placeholder: "/usr/bin/chromium",
+    hint: "Only needed to use a specific Chromium-compatible browser instead of the bundled one.",
+  },
+  {
+    name: "extra_headers",
+    flag: "--extra-headers",
+    type: "list",
+    label: "Extra headers",
+    placeholder: "Accept-Language: en-US",
+    hint: 'One "Key: Value" per line.',
+  },
+  {
+    name: "proxy",
+    flag: "--proxy",
+    type: "string",
+    label: "Proxy URL",
+    placeholder: "http://username:password@host:port",
+    hint: "Routes browser traffic through an HTTP(S) proxy.",
+  },
   {
     name: "real_chrome",
     flag: "--real-chrome",
@@ -80,9 +165,30 @@ const COMMON_BROWSER_OPTIONS = [
     default: false,
     label: "Use real installed Chrome",
   },
-  { name: "locale", flag: "--locale", type: "string", label: "Locale" },
-  { name: "wait_selector", flag: "--wait-selector", type: "string", label: "Wait for CSS selector" },
-  { name: "css_selector", flag: "--css-selector", type: "string", label: "CSS selector" },
+  {
+    name: "locale",
+    flag: "--locale",
+    type: "string",
+    label: "Locale",
+    placeholder: "en-US",
+    hint: "BCP-47 language tag, e.g. en-US or de-DE. Leave blank to use the system default.",
+  },
+  {
+    name: "wait_selector",
+    flag: "--wait-selector",
+    type: "string",
+    label: "Wait for CSS selector",
+    placeholder: ".content-loaded",
+    hint: "Pauses until an element matching this selector appears, useful for content that loads after the initial page load.",
+  },
+  {
+    name: "css_selector",
+    flag: "--css-selector",
+    type: "string",
+    label: "CSS selector",
+    placeholder: ".product-title, article p",
+    hint: "Only content matching this selector is saved; leave blank to save the whole page.",
+  },
   { name: "wait", flag: "--wait", type: "number", default: 0, label: "Extra wait after load (ms)" },
   { name: "timeout", flag: "--timeout", type: "number", default: 30000, label: "Timeout (ms)" },
   {
