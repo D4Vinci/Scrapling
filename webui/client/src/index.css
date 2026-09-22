@@ -71,6 +71,7 @@ h2 {
 
 .app {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
@@ -78,13 +79,15 @@ h2 {
 
 .nav {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  width: 200px;
+  align-items: center;
+  gap: 1.75rem;
   flex-shrink: 0;
-  padding: 1.5rem 1rem;
-  background: linear-gradient(180deg, #1e2030, #171826);
+  padding: 0.85rem 1.75rem;
+  background: linear-gradient(90deg, #1e2030, #171826);
   color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .nav .brand {
@@ -92,9 +95,8 @@ h2 {
   align-items: center;
   gap: 0.5rem;
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   letter-spacing: 0.01em;
-  margin-bottom: 1.25rem;
   color: #fff;
 }
 
@@ -106,11 +108,17 @@ h2 {
   box-shadow: 0 0 12px var(--accent);
 }
 
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .nav a {
   color: #b7bad0;
   text-decoration: none;
   font-size: 0.92rem;
-  padding: 0.5rem 0.7rem;
+  padding: 0.45rem 0.85rem;
   border-radius: var(--radius-sm);
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -128,8 +136,10 @@ h2 {
 
 .content {
   flex: 1;
-  padding: 2.5rem 3rem;
-  max-width: 960px;
+  padding: 2rem 3rem 3rem;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 /* --- Cards / layout --- */
@@ -673,4 +683,120 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* --- New Job page: form + hover descriptor panel --- */
+
+.job-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .job-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hint-panel {
+  position: sticky;
+  top: 5.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem 1.5rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text);
+  min-height: 140px;
+}
+
+.hint-panel-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.hint-panel-placeholder {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* --- Fetch Page analysis + element picker --- */
+
+.suggestion {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
+  margin: 0.75rem 0;
+}
+
+.suggestion .hint {
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.picker-frame {
+  width: 100%;
+  height: 50vh;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  margin-top: 0.5rem;
+}
+
+.picked-selector {
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.picked-selector code {
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.picked-selector-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* --- Buttons: secondary variant (Discard, "just this element", etc.) --- */
+
+button.secondary {
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--border);
+}
+
+/* --- Current Job page --- */
+
+.job-log {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.save-panel {
+  margin-top: 1rem;
+}
+
+.save-panel-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
 }

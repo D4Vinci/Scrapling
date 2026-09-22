@@ -27,6 +27,14 @@ export const listJobs = (params = {}) => {
 
 export const previewUrl = (url) => request("/preview", { method: "POST", body: JSON.stringify({ url }) });
 
+export const renderPreview = (url) => request("/preview/render", { method: "POST", body: JSON.stringify({ url }) });
+
+export const saveJob = (id, folder) => request(`/jobs/${id}/save`, { method: "POST", body: JSON.stringify({ folder }) });
+
+export const discardJob = (id) => request(`/jobs/${id}/discard`, { method: "POST" });
+
+export const jobLogsStreamUrl = (id) => `${BASE}/jobs/${id}/logs/stream`;
+
 export const listOutputFolders = () => request("/output-folders");
 
 export const getMcpStatus = () => request("/mcp/status");

@@ -57,12 +57,6 @@ export const OUTPUT_FORMATS = [
     hint: "Saves the page's raw HTML to a single .html file, unmodified aside from the CSS selector scope.",
   },
   {
-    value: "md",
-    label: "Markdown",
-    extension: "md",
-    hint: "Converts the HTML to Markdown and saves it to a single .md file. Good for feeding into an LLM or reading as plain text with structure.",
-  },
-  {
     value: "txt",
     label: "Text",
     extension: "txt",

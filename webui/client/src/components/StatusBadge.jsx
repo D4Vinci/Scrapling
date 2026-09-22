@@ -3,6 +3,7 @@ const COLOR_VARS = {
   running: "var(--running)",
   success: "var(--success)",
   error: "var(--error)",
+  discarded: "var(--pending)",
 };
 
 export default function StatusBadge({ status }) {

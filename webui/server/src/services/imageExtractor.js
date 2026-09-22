@@ -27,10 +27,34 @@ function widestFromSrcset(srcset) {
   return candidates[0][0];
 }
 
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "avif", "bmp", "svg", "ico"]);
+
+// True for a string that looks like a path/URL ending in a known image
+// extension — used to fish image URLs out of places that aren't `src`/
+// `srcset` at all, like `onclick="openModal('...')"` lightbox handlers,
+// which plenty of gallery sites use instead of a real <img src>.
+function looksLikeImageUrl(str) {
+  if (!str || str.length > 2000) return false;
+  const withoutQuery = str.split(/[?#]/)[0];
+  const ext = withoutQuery.split(".").pop()?.toLowerCase();
+  return Boolean(ext) && IMAGE_EXTENSIONS.has(ext) && !/\s/.test(withoutQuery);
+}
+
+// Pulls out every single- or double-quoted substring in an attribute value
+// (e.g. the two arguments to `openModal('a.jpg', 'caption')`), plus the raw
+// value itself, as candidates to test with looksLikeImageUrl.
+function candidateStringsFromAttrValue(value) {
+  const quoted = [...value.matchAll(/'([^']+)'|"([^"]+)"/g)].map((m) => m[1] ?? m[2]);
+  return [value, ...quoted];
+}
+
 // Scans the given HTML for images (scoped to `selector` if provided, else the
 // whole document) and returns their absolute URLs in document order, deduped.
-// Looks past plain `src` at the common lazy-load attributes too, since a lot
-// of sites don't put the real image URL in `src` until JS runs.
+// Two passes: first the well-known <img> attributes (src, lazy-load
+// data-* variants, srcset), then a generic sweep of every element's
+// attributes — onclick handlers and data-* attributes included — for any
+// value that looks like an image URL, since a lot of gallery/lightbox
+// markup never puts the image in an <img> tag's src at all.
 export function extractImageUrls(html, pageUrl, selector) {
   const $ = cheerio.load(html);
   let scope = $("body").length ? $("body") : $.root();
@@ -39,35 +63,54 @@ export function extractImageUrls(html, pageUrl, selector) {
     if (matched.length) scope = matched;
   }
 
-  const elements = [];
-  scope.each((_, el) => {
-    const $el = $(el);
-    if ($el.is("img")) elements.push(el);
-    $el.find("img").each((__, img) => elements.push(img));
-  });
-
   const seen = new Set();
   const urls = [];
-  for (const el of elements) {
-    const $el = $(el);
-    const candidate =
-      $el.attr("src") ||
-      $el.attr("data-src") ||
-      $el.attr("data-lazy-src") ||
-      $el.attr("data-original") ||
-      (($el.attr("srcset") || $el.attr("data-srcset")) && widestFromSrcset($el.attr("srcset") || $el.attr("data-srcset")));
-    if (!candidate) continue;
-
+  function addCandidate(candidate) {
+    if (!candidate) return;
     let absolute;
     try {
       absolute = candidate.startsWith("data:") ? candidate : new URL(candidate, pageUrl).toString();
     } catch {
-      continue;
+      return;
     }
-    if (seen.has(absolute)) continue;
+    if (seen.has(absolute)) return;
     seen.add(absolute);
     urls.push(absolute);
   }
+
+  const imgElements = [];
+  scope.each((_, el) => {
+    const $el = $(el);
+    if ($el.is("img")) imgElements.push(el);
+    $el.find("img").each((__, img) => imgElements.push(img));
+  });
+  for (const el of imgElements) {
+    const $el = $(el);
+    addCandidate(
+      $el.attr("src") ||
+        $el.attr("data-src") ||
+        $el.attr("data-lazy-src") ||
+        $el.attr("data-original") ||
+        (($el.attr("srcset") || $el.attr("data-srcset")) && widestFromSrcset($el.attr("srcset") || $el.attr("data-srcset"))),
+    );
+  }
+
+  const allElements = [];
+  scope.each((_, el) => {
+    allElements.push(el);
+    $(el)
+      .find("*")
+      .each((__, child) => allElements.push(child));
+  });
+  for (const el of allElements) {
+    for (const [name, value] of Object.entries(el.attribs || {})) {
+      if (name === "src" || name === "srcset") continue; // already handled above for <img>
+      for (const candidate of candidateStringsFromAttrValue(value)) {
+        if (looksLikeImageUrl(candidate)) addCandidate(candidate);
+      }
+    }
+  }
+
   return urls;
 }
 

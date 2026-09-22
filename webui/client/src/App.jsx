@@ -12,11 +12,13 @@ export default function App() {
           <span className="brand-dot" />
           Scrapling
         </span>
-        <NavLink to="/" end>
-          New job
-        </NavLink>
-        <NavLink to="/history">History</NavLink>
-        <NavLink to="/mcp">MCP server</NavLink>
+        <div className="nav-links">
+          <NavLink to="/" end>
+            New job
+          </NavLink>
+          <NavLink to="/history">History</NavLink>
+          <NavLink to="/mcp">MCP server</NavLink>
+        </div>
       </nav>
       <main className="content">
         <Routes>
