@@ -856,7 +856,7 @@ class TestMCPServerAuthentication:
         monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
         built = ScraplingMCPServer(auth_token=SHARED_KEY)._build_server("0.0.0.0", 8000)
 
-        assert len(built._tool_manager.list_tools()) == 13
+        assert len(built._tool_manager.list_tools()) == 14
 
     def test_http_without_a_token_refuses_to_serve(self, monkeypatch):
         """The streamable-http transport requires authentication unless the caller explicitly opts out"""
@@ -913,15 +913,21 @@ class TestServerToolRegistration:
 
     @pytest.mark.asyncio
     async def test_tools_are_listed_with_expected_schemas(self):
-        """All 13 tools are advertised, and only the screenshot tool skips the structured output schema"""
+        """All 14 tools are advertised, with plain content for screenshots and snapshots"""
         server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
         async with Client(server) as client:
             assert client.instructions
             tools = {tool.name: tool for tool in (await client.list_tools()).tools}
 
-        assert len(tools) == 13
+        assert len(tools) == 14
         assert tools["screenshot"].output_schema is None
-        assert all(tool.output_schema is not None for name, tool in tools.items() if name != "screenshot")
+        assert tools["browser_snapshot"].output_schema is None
+        assert "session_snapshot" not in tools
+        assert all(
+            tool.output_schema is not None
+            for name, tool in tools.items()
+            if name not in ("screenshot", "browser_snapshot")
+        )
 
     @pytest.mark.asyncio
     async def test_fetch_tools_expose_real_defaults_and_no_session_id(self):
@@ -937,6 +943,7 @@ class TestServerToolRegistration:
             assert props["google_search"]["default"] is True
             assert props["pierce_shadow"]["type"] == "boolean"
             assert props["pierce_shadow"]["default"] is False
+            assert "snapshot" not in props["extraction_type"]["enum"]
 
         request_props = tools["make_request"].input_schema["properties"]
         assert request_props["method"]["default"] == "GET"
@@ -954,6 +961,9 @@ class TestServerToolRegistration:
         assert session_props["pierce_shadow"]["type"] == "boolean"
         assert session_props["pierce_shadow"]["default"] is False
         assert "solve_cloudflare" in session_props
+        assert session_props["extraction_type"]["default"] == "markdown"
+        assert set(session_props["extraction_type"]["enum"]) == {"markdown", "html", "text", "snapshot"}
+        assert {"depth", "boxes"}.isdisjoint(session_props)
         assert set(tools["session_fetch"].input_schema["required"]) >= {"url", "session_id"}
 
         open_props = set(tools["open_session"].input_schema["properties"])
@@ -976,7 +986,7 @@ class TestServerToolRegistration:
         assert result.ttl_ms == 3_600_000 and result.cache_scope == "public"
 
         annotations = {tool.name: tool.annotations for tool in result.tools if tool.annotations is not None}
-        assert len(annotations) == 13
+        assert len(annotations) == 14
         for name in (
             "make_request",
             "bulk_get",
@@ -986,6 +996,7 @@ class TestServerToolRegistration:
             "bulk_stealthy_fetch",
             "session_fetch",
             "session_make_request",
+            "browser_snapshot",
             "screenshot",
         ):
             assert annotations[name].read_only_hint is True

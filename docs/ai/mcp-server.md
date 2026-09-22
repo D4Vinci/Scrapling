@@ -6,7 +6,7 @@ The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful W
 
 ## Features
 
-The Scrapling MCP Server provides thirteen powerful tools for web scraping, split into two modes: one-shot tools that each launch and close their own browser/client, and session tools that open a browser or an HTTP session once and then work through it.
+The Scrapling MCP Server provides fourteen powerful tools for web scraping, split into two modes: one-shot tools that each launch and close their own browser/client, and session tools that open a browser or an HTTP session once and then work through it.
 
 ### One-shot tools
 
@@ -31,11 +31,15 @@ The Scrapling MCP Server provides thirteen powerful tools for web scraping, spli
 - **`list_sessions`**: List all active sessions with their details and `settings`.
 
 #### 🎯 Fetching Through a Session
-- **`session_fetch`**: Fetch a single URL through an open browser session (dynamic or stealthy), carrying the per-request options for that call. This is the session counterpart of `fetch`/`stealthy_fetch`.
+- **`session_fetch`**: Fetch a single URL through an open browser session (dynamic or stealthy), carrying the per-request options for that call. This is the session counterpart of `fetch`/`stealthy_fetch`. Set `extraction_type="snapshot"` to return an AI ARIA snapshot in the usual response's `content` list.
 - **`session_make_request`**: Make an HTTP request with any method through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint. This is the session counterpart of `make_request`.
 
 #### 📸 Screenshots
 - **`screenshot`**: Capture a PNG or JPEG screenshot of a page using an open browser session, returned as an image content block the model can actually see (not a base64 string blob). Supports full-page captures, JPEG quality, and the usual readiness controls (`wait`, `wait_selector`, `network_idle`).
+
+#### AI Snapshots
+
+- **`browser_snapshot`**: Read the current whole page in an open browser session as an AI ARIA snapshot. Returns plain text with element roles, names, and references without loading the page again. Supports `depth` and `boxes`.
 
 ### Shadow DOM
 
@@ -204,7 +208,7 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Both browser session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `session_fetch` and `screenshot` as usual.
+Both browser session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `session_fetch`, `browser_snapshot`, and `screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline
