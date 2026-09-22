@@ -139,6 +139,19 @@ class SyncSession:
         }
 
     @staticmethod
+    def _snapshot(
+        page: Page, depth: Optional[int] = None, boxes: bool = False, css_selector: Optional[str] = None
+    ) -> str:
+        """Return an AI ARIA snapshot of an existing browser page.
+
+        :param page: The browser page to snapshot.
+        :param depth: Limit the snapshot tree depth. Defaults to no limit.
+        :param boxes: Include element bounding boxes in viewport CSS pixels.
+        :param css_selector: Snapshot one matching element instead of the whole page.
+        """
+        return (page.locator(css_selector) if css_selector else page).aria_snapshot(mode="ai", depth=depth, boxes=boxes)
+
+    @staticmethod
     def _wait_for_networkidle(page: Page | Frame, timeout: Optional[int] = None):
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
@@ -337,6 +350,21 @@ class AsyncSession:
             "busy_pages": self.page_pool.busy_count,
             "max_pages": self.max_pages,
         }
+
+    @staticmethod
+    async def _snapshot(
+        page: AsyncPage, depth: Optional[int] = None, boxes: bool = False, css_selector: Optional[str] = None
+    ) -> str:
+        """Return an AI ARIA snapshot of an existing browser page.
+
+        :param page: The browser page to snapshot.
+        :param depth: Limit the snapshot tree depth. Defaults to no limit.
+        :param boxes: Include element bounding boxes in viewport CSS pixels.
+        :param css_selector: Snapshot one matching element instead of the whole page.
+        """
+        return await (page.locator(css_selector) if css_selector else page).aria_snapshot(
+            mode="ai", depth=depth, boxes=boxes
+        )
 
     @staticmethod
     async def _wait_for_networkidle(page: AsyncPage | AsyncFrame, timeout: Optional[int] = None):

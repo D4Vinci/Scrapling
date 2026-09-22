@@ -45,6 +45,7 @@ from scrapling.core._types import (
 
 SessionType = Literal["dynamic", "stealthy", "static"]
 BrowserSessionType = Literal["dynamic", "stealthy"]
+SessionExtractionType = Literal[extraction_types, "snapshot"]
 ScreenshotType = Literal["png", "jpeg"]
 MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
 MCP_AUTH_TOKEN_ENV = "SCRAPLING_MCP_AUTH_TOKEN"  # nosec B105 - the name of the variable, not a token
@@ -97,7 +98,7 @@ class ResponseModel(BaseModel):
     """Request's response information structure."""
 
     status: int = Field(description="The status code returned by the website.")
-    content: list[str] = Field(description="The content as Markdown/HTML or the text content of the page.")
+    content: list[str] = Field(description="The page content as Markdown, HTML, text, or an AI ARIA snapshot.")
     url: str = Field(description="The URL given by the user that resulted in this response.")
 
 
@@ -354,6 +355,53 @@ class ScraplingMCPServer:
             )
             for sid, entry in self._sessions.items()
         ]
+
+    async def browser_snapshot(
+        self,
+        session_id: str,
+        depth: Optional[int] = None,
+        boxes: bool = False,
+    ) -> str:
+        """Return the AI ARIA snapshot of the current page in an open browser session as plain text.
+        Fetch a page with `session_fetch` first. The snapshot includes element references and preserves the current page.
+
+        :param session_id: ID of an open browser session created with `open_session`.
+        :param depth: Limit the snapshot tree depth. Defaults to no limit.
+        :param boxes: Include element bounding boxes in viewport CSS pixels.
+        """
+        return await self._browser_snapshot(session_id, depth=depth, boxes=boxes)
+
+    async def _browser_snapshot(
+        self,
+        session_id: str,
+        css_selector: Optional[str] = None,
+        depth: Optional[int] = None,
+        boxes: bool = False,
+    ) -> str:
+        """Reserve the current page and return its AI ARIA snapshot."""
+        entry = self._get_session(session_id, expected_type=None)
+        if entry.session_type == "static":
+            raise ValueError(
+                f"Session '{session_id}' is a 'static' session, so it can't take snapshots. "
+                f"Open a 'dynamic' or 'stealthy' session for that."
+            )
+
+        pool = entry.session.page_pool
+        if not pool.pages_count:
+            raise ValueError(f"Session '{session_id}' has no page to snapshot. Use session_fetch first.")
+        page_info = pool.get_ready_page()
+        if page_info is None:
+            raise RuntimeError(f"Session '{session_id}' has a busy page. Wait for the current request to finish.")
+
+        try:
+            if page_info.page.is_closed():
+                raise RuntimeError(f"Session '{session_id}' has a closed page. Use session_fetch to open a new one.")
+            return await entry.session._snapshot(page_info.page, depth=depth, boxes=boxes, css_selector=css_selector)
+        finally:
+            if page_info.page.is_closed():
+                pool.remove_page(page_info)
+            else:
+                page_info.mark_ready()
 
     async def screenshot(
         self,
@@ -930,7 +978,7 @@ class ScraplingMCPServer:
         self,
         url: str,
         session_id: str,
-        extraction_type: extraction_types = "markdown",
+        extraction_type: SessionExtractionType = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
         wait: int | float = 0,
@@ -951,10 +999,10 @@ class ScraplingMCPServer:
 
         :param url: The URL to request.
         :param session_id: ID of an open browser session created with `open_session`.
-        :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
+        :param extraction_type: The type of content to extract from the page: "markdown", "html", "text", or "snapshot".
         :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
         :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
-        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the `Response` object.
+        :param wait: The time (milliseconds) to wait after the page is ready, before returning the `Response` object.
         :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
@@ -997,6 +1045,10 @@ class ScraplingMCPServer:
         page = await entry.session.fetch(
             url, **{name: value for name, value in fetch_params.items() if name in fetch_keys}
         )
+        if extraction_type == "snapshot":
+            return ResponseModel(
+                status=page.status, content=[await self._browser_snapshot(session_id, css_selector)], url=page.url
+            )
         return _translate_response(page, extraction_type, css_selector, main_content_only)
 
     async def session_make_request(
@@ -1098,9 +1150,9 @@ class ScraplingMCPServer:
 1. When the `open_session` or `open_request_session` tools are used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions or their effective settings.
 2. If the user didn't specify which tool to use, start with the `make_request` tool (a plain HTTP request, defaulting to GET; set `method` for POST/PUT/DELETE), then escalate. The `make_request` tool and `bulk_get` (its GET-only bulk version) are suitable only for low-to-mid protection levels.
     For high-protection levels or websites that require JS loading, use the other tools directly.
-3. For all tools, if the `css_selector` resolves to more than one element, all the elements will be returned.
+3. For HTML, Markdown, and text extraction, if the `css_selector` resolves to more than one element, all the elements will be returned. Snapshot extraction requires a selector matching exactly one element, or no selector for the whole page.
 4. For all fetch tools, the `extraction_type` parameter controls the format of the returned content: "markdown" (default) converts the page content to Markdown, "html" returns the raw HTML, and "text" returns the text content of the page.
-5. For all fetch tools, `main_content_only` is enabled by default and returns only the content inside the page's `<body>` tag. Pass `main_content_only=False` when you need the full page instead.
+5. For HTML, Markdown, and text extraction, `main_content_only` is enabled by default and returns only the content inside the page's `<body>` tag. Pass `main_content_only=False` when you need the full page instead.
 6. If the task consists of multiple sequential requests to the same website, open a session once, then fetch through it to be more efficient:
     `open_session` + `session_fetch` per page for browsers, or `open_request_session` + `session_make_request` per request for plain HTTP.
 7. Sessions hold the session-level configuration set when opened, while `session_fetch`/`session_make_request` carry the per-request options and apply them on each call with the defaults shown in their schemas.
@@ -1108,6 +1160,7 @@ class ScraplingMCPServer:
 8. If you are making multiple parallel one-shot requests, use the bulk version of the tool to be more efficient.
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
 10. The user can pass a CDP URL to connect to a remote browser session through the `open_session` tool, then use it with the session tools.
+11. Set `extraction_type="snapshot"` on `session_fetch` to get an AI ARIA snapshot with element references in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page again without navigating; it returns plain text. Its `depth` and `boxes` options limit the tree or include element bounding boxes.
 """,
         }
         if self._auth_token:
@@ -1190,6 +1243,13 @@ class ScraplingMCPServer:
             title="session_make_request",
             description=self.session_make_request.__doc__,
             structured_output=True,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_snapshot,
+            title="browser_snapshot",
+            description=self.browser_snapshot.__doc__,
+            structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
