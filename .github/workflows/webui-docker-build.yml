@@ -1,0 +1,70 @@
+name: Build and Push Web UI Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'webui/**'
+      - 'scrapling/**'
+      - 'pyproject.toml'
+      - '.github/workflows/webui-docker-build.yml'
+  workflow_dispatch:
+
+env:
+  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/scrapling-webui
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.CONTAINER_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.GHCR_IMAGE }}
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=sha,prefix=,format=short
+        labels: |
+          org.opencontainers.image.title=Scrapling Web UI
+          org.opencontainers.image.description=Express + React front end for Scrapling's extract CLI, meant to run as a lightweight always-on service on a Raspberry Pi.
+          org.opencontainers.image.vendor=D4Vinci
+          org.opencontainers.image.licenses=BSD
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.documentation=${{ github.server_url }}/${{ github.repository }}/blob/main/webui/README.md
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: webui/Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha,scope=webui
+        cache-to: type=gha,mode=min,scope=webui,ignore-error=true
+
+    - name: Image digest
+      run: echo ${{ steps.build.outputs.digest }}

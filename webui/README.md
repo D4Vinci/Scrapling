@@ -74,6 +74,46 @@ WantedBy=multi-user.target
 sudo systemctl enable --now scrapling-webui
 ```
 
+## Production (Docker)
+
+`webui/Dockerfile` builds a single image with Node (the webui server + the
+already-built React app) and Python/uv (`scrapling[all]` + Chromium) so the
+server's `spawn("scrapling", ...)` calls resolve without anything installed
+on the Pi's host beyond Docker itself. Build context is the **repo root**
+(the image needs the `scrapling` package, not just `webui/`).
+
+```bash
+# on the Pi (arm64), or cross-built elsewhere — see below
+docker compose -f webui/docker-compose.yml up -d --build
+```
+
+This publishes port 3000 and keeps `server/data/` (the jobs SQLite DB and
+job output files) in the `webui-data` named volume, so job history survives
+`docker compose down`/image rebuilds.
+
+Set `SCRAPLING_MCP_AUTH_TOKEN` in `webui/docker-compose.yml` (or an `.env`
+file next to it) to protect the MCP server endpoint the same way the native
+setup does.
+
+### Building for a Raspberry Pi from another machine
+
+Building on-device works but is slow (compiling Chromium's deps under QEMU
+if you cross-build, or just a slow Pi CPU if you build natively). To
+cross-build an arm64 image from an x86 dev machine with `docker buildx`:
+
+```bash
+docker buildx build --platform linux/arm64 \
+  -f webui/Dockerfile -t scrapling-webui:latest --load .
+```
+
+`--load` only works for a single platform at a time; push to a registry
+instead of `--load` if you want to build multiple platforms at once or
+build on a machine that isn't the Pi and pull the image down on it.
+Native modules (`better-sqlite3` in `webui/server`) are compiled during
+`npm ci`, so cross-builds under QEMU emulation are noticeably slower than
+same-arch builds — building directly on a Pi 4/5 (or in CI on an arm64
+runner) is often faster in practice than cross-compiling.
+
 ## Notes / known gaps in this scaffold
 
 - No authentication on the web UI itself — fine on a trusted LAN, not fine

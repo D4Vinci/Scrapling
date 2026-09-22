@@ -38,6 +38,12 @@ ENV/
 env.bak/
 venv.bak/
 
+# webui (Node deps/build output are installed/built inside the image;
+# runtime data is volume-mounted, never baked in)
+node_modules/
+webui/client/dist/
+webui/server/data/
+
 # C extensions
 *.so
 

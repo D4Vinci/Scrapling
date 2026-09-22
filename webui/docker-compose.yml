@@ -1,0 +1,24 @@
+services:
+  webui:
+    build:
+      context: ..
+      dockerfile: webui/Dockerfile
+    image: scrapling-webui
+    container_name: scrapling-webui
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - webui-data:/app/webui/server/data
+    environment:
+      - PORT=3000
+      # - SCRAPLING_MCP_AUTH_TOKEN=change-me
+    # Chromium jobs are CPU/RAM-heavy on a Pi; cap the container so one
+    # runaway job can't take the whole board down. Tune to your model.
+    deploy:
+      resources:
+        limits:
+          memory: 1500M
+
+volumes:
+  webui-data:
