@@ -30,7 +30,7 @@ server = ScraplingMCPServer(executable_path="/path/to/chromium")
 
 ## Response Model
 
-The standardized response structure returned by the fetch and HTTP request tools. Bulk tools return a list of these responses. Session management tools use the models below, `screenshot` returns image and text content blocks, and `browser_snapshot` returns plain text.
+The standardized response structure returned by the fetch and HTTP request tools. Bulk tools return a list of these responses. Session management tools use the models below, `browser_screenshot` returns image and text content blocks, and `browser_snapshot` returns plain text.
 
 ## ::: scrapling.core.ai.ResponseModel
     handler: python
@@ -56,9 +56,9 @@ Model classes for session management:
 
 The main MCP server class that provides all web scraping tools:
 
-`browser_snapshot(session_id, depth=None, boxes=False)` returns a plain-text AI ARIA snapshot of the current whole page in a dynamic or stealthy session. Use it after `session_fetch` finishes. It reads the existing page without navigation and includes element references. `depth` limits the tree depth, and `boxes=True` adds element positions and sizes in viewport CSS pixels. An unknown session, an HTTP request session, or a missing, closed, or busy page returns an error.
+`browser_snapshot(session_id, depth=None, boxes=False)` returns a plain-text AI ARIA snapshot of the current whole page in a dynamic or stealthy session. Use it after `browser_fetch` finishes. It reads the existing page without navigation and includes element references. `depth` limits the tree depth, and `boxes=True` adds element positions and sizes in viewport CSS pixels. An unknown session, an HTTP request session, or a missing, closed, or busy page returns an error.
 
-`session_fetch` also accepts `extraction_type="snapshot"` to take an AI ARIA snapshot after loading the requested URL. It returns the usual `status`, `url`, and `content` fields, with one unchanged snapshot string in `content`. The existing `css_selector` can scope the snapshot to exactly one element; zero or multiple matches return an error. Without a selector, the snapshot covers the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. This extraction type is only available on the MCP `session_fetch` tool; browser fetchers still return the same `Response` object.
+`browser_fetch` also accepts `extraction_type="snapshot"` to take an AI ARIA snapshot after loading the requested URL. It returns the usual `status`, `url`, and `content` fields, with one unchanged snapshot string in `content`. The existing `css_selector` can scope the snapshot to exactly one element; zero or multiple matches return an error. Without a selector, the snapshot covers the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. This extraction type is only available on the MCP `browser_fetch` tool; browser fetchers still return the same `Response` object.
 
 ## ::: scrapling.core.ai.ScraplingMCPServer
     handler: python

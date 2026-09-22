@@ -25,17 +25,17 @@ The Scrapling MCP Server provides fourteen powerful tools for web scraping, spli
 ### Session tools
 
 #### 🔌 Session Management
-- **`open_session`**: Create a persistent browser session (dynamic or stealthy) that stays open across multiple `session_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns the session's effective `settings` for the AI agent (empty for CDP sessions).
+- **`browser_open`**: Create a persistent browser session (dynamic or stealthy) that stays open across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns the session's effective `settings` for the AI agent (empty for CDP sessions).
 - **`open_request_session`**: Create a persistent HTTP requests session (no browser) used with `session_make_request`, keeping cookies, connections, and the browser fingerprint (`impersonate`) between requests. It returns the same `settings` receipt and shows in `list_sessions` as a `static` session.
 - **`close_session`**: Close a persistent session (browser or requests) and free its resources.
 - **`list_sessions`**: List all active sessions with their details and `settings`.
 
 #### 🎯 Fetching Through a Session
-- **`session_fetch`**: Fetch a single URL through an open browser session (dynamic or stealthy), carrying the per-request options for that call. This is the session counterpart of `fetch`/`stealthy_fetch`. Set `extraction_type="snapshot"` to return an AI ARIA snapshot in the usual response's `content` list.
+- **`browser_fetch`**: Fetch a single URL through an open browser session (dynamic or stealthy), carrying the per-request options for that call. This is the session counterpart of `fetch`/`stealthy_fetch`. Set `extraction_type="snapshot"` to return an AI ARIA snapshot in the usual response's `content` list.
 - **`session_make_request`**: Make an HTTP request with any method through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint. This is the session counterpart of `make_request`.
 
 #### 📸 Screenshots
-- **`screenshot`**: Capture a PNG or JPEG screenshot of a page using an open browser session, returned as an image content block the model can actually see (not a base64 string blob). Supports full-page captures, JPEG quality, and the usual readiness controls (`wait`, `wait_selector`, `network_idle`).
+- **`browser_screenshot`**: Capture a PNG or JPEG screenshot of a page using an open browser session, returned as an image content block the model can actually see (not a base64 string blob). Supports full-page captures, JPEG quality, and the usual readiness controls (`wait`, `wait_selector`, `network_idle`).
 
 #### AI Snapshots
 
@@ -43,7 +43,7 @@ The Scrapling MCP Server provides fourteen powerful tools for web scraping, spli
 
 ### Shadow DOM
 
-Set `pierce_shadow=true` on `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, or `session_fetch` to include open Shadow DOM content. It defaults to `false`. For persistent sessions, pass it on each `session_fetch` call. See [Shadow DOM](../fetching/dynamic.md#shadow-dom) for selector examples and limits.
+Set `pierce_shadow=true` on `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, or `browser_fetch` to include open Shadow DOM content. It defaults to `false`. For persistent sessions, pass it on each `browser_fetch` call. See [Shadow DOM](../fetching/dynamic.md#shadow-dom) for selector examples and limits.
 
 ### Key Capabilities
 - **Smart Content Extraction**: Convert web pages/elements to Markdown, HTML, or extract a clean version of the text content
@@ -69,8 +69,8 @@ If you don't know how to write/use CSS selectors, don't worry. You can tell the 
 Since version 0.4.15, the MCP server is reworked. If you are upgrading, note:
 
 1. **The Streamable HTTP transport now requires authentication and binds to localhost.** `scrapling-mcp --http` on its own refuses to start; pass `--auth-token` (or the `SCRAPLING_MCP_AUTH_TOKEN` environment variable), or `--no-auth` to serve it unauthenticated on purpose. The default host is now `127.0.0.1` instead of `0.0.0.0`; pass `--host 0.0.0.0` to accept connections from the network.
-2. **The one-shot fetch tools no longer accept `session_id`.** `fetch`, `bulk_fetch`, `stealthy_fetch`, and `bulk_stealthy_fetch` always launch their own browser. To fetch through a session, use the new **`session_fetch`** tool (one URL per call, works with dynamic and stealthy sessions).
-3. **`open_session` takes browser-level parameters only.** The per-request options (`wait`, `timeout`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `solve_cloudflare`) moved to `session_fetch` and are supplied on each call. `proxy` stays on `open_session` (it applies to the whole session, which runs a single tab). `max_pages` was removed too, since a session manages a single page per call now.
+2. **The one-shot fetch tools no longer accept `session_id`.** `fetch`, `bulk_fetch`, `stealthy_fetch`, and `bulk_stealthy_fetch` always launch their own browser. To fetch through a session, use the new **`browser_fetch`** tool (one URL per call, works with dynamic and stealthy sessions).
+3. **`browser_open` takes browser-level parameters only.** The per-request options (`wait`, `timeout`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `solve_cloudflare`) moved to `browser_fetch` and are supplied on each call. `proxy` stays on `browser_open` (it applies to the whole session, which runs a single tab). `max_pages` was removed too, since a session manages a single page per call now.
 4. **The `get` tool is renamed to `make_request`.** It now takes a `method` parameter and supports GET (default), POST, PUT, and DELETE, with `data`/`json` for request bodies. `bulk_get` is unchanged.
 
 ## Installation
@@ -176,7 +176,7 @@ Then, after you've added the server, you need to completely quit and restart the
 
 ### Custom Browser Executable
 
-Browser-based tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, and `open_session`) can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
+Browser-based tools (`fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, and `browser_open`) can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
 
 To configure it once for the whole MCP server, pass the executable path when starting the server:
 
@@ -204,11 +204,11 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 
 ### Connecting to Remote Browsers
 
-`open_session` doesn't have to launch a browser locally. Pass a CDP url and it will connect to an already-running browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/), whether that browser is on the same machine, another host, or a managed browser provider:
+`browser_open` doesn't have to launch a browser locally. Pass a CDP url and it will connect to an already-running browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/), whether that browser is on the same machine, another host, or a managed browser provider:
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Both browser session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `session_fetch`, `browser_snapshot`, and `screenshot` as usual.
+Both browser session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline
@@ -385,7 +385,7 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
     ```
     Open a stealthy browser session, then use it to scrape the main details from the first 5 product pages on https://shop.example.com. Close the session when you're done.
     ```
-    Claude will use `open_session` to create a persistent browser, call `session_fetch` for each product page through that session, and then call `close_session` at the end. This is significantly faster than launching a new browser for each page.
+    Claude will use `browser_open` to create a persistent browser, call `browser_fetch` for each product page through that session, and then call `close_session` at the end. This is significantly faster than launching a new browser for each page.
 
     !!! danger
     
@@ -442,20 +442,20 @@ The MCP server automatically sanitizes scraped content when `main_content_only` 
 - **HTML comments**: `<!-- ... -->`
 - **Zero-width characters**: Invisible unicode characters like zero-width spaces
 
-This protection runs automatically on all MCP tool responses. Keep `main_content_only=true` (the default) for maximum protection.
+This protection runs automatically for HTML, Markdown, and text extraction. Keep `main_content_only=true` (the default) for maximum protection.
 
 ### 6. Use Sessions for Multiple Requests
-- Use `open_session` to create a persistent browser session when scraping multiple pages, then call `session_fetch` for each page through that session
+- Use `browser_open` to create a persistent browser session when scraping multiple pages, then call `browser_fetch` for each page through that session
 - For multiple plain HTTP requests, use `open_request_session` instead and call `session_make_request` per request; it keeps cookies, connections, and the browser fingerprint (`impersonate`) across calls without a browser
-- Sessions hold the session-level configuration set when opened (headless, locale, cookies, stealth toggles, etc. for browsers; `impersonate` and `proxy` for requests sessions); the per-request options (timeout, wait_selector, network_idle, solve_cloudflare, etc.) are passed to `session_fetch`/`session_make_request` on each call, with their defaults shown in the tool schemas
-- One `session_fetch` works with both browser session types; `solve_cloudflare` only applies to a stealthy session and raises a clear error on a dynamic one
+- Sessions hold the session-level configuration set when opened (headless, locale, cookies, stealth toggles, etc. for browsers; `impersonate` and `proxy` for requests sessions); the per-request options (timeout, wait_selector, network_idle, solve_cloudflare, etc.) are passed to `browser_fetch`/`session_make_request` on each call, with their defaults shown in the tool schemas
+- One `browser_fetch` works with both browser session types; `solve_cloudflare` only applies to a stealthy session and raises a clear error on a dynamic one
 - The one-shot tools (`make_request`, `bulk_get`, `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) never take a session
 - Always close sessions with `close_session` when done to free resources
 - Use `list_sessions` to check which sessions are still active and see the `settings` each was created with (returned for the AI agent; empty for CDP sessions)
 - Pass a custom `session_id` to the open tools to give sessions meaningful names (e.g. `"search"`, `"checkout"`) instead of the random hex default. They raise if the chosen ID is already in use, so you can detect collisions up front
 
 ### 7. Capturing Screenshots
-- `screenshot` only works through an existing browser session, so call `open_session` first (either `dynamic` or `stealthy` works)
+- `browser_screenshot` only works through an existing browser session, so call `browser_open` first (either `dynamic` or `stealthy` works)
 - The image is returned as a real `ImageContent` block, not a base64 string in JSON, so the model sees the page directly
 - Use `full_page=True` when you need everything below the fold; the default captures only the visible viewport
 - Pick `image_type="jpeg"` with a `quality` value (0-100) for smaller payloads when pixel-perfect color isn't needed
