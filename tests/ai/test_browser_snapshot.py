@@ -36,7 +36,8 @@ def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_snapshot_returns_plain_mcp_text(session_type: SessionType) -> None:
+@pytest.mark.parametrize("boxes", [None, False, True])
+async def test_browser_snapshot_returns_plain_mcp_text(session_type: SessionType, boxes: bool | None) -> None:
     server, session, page = _server(session_type)
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         tools = {tool.name: tool for tool in (await client.list_tools()).tools}
@@ -44,16 +45,20 @@ async def test_browser_snapshot_returns_plain_mcp_text(session_type: SessionType
         tool = tools["browser_snapshot"]
         assert tool.output_schema is None
         assert set(tool.input_schema["properties"]) == {"session_id", "depth", "boxes"}
+        assert tool.input_schema["properties"]["boxes"]["default"] is True
         assert tool.input_schema["required"] == ["session_id"]
         fetch_props = tools["browser_fetch"].input_schema["properties"]
         assert set(fetch_props["extraction_type"]["enum"]) == {"markdown", "html", "text", "snapshot"}
         assert "depth" not in fetch_props and "boxes" not in fetch_props
         assert "snapshot" not in tools["browser_fetch_once"].input_schema["properties"]["extraction_type"]["enum"]
-        result = await client.call_tool("browser_snapshot", {"session_id": "browser", "depth": 3, "boxes": True})
+        args: dict[str, Any] = {"session_id": "browser", "depth": 3}
+        if boxes is not None:
+            args["boxes"] = boxes
+        result = await client.call_tool("browser_snapshot", args)
     assert not result.is_error
     assert result.structured_content is None
     assert result.content == [TextContent(type="text", text=SNAPSHOT)]
-    page.aria_snapshot.assert_awaited_once_with(mode="ai", depth=3, boxes=True)
+    page.aria_snapshot.assert_awaited_once_with(mode="ai", depth=3, boxes=True if boxes is None else boxes)
     assert session.page_pool.pages_count == 1
     assert session.page_pool.pages[0].state == "ready"
     page.goto.assert_not_called()
@@ -151,6 +156,7 @@ async def test_browser_snapshot_live_mcp_round_trip(session_type: SessionType, c
             assert fetched.structured_content["url"] == "https://snapshot.test/"
             fetched_snapshot = fetched.structured_content["content"][0]
             assert "after wait" in fetched_snapshot and "initial" not in fetched_snapshot
+            assert "[box=" in fetched_snapshot
             assert ("Outside scope" in fetched_snapshot) is (css_selector is None)
             assert requests == ["https://snapshot.test/"]
             page_info = session.page_pool.pages[0]
@@ -163,7 +169,7 @@ async def test_browser_snapshot_live_mcp_round_trip(session_type: SessionType, c
             navigations: list[str] = []
             page.on("framenavigated", lambda frame: navigations.append(frame.url))
             previous_requests = requests.copy()
-            result = await client.call_tool("browser_snapshot", {"session_id": "browser", "boxes": True})
+            result = await client.call_tool("browser_snapshot", {"session_id": "browser"})
             assert not result.is_error
             assert result.structured_content is None
             assert len(result.content) == 1 and isinstance(result.content[0], TextContent)
@@ -177,6 +183,11 @@ async def test_browser_snapshot_live_mcp_round_trip(session_type: SessionType, c
             assert match is not None
             await page.locator(f"aria-ref={match[1]}").click()
             assert await page.locator("output").inner_text() == "live value"
+            without_boxes = await client.call_tool("browser_snapshot", {"session_id": "browser", "boxes": False})
+            assert not without_boxes.is_error
+            assert len(without_boxes.content) == 1 and isinstance(without_boxes.content[0], TextContent)
+            assert "[box=" not in without_boxes.content[0].text
+            assert "[ref=" in without_boxes.content[0].text
             for selector in ("#missing", "button", "["):
                 previous_count = len(requests)
                 failed = await client.call_tool(
@@ -269,6 +280,7 @@ async def test_browser_fetch_snapshot_keeps_raw_content_and_response_metadata() 
     assert result.content == [snapshot]
     assert result.status == 202
     assert result.url == "https://snapshot.test/redirected"
+    page.aria_snapshot.assert_awaited_once_with(mode="ai", depth=None, boxes=True)
     fetch.assert_awaited_once()
     assert {"extraction_type", "css_selector", "depth", "boxes"}.isdisjoint(fetch.call_args.kwargs)
 

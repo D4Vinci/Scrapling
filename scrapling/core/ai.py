@@ -1,10 +1,12 @@
 from uuid import uuid4
 from os import environ
 from hmac import compare_digest
-from asyncio import gather
+from asyncio import CancelledError, gather
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
+from anyio import CancelScope
 from mcp.server import MCPServer
 from mcp.server.mcpserver import Image
 from mcp.server.auth.provider import AccessToken, TokenVerifier
@@ -12,7 +14,9 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.caching import CacheHint
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import Icon, ImageContent, TextContent, ToolAnnotations
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field, FiniteFloat, PositiveInt
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+from patchright.async_api import TimeoutError as PatchrightTimeoutError
 
 from scrapling import __version__
 from scrapling.core.utils import log
@@ -34,8 +38,10 @@ from scrapling.core._types import (
     Dict,
     List,
     Any,
+    Annotated,
     Set,
     Sequence,
+    Iterator,
     SetCookieParam,
     extraction_types,
     SelectorWaitStates,
@@ -47,6 +53,9 @@ SessionType = Literal["dynamic", "stealthy", "static"]
 BrowserSessionType = Literal["dynamic", "stealthy"]
 SessionExtractionType = Literal[extraction_types, "snapshot"]
 ScreenshotType = Literal["png", "jpeg"]
+MouseButton = Literal["left", "right", "middle"]
+NonNegativeFiniteFloat = Annotated[float, Field(ge=0, allow_inf_nan=False)]
+NonEmptyString = Annotated[str, Field(min_length=1)]
 MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
 MCP_AUTH_TOKEN_ENV = "SCRAPLING_MCP_AUTH_TOKEN"  # nosec B105 - the name of the variable, not a token
 
@@ -92,6 +101,9 @@ def _session_settings(session: Any) -> Dict[str, Any]:
 _FETCH_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=True)
 _SESSION_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=True)
 _LIST_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=False)
+_MOUSE_TOOL_ANNOTATIONS = ToolAnnotations(
+    read_only_hint=False, destructive_hint=True, idempotent_hint=False, open_world_hint=True
+)
 
 
 class ResponseModel(BaseModel):
@@ -356,7 +368,7 @@ class ScraplingMCPServer:
         self,
         session_id: str,
         depth: Optional[int] = None,
-        boxes: bool = False,
+        boxes: bool = True,
     ) -> str:
         """Return the current page's AI ARIA snapshot with element references as plain text, without navigating.
 
@@ -371,14 +383,18 @@ class ScraplingMCPServer:
         session_id: str,
         css_selector: Optional[str] = None,
         depth: Optional[int] = None,
-        boxes: bool = False,
+        boxes: bool = True,
     ) -> str:
         """Reserve the current page and return its AI ARIA snapshot."""
-        entry = self._get_session(session_id, expected_type=["dynamic", "stealthy"])
+        with self._browser_page(session_id) as (session, page):
+            return await session._snapshot(page, depth=depth, boxes=boxes, css_selector=css_selector)
 
+    @contextmanager
+    def _browser_page(self, session_id: str) -> Iterator[Tuple[Any, Any]]:
+        entry = self._get_session(session_id, expected_type=["dynamic", "stealthy"])
         pool = entry.session.page_pool
         if not pool.pages_count:
-            raise ValueError(f"Session '{session_id}' has no page to snapshot. Use browser_fetch first.")
+            raise ValueError(f"Session '{session_id}' has no page. Use browser_fetch first.")
         page_info = pool.get_ready_page()
         if page_info is None:
             raise RuntimeError(f"Session '{session_id}' has a busy page. Wait for the current request to finish.")
@@ -386,12 +402,73 @@ class ScraplingMCPServer:
         try:
             if page_info.page.is_closed():
                 raise RuntimeError(f"Session '{session_id}' has a closed page. Use browser_fetch to open a new one.")
-            return await entry.session._snapshot(page_info.page, depth=depth, boxes=boxes, css_selector=css_selector)
+            yield entry.session, page_info.page
         finally:
             if page_info.page.is_closed():
                 pool.remove_page(page_info)
             else:
                 page_info.mark_ready()
+
+    async def browser_mouse_move(
+        self,
+        session_id: str,
+        x: FiniteFloat,
+        y: FiniteFloat,
+        steps: PositiveInt = 1,
+    ) -> str:
+        """Move the native browser mouse on the current page; return plain text. Coordinates are CSS pixels from the main frame viewport's top-left.
+
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
+        :param x: Horizontal position.
+        :param y: Vertical position.
+        :param steps: Number of mousemove events.
+        """
+        with self._browser_page(session_id) as (_, page):
+            await page.mouse.move(x, y, steps=steps)
+        return f"Mouse moved to ({x}, {y})."
+
+    async def browser_click(
+        self,
+        session_id: str,
+        selector: Optional[NonEmptyString] = None,
+        ref: Optional[NonEmptyString] = None,
+        x: Optional[FiniteFloat] = None,
+        y: Optional[FiniteFloat] = None,
+        button: MouseButton = "left",
+        click_count: PositiveInt = 1,
+        delay: NonNegativeFiniteFloat = 0,
+        timeout: NonNegativeFiniteFloat = 30000,
+    ) -> str:
+        """Click using exactly one selector, snapshot ref, or (x, y) pair; return plain text.
+        Selector/ref clicks wait and scroll into view.
+        Coordinate clicks do not scroll or wait for navigation. Cancellation/timeouts release the button if the page stays open; completed actions remain.
+
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
+        :param selector: Playwright selector (e.g. CSS or XPath) matching exactly one element.
+        :param ref: Element reference from the current snapshot, e.g. "e2".
+        :param x: Horizontal CSS pixels from the main frame viewport's top-left.
+        :param y: Vertical CSS pixels from the same origin.
+        :param button: Mouse button.
+        :param click_count: Click count; use 2 for a double-click.
+        :param delay: Milliseconds between button press and release.
+        :param timeout: Selector/ref timeout in milliseconds; 0 disables it. Ignored for coordinates.
+        """
+        if sum(value is not None for value in (selector, ref, x)) != 1 or (x is None) != (y is None):
+            raise ValueError("Provide exactly one target: 'selector', 'ref', or both 'x' and 'y'.")
+        with self._browser_page(session_id) as (_, page):
+            try:
+                if selector is not None or ref is not None:
+                    await page.locator(selector if selector is not None else f"aria-ref={ref}").click(
+                        button=button, click_count=click_count, delay=delay, timeout=timeout
+                    )
+                else:
+                    await page.mouse.click(x, y, button=button, click_count=click_count, delay=delay)
+            except (CancelledError, PlaywrightTimeoutError, PatchrightTimeoutError):
+                with CancelScope(shield=True):
+                    if not page.is_closed():
+                        await page.mouse.up(button=button)
+                raise
+        return "Click sent."
 
     async def browser_screenshot(
         self,
@@ -966,7 +1043,7 @@ class ScraplingMCPServer:
 
         :param url: URL to fetch.
         :param session_id: ID from `browser_open`.
-        :param extraction_type: Content output format.
+        :param extraction_type: Content output format; snapshots include element bounding boxes.
         :param css_selector: Select after `main_content_only` filtering; snapshots require exactly one match.
         :param main_content_only: Sanitize <body> before selection; False uses the full document. Ignored for snapshots.
         :param wait: Extra milliseconds after the page is ready, before returning.
@@ -1119,7 +1196,8 @@ class ScraplingMCPServer:
 8. If you are making multiple parallel one-shot requests, use the bulk version of the tool to be more efficient.
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
 10. The user can pass a CDP URL to connect to a remote browser session through the `browser_open` tool, then use it with the session tools.
-11. Set `extraction_type="snapshot"` on `browser_fetch` to get an AI ARIA snapshot with element references in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page again without navigating; it returns plain text. Its `depth` and `boxes` options limit the tree or include element bounding boxes.
+11. Set `extraction_type="snapshot"` on `browser_fetch` to get an AI ARIA snapshot with element references and bounding boxes in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page without navigating; it returns plain text with boxes by default. Set `depth` to limit the tree or `boxes=False` to omit boxes.
+12. Use `browser_mouse_move` to move the mouse on the current page. Use `browser_click` with exactly one target: `selector`, `ref` from the current snapshot, or both `x` and `y` viewport CSS coordinates. Selector/ref clicks use Playwright's normal waiting and scrolling; coordinate clicks do not scroll or wait for navigation. Get coordinates from `browser_snapshot` and inspect the page afterward with `browser_snapshot`. Clicks can change website data. Do not repeat a click without checking the page state.
 """,
         }
         if self._auth_token:
@@ -1210,6 +1288,20 @@ class ScraplingMCPServer:
             description=self.browser_snapshot.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_mouse_move,
+            title="Move mouse",
+            description=self.browser_mouse_move.__doc__,
+            structured_output=False,
+            annotations=_MOUSE_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_click,
+            title="Click",
+            description=self.browser_click.__doc__,
+            structured_output=False,
+            annotations=_MOUSE_TOOL_ANNOTATIONS,
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
         server.add_tool(
