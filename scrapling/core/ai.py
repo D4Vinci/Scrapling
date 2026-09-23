@@ -253,25 +253,23 @@ class ScraplingMCPServer:
         allow_webgl: bool = True,
         additional_args: Optional[Dict] = None,
     ) -> SessionCreatedModel:
-        """Open a persistent browser session that can be reused across multiple `browser_fetch` calls.
-        This avoids the overhead of launching a new browser for each request. Sessions hold the browser-level
-        configuration only; per-request options are passed to `browser_fetch` on each call.
+        """Open a reusable browser session with these settings. Pass per-request options to `browser_fetch`.
 
-        :param session_type: The type of session to open. Use "dynamic" for standard Playwright browser, or "stealthy" for anti-bot bypass with fingerprint spoofing.
-        :param session_id: Optional custom session ID. If not provided, a random 12-character hex ID will be generated. Useful for naming sessions for easier management.
-        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
-        :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
-        :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc.
-        :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
-        :param proxy: The proxy used for every request in this session, as a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
-        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this session.
-        :param cookies: Set cookies for the session. It should be in a dictionary format that Playwright accepts.
-        :param hide_canvas: (Stealthy only) Add random noise to canvas operations to prevent fingerprinting.
-        :param block_webrtc: (Stealthy only) Forces WebRTC to respect proxy settings to prevent local IP address leak.
-        :param allow_webgl: (Stealthy only) Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
-        :param additional_args: (Stealthy only) Additional arguments to be passed to Playwright's context as additional settings.
+        :param session_type: "dynamic" for Playwright; "stealthy" for anti-bot bypass with fingerprint spoofing.
+        :param session_id: Custom ID; a random 12-character hex ID if omitted.
+        :param headless: Hide the browser window.
+        :param real_chrome: Use locally installed Chrome.
+        :param timezone_id: Browser timezone; uses the system timezone if omitted.
+        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
+        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
+        :param proxy: Proxy URL, or dictionary with server and optional username/password.
+        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
+        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
+        :param cookies: Initial cookies as Playwright cookie dictionaries.
+        :param hide_canvas: Stealthy only. Add noise to canvas operations.
+        :param block_webrtc: Stealthy only. Disable non-proxied WebRTC UDP to reduce IP leaks.
+        :param allow_webgl: Stealthy only. Enable WebGL; disabling it can trigger bot detection.
+        :param additional_args: Stealthy only. Browser context options that override Scrapling settings.
         """
         session_id = self._new_session_id(session_id)
         common_kwargs: Dict[str, Any] = dict(
@@ -308,14 +306,12 @@ class ScraplingMCPServer:
         impersonate: ImpersonateType = "chrome",
         proxy: Optional[str] = None,
     ) -> SessionCreatedModel:
-        """Open a persistent HTTP requests session (no browser) that can be reused across multiple
-        `session_make_request` calls, keeping cookies, connections, and the browser fingerprint between requests.
-        The session holds this configuration only; per-request options are passed to `session_make_request` on each call.
-        It shares `close_session`/`list_sessions` with the browser sessions and shows there as a 'static' session.
+        """Open a reusable HTTP session for `session_make_request`, keeping cookies, connections, and request settings.
 
-        :param session_id: Optional custom session ID. If not provided, a random 12-character hex ID will be generated. Useful for naming sessions for easier management.
-        :param impersonate: Browser version to impersonate its fingerprint on every request. It's using the latest chrome version by default.
-        :param proxy: The proxy URL used for every request in this session. Format: "http://username:password@localhost:8030".
+        :param session_id: Custom ID; a random 12-character hex ID if omitted.
+        :param impersonate: Browser/version to impersonate; "chrome" uses the latest supported Chrome profile.
+            Lists pick randomly per attempt; None disables impersonation.
+        :param proxy: Proxy URL for all session requests, optionally including credentials.
         """
         session_id = self._new_session_id(session_id)
         session = FetcherSession(impersonate=impersonate, proxy=proxy)
@@ -326,9 +322,9 @@ class ScraplingMCPServer:
         self,
         session_id: str,
     ) -> SessionClosedModel:
-        """Close a persistent session and free its resources.
+        """Close a session and free its resources.
 
-        :param session_id: The unique identifier of the session to close. Use list_sessions to see active sessions.
+        :param session_id: Session ID to close.
         """
         entry = self._sessions.pop(session_id, None)
         if entry is None:
@@ -344,7 +340,7 @@ class ScraplingMCPServer:
         )
 
     async def list_sessions(self) -> List[SessionInfo]:
-        """List all active sessions with their details, including the effective settings each one was created with."""
+        """List registered sessions, their status, and effective settings."""
         return [
             SessionInfo(
                 session_id=sid,
@@ -362,11 +358,10 @@ class ScraplingMCPServer:
         depth: Optional[int] = None,
         boxes: bool = False,
     ) -> str:
-        """Return the AI ARIA snapshot of the current page in an open browser session as plain text.
-        Fetch a page with `browser_fetch` first. The snapshot includes element references and preserves the current page.
+        """Return the current page's AI ARIA snapshot with element references as plain text, without navigating.
 
-        :param session_id: ID of an open browser session created with `browser_open`.
-        :param depth: Limit the snapshot tree depth. Defaults to no limit.
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
+        :param depth: Maximum snapshot depth; unlimited if omitted.
         :param boxes: Include element bounding boxes in viewport CSS pixels.
         """
         return await self._browser_snapshot(session_id, depth=depth, boxes=boxes)
@@ -411,19 +406,18 @@ class ScraplingMCPServer:
         network_idle: bool = False,
         timeout: int | float = 30000,
     ) -> List[ImageContent | TextContent]:
-        """Capture a screenshot of a web page using an existing browser session and return it as an image.
-        A browser session must be opened first with `browser_open` (either `dynamic` or `stealthy`); the session ID is then passed here.
+        """Navigate to a URL in an open browser session; return the image and URL at capture.
 
-        :param url: The URL to navigate to and capture.
-        :param session_id: ID of an open browser session created with `browser_open`.
-        :param image_type: Image format. Defaults to "png". Use "jpeg" for smaller file sizes.
-        :param full_page: When True, captures the full scrollable page instead of just the viewport.
-        :param quality: Image quality (0-100) for JPEG only. Raises if passed with `image_type="png"`.
-        :param wait: Time in milliseconds to wait after page load before capturing.
-        :param wait_selector: Optional CSS selector to wait for before capturing.
-        :param wait_selector_state: State to wait for the selector.
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: Timeout in milliseconds for page operations.
+        :param url: URL to navigate to and capture.
+        :param session_id: ID from `browser_open`.
+        :param image_type: Image format.
+        :param full_page: Capture the full scrollable page.
+        :param quality: JPEG quality, 0-100; invalid for PNG.
+        :param wait: Extra milliseconds after capture.
+        :param wait_selector: Wait for the first CSS match after capture; continue if the wait fails.
+        :param wait_selector_state: Target state of `wait_selector`.
+        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
+        :param timeout: Navigation and page-operation timeout in milliseconds.
         """
         if quality is not None and image_type != "jpeg":
             raise ValueError("'quality' is only valid when 'image_type' is 'jpeg'.")
@@ -486,33 +480,31 @@ class ScraplingMCPServer:
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
     ) -> ResponseModel:
-        """Make an HTTP request to a URL with any method (GET, POST, PUT, DELETE) and return a structured output of the result.
-        Only suitable for low-mid protection levels.
+        """Make an HTTP request without JavaScript. Suitable for low-to-mid protection.
 
-        :param url: The URL to request.
-        :param method: The HTTP method to use: "GET" (default), "POST", "PUT", or "DELETE".
-        :param impersonate: Browser version to impersonate its fingerprint. It's using the latest chrome version by default.
-        :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
-        :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
-        :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
-        :param params: Query string parameters for the request.
-        :param data: Form data for the request body. Used with "POST", "PUT", and "DELETE" only.
-        :param json: A JSON-serializable object for the request body. Used with "POST", "PUT", and "DELETE" only.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to "safe", which follows redirects but rejects those targeting internal/private IPs (SSRF protection).
-            Pass True to follow all redirects without restriction.
-        :param max_redirects: Maximum number of redirects. Use -1 for unlimited.
-        :param retries: Number of retry attempts.
-        :param retry_delay: Number of seconds to wait between retry attempts.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy in dictionary format with `username` and `password` keys.
-        :param auth: HTTP basic auth in dictionary format with `username` and `password` keys.
-        :param verify: Whether to verify HTTPS certificates.
-        :param http3: Whether to use HTTP3. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
+        :param url: URL to fetch.
+        :param method: HTTP method.
+        :param impersonate: Browser/version to impersonate; "chrome" uses the latest supported Chrome profile.
+            Lists pick randomly per attempt; None disables impersonation.
+        :param extraction_type: Content output format.
+        :param css_selector: Select matching elements after `main_content_only` filtering.
+        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
+        :param params: Query parameters.
+        :param data: Form or raw body; ignored for GET.
+        :param json: JSON body; ignored for GET.
+        :param headers: Request headers.
+        :param cookies: Request cookies.
+        :param timeout: Timeout in seconds.
+        :param follow_redirects: "safe" blocks redirects to private/internal IPs; True allows all; False disables redirects.
+        :param max_redirects: Redirect limit; -1 means unlimited.
+        :param retries: Maximum attempts, including the first; None or values below 1 send once.
+        :param retry_delay: Seconds between retries.
+        :param proxy: Proxy URL, optionally including credentials.
+        :param proxy_auth: Proxy basic auth: {"username": ..., "password": ...}.
+        :param auth: Basic auth: {"username": ..., "password": ...}.
+        :param verify: Verify TLS certificates.
+        :param http3: Use HTTP/3; may conflict with browser impersonation.
+        :param stealthy_headers: Fill missing browser headers and use a Google referer if none was supplied.
         """
         normalized_proxy_auth = _normalize_credentials(proxy_auth)
         normalized_auth = _normalize_credentials(auth)
@@ -563,30 +555,28 @@ class ScraplingMCPServer:
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
     ) -> List[ResponseModel]:
-        """Make GET HTTP request to a group of URLs and for each URL, return a structured output of the result.
-        Only suitable for low-mid protection levels.
+        """GET multiple URLs concurrently without JavaScript. Suitable for low-to-mid protection.
 
-        :param urls: A list of the URLs to request.
-        :param impersonate: Browser version to impersonate its fingerprint. It's using the latest chrome version by default.
-        :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
-        :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page. Defaults to None.
-        :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
-        :param params: Query string parameters for the request.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to "safe", which follows redirects but rejects those targeting internal/private IPs (SSRF protection).
-            Pass True to follow all redirects without restriction.
-        :param max_redirects: Maximum number of redirects. Use -1 for unlimited.
-        :param retries: Number of retry attempts.
-        :param retry_delay: Number of seconds to wait between retry attempts.
-        :param proxy: Proxy URL to use. Format: "http://username:password@localhost:8030".
-                     Cannot be used together with the `proxies` parameter.
-        :param proxy_auth: HTTP basic auth for proxy in dictionary format with `username` and `password` keys.
-        :param auth: HTTP basic auth in dictionary format with `username` and `password` keys.
-        :param verify: Whether to verify HTTPS certificates.
-        :param http3: Whether to use HTTP3. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
+        :param urls: URLs to fetch.
+        :param impersonate: Browser/version to impersonate; "chrome" uses the latest supported Chrome profile.
+            Lists pick randomly per attempt; None disables impersonation.
+        :param extraction_type: Content output format.
+        :param css_selector: Select matching elements after `main_content_only` filtering.
+        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
+        :param params: Query parameters.
+        :param headers: Request headers.
+        :param cookies: Request cookies.
+        :param timeout: Timeout in seconds.
+        :param follow_redirects: "safe" blocks redirects to private/internal IPs; True allows all; False disables redirects.
+        :param max_redirects: Redirect limit; -1 means unlimited.
+        :param retries: Maximum attempts, including the first; None or values below 1 send once.
+        :param retry_delay: Seconds between retries.
+        :param proxy: Proxy URL, optionally including credentials.
+        :param proxy_auth: Proxy basic auth: {"username": ..., "password": ...}.
+        :param auth: Basic auth: {"username": ..., "password": ...}.
+        :param verify: Verify TLS certificates.
+        :param http3: Use HTTP/3; may conflict with browser impersonation.
+        :param stealthy_headers: Fill missing browser headers and use a Google referer if none was supplied.
         """
         normalized_proxy_auth = _normalize_credentials(proxy_auth)
         normalized_auth = _normalize_credentials(auth)
@@ -641,33 +631,30 @@ class ScraplingMCPServer:
         wait_selector_state: SelectorWaitStates = "attached",
         pierce_shadow: bool = False,
     ) -> ResponseModel:
-        """Use playwright to open a browser to fetch a URL and return a structured output of the result.
-        Only suitable for low-mid protection levels.
+        """Fetch a page with Playwright and JavaScript. Suitable for low-to-mid protection.
 
-        :param url: The URL to request.
-        :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
-        :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
-        :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
-        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
-            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-        :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
-        :param cookies: Set cookies for the next request. It should be in a dictionary format that Playwright accepts.
-        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
-        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
-        :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
-        :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
-            rules. Defaults to the system locale.
-        :param wait_selector_state: The state to wait for the selector given with `wait_selector`.
-        :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
-        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this request.
-        :param google_search: Enabled by default, Scrapling will set a Google referer header.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
-        :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
+        :param url: URL to fetch.
+        :param extraction_type: Content output format.
+        :param css_selector: Select matching elements after `main_content_only` filtering.
+        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
+        :param headless: Hide the browser window.
+        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
+        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
+        :param cookies: Initial cookies as Playwright cookie dictionaries.
+        :param pierce_shadow: Include open Shadow DOM content.
+        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
+        :param timeout: Navigation and page-operation timeout in milliseconds.
+        :param wait: Extra milliseconds after the page is ready, before returning.
+        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
+        :param timezone_id: Browser timezone; uses the system timezone if omitted.
+        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
+        :param wait_selector_state: Target state of `wait_selector`.
+        :param real_chrome: Use locally installed Chrome.
+        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
+        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
+        :param google_search: Set a Google referer, overriding any supplied referer.
+        :param extra_headers: Additional request headers.
+        :param proxy: Proxy URL, or dictionary with server and optional username/password.
         """
         results = await self.bulk_fetch(
             urls=[url],
@@ -720,33 +707,30 @@ class ScraplingMCPServer:
         wait_selector_state: SelectorWaitStates = "attached",
         pierce_shadow: bool = False,
     ) -> List[ResponseModel]:
-        """Use playwright to open a browser, then fetch a group of URLs at the same time, and for each page return a structured output of the result.
-        Only suitable for low-mid protection levels.
+        """Fetch pages concurrently with Playwright and JavaScript. Suitable for low-to-mid protection.
 
-        :param urls: A list of the URLs to request. Batches bigger than 50 URLs are fetched through a pool of 50 concurrent pages.
-        :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
-        :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
-        :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
-        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
-            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-        :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
-        :param cookies: Set cookies for the next request. It should be in a dictionary format that Playwright accepts.
-        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
-        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
-        :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
-        :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
-            rules. Defaults to the system locale.
-        :param wait_selector_state: The state to wait for the selector given with `wait_selector`.
-        :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
-        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this request.
-        :param google_search: Enabled by default, Scrapling will set a Google referer header.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
-        :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
+        :param urls: URLs to fetch, with at most 50 concurrent pages.
+        :param extraction_type: Content output format.
+        :param css_selector: Select matching elements after `main_content_only` filtering.
+        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
+        :param headless: Hide the browser window.
+        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
+        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
+        :param cookies: Initial cookies as Playwright cookie dictionaries.
+        :param pierce_shadow: Include open Shadow DOM content.
+        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
+        :param timeout: Navigation and page-operation timeout in milliseconds.
+        :param wait: Extra milliseconds after the page is ready, before returning.
+        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
+        :param timezone_id: Browser timezone; uses the system timezone if omitted.
+        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
+        :param wait_selector_state: Target state of `wait_selector`.
+        :param real_chrome: Use locally installed Chrome.
+        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
+        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
+        :param google_search: Set a Google referer, overriding any supplied referer.
+        :param extra_headers: Additional request headers.
+        :param proxy: Proxy URL, or dictionary with server and optional username/password.
         """
         async with AsyncDynamicSession(
             wait=wait,
@@ -805,38 +789,35 @@ class ScraplingMCPServer:
         additional_args: Optional[Dict] = None,
         pierce_shadow: bool = False,
     ) -> ResponseModel:
-        """Use the stealthy fetcher to fetch a URL and return a structured output of the result.
-        The only fetcher suitable for high-protection websites.
+        """Fetch a page with a stealth browser for high-protection sites.
 
-        :param url: The URL to request.
-        :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
-        :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
-        :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
-        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
-            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-        :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
-        :param cookies: Set cookies for the next request.
-        :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
-        :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
-        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
-        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
-        :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
-        :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
-            rules. Defaults to the system locale.
-        :param wait_selector_state: The state to wait for the selector given with `wait_selector`.
-        :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
-        :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
-        :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
-        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this request.
-        :param google_search: Enabled by default, Scrapling will set a Google referer header.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
-        :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
+        :param url: URL to fetch.
+        :param extraction_type: Content output format.
+        :param css_selector: Select matching elements after `main_content_only` filtering.
+        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
+        :param headless: Hide the browser window.
+        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
+        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
+        :param cookies: Initial cookies as Playwright cookie dictionaries.
+        :param solve_cloudflare: Attempt to solve Cloudflare Turnstile/interstitial challenges before returning.
+        :param allow_webgl: Enable WebGL; disabling it can trigger bot detection.
+        :param pierce_shadow: Include open Shadow DOM content.
+        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
+        :param wait: Extra milliseconds after the page is ready, before returning.
+        :param timeout: Navigation and page-operation timeout in milliseconds.
+        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
+        :param timezone_id: Browser timezone; uses the system timezone if omitted.
+        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
+        :param wait_selector_state: Target state of `wait_selector`.
+        :param real_chrome: Use locally installed Chrome.
+        :param hide_canvas: Add noise to canvas operations.
+        :param block_webrtc: Disable non-proxied WebRTC UDP to reduce IP leaks.
+        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
+        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
+        :param google_search: Set a Google referer, overriding any supplied referer.
+        :param extra_headers: Additional request headers.
+        :param proxy: Proxy URL, or dictionary with server and optional username/password.
+        :param additional_args: Browser context options that override Scrapling settings.
         """
         results = await self.bulk_stealthy_fetch(
             urls=[url],
@@ -899,38 +880,35 @@ class ScraplingMCPServer:
         additional_args: Optional[Dict] = None,
         pierce_shadow: bool = False,
     ) -> List[ResponseModel]:
-        """Use the stealthy fetcher to fetch a group of URLs at the same time, and for each page return a structured output of the result.
-        The only fetcher suitable for high-protection websites.
+        """Fetch pages concurrently with a stealth browser for high-protection sites.
 
-        :param urls: A list of the URLs to request. Batches bigger than 50 URLs are fetched through a pool of 50 concurrent pages.
-        :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
-        :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
-        :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
-        :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
-        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
-            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-        :param useragent: Pass a useragent string to be used. Otherwise the fetcher will generate a real Useragent of the same browser and use it.
-        :param cookies: Set cookies for the next request.
-        :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
-        :param allow_webgl: Enabled by default. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
-        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param wait: The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the ` Response ` object.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
-        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
-        :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
-        :param locale: Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect navigator.language value, Accept-Language request header value as well as number and date formatting
-            rules. Defaults to the system locale.
-        :param wait_selector_state: The state to wait for the selector given with `wait_selector`.
-        :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
-        :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
-        :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
-        :param executable_path: Absolute path to a custom Chromium-compatible browser executable. Overrides the server-wide default for this request.
-        :param google_search: Enabled by default, Scrapling will set a Google referer header.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
-        :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
-        :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
+        :param urls: URLs to fetch, with at most 50 concurrent pages.
+        :param extraction_type: Content output format.
+        :param css_selector: Select matching elements after `main_content_only` filtering.
+        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
+        :param headless: Hide the browser window.
+        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
+        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
+        :param cookies: Initial cookies as Playwright cookie dictionaries.
+        :param solve_cloudflare: Attempt to solve Cloudflare Turnstile/interstitial challenges before returning.
+        :param allow_webgl: Enable WebGL; disabling it can trigger bot detection.
+        :param pierce_shadow: Include open Shadow DOM content.
+        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
+        :param wait: Extra milliseconds after the page is ready, before returning.
+        :param timeout: Navigation and page-operation timeout in milliseconds.
+        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
+        :param timezone_id: Browser timezone; uses the system timezone if omitted.
+        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
+        :param wait_selector_state: Target state of `wait_selector`.
+        :param real_chrome: Use locally installed Chrome.
+        :param hide_canvas: Add noise to canvas operations.
+        :param block_webrtc: Disable non-proxied WebRTC UDP to reduce IP leaks.
+        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
+        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
+        :param google_search: Set a Google referer, overriding any supplied referer.
+        :param extra_headers: Additional request headers.
+        :param proxy: Proxy URL, or dictionary with server and optional username/password.
+        :param additional_args: Browser context options that override Scrapling settings.
         """
         async with AsyncStealthySession(
             wait=wait,
@@ -984,27 +962,25 @@ class ScraplingMCPServer:
         solve_cloudflare: bool = False,
         pierce_shadow: bool = False,
     ) -> ResponseModel:
-        """Fetch a URL through a browser session previously opened with `browser_open` and return a structured output of the result.
-        The session (dynamic or stealthy) holds the browser-level configuration; every option here applies to this request only, with the defaults shown.
+        """Fetch a URL in an open browser session. Options apply only to this request.
 
-        :param url: The URL to request.
-        :param session_id: ID of an open browser session created with `browser_open`.
-        :param extraction_type: The type of content to extract from the page: "markdown", "html", "text", or "snapshot".
-        :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
-        :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
-        :param wait: The time (milliseconds) to wait after the page is ready, before returning the `Response` object.
-        :param timeout: The timeout in milliseconds that is used in all operations and waits through the page.
-        :param google_search: Enabled by default, Scrapling will set a Google referer header.
-        :param pierce_shadow: Include open Shadow DOM content in the response. Defaults to False.
-        :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
-        :param load_dom: Enabled by default, wait for all JavaScript on the page to fully load and execute.
-        :param disable_resources: Drop requests for unnecessary resources for a speed boost.
-            Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
-        :param wait_selector: Wait for a specific CSS selector to be in a specific state.
-        :param wait_selector_state: The state to wait for the selector given with `wait_selector`.
-        :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
-        :param blocked_domains: A list of domain names to block requests to for this request. Subdomains are also matched.
-        :param solve_cloudflare: (Stealthy sessions only) Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response.
+        :param url: URL to fetch.
+        :param session_id: ID from `browser_open`.
+        :param extraction_type: Content output format.
+        :param css_selector: Select after `main_content_only` filtering; snapshots require exactly one match.
+        :param main_content_only: Sanitize <body> before selection; False uses the full document. Ignored for snapshots.
+        :param wait: Extra milliseconds after the page is ready, before returning.
+        :param timeout: Navigation and page-operation timeout in milliseconds.
+        :param google_search: Set a Google referer, overriding any supplied referer.
+        :param pierce_shadow: Include open Shadow DOM content; ignored for snapshots.
+        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
+        :param load_dom: Wait for DOMContentLoaded.
+        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
+        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
+        :param wait_selector_state: Target state of `wait_selector`.
+        :param extra_headers: Additional request headers.
+        :param blocked_domains: Block requests to these domains and their subdomains.
+        :param solve_cloudflare: Attempt to solve Cloudflare Turnstile/interstitial challenges; stealthy sessions only.
         """
         entry = self._get_session(session_id, expected_type=["dynamic", "stealthy"])
         if solve_cloudflare and entry.session_type != "stealthy":
@@ -1060,31 +1036,28 @@ class ScraplingMCPServer:
         http3: Optional[bool] = False,
         stealthy_headers: Optional[bool] = True,
     ) -> ResponseModel:
-        """Make an HTTP request with any method (GET, POST, PUT, DELETE) through a requests session previously opened
-        with `open_request_session`, keeping its cookies, connections, and browser fingerprint across calls. The session
-        holds the impersonation and proxy configuration; every option here applies to this request only, with the defaults shown.
+        """Make an HTTP request using the session's cookies, connections, impersonation, and proxy. Options apply to this request.
 
-        :param url: The URL to request.
-        :param session_id: ID of an open requests session created with `open_request_session`.
-        :param method: The HTTP method to use: "GET" (default), "POST", "PUT", or "DELETE".
-        :param extraction_type: The type of content to extract from the page: "markdown", "html", or "text".
-        :param css_selector: CSS selector to extract the content from the page. If main_content_only is True, then it will be executed on the main content of the page.
-        :param main_content_only: Whether to extract only the main content of the page. The main content here is the data inside the `<body>` tag.
-        :param params: Query string parameters for the request.
-        :param data: Form data for the request body. Used with "POST", "PUT", and "DELETE" only.
-        :param json: A JSON-serializable object for the request body. Used with "POST", "PUT", and "DELETE" only.
-        :param headers: Headers to include in the request.
-        :param cookies: Cookies to use in the request.
-        :param timeout: Number of seconds to wait before timing out.
-        :param follow_redirects: Whether to follow redirects. Defaults to "safe", which follows redirects but rejects those targeting internal/private IPs (SSRF protection).
-            Pass True to follow all redirects without restriction.
-        :param max_redirects: Maximum number of redirects. Use -1 for unlimited.
-        :param retries: Number of retry attempts.
-        :param retry_delay: Number of seconds to wait between retry attempts.
-        :param auth: HTTP basic auth in dictionary format with `username` and `password` keys.
-        :param verify: Whether to verify HTTPS certificates.
-        :param http3: Whether to use HTTP3. It might be problematic if used it with `impersonate`.
-        :param stealthy_headers: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
+        :param url: URL to fetch.
+        :param session_id: HTTP session ID from `open_request_session`.
+        :param method: HTTP method.
+        :param extraction_type: Content output format.
+        :param css_selector: Select matching elements after `main_content_only` filtering.
+        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
+        :param params: Query parameters.
+        :param data: Form or raw body; ignored for GET.
+        :param json: JSON body; ignored for GET.
+        :param headers: Request headers.
+        :param cookies: Request cookies.
+        :param timeout: Timeout in seconds.
+        :param follow_redirects: "safe" blocks redirects to private/internal IPs; True allows all; False disables redirects.
+        :param max_redirects: Redirect limit; -1 means unlimited.
+        :param retries: Maximum attempts, including the first; None or values below 1 send once.
+        :param retry_delay: Seconds between retries.
+        :param auth: Basic auth: {"username": ..., "password": ...}.
+        :param verify: Verify TLS certificates.
+        :param http3: Use HTTP/3; may conflict with browser impersonation.
+        :param stealthy_headers: Fill missing browser headers and use a Google referer if none was supplied.
         """
         entry = self._get_session(session_id, expected_type=["static"])
 
