@@ -1130,31 +1130,31 @@ class ScraplingMCPServer:
         server = MCPServer(name="Scrapling", **settings)
         # Session management tools
         server.add_tool(
-            self.browser_open, title="browser_open", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
+            self.browser_open, title="Open browser", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
         )
         server.add_tool(
             self.open_request_session,
-            title="open_request_session",
+            title="Open HTTP session",
             structured_output=True,
             annotations=_SESSION_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.close_session, title="close_session", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
+            self.close_session, title="Close session", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
         )
         server.add_tool(
-            self.list_sessions, title="list_sessions", structured_output=True, annotations=_LIST_TOOL_ANNOTATIONS
+            self.list_sessions, title="List sessions", structured_output=True, annotations=_LIST_TOOL_ANNOTATIONS
         )
         # HTTP tools
         server.add_tool(
             self.make_request,
-            title="make_request",
+            title="Send HTTP request",
             description=self.make_request.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
             self.bulk_get,
-            title="bulk_get",
+            title="Get pages via HTTP requests",
             description=self.bulk_get.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
@@ -1162,14 +1162,14 @@ class ScraplingMCPServer:
         # Dynamic browser tools
         server.add_tool(
             self.fetch,
-            title="fetch",
+            title="Fetch page in browser",
             description=self.fetch.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
             self.bulk_fetch,
-            title="bulk_fetch",
+            title="Fetch pages in browser",
             description=self.bulk_fetch.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
@@ -1177,14 +1177,14 @@ class ScraplingMCPServer:
         # Stealthy browser tools
         server.add_tool(
             self.stealthy_fetch,
-            title="stealthy_fetch",
+            title="Fetch page with stealthy browser",
             description=self.stealthy_fetch.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
             self.bulk_stealthy_fetch,
-            title="bulk_stealthy_fetch",
+            title="Fetch pages with stealthy browser",
             description=self.bulk_stealthy_fetch.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
@@ -1192,21 +1192,21 @@ class ScraplingMCPServer:
         # Session-scoped fetch tools
         server.add_tool(
             self.browser_fetch,
-            title="browser_fetch",
+            title="Fetch in browser session",
             description=self.browser_fetch.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
             self.session_make_request,
-            title="session_make_request",
+            title="Send HTTP request in HTTP session",
             description=self.session_make_request.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
             self.browser_snapshot,
-            title="browser_snapshot",
+            title="Browser page snapshot",
             description=self.browser_snapshot.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
@@ -1214,7 +1214,7 @@ class ScraplingMCPServer:
         # Screenshot tool (returns image + url content blocks, not structured JSON)
         server.add_tool(
             self.browser_screenshot,
-            title="browser_screenshot",
+            title="Take browser session screenshot",
             description=self.browser_screenshot.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
