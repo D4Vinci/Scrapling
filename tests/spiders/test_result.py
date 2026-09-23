@@ -87,7 +87,7 @@ class TestItemList:
 
             assert path.exists()
 
-            rows = list(csv.DictReader(path.open(newline="", encoding="utf-8")))
+            rows = list(csv.DictReader(path.read_text(encoding="utf-8").splitlines()))
             assert len(rows) == 2
             assert rows[0] == {"name": "first", "price": "10"}
             assert rows[1]["name"] == "second"
@@ -102,7 +102,7 @@ class TestItemList:
             path = Path(tmpdir) / "output.csv"
             items.to_csv(path)
 
-            reader = csv.DictReader(path.open(newline="", encoding="utf-8"))
+            reader = csv.DictReader(path.read_text(encoding="utf-8").splitlines())
             assert reader.fieldnames == ["name", "price"]
             rows = list(reader)
             assert rows[0] == {"name": "first", "price": ""}
@@ -116,7 +116,7 @@ class TestItemList:
             path = Path(tmpdir) / "output.csv"
             items.to_csv(path)
 
-            row = next(csv.DictReader(path.open(newline="", encoding="utf-8")))
+            row = next(csv.DictReader(path.read_text(encoding="utf-8").splitlines()))
             assert json.loads(row["tags"]) == ["a", "b"]
             assert json.loads(row["meta"]) == {"x": 1}
             assert row["empty"] == ""
