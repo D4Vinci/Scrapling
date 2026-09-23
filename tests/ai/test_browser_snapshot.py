@@ -48,7 +48,7 @@ async def test_browser_snapshot_returns_plain_mcp_text(session_type: SessionType
         fetch_props = tools["browser_fetch"].input_schema["properties"]
         assert set(fetch_props["extraction_type"]["enum"]) == {"markdown", "html", "text", "snapshot"}
         assert "depth" not in fetch_props and "boxes" not in fetch_props
-        assert "snapshot" not in tools["fetch"].input_schema["properties"]["extraction_type"]["enum"]
+        assert "snapshot" not in tools["browser_fetch_once"].input_schema["properties"]["extraction_type"]["enum"]
         result = await client.call_tool("browser_snapshot", {"session_id": "browser", "depth": 3, "boxes": True})
     assert not result.is_error
     assert result.structured_content is None

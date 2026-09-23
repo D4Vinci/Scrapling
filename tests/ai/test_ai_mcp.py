@@ -208,29 +208,29 @@ class TestMCPServer:
         assert all(isinstance(r, ResponseModel) for r in results)
 
     @pytest.mark.asyncio
-    async def test_fetch_tool(self, server, test_url):
-        """Test the fetch tool method"""
-        result = await server.fetch(url=test_url, headless=True)
+    async def test_browser_fetch_once_tool(self, server, test_url):
+        """Test the browser_fetch_once tool method"""
+        result = await server.browser_fetch_once(url=test_url, headless=True)
         assert isinstance(result, ResponseModel)
         assert result.status == 200
 
     @pytest.mark.asyncio
-    async def test_bulk_fetch_tool(self, server, test_url):
-        """Test the bulk_fetch tool method"""
-        result = await server.bulk_fetch(urls=(test_url, test_url), headless=True)
+    async def test_browser_fetch_many_once_tool(self, server, test_url):
+        """Test the browser_fetch_many_once tool method"""
+        result = await server.browser_fetch_many_once(urls=(test_url, test_url), headless=True)
         assert all(isinstance(r, ResponseModel) for r in result)
 
     @pytest.mark.asyncio
-    async def test_stealthy_fetch_tool(self, server, test_url):
-        """Test the stealthy_fetch tool method"""
-        result = await server.stealthy_fetch(url=test_url, headless=True)
+    async def test_browser_stealth_fetch_once_tool(self, server, test_url):
+        """Test the browser_stealth_fetch_once tool method"""
+        result = await server.browser_stealth_fetch_once(url=test_url, headless=True)
         assert isinstance(result, ResponseModel)
         assert result.status == 200
 
     @pytest.mark.asyncio
-    async def test_bulk_stealthy_fetch_tool(self, server, test_url):
-        """Test the bulk_stealthy_fetch tool method"""
-        result = await server.bulk_stealthy_fetch(urls=(test_url, test_url), headless=True)
+    async def test_browser_stealth_fetch_many_once_tool(self, server, test_url):
+        """Test the browser_stealth_fetch_many_once tool method"""
+        result = await server.browser_stealth_fetch_many_once(urls=(test_url, test_url), headless=True)
         assert all(isinstance(r, ResponseModel) for r in result)
 
 
@@ -464,23 +464,23 @@ class TestExecutablePath:
         await server.close_session(created.session_id)
 
     @pytest.mark.asyncio
-    async def test_fetch_overrides_global_executable_path(self, monkeypatch):
-        """fetch forwards a per-call executable_path instead of the server default"""
+    async def test_browser_fetch_once_overrides_global_executable_path(self, monkeypatch):
+        """browser_fetch_once forwards a per-call executable_path instead of the server default"""
         monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
         server = ScraplingMCPServer(executable_path="/opt/default-chromium")
 
-        result = await server.fetch(url="https://example.com", executable_path="/opt/request-chromium")
+        result = await server.browser_fetch_once(url="https://example.com", executable_path="/opt/request-chromium")
 
         assert isinstance(result, ResponseModel)
         assert _FakeDynamicSession.instances[0].kwargs["executable_path"] == "/opt/request-chromium"
 
     @pytest.mark.asyncio
-    async def test_stealthy_fetch_uses_global_executable_path(self, monkeypatch):
-        """stealthy_fetch forwards the server executable_path default"""
+    async def test_browser_stealth_fetch_once_uses_global_executable_path(self, monkeypatch):
+        """browser_stealth_fetch_once forwards the server executable_path default"""
         monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer(executable_path="/opt/default-chromium")
 
-        result = await server.stealthy_fetch(url="https://example.com")
+        result = await server.browser_stealth_fetch_once(url="https://example.com")
 
         assert isinstance(result, ResponseModel)
         assert _FakeStealthySession.instances[0].kwargs["executable_path"] == "/opt/default-chromium"
@@ -496,13 +496,15 @@ class TestBulkPagePool:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("url_count,expected_pages", [(3, 3), (60, 50), (0, 1)])
-    async def test_bulk_fetch_sizes_pool_within_validator_bounds(self, monkeypatch, url_count, expected_pages):
-        """bulk_fetch opens a pool that covers the batch but stays inside the 1..50 `PagesCount` range"""
+    async def test_browser_fetch_many_once_sizes_pool_within_validator_bounds(
+        self, monkeypatch, url_count, expected_pages
+    ):
+        """browser_fetch_many_once opens a pool that covers the batch but stays inside the 1..50 `PagesCount` range"""
         monkeypatch.setattr("scrapling.core.ai.AsyncDynamicSession", _FakeDynamicSession)
         server = ScraplingMCPServer()
         urls = [f"https://example.com/{index}" for index in range(url_count)]
 
-        results = await server.bulk_fetch(urls=urls)
+        results = await server.browser_fetch_many_once(urls=urls)
 
         max_pages = _FakeDynamicSession.instances[0].kwargs["max_pages"]
         assert max_pages == expected_pages, f"Expected max_pages {expected_pages} for {url_count} URLs, got {max_pages}"
@@ -510,13 +512,15 @@ class TestBulkPagePool:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("url_count,expected_pages", [(4, 4), (60, 50), (0, 1)])
-    async def test_bulk_stealthy_fetch_sizes_pool_within_validator_bounds(self, monkeypatch, url_count, expected_pages):
-        """bulk_stealthy_fetch sizes its pool to the batch instead of leaving it at the default of 1"""
+    async def test_browser_stealth_fetch_many_once_sizes_pool_within_validator_bounds(
+        self, monkeypatch, url_count, expected_pages
+    ):
+        """browser_stealth_fetch_many_once sizes its pool to the batch instead of leaving it at the default of 1"""
         monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer()
         urls = [f"https://example.com/{index}" for index in range(url_count)]
 
-        results = await server.bulk_stealthy_fetch(urls=urls)
+        results = await server.browser_stealth_fetch_many_once(urls=urls)
 
         max_pages = _FakeStealthySession.instances[0].kwargs["max_pages"]
         assert max_pages == expected_pages, f"Expected max_pages {expected_pages} for {url_count} URLs, got {max_pages}"
@@ -647,10 +651,10 @@ class TestModeSplitContract:
     def test_one_shot_fetch_tools_have_no_session_id(self):
         """The one-shot tools no longer accept session_id"""
         for tool in (
-            ScraplingMCPServer.fetch,
-            ScraplingMCPServer.bulk_fetch,
-            ScraplingMCPServer.stealthy_fetch,
-            ScraplingMCPServer.bulk_stealthy_fetch,
+            ScraplingMCPServer.browser_fetch_once,
+            ScraplingMCPServer.browser_fetch_many_once,
+            ScraplingMCPServer.browser_stealth_fetch_once,
+            ScraplingMCPServer.browser_stealth_fetch_many_once,
         ):
             assert "session_id" not in inspect.signature(tool).parameters, f"{tool.__name__} still takes session_id"
 
@@ -1004,7 +1008,12 @@ class TestServerToolRegistration:
         async with Client(server) as client:
             tools = {tool.name: tool for tool in (await client.list_tools()).tools}
 
-        for name in ("fetch", "bulk_fetch", "stealthy_fetch", "bulk_stealthy_fetch"):
+        for name in (
+            "browser_fetch_once",
+            "browser_fetch_many_once",
+            "browser_stealth_fetch_once",
+            "browser_stealth_fetch_many_once",
+        ):
             props = tools[name].input_schema["properties"]
             assert "session_id" not in props, f"{name} still exposes session_id"
             assert props["timeout"]["default"] == 30000, f"{name} hides the real timeout default"
@@ -1058,10 +1067,10 @@ class TestServerToolRegistration:
         for name in (
             "make_request",
             "bulk_get",
-            "fetch",
-            "bulk_fetch",
-            "stealthy_fetch",
-            "bulk_stealthy_fetch",
+            "browser_fetch_once",
+            "browser_fetch_many_once",
+            "browser_stealth_fetch_once",
+            "browser_stealth_fetch_many_once",
             "browser_fetch",
             "session_make_request",
             "browser_snapshot",
@@ -1079,15 +1088,16 @@ class TestServerToolRegistration:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("enabled", [False, True])
-@pytest.mark.parametrize("tool", ["fetch", "bulk_fetch", "stealthy_fetch", "bulk_stealthy_fetch"])
+@pytest.mark.parametrize(
+    "tool",
+    ["browser_fetch_once", "browser_fetch_many_once", "browser_stealth_fetch_once", "browser_stealth_fetch_many_once"],
+)
 async def test_shadow_option_reaches_browser_session(monkeypatch, tool, enabled):
-    fake = _FakeStealthySession if "stealthy" in tool else _FakeDynamicSession
-    target = "AsyncStealthySession" if "stealthy" in tool else "AsyncDynamicSession"
+    fake = _FakeStealthySession if "stealth" in tool else _FakeDynamicSession
+    target = "AsyncStealthySession" if "stealth" in tool else "AsyncDynamicSession"
     monkeypatch.setattr("scrapling.core.ai." + target, fake)
     server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
-    args: dict[str, Any] = (
-        {"urls": ["https://example.com"]} if tool.startswith("bulk_") else {"url": "https://example.com"}
-    )
+    args: dict[str, Any] = {"urls": ["https://example.com"]} if "_many_" in tool else {"url": "https://example.com"}
     async with Client(server) as client:
         result = await client.call_tool(tool, {**args, "pierce_shadow": enabled})
     assert not result.is_error
