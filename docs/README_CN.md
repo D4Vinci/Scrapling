@@ -209,6 +209,16 @@ MySpider().start()
     <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: 基于真实 SIM 卡和设备的 4G/5G 移动代理。独享或共享、粘性、轮换、p0f 指纹预设、API/MCP 及全协议支持。使用优惠码 SCRAPLING20 可享 20% 折扣。
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> 提供符合道德规范的住宅、移动、ISP 和数据中心代理，以及网页抓取和 AI 自动化工具。使用优惠码 SCRAPLING10，住宅代理可享 10% 折扣。
+    </td>
+  </tr>
 </table>
 
 <i><sub>想在这里展示您的广告吗？点击 [这里](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>

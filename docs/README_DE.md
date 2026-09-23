@@ -209,6 +209,16 @@ MySpider().start()
     <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: 4G/5G-Mobilproxies auf echten SIM-Karten und Geräten. Dediziert oder geteilt, sticky, rotierend, p0f-Fingerprint-Presets, API/MCP und volle Protokollunterstützung. Mit dem Code SCRAPLING20 erhalten Sie 20% Rabatt.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> bietet ethisch beschaffte Residential-, Mobil-, ISP- und Datacenter-Proxys sowie Tools für Web Scraping und KI-Automatisierung. Mit dem Code SCRAPLING10 erhalten Sie 10% Rabatt auf Residential-Proxys.
+    </td>
+  </tr>
 </table>
 
 <i><sub>Möchten Sie Ihre Anzeige hier zeigen? Klicken Sie [hier](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
