@@ -109,7 +109,49 @@ class TestSitemapSpiderFlow:
         spider = S()
         out = await _collect(spider._parse_sitemap(_make_response(URLSET_XML)))
         assert len(out) == 3
-        assert all(r.callback is None for r in out)
+        assert all(r.callback == spider.parse for r in out)
+
+    @pytest.mark.asyncio
+    async def test_no_rules_urls_go_to_parse_not_sitemap_parser(self):
+        """In a real crawl, the sitemap response's request carries `_parse_sitemap` as its callback,
+        which the page requests must not inherit."""
+
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        spider = S()
+        response = _make_response(URLSET_XML)
+        response.request = Request(response.url, sid="default", callback=spider._parse_sitemap)
+        out = await _collect(spider._parse_sitemap(response))
+        assert len(out) == 3
+        assert all(r.callback == spider.parse for r in out)
+
+    @pytest.mark.asyncio
+    async def test_rule_without_callback_goes_to_parse_not_sitemap_parser(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+            def rules(self):
+                return [
+                    CrawlRule(LinkExtractor(allow=r"/posts/"), callback=self.parse_post),
+                    CrawlRule(LinkExtractor(allow=r"/about")),
+                ]
+
+            async def parse_post(self, response):
+                yield {"post": response.url}
+
+        spider = S()
+        response = _make_response(URLSET_XML)
+        response.request = Request(response.url, sid="default", callback=spider._parse_sitemap)
+        out = await _collect(spider._parse_sitemap(response))
+        callbacks = {r.url: r.callback for r in out}
+        assert callbacks == {
+            "https://example.com/posts/1": spider.parse_post,
+            "https://example.com/posts/2": spider.parse_post,
+            "https://example.com/about": spider.parse,
+        }
 
     @pytest.mark.asyncio
     async def test_comments_in_sitemap_are_skipped(self):
