@@ -255,7 +255,7 @@ data = page.css('.quote .text::text').getall()
 
 ### Shadow DOM
 
-Use `pierce_shadow=True` with dynamic or stealth Python fetchers and sessions to include open shadow roots. It defaults to `False` and can be overridden per request. For MCP, pass `pierce_shadow=true` to `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, or each `browser_fetch` call.
+Use `pierce_shadow=True` with dynamic or stealth Python fetchers and sessions to include open shadow roots. It defaults to `False` and can be overridden per request. For MCP, pass `pierce_shadow=true` to `browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`, or each `browser_fetch` call.
 
 Both browser CLI commands accept `--pierce-shadow` and `--no-pierce-shadow`:
 
