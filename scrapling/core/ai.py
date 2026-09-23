@@ -606,7 +606,7 @@ class ScraplingMCPServer:
             responses = await gather(*tasks)
             return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
 
-    async def fetch(
+    async def browser_fetch_once(
         self,
         url: str,
         extraction_type: extraction_types = "markdown",
@@ -656,7 +656,7 @@ class ScraplingMCPServer:
         :param extra_headers: Additional request headers.
         :param proxy: Proxy URL, or dictionary with server and optional username/password.
         """
-        results = await self.bulk_fetch(
+        results = await self.browser_fetch_many_once(
             urls=[url],
             extraction_type=extraction_type,
             css_selector=css_selector,
@@ -682,7 +682,7 @@ class ScraplingMCPServer:
         )
         return results[0]
 
-    async def bulk_fetch(
+    async def browser_fetch_many_once(
         self,
         urls: List[str],
         extraction_type: extraction_types = "markdown",
@@ -759,7 +759,7 @@ class ScraplingMCPServer:
 
         return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
 
-    async def stealthy_fetch(
+    async def browser_stealth_fetch_once(
         self,
         url: str,
         extraction_type: extraction_types = "markdown",
@@ -819,7 +819,7 @@ class ScraplingMCPServer:
         :param proxy: Proxy URL, or dictionary with server and optional username/password.
         :param additional_args: Browser context options that override Scrapling settings.
         """
-        results = await self.bulk_stealthy_fetch(
+        results = await self.browser_stealth_fetch_many_once(
             urls=[url],
             extraction_type=extraction_type,
             css_selector=css_selector,
@@ -850,7 +850,7 @@ class ScraplingMCPServer:
         )
         return results[0]
 
-    async def bulk_stealthy_fetch(
+    async def browser_stealth_fetch_many_once(
         self,
         urls: List[str],
         extraction_type: extraction_types = "markdown",
@@ -1115,7 +1115,7 @@ class ScraplingMCPServer:
 6. If the task consists of multiple sequential requests to the same website, open a session once, then fetch through it to be more efficient:
     `browser_open` + `browser_fetch` per page for browsers, or `open_request_session` + `session_make_request` per request for plain HTTP.
 7. Sessions hold the session-level configuration set when opened, while `browser_fetch`/`session_make_request` carry the per-request options and apply them on each call with the defaults shown in their schemas.
-    The one-shot tools (`make_request`, `bulk_get`, `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`) never touch sessions.
+    The one-shot tools (`make_request`, `bulk_get`, `browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) never touch sessions.
 8. If you are making multiple parallel one-shot requests, use the bulk version of the tool to be more efficient.
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
 10. The user can pass a CDP URL to connect to a remote browser session through the `browser_open` tool, then use it with the session tools.
@@ -1161,31 +1161,31 @@ class ScraplingMCPServer:
         )
         # Dynamic browser tools
         server.add_tool(
-            self.fetch,
+            self.browser_fetch_once,
             title="Fetch page in browser",
-            description=self.fetch.__doc__,
+            description=self.browser_fetch_once.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.bulk_fetch,
+            self.browser_fetch_many_once,
             title="Fetch pages in browser",
-            description=self.bulk_fetch.__doc__,
+            description=self.browser_fetch_many_once.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         # Stealthy browser tools
         server.add_tool(
-            self.stealthy_fetch,
+            self.browser_stealth_fetch_once,
             title="Fetch page with stealthy browser",
-            description=self.stealthy_fetch.__doc__,
+            description=self.browser_stealth_fetch_once.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.bulk_stealthy_fetch,
+            self.browser_stealth_fetch_many_once,
             title="Fetch pages with stealthy browser",
-            description=self.bulk_stealthy_fetch.__doc__,
+            description=self.browser_stealth_fetch_many_once.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
