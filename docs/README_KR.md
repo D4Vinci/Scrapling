@@ -209,6 +209,16 @@ MySpider().start()
     <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: 실제 SIM과 기기 기반의 4G/5G 모바일 프록시. 전용 또는 공유, 스티키, 로테이팅, p0f 핑거프린트 프리셋, API/MCP 및 전체 프로토콜 지원. 코드 SCRAPLING20으로 20% 할인.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a>은 윤리적으로 확보한 주거용, 모바일, ISP 및 데이터센터 프록시와 스크래핑 및 AI 자동화 도구를 제공합니다. 코드 SCRAPLING10을 사용하면 주거용 프록시를 10% 할인받을 수 있습니다.
+    </td>
+  </tr>
 </table>
 
 <i><sub>여기에 광고를 게재하고 싶으신가요? [여기](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)를 클릭하세요</sub></i>
