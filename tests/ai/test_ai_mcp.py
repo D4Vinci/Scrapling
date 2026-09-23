@@ -925,7 +925,7 @@ class TestMCPServerAuthentication:
         monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
         built = ScraplingMCPServer(auth_token=SHARED_KEY)._build_server("0.0.0.0", 8000)
 
-        assert len(built._tool_manager.list_tools()) == 14
+        assert len(built._tool_manager.list_tools()) == 16
 
     def test_http_without_a_token_refuses_to_serve(self, monkeypatch):
         """The streamable-http transport requires authentication unless the caller explicitly opts out"""
@@ -982,23 +982,52 @@ class TestServerToolRegistration:
 
     @pytest.mark.asyncio
     async def test_tools_are_listed_with_expected_schemas(self):
-        """All 14 tools are advertised, with plain content for screenshots and snapshots"""
+        """All 16 tools are advertised, with plain content for screenshots, snapshots, and mouse actions"""
         server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
         async with Client(server) as client:
             assert client.instructions
             tools = {tool.name: tool for tool in (await client.list_tools()).tools}
-            for name in ("open_session", "session_fetch", "screenshot"):
+            for name in (
+                "open_session",
+                "session_fetch",
+                "screenshot",
+                "browser_mouse",
+                "browser_mouse_move_xy",
+                "fetch",
+                "bulk_fetch",
+                "stealthy_fetch",
+                "bulk_stealthy_fetch",
+            ):
                 result = await client.call_tool(name, {})
                 assert result.is_error
 
-        assert len(tools) == 14
+        assert len(tools) == 16
         assert tools["browser_screenshot"].output_schema is None
         assert tools["browser_snapshot"].output_schema is None
-        assert {"session_snapshot", "open_session", "session_fetch", "screenshot"}.isdisjoint(tools)
+        assert tools["browser_mouse_move"].output_schema is None
+        assert tools["browser_click"].output_schema is None
+        assert {
+            "session_snapshot",
+            "open_session",
+            "session_fetch",
+            "screenshot",
+            "browser_mouse",
+            "browser_mouse_move_xy",
+            "fetch",
+            "bulk_fetch",
+            "stealthy_fetch",
+            "bulk_stealthy_fetch",
+        }.isdisjoint(tools)
+        assert {
+            "browser_fetch_once",
+            "browser_fetch_many_once",
+            "browser_stealth_fetch_once",
+            "browser_stealth_fetch_many_once",
+        } <= tools.keys()
         assert all(
             tool.output_schema is not None
             for name, tool in tools.items()
-            if name not in ("browser_screenshot", "browser_snapshot")
+            if name not in ("browser_screenshot", "browser_snapshot", "browser_mouse_move", "browser_click")
         )
 
     @pytest.mark.asyncio
@@ -1063,7 +1092,7 @@ class TestServerToolRegistration:
         assert result.ttl_ms == 3_600_000 and result.cache_scope == "public"
 
         annotations = {tool.name: tool.annotations for tool in result.tools if tool.annotations is not None}
-        assert len(annotations) == 14
+        assert len(annotations) == 16
         for name in (
             "make_request",
             "bulk_get",
@@ -1084,6 +1113,11 @@ class TestServerToolRegistration:
             assert annotations[name].open_world_hint is True
         assert annotations["list_sessions"].read_only_hint is True
         assert annotations["list_sessions"].open_world_hint is False
+        for name in ("browser_mouse_move", "browser_click"):
+            assert annotations[name].read_only_hint is False
+            assert annotations[name].destructive_hint is True
+            assert annotations[name].idempotent_hint is False
+            assert annotations[name].open_world_hint is True
 
 
 @pytest.mark.asyncio
