@@ -56,7 +56,7 @@ class TestCheckpointManagerInit:
         """Test initialization with string path."""
         manager = CheckpointManager("/tmp/test_crawl")
 
-        assert str(manager.crawldir) == "/tmp/test_crawl"
+        assert manager.crawldir == Path("/tmp/test_crawl")
         assert manager.interval == 300.0
 
     def test_init_with_pathlib_path(self):
@@ -64,7 +64,7 @@ class TestCheckpointManagerInit:
         path = Path("/tmp/test_crawl")
         manager = CheckpointManager(path)
 
-        assert str(manager.crawldir) == "/tmp/test_crawl"
+        assert manager.crawldir == Path("/tmp/test_crawl")
 
     def test_init_with_custom_interval(self):
         """Test initialization with custom interval."""
@@ -90,8 +90,8 @@ class TestCheckpointManagerInit:
         """Test that checkpoint file path is correctly constructed."""
         manager = CheckpointManager("/tmp/test_crawl")
 
-        expected_path = "/tmp/test_crawl/checkpoint.pkl"
-        assert str(manager._checkpoint_path) == expected_path
+        expected_path = Path("/tmp/test_crawl/checkpoint.pkl")
+        assert manager._checkpoint_path == expected_path
 
 
 class TestCheckpointManagerOperations:
