@@ -2,7 +2,7 @@
 from sys import stderr
 from copy import deepcopy
 from functools import wraps
-from re import sub as re_sub, compile as re_compile
+from re import sub as re_sub, compile as re_compile, DOTALL, IGNORECASE
 from collections import namedtuple
 from shlex import split as shlex_split
 from inspect import signature, Parameter
@@ -35,6 +35,7 @@ from scrapling.core._types import (
     Callable,
     Dict,
     Any,
+    Match,
     cast,
     Optional,
     Generator,
@@ -69,19 +70,51 @@ Request = namedtuple(
 )
 
 # Precompiled for the prompt injection sanitizer
-_HIDDEN_XPATH = XPath(
-    './/*[contains(@style,"display:none") or contains(@style,"display: none")'
-    ' or contains(@style,"visibility:hidden") or contains(@style,"visibility: hidden")'
-    ' or contains(@style,"opacity:0") or contains(@style,"opacity: 0")'
-    ' or contains(@style,"font-size:0") or contains(@style,"font-size: 0")'
-    ' or contains(@style,"height:0") or contains(@style,"height: 0")'
-    ' or contains(@style,"width:0") or contains(@style,"width: 0")]'
-    " | .//*[@aria-hidden='true']"
-    " | .//slot[@hidden]"
-    " | .//template"
+_HIDDEN_XPATH = XPath(".//*[@style] | .//*[@aria-hidden='true'] | .//slot[@hidden] | .//template")
+_HIDING_DECLARATIONS = frozenset({("display", "none"), ("visibility", "hidden")})
+_ZERO_HIDING_PROPERTIES = frozenset({"opacity", "font-size", "height", "width", "max-height", "max-width"})
+# Strings and unquoted `url()` tokens are matched first so a `/*` or `;` inside them is never read as CSS
+_STYLE_TOKEN_PATTERN = re_compile(
+    r""""(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?|url\([^"'()\\]*\)|(/\*.*?(?:\*/|\Z))""",
+    DOTALL | IGNORECASE,
 )
+_ZERO_VALUE_PATTERN = re_compile(r"[+-]?(?:0+(?:\.0+)?|\.0+)(?:e[+-]?[0-9]+)?[a-z%]*")
+_IMPORTANT_SUFFIX_PATTERN = re_compile(r"!\s*important$")
 _ZWC_PATTERN = re_compile(r"[\u200b\u200c\u200d\ufeff\u2060\u180e]")
 _CONTROL_CHARS_PATTERN = re_compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def _blank_style_token(match: Match[str]) -> str:
+    """Replace a comment with a space and a string or `url()` with an empty string.
+
+    A comment separates tokens instead of joining them, so `no/**/ne` never reads as `none`,
+    and no hiding value contains a string or a `url()`, so their content can be dropped.
+    """
+    return " " if match.group(1) else '""'
+
+
+def _is_hidden_element(element: Any) -> bool:
+    """Check if an element selected by `_HIDDEN_XPATH` is hidden from the page's readers.
+
+    Inline styles are compared declaration by declaration instead of by substring, so a value that
+    only starts with a zero (`opacity:0.95`) or a longer property name (`line-height:0.9`) is kept.
+    """
+    if element.tag == "template" or element.get("aria-hidden") == "true":
+        return True
+    if element.tag == "slot" and element.get("hidden") is not None:
+        return True
+
+    style = _STYLE_TOKEN_PATTERN.sub(_blank_style_token, element.get("style") or "")
+    for declaration in style.split(";"):
+        prop, _, value = declaration.partition(":")
+        prop = prop.strip().lower()
+        value = _IMPORTANT_SUFFIX_PATTERN.sub("", value.strip().lower()).rstrip()
+        if (prop, value) in _HIDING_DECLARATIONS:
+            return True
+        if prop in _ZERO_HIDING_PROPERTIES and _ZERO_VALUE_PATTERN.fullmatch(value):
+            return True
+
+    return False
 
 
 # Suppress exit on error to handle parsing errors gracefully
@@ -611,7 +644,8 @@ class Convertor:
         """
         clean_root = deepcopy(page._root)
         for element in cast(list, _HIDDEN_XPATH(clean_root)):
-            element.drop_tree()
+            if _is_hidden_element(element):
+                element.drop_tree()
         for element in clean_root.iter():
             if element.text:
                 element.text = _CONTROL_CHARS_PATTERN.sub("", _ZWC_PATTERN.sub("", element.text))
