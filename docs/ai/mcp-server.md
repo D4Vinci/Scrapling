@@ -43,7 +43,7 @@ The Scrapling MCP Server provides sixteen tools for web scraping and browser int
 
 #### Mouse Actions
 
-- **`browser_mouse_move`**: Move the browser's mouse to reveal hover menus, tooltips, and other content that appears on hover. Supports movement in multiple steps for controls that react as the pointer moves.
+- **`browser_mouse_move`**: Move the browser's mouse to reveal hover menus, tooltips, and other content that appears on hover. Target elements through selectors or snapshot references, with automatic waiting and scrolling into view. Coordinate moves support multiple steps for controls that react as the pointer moves.
 - **`browser_click`**: Click buttons, follow links, and use other page controls through selectors, snapshot references, or page coordinates. Supports left, right, and middle clicks, plus double-clicks.
 
 ### Shadow DOM
