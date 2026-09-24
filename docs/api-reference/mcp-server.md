@@ -57,7 +57,7 @@ Model classes for session management:
 The main MCP server class that provides all web scraping tools:
 
 - **`browser_snapshot`**: Inspect the current page without reloading it. Structured text includes element roles, names, references, positions, and sizes to help the AI target page controls.
-- **`browser_mouse_move`**: Reveal hover menus and tooltips with the browser's mouse, including movement in multiple steps.
+- **`browser_mouse_move`**: Reveal hover menus and tooltips with the browser's mouse. Target elements through selectors or snapshot references, with automatic waiting and scrolling into view, or use coordinates with movement in multiple steps.
 - **`browser_click`**: Click buttons, links, and other controls using selectors, snapshot references, or page coordinates. Supports left, right, and middle clicks, plus double-clicks.
 - **`browser_fetch`**: Fetch a page through an open browser session and extract HTML, Markdown, text, or a structured snapshot. Snapshots can cover the whole page or a chosen element and include element references, positions, and sizes for later interaction.
 

@@ -412,18 +412,30 @@ class ScraplingMCPServer:
     async def browser_mouse_move(
         self,
         session_id: str,
-        x: FiniteFloat,
-        y: FiniteFloat,
+        x: Optional[FiniteFloat] = None,
+        y: Optional[FiniteFloat] = None,
         steps: PositiveInt = 1,
+        selector: Optional[NonEmptyString] = None,
+        ref: Optional[NonEmptyString] = None,
+        timeout: NonNegativeFiniteFloat = 30000,
     ) -> str:
-        """Move the native browser mouse on the current page; return plain text. Coordinates are CSS pixels from the main frame viewport's top-left.
+        """Hover using exactly one selector, snapshot ref, or (x, y) pair; return plain text.
+        Selector/ref targets wait and scroll into view; coordinate moves do not.
 
         :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param x: Horizontal position.
-        :param y: Vertical position.
-        :param steps: Number of mousemove events.
+        :param x: Horizontal CSS pixels from the main frame viewport's top-left.
+        :param y: Vertical CSS pixels from the same origin.
+        :param steps: Number of mousemove events for coordinate moves; ignored for selector/ref targets.
+        :param selector: Playwright selector matching exactly one element.
+        :param ref: Element reference from the current snapshot, e.g. "e2".
+        :param timeout: Selector/ref timeout in milliseconds; 0 disables it. Ignored for coordinates.
         """
+        if sum(value is not None for value in (selector, ref, x)) != 1 or (x is None) != (y is None):
+            raise ValueError("Provide exactly one target: 'selector', 'ref', or both 'x' and 'y'.")
         with self._browser_page(session_id) as (_, page):
+            if selector is not None or ref is not None:
+                await page.locator(selector if selector is not None else f"aria-ref={ref}").hover(timeout=timeout)
+                return "Mouse hovered over element."
             await page.mouse.move(x, y, steps=steps)
         return f"Mouse moved to ({x}, {y})."
 

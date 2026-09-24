@@ -163,17 +163,22 @@ With `extraction_type="snapshot"`, the response keeps `status` and `url` and ret
 
 Returns a plain-text AI ARIA snapshot of the current whole page, including element roles, names, and references. Takes `session_id` from `browser_open` and optional `depth` to limit the tree. Element positions and sizes in viewport CSS pixels are included by default; set `boxes=false` to omit them. Use it after `browser_fetch` finishes. Raises for an unknown or HTTP session, or a missing, closed, or busy page.
 
-### `browser_mouse_move` -- Move the mouse on the current page
+### `browser_mouse_move` -- Hover by selector, snapshot reference, or coordinates
 
-Moves the native mouse on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first, then use `browser_snapshot` to find coordinates.
+Moves the native mouse on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first, then use `browser_snapshot` to find references or coordinates. Supply exactly one target: `selector`, `ref`, or both `x` and `y`.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `session_id` | str | required | ID of an open browser session |
-| `x`, `y` | number | required | Finite CSS pixel coordinates from the main frame viewport's top-left |
-| `steps` | int | 1 | Number of mousemove events, at least 1 |
+| `x`, `y` | number or null | null | Finite CSS pixel coordinates from the main frame viewport's top-left; supply both |
+| `steps` | int | 1 | Number of mousemove events for coordinate moves, at least 1; ignored for selector/reference hovers |
+| `selector` | str or null | null | Nonempty Playwright selector, such as `button[type="submit"]` or `xpath=//button[@type="submit"]` |
+| `ref` | str or null | null | Nonempty reference from the current `browser_snapshot`, such as `e2` |
+| `timeout` | number | 30000 | Finite nonnegative timeout in milliseconds for selector/reference hovers; 0 disables the limit |
 
-Coordinates are viewport CSS pixels, not full-page screenshot coordinates. Returns plain text without an automatic snapshot. Invalid sessions and missing, closed, or busy pages return an error.
+Selector and reference hovers use Playwright's locator hover, which waits for the target to be ready and scrolls it into view. A selector must match exactly one element. Pass the exact snapshot reference value, such as `ref="e2"`. Take a new snapshot if the reference is stale. Coordinate moves use the native mouse directly, without automatic waiting or scrolling. Coordinates are viewport CSS pixels, not full-page screenshot coordinates. `timeout` does not apply to coordinate moves.
+
+Returns plain text without an automatic snapshot. Use `browser_snapshot` to inspect the page afterward. Invalid targets, unknown sessions, and missing, closed, or busy pages return an error.
 
 ### `browser_click` -- Click by selector, snapshot reference, or coordinates
 

@@ -50,6 +50,7 @@ def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, 
     page.mouse.click = AsyncMock()
     page.mouse.up = AsyncMock()
     page.locator.return_value.click = AsyncMock()
+    page.locator.return_value.hover = AsyncMock()
     session.page_pool.add_page(page).mark_ready()
     server._sessions["browser"] = _SessionEntry(session, session_type)
     return server, session, page
@@ -63,10 +64,12 @@ async def test_browser_mouse_schema_and_annotations() -> None:
         removed = await client.call_tool("browser_mouse", {"session_id": "browser", "action": "move", "x": 1, "y": 2})
     assert "browser_mouse" not in tools and removed.is_error
     move, click = tools["browser_mouse_move"], tools["browser_click"]
-    assert set(move.input_schema["properties"]) == {"session_id", "x", "y", "steps"}
-    assert set(move.input_schema["required"]) == {"session_id", "x", "y"}
+    assert set(move.input_schema["properties"]) == {"session_id", "x", "y", "steps", "selector", "ref", "timeout"}
+    assert move.input_schema["required"] == ["session_id"]
     assert move.input_schema["properties"]["steps"]["exclusiveMinimum"] == 0
     assert move.input_schema["properties"]["steps"]["default"] == 1
+    assert move.input_schema["properties"]["timeout"]["minimum"] == 0
+    assert move.input_schema["properties"]["timeout"]["default"] == 30000
     properties = click.input_schema["properties"]
     assert set(properties) == {"session_id", "selector", "ref", "x", "y", "button", "click_count", "delay", "timeout"}
     assert click.input_schema["required"] == ["session_id"]
@@ -94,7 +97,10 @@ async def test_browser_mouse_schema_and_annotations() -> None:
     "tool, target, options, expected",
     [
         ("browser_mouse_move", {"x": -12.5, "y": 23.5}, {}, {"steps": 1}),
-        ("browser_mouse_move", {"x": -12.5, "y": 23.5}, {"steps": 5}, {"steps": 5}),
+        ("browser_mouse_move", {"x": -12.5, "y": 23.5}, {"steps": 5, "timeout": 400}, {"steps": 5}),
+        ("browser_mouse_move", {"selector": "button"}, {}, {"timeout": 30000}),
+        ("browser_mouse_move", {"ref": "e4"}, {"steps": 5, "timeout": 500}, {"timeout": 500}),
+        ("browser_mouse_move", {"selector": "button"}, {"timeout": 0}, {"timeout": 0}),
         ("browser_click", {"x": -12.5, "y": 23.5}, {}, {"button": "left", "click_count": 1, "delay": 0}),
         (
             "browser_click",
@@ -124,12 +130,11 @@ async def test_browser_mouse_forwards_native_actions(
         result = await client.call_tool(tool, {"session_id": "browser", **target, **options})
     assert not result.is_error
     assert result.structured_content is None
-    assert result.content == [
-        TextContent(
-            type="text", text="Mouse moved to (-12.5, 23.5)." if tool == "browser_mouse_move" else "Click sent."
-        )
-    ]
+    message = "Click sent."
     if tool == "browser_mouse_move":
+        message = "Mouse moved to (-12.5, 23.5)." if "x" in target else "Mouse hovered over element."
+    assert result.content == [TextContent(type="text", text=message)]
+    if tool == "browser_mouse_move" and "x" in target:
         page.mouse.move.assert_awaited_once_with(-12.5, 23.5, **expected)
         page.mouse.click.assert_not_awaited()
         page.locator.assert_not_called()
@@ -139,7 +144,9 @@ async def test_browser_mouse_forwards_native_actions(
         page.locator.assert_not_called()
     else:
         page.locator.assert_called_once_with(target["selector"] if "selector" in target else "aria-ref=e4")
-        page.locator.return_value.click.assert_awaited_once_with(**expected)
+        action = "hover" if tool == "browser_mouse_move" else "click"
+        getattr(page.locator.return_value, action).assert_awaited_once_with(**expected)
+        getattr(page.locator.return_value, "click" if action == "hover" else "hover").assert_not_awaited()
         page.mouse.move.assert_not_awaited()
         page.mouse.click.assert_not_awaited()
     assert session.page_pool.pages_count == 1
@@ -166,6 +173,9 @@ async def test_browser_mouse_forwards_native_actions(
         ("browser_mouse_move", {"steps": 1.5}),
         ("browser_mouse_move", {"steps": 0}),
         ("browser_mouse_move", {"steps": -1}),
+        ("browser_mouse_move", {"selector": ""}),
+        ("browser_mouse_move", {"ref": ""}),
+        ("browser_mouse_move", {"timeout": -1}),
         ("browser_click", {"button": "back"}),
         ("browser_click", {"click_count": 1.5}),
         ("browser_click", {"click_count": 0}),
@@ -190,7 +200,7 @@ async def test_browser_mouse_invalid_input_does_not_reserve_or_use_page(tool: st
 
 
 @pytest.mark.parametrize(
-    "tool, fields", [("browser_mouse_move", ("x", "y")), ("browser_click", ("x", "y", "delay", "timeout"))]
+    "tool, fields", [("browser_mouse_move", ("x", "y", "timeout")), ("browser_click", ("x", "y", "delay", "timeout"))]
 )
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
 def test_browser_mouse_schema_rejects_nonfinite_values(tool: str, fields: tuple[str, ...], value: float) -> None:
@@ -207,6 +217,7 @@ def test_browser_mouse_schema_rejects_nonfinite_values(tool: str, fields: tuple[
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("tool", ["browser_mouse_move", "browser_click"])
 @pytest.mark.parametrize(
     "target",
     [
@@ -220,12 +231,13 @@ def test_browser_mouse_schema_rejects_nonfinite_values(tool: str, fields: tuple[
         {"ref": "e2", "x": 1, "y": 2},
     ],
 )
-async def test_browser_click_requires_exactly_one_complete_target(target: dict[str, Any]) -> None:
+async def test_browser_mouse_requires_exactly_one_complete_target(tool: str, target: dict[str, Any]) -> None:
     server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_click", {"session_id": "browser", **target})
+        result = await client.call_tool(tool, {"session_id": "browser", **target})
     assert result.is_error
     page.is_closed.assert_not_called()
+    page.mouse.move.assert_not_awaited()
     page.mouse.click.assert_not_awaited()
     page.locator.assert_not_called()
     assert session.page_pool.pages[0].state == "ready"
@@ -270,35 +282,42 @@ async def test_browser_mouse_session_errors_reach_mcp(tool: str, state: str, mes
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("tool", ["browser_mouse_move", "browser_click"])
 @pytest.mark.parametrize("closed", [False, True])
 @pytest.mark.parametrize("target", [{"x": 10, "y": 20}, {"selector": "button"}, {"ref": "e1"}])
-async def test_browser_mouse_failure_is_not_retried_and_releases_page(closed: bool, target: dict[str, Any]) -> None:
+async def test_browser_mouse_failure_is_not_retried_and_releases_page(
+    tool: str, closed: bool, target: dict[str, Any]
+) -> None:
     server, session, page = _server()
 
     async def fail(*args: Any, **kwargs: Any) -> None:
         page.is_closed.return_value = closed
         raise RuntimeError("mouse failed")
 
-    click = page.mouse.click if "x" in target else page.locator.return_value.click
-    click.side_effect = fail
+    if tool == "browser_mouse_move":
+        action = page.mouse.move if "x" in target else page.locator.return_value.hover
+    else:
+        action = page.mouse.click if "x" in target else page.locator.return_value.click
+    action.side_effect = fail
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_click", {"session_id": "browser", **target})
+        result = await client.call_tool(tool, {"session_id": "browser", **target})
     assert result.is_error
     assert result.content and isinstance(result.content[0], TextContent)
     assert "mouse failed" in result.content[0].text
-    click.assert_awaited_once()
+    action.assert_awaited_once()
     if closed:
         assert session.page_pool.pages_count == 0
     else:
         assert session.page_pool.pages[0].state == "ready"
-        click.side_effect = None
-        await server.browser_click("browser", **target)
+        action.side_effect = None
+        await getattr(server, tool)("browser", **target)
     page.close.assert_not_called()
     page.mouse.up.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_browser_mouse_reserves_page_until_cancelled() -> None:
+@pytest.mark.parametrize("target", [{"x": 10, "y": 20}, {"selector": "button"}, {"ref": "e1"}])
+async def test_browser_mouse_reserves_page_until_cancelled(target: dict[str, Any]) -> None:
     server, session, page = _server()
     entered = asyncio.Event()
     release = asyncio.Event()
@@ -307,8 +326,13 @@ async def test_browser_mouse_reserves_page_until_cancelled() -> None:
         entered.set()
         await release.wait()
 
-    page.mouse.move.side_effect = move
-    task = asyncio.create_task(server.browser_mouse_move("browser", 10, 20))
+    action = page.mouse.move if "x" in target else page.locator.return_value.hover
+    action.side_effect = move
+    task = asyncio.create_task(
+        server.browser_mouse_move("browser", 10, 20, 3)
+        if "x" in target
+        else server.browser_mouse_move("browser", **target)
+    )
     try:
         await asyncio.wait_for(entered.wait(), 5)
         assert session.page_pool.pages[0].state == "busy"
@@ -558,7 +582,8 @@ async def test_browser_mouse_live_cancelled_click_releases_native_button(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_click_live_selectors_refs_and_scroll(session_type: SessionType) -> None:
+@pytest.mark.parametrize("tool", ["browser_mouse_move", "browser_click"])
+async def test_browser_mouse_live_selectors_refs_and_scroll(session_type: SessionType, tool: str) -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
 
     async def serve(route: Any) -> None:
@@ -586,20 +611,27 @@ async def test_browser_click_live_selectors_refs_and_scroll(session_type: Sessio
                 {"ref": ref},
                 {"selector": "#below"},
             ):
+                await page.mouse.move(0, 0)
                 await page.locator("#events").evaluate("element => element.value = '[]'")
-                result = await client.call_tool("browser_click", {"session_id": "browser", **target})
+                result = await client.call_tool(tool, {"session_id": "browser", **target})
                 assert not result.is_error
                 events = loads(await page.locator("#events").input_value())
-                clicks = [event for event in events if event["type"] == "click"]
-                assert len(clicks) == 1 and clicks[0]["trusted"]
-                assert clicks[0]["target"] == ("below" if target.get("selector") == "#below" else "target")
+                expected_id = "below" if target.get("selector") == "#below" else "target"
+                if tool == "browser_mouse_move":
+                    assert events and all(event["type"] == "mousemove" and event["trusted"] for event in events)
+                    assert events[-1]["target"] == expected_id
+                    assert await page.locator(f"#{expected_id}").evaluate("element => element.matches(':hover')")
+                else:
+                    clicks = [event for event in events if event["type"] == "click"]
+                    assert len(clicks) == 1 and clicks[0]["trusted"]
+                    assert clicks[0]["target"] == expected_id
             assert await page.evaluate("window.scrollY") > 0
             assert await page.content() == initial_dom
             await page.locator("#target").evaluate("element => element.remove()")
             for target in ({"selector": "button, a"}, {"selector": "#missing"}, {"ref": ref}):
                 await page.locator("#events").evaluate("element => element.value = '[]'")
                 with pytest.raises((PlaywrightError, PatchrightError)) as error:
-                    await server.browser_click(
+                    await getattr(server, tool)(
                         "browser", selector=target.get("selector"), ref=target.get("ref"), timeout=100
                     )
                 events = loads(await page.locator("#events").input_value())
@@ -609,7 +641,10 @@ async def test_browser_click_live_selectors_refs_and_scroll(session_type: Sessio
                     )
                     assert not any(event["type"] in ("mousedown", "click") for event in events)
                     released = [event for event in events if event["type"] == "mouseup"]
-                    assert len(released) == 1 and released[0]["buttons"] == 0
+                    if tool == "browser_click":
+                        assert len(released) == 1 and released[0]["buttons"] == 0
+                    else:
+                        assert not released
                 else:
                     assert "strict mode violation" in str(error.value)
                     assert not any(event["type"] in ("mousedown", "mouseup", "click") for event in events)
