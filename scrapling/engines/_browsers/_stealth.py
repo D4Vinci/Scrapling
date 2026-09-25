@@ -116,7 +116,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         self._wait_for_networkidle(page, timeout=5000)
         challenge_type = self._detect_cloudflare(ResponseFactory._get_page_content(page))
         if not challenge_type:
-            log.error("No Cloudflare challenge found.")
+            log.info("No Cloudflare challenge found.")
             return None
         elif _attempts >= __CF_MAX_SOLVE_ATTEMPTS__:
             log.error(f"Failed to solve the Cloudflare challenge after {_attempts} attempts, returning the page as is")
@@ -404,7 +404,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         await self._wait_for_networkidle(page, timeout=5000)
         challenge_type = self._detect_cloudflare(await ResponseFactory._get_async_page_content(page))
         if not challenge_type:
-            log.error("No Cloudflare challenge found.")
+            log.info("No Cloudflare challenge found.")
             return None
         elif _attempts >= __CF_MAX_SOLVE_ATTEMPTS__:
             log.error(f"Failed to solve the Cloudflare challenge after {_attempts} attempts, returning the page as is")
