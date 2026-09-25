@@ -96,12 +96,12 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingaugust" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingaugust" target="_blank">NodeMaven</a> - самый эффективный провайдер прокси для веб-скрапинга и автоматизации с самым высоким качеством IP на рынке. Используйте код SCRAPLING35 для получения скидки 35%.
+    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> - самый эффективный провайдер прокси для веб-скрапинга и автоматизации с самым высоким качеством IP на рынке. Используйте код SCRAPLING35 для получения скидки 35%.
     </td>
   </tr>
   <tr>
@@ -210,6 +210,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: мобильные 4G/5G прокси на реальных SIM-картах и устройствах. Выделенные или общие, sticky, ротационные, пресеты отпечатков p0f, API/MCP и поддержка всех протоколов. Код SCRAPLING20 даёт скидку 20%.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> предоставляет резидентные, мобильные, ISP- и дата-центровые прокси из этичных источников, а также инструменты для веб-скрейпинга и автоматизации с ИИ. Используйте код SCRAPLING10 для получения скидки 10% на резидентные прокси.
     </td>
   </tr>
 </table>
