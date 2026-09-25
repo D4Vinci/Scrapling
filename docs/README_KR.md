@@ -219,6 +219,16 @@ MySpider().start()
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a>은 윤리적으로 확보한 주거용, 모바일, ISP 및 데이터센터 프록시와 스크래핑 및 AI 자동화 도구를 제공합니다. 코드 SCRAPLING10을 사용하면 주거용 프록시를 10% 할인받을 수 있습니다.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 안정적인 스크래핑과 브라우저 자동화를 위한 2,800만 개의 깨끗한 주거용 IP. 유효 기간이 없는 트래픽을 $2/GB부터 제공합니다. 195개 국가 지원. 고정 및 순환 세션. 도시, ISP, ASN 타겟팅. 체험 요금은 $1.95/350MB. 코드 SCRAPEANDTAKE를 사용하면 25% 할인.
+    </td>
+  </tr>
 </table>
 
 <i><sub>여기에 광고를 게재하고 싶으신가요? [여기](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)를 클릭하세요</sub></i>
