@@ -6,7 +6,7 @@ The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful W
 
 ## Features
 
-The Scrapling MCP Server provides sixteen tools for web scraping and browser interaction, split into two modes: one-shot tools that each launch and close their own browser/client, and session tools that open a browser or an HTTP session once and then work through it.
+The Scrapling MCP Server provides seventeen tools for web scraping and browser interaction, split into two modes: one-shot tools that each launch and close their own browser/client, and session tools that open a browser or an HTTP session once and then work through it.
 
 ### One-shot tools
 
@@ -45,6 +45,10 @@ The Scrapling MCP Server provides sixteen tools for web scraping and browser int
 
 - **`browser_mouse_move`**: Move the browser's mouse to reveal hover menus, tooltips, and other content that appears on hover. Target elements through selectors or snapshot references, with automatic waiting and scrolling into view. Coordinate moves support multiple steps for controls that react as the pointer moves.
 - **`browser_click`**: Click buttons, follow links, and use other page controls through selectors, snapshot references, or page coordinates. Supports left, right, and middle clicks, plus double-clicks.
+
+#### Text Input
+
+- **`browser_type`**: Fill search boxes, login fields, text areas, and other editable content through selectors or snapshot references. Replace or clear existing text, or type one character at a time for fields that react to key events. Can also press Enter to run a search or submit a form.
 
 ### Shadow DOM
 
@@ -205,7 +209,7 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Both browser session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse_move`, `browser_click`, and `browser_screenshot` as usual.
+Both browser session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse_move`, `browser_click`, `browser_type`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline

@@ -101,7 +101,7 @@ def _session_settings(session: Any) -> Dict[str, Any]:
 _FETCH_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=True)
 _SESSION_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=True)
 _LIST_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=False)
-_MOUSE_TOOL_ANNOTATIONS = ToolAnnotations(
+_INPUT_TOOL_ANNOTATIONS = ToolAnnotations(
     read_only_hint=False, destructive_hint=True, idempotent_hint=False, open_world_hint=True
 )
 
@@ -481,6 +481,36 @@ class ScraplingMCPServer:
                         await page.mouse.up(button=button)
                 raise
         return "Click sent."
+
+    async def browser_type(
+        self,
+        session_id: str,
+        text: str,
+        selector: Optional[NonEmptyString] = None,
+        ref: Optional[NonEmptyString] = None,
+        slowly: bool = False,
+        submit: bool = False,
+        timeout: NonNegativeFiniteFloat = 30000,
+    ) -> str:
+        """Enter text using exactly one selector or snapshot ref; return plain text.
+        Replaces existing text by default; slowly types without clearing first.
+
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
+        :param text: Text to enter; empty clears the field in default mode.
+        :param selector: Playwright selector matching exactly one element.
+        :param ref: Element reference from the current snapshot, e.g. "e2".
+        :param slowly: Type character by character at the current caret or selection, triggering key events.
+        :param submit: Press Enter on the target after successful text entry.
+        :param timeout: Limit per operation in milliseconds; 0 disables it.
+        """
+        if (selector is None) == (ref is None):
+            raise ValueError("Provide exactly one target: 'selector' or 'ref'.")
+        with self._browser_page(session_id) as (_, page):
+            locator = page.locator(selector if selector is not None else f"aria-ref={ref}")
+            await (locator.press_sequentially if slowly else locator.fill)(text, timeout=timeout)
+            if submit:
+                await locator.press("Enter", timeout=timeout)
+        return "Text entered."
 
     async def browser_screenshot(
         self,
@@ -1210,6 +1240,7 @@ class ScraplingMCPServer:
 10. The user can pass a CDP URL to connect to a remote browser session through the `browser_open` tool, then use it with the session tools.
 11. Set `extraction_type="snapshot"` on `browser_fetch` to get an AI ARIA snapshot with element references and bounding boxes in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page without navigating; it returns plain text with boxes by default. Set `depth` to limit the tree or `boxes=False` to omit boxes.
 12. Use `browser_mouse_move` to move the mouse on the current page. Use `browser_click` with exactly one target: `selector`, `ref` from the current snapshot, or both `x` and `y` viewport CSS coordinates. Selector/ref clicks use Playwright's normal waiting and scrolling; coordinate clicks do not scroll or wait for navigation. Get coordinates from `browser_snapshot` and inspect the page afterward with `browser_snapshot`. Clicks can change website data. Do not repeat a click without checking the page state.
+13. Use `browser_snapshot` to inspect the page after `browser_type`. Typing or submission may partly complete before an error; check the page before repeating the action.
 """,
         }
         if self._auth_token:
@@ -1306,14 +1337,21 @@ class ScraplingMCPServer:
             title="Move mouse",
             description=self.browser_mouse_move.__doc__,
             structured_output=False,
-            annotations=_MOUSE_TOOL_ANNOTATIONS,
+            annotations=_INPUT_TOOL_ANNOTATIONS,
         )
         server.add_tool(
             self.browser_click,
             title="Click",
             description=self.browser_click.__doc__,
             structured_output=False,
-            annotations=_MOUSE_TOOL_ANNOTATIONS,
+            annotations=_INPUT_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_type,
+            title="Type text",
+            description=self.browser_type.__doc__,
+            structured_output=False,
+            annotations=_INPUT_TOOL_ANNOTATIONS,
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
         server.add_tool(

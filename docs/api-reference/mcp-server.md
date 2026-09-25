@@ -5,7 +5,7 @@ search:
 
 # MCP Server API Reference
 
-The **Scrapling MCP Server** provides sixteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
+The **Scrapling MCP Server** provides seventeen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
 
 You can start the MCP server by running:
 
@@ -30,7 +30,7 @@ server = ScraplingMCPServer(executable_path="/path/to/chromium")
 
 ## Response Model
 
-The standardized response structure returned by the fetch and HTTP request tools. Bulk tools return a list of these responses. Session management tools use the models below, `browser_screenshot` returns image and text content blocks, and `browser_snapshot`, `browser_mouse_move`, and `browser_click` return plain text.
+The standardized response structure returned by the fetch and HTTP request tools. Bulk tools return a list of these responses. Session management tools use the models below, `browser_screenshot` returns image and text content blocks, and `browser_snapshot`, `browser_mouse_move`, `browser_click`, and `browser_type` return plain text.
 
 ## ::: scrapling.core.ai.ResponseModel
     handler: python
@@ -59,6 +59,7 @@ The main MCP server class that provides all web scraping tools:
 - **`browser_snapshot`**: Inspect the current page without reloading it. Structured text includes element roles, names, references, positions, and sizes to help the AI target page controls.
 - **`browser_mouse_move`**: Reveal hover menus and tooltips with the browser's mouse. Target elements through selectors or snapshot references, with automatic waiting and scrolling into view, or use coordinates with movement in multiple steps.
 - **`browser_click`**: Click buttons, links, and other controls using selectors, snapshot references, or page coordinates. Supports left, right, and middle clicks, plus double-clicks.
+- **`browser_type`**: Fill search boxes, login fields, text areas, and other editable content through selectors or snapshot references. Supports replacing or clearing text, typing one character at a time for key events, and pressing Enter after entry.
 - **`browser_fetch`**: Fetch a page through an open browser session and extract HTML, Markdown, text, or a structured snapshot. Snapshots can cover the whole page or a chosen element and include element references, positions, and sizes for later interaction.
 
 ## ::: scrapling.core.ai.ScraplingMCPServer
