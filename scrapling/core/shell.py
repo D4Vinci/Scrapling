@@ -73,9 +73,13 @@ Request = namedtuple(
 _HIDDEN_XPATH = XPath(".//*[@style] | .//*[@aria-hidden='true'] | .//slot[@hidden] | .//template")
 _HIDING_DECLARATIONS = frozenset({("display", "none"), ("visibility", "hidden")})
 _ZERO_HIDING_PROPERTIES = frozenset({"opacity", "font-size", "height", "width", "max-height", "max-width"})
-# Strings and unquoted `url()` tokens are matched first so a `/*` or `;` inside them is never read as CSS
+# CSS reads CRLF, CR and FF as a single LF, which ends an unfinished string
+_CSS_NEWLINE_PATTERN = re_compile(r"\r\n?|\f")
+# Escapes, strings and unquoted `url()` tokens are matched first so a `/*`, a quote or a `;` inside them is never
+# read as CSS. An unquoted `url(` runs to the first unescaped `)` even when malformed, as browsers skip a bad url
 _STYLE_TOKEN_PATTERN = re_compile(
-    r""""(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?|url\([^"'()\\]*\)|(/\*.*?(?:\*/|\Z))""",
+    r"""(\\.)|"(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?"""
+    r"""|(?<![\w-])url\((?!\s*["'])(?:[^)\\]|\\.?)*\)?|(/\*.*?(?:\*/|\Z))""",
     DOTALL | IGNORECASE,
 )
 _ZERO_VALUE_PATTERN = re_compile(r"[+-]?(?:0+(?:\.0+)?|\.0+)(?:e[+-]?[0-9]+)?[a-z%]*")
@@ -85,12 +89,14 @@ _CONTROL_CHARS_PATTERN = re_compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
 
 def _blank_style_token(match: Match[str]) -> str:
-    """Replace a comment with a space and a string or `url()` with an empty string.
+    """Keep an escape, replace a comment with a space and a string or `url()` with an empty string.
 
     A comment separates tokens instead of joining them, so `no/**/ne` never reads as `none`,
     and no hiding value contains a string or a `url()`, so their content can be dropped.
     """
-    return " " if match.group(1) else '""'
+    if match.group(1):
+        return match.group(1)
+    return " " if match.group(2) else '""'
 
 
 def _is_hidden_element(element: Any) -> bool:
@@ -104,7 +110,8 @@ def _is_hidden_element(element: Any) -> bool:
     if element.tag == "slot" and element.get("hidden") is not None:
         return True
 
-    style = _STYLE_TOKEN_PATTERN.sub(_blank_style_token, element.get("style") or "")
+    style = _CSS_NEWLINE_PATTERN.sub("\n", element.get("style") or "")
+    style = _STYLE_TOKEN_PATTERN.sub(_blank_style_token, style)
     for declaration in style.split(";"):
         prop, _, value = declaration.partition(":")
         prop = prop.strip().lower()

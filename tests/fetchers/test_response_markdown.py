@@ -93,6 +93,8 @@ STYLED_BUT_VISIBLE_HTML = """
     <p style="opacity:5e-1">Half opaque note.</p>
     <p style='--note:"a;display:none;b"'>Quoted separator note.</p>
     <p style="background:url(a;display:none;b)">Unquoted url note.</p>
+    <p style='background:url( "a;display:none" )'>Quoted url note.</p>
+    <p style='--note:"a\\&#13;&#10;;display:none"'>Escaped line break note.</p>
     <p style="display:no/**/ne">Split keyword note.</p>
     <p style="opacity:0/**/5">Split number note.</p>
     <slot style="color:red">Styled slot note.</slot>
@@ -129,6 +131,11 @@ HIDDEN_HTML = """
     <p style="background:url(/*);display:none;color:url(*/)">Hidden between url comment markers</p>
     <p style="opacity:0.0">Hidden by decimal zero</p>
     <p style="opacity:0/**/!/**/important">Hidden by commented important</p>
+    <p style="background:url(a\\)/*);display:none">Hidden after escaped url parenthesis</p>
+    <p style='background:url(a"/*);display:none;--b:"*/"'>Hidden after malformed url</p>
+    <p style='--x:\\";display:none'>Hidden after escaped quote</p>
+    <p style='--note:"unfinished&#13;;display:none'>Hidden after carriage return in string</p>
+    <p style='--note:"unfinished\f;display:none'>Hidden after form feed in string</p>
     <p aria-hidden="true">Hidden by aria</p>
     <slot hidden>Hidden by slot</slot>
     <template><p>Hidden by template</p></template>
@@ -153,6 +160,8 @@ class TestResponseMarkdownSanitizerPrecision:
             "Half opaque note.",
             "Quoted separator note.",
             "Unquoted url note.",
+            "Quoted url note.",
+            "Escaped line break note.",
             "Split keyword note.",
             "Split number note.",
             "Styled slot note.",
@@ -188,6 +197,11 @@ class TestResponseMarkdownSanitizerPrecision:
             "Hidden between url comment markers",
             "Hidden by decimal zero",
             "Hidden by commented important",
+            "Hidden after escaped url parenthesis",
+            "Hidden after malformed url",
+            "Hidden after escaped quote",
+            "Hidden after carriage return in string",
+            "Hidden after form feed in string",
             "Hidden by aria",
             "Hidden by slot",
             "Hidden by template",
