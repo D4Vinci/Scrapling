@@ -96,12 +96,12 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingaugust" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingaugust" target="_blank">NodeMaven</a> - der effizienteste Proxy-Anbieter für Web Scraping und Automatisierung mit der höchsten IP-Qualität auf dem Markt. Nutze den Code SCRAPLING35 für 35% Rabatt.
+    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> - der effizienteste Proxy-Anbieter für Web Scraping und Automatisierung mit der höchsten IP-Qualität auf dem Markt. Nutze den Code SCRAPLING35 für 35% Rabatt.
     </td>
   </tr>
   <tr>
@@ -207,6 +207,26 @@ MySpider().start()
     </td>
     <td>
     <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: 4G/5G-Mobilproxies auf echten SIM-Karten und Geräten. Dediziert oder geteilt, sticky, rotierend, p0f-Fingerprint-Presets, API/MCP und volle Protokollunterstützung. Mit dem Code SCRAPLING20 erhalten Sie 20% Rabatt.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> bietet ethisch beschaffte Residential-, Mobil-, ISP- und Datacenter-Proxys sowie Tools für Web Scraping und KI-Automatisierung. Mit dem Code SCRAPLING10 erhalten Sie 10% Rabatt auf Residential-Proxys.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 28 Mio. saubere Residential-IPs für zuverlässiges Web Scraping und Browser-Automatisierung. Datenvolumen ohne Ablaufdatum ab $2/GB. 195 Länder. Sitzungen mit fester oder rotierender IP. Gezielte Auswahl nach Stadt/ISP/ASN. Testpaket für $1.95/350MB. Code SCRAPEANDTAKE: 25% Rabatt.
     </td>
   </tr>
 </table>

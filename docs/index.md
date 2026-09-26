@@ -59,7 +59,7 @@ MySpider().start()
   <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png" class="ad">
   </a>
-  <a href="https://go.nodemaven.com/scraplingaugust" target="_blank" title="Proxies with the Highest IP Scores">
+  <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" class="ad">
   </a>
   <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
@@ -87,10 +87,16 @@ MySpider().start()
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SwiftProxy.png" class="ad">
   </a>
   <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank" title="Affordable Residential in 190+ Countries">
-    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png" class="ad">
   </a>
   <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png" class="ad">
+  </a>
+  <a href="https://byteful.com/?utm_source=scrapling_website&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png" class="ad">
+  </a>
+  <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png" class="ad">
   </a>
   <br />
   <br />

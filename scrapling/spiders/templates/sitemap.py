@@ -164,13 +164,13 @@ class SitemapSpider(Spider):
             if req is not None:
                 yield req
 
-    @staticmethod
-    def _dispatch(response: "Response", url: str, rules: List[CrawlRule]) -> Optional[Request]:
+    def _dispatch(self, response: "Response", url: str, rules: List[CrawlRule]) -> Optional[Request]:
+        # The callback is always set explicitly, otherwise `follow()` would inherit `_parse_sitemap` from the sitemap request
         if not rules:
-            return response.follow(url)
+            return response.follow(url, callback=self.parse)
         for rule in rules:
             if rule.link_extractor.matches(url):
-                req = response.follow(url, callback=rule.callback)
+                req = response.follow(url, callback=rule.callback or self.parse)
                 if rule.priority is not None:
                     req.priority = rule.priority
                 if rule.process_request is not None:

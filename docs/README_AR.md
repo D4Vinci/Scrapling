@@ -96,12 +96,12 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingaugust" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingaugust" target="_blank">NodeMaven</a> - أكفأ مزود بروكسيات للـ Web Scraping والأتمتة، مع أعلى جودة IP في السوق. استخدم الكود SCRAPLING35 للحصول على خصم 35%.
+    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> - أكفأ مزود بروكسيات للـ Web Scraping والأتمتة، مع أعلى جودة IP في السوق. استخدم الكود SCRAPLING35 للحصول على خصم 35%.
     </td>
   </tr>
   <tr>
@@ -207,6 +207,26 @@ MySpider().start()
     </td>
     <td>
     <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: بروكسيات موبايل 4G/5G على شرائح SIM وأجهزة حقيقية. مخصصة أو مشتركة، ثابتة، دوّارة، إعدادات مسبقة لبصمة p0f، دعم API/MCP وجميع البروتوكولات. استخدم كود SCRAPLING20 للحصول على خصم 20%.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
+      </a>
+    </td>
+    <td>
+    توفر <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> بروكسيات سكنية ومحمولة وبروكسيات ISP ومراكز بيانات من مصادر أخلاقية، إلى جانب أدوات لاستخراج بيانات الويب وأتمتة الذكاء الاصطناعي. استخدم الكود SCRAPLING10 للحصول على خصم 10% على البروكسيات السكنية.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 28 مليون عنوان IP سكني نظيف لاستخراج بيانات الويب وأتمتة المتصفح بشكل موثوق. حركة بيانات لا تنتهي صلاحيتها تبدأ من $2/GB. 195 دولة. جلسات ثابتة أو دوّارة. استهداف حسب المدينة/ISP/ASN. تجربة بسعر $1.95/350MB. الكود SCRAPEANDTAKE: خصم 25%.
     </td>
   </tr>
 </table>
