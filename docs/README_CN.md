@@ -219,6 +219,16 @@ MySpider().start()
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> 提供符合道德规范的住宅、移动、ISP 和数据中心代理，以及网页抓取和 AI 自动化工具。使用优惠码 SCRAPLING10，住宅代理可享 10% 折扣。
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：提供 2800 万个干净的住宅 IP，支持稳定的网页抓取和浏览器自动化。流量永不过期，低至 $2/GB。覆盖 195 个国家。支持固定和轮换会话，以及城市、ISP、ASN 定向。试用套餐：$1.95/350MB。使用优惠码 SCRAPEANDTAKE 可享 25% 折扣。
+    </td>
+  </tr>
 </table>
 
 <i><sub>想在这里展示您的广告吗？点击 [这里](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>

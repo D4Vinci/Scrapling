@@ -219,6 +219,16 @@ MySpider().start()
     توفر <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> بروكسيات سكنية ومحمولة وبروكسيات ISP ومراكز بيانات من مصادر أخلاقية، إلى جانب أدوات لاستخراج بيانات الويب وأتمتة الذكاء الاصطناعي. استخدم الكود SCRAPLING10 للحصول على خصم 10% على البروكسيات السكنية.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 28 مليون عنوان IP سكني نظيف لاستخراج بيانات الويب وأتمتة المتصفح بشكل موثوق. حركة بيانات لا تنتهي صلاحيتها تبدأ من $2/GB. 195 دولة. جلسات ثابتة أو دوّارة. استهداف حسب المدينة/ISP/ASN. تجربة بسعر $1.95/350MB. الكود SCRAPEANDTAKE: خصم 25%.
+    </td>
+  </tr>
 </table>
 
 <i><sub>هل تريد عرض إعلانك هنا؟ انقر [هنا](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>

@@ -222,6 +222,16 @@ MySpider().start()
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> предоставляет резидентные, мобильные, ISP- и дата-центровые прокси из этичных источников, а также инструменты для веб-скрейпинга и автоматизации с ИИ. Используйте код SCRAPLING10 для получения скидки 10% на резидентные прокси.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 28 млн чистых резидентных IP-адресов для надёжного веб-скрейпинга и автоматизации браузера. Трафик без срока действия от $2/GB. 195 стран. Сессии с постоянным IP или ротацией. Таргетинг по городу/ISP/ASN. Пробный пакет: $1.95/350MB. Код SCRAPEANDTAKE: скидка 25%.
+    </td>
+  </tr>
 </table>
 
 <i><sub>Хотите показать здесь свою рекламу? Нажмите [здесь](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
