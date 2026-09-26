@@ -649,7 +649,9 @@ async def test_browser_fill_fields_live_caret_selection_and_submit(session_type:
         assert await page.locator("#name").input_value() == "abcz!d"
         assert await page.locator("#notes").input_value() == "new notes"
         assert await page.locator("#submitted").inner_text() == "0"
-        focused = await client.call_tool("browser_click", {"session_id": "browser", "ref": name[1]})
+        focused = await client.call_tool(
+            "browser_mouse", {"session_id": "browser", "actions": [{"type": "click", "ref": name[1]}]}
+        )
         assert not focused.is_error
         await press(["Enter"])
         assert await page.locator("#submitted").inner_text() == "1"

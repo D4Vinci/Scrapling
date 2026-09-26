@@ -48,12 +48,15 @@ def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, 
 @pytest.mark.asyncio
 async def test_browser_wheel_schema() -> None:
     async with Client(ScraplingMCPServer()._build_server("127.0.0.1", 8000)) as client:
-        tool = next(tool for tool in (await client.list_tools()).tools if tool.name == "browser_mouse_wheel")
-    assert set(tool.input_schema["properties"]) == {"session_id", "delta_x", "delta_y"}
-    assert tool.input_schema["required"] == ["session_id"]
+        tool = next(tool for tool in (await client.list_tools()).tools if tool.name == "browser_mouse")
+    schema = tool.input_schema
+    ref = schema["properties"]["actions"]["items"]["discriminator"]["mapping"]["wheel"]
+    wheel = schema["$defs"][ref.rsplit("/", 1)[1]]
+    assert set(wheel["properties"]) == {"type", "delta_x", "delta_y"}
+    assert wheel["required"] == ["type"]
     for field in ("delta_x", "delta_y"):
-        assert tool.input_schema["properties"][field]["type"] == "number"
-        assert tool.input_schema["properties"][field]["default"] == 0
+        assert wheel["properties"][field]["type"] == "number"
+        assert wheel["properties"][field]["default"] == 0
 
 
 @pytest.mark.asyncio
@@ -63,10 +66,12 @@ async def test_browser_wheel_schema() -> None:
 async def test_browser_wheel_forwards_deltas_without_moving_or_capturing(values: dict[str, float]) -> None:
     server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_mouse_wheel", {"session_id": "browser", **values})
+        result = await client.call_tool(
+            "browser_mouse", {"session_id": "browser", "actions": [{"type": "wheel", **values}]}
+        )
     assert not result.is_error
     assert result.structured_content is None
-    assert result.content == [TextContent(type="text", text="Wheel event sent.")]
+    assert result.content == [TextContent(type="text", text="Mouse actions completed.")]
     page.mouse.wheel.assert_awaited_once_with(values.get("delta_x", 0), values.get("delta_y", 0))
     page.mouse.move.assert_not_called()
     page.locator.assert_not_called()
@@ -81,7 +86,9 @@ async def test_browser_wheel_forwards_deltas_without_moving_or_capturing(values:
 async def test_browser_wheel_invalid_input_does_not_reserve_page(field: str, value: Any) -> None:
     server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_mouse_wheel", {"session_id": "browser", field: value})
+        result = await client.call_tool(
+            "browser_mouse", {"session_id": "browser", "actions": [{"type": "wheel", field: value}]}
+        )
     assert result.is_error
     page.is_closed.assert_not_called()
     page.mouse.wheel.assert_not_awaited()
@@ -90,11 +97,13 @@ async def test_browser_wheel_invalid_input_does_not_reserve_page(field: str, val
 
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
 def test_browser_wheel_schema_rejects_nonfinite_deltas(value: float) -> None:
-    tool = ScraplingMCPServer()._build_server("127.0.0.1", 8000)._tool_manager.get_tool("browser_mouse_wheel")
+    tool = ScraplingMCPServer()._build_server("127.0.0.1", 8000)._tool_manager.get_tool("browser_mouse")
     assert tool is not None
     for field in ("delta_x", "delta_y"):
         with pytest.raises(ValidationError):
-            tool.fn_metadata.arg_model.model_validate({"session_id": "browser", field: value})
+            tool.fn_metadata.arg_model.model_validate(
+                {"session_id": "browser", "actions": [{"type": "wheel", field: value}]}
+            )
 
 
 @pytest.mark.asyncio
@@ -122,7 +131,9 @@ async def test_browser_wheel_session_errors_reach_mcp(state: str, message: str) 
     elif state == "closed":
         page.is_closed.return_value = True
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_mouse_wheel", {"session_id": "browser", "delta_y": 120})
+        result = await client.call_tool(
+            "browser_mouse", {"session_id": "browser", "actions": [{"type": "wheel", "delta_y": 120}]}
+        )
     assert result.is_error
     assert result.content and isinstance(result.content[0], TextContent)
     assert message in result.content[0].text
@@ -134,14 +145,16 @@ async def test_browser_wheel_error_is_not_retried_and_releases_page() -> None:
     server, session, page = _server()
     page.mouse.wheel.side_effect = RuntimeError("wheel failed")
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_mouse_wheel", {"session_id": "browser", "delta_y": 120})
+        result = await client.call_tool(
+            "browser_mouse", {"session_id": "browser", "actions": [{"type": "wheel", "delta_y": 120}]}
+        )
     assert result.is_error
     assert result.content and isinstance(result.content[0], TextContent)
-    assert "wheel failed" in result.content[0].text
+    assert "Mouse action 1 (wheel) failed: wheel failed" in result.content[0].text
     page.mouse.wheel.assert_awaited_once()
     assert session.page_pool.pages[0].state == "ready"
     page.mouse.wheel.side_effect = None
-    assert await server.browser_mouse_wheel("browser", delta_y=-120) == "Wheel event sent."
+    assert await server.browser_mouse("browser", [{"type": "wheel", "delta_y": -120}]) == "Mouse actions completed."
 
 
 @pytest.mark.asyncio
@@ -157,7 +170,7 @@ async def test_browser_wheel_reserves_page_until_cancelled(cancel_mode: str) -> 
 
     async def wheel() -> None:
         with scope:
-            await server.browser_mouse_wheel("browser", delta_y=120)
+            await server.browser_mouse("browser", [{"type": "wheel", "delta_y": 120}])
 
     page.mouse.wheel.side_effect = pending
     task = asyncio.create_task(wheel())
@@ -165,7 +178,7 @@ async def test_browser_wheel_reserves_page_until_cancelled(cancel_mode: str) -> 
         await asyncio.wait_for(entered.wait(), 5)
         assert session.page_pool.pages[0].state == "busy"
         with pytest.raises(RuntimeError, match="busy"):
-            await server.browser_mouse_wheel("browser", delta_y=120)
+            await server.browser_mouse("browser", [{"type": "wheel", "delta_y": 120}])
     finally:
         scope.cancel() if cancel_mode == "scope" else task.cancel()
         if cancel_mode == "scope":
@@ -208,11 +221,14 @@ async def test_browser_wheel_live_scrolls_under_current_pointer(session_type: Se
         expected = {"page": [0, 0], "panel": [0, 0]}
         events_count = 0
         for target, x, y in (("page", 400, 300), ("panel", 100, 100)):
-            moved = await client.call_tool("browser_mouse_move", {"session_id": "browser", "x": x, "y": y})
-            assert not moved.is_error
             for dx, dy in ((0, 120), (80, 0), (0, -60), (-40, 0)):
                 result = await client.call_tool(
-                    "browser_mouse_wheel", {"session_id": "browser", "delta_x": dx, "delta_y": dy}
+                    "browser_mouse",
+                    {
+                        "session_id": "browser",
+                        "actions": ([{"type": "move", "x": x, "y": y}] if (dx, dy) == (0, 120) else [])
+                        + [{"type": "wheel", "delta_x": dx, "delta_y": dy}],
+                    },
                 )
                 assert not result.is_error
                 expected[target][0] += dx

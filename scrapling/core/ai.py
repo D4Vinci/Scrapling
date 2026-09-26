@@ -109,6 +109,43 @@ _INPUT_TOOL_ANNOTATIONS = ToolAnnotations(
 )
 
 
+class _MouseTarget(TypedDict, total=False):
+    selector: Optional[NonEmptyString]
+    ref: Optional[NonEmptyString]
+    x: Optional[FiniteFloat]
+    y: Optional[FiniteFloat]
+    timeout: Annotated[
+        NonNegativeFiniteFloat, Field(default=30000, description="Selector/ref timeout in ms; 0 disables it.")
+    ]
+
+
+class _MouseMove(_MouseTarget):
+    type: Literal["move"]
+    steps: NotRequired[Annotated[PositiveInt, Field(default=1, description="Mousemove events for coordinates only.")]]
+
+
+class _MouseClick(_MouseTarget):
+    type: Literal["click"]
+    button: NotRequired[Annotated[MouseButton, Field(default="left")]]
+    click_count: NotRequired[Annotated[PositiveInt, Field(default=1, description="2 for a double-click.")]]
+    delay: NotRequired[
+        Annotated[NonNegativeFiniteFloat, Field(default=0, description="Milliseconds between press and release.")]
+    ]
+
+
+class _MouseWheel(TypedDict):
+    type: Literal["wheel"]
+    delta_x: NotRequired[
+        Annotated[FiniteFloat, Field(default=0, description="Horizontal CSS pixels; positive scrolls right.")]
+    ]
+    delta_y: NotRequired[
+        Annotated[FiniteFloat, Field(default=0, description="Vertical CSS pixels; positive scrolls down.")]
+    ]
+
+
+MouseAction = Annotated[Union[_MouseMove, _MouseClick, _MouseWheel], Field(discriminator="type")]
+
+
 class _FormTarget(TypedDict, total=False):
     selector: Optional[NonEmptyString]
     ref: Optional[NonEmptyString]
@@ -445,94 +482,63 @@ class ScraplingMCPServer:
             else:
                 page_info.mark_ready()
 
-    async def browser_mouse_move(
+    async def browser_mouse(
         self,
         session_id: str,
-        x: Optional[FiniteFloat] = None,
-        y: Optional[FiniteFloat] = None,
-        steps: PositiveInt = 1,
-        selector: Optional[NonEmptyString] = None,
-        ref: Optional[NonEmptyString] = None,
-        timeout: NonNegativeFiniteFloat = 30000,
+        actions: Annotated[List[MouseAction], Field(min_length=1)],
     ) -> str:
-        """Hover using exactly one selector, snapshot ref, or (x, y) pair; return plain text.
-        Selector/ref targets wait and scroll into view; coordinate moves do not.
+        """Move, hover, click, or wheel in order; return plain text. Errors identify the failed action; earlier actions remain.
+        Selector/ref targets wait and scroll into view; coordinates do not. Wheel does not wait for scrolling to finish.
+        Cancelled/timed-out clicks attempt button release. Use browser_snapshot separately to check page changes.
 
         :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param x: Horizontal CSS pixels from the main frame viewport's top-left.
-        :param y: Vertical CSS pixels from the same origin.
-        :param steps: Number of mousemove events for coordinate moves; ignored for selector/ref targets.
-        :param selector: Playwright selector matching exactly one element.
-        :param ref: Element reference from the current snapshot, e.g. "e2".
-        :param timeout: Selector/ref timeout in milliseconds; 0 disables it. Ignored for coordinates.
+        :param actions: Ordered actions; move/click need exactly one selector, snapshot ref, or (x, y) pair in viewport CSS pixels.
         """
-        if sum(value is not None for value in (selector, ref, x)) != 1 or (x is None) != (y is None):
-            raise ValueError("Provide exactly one target: 'selector', 'ref', or both 'x' and 'y'.")
+        for index, action in enumerate(actions, 1):
+            if action["type"] != "wheel" and (
+                sum(action.get(key) is not None for key in ("selector", "ref", "x")) != 1
+                or (action.get("x") is None) != (action.get("y") is None)
+            ):
+                raise ValueError(
+                    f"Mouse action {index} ({action['type']}) needs exactly one target: 'selector', 'ref', or both 'x' and 'y'."
+                )
         with self._browser_page(session_id) as (_, page):
-            if selector is not None or ref is not None:
-                await page.locator(selector if selector is not None else f"aria-ref={ref}").hover(timeout=timeout)
-                return "Mouse hovered over element."
-            await page.mouse.move(x, y, steps=steps)
-        return f"Mouse moved to ({x}, {y})."
-
-    async def browser_mouse_wheel(
-        self,
-        session_id: str,
-        delta_x: FiniteFloat = 0,
-        delta_y: FiniteFloat = 0,
-    ) -> str:
-        """Send a wheel event at the current mouse position; return plain text.
-
-        :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param delta_x: Horizontal pixels; positive scrolls right, negative scrolls left.
-        :param delta_y: Vertical pixels; positive scrolls down, negative scrolls up.
-        """
-        with self._browser_page(session_id) as (_, page):
-            await page.mouse.wheel(delta_x, delta_y)
-        return "Wheel event sent."
-
-    async def browser_click(
-        self,
-        session_id: str,
-        selector: Optional[NonEmptyString] = None,
-        ref: Optional[NonEmptyString] = None,
-        x: Optional[FiniteFloat] = None,
-        y: Optional[FiniteFloat] = None,
-        button: MouseButton = "left",
-        click_count: PositiveInt = 1,
-        delay: NonNegativeFiniteFloat = 0,
-        timeout: NonNegativeFiniteFloat = 30000,
-    ) -> str:
-        """Click using exactly one selector, snapshot ref, or (x, y) pair; return plain text.
-        Selector/ref clicks wait and scroll into view.
-        Coordinate clicks do not scroll or wait for navigation. Cancellation/timeouts release the button if the page stays open; completed actions remain.
-
-        :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param selector: Playwright selector (e.g. CSS or XPath) matching exactly one element.
-        :param ref: Element reference from the current snapshot, e.g. "e2".
-        :param x: Horizontal CSS pixels from the main frame viewport's top-left.
-        :param y: Vertical CSS pixels from the same origin.
-        :param button: Mouse button.
-        :param click_count: Click count; use 2 for a double-click.
-        :param delay: Milliseconds between button press and release.
-        :param timeout: Selector/ref timeout in milliseconds; 0 disables it. Ignored for coordinates.
-        """
-        if sum(value is not None for value in (selector, ref, x)) != 1 or (x is None) != (y is None):
-            raise ValueError("Provide exactly one target: 'selector', 'ref', or both 'x' and 'y'.")
-        with self._browser_page(session_id) as (_, page):
-            try:
-                if selector is not None or ref is not None:
-                    await page.locator(selector if selector is not None else f"aria-ref={ref}").click(
-                        button=button, click_count=click_count, delay=delay, timeout=timeout
+            for index, action in enumerate(actions, 1):
+                try:
+                    if action["type"] == "wheel":
+                        await page.mouse.wheel(action.get("delta_x", 0), action.get("delta_y", 0))
+                        continue
+                    selector, ref = action.get("selector"), action.get("ref")
+                    locator = (
+                        page.locator(selector or f"aria-ref={ref}") if selector is not None or ref is not None else None
                     )
-                else:
-                    await page.mouse.click(x, y, button=button, click_count=click_count, delay=delay)
-            except (CancelledError, PlaywrightTimeoutError, PatchrightTimeoutError):
-                with CancelScope(shield=True):
-                    if not page.is_closed():
-                        await page.mouse.up(button=button)
-                raise
-        return "Click sent."
+                    if action["type"] == "move":
+                        if locator is not None:
+                            await locator.hover(timeout=action.get("timeout", 30000))
+                        else:
+                            await page.mouse.move(action.get("x"), action.get("y"), steps=action.get("steps", 1))
+                    else:
+                        options = {
+                            "button": action.get("button", "left"),
+                            "click_count": action.get("click_count", 1),
+                            "delay": action.get("delay", 0),
+                        }
+                        try:
+                            if locator is not None:
+                                await locator.click(**options, timeout=action.get("timeout", 30000))
+                            else:
+                                await page.mouse.click(action.get("x"), action.get("y"), **options)
+                        except (CancelledError, PlaywrightTimeoutError, PatchrightTimeoutError) as exc:
+                            try:
+                                with CancelScope(shield=True):
+                                    if not page.is_closed():
+                                        await page.mouse.up(button=options["button"])
+                            except Exception as cleanup_error:
+                                raise exc from cleanup_error
+                            raise
+                except Exception as exc:
+                    raise RuntimeError(f"Mouse action {index} ({action['type']}) failed: {exc}") from exc
+        return "Mouse actions completed."
 
     async def browser_press_key(
         self, session_id: str, keys: Annotated[List[NonEmptyString], Field(min_length=1)]
@@ -1309,7 +1315,7 @@ class ScraplingMCPServer:
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
 10. The user can pass a CDP URL to connect to a remote browser session through the `browser_open` tool, then use it with the session tools.
 11. Set `extraction_type="snapshot"` on `browser_fetch` to get an AI ARIA snapshot with element references and bounding boxes in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page without navigating; it returns plain text with boxes by default. Set `depth` to limit the tree or `boxes=False` to omit boxes.
-12. Use `browser_mouse_move` to move the mouse on the current page. Use `browser_click` with exactly one target: `selector`, `ref` from the current snapshot, or both `x` and `y` viewport CSS coordinates. Selector/ref clicks use Playwright's normal waiting and scrolling; coordinate clicks do not scroll or wait for navigation. Get coordinates from `browser_snapshot` and inspect the page afterward with `browser_snapshot`. Clicks can change website data. Do not repeat a click without checking the page state.
+12. Use `browser_mouse` for ordered move/hover, click, and wheel actions. Move/click targets use exactly one selector, current snapshot ref, or viewport (x, y) pair in CSS pixels. Wheel acts at the current pointer and does not wait for scrolling to finish; coordinate clicks do not wait for navigation. Use `browser_snapshot` to inspect results before repeating failed actions or choosing targets that depend on page changes. Completed actions are not undone or retried.
 13. Use `browser_snapshot` to inspect the page after `browser_fill_fields` or `browser_press_key`. Actions may partly complete before an error; check the page before repeating them. To submit, focus the intended control and use `browser_press_key` with ["Enter"].
 """,
         }
@@ -1403,23 +1409,9 @@ class ScraplingMCPServer:
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.browser_mouse_move,
-            title="Move mouse",
-            description=self.browser_mouse_move.__doc__,
-            structured_output=False,
-            annotations=_INPUT_TOOL_ANNOTATIONS,
-        )
-        server.add_tool(
-            self.browser_mouse_wheel,
-            title="Scroll",
-            description=self.browser_mouse_wheel.__doc__,
-            structured_output=False,
-            annotations=_INPUT_TOOL_ANNOTATIONS,
-        )
-        server.add_tool(
-            self.browser_click,
-            title="Click",
-            description=self.browser_click.__doc__,
+            self.browser_mouse,
+            title="Mouse actions",
+            description=self.browser_mouse.__doc__,
             structured_output=False,
             annotations=_INPUT_TOOL_ANNOTATIONS,
         )

@@ -1,8 +1,8 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes nineteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes seventeen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_fill_fields`, and `browser_press_key` return plain text.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, and `browser_press_key` return plain text.
 
 ## Shadow DOM
 
@@ -163,57 +163,40 @@ With `extraction_type="snapshot"`, the response keeps `status` and `url` and ret
 
 Returns a plain-text AI ARIA snapshot of the current whole page, including element roles, names, and references. Takes `session_id` from `browser_open` and optional `depth` to limit the tree. Element positions and sizes in viewport CSS pixels are included by default; set `boxes=false` to omit them. Use it after `browser_fetch` finishes. Raises for an unknown or HTTP session, or a missing, closed, or busy page.
 
-### `browser_mouse_move` -- Hover by selector, snapshot reference, or coordinates
+### `browser_mouse` -- Chain mouse moves, hovers, clicks, and scrolling
 
-Moves the native mouse on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first, then use `browser_snapshot` to find references or coordinates. Supply exactly one target: `selector`, `ref`, or both `x` and `y`.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID of an open browser session |
-| `x`, `y` | number or null | null | Finite CSS pixel coordinates from the main frame viewport's top-left; supply both |
-| `steps` | int | 1 | Number of mousemove events for coordinate moves, at least 1; ignored for selector/reference hovers |
-| `selector` | str or null | null | Nonempty Playwright selector, such as `button[type="submit"]` or `xpath=//button[@type="submit"]` |
-| `ref` | str or null | null | Nonempty reference from the current `browser_snapshot`, such as `e2` |
-| `timeout` | number | 30000 | Finite nonnegative timeout in milliseconds for selector/reference hovers; 0 disables the limit |
-
-Selector and reference hovers use Playwright's locator hover, which waits for the target to be ready and scrolls it into view. A selector must match exactly one element. Pass the exact snapshot reference value, such as `ref="e2"`. Take a new snapshot if the reference is stale. Coordinate moves use the native mouse directly, without automatic waiting or scrolling. Coordinates are viewport CSS pixels, not full-page screenshot coordinates. `timeout` does not apply to coordinate moves.
-
-Returns plain text without an automatic snapshot. Use `browser_snapshot` to inspect the page afterward. Invalid targets, unknown sessions, and missing, closed, or busy pages return an error.
-
-### `browser_mouse_wheel` -- Scroll at the current pointer position
-
-Sends a native mouse wheel event on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first. To target a scrollable area, use `browser_mouse_move` with a selector, snapshot reference, or coordinates before scrolling.
+Runs native mouse actions in order on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first. Use `browser_snapshot` to find current references or coordinates.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `session_id` | str | required | ID of an open browser session |
-| `delta_x` | number | 0 | Finite horizontal delta in CSS pixels; positive moves right, negative moves left |
-| `delta_y` | number | 0 | Finite vertical delta in CSS pixels; positive moves down, negative moves up |
+| `actions` | list[object] | required | Nonempty ordered list of `move`, `click`, or `wheel` actions |
 
-Fractional values and zero are allowed. Uses `page.mouse.wheel` at the current pointer position without moving the mouse, injecting a page script, or navigating. Dispatch does not guarantee scrolling: the page can prevent the event, or the scrollable area can be at its edge. It does not wait for scrolling, animations, or content loaded by scrolling to finish.
+| Action `type` | Fields | Behavior |
+|---------------|--------|----------|
+| `move` | Target, `steps=1`, `timeout=30000` | Hover over an element or move to coordinates; `steps` is the number of coordinate mousemove events, at least 1, and is ignored for element targets |
+| `click` | Target, `button="left"`, `click_count=1`, `delay=0`, `timeout=30000` | Click with the left, right, or middle button; `click_count` must be at least 1, with 2 for a double-click; `delay` is finite nonnegative milliseconds between press and release |
+| `wheel` | `delta_x=0`, `delta_y=0` | Scroll at the current pointer position; finite CSS pixel deltas allow fractions and zero; positive moves right/down, negative moves left/up |
 
-Returns `Wheel event sent.` as plain text without an automatic snapshot. Use `browser_snapshot` to inspect the current page afterward. Errors are not retried. Invalid deltas, unknown or HTTP sessions, and missing, closed, or busy pages return an error.
+Each move or click needs exactly one target: a nonempty Playwright `selector`, a nonempty snapshot `ref` such as `"e2"`, or both `x` and `y`. Coordinates must be finite viewport CSS pixels measured from the main frame's top-left, not full-page screenshot coordinates. Selectors must match exactly one element. Refresh stale references with `browser_snapshot`.
 
-### `browser_click` -- Click by selector, snapshot reference, or coordinates
+Element targets use native locator hover or click, which waits for readiness and scrolls into view. Their per-action `timeout` is finite nonnegative milliseconds; 0 disables it. Coordinate actions use the native mouse without automatic waiting or scrolling and ignore `timeout`. Coordinate clicks move the mouse, then press and release, without waiting for navigation. Wheel actions neither move the pointer nor wait for scrolling, animations, or loaded content to finish. The page may prevent scrolling, or the scrollable area may be at its edge.
 
-Clicks on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first. Supply exactly one target: `selector`, `ref`, or both `x` and `y`.
+For example, hover over a panel and scroll it in one call:
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID of an open browser session |
-| `selector` | str or null | null | Nonempty Playwright selector, such as `button[type="submit"]` or `xpath=//button[@type="submit"]` |
-| `ref` | str or null | null | Nonempty reference from the current `browser_snapshot`, such as `e2` |
-| `x`, `y` | number or null | null | Finite CSS pixel coordinates from the main frame viewport's top-left; supply both |
-| `button` | `"left"` / `"right"` / `"middle"` | `"left"` | Button to click |
-| `click_count` | int | 1 | Number of clicks, at least 1; use 2 for a double-click |
-| `delay` | number | 0 | Finite nonnegative milliseconds between press and release |
-| `timeout` | number | 30000 | Finite nonnegative timeout in milliseconds for selector/reference clicks; 0 disables the limit |
+```json
+{
+  "session_id": "browser",
+  "actions": [
+    {"type": "move", "selector": "#results"},
+    {"type": "wheel", "delta_y": 500}
+  ]
+}
+```
 
-Selector and reference clicks use Playwright's locator click, which waits for the target to be ready and scrolls it into view. A selector must match exactly one element. Pass the exact snapshot reference value, such as `ref="e2"`. Take a new snapshot if the reference is stale. Coordinate clicks move the mouse before pressing and releasing the button, with no scroll or navigation wait. `timeout` does not apply to coordinate clicks.
+The whole list is validated before execution, and the page stays reserved for the full sequence. The first action error stops the batch and reports its one-based action number, type, and native error. Cancellation also stops the batch and remains cancellation. Earlier actions stay in effect and are never retried. A cancelled or timed-out click attempts to release the button while the page is open; this does not undo the click. The page reservation is released after success, error, or cancellation.
 
-Invalid targets, unknown sessions, and missing, closed, or busy pages return an error.
-
-Returns plain text without an automatic snapshot. Use `browser_snapshot` to inspect the page afterward. A cancelled or timed-out click sends a button release before the page can be reused, even if it was still waiting for a target. This does not undo page actions. Do not repeat a failed click without checking the page state.
+Returns `Mouse actions completed.` as plain text without a snapshot. Use `browser_snapshot` before retrying after an error or when the next action depends on a page change. Invalid targets, unknown or HTTP sessions, and missing, closed, or busy pages return an error.
 
 ### `browser_fill_fields` -- Fill one or more page fields in order
 
@@ -239,11 +222,11 @@ Selectors must match exactly one element. Use current snapshot references, such 
 
 With `slowly=true`, native `press_sequentially` types each character with a fresh random delay of 50-150 ms, clearing first unless the field has `clear=false`. All field types get a fresh random pause of 100-300 ms before the next field, with no pause before the first or after the last. The timeout applies separately to each native action, including clearing and each character press; pauses between fields are outside it.
 
-Returns `Fields filled.` as plain text without echoing values, submitting forms, or taking a snapshot. An error or cancellation stops the remaining fields; completed changes stay and are not retried. The page reservation is released afterward. Use `browser_snapshot` to check the page before retrying. To submit with Enter, use `browser_press_key` with `keys=["Enter"]`; first focus the intended control with `browser_click` if needed, since the batch may end on another field. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
+Returns `Fields filled.` as plain text without echoing values, submitting forms, or taking a snapshot. An error or cancellation stops the remaining fields; completed changes stay and are not retried. The page reservation is released afterward. Use `browser_snapshot` to check the page before retrying. To submit with Enter, use `browser_press_key` with `keys=["Enter"]`; first focus the intended control with a `browser_mouse` click action if needed, since the batch may end on another field. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
 
 ### `browser_press_key` -- Chain keys and shortcuts at the current focus
 
-Presses each item in order through native `page.keyboard.press` on the existing page in a dynamic or stealthy browser session. The page stays reserved for the full sequence. Call `browser_fetch` first. Use `browser_click` to focus a control before pressing when needed; later presses follow any focus changes caused by earlier ones.
+Presses each item in order through native `page.keyboard.press` on the existing page in a dynamic or stealthy browser session. The page stays reserved for the full sequence. Call `browser_fetch` first. Use a `browser_mouse` click action to focus a control before pressing when needed; later presses follow any focus changes caused by earlier ones.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -307,9 +290,7 @@ Requires an open browser session. Call `browser_open` first, then pass the `sess
 | Multiple plain HTTP requests to one site | `open_request_session` + `session_make_request` per request   |
 | Need a screenshot of a page              | `browser_open` + `browser_screenshot` with `session_id`               |
 | Read the current page's AI ARIA snapshot  | `browser_snapshot` with `session_id`                          |
-| Move the mouse on the current page       | `browser_mouse_move` with `session_id`                     |
-| Scroll a page or nested panel            | `browser_mouse_wheel` with `session_id`                    |
-| Click by selector, snapshot ref, or coordinates | `browser_click` with `session_id`                      |
+| Move, hover, click, or scroll in order    | `browser_mouse` with `session_id`                          |
 | Fill one or more page fields in order   | `browser_fill_fields` with `session_id`                      |
 | Chain keys or keyboard shortcuts         | `browser_press_key` with `session_id`                      |
 
@@ -402,7 +383,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_fill_fields`, `browser_press_key`, and `browser_screenshot` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, `browser_press_key`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 
