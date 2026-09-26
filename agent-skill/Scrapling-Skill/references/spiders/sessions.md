@@ -173,7 +173,7 @@ async def parse(self, response: Response):
     )
 ```
 
-**Warning:** Session arguments (**kwargs) passed from the original request are inherited by `response.follow()`. New kwargs take precedence over inherited ones.
+**Warning:** Session arguments (**kwargs) passed from the original request are inherited by `response.follow()`, except `method`, `params`, `data`, `json`, `files`, and `multipart`, so following a link after a POST issues a plain GET. New kwargs take precedence over inherited ones.
 
 ```python
 from scrapling.spiders import Spider, Response
