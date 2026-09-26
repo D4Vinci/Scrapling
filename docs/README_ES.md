@@ -219,6 +219,16 @@ MySpider().start()
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> ofrece proxies residenciales, móviles, ISP y de centros de datos de origen ético, además de herramientas de scraping y automatización con IA. Usa el código SCRAPLING10 para obtener un 10% de descuento en proxies residenciales.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 28 millones de IPs residenciales limpias para scraping y automatización del navegador fiables. Tráfico sin caducidad desde $2/GB. 195 países. Sesiones persistentes o rotativas. Segmentación por ciudad/ISP/ASN. Prueba por $1.95/350MB. Código SCRAPEANDTAKE: 25% de descuento.
+    </td>
+  </tr>
 </table>
 
 <i><sub>¿Quieres mostrar tu anuncio aquí? Haz clic [aquí](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>

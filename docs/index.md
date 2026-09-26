@@ -95,6 +95,9 @@ MySpider().start()
   <a href="https://byteful.com/?utm_source=scrapling_website&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png" class="ad">
   </a>
+  <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png" class="ad">
+  </a>
   <br />
   <br />
     <a href="https://www.novada.com/?d4vinci-scrapling" target="_blank" title="The All-in-One Solution for Every Data Scraping Scenario"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/novada.jpg"></a>
