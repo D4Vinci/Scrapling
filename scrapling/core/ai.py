@@ -1,7 +1,8 @@
 from uuid import uuid4
 from os import environ
+from random import uniform
 from hmac import compare_digest
-from asyncio import CancelledError, gather
+from asyncio import CancelledError, gather, sleep
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
@@ -36,6 +37,7 @@ from scrapling.core._types import (
     Tuple,
     Mapping,
     Dict,
+    TypedDict,
     List,
     Any,
     Annotated,
@@ -104,6 +106,36 @@ _LIST_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=Fa
 _INPUT_TOOL_ANNOTATIONS = ToolAnnotations(
     read_only_hint=False, destructive_hint=True, idempotent_hint=False, open_world_hint=True
 )
+
+
+class _FormTarget(TypedDict, total=False):
+    selector: Optional[NonEmptyString]
+    ref: Optional[NonEmptyString]
+
+
+class _TextFormField(_FormTarget):
+    type: Literal["textbox"]
+    value: str
+
+
+class _CheckboxFormField(_FormTarget):
+    type: Literal["checkbox"]
+    value: bool
+
+
+class _RadioFormField(_FormTarget):
+    type: Literal["radio"]
+    value: Literal[True]
+
+
+class _SelectFormField(_FormTarget):
+    type: Literal["combobox"]
+    value: Annotated[Union[str, List[str]], Field(description="Option label(s); [] clears selection.")]
+
+
+FormField = Annotated[
+    Union[_TextFormField, _CheckboxFormField, _RadioFormField, _SelectFormField], Field(discriminator="type")
+]
 
 
 class ResponseModel(BaseModel):
@@ -540,6 +572,38 @@ class ScraplingMCPServer:
             for key in keys:
                 await page.keyboard.press(key)
         return "Keys pressed."
+
+    async def browser_fill_fields(
+        self,
+        session_id: str,
+        fields: Annotated[List[FormField], Field(min_length=1)],
+        timeout: NonNegativeFiniteFloat = 30000,
+        slowly: bool = False,
+    ) -> str:
+        """Fill fields in order; stop on error and return plain text on success.
+
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
+        :param fields: Ordered field values; each needs exactly one selector or snapshot ref.
+        :param timeout: Limit per operation in milliseconds; 0 disables it.
+        :param slowly: Replace text with random pauses: 50-150 ms per character, 100-300 ms between fields.
+        """
+        if any((item.get("selector") is None) == (item.get("ref") is None) for item in fields):
+            raise ValueError("Each field must have exactly one target: 'selector' or 'ref'.")
+        with self._browser_page(session_id) as (_, page):
+            for index, item in enumerate(fields):
+                if slowly and index:
+                    await sleep(uniform(0.1, 0.3))
+                locator = page.locator(item.get("selector") or f"aria-ref={item.get('ref')}")
+                if item["type"] == "textbox":
+                    await locator.fill("" if slowly else item["value"], timeout=timeout)
+                    if slowly:
+                        for character in item["value"]:
+                            await locator.press_sequentially(character, delay=uniform(50, 150), timeout=timeout)
+                elif item["type"] == "combobox":
+                    await locator.select_option(label=item["value"], timeout=timeout)
+                else:
+                    await locator.set_checked(item["value"], timeout=timeout)
+        return "Fields filled."
 
     async def browser_screenshot(
         self,
@@ -1393,6 +1457,13 @@ class ScraplingMCPServer:
             self.browser_press_key,
             title="Press keys",
             description=self.browser_press_key.__doc__,
+            structured_output=False,
+            annotations=_INPUT_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_fill_fields,
+            title="Fill fields",
+            description=self.browser_fill_fields.__doc__,
             structured_output=False,
             annotations=_INPUT_TOOL_ANNOTATIONS,
         )

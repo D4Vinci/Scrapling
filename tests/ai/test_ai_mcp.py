@@ -982,12 +982,13 @@ class TestServerToolRegistration:
 
     @pytest.mark.asyncio
     async def test_tools_are_listed_with_expected_schemas(self):
-        """All 19 tools are advertised, with plain content for screenshots, snapshots, and input actions"""
+        """All 20 tools are advertised, with plain content for screenshots, snapshots, and input actions"""
         server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
         async with Client(server) as client:
             assert client.instructions
             tools = {tool.name: tool for tool in (await client.list_tools()).tools}
             for name in (
+                "browser_fill_form",
                 "open_session",
                 "session_fetch",
                 "screenshot",
@@ -1001,7 +1002,7 @@ class TestServerToolRegistration:
                 result = await client.call_tool(name, {})
                 assert result.is_error
 
-        assert len(tools) == 19
+        assert len(tools) == 20
         assert tools["browser_screenshot"].output_schema is None
         assert tools["browser_snapshot"].output_schema is None
         assert tools["browser_mouse_move"].output_schema is None
@@ -1009,7 +1010,9 @@ class TestServerToolRegistration:
         assert tools["browser_type"].output_schema is None
         assert tools["browser_mouse_wheel"].output_schema is None
         assert tools["browser_press_key"].output_schema is None
+        assert tools["browser_fill_fields"].output_schema is None
         assert {
+            "browser_fill_form",
             "session_snapshot",
             "open_session",
             "session_fetch",
@@ -1039,6 +1042,7 @@ class TestServerToolRegistration:
                 "browser_type",
                 "browser_mouse_wheel",
                 "browser_press_key",
+                "browser_fill_fields",
             )
         )
 
@@ -1104,7 +1108,7 @@ class TestServerToolRegistration:
         assert result.ttl_ms == 3_600_000 and result.cache_scope == "public"
 
         annotations = {tool.name: tool.annotations for tool in result.tools if tool.annotations is not None}
-        assert len(annotations) == 19
+        assert len(annotations) == 20
         for name in (
             "make_request",
             "bulk_get",
@@ -1125,7 +1129,14 @@ class TestServerToolRegistration:
             assert annotations[name].open_world_hint is True
         assert annotations["list_sessions"].read_only_hint is True
         assert annotations["list_sessions"].open_world_hint is False
-        for name in ("browser_mouse_move", "browser_click", "browser_type", "browser_mouse_wheel", "browser_press_key"):
+        for name in (
+            "browser_mouse_move",
+            "browser_click",
+            "browser_type",
+            "browser_mouse_wheel",
+            "browser_press_key",
+            "browser_fill_fields",
+        ):
             assert annotations[name].read_only_hint is False
             assert annotations[name].destructive_hint is True
             assert annotations[name].idempotent_hint is False
