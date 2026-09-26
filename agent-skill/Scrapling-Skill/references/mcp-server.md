@@ -238,19 +238,37 @@ Returns a list of `SessionInfo` objects, each with `session_id`, `session_type`,
 
 No parameters.
 
-### `browser_screenshot` -- Capture the current page
+### `browser_screenshot` -- Capture the current page or an element
 
-Captures the existing page without reloading or navigating, preserving filled inputs and open menus. Returns an MCP `ImageContent` block followed by a `TextContent` block with the current page URL. The tool uses `structured_output=False`, so the model receives real image content rather than image data duplicated in a structured JSON result.
+Captures the existing page or one element without reloading or navigating. Element capture can scroll the target into view. Returns an MCP `ImageContent` block followed by a `TextContent` block with the current page URL. The tool uses `structured_output=False`, so the model receives real image content rather than image data duplicated in a structured JSON result.
 
 Call `browser_open`, then `browser_fetch` to open a page first. Both `dynamic` and `stealthy` sessions are accepted. Use `browser_actions` for waits or interactions before capture; this tool does not accept a URL or readiness controls.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `session_id` | str | required | ID of an open browser session with a page |
+| `selector` | str or null | null | Nonempty Playwright selector for one element; cannot combine with `ref` |
+| `ref` | str or null | null | Nonempty current snapshot reference, such as `e2`; cannot combine with `selector` |
 | `image_type` | `"png"` / `"jpeg"` | `"png"` | Image format; JPEG allows smaller payloads |
-| `full_page` | bool | false | Capture the full scrollable page instead of the viewport |
+| `full_page` | bool | false | Capture the full scrollable page; cannot combine with an element target |
 | `quality` | int or null | null | JPEG quality 0-100; an error if supplied for PNG |
 | `timeout` | number | 30000 | Finite nonnegative capture timeout in milliseconds; 0 disables it |
+
+Omit both `selector` and `ref` for the viewport or full-page capture. For an element, pass exactly one target and leave `full_page=false`. Native element capture requires exactly one match, waits for the element to be ready, and may scroll it into view. Refresh stale references with `browser_snapshot`.
+
+The element image is clipped to its bounding box. A scrollable container includes only its currently visible contents, not all content inside it. Content covered by another element stays covered in the image.
+
+For example, capture a result card through its selector:
+
+```json
+{"session_id": "browser", "selector": "#result-card"}
+```
+
+Or use a reference from the current snapshot:
+
+```json
+{"session_id": "browser", "ref": "e2"}
+```
 
 The page stays reserved during capture and is released after success, failure, or cancellation. Unknown or HTTP sessions and missing, closed, or busy pages return an error. Capture errors propagate.
 
@@ -266,7 +284,7 @@ The page stays reserved during capture and is released after success, failure, o
 | Multiple protected pages                 | `browser_stealth_fetch_many_once`                                         |
 | Multiple pages from the same site        | `browser_open` + `browser_fetch` per page                     |
 | Multiple plain HTTP requests to one site | `open_request_session` + `session_make_request` per request   |
-| Capture the current page                 | `browser_screenshot` after `browser_open` + `browser_fetch` |
+| Capture the current page or an element   | `browser_screenshot` after `browser_open` + `browser_fetch` |
 | Read the current page's AI ARIA snapshot  | `browser_snapshot` with `session_id`                          |
 | Chain mouse, field, keyboard, or wait actions | `browser_actions` with `session_id`                       |
 

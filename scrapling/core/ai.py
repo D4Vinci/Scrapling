@@ -1,5 +1,6 @@
 from uuid import uuid4
 from os import environ
+from time import monotonic
 from random import uniform
 from hmac import compare_digest
 from asyncio import CancelledError, gather, sleep
@@ -631,25 +632,47 @@ class ScraplingMCPServer:
         full_page: bool = False,
         quality: Optional[Annotated[int, Field(ge=0, le=100)]] = None,
         timeout: NonNegativeFiniteFloat = 30000,
+        selector: Optional[NonEmptyString] = None,
+        ref: Optional[NonEmptyString] = None,
     ) -> List[ImageContent | TextContent]:
-        """Capture the current page without navigating; return the image and current URL.
-        Use browser_actions for waits before capture.
+        """Capture the current page or one element without navigating; return the image and current URL.
+        Element capture waits and scrolls into view. Use browser_actions for other waits before capture.
 
         :param session_id: ID from `browser_open`; call `browser_fetch` first.
         :param image_type: Image format.
-        :param full_page: Capture the full scrollable page.
+        :param full_page: Capture the full scrollable page; incompatible with selector/ref.
         :param quality: JPEG quality, 0-100; invalid for PNG.
         :param timeout: Capture limit in milliseconds; 0 disables it.
+        :param selector: Playwright selector matching one element; omit when using ref.
+        :param ref: Current snapshot element reference; omit both targets for page capture.
         """
         if quality is not None and image_type != "jpeg":
             raise ValueError("'quality' is only valid when 'image_type' is 'jpeg'.")
+        if selector is not None and ref is not None:
+            raise ValueError("Provide either 'selector' or 'ref', not both.")
+        if full_page and (selector is not None or ref is not None):
+            raise ValueError("'full_page' cannot be combined with 'selector' or 'ref'.")
 
         with self._browser_page(session_id) as (_, page):
-            image = Image(
-                data=await page.screenshot(type=image_type, full_page=full_page, quality=quality, timeout=timeout),
-                format=image_type,
-            ).to_image_content()
-            return [image, TextContent(type="text", text=page.url)]
+            options: Dict[str, Any] = {"type": image_type, "quality": quality, "timeout": timeout}
+            if selector is not None or ref is not None:
+                started = monotonic()
+                element = await page.locator(selector or f"aria-ref={ref}").element_handle(timeout=timeout)
+                try:
+                    options["timeout"] = max(1, timeout - (monotonic() - started) * 1000) if timeout else 0
+                    data = await element.screenshot(**options)
+                except BaseException as exc:
+                    try:
+                        with CancelScope(shield=True):
+                            await element.dispose()
+                    except Exception as cleanup_error:
+                        raise exc from cleanup_error
+                    raise
+                with CancelScope(shield=True):
+                    await element.dispose()
+            else:
+                data = await page.screenshot(full_page=full_page, **options)
+            return [Image(data=data, format=image_type).to_image_content(), TextContent(type="text", text=page.url)]
 
     @staticmethod
     async def make_request(

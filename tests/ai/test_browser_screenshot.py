@@ -2,7 +2,9 @@ import asyncio
 from base64 import b64decode
 from contextlib import suppress
 from os import getenv
+from re import search
 from struct import unpack
+from time import monotonic
 from unittest.mock import AsyncMock, Mock, call
 
 import pytest
@@ -26,6 +28,9 @@ def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, 
     page.is_closed.return_value = False
     page.url = "https://screenshot.test/current"
     page.screenshot = AsyncMock(return_value=b"captured pixels")
+    page.locator.return_value.element_handle = AsyncMock()
+    page.locator.return_value.element_handle.return_value.screenshot = AsyncMock(return_value=b"captured pixels")
+    page.locator.return_value.element_handle.return_value.dispose = AsyncMock()
     session.page_pool.add_page(page).mark_ready()
     server._sessions["browser"] = _SessionEntry(session, session_type)
     return server, session, page
@@ -38,7 +43,11 @@ async def test_browser_screenshot_schema() -> None:
     schema = tool.input_schema
     assert schema["required"] == ["session_id"]
     properties = schema["properties"]
-    assert set(properties) == {"session_id", "image_type", "full_page", "quality", "timeout"}
+    assert set(properties) == {"session_id", "image_type", "full_page", "quality", "timeout", "selector", "ref"}
+    for target in ("selector", "ref"):
+        assert properties[target]["default"] is None
+        assert {"type": "null"} in properties[target]["anyOf"]
+        assert {"type": "string", "minLength": 1} in properties[target]["anyOf"]
     assert properties["image_type"]["default"] == "png"
     assert properties["image_type"]["enum"] == ["png", "jpeg"]
     assert properties["full_page"]["default"] is False
@@ -97,6 +106,143 @@ async def test_browser_screenshot_returns_native_image_without_navigation(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
+@pytest.mark.parametrize("target", [{"selector": "#card", "ref": None}, {"selector": None, "ref": "e2"}])
+@pytest.mark.parametrize("options", [{}, {"image_type": "jpeg", "quality": 70, "timeout": 250}])
+async def test_browser_screenshot_forwards_element_target_without_full_page(
+    session_type: SessionType, target: dict[str, Any], options: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    server, session, page = _server(session_type)
+    monkeypatch.setattr("scrapling.core.ai.monotonic", lambda: 10)
+
+    async def capture(**kwargs: Any) -> bytes:
+        assert session.page_pool.pages[0].state == "busy"
+        return b"captured pixels"
+
+    page.locator.return_value.element_handle.return_value.screenshot.side_effect = capture
+    async with Client(server._build_server("127.0.0.1", 8000)) as client:
+        result = await client.call_tool("browser_screenshot", {"session_id": "browser", **target, **options})
+    assert not result.is_error and result.structured_content is None
+    assert len(result.content) == 2 and isinstance(result.content[0], ImageContent)
+    assert b64decode(result.content[0].data) == b"captured pixels"
+    assert result.content[0].mime_type == f"image/{options.get('image_type', 'png')}"
+    assert result.content[1] == TextContent(type="text", text=page.url)
+    assert page.mock_calls == [
+        call.is_closed(),
+        call.locator(target.get("selector") or "aria-ref=e2"),
+        call.locator().element_handle(timeout=options.get("timeout", 30000)),
+        call.locator()
+        .element_handle()
+        .screenshot(
+            type=options.get("image_type", "png"), quality=options.get("quality"), timeout=options.get("timeout", 30000)
+        ),
+        call.locator().element_handle().dispose(),
+        call.is_closed(),
+    ]
+    page.screenshot.assert_not_awaited()
+    assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("timeout, elapsed, remaining", [(1000, 0.25, 750), (100, 0.1, 1), (100, 0.2, 1), (0, 100, 0)])
+async def test_browser_screenshot_element_resolution_uses_capture_budget(
+    timeout: float, elapsed: float, remaining: float, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    server, session, page = _server()
+    monkeypatch.setattr("scrapling.core.ai.monotonic", Mock(side_effect=[10, 10 + elapsed]))
+    await server.browser_screenshot("browser", selector="#card", timeout=timeout)
+    locator = page.locator.return_value
+    locator.element_handle.assert_awaited_once_with(timeout=timeout)
+    locator.element_handle.return_value.screenshot.assert_awaited_once_with(type="png", quality=None, timeout=remaining)
+    locator.element_handle.return_value.dispose.assert_awaited_once()
+    page.screenshot.assert_not_awaited()
+    page.set_default_timeout.assert_not_called()
+    assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("session_type, error_type", [("dynamic", PlaywrightError), ("stealthy", PatchrightError)])
+async def test_browser_screenshot_element_resolution_failure_does_not_capture_or_retry(
+    session_type: SessionType, error_type: type[Exception]
+) -> None:
+    server, session, page = _server(session_type)
+    native_error = error_type("element resolution failed")
+    locator = page.locator.return_value
+    locator.element_handle.side_effect = native_error
+    with pytest.raises(error_type) as error:
+        await server.browser_screenshot("browser", ref="e2", timeout=100)
+    assert error.value is native_error
+    locator.element_handle.assert_awaited_once_with(timeout=100)
+    locator.element_handle.return_value.screenshot.assert_not_awaited()
+    locator.element_handle.return_value.dispose.assert_not_awaited()
+    page.screenshot.assert_not_awaited()
+    assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("session_type, error_type", [("dynamic", PlaywrightError), ("stealthy", PatchrightError)])
+@pytest.mark.parametrize("outcome", ["success", "error", "cancel"])
+async def test_browser_screenshot_disposal_failure_preserves_capture_error_or_cancellation(
+    session_type: SessionType, error_type: type[Exception], outcome: str
+) -> None:
+    server, session, page = _server(session_type)
+    element = page.locator.return_value.element_handle.return_value
+    native_error = error_type("capture failed")
+    cleanup_error = error_type("dispose failed")
+    entered = asyncio.Event()
+    release = asyncio.Event()
+
+    async def capture(**kwargs: Any) -> bytes:
+        entered.set()
+        await release.wait()
+        if outcome == "error":
+            raise native_error
+        return b"captured pixels"
+
+    element.screenshot.side_effect = capture
+    element.dispose.side_effect = cleanup_error
+    task = asyncio.create_task(server.browser_screenshot("browser", selector="#card"))
+    try:
+        await asyncio.wait_for(entered.wait(), 5)
+        task.cancel() if outcome == "cancel" else release.set()
+        with pytest.raises(asyncio.CancelledError if outcome == "cancel" else error_type) as error:
+            await task
+        if outcome == "success":
+            assert error.value is cleanup_error
+        else:
+            if outcome == "error":
+                assert error.value is native_error
+            assert error.value.__cause__ is cleanup_error
+    finally:
+        if not task.done():
+            task.cancel()
+        with suppress(Exception, asyncio.CancelledError):
+            await task
+    page.locator.return_value.element_handle.assert_awaited_once()
+    element.screenshot.assert_awaited_once()
+    element.dispose.assert_awaited_once()
+    assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "options",
+    [{"selector": "#card", "ref": "e2"}, {"selector": "#card", "full_page": True}, {"ref": "e2", "full_page": True}],
+)
+async def test_browser_screenshot_conflicting_targets_do_not_reserve_page(options: dict[str, Any]) -> None:
+    server, session, page = _server()
+    with pytest.raises(ValueError):
+        await server.browser_screenshot("browser", **options)
+    async with Client(server._build_server("127.0.0.1", 8000)) as client:
+        result = await client.call_tool("browser_screenshot", {"session_id": "browser", **options})
+    assert result.is_error
+    page.is_closed.assert_not_called()
+    page.locator.assert_not_called()
+    page.screenshot.assert_not_awaited()
+    assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "options",
     [
@@ -108,6 +254,8 @@ async def test_browser_screenshot_returns_native_image_without_navigation(
         {"timeout": -1},
         {"timeout": "NaN"},
         {"timeout": "Infinity"},
+        {"selector": ""},
+        {"ref": ""},
     ],
 )
 async def test_browser_screenshot_invalid_input_does_not_reserve_page(options: dict[str, Any]) -> None:
@@ -183,8 +331,9 @@ async def test_browser_screenshot_session_errors(state: str, message: str) -> No
 @pytest.mark.parametrize("session_type, error_type", [("dynamic", PlaywrightError), ("stealthy", PatchrightError)])
 @pytest.mark.parametrize("closed", [False, True])
 @pytest.mark.parametrize("through_mcp", [False, True])
+@pytest.mark.parametrize("target", [{}, {"selector": "#card"}, {"ref": "e2"}])
 async def test_browser_screenshot_native_error_releases_page_without_retry(
-    session_type: SessionType, error_type: type[Exception], closed: bool, through_mcp: bool
+    session_type: SessionType, error_type: type[Exception], closed: bool, through_mcp: bool, target: dict[str, str]
 ) -> None:
     server, session, page = _server(session_type)
     native_error = error_type("capture failed")
@@ -193,17 +342,22 @@ async def test_browser_screenshot_native_error_releases_page_without_retry(
         page.is_closed.return_value = closed
         raise native_error
 
-    page.screenshot.side_effect = fail
+    capture = page.locator.return_value.element_handle.return_value.screenshot if target else page.screenshot
+    capture.side_effect = fail
     if through_mcp:
         async with Client(server._build_server("127.0.0.1", 8000)) as client:
-            result = await client.call_tool("browser_screenshot", {"session_id": "browser"})
+            result = await client.call_tool("browser_screenshot", {"session_id": "browser", **target})
         assert result.is_error and isinstance(result.content[0], TextContent)
         assert "capture failed" in result.content[0].text
     else:
         with pytest.raises(error_type) as error:
-            await server.browser_screenshot("browser")
+            await server.browser_screenshot("browser", **target)
         assert error.value is native_error
-    page.screenshot.assert_awaited_once()
+    capture.assert_awaited_once()
+    if target:
+        page.locator.return_value.element_handle.assert_awaited_once()
+        page.locator.return_value.element_handle.return_value.dispose.assert_awaited_once()
+        page.screenshot.assert_not_awaited()
     page.close.assert_not_called()
     if closed:
         assert session.page_pool.pages_count == 0
@@ -214,9 +368,14 @@ async def test_browser_screenshot_native_error_releases_page_without_retry(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("cancel_mode", ["task", "scope"])
 @pytest.mark.parametrize("closed", [False, True])
-async def test_browser_screenshot_reserves_page_until_cancelled(cancel_mode: str, closed: bool) -> None:
+@pytest.mark.parametrize("target", [{}, {"selector": "#card"}, {"ref": "e2"}])
+async def test_browser_screenshot_reserves_page_until_cancelled(
+    cancel_mode: str, closed: bool, target: dict[str, str]
+) -> None:
     server, session, page = _server()
     entered = asyncio.Event()
+    disposing = asyncio.Event()
+    released = asyncio.Event()
     scope = CancelScope()
 
     async def pending(**kwargs: Any) -> bytes:
@@ -224,21 +383,32 @@ async def test_browser_screenshot_reserves_page_until_cancelled(cancel_mode: str
         await asyncio.Event().wait()
         return b""
 
+    async def dispose() -> None:
+        disposing.set()
+        await released.wait()
+
     async def capture() -> None:
         with scope:
-            await server.browser_screenshot("browser")
+            await server.browser_screenshot("browser", **target)
 
-    page.screenshot.side_effect = pending
+    screenshot = page.locator.return_value.element_handle.return_value.screenshot if target else page.screenshot
+    screenshot.side_effect = pending
+    page.locator.return_value.element_handle.return_value.dispose.side_effect = dispose
     task = asyncio.create_task(capture())
     try:
         await asyncio.wait_for(entered.wait(), 5)
         assert session.page_pool.pages[0].state == "busy"
         with pytest.raises(RuntimeError, match="busy"):
-            await server.browser_screenshot("browser")
+            await server.browser_screenshot("browser", **target)
         with pytest.raises(RuntimeError, match="busy"):
             await server.browser_actions("browser", [{"type": "press_key", "key": "Enter"}])
         page.is_closed.return_value = closed
         scope.cancel() if cancel_mode == "scope" else task.cancel()
+        if target:
+            await asyncio.wait_for(disposing.wait(), 5)
+            assert session.page_pool.pages[0].state == "busy"
+            assert not task.done()
+            released.set()
         if cancel_mode == "scope":
             await asyncio.wait_for(task, 5)
             assert scope.cancelled_caught
@@ -246,11 +416,16 @@ async def test_browser_screenshot_reserves_page_until_cancelled(cancel_mode: str
             with pytest.raises(asyncio.CancelledError):
                 await task
     finally:
+        released.set()
         if not task.done():
             task.cancel()
         with suppress(asyncio.CancelledError):
             await task
-    page.screenshot.assert_awaited_once()
+    screenshot.assert_awaited_once()
+    if target:
+        page.locator.return_value.element_handle.assert_awaited_once()
+        page.locator.return_value.element_handle.return_value.dispose.assert_awaited_once()
+        page.screenshot.assert_not_awaited()
     page.close.assert_not_called()
     if closed:
         assert session.page_pool.pages_count == 0
@@ -266,9 +441,11 @@ async def test_browser_screenshot_live_preserves_actions_and_current_page(sessio
     html = """<!DOCTYPE html><html><head><style>
         body { margin: 0; height: 4000px; background: linear-gradient(white, #abc); }
         #controls { position: fixed; top: 20px; left: 20px; background: white; }
+        #toggle { width: 120px; height: 40px; box-sizing: border-box; }
+        #below { position: absolute; top: 3000px; left: 20px; width: 100px; height: 50px; box-sizing: border-box; }
         </style></head><body><div id=controls>
         <input id=name><input id=agree type=checkbox><button id=toggle>Open menu</button>
-        <div id=menu hidden>Saved choices</div></div><script>
+        <div id=menu hidden>Saved choices</div></div><button id=below>Below</button><script>
         document.querySelector('#toggle').onclick = () => {
             document.querySelector('#menu').hidden = false;
             history.pushState({}, '', '/edited');
@@ -323,7 +500,8 @@ async def test_browser_screenshot_live_preserves_actions_and_current_page(sessio
             }
             initial_requests = requests.copy()
             assert initial_requests == ["https://screenshot.test/start"]
-            heights = []
+            pixel_ratio = await page.evaluate("devicePixelRatio")
+            dimensions = []
             for full_page in (False, True):
                 result = await client.call_tool("browser_screenshot", {"session_id": "browser", "full_page": full_page})
                 assert not result.is_error and result.structured_content is None
@@ -332,10 +510,54 @@ async def test_browser_screenshot_live_preserves_actions_and_current_page(sessio
                 assert result.content[1] == TextContent(type="text", text=before["url"])
                 png = b64decode(result.content[0].data)
                 assert png.startswith(b"\x89PNG\r\n\x1a\n")
-                heights.append(unpack(">II", png[16:24])[1])
+                dimensions.append(unpack(">II", png[16:24]))
                 assert await page.evaluate(read_state) == before
                 assert requests == initial_requests
                 assert session.page_pool.pages == [page_info] and page_info.state == "ready"
-            assert heights[1] > heights[0]
+            assert dimensions[1][1] > dimensions[0][1]
+            snapshot = await server.browser_snapshot("browser")
+            ref = search(r'button "Open menu".*?\[ref=([^\]]+)\]', snapshot)
+            assert ref is not None
+            for target in ({"selector": "#toggle"}, {"ref": ref[1]}):
+                result = await client.call_tool("browser_screenshot", {"session_id": "browser", **target})
+                assert not result.is_error and result.structured_content is None
+                assert isinstance(result.content[0], ImageContent)
+                assert result.content[1] == TextContent(type="text", text=before["url"])
+                size = unpack(">II", b64decode(result.content[0].data)[16:24])
+                assert size == (round(120 * pixel_ratio), round(40 * pixel_ratio))
+                box = await page.locator("#toggle").bounding_box()
+                assert box is not None and size == (
+                    round(box["width"] * pixel_ratio),
+                    round(box["height"] * pixel_ratio),
+                )
+                assert size[0] < dimensions[0][0] and size[1] < dimensions[0][1]
+                assert await page.evaluate(read_state) == before
+                assert requests == initial_requests
+            result = await client.call_tool("browser_screenshot", {"session_id": "browser", "selector": "#below"})
+            assert not result.is_error and isinstance(result.content[0], ImageContent)
+            assert unpack(">II", b64decode(result.content[0].data)[16:24]) == (
+                round(100 * pixel_ratio),
+                round(50 * pixel_ratio),
+            )
+            scrolled = await page.evaluate(read_state)
+            assert scrolled["y"] > before["y"]
+            assert {**scrolled, "y": before["y"]} == before
+            assert requests == initial_requests
+            await page.locator("#toggle").evaluate("element => element.remove()")
+            for target, message in (
+                ({"selector": "input"}, "strict mode violation"),
+                ({"selector": "#missing"}, "Timeout"),
+                ({"ref": ref[1]}, "Timeout"),
+            ):
+                started = monotonic()
+                result = await client.call_tool(
+                    "browser_screenshot", {"session_id": "browser", "timeout": 100, **target}
+                )
+                assert monotonic() - started < 2
+                assert result.is_error and isinstance(result.content[0], TextContent)
+                assert message in result.content[0].text
+                assert await page.evaluate(read_state) == scrolled
+                assert requests == initial_requests
+                assert session.page_pool.pages == [page_info] and page_info.state == "ready"
         finally:
             assert not (await client.call_tool("close_session", {"session_id": "browser"})).is_error

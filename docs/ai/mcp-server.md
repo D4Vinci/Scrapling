@@ -36,7 +36,7 @@ The Scrapling MCP Server provides fifteen tools for web scraping and browser int
 
 #### 📸 Screenshots
 
-- **`browser_screenshot`**: Capture the current page as PNG or JPEG without reloading it, keeping filled inputs and open menus in place. Supports the visible viewport or the full page, with adjustable JPEG quality. The screenshot is returned as a real image content block the model can see directly.
+- **`browser_screenshot`**: Capture the current page or a chosen element as PNG or JPEG without reloading it. Inspect filled fields, open menus, charts, or result cards, with less unrelated content in element captures. Supports the visible viewport, the full page, or one element, with adjustable JPEG quality. The screenshot is returned as a real image content block the model can see directly.
 
 #### AI Snapshots
 
@@ -462,6 +462,7 @@ This protection runs automatically for HTML, Markdown, and text extraction. Keep
 - `browser_screenshot` captures the page already opened through `browser_fetch` in a dynamic or stealthy browser session. It does not reload the page, so the AI can inspect filled fields, open menus, and other results of its actions.
 - The image is returned as a real `ImageContent` block, so the model sees the page directly.
 - Capture the visible viewport or the full page, including content below the fold.
+- Capture one field, chart, card, or result to inspect it with less surrounding content. Element capture can scroll the target into view.
 - Choose PNG for lossless images or JPEG with adjustable quality for smaller payloads.
 - The AI can use `browser_actions` to wait for content or finish interactions before capture.
 
