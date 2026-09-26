@@ -1,8 +1,8 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes eighteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, text input, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes nineteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, text input, keyboard shortcuts, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, and `browser_type` return plain text.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_type`, and `browser_press_key` return plain text.
 
 ## Shadow DOM
 
@@ -235,6 +235,19 @@ Pass the exact snapshot reference value, such as `ref="e2"`. Take a new snapshot
 
 Returns `Text entered.` as plain text without echoing the text or taking a snapshot. Errors are not retried, and the page reservation is released after success, failure, or cancellation. Entry or submission may have already changed the page when an error occurs; use `browser_snapshot` to check before retrying.
 
+### `browser_press_key` -- Chain keys and shortcuts at the current focus
+
+Presses each item in order through native `page.keyboard.press` on the existing page in a dynamic or stealthy browser session. The page stays reserved for the full sequence. Call `browser_fetch` first. Use `browser_click` or `browser_type` to focus a control before pressing when needed; later presses follow any focus changes caused by earlier ones.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `session_id` | str | required | ID of an open browser session |
+| `keys` | list[str] | required | Nonempty ordered list of nonempty native key names, characters, or shortcuts |
+
+Use `["ControlOrMeta+A", "Backspace"]` to select all with the platform's modifier and then delete, or `["Tab", "Enter"]` to move focus and activate a control. Keep a shortcut in one item; separate items are separate presses. Use `["Escape"]` for one press; a space (`" "`) and plus (`"+"`) are valid list items. MCP validates the whole list and its string items before execution; the native API validates each key name or shortcut when pressed.
+
+Returns `Keys pressed.` as plain text without an automatic snapshot or a wait for navigation. An error or cancellation stops the remaining presses; completed actions are not undone or retried. The page reservation is released after success, failure, or cancellation. Use `browser_snapshot` to check partial effects before retrying. Invalid keys, unknown or HTTP sessions, and missing, closed, or busy pages return an error.
+
 ### `session_make_request` -- HTTP request through an open requests session
 
 Makes an HTTP request (any method) through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint across calls. Same parameters as `make_request` plus a required `session_id`, minus the session-level `impersonate`, `proxy`, and `proxy_auth`. Raises on a browser session.
@@ -292,6 +305,7 @@ Requires an open browser session. Call `browser_open` first, then pass the `sess
 | Scroll a page or nested panel            | `browser_mouse_wheel` with `session_id`                    |
 | Click by selector, snapshot ref, or coordinates | `browser_click` with `session_id`                      |
 | Enter text by selector or snapshot ref   | `browser_type` with `session_id`                           |
+| Chain keys or keyboard shortcuts         | `browser_press_key` with `session_id`                      |
 
 Start with `make_request` (fastest, lowest resource cost). Escalate to `browser_fetch_once` if content requires JS rendering. Escalate to `browser_stealth_fetch_once` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
 
@@ -382,7 +396,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_type`, and `browser_screenshot` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_type`, `browser_press_key`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 

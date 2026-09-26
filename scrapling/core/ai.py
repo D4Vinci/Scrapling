@@ -528,6 +528,19 @@ class ScraplingMCPServer:
                 await locator.press("Enter", timeout=timeout)
         return "Text entered."
 
+    async def browser_press_key(
+        self, session_id: str, keys: Annotated[List[NonEmptyString], Field(min_length=1)]
+    ) -> str:
+        """Press keys or shortcuts in order at the current focus; stop on error and return plain text on success.
+
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
+        :param keys: Ordered presses, e.g. ["ControlOrMeta+A", "Backspace"] or ["Tab", "Enter"].
+        """
+        with self._browser_page(session_id) as (_, page):
+            for key in keys:
+                await page.keyboard.press(key)
+        return "Keys pressed."
+
     async def browser_screenshot(
         self,
         url: str,
@@ -1373,6 +1386,13 @@ class ScraplingMCPServer:
             self.browser_type,
             title="Type text",
             description=self.browser_type.__doc__,
+            structured_output=False,
+            annotations=_INPUT_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_press_key,
+            title="Press keys",
+            description=self.browser_press_key.__doc__,
             structured_output=False,
             annotations=_INPUT_TOOL_ANNOTATIONS,
         )
