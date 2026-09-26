@@ -626,65 +626,30 @@ class ScraplingMCPServer:
 
     async def browser_screenshot(
         self,
-        url: str,
         session_id: str,
         image_type: ScreenshotType = "png",
         full_page: bool = False,
-        quality: Optional[int] = None,
-        wait: int | float = 0,
-        wait_selector: Optional[str] = None,
-        wait_selector_state: SelectorWaitStates = "attached",
-        network_idle: bool = False,
-        timeout: int | float = 30000,
+        quality: Optional[Annotated[int, Field(ge=0, le=100)]] = None,
+        timeout: NonNegativeFiniteFloat = 30000,
     ) -> List[ImageContent | TextContent]:
-        """Navigate to a URL in an open browser session; return the image and URL at capture.
+        """Capture the current page without navigating; return the image and current URL.
+        Use browser_actions for waits before capture.
 
-        :param url: URL to navigate to and capture.
-        :param session_id: ID from `browser_open`.
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
         :param image_type: Image format.
         :param full_page: Capture the full scrollable page.
         :param quality: JPEG quality, 0-100; invalid for PNG.
-        :param wait: Extra milliseconds after capture.
-        :param wait_selector: Wait for the first CSS match after capture; continue if the wait fails.
-        :param wait_selector_state: Target state of `wait_selector`.
-        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
-        :param timeout: Navigation and page-operation timeout in milliseconds.
+        :param timeout: Capture limit in milliseconds; 0 disables it.
         """
         if quality is not None and image_type != "jpeg":
             raise ValueError("'quality' is only valid when 'image_type' is 'jpeg'.")
 
-        entry = self._get_session(session_id, expected_type=["dynamic", "stealthy"])
-
-        screenshot_kwargs: Dict[str, Any] = {"type": image_type, "full_page": full_page}
-        if quality is not None:
-            screenshot_kwargs["quality"] = quality
-
-        captured: Dict[str, Any] = {}
-
-        async def _capture(page: Any) -> None:
-            try:
-                captured["bytes"] = await page.screenshot(**screenshot_kwargs)
-                captured["url"] = page.url
-            except Exception as exc:
-                captured["error"] = exc
-
-        await entry.session.fetch(
-            url,
-            page_action=_capture,
-            wait=wait,
-            timeout=timeout,
-            network_idle=network_idle,
-            wait_selector=wait_selector,
-            wait_selector_state=wait_selector_state,
-        )
-
-        if "error" in captured:
-            raise captured["error"]
-        if "bytes" not in captured:
-            raise RuntimeError(f"Failed to capture screenshot for {url}")
-
-        image = Image(data=captured["bytes"], format=image_type).to_image_content()
-        return [image, TextContent(type="text", text=captured["url"])]
+        with self._browser_page(session_id) as (_, page):
+            image = Image(
+                data=await page.screenshot(type=image_type, full_page=full_page, quality=quality, timeout=timeout),
+                format=image_type,
+            ).to_image_content()
+            return [image, TextContent(type="text", text=page.url)]
 
     @staticmethod
     async def make_request(

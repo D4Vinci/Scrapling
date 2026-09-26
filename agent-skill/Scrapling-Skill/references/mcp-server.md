@@ -2,7 +2,7 @@
 
 The Scrapling MCP server exposes fifteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot` and `browser_actions` return plain text.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_snapshot` and `browser_actions` return plain text.
 
 ## Shadow DOM
 
@@ -238,24 +238,21 @@ Returns a list of `SessionInfo` objects, each with `session_id`, `session_type`,
 
 No parameters.
 
-### `browser_screenshot` -- Capture a page screenshot
+### `browser_screenshot` -- Capture the current page
 
-Navigates to a URL inside an existing browser session and returns the screenshot as an MCP `ImageContent` block (the bytes the model can see directly, not a base64 string in JSON) followed by a `TextContent` block carrying the post-redirect URL.
+Captures the existing page without reloading or navigating, preserving filled inputs and open menus. Returns an MCP `ImageContent` block followed by a `TextContent` block with the current page URL. The tool uses `structured_output=False`, so the model receives real image content rather than image data duplicated in a structured JSON result.
 
-Requires an open browser session. Call `browser_open` first, then pass the `session_id` here. Both `dynamic` and `stealthy` sessions are accepted.
+Call `browser_open`, then `browser_fetch` to open a page first. Both `dynamic` and `stealthy` sessions are accepted. Use `browser_actions` for waits or interactions before capture; this tool does not accept a URL or readiness controls.
 
-| Parameter             | Type                  | Default      | Description                                                                          |
-|-----------------------|-----------------------|--------------|--------------------------------------------------------------------------------------|
-| `url`                 | str                   | required     | URL to navigate to and capture                                                       |
-| `session_id`          | str                   | required     | ID of an open browser session created with `browser_open`                            |
-| `image_type`          | `"png"` / `"jpeg"`    | `"png"`      | Image format. Use `"jpeg"` for smaller payloads                                      |
-| `full_page`           | bool                  | false        | Capture the full scrollable page instead of just the viewport                        |
-| `quality`             | int or null           | null         | JPEG quality 0-100. Raises if passed with `image_type="png"`                         |
-| `wait`                | number                | 0            | Extra wait (ms) after page load before capture                                       |
-| `wait_selector`       | str or null           | null         | CSS selector to wait for before capture                                              |
-| `wait_selector_state` | str                   | `"attached"` | State for `wait_selector`: `"attached"` / `"visible"` / `"hidden"` / `"detached"`    |
-| `network_idle`        | bool                  | false        | Wait until no network activity for 500ms                                             |
-| `timeout`             | number                | 30000        | Timeout in milliseconds                                                              |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `session_id` | str | required | ID of an open browser session with a page |
+| `image_type` | `"png"` / `"jpeg"` | `"png"` | Image format; JPEG allows smaller payloads |
+| `full_page` | bool | false | Capture the full scrollable page instead of the viewport |
+| `quality` | int or null | null | JPEG quality 0-100; an error if supplied for PNG |
+| `timeout` | number | 30000 | Finite nonnegative capture timeout in milliseconds; 0 disables it |
+
+The page stays reserved during capture and is released after success, failure, or cancellation. Unknown or HTTP sessions and missing, closed, or busy pages return an error. Capture errors propagate.
 
 ## Tool selection guide
 
@@ -269,7 +266,7 @@ Requires an open browser session. Call `browser_open` first, then pass the `sess
 | Multiple protected pages                 | `browser_stealth_fetch_many_once`                                         |
 | Multiple pages from the same site        | `browser_open` + `browser_fetch` per page                     |
 | Multiple plain HTTP requests to one site | `open_request_session` + `session_make_request` per request   |
-| Need a screenshot of a page              | `browser_open` + `browser_screenshot` with `session_id`               |
+| Capture the current page                 | `browser_screenshot` after `browser_open` + `browser_fetch` |
 | Read the current page's AI ARIA snapshot  | `browser_snapshot` with `session_id`                          |
 | Chain mouse, field, keyboard, or wait actions | `browser_actions` with `session_id`                       |
 

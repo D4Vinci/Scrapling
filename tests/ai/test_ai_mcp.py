@@ -159,7 +159,7 @@ class TestSessionTypeChecks:
         session = Mock(_is_alive=True)
         server._sessions["test"] = _SessionEntry(session, session_type)
         args = {"session_id": "test"}
-        if tool != "browser_snapshot":
+        if tool not in ("browser_snapshot", "browser_screenshot"):
             args["url"] = "https://example.com"
         async with Client(server._build_server("127.0.0.1", 8000)) as client:
             result = await client.call_tool(tool, args)
@@ -428,7 +428,7 @@ class TestStaticSessionManagement:
         with pytest.raises(ValueError, match="requires a 'dynamic' or 'stealthy' session"):
             await server.browser_fetch(url="https://example.com", session_id="st2")
         with pytest.raises(ValueError, match="requires a 'dynamic' or 'stealthy' session"):
-            await server.browser_screenshot(url="https://example.com", session_id="st2")
+            await server.browser_screenshot(session_id="st2")
         await server.close_session("st2")
 
 
@@ -768,10 +768,12 @@ class TestScreenshot:
         """PNG screenshot via a dynamic session returns image and url content blocks"""
         opened = await server.browser_open(session_type="dynamic", headless=True)
         try:
-            result = await server.browser_screenshot(url=test_url, session_id=opened.session_id)
+            await server.browser_fetch(url=test_url, session_id=opened.session_id)
+            result = await server.browser_screenshot(session_id=opened.session_id)
             assert isinstance(result, list) and len(result) == 2
             assert isinstance(result[0], ImageContent)
             assert result[0].mime_type == "image/png"
+            assert base64.b64decode(result[0].data).startswith(b"\x89PNG\r\n\x1a\n")
             assert isinstance(result[1], TextContent)
             assert result[1].text == test_url
         finally:
@@ -782,11 +784,12 @@ class TestScreenshot:
         """JPEG screenshot with quality parameter via a dynamic session"""
         opened = await server.browser_open(session_type="dynamic", headless=True)
         try:
-            result = await server.browser_screenshot(
-                url=test_url, session_id=opened.session_id, image_type="jpeg", quality=80
-            )
+            await server.browser_fetch(url=test_url, session_id=opened.session_id)
+            result = await server.browser_screenshot(session_id=opened.session_id, image_type="jpeg", quality=80)
             assert isinstance(result[0], ImageContent)
             assert result[0].mime_type == "image/jpeg"
+            jpeg = base64.b64decode(result[0].data)
+            assert jpeg.startswith(b"\xff\xd8") and jpeg.endswith(b"\xff\xd9")
         finally:
             await server.close_session(opened.session_id)
 
@@ -795,9 +798,11 @@ class TestScreenshot:
         """PNG screenshot via a stealthy session"""
         opened = await server.browser_open(session_type="stealthy", headless=True)
         try:
-            result = await server.browser_screenshot(url=test_url, session_id=opened.session_id)
+            await server.browser_fetch(url=test_url, session_id=opened.session_id)
+            result = await server.browser_screenshot(session_id=opened.session_id)
             assert isinstance(result[0], ImageContent)
             assert result[0].mime_type == "image/png"
+            assert base64.b64decode(result[0].data).startswith(b"\x89PNG\r\n\x1a\n")
         finally:
             await server.close_session(opened.session_id)
 
@@ -808,12 +813,9 @@ class TestScreenshot:
         with _serve_html(tall_html) as tall_url:
             opened = await server.browser_open(session_type="dynamic", headless=True)
             try:
-                viewport_result = await server.browser_screenshot(
-                    url=tall_url, session_id=opened.session_id, full_page=False
-                )
-                full_result = await server.browser_screenshot(
-                    url=tall_url, session_id=opened.session_id, full_page=True
-                )
+                await server.browser_fetch(url=tall_url, session_id=opened.session_id)
+                viewport_result = await server.browser_screenshot(session_id=opened.session_id, full_page=False)
+                full_result = await server.browser_screenshot(session_id=opened.session_id, full_page=True)
 
                 viewport_png = base64.b64decode(viewport_result[0].data)
                 full_png = base64.b64decode(full_result[0].data)
@@ -826,7 +828,7 @@ class TestScreenshot:
     async def test_screenshot_invalid_session_id_raises(self, server, test_url):
         """Unknown session_id raises ValueError"""
         with pytest.raises(ValueError, match="not found"):
-            await server.browser_screenshot(url=test_url, session_id="does-not-exist")
+            await server.browser_screenshot(session_id="does-not-exist")
 
     @pytest.mark.asyncio
     async def test_screenshot_quality_with_png_raises(self, server, test_url):
@@ -834,9 +836,7 @@ class TestScreenshot:
         opened = await server.browser_open(session_type="dynamic", headless=True)
         try:
             with pytest.raises(ValueError, match="quality"):
-                await server.browser_screenshot(
-                    url=test_url, session_id=opened.session_id, image_type="png", quality=90
-                )
+                await server.browser_screenshot(session_id=opened.session_id, image_type="png", quality=90)
         finally:
             await server.close_session(opened.session_id)
 

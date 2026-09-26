@@ -35,7 +35,8 @@ The Scrapling MCP Server provides fifteen tools for web scraping and browser int
 - **`session_make_request`**: Make an HTTP request with any method through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint. This is the session counterpart of `make_request`.
 
 #### 📸 Screenshots
-- **`browser_screenshot`**: Capture a PNG or JPEG screenshot of a page using an open browser session, returned as an image content block the model can actually see (not a base64 string blob). Supports full-page captures, JPEG quality, and the usual readiness controls (`wait`, `wait_selector`, `network_idle`).
+
+- **`browser_screenshot`**: Capture the current page as PNG or JPEG without reloading it, keeping filled inputs and open menus in place. Supports the visible viewport or the full page, with adjustable JPEG quality. The screenshot is returned as a real image content block the model can see directly.
 
 #### AI Snapshots
 
@@ -457,11 +458,12 @@ This protection runs automatically for HTML, Markdown, and text extraction. Keep
 - Pass a custom `session_id` to the open tools to give sessions meaningful names (e.g. `"search"`, `"checkout"`) instead of the random hex default. They raise if the chosen ID is already in use, so you can detect collisions up front
 
 ### 7. Capturing Screenshots
-- `browser_screenshot` only works through an existing browser session, so call `browser_open` first (either `dynamic` or `stealthy` works)
-- The image is returned as a real `ImageContent` block, not a base64 string in JSON, so the model sees the page directly
-- Use `full_page=True` when you need everything below the fold; the default captures only the visible viewport
-- Pick `image_type="jpeg"` with a `quality` value (0-100) for smaller payloads when pixel-perfect color isn't needed
-- The same `wait`, `wait_selector`, `network_idle`, and `timeout` controls used by `browser_fetch_once` are available here too
+
+- `browser_screenshot` captures the page already opened through `browser_fetch` in a dynamic or stealthy browser session. It does not reload the page, so the AI can inspect filled fields, open menus, and other results of its actions.
+- The image is returned as a real `ImageContent` block, so the model sees the page directly.
+- Capture the visible viewport or the full page, including content below the fold.
+- Choose PNG for lossless images or JPEG with adjustable quality for smaller payloads.
+- The AI can use `browser_actions` to wait for content or finish interactions before capture.
 
 ## Legal and Ethical Considerations
 

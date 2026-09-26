@@ -30,7 +30,7 @@ server = ScraplingMCPServer(executable_path="/path/to/chromium")
 
 ## Response Model
 
-The standardized response structure returned by the fetch and HTTP request tools. Bulk tools return a list of these responses. Session management tools use the models below, `browser_screenshot` returns image and text content blocks, and `browser_snapshot` and `browser_actions` return plain text.
+The standardized response structure returned by the fetch and HTTP request tools. Bulk tools return a list of these responses. Session management tools use the models below, `browser_screenshot` returns the current page image and URL as image and text content blocks, and `browser_snapshot` and `browser_actions` return plain text.
 
 ## ::: scrapling.core.ai.ResponseModel
     handler: python
