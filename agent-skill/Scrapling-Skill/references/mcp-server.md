@@ -1,8 +1,8 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes seventeen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, text input, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes eighteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, text input, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse_move`, `browser_click`, and `browser_type` return plain text.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, and `browser_type` return plain text.
 
 ## Shadow DOM
 
@@ -180,6 +180,20 @@ Selector and reference hovers use Playwright's locator hover, which waits for th
 
 Returns plain text without an automatic snapshot. Use `browser_snapshot` to inspect the page afterward. Invalid targets, unknown sessions, and missing, closed, or busy pages return an error.
 
+### `browser_mouse_wheel` -- Scroll at the current pointer position
+
+Sends a native mouse wheel event on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first. To target a scrollable area, use `browser_mouse_move` with a selector, snapshot reference, or coordinates before scrolling.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `session_id` | str | required | ID of an open browser session |
+| `delta_x` | number | 0 | Finite horizontal delta in CSS pixels; positive moves right, negative moves left |
+| `delta_y` | number | 0 | Finite vertical delta in CSS pixels; positive moves down, negative moves up |
+
+Fractional values and zero are allowed. Uses `page.mouse.wheel` at the current pointer position without moving the mouse, injecting a page script, or navigating. Dispatch does not guarantee scrolling: the page can prevent the event, or the scrollable area can be at its edge. It does not wait for scrolling, animations, or content loaded by scrolling to finish.
+
+Returns `Wheel event sent.` as plain text without an automatic snapshot. Use `browser_snapshot` to inspect the current page afterward. Errors are not retried. Invalid deltas, unknown or HTTP sessions, and missing, closed, or busy pages return an error.
+
 ### `browser_click` -- Click by selector, snapshot reference, or coordinates
 
 Clicks on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first. Supply exactly one target: `selector`, `ref`, or both `x` and `y`.
@@ -275,6 +289,7 @@ Requires an open browser session. Call `browser_open` first, then pass the `sess
 | Need a screenshot of a page              | `browser_open` + `browser_screenshot` with `session_id`               |
 | Read the current page's AI ARIA snapshot  | `browser_snapshot` with `session_id`                          |
 | Move the mouse on the current page       | `browser_mouse_move` with `session_id`                     |
+| Scroll a page or nested panel            | `browser_mouse_wheel` with `session_id`                    |
 | Click by selector, snapshot ref, or coordinates | `browser_click` with `session_id`                      |
 | Enter text by selector or snapshot ref   | `browser_type` with `session_id`                           |
 
@@ -367,7 +382,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse_move`, `browser_click`, `browser_type`, and `browser_screenshot` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_type`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 

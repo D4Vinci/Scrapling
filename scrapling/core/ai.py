@@ -439,6 +439,22 @@ class ScraplingMCPServer:
             await page.mouse.move(x, y, steps=steps)
         return f"Mouse moved to ({x}, {y})."
 
+    async def browser_mouse_wheel(
+        self,
+        session_id: str,
+        delta_x: FiniteFloat = 0,
+        delta_y: FiniteFloat = 0,
+    ) -> str:
+        """Send a wheel event at the current mouse position; return plain text.
+
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
+        :param delta_x: Horizontal pixels; positive scrolls right, negative scrolls left.
+        :param delta_y: Vertical pixels; positive scrolls down, negative scrolls up.
+        """
+        with self._browser_page(session_id) as (_, page):
+            await page.mouse.wheel(delta_x, delta_y)
+        return "Wheel event sent."
+
     async def browser_click(
         self,
         session_id: str,
@@ -1336,6 +1352,13 @@ class ScraplingMCPServer:
             self.browser_mouse_move,
             title="Move mouse",
             description=self.browser_mouse_move.__doc__,
+            structured_output=False,
+            annotations=_INPUT_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_mouse_wheel,
+            title="Scroll",
+            description=self.browser_mouse_wheel.__doc__,
             structured_output=False,
             annotations=_INPUT_TOOL_ANNOTATIONS,
         )
