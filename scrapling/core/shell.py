@@ -79,11 +79,11 @@ _CSS_NEWLINE_PATTERN = re_compile(r"\r\n?|\f")
 # read as CSS. An unquoted `url(` runs to the first unescaped `)` even when malformed, as browsers skip a bad url
 _STYLE_TOKEN_PATTERN = re_compile(
     r"""(\\.)|"(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?"""
-    r"""|(?<![\w-])url\((?!\s*["'])(?:[^)\\]|\\.?)*\)?|(/\*.*?(?:\*/|\Z))""",
+    r"""|(?<![\w-])url\((?![ \t\n]*["'])(?:[^)\\]|\\.?)*\)?|(/\*.*?(?:\*/|\Z))""",
     DOTALL | IGNORECASE,
 )
 _ZERO_VALUE_PATTERN = re_compile(r"[+-]?(?:0+(?:\.0+)?|\.0+)(?:e[+-]?[0-9]+)?[a-z%]*")
-_IMPORTANT_SUFFIX_PATTERN = re_compile(r"!\s*important$")
+_IMPORTANT_SUFFIX_PATTERN = re_compile(r"![ \t\n]*important$")
 _ZWC_PATTERN = re_compile(r"[\u200b\u200c\u200d\ufeff\u2060\u180e]")
 _CONTROL_CHARS_PATTERN = re_compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
@@ -114,8 +114,8 @@ def _is_hidden_element(element: Any) -> bool:
     style = _STYLE_TOKEN_PATTERN.sub(_blank_style_token, style)
     for declaration in style.split(";"):
         prop, _, value = declaration.partition(":")
-        prop = prop.strip().lower()
-        value = _IMPORTANT_SUFFIX_PATTERN.sub("", value.strip().lower()).rstrip()
+        prop = prop.strip(" \t\n").lower()
+        value = _IMPORTANT_SUFFIX_PATTERN.sub("", value.strip(" \t\n").lower()).rstrip(" \t\n")
         if (prop, value) in _HIDING_DECLARATIONS:
             return True
         if prop in _ZERO_HIDING_PROPERTIES and _ZERO_VALUE_PATTERN.fullmatch(value):

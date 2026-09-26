@@ -95,6 +95,7 @@ STYLED_BUT_VISIBLE_HTML = """
     <p style="background:url(a;display:none;b)">Unquoted url note.</p>
     <p style='background:url( "a;display:none" )'>Quoted url note.</p>
     <p style='--note:"a\\&#13;&#10;;display:none"'>Escaped line break note.</p>
+    <p style="display:&nbsp;none">Non-breaking space note.</p>
     <p style="display:no/**/ne">Split keyword note.</p>
     <p style="opacity:0/**/5">Split number note.</p>
     <slot style="color:red">Styled slot note.</slot>
@@ -136,6 +137,7 @@ HIDDEN_HTML = """
     <p style='--x:\\";display:none'>Hidden after escaped quote</p>
     <p style='--note:"unfinished&#13;;display:none'>Hidden after carriage return in string</p>
     <p style='--note:"unfinished\f;display:none'>Hidden after form feed in string</p>
+    <p style='background:url(&nbsp;"/*);display:none;--b:"*/"'>Hidden after non-breaking space in url</p>
     <p aria-hidden="true">Hidden by aria</p>
     <slot hidden>Hidden by slot</slot>
     <template><p>Hidden by template</p></template>
@@ -162,6 +164,7 @@ class TestResponseMarkdownSanitizerPrecision:
             "Unquoted url note.",
             "Quoted url note.",
             "Escaped line break note.",
+            "Non-breaking space note.",
             "Split keyword note.",
             "Split number note.",
             "Styled slot note.",
@@ -202,6 +205,7 @@ class TestResponseMarkdownSanitizerPrecision:
             "Hidden after escaped quote",
             "Hidden after carriage return in string",
             "Hidden after form feed in string",
+            "Hidden after non-breaking space in url",
             "Hidden by aria",
             "Hidden by slot",
             "Hidden by template",
