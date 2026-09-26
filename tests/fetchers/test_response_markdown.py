@@ -78,3 +78,136 @@ class TestResponseMarkdown:
         monkeypatch.setitem(sys.modules, "markdownify", None)
         with pytest.raises(ModuleNotFoundError, match=r"scrapling\[rag\]"):
             _make_response().markdown()
+
+
+STYLED_BUT_VISIBLE_HTML = """
+<html>
+  <body>
+    <div style="line-height:0.9"><h2>Compact heading</h2><p>Body of the first section.</p></div>
+    <p style="opacity:0.95">Almost opaque note.</p>
+    <p style="font-size:0.9rem">Slightly smaller note.</p>
+    <p style="width:0.5em">Narrow but visible.</p>
+    <p style="min-height:0">Flexbox child.</p>
+    <p style="opacity:0.95/*hidden*/">Commented but almost opaque.</p>
+    <p style="opacity:0.95 ! important">Important but almost opaque.</p>
+    <p style="opacity:5e-1">Half opaque note.</p>
+    <p style='--note:"a;display:none;b"'>Quoted separator note.</p>
+    <p style="background:url(a;display:none;b)">Unquoted url note.</p>
+    <p style='background:url( "a;display:none" )'>Quoted url note.</p>
+    <p style='--note:"a\\&#13;&#10;;display:none"'>Escaped line break note.</p>
+    <p style="display:&nbsp;none">Non-breaking space note.</p>
+    <p style="display:no/**/ne">Split keyword note.</p>
+    <p style="opacity:0/**/5">Split number note.</p>
+    <slot style="color:red">Styled slot note.</slot>
+  </body>
+</html>
+"""
+
+HIDDEN_HTML = """
+<html>
+  <body>
+    <p>Visible content.</p>
+    <p style="display:none">Hidden by display</p>
+    <p style="display: none">Hidden by spaced display</p>
+    <p style="visibility:hidden">Hidden by visibility</p>
+    <p style="opacity:0">Hidden by opacity</p>
+    <p style="opacity: 0">Hidden by spaced opacity</p>
+    <p style="height:0px">Hidden by height</p>
+    <p style="max-height:0">Hidden by max height</p>
+    <p style="width:0">Hidden by width</p>
+    <p style="font-size:0">Hidden by font size</p>
+    <p style="display:none !important">Hidden by important</p>
+    <p style="display:none ! important">Hidden by spaced important</p>
+    <p style="opacity:0 ! important">Hidden by spaced important opacity</p>
+    <p style="visibility:hidden!important">Hidden by unspaced important</p>
+    <p style="display:none/*hidden*/">Hidden by commented display</p>
+    <p style="opacity:0/*hidden*/">Hidden by commented opacity</p>
+    <p style="display:/* keep */none;">Hidden by comment inside declaration</p>
+    <p style="color:red/*;*/;visibility:hidden">Hidden after commented separator</p>
+    <p style="opacity:00">Hidden by double zero</p>
+    <p style="opacity:0e0">Hidden by exponent zero</p>
+    <p style="opacity:.0">Hidden by leading dot zero</p>
+    <p style="display:none/*unfinished">Hidden by unterminated comment</p>
+    <p style='--a:"/*";display:none;--b:"*/"'>Hidden between quoted comment markers</p>
+    <p style="background:url(/*);display:none;color:url(*/)">Hidden between url comment markers</p>
+    <p style="opacity:0.0">Hidden by decimal zero</p>
+    <p style="opacity:0/**/!/**/important">Hidden by commented important</p>
+    <p style="background:url(a\\)/*);display:none">Hidden after escaped url parenthesis</p>
+    <p style='background:url(a"/*);display:none;--b:"*/"'>Hidden after malformed url</p>
+    <p style='--x:\\";display:none'>Hidden after escaped quote</p>
+    <p style='--note:"unfinished&#13;;display:none'>Hidden after carriage return in string</p>
+    <p style='--note:"unfinished\f;display:none'>Hidden after form feed in string</p>
+    <p style='background:url(&nbsp;"/*);display:none;--b:"*/"'>Hidden after non-breaking space in url</p>
+    <p aria-hidden="true">Hidden by aria</p>
+    <slot hidden>Hidden by slot</slot>
+    <template><p>Hidden by template</p></template>
+  </body>
+</html>
+"""
+
+
+class TestResponseMarkdownSanitizerPrecision:
+    def test_partial_zero_values_are_not_treated_as_hidden(self):
+        """A style value that merely starts with a zero does not hide the element"""
+        md = _make_response(content=STYLED_BUT_VISIBLE_HTML).markdown()
+        for expected in (
+            "Compact heading",
+            "Body of the first section.",
+            "Almost opaque note.",
+            "Slightly smaller note.",
+            "Narrow but visible.",
+            "Flexbox child.",
+            "Commented but almost opaque.",
+            "Important but almost opaque.",
+            "Half opaque note.",
+            "Quoted separator note.",
+            "Unquoted url note.",
+            "Quoted url note.",
+            "Escaped line break note.",
+            "Non-breaking space note.",
+            "Split keyword note.",
+            "Split number note.",
+            "Styled slot note.",
+        ):
+            assert expected in md
+
+    def test_truly_hidden_content_is_still_removed(self):
+        md = _make_response(content=HIDDEN_HTML).markdown()
+        assert "Visible content." in md
+        for hidden in (
+            "Hidden by display",
+            "Hidden by spaced display",
+            "Hidden by visibility",
+            "Hidden by opacity",
+            "Hidden by spaced opacity",
+            "Hidden by height",
+            "Hidden by max height",
+            "Hidden by width",
+            "Hidden by font size",
+            "Hidden by important",
+            "Hidden by spaced important",
+            "Hidden by spaced important opacity",
+            "Hidden by unspaced important",
+            "Hidden by commented display",
+            "Hidden by commented opacity",
+            "Hidden by comment inside declaration",
+            "Hidden after commented separator",
+            "Hidden by double zero",
+            "Hidden by exponent zero",
+            "Hidden by leading dot zero",
+            "Hidden by unterminated comment",
+            "Hidden between quoted comment markers",
+            "Hidden between url comment markers",
+            "Hidden by decimal zero",
+            "Hidden by commented important",
+            "Hidden after escaped url parenthesis",
+            "Hidden after malformed url",
+            "Hidden after escaped quote",
+            "Hidden after carriage return in string",
+            "Hidden after form feed in string",
+            "Hidden after non-breaking space in url",
+            "Hidden by aria",
+            "Hidden by slot",
+            "Hidden by template",
+        ):
+            assert hidden not in md
