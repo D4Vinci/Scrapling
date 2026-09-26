@@ -1,8 +1,8 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes twenty tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, text input, batch field filling, keyboard shortcuts, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes nineteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_type`, `browser_fill_fields`, and `browser_press_key` return plain text.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_fill_fields`, and `browser_press_key` return plain text.
 
 ## Shadow DOM
 
@@ -215,27 +215,7 @@ Invalid targets, unknown sessions, and missing, closed, or busy pages return an 
 
 Returns plain text without an automatic snapshot. Use `browser_snapshot` to inspect the page afterward. A cancelled or timed-out click sends a button release before the page can be reused, even if it was still waiting for a target. This does not undo page actions. Do not repeat a failed click without checking the page state.
 
-### `browser_type` -- Enter text by selector or snapshot reference
-
-Enters text on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first. Supply exactly one target: `selector` or `ref`.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID of an open browser session |
-| `text` | str | required | Text to enter; an empty string clears the field in the default mode |
-| `selector` | str or null | null | Nonempty Playwright selector matching exactly one element |
-| `ref` | str or null | null | Nonempty reference from the current `browser_snapshot`, such as `e2` |
-| `slowly` | bool | false | Type one character at a time at the current caret or selection without clearing first |
-| `submit` | bool | false | Press Enter on the same target after successful text entry |
-| `timeout` | number | 30000 | Finite nonnegative timeout in milliseconds per native operation; 0 disables the limit |
-
-By default, Playwright's locator fill replaces the contents of an input, textarea, or contenteditable element. With `slowly=true`, locator press_sequentially sends key events for each character at the current caret or selection, without first clearing existing text. With `submit=true`, locator press sends Enter only after text entry succeeds. The timeout applies separately to text entry and the optional Enter press.
-
-Pass the exact snapshot reference value, such as `ref="e2"`. Take a new snapshot if the reference is stale. Invalid targets, unknown or HTTP sessions, and missing, closed, or busy pages return an error.
-
-Returns `Text entered.` as plain text without echoing the text or taking a snapshot. Errors are not retried, and the page reservation is released after success, failure, or cancellation. Entry or submission may have already changed the page when an error occurs; use `browser_snapshot` to check before retrying.
-
-### `browser_fill_fields` -- Fill multiple page fields in order
+### `browser_fill_fields` -- Fill one or more page fields in order
 
 Fills fields anywhere on the existing page in a dynamic or stealthy browser session. Fields do not need a `<form>` parent. Call `browser_fetch` first. Each field needs exactly one nonempty `selector` or snapshot `ref`, plus its `type` and `value`.
 
@@ -244,24 +224,26 @@ Fills fields anywhere on the existing page in a dynamic or stealthy browser sess
 | `session_id` | str | required | ID of an open browser session |
 | `fields` | list[object] | required | Nonempty ordered list of field targets, types, and values |
 | `timeout` | number | 30000 | Finite nonnegative timeout in milliseconds per operation; 0 disables the limit |
-| `slowly` | bool | false | Replace text with fresh random delays: 50-150 ms per character, 100-300 ms between fields |
+| `slowly` | bool | false | Add fresh random delays: 50-150 ms per character, 100-300 ms between fields |
 
 | Field `type` | `value` | Behavior |
 |--------------|---------|----------|
-| `textbox` | str | Replace text in an input, textarea, or contenteditable element; an empty string clears it |
+| `textbox` | str | By default, replace text in an input, textarea, or contenteditable element; an empty string clears it |
 | `checkbox` | bool | `true` checks the box; `false` unchecks it |
 | `radio` | `true` | Select the radio option; `false` is not supported |
 | `combobox` | str or list[str] | Select native `<select>` options by label; use a list for multiple selections or `[]` to clear |
 
-Selectors must match exactly one element. Use current snapshot references, such as `"e2"`. MCP validates all field types and values before execution, and target combinations are checked before reserving the page. One page stays reserved for the whole batch. Native locator `fill`, `set_checked`, and `select_option(label=...)` run in list order with their normal waiting. Combobox fields support native `<select>` elements, not custom dropdown widgets.
+Textbox fields also accept `clear` (bool, default `true`). With `clear=false`, native `press_sequentially` types at the current caret or selection without clearing first, even when `slowly=false`. An empty value preserves existing content when `clear=false`; otherwise it clears the field.
 
-With `slowly=true`, text fields are cleared before native `press_sequentially` types each character with a fresh random delay of 50-150 ms. Empty text only clears the field. All field types get a fresh random pause of 100-300 ms before the next field, with no pause before the first or after the last. The timeout applies separately to each native action, including clearing and each character press; pauses between fields are outside it.
+Selectors must match exactly one element. Use current snapshot references, such as `"e2"`. MCP validates all field types and values before execution, and target combinations are checked before reserving the page. One page stays reserved for the whole batch. Native locator `fill`, `press_sequentially`, `set_checked`, and `select_option(label=...)` run in list order. Combobox fields support native `<select>` elements, not custom dropdown widgets.
 
-Returns `Fields filled.` as plain text without echoing values, submitting forms, or taking a snapshot. An error or cancellation stops the remaining fields; completed changes stay and are not retried. The page reservation is released afterward. Use `browser_snapshot` to check the page before retrying or submitting a form. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
+With `slowly=true`, native `press_sequentially` types each character with a fresh random delay of 50-150 ms, clearing first unless the field has `clear=false`. All field types get a fresh random pause of 100-300 ms before the next field, with no pause before the first or after the last. The timeout applies separately to each native action, including clearing and each character press; pauses between fields are outside it.
+
+Returns `Fields filled.` as plain text without echoing values, submitting forms, or taking a snapshot. An error or cancellation stops the remaining fields; completed changes stay and are not retried. The page reservation is released afterward. Use `browser_snapshot` to check the page before retrying. To submit with Enter, use `browser_press_key` with `keys=["Enter"]`; first focus the intended control with `browser_click` if needed, since the batch may end on another field. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
 
 ### `browser_press_key` -- Chain keys and shortcuts at the current focus
 
-Presses each item in order through native `page.keyboard.press` on the existing page in a dynamic or stealthy browser session. The page stays reserved for the full sequence. Call `browser_fetch` first. Use `browser_click` or `browser_type` to focus a control before pressing when needed; later presses follow any focus changes caused by earlier ones.
+Presses each item in order through native `page.keyboard.press` on the existing page in a dynamic or stealthy browser session. The page stays reserved for the full sequence. Call `browser_fetch` first. Use `browser_click` to focus a control before pressing when needed; later presses follow any focus changes caused by earlier ones.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -328,8 +310,7 @@ Requires an open browser session. Call `browser_open` first, then pass the `sess
 | Move the mouse on the current page       | `browser_mouse_move` with `session_id`                     |
 | Scroll a page or nested panel            | `browser_mouse_wheel` with `session_id`                    |
 | Click by selector, snapshot ref, or coordinates | `browser_click` with `session_id`                      |
-| Enter text by selector or snapshot ref   | `browser_type` with `session_id`                           |
-| Fill several page fields in order        | `browser_fill_fields` with `session_id`                      |
+| Fill one or more page fields in order   | `browser_fill_fields` with `session_id`                      |
 | Chain keys or keyboard shortcuts         | `browser_press_key` with `session_id`                      |
 
 Start with `make_request` (fastest, lowest resource cost). Escalate to `browser_fetch_once` if content requires JS rendering. Escalate to `browser_stealth_fetch_once` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
@@ -421,7 +402,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_type`, `browser_fill_fields`, `browser_press_key`, and `browser_screenshot` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse_move`, `browser_mouse_wheel`, `browser_click`, `browser_fill_fields`, `browser_press_key`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 

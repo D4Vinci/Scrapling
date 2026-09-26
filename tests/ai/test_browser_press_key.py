@@ -202,7 +202,8 @@ async def test_browser_press_key_live_focus_editing_and_shortcuts(session_type: 
             assert session.page_pool.pages[0].state == "ready"
 
         typed = await client.call_tool(
-            "browser_type", {"session_id": "browser", "selector": "#first", "text": "initial"}
+            "browser_fill_fields",
+            {"session_id": "browser", "fields": [{"type": "textbox", "selector": "#first", "value": "initial"}]},
         )
         assert not typed.is_error
         await page.locator("#events").evaluate("element => element.value = '[]'")

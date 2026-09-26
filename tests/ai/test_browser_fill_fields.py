@@ -9,6 +9,8 @@ import pytest
 from anyio import CancelScope
 from mcp.client import Client
 from mcp.types import TextContent
+from patchright.async_api import TimeoutError as PatchrightTimeoutError
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import ValidationError
 
 from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
@@ -74,12 +76,16 @@ async def test_browser_fill_fields_schema() -> None:
     assert len(items["oneOf"]) == 4
     for kind, variant in variants.items():
         assert set(variant["required"]) == {"type", "value"}
-        assert set(variant["properties"]) == {"type", "value", "selector", "ref"}
+        assert set(variant["properties"]) == {"type", "value", "selector", "ref"} | (
+            {"clear"} if kind == "textbox" else set()
+        )
         assert variant["properties"]["type"]["const"] == kind
         for target in ("selector", "ref"):
             assert {"type": "null"} in variant["properties"][target]["anyOf"]
             assert any(option.get("minLength") == 1 for option in variant["properties"][target]["anyOf"])
     assert variants["textbox"]["properties"]["value"]["type"] == "string"
+    assert variants["textbox"]["properties"]["clear"]["type"] == "boolean"
+    assert variants["textbox"]["properties"]["clear"]["default"] is True
     assert variants["checkbox"]["properties"]["value"]["type"] == "boolean"
     assert variants["radio"]["properties"]["value"]["const"] is True
     assert {option["type"] for option in variants["combobox"]["properties"]["value"]["anyOf"]} == {"string", "array"}
@@ -95,7 +101,7 @@ async def test_browser_fill_fields_forwards_native_actions_in_order(
     monkeypatch.setattr("scrapling.core.ai.sleep", pause)
     fields = [
         {**TEXT_FIELD, "ref": None},
-        {"type": "textbox", "selector": None, "ref": "e2", "value": ""},
+        {"type": "textbox", "selector": None, "ref": "e2", "value": "", "clear": True},
         {"type": "checkbox", "selector": "#agree", "value": True},
         {"type": "checkbox", "selector": "#agree", "value": False},
         {"type": "checkbox", "selector": "#agree", "value": "false"},
@@ -134,6 +140,30 @@ async def test_browser_fill_fields_forwards_native_actions_in_order(
     page.aria_snapshot.assert_not_called()
     page.screenshot.assert_not_called()
     pause.assert_not_awaited()
+    assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("slowly", [False, True])
+@pytest.mark.parametrize("value", ["xy", ""])
+async def test_browser_fill_fields_types_without_clearing(
+    slowly: bool, value: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    server, session, page = _server()
+    monkeypatch.setattr("scrapling.core.ai.uniform", Mock(side_effect=[60, 140]))
+    async with Client(server._build_server("127.0.0.1", 8000)) as client:
+        result = await client.call_tool(
+            "browser_fill_fields",
+            {"session_id": "browser", "fields": [{**TEXT_FIELD, "value": value, "clear": False}], "slowly": slowly},
+        )
+    assert not result.is_error
+    assert result.content == [TextContent(type="text", text="Fields filled.")]
+    page.locator.return_value.fill.assert_not_awaited()
+    assert page.locator.return_value.press_sequentially.await_args_list == (
+        [call("x", delay=60, timeout=30000), call("y", delay=140, timeout=30000)]
+        if slowly and value
+        else [call(value, timeout=30000)]
+    )
     assert session.page_pool.pages[0].state == "ready"
 
 
@@ -218,6 +248,8 @@ async def test_browser_fill_fields_slow_failure_stops_before_next_pause(
         {"type": None},
         {"value": None},
         {"value": False},
+        {"clear": None},
+        {"clear": "invalid"},
         {"type": "checkbox", "value": "invalid"},
         {"type": "radio", "value": False},
         {"type": "combobox", "value": True},
@@ -269,20 +301,65 @@ def test_browser_fill_fields_rejects_nonfinite_timeout(timeout: float) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "state, message", [("missing", "not found"), ("static", "'static'"), ("empty", "browser_fetch")]
+    "state, message",
+    [
+        ("missing", "not found"),
+        ("dead", "no longer alive"),
+        ("static", "'static'"),
+        ("empty", "browser_fetch"),
+        ("busy", "busy"),
+        ("closed", "closed"),
+    ],
 )
 async def test_browser_fill_fields_session_errors_reach_mcp(state: str, message: str) -> None:
     server, session, page = _server("static" if state == "static" else "dynamic")
     if state == "missing":
         server._sessions.clear()
+    elif state == "dead":
+        session._is_alive = False
     elif state == "empty":
         session.page_pool.clear()
+    elif state == "busy":
+        session.page_pool.pages[0].mark_busy()
+    elif state == "closed":
+        page.is_closed.return_value = True
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool("browser_fill_fields", {"session_id": "browser", "fields": [TEXT_FIELD]})
     assert result.is_error
     assert result.content and isinstance(result.content[0], TextContent)
     assert message in result.content[0].text
     page.locator.assert_not_called()
+    if state == "closed":
+        assert session.page_pool.pages_count == 0
+    elif state == "busy":
+        assert session.page_pool.pages[0].state == "busy"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "session_type, error", [("dynamic", PlaywrightTimeoutError), ("stealthy", PatchrightTimeoutError)]
+)
+@pytest.mark.parametrize("clear, slowly", [(True, False), (False, False), (False, True)])
+async def test_browser_fill_fields_timeout_stops_and_releases_page(
+    session_type: SessionType, error: type[Exception], clear: bool, slowly: bool
+) -> None:
+    server, session, page = _server(session_type)
+    action = page.locator.return_value.fill if clear else page.locator.return_value.press_sequentially
+    action.side_effect = error("typing timed out")
+    async with Client(server._build_server("127.0.0.1", 8000)) as client:
+        result = await client.call_tool(
+            "browser_fill_fields",
+            {"session_id": "browser", "fields": [{**TEXT_FIELD, "clear": clear}, TEXT_FIELD], "slowly": slowly},
+        )
+    assert result.is_error
+    assert result.content and isinstance(result.content[0], TextContent)
+    assert "typing timed out" in result.content[0].text
+    action.assert_awaited_once()
+    page.locator.assert_called_once_with("#name")
+    page.locator.return_value.press.assert_not_called()
+    assert session.page_pool.pages[0].state == "ready"
+    action.side_effect = None
+    assert await server.browser_fill_fields("browser", [TEXT_FIELD]) == "Fields filled."
 
 
 @pytest.mark.asyncio
@@ -304,11 +381,12 @@ async def test_browser_fill_fields_error_stops_remaining_fields_and_releases_pag
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("cancel_mode", ["task", "scope"])
-async def test_browser_fill_fields_cancellation_stops_remaining_fields(cancel_mode: str) -> None:
+@pytest.mark.parametrize("clear", [False, True])
+async def test_browser_fill_fields_cancellation_stops_remaining_fields(cancel_mode: str, clear: bool) -> None:
     server, session, page = _server()
     entered = asyncio.Event()
     scope = CancelScope()
-    fields = [{**TEXT_FIELD, "value": value} for value in ("first", "second", "third")]
+    fields = [{**TEXT_FIELD, "value": value, "clear": clear} for value in ("first", "second", "third")]
 
     async def pending(value: str, **kwargs: Any) -> None:
         if value == "second":
@@ -319,7 +397,8 @@ async def test_browser_fill_fields_cancellation_stops_remaining_fields(cancel_mo
         with scope:
             await server.browser_fill_fields("browser", fields)
 
-    page.locator.return_value.fill.side_effect = pending
+    action = page.locator.return_value.fill if clear else page.locator.return_value.press_sequentially
+    action.side_effect = pending
     task = asyncio.create_task(fill())
     try:
         await asyncio.wait_for(entered.wait(), 5)
@@ -334,7 +413,7 @@ async def test_browser_fill_fields_cancellation_stops_remaining_fields(cancel_mo
         else:
             with pytest.raises(asyncio.CancelledError):
                 await task
-    assert page.locator.return_value.fill.await_args_list == [
+    assert action.await_args_list == [
         call("first", timeout=30000),
         call("second", timeout=30000),
     ]
@@ -528,6 +607,56 @@ async def test_browser_fill_fields_live_slow_typing_and_field_delays(session_typ
         assert await page.locator("#name").input_value() == ""
         assert await page.locator("#submitted").inner_text() == "0"
         assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
+@pytest.mark.parametrize("slowly", [False, True])
+async def test_browser_fill_fields_live_caret_selection_and_submit(session_type: SessionType, slowly: bool) -> None:
+    async with _browser(session_type) as (client, session, page):
+        snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+        assert not snapshot.is_error
+        assert snapshot.content and isinstance(snapshot.content[0], TextContent)
+        name = search(r'textbox "Name".*?\[ref=([^\]]+)\]', snapshot.content[0].text)
+        assert name is not None
+
+        async def fill(fields: list[dict[str, Any]]) -> None:
+            result = await client.call_tool(
+                "browser_fill_fields", {"session_id": "browser", "fields": fields, "slowly": slowly}
+            )
+            assert not result.is_error
+            assert session.page_pool.pages[0].state == "ready"
+
+        async def press(keys: list[str]) -> None:
+            result = await client.call_tool("browser_press_key", {"session_id": "browser", "keys": keys})
+            assert not result.is_error
+
+        await fill([{**TEXT_FIELD, "value": "abcd"}])
+        await press(["ArrowLeft"])
+        await fill([{"type": "textbox", "ref": name[1], "value": "XY", "clear": False}])
+        assert await page.locator("#name").input_value() == "abcXYd"
+        await press(["Shift+ArrowLeft", "Shift+ArrowLeft"])
+        await fill([{**TEXT_FIELD, "value": "z", "clear": False}])
+        assert await page.locator("#name").input_value() == "abczd"
+        await fill([{**TEXT_FIELD, "value": "", "clear": False}])
+        assert await page.locator("#name").input_value() == "abczd"
+        await fill(
+            [
+                {**TEXT_FIELD, "value": "!", "clear": False},
+                {"type": "textbox", "selector": "#notes", "value": "new notes"},
+            ]
+        )
+        assert await page.locator("#name").input_value() == "abcz!d"
+        assert await page.locator("#notes").input_value() == "new notes"
+        assert await page.locator("#submitted").inner_text() == "0"
+        focused = await client.call_tool("browser_click", {"session_id": "browser", "ref": name[1]})
+        assert not focused.is_error
+        await press(["Enter"])
+        assert await page.locator("#submitted").inner_text() == "1"
+        events = loads(await page.locator("#events").input_value())
+        assert [
+            event["key"] for event in events if event["type"] == "keydown" and event["key"] in ["X", "Y", "z", "!"]
+        ] == ["X", "Y", "z", "!"]
 
 
 @pytest.mark.asyncio

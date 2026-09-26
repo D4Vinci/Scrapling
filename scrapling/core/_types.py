@@ -32,7 +32,7 @@ from typing import (
     Coroutine,
     SupportsIndex,
 )
-from typing_extensions import Self, Unpack, TypedDict
+from typing_extensions import Self, Unpack, TypedDict, NotRequired
 
 # Proxy can be a string URL or a dict (Playwright format: {"server": "...", "username": "...", "password": "..."})
 ProxyType = Union[str, Dict[str, str]]
