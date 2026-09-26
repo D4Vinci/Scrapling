@@ -1,8 +1,8 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes eighteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes fifteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, `browser_press_key`, and `browser_wait` return plain text.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot` and `browser_actions` return plain text.
 
 ## Shadow DOM
 
@@ -163,115 +163,60 @@ With `extraction_type="snapshot"`, the response keeps `status` and `url` and ret
 
 Returns a plain-text AI ARIA snapshot of the current whole page, including element roles, names, and references. Takes `session_id` from `browser_open` and optional `depth` to limit the tree. Element positions and sizes in viewport CSS pixels are included by default; set `boxes=false` to omit them. Use it after `browser_fetch` finishes. Raises for an unknown or HTTP session, or a missing, closed, or busy page.
 
-### `browser_mouse` -- Chain mouse moves, hovers, clicks, and scrolling
+### `browser_actions` -- Chain mouse, field, keyboard, and wait actions
 
-Runs native mouse actions in order on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first. Use `browser_snapshot` to find current references or coordinates.
+Runs actions in order on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first. The flat `actions` list can mix any of the eleven action types below; use `browser_snapshot` when you need to inspect the page before choosing later actions.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `session_id` | str | required | ID of an open browser session |
-| `actions` | list[object] | required | Nonempty ordered list of `move`, `click`, or `wheel` actions |
+| `actions` | list[object] | required | Nonempty ordered list; each item has a `type` and that type's fields |
+| `slowly` | bool | false | Fresh random delays of 50-150 ms per typed character and 100-300 ms between all actions, including waits |
 
 | Action `type` | Fields | Behavior |
 |---------------|--------|----------|
 | `move` | Target, `steps=1`, `timeout=30000` | Hover over an element or move to coordinates; `steps` is the number of coordinate mousemove events, at least 1, and is ignored for element targets |
 | `click` | Target, `button="left"`, `click_count=1`, `delay=0`, `timeout=30000` | Click with the left, right, or middle button; `click_count` must be at least 1, with 2 for a double-click; `delay` is finite nonnegative milliseconds between press and release |
 | `wheel` | `delta_x=0`, `delta_y=0` | Scroll at the current pointer position; finite CSS pixel deltas allow fractions and zero; positive moves right/down, negative moves left/up |
+| `textbox` | Target, `value`, `clear=true`, `timeout=30000` | By default, replace text in an input, textarea, or contenteditable element with a string; an empty string clears it; `clear=false` types at the current caret or selection without clearing |
+| `checkbox` | Target, `value`, `timeout=30000` | Boolean `true` checks the box; `false` unchecks it |
+| `radio` | Target, `value`, `timeout=30000` | Select the radio option; `value` is required and only `true` is supported |
+| `combobox` | Target, `value`, `timeout=30000` | Select native `<select>` options by label; use a string, a list of strings for multiple selections, or `[]` to clear |
+| `press_key` | `key` | Press a nonempty native key name, character, or shortcut at the current focus |
+| `wait_time` | `milliseconds` | Fixed pause in finite nonnegative milliseconds |
+| `wait_element` | `selector`, `state="visible"`, `timeout=30000` | Wait for a nonempty Playwright selector to reach `"visible"`, `"hidden"`, `"attached"`, or `"detached"` |
+| `wait_load` | `state`, `timeout=30000` | Wait for `"domcontentloaded"`, `"load"`, or `"networkidle"` |
 
-Each move or click needs exactly one target: a nonempty Playwright `selector`, a nonempty snapshot `ref` such as `"e2"`, or both `x` and `y`. Coordinates must be finite viewport CSS pixels measured from the main frame's top-left, not full-page screenshot coordinates. Selectors must match exactly one element. Refresh stale references with `browser_snapshot`.
+**Targets and timing.** Each move or click needs exactly one target: a nonempty Playwright `selector`, a nonempty snapshot `ref` such as `"e2"`, or both `x` and `y`. Coordinates must be finite viewport CSS pixels from the main frame's top-left, not full-page screenshot coordinates. Field actions need exactly one nonempty `selector` or `ref` and can target fields anywhere on the page without a `<form>` parent. Element waits use a selector only. Mouse and field selectors must match exactly one element. Use current snapshot references; do not build a chain with references that need a future snapshot.
 
-Element targets use native locator hover or click, which waits for readiness and scrolls into view. Their per-action `timeout` is finite nonnegative milliseconds; 0 disables it. Coordinate actions use the native mouse without automatic waiting or scrolling and ignore `timeout`. Coordinate clicks move the mouse, then press and release, without waiting for navigation. Wheel actions neither move the pointer nor wait for scrolling, animations, or loaded content to finish. The page may prevent scrolling, or the scrollable area may be at its edge.
+Each action with a `timeout` accepts finite nonnegative milliseconds, default 30000; 0 disables the limit. Mouse coordinate actions ignore it. For text input, the limit applies separately to each native operation, including clearing and each character press in slow mode. Keyboard, wheel, and fixed-pause actions have no timeout option. Pauses between actions are outside action timeouts.
 
-For example, hover over a panel and scroll it in one call:
+**Mouse actions.** Element targets use native locator hover or click, which waits for readiness and scrolls into view. Coordinate actions use the native mouse without automatic waiting or scrolling. Coordinate clicks move the mouse, then press and release, without waiting for navigation. Wheel actions neither move the pointer nor wait for scrolling, animations, or loaded content to finish. The page may prevent scrolling, or the scrollable area may be at its edge.
+
+**Fields and keys.** Field actions use native locator `fill`, `press_sequentially`, `set_checked`, and `select_option(label=...)`. Combobox actions support native `<select>` elements, not custom dropdown widgets. With `clear=false`, text uses `press_sequentially` even when `slowly=false`; an empty value preserves existing content. With `slowly=true`, text clears first unless `clear=false`, then each character gets a fresh 50-150 ms delay. Every pair of actions also gets a fresh 100-300 ms pause, including explicit wait actions, with no leading or trailing pause.
+
+Each `press_key` uses native `page.keyboard.press` at the current focus. Keep a shortcut such as `"ControlOrMeta+A"` in one `key` string, then use another `press_key` action with `"Backspace"` to delete. A space (`" "`) and plus (`"+"`) are valid key strings. The native API validates key names and shortcuts when pressed. Use a click action to focus the intended control before an Enter press when needed. Key presses do not wait for navigation.
+
+**Waits.** Element waits are strict: multiple matches return an error. `attached` means present in the DOM, and `detached` means absent. `visible` requires a nonempty bounding box and no `visibility:hidden`; `hidden` also succeeds when the element is absent. Load waits observe the current committed document and return immediately if the state was already reached. A click or key press followed by `wait_load` does not guarantee waiting for delayed future navigation. `domcontentloaded` waits for DOMContentLoaded, not all future JavaScript work; `load` waits for the load event; `networkidle` requires no active network connections for at least 500 ms and does not prove application readiness. Prefer a specific result element when it signals readiness.
+
+For example, fill and submit a search, wait for its results, then hover over the results panel and scroll it:
 
 ```json
 {
   "session_id": "browser",
   "actions": [
+    {"type": "textbox", "selector": "#search", "value": "books"},
+    {"type": "press_key", "key": "Enter"},
+    {"type": "wait_element", "selector": "#results"},
     {"type": "move", "selector": "#results"},
     {"type": "wheel", "delta_y": 500}
   ]
 }
 ```
 
-The whole list is validated before execution, and the page stays reserved for the full sequence. The first action error stops the batch and reports its one-based action number, type, and native error. Cancellation also stops the batch and remains cancellation. Earlier actions stay in effect and are never retried. A cancelled or timed-out click attempts to release the button while the page is open; this does not undo the click. The page reservation is released after success, error, or cancellation.
+MCP validates the entire action schema, and all target combinations are checked before execution. Targets are resolved only when their action runs, so earlier actions can create later targets. One page stays reserved for the whole sequence, including waits and random pauses. The first runtime failure stops the chain and reports its one-based action number, type, and native error. Earlier effects remain, and the failed action itself may partly apply. Nothing is retried or rolled back. Cancellation also stops the chain and remains cancellation. A cancelled or timed-out click attempts to release its button while the page is open, preserving the original error if release fails. The page reservation is released after success, failure, or cancellation.
 
-Returns `Mouse actions completed.` as plain text without a snapshot. Use `browser_snapshot` before retrying after an error or when the next action depends on a page change. Invalid targets, unknown or HTTP sessions, and missing, closed, or busy pages return an error.
-
-### `browser_fill_fields` -- Fill one or more page fields in order
-
-Fills fields anywhere on the existing page in a dynamic or stealthy browser session. Fields do not need a `<form>` parent. Call `browser_fetch` first. Each field needs exactly one nonempty `selector` or snapshot `ref`, plus its `type` and `value`.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID of an open browser session |
-| `fields` | list[object] | required | Nonempty ordered list of field targets, types, and values |
-| `timeout` | number | 30000 | Finite nonnegative timeout in milliseconds per operation; 0 disables the limit |
-| `slowly` | bool | false | Add fresh random delays: 50-150 ms per character, 100-300 ms between fields |
-
-| Field `type` | `value` | Behavior |
-|--------------|---------|----------|
-| `textbox` | str | By default, replace text in an input, textarea, or contenteditable element; an empty string clears it |
-| `checkbox` | bool | `true` checks the box; `false` unchecks it |
-| `radio` | `true` | Select the radio option; `false` is not supported |
-| `combobox` | str or list[str] | Select native `<select>` options by label; use a list for multiple selections or `[]` to clear |
-
-Textbox fields also accept `clear` (bool, default `true`). With `clear=false`, native `press_sequentially` types at the current caret or selection without clearing first, even when `slowly=false`. An empty value preserves existing content when `clear=false`; otherwise it clears the field.
-
-Selectors must match exactly one element. Use current snapshot references, such as `"e2"`. MCP validates all field types and values before execution, and target combinations are checked before reserving the page. One page stays reserved for the whole batch. Native locator `fill`, `press_sequentially`, `set_checked`, and `select_option(label=...)` run in list order. Combobox fields support native `<select>` elements, not custom dropdown widgets.
-
-With `slowly=true`, native `press_sequentially` types each character with a fresh random delay of 50-150 ms, clearing first unless the field has `clear=false`. All field types get a fresh random pause of 100-300 ms before the next field, with no pause before the first or after the last. The timeout applies separately to each native action, including clearing and each character press; pauses between fields are outside it.
-
-Returns `Fields filled.` as plain text without echoing values, submitting forms, or taking a snapshot. An error or cancellation stops the remaining fields; completed changes stay and are not retried. The page reservation is released afterward. Use `browser_snapshot` to check the page before retrying. To submit with Enter, use `browser_press_key` with `keys=["Enter"]`; first focus the intended control with a `browser_mouse` click action if needed, since the batch may end on another field. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
-
-### `browser_press_key` -- Chain keys and shortcuts at the current focus
-
-Presses each item in order through native `page.keyboard.press` on the existing page in a dynamic or stealthy browser session. The page stays reserved for the full sequence. Call `browser_fetch` first. Use a `browser_mouse` click action to focus a control before pressing when needed; later presses follow any focus changes caused by earlier ones.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID of an open browser session |
-| `keys` | list[str] | required | Nonempty ordered list of nonempty native key names, characters, or shortcuts |
-
-Use `["ControlOrMeta+A", "Backspace"]` to select all with the platform's modifier and then delete, or `["Tab", "Enter"]` to move focus and activate a control. Keep a shortcut in one item; separate items are separate presses. Use `["Escape"]` for one press; a space (`" "`) and plus (`"+"`) are valid list items. MCP validates the whole list and its string items before execution; the native API validates each key name or shortcut when pressed.
-
-Returns `Keys pressed.` as plain text without an automatic snapshot or a wait for navigation. An error or cancellation stops the remaining presses; completed actions are not undone or retried. The page reservation is released after success, failure, or cancellation. Use `browser_snapshot` to check partial effects before retrying. Invalid keys, unknown or HTTP sessions, and missing, closed, or busy pages return an error.
-
-### `browser_wait` -- Chain waits on the current page
-
-Runs native waits in order on the existing page in a dynamic or stealthy browser session without reloading it. Call `browser_fetch` first.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID of an open browser session |
-| `actions` | list[object] | required | Nonempty ordered list of `time`, `element`, or `load` waits |
-
-| Action `type` | Fields | Behavior |
-|---------------|--------|----------|
-| `time` | `milliseconds` | Fixed pause in finite nonnegative milliseconds |
-| `element` | `selector`, `state="visible"`, `timeout=30000` | Wait for a nonempty Playwright selector to reach `"visible"`, `"hidden"`, `"attached"`, or `"detached"` |
-| `load` | `state`, `timeout=30000` | Wait for `"domcontentloaded"`, `"load"`, or `"networkidle"` |
-
-Element and load timeouts are finite nonnegative milliseconds per action; 0 disables the limit. Element waits are strict: multiple matches return an error. `attached` means present in the DOM, and `detached` means absent. `visible` requires a nonempty bounding box and no `visibility:hidden`; `hidden` also succeeds when the element is absent.
-
-Load states use the same native browser waits as the fetchers. An already reached state returns immediately for the current document. `domcontentloaded` waits for the DOMContentLoaded event, not all future JavaScript work. `load` waits for the load event. `networkidle` requires no active network connections for at least 500 ms; it does not prove the application is ready. Prefer a specific element state when it signals readiness.
-
-For example, wait for the document, results, and loading overlay in order:
-
-```json
-{
-  "session_id": "browser",
-  "actions": [
-    {"type": "load", "state": "domcontentloaded"},
-    {"type": "element", "selector": "#results", "state": "visible"},
-    {"type": "element", "selector": "#loading", "state": "hidden"}
-  ]
-}
-```
-
-MCP validates the whole list before execution. The page stays reserved for the full sequence and is released after success, failure, or cancellation. The first failure stops the remaining waits and reports the one-based action number, type, and native error. Cancellation also stops the sequence. Completed waits are not undone or retried.
-
-Returns `Wait completed.` as plain text without a snapshot. Unknown or HTTP sessions and missing, closed, or busy pages return an error. Use `browser_snapshot` afterward to inspect the result.
+Returns `Actions completed.` as plain text without echoing field values or taking a snapshot. Use `browser_snapshot` before retrying after an error or when later actions depend on inspecting a page change. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
 
 ### `session_make_request` -- HTTP request through an open requests session
 
@@ -326,10 +271,7 @@ Requires an open browser session. Call `browser_open` first, then pass the `sess
 | Multiple plain HTTP requests to one site | `open_request_session` + `session_make_request` per request   |
 | Need a screenshot of a page              | `browser_open` + `browser_screenshot` with `session_id`               |
 | Read the current page's AI ARIA snapshot  | `browser_snapshot` with `session_id`                          |
-| Move, hover, click, or scroll in order    | `browser_mouse` with `session_id`                          |
-| Fill one or more page fields in order   | `browser_fill_fields` with `session_id`                      |
-| Chain keys or keyboard shortcuts         | `browser_press_key` with `session_id`                      |
-| Wait for content or a page load state     | `browser_wait` with `session_id`                           |
+| Chain mouse, field, keyboard, or wait actions | `browser_actions` with `session_id`                       |
 
 Start with `make_request` (fastest, lowest resource cost). Escalate to `browser_fetch_once` if content requires JS rendering. Escalate to `browser_stealth_fetch_once` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
 
@@ -420,7 +362,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, `browser_press_key`, `browser_wait`, and `browser_screenshot` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 

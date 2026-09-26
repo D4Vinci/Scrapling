@@ -6,7 +6,7 @@ The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful W
 
 ## Features
 
-The Scrapling MCP Server provides eighteen tools for web scraping and browser interaction, split into two modes: one-shot tools that each launch and close their own browser/client, and session tools that open a browser or an HTTP session once and then work through it.
+The Scrapling MCP Server provides fifteen tools for web scraping and browser interaction, split into two modes: one-shot tools that each launch and close their own browser/client, and session tools that open a browser or an HTTP session once and then work through it.
 
 ### One-shot tools
 
@@ -41,18 +41,15 @@ The Scrapling MCP Server provides eighteen tools for web scraping and browser in
 
 - **`browser_snapshot`**: Give the AI a structured text view of the current page without reloading it. Includes element roles, names, references, positions, and sizes to help the AI understand the page and target clicks.
 
-#### Mouse Actions
+#### Browser Actions
 
-- **`browser_mouse`**: Chain native mouse moves, hovers, clicks, and scrolling in one call. Reveal hover menus and tooltips, click buttons and links, and scroll long pages or nested panels vertically or horizontally. Moves and clicks target selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks. The AI can move over a panel and scroll it in the same call.
+- **`browser_actions`**: Chain mouse actions, field filling, keyboard shortcuts, and waits in one call. For example, fill a search box, submit it, wait for results, and open a result. The AI can combine known steps while keeping snapshots separate when it needs to inspect a page change.
 
-#### Text Input and Keyboard
+    Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks support selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
 
-- **`browser_fill_fields`**: Fill one or more fields anywhere on the page in one call, including text, checkboxes, radio buttons, and native dropdowns. Target fields through selectors or snapshot references. Replace or clear text, or type at the current caret without clearing existing content. Supports checking or unchecking boxes and choosing one or more dropdown options by their visible labels. Slow mode types text one character at a time with random pauses between characters and fields.
-- **`browser_press_key`**: Chain keys and shortcuts on the current page to move between fields, submit forms, or dismiss menus in one call. Supports actions such as selecting all text and then deleting it, using the browser's current focus for each press.
+    Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by their visible labels. Text can replace existing content, clear it, or continue at the current caret. Keyboard shortcuts can select and delete text, move focus, submit forms, or dismiss menus. Slow mode types one character at a time with random pauses between characters and all actions.
 
-#### Waiting
-
-- **`browser_wait`**: Chain waits for delayed content, loading overlays, and page load events in one call without reloading the current page. For example, wait for the document to load, results to appear, and a loading overlay to disappear before the next action. Also supports fixed pauses and waiting for network activity to settle.
+    Wait for results to appear, loading overlays to disappear, or page load events before the next action. Also supports fixed pauses and waiting for network activity to settle.
 
 ### Shadow DOM
 
@@ -213,7 +210,7 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Both browser session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, `browser_press_key`, `browser_wait`, and `browser_screenshot` as usual.
+Both browser session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline

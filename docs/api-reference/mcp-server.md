@@ -5,7 +5,7 @@ search:
 
 # MCP Server API Reference
 
-The **Scrapling MCP Server** provides eighteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
+The **Scrapling MCP Server** provides fifteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
 
 You can start the MCP server by running:
 
@@ -30,7 +30,7 @@ server = ScraplingMCPServer(executable_path="/path/to/chromium")
 
 ## Response Model
 
-The standardized response structure returned by the fetch and HTTP request tools. Bulk tools return a list of these responses. Session management tools use the models below, `browser_screenshot` returns image and text content blocks, and `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, `browser_press_key`, and `browser_wait` return plain text.
+The standardized response structure returned by the fetch and HTTP request tools. Bulk tools return a list of these responses. Session management tools use the models below, `browser_screenshot` returns image and text content blocks, and `browser_snapshot` and `browser_actions` return plain text.
 
 ## ::: scrapling.core.ai.ResponseModel
     handler: python
@@ -57,10 +57,13 @@ Model classes for session management:
 The main MCP server class that provides all web scraping tools:
 
 - **`browser_snapshot`**: Inspect the current page without reloading it. Structured text includes element roles, names, references, positions, and sizes to help the AI target page controls.
-- **`browser_mouse`**: Chain native mouse moves, hovers, clicks, and scrolling in one call. Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks target selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
-- **`browser_fill_fields`**: Fill text fields, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by visible labels in one call. Targets one or more fields anywhere on the page through selectors or snapshot references. Replace or clear text, or type at the current caret without clearing existing content. Slow mode types text one character at a time with random pauses between characters and fields.
-- **`browser_press_key`**: Chain keys and shortcuts in one call to move between fields, submit forms, dismiss menus, or select and delete text. Each press uses the browser's current focus.
-- **`browser_wait`**: Chain waits for page load events, content appearing, and loading overlays disappearing in one call on the current page. Supports fixed pauses and waiting for network activity to settle without reloading the page.
+- **`browser_actions`**: Chain mouse moves, hovers, clicks, scrolling, field filling, keyboard shortcuts, and waits in one call. Fill a search box, submit it, wait for results, and open a result without a separate call for each step.
+
+    Moves and clicks target selectors, snapshot references, or coordinates; element targets wait and scroll into view. Supports movement in multiple steps, left, right, and middle clicks, double-clicks, and scrolling nested panels.
+
+    Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by label. Replace or clear text, or type at the current caret. Keyboard shortcuts use the current focus. Slow mode adds random pauses between typed characters and all actions.
+
+    Wait for content, loading overlays, page load events, or settled network activity, or add a fixed pause before continuing.
 - **`browser_fetch`**: Fetch a page through an open browser session and extract HTML, Markdown, text, or a structured snapshot. Snapshots can cover the whole page or a chosen element and include element references, positions, and sizes for later interaction.
 
 ## ::: scrapling.core.ai.ScraplingMCPServer

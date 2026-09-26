@@ -33,11 +33,11 @@ def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, 
 @pytest.mark.asyncio
 async def test_browser_wait_schema_and_annotations() -> None:
     async with Client(ScraplingMCPServer()._build_server("127.0.0.1", 8000)) as client:
-        tool = next(tool for tool in (await client.list_tools()).tools if tool.name == "browser_wait")
-    assert tool.title == "Wait"
+        tool = next(tool for tool in (await client.list_tools()).tools if tool.name == "browser_actions")
+    assert tool.title == "Browser actions"
     assert tool.input_schema["required"] == ["session_id", "actions"]
     properties = tool.input_schema["properties"]
-    assert set(properties) == {"session_id", "actions"}
+    assert set(properties) == {"session_id", "actions", "slowly"}
     actions = properties["actions"]
     assert actions["type"] == "array" and actions["minItems"] == 1
     items = actions["items"]
@@ -46,21 +46,37 @@ async def test_browser_wait_schema_and_annotations() -> None:
         kind: tool.input_schema["$defs"][ref.rsplit("/", 1)[1]]
         for kind, ref in items["discriminator"]["mapping"].items()
     }
-    assert set(variants) == {"time", "element", "load"}
-    assert len(items["oneOf"]) == 3
-    assert variants["time"]["required"] == ["type", "milliseconds"]
-    assert variants["time"]["properties"]["milliseconds"]["minimum"] == 0
-    assert variants["element"]["required"] == ["type", "selector"]
-    assert variants["element"]["properties"]["selector"]["minLength"] == 1
-    assert set(variants["element"]["properties"]["state"]["enum"]) == {"attached", "detached", "visible", "hidden"}
-    assert variants["element"]["properties"]["state"]["default"] == "visible"
-    assert variants["load"]["required"] == ["type", "state"]
-    assert set(variants["load"]["properties"]["state"]["enum"]) == {"domcontentloaded", "load", "networkidle"}
-    for kind in ("element", "load"):
+    assert set(variants) == {
+        "move",
+        "click",
+        "wheel",
+        "wait_time",
+        "wait_element",
+        "wait_load",
+        "textbox",
+        "checkbox",
+        "radio",
+        "combobox",
+        "press_key",
+    }
+    assert len(items["oneOf"]) == 11
+    assert variants["wait_time"]["required"] == ["type", "milliseconds"]
+    assert variants["wait_time"]["properties"]["milliseconds"]["minimum"] == 0
+    assert variants["wait_element"]["required"] == ["type", "selector"]
+    assert variants["wait_element"]["properties"]["selector"]["minLength"] == 1
+    assert set(variants["wait_element"]["properties"]["state"]["enum"]) == {"attached", "detached", "visible", "hidden"}
+    assert variants["wait_element"]["properties"]["state"]["default"] == "visible"
+    assert variants["wait_load"]["required"] == ["type", "state"]
+    assert set(variants["wait_load"]["properties"]["state"]["enum"]) == {"domcontentloaded", "load", "networkidle"}
+    for kind in ("wait_element", "wait_load"):
         assert variants[kind]["properties"]["timeout"]["minimum"] == 0
         assert variants[kind]["properties"]["timeout"]["default"] == 30000
     assert tool.output_schema is None
-    assert tool.annotations and tool.annotations.read_only_hint and tool.annotations.open_world_hint
+    assert tool.annotations is not None
+    assert tool.annotations.read_only_hint is False
+    assert tool.annotations.destructive_hint is True
+    assert tool.annotations.idempotent_hint is False
+    assert tool.annotations.open_world_hint is True
 
 
 @pytest.mark.asyncio
@@ -68,12 +84,12 @@ async def test_browser_wait_schema_and_annotations() -> None:
 @pytest.mark.parametrize(
     "values, method, args, kwargs",
     [
-        ({"type": "time", "milliseconds": 0}, "wait_for_timeout", (0,), {}),
-        ({"type": "time", "milliseconds": 12.5}, "wait_for_timeout", (12.5,), {}),
-        ({"type": "element", "selector": "#ready"}, "locator", (), {"state": "visible", "timeout": 30000}),
+        ({"type": "wait_time", "milliseconds": 0}, "wait_for_timeout", (0,), {}),
+        ({"type": "wait_time", "milliseconds": 12.5}, "wait_for_timeout", (12.5,), {}),
+        ({"type": "wait_element", "selector": "#ready"}, "locator", (), {"state": "visible", "timeout": 30000}),
         *[
             (
-                {"type": "element", "selector": "#ready", "state": state, "timeout": 0},
+                {"type": "wait_element", "selector": "#ready", "state": state, "timeout": 0},
                 "locator",
                 (),
                 {"state": state, "timeout": 0},
@@ -81,7 +97,7 @@ async def test_browser_wait_schema_and_annotations() -> None:
             for state in ("attached", "detached", "visible", "hidden")
         ],
         *[
-            ({"type": "load", "state": state, "timeout": 12.5}, "wait_for_load_state", (state,), {"timeout": 12.5})
+            ({"type": "wait_load", "state": state, "timeout": 12.5}, "wait_for_load_state", (state,), {"timeout": 12.5})
             for state in ("domcontentloaded", "load", "networkidle")
         ],
     ],
@@ -91,9 +107,9 @@ async def test_browser_wait_forwards_only_requested_wait(
 ) -> None:
     server, session, page = _server(session_type)
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_wait", {"session_id": "browser", "actions": [values]})
+        result = await client.call_tool("browser_actions", {"session_id": "browser", "actions": [values]})
     assert not result.is_error and result.structured_content is None
-    assert result.content == [TextContent(type="text", text="Wait completed.")]
+    assert result.content == [TextContent(type="text", text="Actions completed.")]
     for name in ("wait_for_timeout", "wait_for_load_state", "locator"):
         action = page.locator.return_value.wait_for if name == "locator" else getattr(page, name)
         if name == method:
@@ -127,14 +143,14 @@ async def test_browser_wait_mixed_chain_keeps_order_and_page_reservation() -> No
         method.side_effect = assert_reserved
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
-            "browser_wait",
+            "browser_actions",
             {
                 "session_id": "browser",
                 "actions": [
-                    {"type": "load", "state": "domcontentloaded"},
-                    {"type": "element", "selector": "#ready", "timeout": 15},
-                    {"type": "time", "milliseconds": 2.5},
-                    {"type": "element", "selector": "#ready", "state": "hidden", "timeout": 0},
+                    {"type": "wait_load", "state": "domcontentloaded"},
+                    {"type": "wait_element", "selector": "#ready", "timeout": 15},
+                    {"type": "wait_time", "milliseconds": 2.5},
+                    {"type": "wait_element", "selector": "#ready", "state": "hidden", "timeout": 0},
                 ],
             },
         )
@@ -161,20 +177,20 @@ async def test_browser_wait_mixed_chain_keeps_order_and_page_reservation() -> No
         [{}],
         [{"type": "unknown"}],
         *[
-            [{"type": "time", "milliseconds": 0}, invalid]
+            [{"type": "wait_time", "milliseconds": 0}, invalid]
             for invalid in (
-                {"type": "time"},
-                {"type": "time", "milliseconds": -1},
-                {"type": "time", "milliseconds": "NaN"},
-                {"type": "time", "milliseconds": "Infinity"},
-                {"type": "element"},
-                {"type": "element", "selector": ""},
-                {"type": "element", "selector": "#ready", "state": "missing"},
-                {"type": "load"},
-                {"type": "load", "state": "commit"},
-                {"type": "load", "state": "load", "timeout": -1},
-                {"type": "load", "state": "load", "timeout": "NaN"},
-                {"type": "element", "selector": "#ready", "timeout": "Infinity"},
+                {"type": "wait_time"},
+                {"type": "wait_time", "milliseconds": -1},
+                {"type": "wait_time", "milliseconds": "NaN"},
+                {"type": "wait_time", "milliseconds": "Infinity"},
+                {"type": "wait_element"},
+                {"type": "wait_element", "selector": ""},
+                {"type": "wait_element", "selector": "#ready", "state": "missing"},
+                {"type": "wait_load"},
+                {"type": "wait_load", "state": "commit"},
+                {"type": "wait_load", "state": "load", "timeout": -1},
+                {"type": "wait_load", "state": "load", "timeout": "NaN"},
+                {"type": "wait_element", "selector": "#ready", "timeout": "Infinity"},
             )
         ],
     ],
@@ -182,7 +198,7 @@ async def test_browser_wait_mixed_chain_keeps_order_and_page_reservation() -> No
 async def test_browser_wait_invalid_batch_does_not_start_or_reserve_page(actions: Any) -> None:
     server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_wait", {"session_id": "browser", "actions": actions})
+        result = await client.call_tool("browser_actions", {"session_id": "browser", "actions": actions})
     assert result.is_error
     page.is_closed.assert_not_called()
     page.wait_for_timeout.assert_not_awaited()
@@ -196,34 +212,34 @@ async def test_browser_wait_invalid_batch_does_not_start_or_reserve_page(actions
     "session_type, error", [("dynamic", PlaywrightTimeoutError), ("stealthy", PatchrightTimeoutError)]
 )
 @pytest.mark.parametrize(
-    "values", [{"type": "element", "selector": "#missing"}, {"type": "load", "state": "networkidle"}]
+    "values", [{"type": "wait_element", "selector": "#missing"}, {"type": "wait_load", "state": "networkidle"}]
 )
 async def test_browser_wait_native_timeout_reaches_mcp_and_releases_page(
     session_type: SessionType, error: type[Exception], values: dict[str, Any]
 ) -> None:
     server, session, page = _server(session_type)
-    action = page.locator.return_value.wait_for if values["type"] == "element" else page.wait_for_load_state
+    action = page.locator.return_value.wait_for if values["type"] == "wait_element" else page.wait_for_load_state
     action.side_effect = error("wait timed out")
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
-            "browser_wait",
+            "browser_actions",
             {
                 "session_id": "browser",
-                "actions": [{"type": "time", "milliseconds": 1}, values, {"type": "time", "milliseconds": 2}],
+                "actions": [{"type": "wait_time", "milliseconds": 1}, values, {"type": "wait_time", "milliseconds": 2}],
             },
         )
         assert result.is_error and isinstance(result.content[0], TextContent)
-        assert f"Wait action 2 ({values['type']}) failed: wait timed out" in result.content[0].text
+        assert f"Action 2 ({values['type']}) failed: wait timed out" in result.content[0].text
         assert page.wait_for_timeout.await_args_list == [call(1)]
         assert session.page_pool.pages[0].state == "ready"
         assert not (
             await client.call_tool(
-                "browser_wait", {"session_id": "browser", "actions": [{"type": "time", "milliseconds": 0}]}
+                "browser_actions", {"session_id": "browser", "actions": [{"type": "wait_time", "milliseconds": 0}]}
             )
         ).is_error
     assert action.await_count == 1
-    with pytest.raises(RuntimeError, match=r"Wait action 1 .* failed: wait timed out") as failed:
-        await server.browser_wait("browser", [values])
+    with pytest.raises(RuntimeError, match=r"Action 1 .* failed: wait timed out") as failed:
+        await server.browser_actions("browser", [values])
     assert isinstance(failed.value.__cause__, error)
     assert session.page_pool.pages[0].state == "ready"
 
@@ -251,7 +267,7 @@ async def test_browser_wait_session_errors(state: str, message: str) -> None:
         page.is_closed.return_value = True
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
-            "browser_wait", {"session_id": "browser", "actions": [{"type": "time", "milliseconds": 0}]}
+            "browser_actions", {"session_id": "browser", "actions": [{"type": "wait_time", "milliseconds": 0}]}
         )
     assert result.is_error and isinstance(result.content[0], TextContent)
     assert message in result.content[0].text
@@ -273,12 +289,12 @@ async def test_browser_wait_reserves_page_until_cancelled(cancel_mode: str) -> N
 
     async def wait() -> None:
         with scope:
-            await server.browser_wait(
+            await server.browser_actions(
                 "browser",
                 [
-                    {"type": "time", "milliseconds": 1},
-                    {"type": "load", "state": "networkidle", "timeout": 0},
-                    {"type": "time", "milliseconds": 2},
+                    {"type": "wait_time", "milliseconds": 1},
+                    {"type": "wait_load", "state": "networkidle", "timeout": 0},
+                    {"type": "wait_time", "milliseconds": 2},
                 ],
             )
 
@@ -288,9 +304,9 @@ async def test_browser_wait_reserves_page_until_cancelled(cancel_mode: str) -> N
         await asyncio.wait_for(entered.wait(), 5)
         assert session.page_pool.pages[0].state == "busy"
         with pytest.raises(RuntimeError, match="busy"):
-            await server.browser_wait("browser", [{"type": "time", "milliseconds": 0}])
+            await server.browser_actions("browser", [{"type": "wait_time", "milliseconds": 0}])
         with pytest.raises(RuntimeError, match="busy"):
-            await server.browser_press_key("browser", ["Enter"])
+            await server.browser_actions("browser", [{"type": "press_key", "key": "Enter"}])
     finally:
         scope.cancel() if cancel_mode == "scope" else task.cancel()
         if cancel_mode == "scope":
@@ -301,7 +317,7 @@ async def test_browser_wait_reserves_page_until_cancelled(cancel_mode: str) -> N
                 await task
     assert session.page_pool.pages[0].state == "ready"
     assert page.wait_for_timeout.await_args_list == [call(1)]
-    assert await server.browser_wait("browser", [{"type": "time", "milliseconds": 0}]) == "Wait completed."
+    assert await server.browser_actions("browser", [{"type": "wait_time", "milliseconds": 0}]) == "Actions completed."
 
 
 @asynccontextmanager
@@ -331,7 +347,7 @@ async def test_browser_wait_live_pause_and_element_states(session_type: SessionT
         started = monotonic()
         assert not (
             await client.call_tool(
-                "browser_wait", {"session_id": "browser", "actions": [{"type": "time", "milliseconds": 80}]}
+                "browser_actions", {"session_id": "browser", "actions": [{"type": "wait_time", "milliseconds": 80}]}
             )
         ).is_error
         assert monotonic() - started >= 0.07
@@ -347,10 +363,10 @@ async def test_browser_wait_live_pause_and_element_states(session_type: SessionT
         ):
             await page.evaluate(f"() => {{ {setup}; setTimeout(() => {{ {change} }}, 80); }}")
             result = await client.call_tool(
-                "browser_wait",
+                "browser_actions",
                 {
                     "session_id": "browser",
-                    "actions": [{"type": "element", "selector": "#target", "state": state, "timeout": 5000}],
+                    "actions": [{"type": "wait_element", "selector": "#target", "state": state, "timeout": 5000}],
                 },
             )
             assert not result.is_error
@@ -362,19 +378,19 @@ async def test_browser_wait_live_pause_and_element_states(session_type: SessionT
         for state in ("hidden", "detached"):
             assert not (
                 await client.call_tool(
-                    "browser_wait",
+                    "browser_actions",
                     {
                         "session_id": "browser",
-                        "actions": [{"type": "element", "selector": "#absent", "state": state, "timeout": 100}],
+                        "actions": [{"type": "wait_element", "selector": "#absent", "state": state, "timeout": 100}],
                     },
                 )
             ).is_error
         await page.evaluate("document.body.innerHTML = '<div class=duplicate></div><div class=duplicate></div>'")
         result = await client.call_tool(
-            "browser_wait",
+            "browser_actions",
             {
                 "session_id": "browser",
-                "actions": [{"type": "element", "selector": ".duplicate", "state": "attached", "timeout": 100}],
+                "actions": [{"type": "wait_element", "selector": ".duplicate", "state": "attached", "timeout": 100}],
             },
         )
         assert result.is_error and isinstance(result.content[0], TextContent)
@@ -395,7 +411,7 @@ async def test_browser_wait_live_current_document_load_states(session_type: Sess
 
         async def wait(values: dict[str, Any]) -> Any:
             return await client.call_tool(
-                "browser_wait", {"session_id": "browser", "actions": [{"type": "load", **values}]}
+                "browser_actions", {"session_id": "browser", "actions": [{"type": "wait_load", **values}]}
             )
 
         await page.route("**/pending", blocked)
@@ -451,17 +467,17 @@ async def test_browser_wait_live_load_visible_hidden_chain(session_type: Session
             }, 100);
         }""")
         result = await client.call_tool(
-            "browser_wait",
+            "browser_actions",
             {
                 "session_id": "browser",
                 "actions": [
-                    {"type": "load", "state": "load", "timeout": 5000},
-                    {"type": "element", "selector": "#target", "state": "visible", "timeout": 5000},
-                    {"type": "element", "selector": "#target", "state": "hidden", "timeout": 5000},
+                    {"type": "wait_load", "state": "load", "timeout": 5000},
+                    {"type": "wait_element", "selector": "#target", "state": "visible", "timeout": 5000},
+                    {"type": "wait_element", "selector": "#target", "state": "hidden", "timeout": 5000},
                 ],
             },
         )
         assert not result.is_error
-        assert result.content == [TextContent(type="text", text="Wait completed.")]
+        assert result.content == [TextContent(type="text", text="Actions completed.")]
         assert await page.locator("#target").is_hidden()
         assert session.page_pool.pages[0].state == "ready"

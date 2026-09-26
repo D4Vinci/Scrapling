@@ -61,22 +61,37 @@ def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, 
 async def test_browser_mouse_schema_and_annotations() -> None:
     async with Client(ScraplingMCPServer()._build_server("127.0.0.1", 8000)) as client:
         tools = {tool.name: tool for tool in (await client.list_tools()).tools}
-        for name in ("browser_mouse_move", "browser_click", "browser_mouse_wheel"):
+        for name in ("browser_mouse", "browser_mouse_move", "browser_click", "browser_mouse_wheel"):
             assert name not in tools
             assert (await client.call_tool(name, {"session_id": "browser"})).is_error
-    tool = tools["browser_mouse"]
-    assert tool.title == "Mouse actions"
+    tool = tools["browser_actions"]
+    assert tool.title == "Browser actions"
     schema = tool.input_schema
-    assert set(schema["properties"]) == {"session_id", "actions"}
+    assert set(schema["properties"]) == {"session_id", "actions", "slowly"}
+    assert schema["properties"]["slowly"]["type"] == "boolean"
+    assert schema["properties"]["slowly"]["default"] is False
     assert schema["required"] == ["session_id", "actions"]
     actions = schema["properties"]["actions"]
     assert actions["type"] == "array" and actions["minItems"] == 1
     items = actions["items"]
     assert items["discriminator"]["propertyName"] == "type"
     variants = {kind: schema["$defs"][ref.rsplit("/", 1)[1]] for kind, ref in items["discriminator"]["mapping"].items()}
-    assert set(variants) == {"move", "click", "wheel"}
-    assert len(items["oneOf"]) == 3
-    for kind, variant in variants.items():
+    assert set(variants) == {
+        "move",
+        "click",
+        "wheel",
+        "wait_time",
+        "wait_element",
+        "wait_load",
+        "textbox",
+        "checkbox",
+        "radio",
+        "combobox",
+        "press_key",
+    }
+    assert len(items["oneOf"]) == 11
+    for kind in ("move", "click", "wheel"):
+        variant = variants[kind]
         assert variant["required"] == ["type"]
         assert variant["properties"]["type"]["const"] == kind
     move = variants["move"]["properties"]
@@ -141,11 +156,11 @@ async def test_browser_mouse_forwards_native_actions(
     server, session, page = _server(session_type)
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
-            "browser_mouse", {"session_id": "browser", "actions": [{"type": tool, **target, **options}]}
+            "browser_actions", {"session_id": "browser", "actions": [{"type": tool, **target, **options}]}
         )
     assert not result.is_error
     assert result.structured_content is None
-    assert result.content == [TextContent(type="text", text="Mouse actions completed.")]
+    assert result.content == [TextContent(type="text", text="Actions completed.")]
     if tool == "move" and "x" in target:
         page.mouse.move.assert_awaited_once_with(-12.5, 23.5, **expected)
         page.mouse.click.assert_not_awaited()
@@ -203,7 +218,7 @@ async def test_browser_mouse_invalid_input_does_not_reserve_or_use_page(tool: st
     server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
-            "browser_mouse",
+            "browser_actions",
             {
                 "session_id": "browser",
                 "actions": [{"type": "move", "x": 1, "y": 2}, {"type": tool, "x": 10, "y": 20, **values}],
@@ -221,7 +236,7 @@ async def test_browser_mouse_invalid_input_does_not_reserve_or_use_page(tool: st
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
 def test_browser_mouse_schema_rejects_nonfinite_values(tool: str, fields: tuple[str, ...], value: float) -> None:
     server, session, page = _server()
-    registered = server._build_server("127.0.0.1", 8000)._tool_manager.get_tool("browser_mouse")
+    registered = server._build_server("127.0.0.1", 8000)._tool_manager.get_tool("browser_actions")
     assert registered is not None
     for field in fields:
         with pytest.raises(ValidationError):
@@ -253,7 +268,7 @@ async def test_browser_mouse_requires_exactly_one_complete_target(tool: str, tar
     server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
-            "browser_mouse",
+            "browser_actions",
             {"session_id": "browser", "actions": [{"type": "move", "x": 1, "y": 2}, {"type": tool, **target}]},
         )
     assert result.is_error
@@ -291,7 +306,7 @@ async def test_browser_mouse_session_errors_reach_mcp(tool: str, state: str, mes
         page.is_closed.return_value = True
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
-            "browser_mouse", {"session_id": "browser", "actions": [{"type": tool, "x": 10, "y": 20}]}
+            "browser_actions", {"session_id": "browser", "actions": [{"type": tool, "x": 10, "y": 20}]}
         )
     assert result.is_error
     assert result.content and isinstance(result.content[0], TextContent)
@@ -324,7 +339,7 @@ async def test_browser_mouse_failure_is_not_retried_and_releases_page(
     action.side_effect = fail
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
-            "browser_mouse", {"session_id": "browser", "actions": [{"type": tool, **target}]}
+            "browser_actions", {"session_id": "browser", "actions": [{"type": tool, **target}]}
         )
     assert result.is_error
     assert result.content and isinstance(result.content[0], TextContent)
@@ -335,7 +350,7 @@ async def test_browser_mouse_failure_is_not_retried_and_releases_page(
     else:
         assert session.page_pool.pages[0].state == "ready"
         action.side_effect = None
-        await server.browser_mouse("browser", [{"type": tool, **target}])
+        await server.browser_actions("browser", [{"type": tool, **target}])
     page.close.assert_not_called()
     page.mouse.wheel.assert_not_awaited()
     page.mouse.up.assert_not_awaited()
@@ -355,14 +370,14 @@ async def test_browser_mouse_reserves_page_until_cancelled(target: dict[str, Any
     action = page.mouse.move if "x" in target else page.locator.return_value.hover
     action.side_effect = move
     task = asyncio.create_task(
-        server.browser_mouse("browser", [{"type": "move", **target, "steps": 3}, {"type": "wheel", "delta_y": 120}])
+        server.browser_actions("browser", [{"type": "move", **target, "steps": 3}, {"type": "wheel", "delta_y": 120}])
     )
     try:
         await asyncio.wait_for(entered.wait(), 5)
         assert session.page_pool.pages[0].state == "busy"
         assert session.page_pool.get_ready_page() is None
         with pytest.raises(RuntimeError, match="busy"):
-            await server.browser_mouse("browser", [{"type": "click", "x": 10, "y": 20}])
+            await server.browser_actions("browser", [{"type": "click", "x": 10, "y": 20}])
         with pytest.raises(RuntimeError, match="busy"):
             await server.browser_snapshot("browser")
     finally:
@@ -392,16 +407,16 @@ async def test_browser_mouse_click_timeout_holds_page_until_button_is_released(
     page.locator.return_value.click.side_effect = error_type("click timed out")
     page.mouse.up.side_effect = unpress
     task = asyncio.create_task(
-        server.browser_mouse("browser", [{"type": "click", "selector": "button", "button": "right"}])
+        server.browser_actions("browser", [{"type": "click", "selector": "button", "button": "right"}])
     )
     try:
         await asyncio.wait_for(releasing.wait(), 5)
         assert session.page_pool.pages[0].state == "busy"
         assert session.page_pool.get_ready_page() is None
         with pytest.raises(RuntimeError, match="busy"):
-            await server.browser_mouse("browser", [{"type": "move", "x": 30, "y": 40}])
+            await server.browser_actions("browser", [{"type": "move", "x": 30, "y": 40}])
         release.set()
-        with pytest.raises(RuntimeError, match=r"Mouse action 1 \(click\) failed: click timed out") as error:
+        with pytest.raises(RuntimeError, match=r"Action 1 \(click\) failed: click timed out") as error:
             await task
         assert isinstance(error.value.__cause__, error_type)
     finally:
@@ -437,7 +452,7 @@ async def test_browser_mouse_cancelled_click_holds_page_until_button_is_released
 
     async def click() -> None:
         with scope:
-            await server.browser_mouse(
+            await server.browser_actions(
                 "browser",
                 [{"type": "click", **target, "button": "right", "delay": 60000}, {"type": "wheel", "delta_y": 120}],
             )
@@ -453,7 +468,7 @@ async def test_browser_mouse_cancelled_click_holds_page_until_button_is_released
         assert session.page_pool.pages[0].state == "busy"
         assert session.page_pool.get_ready_page() is None
         with pytest.raises(RuntimeError, match="busy"):
-            await server.browser_mouse("browser", [{"type": "move", "x": 30, "y": 40}])
+            await server.browser_actions("browser", [{"type": "move", "x": 30, "y": 40}])
         release.set()
         if cancel_mode == "scope":
             await asyncio.wait_for(task, 5)
@@ -509,7 +524,7 @@ async def test_browser_mouse_cleanup_failure_preserves_click_error(
     page.locator.return_value.click.side_effect = press
     page.mouse.up.side_effect = unpress
     task = asyncio.create_task(
-        server.browser_mouse(
+        server.browser_actions(
             "browser",
             [{"type": "click", "selector": "#target", "button": "right"}, {"type": "wheel", "delta_y": 120}],
         )
@@ -521,7 +536,7 @@ async def test_browser_mouse_cleanup_failure_preserves_click_error(
             await asyncio.wait_for(task, 5)
         original = error.value if cancelled else error.value.__cause__
         if not cancelled:
-            assert str(error.value) == "Mouse action 1 (click) failed: click timed out"
+            assert str(error.value) == "Action 1 (click) failed: click timed out"
             assert original is timeout
         assert original is not None and original.__cause__ is cleanup_error
     finally:
@@ -543,7 +558,7 @@ async def test_browser_mouse_cleanup_failure_preserves_click_error(
 async def test_browser_mouse_rejects_empty_or_unknown_actions(actions: list[dict[str, Any]]) -> None:
     server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_mouse", {"session_id": "browser", "actions": actions})
+        result = await client.call_tool("browser_actions", {"session_id": "browser", "actions": actions})
     assert result.is_error
     page.is_closed.assert_not_called()
     assert session.page_pool.pages[0].state == "ready"
@@ -574,9 +589,9 @@ async def test_browser_mouse_mixed_chain_keeps_one_page_reserved(session_type: S
         {"type": "click", "x": 30, "y": 40, "click_count": 2},
     ]
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_mouse", {"session_id": "browser", "actions": actions})
+        result = await client.call_tool("browser_actions", {"session_id": "browser", "actions": actions})
     assert not result.is_error
-    assert result.content == [TextContent(type="text", text="Mouse actions completed.")]
+    assert result.content == [TextContent(type="text", text="Actions completed.")]
     assert page.mock_calls == [
         call.is_closed(),
         call.mouse.move(10, 20, steps=4),
@@ -608,8 +623,8 @@ async def test_browser_mouse_chain_reports_failed_index_and_keeps_completed_acti
         {"type": kind, **({"selector": "#target"} if kind != "wheel" else {"delta_y": 120})},
         {"type": "click", "x": 30, "y": 40},
     ]
-    with pytest.raises(RuntimeError, match=rf"Mouse action 2 \({kind}\) failed: native failure") as error:
-        await server.browser_mouse("browser", actions)
+    with pytest.raises(RuntimeError, match=rf"Action 2 \({kind}\) failed: native failure") as error:
+        await server.browser_actions("browser", actions)
     assert error.value.__cause__ is native_error
     page.mouse.move.assert_awaited_once_with(10, 20, steps=1)
     failing.assert_awaited_once()
@@ -647,7 +662,7 @@ async def test_browser_mouse_live_native_events_and_navigation(session_type: Ses
             page = page_info.page
             initial_dom = await page.content()
             moved = await client.call_tool(
-                "browser_mouse",
+                "browser_actions",
                 {"session_id": "browser", "actions": [{"type": "move", "x": 140, "y": 110, "steps": 4}]},
             )
             assert not moved.is_error
@@ -666,7 +681,7 @@ async def test_browser_mouse_live_native_events_and_navigation(session_type: Ses
             ):
                 await page.locator("#events").evaluate("element => element.value = '[]'")
                 result = await client.call_tool(
-                    "browser_mouse",
+                    "browser_actions",
                     {"session_id": "browser", "actions": [{"type": "click", "x": 140, "y": 110, **options}]},
                 )
                 assert not result.is_error
@@ -679,7 +694,7 @@ async def test_browser_mouse_live_native_events_and_navigation(session_type: Ses
             assert await page.content() == initial_dom
             assert requests == ["https://mouse.test/"]
             clicked = await client.call_tool(
-                "browser_mouse", {"session_id": "browser", "actions": [{"type": "click", "x": 140, "y": 200}]}
+                "browser_actions", {"session_id": "browser", "actions": [{"type": "click", "x": 140, "y": 200}]}
             )
             assert not clicked.is_error
             await page.wait_for_url("https://mouse.test/next", timeout=5000)
@@ -710,7 +725,7 @@ async def test_browser_mouse_live_cancelled_click_releases_native_button(
 
     async def click() -> None:
         with scope:
-            await server.browser_mouse("browser", [{"type": "click", **target, "delay": 60000, "timeout": 0}])
+            await server.browser_actions("browser", [{"type": "click", **target, "delay": 60000, "timeout": 0}])
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
@@ -744,7 +759,7 @@ async def test_browser_mouse_live_cancelled_click_releases_native_button(
                     await asyncio.wait_for(task, 5)
             assert page_info.state == "ready"
             moved = await client.call_tool(
-                "browser_mouse", {"session_id": "browser", "actions": [{"type": "move", "x": 150, "y": 120}]}
+                "browser_actions", {"session_id": "browser", "actions": [{"type": "move", "x": 150, "y": 120}]}
             )
             assert not moved.is_error
             events = loads(await page.locator("#events").input_value())
@@ -797,7 +812,7 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(session_type: Sessio
                 await page.mouse.move(0, 0)
                 await page.locator("#events").evaluate("element => element.value = '[]'")
                 result = await client.call_tool(
-                    "browser_mouse", {"session_id": "browser", "actions": [{"type": tool, **target}]}
+                    "browser_actions", {"session_id": "browser", "actions": [{"type": tool, **target}]}
                 )
                 assert not result.is_error
                 events = loads(await page.locator("#events").input_value())
@@ -815,8 +830,8 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(session_type: Sessio
             await page.locator("#target").evaluate("element => element.remove()")
             for target in ({"selector": "button, a"}, {"selector": "#missing"}, {"ref": ref}):
                 await page.locator("#events").evaluate("element => element.value = '[]'")
-                with pytest.raises(RuntimeError, match=rf"Mouse action 1 \({tool}\) failed:") as error:
-                    await server.browser_mouse(
+                with pytest.raises(RuntimeError, match=rf"Action 1 \({tool}\) failed:") as error:
+                    await server.browser_actions(
                         "browser",
                         [{"type": tool, "selector": target.get("selector"), "ref": target.get("ref"), "timeout": 100}],
                     )
@@ -863,7 +878,7 @@ async def test_browser_mouse_click_live_timeout_releases_native_button(session_t
             page_info = session.page_pool.pages[0]
             page = page_info.page
             failed = await client.call_tool(
-                "browser_mouse",
+                "browser_actions",
                 {
                     "session_id": "browser",
                     "actions": [{"type": "click", "selector": "#target", "delay": 1000, "timeout": 300}],
@@ -873,7 +888,7 @@ async def test_browser_mouse_click_live_timeout_releases_native_button(session_t
             events = loads(await page.locator("#events").input_value())
             assert next(event for event in events if event["type"] == "mousedown")["buttons"] == 1
             moved = await client.call_tool(
-                "browser_mouse", {"session_id": "browser", "actions": [{"type": "move", "x": 150, "y": 120}]}
+                "browser_actions", {"session_id": "browser", "actions": [{"type": "move", "x": 150, "y": 120}]}
             )
             assert not moved.is_error
             events = loads(await page.locator("#events").input_value())

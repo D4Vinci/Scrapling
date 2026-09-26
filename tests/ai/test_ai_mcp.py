@@ -982,7 +982,7 @@ class TestServerToolRegistration:
 
     @pytest.mark.asyncio
     async def test_tools_are_listed_with_expected_schemas(self):
-        """All 18 tools are advertised, with plain content for screenshots, snapshots, waits, and input actions"""
+        """All 15 tools are advertised, with plain content for screenshots, snapshots, waits, and input actions"""
         server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
         async with Client(server) as client:
             assert client.instructions
@@ -990,6 +990,10 @@ class TestServerToolRegistration:
             for name in (
                 "browser_type",
                 "browser_fill_form",
+                "browser_fill_fields",
+                "browser_mouse",
+                "browser_wait",
+                "browser_press_key",
                 "open_session",
                 "session_fetch",
                 "screenshot",
@@ -1005,16 +1009,17 @@ class TestServerToolRegistration:
                 result = await client.call_tool(name, {})
                 assert result.is_error
 
-        assert len(tools) == 18
+        assert len(tools) == 15
         assert tools["browser_screenshot"].output_schema is None
         assert tools["browser_snapshot"].output_schema is None
-        assert tools["browser_wait"].output_schema is None
-        assert tools["browser_mouse"].output_schema is None
-        assert tools["browser_press_key"].output_schema is None
-        assert tools["browser_fill_fields"].output_schema is None
+        assert tools["browser_actions"].output_schema is None
         assert {
             "browser_type",
             "browser_fill_form",
+            "browser_fill_fields",
+            "browser_mouse",
+            "browser_wait",
+            "browser_press_key",
             "session_snapshot",
             "open_session",
             "session_fetch",
@@ -1041,10 +1046,7 @@ class TestServerToolRegistration:
             not in (
                 "browser_screenshot",
                 "browser_snapshot",
-                "browser_wait",
-                "browser_mouse",
-                "browser_press_key",
-                "browser_fill_fields",
+                "browser_actions",
             )
         )
 
@@ -1110,7 +1112,7 @@ class TestServerToolRegistration:
         assert result.ttl_ms == 3_600_000 and result.cache_scope == "public"
 
         annotations = {tool.name: tool.annotations for tool in result.tools if tool.annotations is not None}
-        assert len(annotations) == 18
+        assert len(annotations) == 15
         for name in (
             "make_request",
             "bulk_get",
@@ -1122,7 +1124,6 @@ class TestServerToolRegistration:
             "session_make_request",
             "browser_snapshot",
             "browser_screenshot",
-            "browser_wait",
         ):
             assert annotations[name].read_only_hint is True
             assert annotations[name].open_world_hint is True
@@ -1132,11 +1133,7 @@ class TestServerToolRegistration:
             assert annotations[name].open_world_hint is True
         assert annotations["list_sessions"].read_only_hint is True
         assert annotations["list_sessions"].open_world_hint is False
-        for name in (
-            "browser_mouse",
-            "browser_press_key",
-            "browser_fill_fields",
-        ):
+        for name in ("browser_actions",):
             assert annotations[name].read_only_hint is False
             assert annotations[name].destructive_hint is True
             assert annotations[name].idempotent_hint is False

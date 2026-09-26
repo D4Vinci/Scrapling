@@ -143,11 +143,8 @@ class _MouseWheel(TypedDict):
     ]
 
 
-MouseAction = Annotated[Union[_MouseMove, _MouseClick, _MouseWheel], Field(discriminator="type")]
-
-
 class _TimeWait(TypedDict):
-    type: Literal["time"]
+    type: Literal["wait_time"]
     milliseconds: NonNegativeFiniteFloat
 
 
@@ -156,25 +153,32 @@ class _ConditionWait(TypedDict, total=False):
 
 
 class _ElementWait(_ConditionWait):
-    type: Literal["element"]
+    type: Literal["wait_element"]
     selector: Annotated[NonEmptyString, Field(description="Playwright selector for one element.")]
     state: NotRequired[Annotated[SelectorWaitStates, Field(default="visible", description="Hidden includes removal.")]]
 
 
 class _LoadWait(_ConditionWait):
-    type: Literal["load"]
+    type: Literal["wait_load"]
     state: Annotated[
         Literal["domcontentloaded", "load", "networkidle"],
         Field(description="Current document readiness; networkidle waits for 500 ms without active connections."),
     ]
 
 
-WaitAction = Annotated[Union[_TimeWait, _ElementWait, _LoadWait], Field(discriminator="type")]
+class _KeyPress(TypedDict):
+    type: Literal["press_key"]
+    key: Annotated[
+        NonEmptyString, Field(description="Key or shortcut at current focus, e.g. Enter or ControlOrMeta+A.")
+    ]
 
 
 class _FormTarget(TypedDict, total=False):
     selector: Optional[NonEmptyString]
     ref: Optional[NonEmptyString]
+    timeout: Annotated[
+        NonNegativeFiniteFloat, Field(default=30000, description="Limit per native operation in ms; 0 disables it.")
+    ]
 
 
 class _TextFormField(_FormTarget):
@@ -200,8 +204,21 @@ class _SelectFormField(_FormTarget):
     value: Annotated[Union[str, List[str]], Field(description="Option label(s); [] clears selection.")]
 
 
-FormField = Annotated[
-    Union[_TextFormField, _CheckboxFormField, _RadioFormField, _SelectFormField], Field(discriminator="type")
+BrowserAction = Annotated[
+    Union[
+        _MouseMove,
+        _MouseClick,
+        _MouseWheel,
+        _TextFormField,
+        _CheckboxFormField,
+        _RadioFormField,
+        _SelectFormField,
+        _KeyPress,
+        _TimeWait,
+        _ElementWait,
+        _LoadWait,
+    ],
+    Field(discriminator="type"),
 ]
 
 
@@ -508,137 +525,104 @@ class ScraplingMCPServer:
             else:
                 page_info.mark_ready()
 
-    async def browser_wait(
+    async def browser_actions(
         self,
         session_id: str,
-        actions: Annotated[List[WaitAction], Field(min_length=1)],
+        actions: Annotated[List[BrowserAction], Field(min_length=1)],
+        slowly: bool = False,
     ) -> str:
-        """Run time, element, or load waits in order on the current page; return plain text. No navigation or snapshot.
-        Stop on the first error, identifying its action. Load states do not guarantee all later JavaScript has finished.
+        """Run mouse, field, key, and wait actions in order; return plain text without a snapshot.
+        Stop on the first error, identifying its action; partial effects remain. No retries.
+        Element mouse targets auto-wait and scroll into view; coordinates and wheel do not wait for navigation or scrolling.
+        Cancelled/timed-out clicks attempt button release. Load waits observe the current document, not future navigation.
 
         :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param actions: Ordered waits; each condition has its own timeout. Time actions use milliseconds.
-        """
-        with self._browser_page(session_id) as (_, page):
-            for index, action in enumerate(actions, 1):
-                try:
-                    if action["type"] == "time":
-                        await page.wait_for_timeout(action["milliseconds"])
-                    elif action["type"] == "element":
-                        await page.locator(action["selector"]).wait_for(
-                            state=action.get("state", "visible"), timeout=action.get("timeout", 30000)
-                        )
-                    else:
-                        await page.wait_for_load_state(action["state"], timeout=action.get("timeout", 30000))
-                except Exception as exc:
-                    raise RuntimeError(f"Wait action {index} ({action['type']}) failed: {exc}") from exc
-        return "Wait completed."
-
-    async def browser_mouse(
-        self,
-        session_id: str,
-        actions: Annotated[List[MouseAction], Field(min_length=1)],
-    ) -> str:
-        """Move, hover, click, or wheel in order; return plain text. Errors identify the failed action; earlier actions remain.
-        Selector/ref targets wait and scroll into view; coordinates do not. Wheel does not wait for scrolling to finish.
-        Cancelled/timed-out clicks attempt button release. Use browser_snapshot separately to check page changes.
-
-        :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param actions: Ordered actions; move/click need exactly one selector, snapshot ref, or (x, y) pair in viewport CSS pixels.
+        :param actions: Ordered actions; fields need one selector/ref, mouse targets one selector/ref or viewport (x, y).
+        :param slowly: Fresh random delays: 50-150 ms per character, 100-300 ms between all actions, including waits.
         """
         for index, action in enumerate(actions, 1):
-            if action["type"] != "wheel" and (
+            if action["type"] in ("move", "click") and (
                 sum(action.get(key) is not None for key in ("selector", "ref", "x")) != 1
                 or (action.get("x") is None) != (action.get("y") is None)
             ):
                 raise ValueError(
-                    f"Mouse action {index} ({action['type']}) needs exactly one target: 'selector', 'ref', or both 'x' and 'y'."
+                    f"Action {index} ({action['type']}) needs exactly one target: 'selector', 'ref', or both 'x' and 'y'."
                 )
+            if action["type"] in ("textbox", "checkbox", "radio", "combobox") and (
+                (action.get("selector") is None) == (action.get("ref") is None)
+            ):
+                raise ValueError(f"Action {index} ({action['type']}) needs exactly one target: 'selector' or 'ref'.")
         with self._browser_page(session_id) as (_, page):
             for index, action in enumerate(actions, 1):
                 try:
-                    if action["type"] == "wheel":
+                    if slowly and index > 1:
+                        await sleep(uniform(0.1, 0.3))
+                    if action["type"] == "wait_time":
+                        await page.wait_for_timeout(action["milliseconds"])
+                    elif action["type"] == "wait_element":
+                        await page.locator(action["selector"]).wait_for(
+                            state=action.get("state", "visible"), timeout=action.get("timeout", 30000)
+                        )
+                    elif action["type"] == "wait_load":
+                        await page.wait_for_load_state(action["state"], timeout=action.get("timeout", 30000))
+                    elif action["type"] == "press_key":
+                        await page.keyboard.press(action["key"])
+                    elif action["type"] == "wheel":
                         await page.mouse.wheel(action.get("delta_x", 0), action.get("delta_y", 0))
-                        continue
-                    selector, ref = action.get("selector"), action.get("ref")
-                    locator = (
-                        page.locator(selector or f"aria-ref={ref}") if selector is not None or ref is not None else None
-                    )
-                    if action["type"] == "move":
-                        if locator is not None:
-                            await locator.hover(timeout=action.get("timeout", 30000))
-                        else:
-                            await page.mouse.move(action.get("x"), action.get("y"), steps=action.get("steps", 1))
                     else:
-                        options = {
-                            "button": action.get("button", "left"),
-                            "click_count": action.get("click_count", 1),
-                            "delay": action.get("delay", 0),
-                        }
-                        try:
-                            if locator is not None:
-                                await locator.click(**options, timeout=action.get("timeout", 30000))
+                        selector, ref = action.get("selector"), action.get("ref")
+                        timeout = action.get("timeout", 30000)
+                        if action["type"] == "move" or action["type"] == "click":
+                            locator = (
+                                page.locator(selector or f"aria-ref={ref}")
+                                if selector is not None or ref is not None
+                                else None
+                            )
+                            if action["type"] == "move":
+                                if locator is not None:
+                                    await locator.hover(timeout=timeout)
+                                else:
+                                    await page.mouse.move(
+                                        action.get("x"), action.get("y"), steps=action.get("steps", 1)
+                                    )
                             else:
-                                await page.mouse.click(action.get("x"), action.get("y"), **options)
-                        except (CancelledError, PlaywrightTimeoutError, PatchrightTimeoutError) as exc:
-                            try:
-                                with CancelScope(shield=True):
-                                    if not page.is_closed():
-                                        await page.mouse.up(button=options["button"])
-                            except Exception as cleanup_error:
-                                raise exc from cleanup_error
-                            raise
+                                options = {
+                                    "button": action.get("button", "left"),
+                                    "click_count": action.get("click_count", 1),
+                                    "delay": action.get("delay", 0),
+                                }
+                                try:
+                                    if locator is not None:
+                                        await locator.click(**options, timeout=timeout)
+                                    else:
+                                        await page.mouse.click(action.get("x"), action.get("y"), **options)
+                                except (CancelledError, PlaywrightTimeoutError, PatchrightTimeoutError) as exc:
+                                    try:
+                                        with CancelScope(shield=True):
+                                            if not page.is_closed():
+                                                await page.mouse.up(button=options["button"])
+                                    except Exception as cleanup_error:
+                                        raise exc from cleanup_error
+                                    raise
+                        else:
+                            locator = page.locator(selector or f"aria-ref={ref}")
+                            if action["type"] == "textbox":
+                                if action.get("clear", True):
+                                    await locator.fill("" if slowly else action["value"], timeout=timeout)
+                                if slowly and action["value"]:
+                                    for character in action["value"]:
+                                        await locator.press_sequentially(
+                                            character, delay=uniform(50, 150), timeout=timeout
+                                        )
+                                elif not action.get("clear", True):
+                                    await locator.press_sequentially(action["value"], timeout=timeout)
+                            elif action["type"] == "combobox":
+                                await locator.select_option(label=action["value"], timeout=timeout)
+                            else:
+                                await locator.set_checked(action["value"], timeout=timeout)
                 except Exception as exc:
-                    raise RuntimeError(f"Mouse action {index} ({action['type']}) failed: {exc}") from exc
-        return "Mouse actions completed."
-
-    async def browser_press_key(
-        self, session_id: str, keys: Annotated[List[NonEmptyString], Field(min_length=1)]
-    ) -> str:
-        """Press keys or shortcuts in order at the current focus; stop on error and return plain text on success.
-
-        :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param keys: Ordered presses, e.g. ["ControlOrMeta+A", "Backspace"] or ["Tab", "Enter"].
-        """
-        with self._browser_page(session_id) as (_, page):
-            for key in keys:
-                await page.keyboard.press(key)
-        return "Keys pressed."
-
-    async def browser_fill_fields(
-        self,
-        session_id: str,
-        fields: Annotated[List[FormField], Field(min_length=1)],
-        timeout: NonNegativeFiniteFloat = 30000,
-        slowly: bool = False,
-    ) -> str:
-        """Fill fields in order; stop on error and return plain text on success.
-
-        :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param fields: Ordered field values; each needs exactly one selector or snapshot ref.
-        :param timeout: Limit per operation in milliseconds; 0 disables it.
-        :param slowly: Type with random pauses: 50-150 ms per character, 100-300 ms between fields.
-        """
-        if any((item.get("selector") is None) == (item.get("ref") is None) for item in fields):
-            raise ValueError("Each field must have exactly one target: 'selector' or 'ref'.")
-        with self._browser_page(session_id) as (_, page):
-            for index, item in enumerate(fields):
-                if slowly and index:
-                    await sleep(uniform(0.1, 0.3))
-                locator = page.locator(item.get("selector") or f"aria-ref={item.get('ref')}")
-                if item["type"] == "textbox":
-                    if item.get("clear", True):
-                        await locator.fill("" if slowly else item["value"], timeout=timeout)
-                    if slowly and item["value"]:
-                        for character in item["value"]:
-                            await locator.press_sequentially(character, delay=uniform(50, 150), timeout=timeout)
-                    elif not item.get("clear", True):
-                        await locator.press_sequentially(item["value"], timeout=timeout)
-                elif item["type"] == "combobox":
-                    await locator.select_option(label=item["value"], timeout=timeout)
-                else:
-                    await locator.set_checked(item["value"], timeout=timeout)
-        return "Fields filled."
+                    raise RuntimeError(f"Action {index} ({action['type']}) failed: {exc}") from exc
+        return "Actions completed."
 
     async def browser_screenshot(
         self,
@@ -1367,8 +1351,8 @@ class ScraplingMCPServer:
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
 10. The user can pass a CDP URL to connect to a remote browser session through the `browser_open` tool, then use it with the session tools.
 11. Set `extraction_type="snapshot"` on `browser_fetch` to get an AI ARIA snapshot with element references and bounding boxes in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page without navigating; it returns plain text with boxes by default. Set `depth` to limit the tree or `boxes=False` to omit boxes.
-12. Use `browser_mouse` for ordered move/hover, click, and wheel actions. Move/click targets use exactly one selector, current snapshot ref, or viewport (x, y) pair in CSS pixels. Wheel acts at the current pointer and does not wait for scrolling to finish; coordinate clicks do not wait for navigation. Use `browser_snapshot` to inspect results before repeating failed actions or choosing targets that depend on page changes. Completed actions are not undone or retried.
-13. Use `browser_snapshot` to inspect the page after `browser_fill_fields` or `browser_press_key`. Actions may partly complete before an error; check the page before repeating them. To submit, focus the intended control and use `browser_press_key` with ["Enter"].
+12. Use `browser_actions` for ordered mouse, field, key, and wait actions on the current page. Move/click targets use exactly one selector, current snapshot ref, or viewport (x, y) pair in CSS pixels; fields use one selector/ref. Wheel acts at the current pointer and does not wait for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document, so prefer a result-specific element for delayed navigation.
+13. Use `browser_snapshot` to inspect results before repeating failed actions or choosing targets that depend on page changes. Actions may partly complete before an error; completed effects are not undone or retried. To submit with Enter, focus the intended control and use a press_key action with key="Enter".
 """,
         }
         if self._auth_token:
@@ -1461,30 +1445,9 @@ class ScraplingMCPServer:
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.browser_wait,
-            title="Wait",
-            description=self.browser_wait.__doc__,
-            structured_output=False,
-            annotations=_FETCH_TOOL_ANNOTATIONS,
-        )
-        server.add_tool(
-            self.browser_mouse,
-            title="Mouse actions",
-            description=self.browser_mouse.__doc__,
-            structured_output=False,
-            annotations=_INPUT_TOOL_ANNOTATIONS,
-        )
-        server.add_tool(
-            self.browser_press_key,
-            title="Press keys",
-            description=self.browser_press_key.__doc__,
-            structured_output=False,
-            annotations=_INPUT_TOOL_ANNOTATIONS,
-        )
-        server.add_tool(
-            self.browser_fill_fields,
-            title="Fill fields",
-            description=self.browser_fill_fields.__doc__,
+            self.browser_actions,
+            title="Browser actions",
+            description=self.browser_actions.__doc__,
             structured_output=False,
             annotations=_INPUT_TOOL_ANNOTATIONS,
         )
