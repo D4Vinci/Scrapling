@@ -146,6 +146,32 @@ class _MouseWheel(TypedDict):
 MouseAction = Annotated[Union[_MouseMove, _MouseClick, _MouseWheel], Field(discriminator="type")]
 
 
+class _TimeWait(TypedDict):
+    type: Literal["time"]
+    milliseconds: NonNegativeFiniteFloat
+
+
+class _ConditionWait(TypedDict, total=False):
+    timeout: Annotated[NonNegativeFiniteFloat, Field(default=30000, description="Wait limit in ms; 0 disables it.")]
+
+
+class _ElementWait(_ConditionWait):
+    type: Literal["element"]
+    selector: Annotated[NonEmptyString, Field(description="Playwright selector for one element.")]
+    state: NotRequired[Annotated[SelectorWaitStates, Field(default="visible", description="Hidden includes removal.")]]
+
+
+class _LoadWait(_ConditionWait):
+    type: Literal["load"]
+    state: Annotated[
+        Literal["domcontentloaded", "load", "networkidle"],
+        Field(description="Current document readiness; networkidle waits for 500 ms without active connections."),
+    ]
+
+
+WaitAction = Annotated[Union[_TimeWait, _ElementWait, _LoadWait], Field(discriminator="type")]
+
+
 class _FormTarget(TypedDict, total=False):
     selector: Optional[NonEmptyString]
     ref: Optional[NonEmptyString]
@@ -481,6 +507,32 @@ class ScraplingMCPServer:
                 pool.remove_page(page_info)
             else:
                 page_info.mark_ready()
+
+    async def browser_wait(
+        self,
+        session_id: str,
+        actions: Annotated[List[WaitAction], Field(min_length=1)],
+    ) -> str:
+        """Run time, element, or load waits in order on the current page; return plain text. No navigation or snapshot.
+        Stop on the first error, identifying its action. Load states do not guarantee all later JavaScript has finished.
+
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
+        :param actions: Ordered waits; each condition has its own timeout. Time actions use milliseconds.
+        """
+        with self._browser_page(session_id) as (_, page):
+            for index, action in enumerate(actions, 1):
+                try:
+                    if action["type"] == "time":
+                        await page.wait_for_timeout(action["milliseconds"])
+                    elif action["type"] == "element":
+                        await page.locator(action["selector"]).wait_for(
+                            state=action.get("state", "visible"), timeout=action.get("timeout", 30000)
+                        )
+                    else:
+                        await page.wait_for_load_state(action["state"], timeout=action.get("timeout", 30000))
+                except Exception as exc:
+                    raise RuntimeError(f"Wait action {index} ({action['type']}) failed: {exc}") from exc
+        return "Wait completed."
 
     async def browser_mouse(
         self,
@@ -1405,6 +1457,13 @@ class ScraplingMCPServer:
             self.browser_snapshot,
             title="Browser page snapshot",
             description=self.browser_snapshot.__doc__,
+            structured_output=False,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_wait,
+            title="Wait",
+            description=self.browser_wait.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )

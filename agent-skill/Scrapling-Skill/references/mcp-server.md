@@ -1,8 +1,8 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes seventeen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes eighteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, and `browser_press_key` return plain text.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the post-redirect URL). `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, `browser_press_key`, and `browser_wait` return plain text.
 
 ## Shadow DOM
 
@@ -237,6 +237,42 @@ Use `["ControlOrMeta+A", "Backspace"]` to select all with the platform's modifie
 
 Returns `Keys pressed.` as plain text without an automatic snapshot or a wait for navigation. An error or cancellation stops the remaining presses; completed actions are not undone or retried. The page reservation is released after success, failure, or cancellation. Use `browser_snapshot` to check partial effects before retrying. Invalid keys, unknown or HTTP sessions, and missing, closed, or busy pages return an error.
 
+### `browser_wait` -- Chain waits on the current page
+
+Runs native waits in order on the existing page in a dynamic or stealthy browser session without reloading it. Call `browser_fetch` first.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `session_id` | str | required | ID of an open browser session |
+| `actions` | list[object] | required | Nonempty ordered list of `time`, `element`, or `load` waits |
+
+| Action `type` | Fields | Behavior |
+|---------------|--------|----------|
+| `time` | `milliseconds` | Fixed pause in finite nonnegative milliseconds |
+| `element` | `selector`, `state="visible"`, `timeout=30000` | Wait for a nonempty Playwright selector to reach `"visible"`, `"hidden"`, `"attached"`, or `"detached"` |
+| `load` | `state`, `timeout=30000` | Wait for `"domcontentloaded"`, `"load"`, or `"networkidle"` |
+
+Element and load timeouts are finite nonnegative milliseconds per action; 0 disables the limit. Element waits are strict: multiple matches return an error. `attached` means present in the DOM, and `detached` means absent. `visible` requires a nonempty bounding box and no `visibility:hidden`; `hidden` also succeeds when the element is absent.
+
+Load states use the same native browser waits as the fetchers. An already reached state returns immediately for the current document. `domcontentloaded` waits for the DOMContentLoaded event, not all future JavaScript work. `load` waits for the load event. `networkidle` requires no active network connections for at least 500 ms; it does not prove the application is ready. Prefer a specific element state when it signals readiness.
+
+For example, wait for the document, results, and loading overlay in order:
+
+```json
+{
+  "session_id": "browser",
+  "actions": [
+    {"type": "load", "state": "domcontentloaded"},
+    {"type": "element", "selector": "#results", "state": "visible"},
+    {"type": "element", "selector": "#loading", "state": "hidden"}
+  ]
+}
+```
+
+MCP validates the whole list before execution. The page stays reserved for the full sequence and is released after success, failure, or cancellation. The first failure stops the remaining waits and reports the one-based action number, type, and native error. Cancellation also stops the sequence. Completed waits are not undone or retried.
+
+Returns `Wait completed.` as plain text without a snapshot. Unknown or HTTP sessions and missing, closed, or busy pages return an error. Use `browser_snapshot` afterward to inspect the result.
+
 ### `session_make_request` -- HTTP request through an open requests session
 
 Makes an HTTP request (any method) through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint across calls. Same parameters as `make_request` plus a required `session_id`, minus the session-level `impersonate`, `proxy`, and `proxy_auth`. Raises on a browser session.
@@ -293,6 +329,7 @@ Requires an open browser session. Call `browser_open` first, then pass the `sess
 | Move, hover, click, or scroll in order    | `browser_mouse` with `session_id`                          |
 | Fill one or more page fields in order   | `browser_fill_fields` with `session_id`                      |
 | Chain keys or keyboard shortcuts         | `browser_press_key` with `session_id`                      |
+| Wait for content or a page load state     | `browser_wait` with `session_id`                           |
 
 Start with `make_request` (fastest, lowest resource cost). Escalate to `browser_fetch_once` if content requires JS rendering. Escalate to `browser_stealth_fetch_once` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
 
@@ -383,7 +420,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, `browser_press_key`, and `browser_screenshot` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_mouse`, `browser_fill_fields`, `browser_press_key`, `browser_wait`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 

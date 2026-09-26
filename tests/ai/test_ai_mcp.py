@@ -982,7 +982,7 @@ class TestServerToolRegistration:
 
     @pytest.mark.asyncio
     async def test_tools_are_listed_with_expected_schemas(self):
-        """All 17 tools are advertised, with plain content for screenshots, snapshots, and input actions"""
+        """All 18 tools are advertised, with plain content for screenshots, snapshots, waits, and input actions"""
         server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
         async with Client(server) as client:
             assert client.instructions
@@ -1005,9 +1005,10 @@ class TestServerToolRegistration:
                 result = await client.call_tool(name, {})
                 assert result.is_error
 
-        assert len(tools) == 17
+        assert len(tools) == 18
         assert tools["browser_screenshot"].output_schema is None
         assert tools["browser_snapshot"].output_schema is None
+        assert tools["browser_wait"].output_schema is None
         assert tools["browser_mouse"].output_schema is None
         assert tools["browser_press_key"].output_schema is None
         assert tools["browser_fill_fields"].output_schema is None
@@ -1040,6 +1041,7 @@ class TestServerToolRegistration:
             not in (
                 "browser_screenshot",
                 "browser_snapshot",
+                "browser_wait",
                 "browser_mouse",
                 "browser_press_key",
                 "browser_fill_fields",
@@ -1108,7 +1110,7 @@ class TestServerToolRegistration:
         assert result.ttl_ms == 3_600_000 and result.cache_scope == "public"
 
         annotations = {tool.name: tool.annotations for tool in result.tools if tool.annotations is not None}
-        assert len(annotations) == 17
+        assert len(annotations) == 18
         for name in (
             "make_request",
             "bulk_get",
@@ -1120,6 +1122,7 @@ class TestServerToolRegistration:
             "session_make_request",
             "browser_snapshot",
             "browser_screenshot",
+            "browser_wait",
         ):
             assert annotations[name].read_only_hint is True
             assert annotations[name].open_world_hint is True
