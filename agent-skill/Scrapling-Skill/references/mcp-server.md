@@ -1,8 +1,8 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes fifteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes sixteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_snapshot` and `browser_actions` return plain text.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_snapshot` and `browser_actions` return plain text. `browser_evaluate` returns compact JSON in one plain text block.
 
 ## Shadow DOM
 
@@ -218,6 +218,35 @@ MCP validates the entire action schema, and all target combinations are checked 
 
 Returns `Actions completed.` as plain text without echoing field values or taking a snapshot. Use `browser_snapshot` before retrying after an error or when later actions depend on inspecting a page change. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
 
+### `browser_evaluate` -- Run JavaScript on the current page
+
+Runs a native JavaScript expression or function on the existing page. Call `browser_open`, then `browser_fetch` first. Both `dynamic` and `stealthy` sessions are accepted. Functions are invoked with the optional JSON object argument, and returned promises are awaited.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `session_id` | str | required | ID of an open browser session with a page |
+| `expression` | str | required | Nonempty JavaScript expression or function to invoke |
+| `arg` | object or null | null | One JSON object passed to the function; nested values can contain any JSON data |
+| `isolated_context` | bool | true | Stealthy only: use a separate JavaScript context; `false` accesses the page's own variables |
+
+In stealthy sessions, the isolated context shares the page's DOM but does not share its JavaScript variables. Use `isolated_context=false` to access application globals. Dynamic sessions always use the page's main context, regardless of this option.
+
+For example, collect text from the first matching links:
+
+```json
+{
+  "session_id": "browser",
+  "expression": "({selector, limit}) => [...document.querySelectorAll(selector)].slice(0, limit).map(element => element.textContent)",
+  "arg": {"selector": "a", "limit": 10}
+}
+```
+
+Return JSON-compatible data: null, strings, booleans, finite numbers, arrays, or objects. Convert special objects such as DOM nodes, dates, maps, and sets into plain data in JavaScript. Both `null` and `undefined` return `null`. Circular data, non-finite numbers, and other results that cannot be encoded as JSON return an error.
+
+The result is compact JSON in one `TextContent` block with `structured_output=False`: strings are JSON-quoted, arrays stay in one block, and null is retained. No automatic snapshot, navigation, reload, retry, or tool timeout is added.
+
+The page stays reserved during evaluation and is released after success, failure, or cancellation. Scripts can change page state or make requests. Errors and cancellation do not undo those effects or guarantee that browser-side JavaScript stops. Use `browser_snapshot` or another read to check effects before repeating a script. Unknown or HTTP sessions and missing, closed, or busy pages return an error; JavaScript errors propagate.
+
 ### `session_make_request` -- HTTP request through an open requests session
 
 Makes an HTTP request (any method) through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint across calls. Same parameters as `make_request` plus a required `session_id`, minus the session-level `impersonate`, `proxy`, and `proxy_auth`. Raises on a browser session.
@@ -287,6 +316,7 @@ The page stays reserved during capture and is released after success, failure, o
 | Capture the current page or an element   | `browser_screenshot` after `browser_open` + `browser_fetch` |
 | Read the current page's AI ARIA snapshot  | `browser_snapshot` with `session_id`                          |
 | Chain mouse, field, keyboard, or wait actions | `browser_actions` with `session_id`                       |
+| Custom JavaScript extraction or page tasks | `browser_evaluate` with `session_id`                        |
 
 Start with `make_request` (fastest, lowest resource cost). Escalate to `browser_fetch_once` if content requires JS rendering. Escalate to `browser_stealth_fetch_once` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
 
@@ -377,7 +407,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, and `browser_screenshot` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, `browser_evaluate`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 

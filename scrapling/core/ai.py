@@ -1,5 +1,6 @@
 from uuid import uuid4
 from os import environ
+from json import dumps
 from time import monotonic
 from random import uniform
 from hmac import compare_digest
@@ -624,6 +625,31 @@ class ScraplingMCPServer:
                 except Exception as exc:
                     raise RuntimeError(f"Action {index} ({action['type']}) failed: {exc}") from exc
         return "Actions completed."
+
+    async def browser_evaluate(
+        self,
+        session_id: str,
+        expression: NonEmptyString,
+        arg: Optional[Dict[str, Any]] = None,
+        isolated_context: bool = True,
+    ) -> str:
+        """Run JavaScript on the current page, await promises, and return JSON text without a snapshot.
+        Return JSON-compatible values; null/undefined become null. Script effects are not undone on failure.
+        Cancellation stops waiting, but may not stop the script.
+
+        :param session_id: ID from `browser_open`; call `browser_fetch` first.
+        :param expression: JavaScript expression or function to invoke.
+        :param arg: JSON object passed to the function; use properties for scalar or array values.
+        :param isolated_context: Stealthy only: false accesses the page's own JS variables. Dynamic always uses that context.
+        """
+        with self._browser_page(session_id) as (session, page):
+            options = {"isolated_context": isolated_context} if isinstance(session, AsyncStealthySession) else {}
+            return dumps(
+                await page.evaluate(expression, arg=arg, **options),
+                ensure_ascii=False,
+                allow_nan=False,
+                separators=(",", ":"),
+            )
 
     async def browser_screenshot(
         self,
@@ -1436,6 +1462,13 @@ class ScraplingMCPServer:
             self.browser_actions,
             title="Browser actions",
             description=self.browser_actions.__doc__,
+            structured_output=False,
+            annotations=_INPUT_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_evaluate,
+            title="Run JavaScript",
+            description=self.browser_evaluate.__doc__,
             structured_output=False,
             annotations=_INPUT_TOOL_ANNOTATIONS,
         )
