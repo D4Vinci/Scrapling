@@ -11,8 +11,6 @@ from mcp.client import Client
 from mcp.types import TextContent
 from patchright.async_api import Error as PatchrightError
 from patchright.async_api import TimeoutError as PatchrightTimeoutError
-from playwright.async_api import Error as PlaywrightError
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import ValidationError
 
 from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
@@ -40,7 +38,7 @@ for (const type of ['mousemove', 'mousedown', 'mouseup', 'click', 'dblclick', 'c
 </script></body></html>"""
 
 
-def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
+def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
     server = ScraplingMCPServer()
     session = AsyncSession()
     session._is_alive = True
@@ -120,7 +118,6 @@ async def test_browser_mouse_schema_and_annotations() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize(
     "tool, target, options, expected",
     [
@@ -151,9 +148,9 @@ async def test_browser_mouse_schema_and_annotations() -> None:
     ],
 )
 async def test_browser_mouse_forwards_native_actions(
-    session_type: SessionType, tool: str, target: dict[str, Any], options: dict[str, Any], expected: dict[str, Any]
+    tool: str, target: dict[str, Any], options: dict[str, Any], expected: dict[str, Any]
 ) -> None:
-    server, session, page = _server(session_type)
+    server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
             "browser_actions", {"session_id": "browser", "actions": [{"type": tool, **target, **options}]}
@@ -286,14 +283,14 @@ async def test_browser_mouse_requires_exactly_one_complete_target(tool: str, tar
     [
         ("missing", "not found"),
         ("dead", "no longer alive"),
-        ("static", "'static'"),
+        ("static", "'stealthy'"),
         ("empty", "browser_fetch"),
         ("busy", "busy"),
         ("closed", "closed"),
     ],
 )
 async def test_browser_mouse_session_errors_reach_mcp(tool: str, state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "dynamic")
+    server, session, page = _server("static" if state == "static" else "stealthy")
     if state == "missing":
         server._sessions.clear()
     elif state == "dead":
@@ -390,13 +387,8 @@ async def test_browser_mouse_reserves_page_until_cancelled(target: dict[str, Any
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "session_type, error_type", [("dynamic", PlaywrightTimeoutError), ("stealthy", PatchrightTimeoutError)]
-)
-async def test_browser_mouse_click_timeout_holds_page_until_button_is_released(
-    session_type: SessionType, error_type: type[Exception]
-) -> None:
-    server, session, page = _server(session_type)
+async def test_browser_mouse_click_timeout_holds_page_until_button_is_released() -> None:
+    server, session, page = _server()
     releasing = asyncio.Event()
     release = asyncio.Event()
 
@@ -404,7 +396,7 @@ async def test_browser_mouse_click_timeout_holds_page_until_button_is_released(
         releasing.set()
         await release.wait()
 
-    page.locator.return_value.click.side_effect = error_type("click timed out")
+    page.locator.return_value.click.side_effect = PatchrightTimeoutError("click timed out")
     page.mouse.up.side_effect = unpress
     task = asyncio.create_task(
         server.browser_actions("browser", [{"type": "click", "selector": "button", "button": "right"}])
@@ -418,7 +410,7 @@ async def test_browser_mouse_click_timeout_holds_page_until_button_is_released(
         release.set()
         with pytest.raises(RuntimeError, match=r"Action 1 \(click\) failed: click timed out") as error:
             await task
-        assert isinstance(error.value.__cause__, error_type)
+        assert isinstance(error.value.__cause__, PatchrightTimeoutError)
     finally:
         release.set()
         with suppress(RuntimeError):
@@ -490,26 +482,17 @@ async def test_browser_mouse_cancelled_click_holds_page_until_button_is_released
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "session_type, timeout_type, native_error_type",
-    [("dynamic", PlaywrightTimeoutError, PlaywrightError), ("stealthy", PatchrightTimeoutError, PatchrightError)],
-)
 @pytest.mark.parametrize("cancelled", [False, True])
 @pytest.mark.parametrize("native_cleanup_error", [False, True])
 @pytest.mark.parametrize("closed", [False, True])
 async def test_browser_mouse_cleanup_failure_preserves_click_error(
-    session_type: SessionType,
-    timeout_type: type[Exception],
-    native_error_type: type[Exception],
-    cancelled: bool,
-    native_cleanup_error: bool,
-    closed: bool,
+    cancelled: bool, native_cleanup_error: bool, closed: bool
 ) -> None:
-    server, session, page = _server(session_type)
+    server, session, page = _server()
     entered = asyncio.Event()
     release = asyncio.Event()
-    timeout = timeout_type("click timed out")
-    cleanup_error = (native_error_type if native_cleanup_error else RuntimeError)("button release failed")
+    timeout = PatchrightTimeoutError("click timed out")
+    cleanup_error = (PatchrightError if native_cleanup_error else RuntimeError)("button release failed")
 
     async def press(*args: Any, **kwargs: Any) -> None:
         entered.set()
@@ -565,9 +548,8 @@ async def test_browser_mouse_rejects_empty_or_unknown_actions(actions: list[dict
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_mouse_mixed_chain_keeps_one_page_reserved(session_type: SessionType) -> None:
-    server, session, page = _server(session_type)
+async def test_browser_mouse_mixed_chain_keeps_one_page_reserved() -> None:
+    server, session, page = _server()
     reservations = []
 
     async def record(*args: Any, **kwargs: Any) -> None:
@@ -634,8 +616,7 @@ async def test_browser_mouse_chain_reports_failed_index_and_keeps_completed_acti
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_mouse_live_native_events_and_navigation(session_type: SessionType) -> None:
+async def test_browser_mouse_live_native_events_and_navigation() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
     requests: list[str] = []
 
@@ -649,7 +630,7 @@ async def test_browser_mouse_live_native_events_and_navigation(session_type: Ses
         )
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
@@ -710,12 +691,9 @@ async def test_browser_mouse_live_native_events_and_navigation(session_type: Ses
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize("cancel_mode", ["task", "scope"])
 @pytest.mark.parametrize("target_type", ["xy", "ref"])
-async def test_browser_mouse_live_cancelled_click_releases_native_button(
-    session_type: SessionType, cancel_mode: str, target_type: str
-) -> None:
+async def test_browser_mouse_live_cancelled_click_releases_native_button(cancel_mode: str, target_type: str) -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
     scope = CancelScope()
     target: dict[str, Any] = {"x": 140, "y": 110}
@@ -728,7 +706,7 @@ async def test_browser_mouse_live_cancelled_click_releases_native_button(
             await server.browser_actions("browser", [{"type": "click", **target, "delay": 60000, "timeout": 0}])
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         task = None
         try:
@@ -779,16 +757,15 @@ async def test_browser_mouse_live_cancelled_click_releases_native_button(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize("tool", ["move", "click"])
-async def test_browser_mouse_live_selectors_refs_and_scroll(session_type: SessionType, tool: str) -> None:
+async def test_browser_mouse_live_selectors_refs_and_scroll(tool: str) -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
 
     async def serve(route: Any) -> None:
         await route.fulfill(status=200, content_type="text/html", body=HTML)
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
@@ -837,10 +814,7 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(session_type: Sessio
                     )
                 events = loads(await page.locator("#events").input_value())
                 if target.get("selector") != "button, a":
-                    assert isinstance(
-                        error.value.__cause__,
-                        PlaywrightTimeoutError if session_type == "dynamic" else PatchrightTimeoutError,
-                    )
+                    assert isinstance(error.value.__cause__, PatchrightTimeoutError)
                     assert not any(event["type"] in ("mousedown", "click") for event in events)
                     released = [event for event in events if event["type"] == "mouseup"]
                     if tool == "click":
@@ -848,7 +822,7 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(session_type: Sessio
                     else:
                         assert not released
                 else:
-                    assert isinstance(error.value.__cause__, (PlaywrightError, PatchrightError))
+                    assert isinstance(error.value.__cause__, PatchrightError)
                     assert "strict mode violation" in str(error.value)
                     assert not any(event["type"] in ("mousedown", "mouseup", "click") for event in events)
                 assert session.page_pool.pages == [page_info] and page_info.state == "ready"
@@ -858,15 +832,14 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(session_type: Sessio
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_mouse_click_live_timeout_releases_native_button(session_type: SessionType) -> None:
+async def test_browser_mouse_click_live_timeout_releases_native_button() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
 
     async def serve(route: Any) -> None:
         await route.fulfill(status=200, content_type="text/html", body=HTML)
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session

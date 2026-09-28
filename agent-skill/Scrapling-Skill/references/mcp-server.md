@@ -1,12 +1,12 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes sixteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), three levels of scraping capability (plain HTTP, browser-rendered, and stealth/anti-bot bypass), persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes fourteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), plain HTTP requests and stealth browser rendering with anti-bot bypass, persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
 Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_snapshot` and `browser_actions` return plain text. `browser_evaluate` returns compact JSON in one plain text block.
 
 ## Shadow DOM
 
-Set `pierce_shadow=true` on `browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`, or `browser_fetch` to include open Shadow DOM content. It defaults to `false`. For persistent sessions, pass it on each `browser_fetch` call. See [Shadow DOM](fetching/dynamic.md#shadow-dom) for selector examples and limits.
+Set `pierce_shadow=true` on `browser_fetch_once`, `browser_fetch_many_once`, or `browser_fetch` to include open Shadow DOM content. It defaults to `false`. For persistent sessions, pass it on each `browser_fetch` call. See [Shadow DOM](fetching/dynamic.md#shadow-dom) for selector examples and limits.
 
 
 ## One-shot tools
@@ -46,11 +46,11 @@ Fast HTTP request with browser fingerprint impersonation (TLS, headers). Support
 
 Async concurrent GET-only version of `make_request`. Same parameters except `url` is replaced by `urls` (list of strings) and there are no `method`/`data`/`json` parameters. All URLs are fetched in parallel. Returns a list of `ResponseModel`.
 
-### `browser_fetch_once` -- Browser fetch (single URL)
+### `browser_fetch_once` -- Stealth browser fetch (single URL)
 
-Opens a Chromium browser via Playwright to render JavaScript. Suitable for dynamic/SPA pages with no/low bot protection.
+Uses a stealthy Chromium browser through Patchright for JavaScript rendering, fingerprint spoofing, and anti-bot bypass. Supports dynamic/SPA pages and sites with Cloudflare Turnstile/Interstitial or other strong protections.
 
-**Key parameters (beyond shared ones):**
+**Key parameters:**
 
 | Parameter             | Type                | Default      | Description                                                                     |
 |-----------------------|---------------------|--------------|---------------------------------------------------------------------------------|
@@ -75,53 +75,37 @@ Opens a Chromium browser via Playwright to render JavaScript. Suitable for dynam
 | `cookies`             | list or null        | null         | Playwright-format cookies                                                       |
 | `timezone_id`         | str or null         | null         | Browser timezone, e.g. `"America/New_York"`                                     |
 | `locale`              | str or null         | null         | Browser locale, e.g. `"en-GB"`                                                  |
-
-This is a one-shot tool: it always launches its own browser. To fetch through a persistent session, use `browser_fetch`.
-
-### `browser_fetch_many_once` -- Browser fetch (multiple URLs)
-
-Concurrent browser version of `browser_fetch_once`. Same parameters except `url` is replaced by `urls` (list of strings). Each URL opens in a separate browser tab. Returns a list of `ResponseModel`.
-
-### `browser_stealth_fetch_once` -- Stealth browser fetch (single URL)
-
-Anti-bot bypass fetcher with fingerprint spoofing. Use this for sites with Cloudflare Turnstile/Interstitial or other strong protections.
-
-**Additional parameters (beyond those in `browser_fetch_once`):**
-
-| Parameter          | Type         | Default | Description                                                      |
-|--------------------|--------------|---------|------------------------------------------------------------------|
 | `solve_cloudflare` | bool         | false   | Automatically solve Cloudflare Turnstile/Interstitial challenges |
-| `hide_canvas`      | bool         | false   | Add noise to canvas operations to prevent fingerprinting         |
-| `block_webrtc`     | bool         | false   | Force WebRTC to respect proxy settings (prevents IP leak)        |
-| `allow_webgl`      | bool         | true    | Keep WebGL enabled (disabling is detectable by WAFs)             |
+| `hide_canvas`      | bool         | false   | Add noise to canvas operations                                  |
+| `block_webrtc`     | bool         | false   | Disable non-proxied WebRTC UDP to reduce IP leaks                 |
+| `allow_webgl`      | bool         | true    | Keep WebGL enabled; disabling it can trigger bot detection        |
 | `additional_args`  | dict or null | null    | Extra Playwright context args (overrides Scrapling defaults)     |
 
-All parameters from `browser_fetch_once` are also accepted. Like `browser_fetch_once`, this is a one-shot tool that launches its own browser; use `browser_fetch` for a stealthy session.
+This one-shot tool creates and closes its own stealthy browser session. To fetch through a persistent session, use `browser_fetch`.
 
-### `browser_stealth_fetch_many_once` -- Stealth browser fetch (multiple URLs)
+### `browser_fetch_many_once` -- Stealth browser fetch (multiple URLs)
 
-Concurrent stealth version. Same parameters as `browser_stealth_fetch_once` except `url` is replaced by `urls` (list of strings). Returns a list of `ResponseModel`.
+Concurrent stealth browser version of `browser_fetch_once`. Same parameters except `url` is replaced by `urls` (list of strings). Each URL opens in a separate browser tab. Returns a list of `ResponseModel`.
 
 ## Session tools
 
-### `browser_open` -- Create a persistent browser session
+### `browser_open` -- Create a persistent stealthy browser session
 
-Opens a browser session that stays alive across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration only; per-request options are passed to `browser_fetch`. For plain HTTP requests without a browser, use `open_request_session` instead. Returns a `SessionCreatedModel` with `session_id`, `session_type`, `created_at`, `is_alive`, `settings` (the session's effective configuration for the AI agent; empty for CDP sessions), and `message`.
+Opens a stealthy browser session that stays alive across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration only; per-request options are passed to `browser_fetch`. For plain HTTP requests without a browser, use `open_request_session` instead. Returns a `SessionCreatedModel` with `session_id`, `session_type="stealthy"`, `created_at`, `is_alive`, `settings` (the session's effective configuration for the AI agent; empty for CDP sessions), and `message`.
 
 **Key parameters:**
 
 | Parameter          | Type                        | Default      | Description                                                                                           |
 |--------------------|-----------------------------|--------------|-------------------------------------------------------------------------------------------------------|
-| `session_type`     | `"dynamic"` / `"stealthy"`  | required     | Type of browser session to create                                                                     |
 | `session_id`       | str or null                 | null         | Custom ID for the session. If omitted, a random 12-char hex ID is generated. Raises if already in use |
 | `headless`         | bool                        | true         | Run browser hidden or visible                                                                         |
-| `hide_canvas`      | bool                        | false        | (Stealthy only) Canvas fingerprint noise                                                              |
-| `block_webrtc`     | bool                        | false        | (Stealthy only) Block WebRTC IP leak                                                                  |
-| `allow_webgl`      | bool                        | true         | (Stealthy only) Keep WebGL enabled                                                                    |
+| `hide_canvas`      | bool                        | false        | Canvas fingerprint noise                                                              |
+| `block_webrtc`     | bool                        | false        | Block WebRTC IP leak                                                                  |
+| `allow_webgl`      | bool                        | true         | Keep WebGL enabled                                                                    |
 
 Plus the other browser-level session parameters (`proxy`, `real_chrome`, `cdp_url`, `locale`, `timezone_id`, `useragent`, `cookies`, `executable_path`, `additional_args`). Per-request options (`timeout`, `wait`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `solve_cloudflare`) are not set here; pass them to `browser_fetch`.
 
-One `browser_fetch` works with either browser session type; `solve_cloudflare` only applies to a stealthy session.
+Use `solve_cloudflare` on `browser_fetch` to solve Cloudflare challenges through the session.
 
 ### `open_request_session` -- Create a persistent HTTP requests session
 
@@ -135,7 +119,7 @@ Opens an HTTP session (no browser) that stays alive across multiple `session_mak
 
 ### `browser_fetch` -- Fetch through an open browser session (single URL)
 
-Fetches one URL through a browser session opened with `browser_open` (dynamic or stealthy). The session holds the browser-level configuration; every parameter here applies to this request only. Raises on a requests session; use `session_make_request` there instead.
+Fetches one URL through a stealthy browser session opened with `browser_open`. The session holds the browser-level configuration; every parameter here applies to this request only. Raises on a requests session; use `session_make_request` there instead.
 
 | Parameter             | Type         | Default      | Description                                                                            |
 |-----------------------|--------------|--------------|----------------------------------------------------------------------------------------|
@@ -155,7 +139,7 @@ Fetches one URL through a browser session opened with `browser_open` (dynamic or
 | `wait_selector_state` | str          | `"attached"` | State for wait_selector: `"attached"` / `"visible"` / `"hidden"` / `"detached"`        |
 | `extra_headers`       | dict or null | null         | Additional request headers                                                             |
 | `blocked_domains`     | list or null | null         | Domain names to block for this request (subdomains matched too)                        |
-| `solve_cloudflare`    | bool         | false        | (Stealthy sessions only) Auto-solve Cloudflare challenges; errors on a dynamic session |
+| `solve_cloudflare`    | bool         | false        | Auto-solve Cloudflare Turnstile/Interstitial challenges |
 
 With `extraction_type="snapshot"`, the response keeps `status` and `url` and returns one unchanged AI ARIA snapshot string in `content`. These snapshots always include element positions and sizes in viewport CSS pixels. `css_selector` must match exactly one element; omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Snapshot extraction is only available on `browser_fetch`.
 
@@ -165,7 +149,7 @@ Returns a plain-text AI ARIA snapshot of the current whole page, including eleme
 
 ### `browser_actions` -- Chain mouse, field, keyboard, and wait actions
 
-Runs actions in order on the existing page in a dynamic or stealthy browser session. Call `browser_fetch` first. The flat `actions` list can mix any of the eleven action types below; use `browser_snapshot` when you need to inspect the page before choosing later actions.
+Runs actions in order on the existing page in a stealthy browser session. Call `browser_fetch` first. The flat `actions` list can mix any of the eleven action types below; use `browser_snapshot` when you need to inspect the page before choosing later actions.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -220,16 +204,16 @@ Returns `Actions completed.` as plain text without echoing field values or takin
 
 ### `browser_evaluate` -- Run JavaScript on the current page
 
-Runs a native JavaScript expression or function on the existing page. Call `browser_open`, then `browser_fetch` first. Both `dynamic` and `stealthy` sessions are accepted. Functions are invoked with the optional JSON object argument, and returned promises are awaited.
+Runs a native JavaScript expression or function on the existing page. Call `browser_open`, then `browser_fetch` first. Functions are invoked with the optional JSON object argument, and returned promises are awaited.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `session_id` | str | required | ID of an open browser session with a page |
 | `expression` | str | required | Nonempty JavaScript expression or function to invoke |
 | `arg` | object or null | null | One JSON object passed to the function; nested values can contain any JSON data |
-| `isolated_context` | bool | true | Stealthy only: use a separate JavaScript context; `false` accesses the page's own variables |
+| `isolated_context` | bool | true | Use a separate JavaScript context; `false` accesses the page's own variables |
 
-In stealthy sessions, the isolated context shares the page's DOM but does not share its JavaScript variables. Use `isolated_context=false` to access application globals. Dynamic sessions always use the page's main context, regardless of this option.
+The isolated context shares the page's DOM but does not share its JavaScript variables. Use `isolated_context=false` to access application globals.
 
 For example, collect text from the first matching links:
 
@@ -271,7 +255,7 @@ No parameters.
 
 Captures the existing page or one element without reloading or navigating. Element capture can scroll the target into view. Returns an MCP `ImageContent` block followed by a `TextContent` block with the current page URL. The tool uses `structured_output=False`, so the model receives real image content rather than image data duplicated in a structured JSON result.
 
-Call `browser_open`, then `browser_fetch` to open a page first. Both `dynamic` and `stealthy` sessions are accepted. Use `browser_actions` for waits or interactions before capture; this tool does not accept a URL or readiness controls.
+Call `browser_open`, then `browser_fetch` to open a page first. Use `browser_actions` for waits or interactions before capture; this tool does not accept a URL or readiness controls.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -309,8 +293,8 @@ The page stays reserved during capture and is released after success, failure, o
 | Multiple static pages                    | `bulk_get`                                                    |
 | JavaScript-rendered / SPA page           | `browser_fetch_once`                                                       |
 | Multiple JS-rendered pages               | `browser_fetch_many_once`                                                  |
-| Cloudflare or strong anti-bot protection | `browser_stealth_fetch_once` (with `solve_cloudflare=true` for Turnstile) |
-| Multiple protected pages                 | `browser_stealth_fetch_many_once`                                         |
+| Cloudflare or strong anti-bot protection | `browser_fetch_once` (with `solve_cloudflare=true` for Turnstile) |
+| Multiple protected pages                 | `browser_fetch_many_once`                                         |
 | Multiple pages from the same site        | `browser_open` + `browser_fetch` per page                     |
 | Multiple plain HTTP requests to one site | `open_request_session` + `session_make_request` per request   |
 | Capture the current page or an element   | `browser_screenshot` after `browser_open` + `browser_fetch` |
@@ -318,7 +302,7 @@ The page stays reserved during capture and is released after success, failure, o
 | Chain mouse, field, keyboard, or wait actions | `browser_actions` with `session_id`                       |
 | Custom JavaScript extraction or page tasks | `browser_evaluate` with `session_id`                        |
 
-Start with `make_request` (fastest, lowest resource cost). Escalate to `browser_fetch_once` if content requires JS rendering. Escalate to `browser_stealth_fetch_once` only if blocked. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
+Start with `make_request` (fastest, lowest resource cost). Use `browser_fetch_once` when JavaScript rendering is needed or HTTP requests are blocked. Enable `solve_cloudflare` for Cloudflare challenges. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
 
 ## Content extraction tips
 
@@ -341,7 +325,7 @@ Keep `main_content_only=true` for maximum protection.
 
 ## Ad blocking
 
-All browser-based tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) and persistent sessions (`browser_open`) automatically block requests to ~3,500 known ad and tracker domains. This is always enabled in the MCP server to save tokens and speed up page loads. No configuration needed.
+All browser-based tools (`browser_fetch_once`, `browser_fetch_many_once`) and persistent sessions (`browser_open`) automatically block requests to ~3,500 known ad and tracker domains. This is always enabled in the MCP server to save tokens and speed up page loads. No configuration needed.
 
 ## Setup
 
@@ -377,7 +361,7 @@ docker run -p 8000:8000 -e SCRAPLING_MCP_AUTH_TOKEN="<your-token>" pyd4vinci/scr
 
 ## Custom browser executable
 
-Browser-based tools (`browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`, and `browser_open`) can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
+Browser-based tools (`browser_fetch_once`, `browser_fetch_many_once`, and `browser_open`) can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
 
 To configure it once for the whole MCP server, pass the executable path when starting the server:
 
@@ -407,7 +391,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. Both session types (`dynamic` and `stealthy`) accept it, and the `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, `browser_evaluate`, and `browser_screenshot` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. The `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, `browser_evaluate`, and `browser_screenshot` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 

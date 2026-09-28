@@ -5,7 +5,7 @@ search:
 
 # MCP Server API Reference
 
-The **Scrapling MCP Server** provides sixteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
+The **Scrapling MCP Server** provides fourteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
 
 You can start the MCP server by running:
 
@@ -66,7 +66,7 @@ The main MCP server class that provides all web scraping tools:
     Wait for content, loading overlays, page load events, or settled network activity, or add a fixed pause before continuing.
 
 - **`browser_evaluate`**: Run JavaScript on the current page to extract custom data, calculate results, read application state, or update page content. Supports asynchronous scripts and returns their results as JSON.
-- **`browser_fetch`**: Fetch a page through an open browser session and extract HTML, Markdown, text, or a structured snapshot. Snapshots can cover the whole page or a chosen element and include element references, positions, and sizes for later interaction.
+- **`browser_fetch`**: Fetch a page through an open stealthy browser session and extract HTML, Markdown, text, or a structured snapshot. Snapshots can cover the whole page or a chosen element and include element references, positions, and sizes for later interaction.
 
 ## ::: scrapling.core.ai.ScraplingMCPServer
     handler: python

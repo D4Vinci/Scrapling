@@ -9,14 +9,13 @@ from anyio import CancelScope
 from mcp.client import Client
 from mcp.types import TextContent
 from patchright.async_api import TimeoutError as PatchrightTimeoutError
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
 from scrapling.core._types import Any, AsyncGenerator
 from scrapling.engines._browsers._base import AsyncSession
 
 
-def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
+def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
     server = ScraplingMCPServer()
     session = AsyncSession()
     session._is_alive = True
@@ -80,7 +79,6 @@ async def test_browser_wait_schema_and_annotations() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize(
     "values, method, args, kwargs",
     [
@@ -103,9 +101,9 @@ async def test_browser_wait_schema_and_annotations() -> None:
     ],
 )
 async def test_browser_wait_forwards_only_requested_wait(
-    session_type: SessionType, values: dict[str, Any], method: str, args: tuple, kwargs: dict[str, Any]
+    values: dict[str, Any], method: str, args: tuple, kwargs: dict[str, Any]
 ) -> None:
-    server, session, page = _server(session_type)
+    server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool("browser_actions", {"session_id": "browser", "actions": [values]})
     assert not result.is_error and result.structured_content is None
@@ -209,17 +207,12 @@ async def test_browser_wait_invalid_batch_does_not_start_or_reserve_page(actions
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "session_type, error", [("dynamic", PlaywrightTimeoutError), ("stealthy", PatchrightTimeoutError)]
-)
-@pytest.mark.parametrize(
     "values", [{"type": "wait_element", "selector": "#missing"}, {"type": "wait_load", "state": "networkidle"}]
 )
-async def test_browser_wait_native_timeout_reaches_mcp_and_releases_page(
-    session_type: SessionType, error: type[Exception], values: dict[str, Any]
-) -> None:
-    server, session, page = _server(session_type)
+async def test_browser_wait_native_timeout_reaches_mcp_and_releases_page(values: dict[str, Any]) -> None:
+    server, session, page = _server()
     action = page.locator.return_value.wait_for if values["type"] == "wait_element" else page.wait_for_load_state
-    action.side_effect = error("wait timed out")
+    action.side_effect = PatchrightTimeoutError("wait timed out")
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
             "browser_actions",
@@ -240,7 +233,7 @@ async def test_browser_wait_native_timeout_reaches_mcp_and_releases_page(
     assert action.await_count == 1
     with pytest.raises(RuntimeError, match=r"Action 1 .* failed: wait timed out") as failed:
         await server.browser_actions("browser", [values])
-    assert isinstance(failed.value.__cause__, error)
+    assert isinstance(failed.value.__cause__, PatchrightTimeoutError)
     assert session.page_pool.pages[0].state == "ready"
 
 
@@ -249,14 +242,14 @@ async def test_browser_wait_native_timeout_reaches_mcp_and_releases_page(
     "state, message",
     [
         ("missing", "not found"),
-        ("static", "'static'"),
+        ("static", "'stealthy'"),
         ("dead", "no longer alive"),
         ("empty", "browser_fetch"),
         ("closed", "closed page"),
     ],
 )
 async def test_browser_wait_session_errors(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "dynamic")
+    server, session, page = _server("static" if state == "static" else "stealthy")
     if state == "missing":
         server._sessions.clear()
     elif state == "dead":
@@ -321,10 +314,10 @@ async def test_browser_wait_reserves_page_until_cancelled(cancel_mode: str) -> N
 
 
 @asynccontextmanager
-async def _browser(session_type: SessionType) -> AsyncGenerator[tuple[Client, Any, Any], None]:
+async def _browser() -> AsyncGenerator[tuple[Client, Any, Any], None]:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
@@ -341,9 +334,8 @@ async def _browser(session_type: SessionType) -> AsyncGenerator[tuple[Client, An
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_wait_live_pause_and_element_states(session_type: SessionType) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_browser_wait_live_pause_and_element_states() -> None:
+    async with _browser() as (client, session, page):
         started = monotonic()
         assert not (
             await client.call_tool(
@@ -399,9 +391,8 @@ async def test_browser_wait_live_pause_and_element_states(session_type: SessionT
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_wait_live_current_document_load_states(session_type: SessionType) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_browser_wait_live_current_document_load_states() -> None:
+    async with _browser() as (client, session, page):
         requested, release = asyncio.Event(), asyncio.Event()
 
         async def blocked(route: Any) -> None:
@@ -456,9 +447,8 @@ async def test_browser_wait_live_current_document_load_states(session_type: Sess
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_wait_live_load_visible_hidden_chain(session_type: SessionType) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_browser_wait_live_load_visible_hidden_chain() -> None:
+    async with _browser() as (client, session, page):
         await page.evaluate("""() => {
             document.body.innerHTML = '<div id=target hidden>Ready</div>';
             setTimeout(() => {

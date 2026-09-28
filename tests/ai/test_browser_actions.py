@@ -6,7 +6,7 @@ import pytest
 from mcp.client import Client
 from mcp.types import TextContent
 
-from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
+from scrapling.core.ai import ScraplingMCPServer, _SessionEntry
 from scrapling.core._types import Any
 from scrapling.engines._browsers._base import AsyncSession
 from tests.ai.test_browser_wait import _browser
@@ -25,7 +25,7 @@ def _server() -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
     for name in ("fill", "press_sequentially", "wait_for"):
         setattr(page.locator.return_value, name, AsyncMock())
     session.page_pool.add_page(page).mark_ready()
-    server._sessions["browser"] = _SessionEntry(session, "dynamic")
+    server._sessions["browser"] = _SessionEntry(session, "stealthy")
     return server, session, page
 
 
@@ -129,12 +129,9 @@ async def test_invalid_later_action_prevents_other_action_kinds(invalid: dict[st
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize("slowly", [False, True])
-async def test_live_mixed_chain_resolves_targets_created_by_earlier_actions(
-    session_type: SessionType, slowly: bool
-) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_live_mixed_chain_resolves_targets_created_by_earlier_actions(slowly: bool) -> None:
+    async with _browser() as (client, session, page):
         await page.set_content("""<form><label>Query<input id=query></label><button>Search</button></form>
             <div id=loading hidden>Loading</div><div id=results></div><div id=details></div><textarea id=events hidden>[]</textarea>
             <script>
@@ -191,9 +188,8 @@ async def test_live_mixed_chain_resolves_targets_created_by_earlier_actions(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_live_stale_ref_stops_mixed_chain_without_retargeting(session_type: SessionType) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_live_stale_ref_stops_mixed_chain_without_retargeting() -> None:
+    async with _browser() as (client, session, page):
         await page.set_content("""<label>Old<input id=field value=old></label><button id=replace>Replace</button>
             <script>
             document.querySelector('#replace').onclick = () => {

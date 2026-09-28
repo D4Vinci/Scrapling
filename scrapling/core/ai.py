@@ -18,7 +18,6 @@ from mcp.server.caching import CacheHint
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import Icon, ImageContent, TextContent, ToolAnnotations
 from pydantic import AnyHttpUrl, BaseModel, Field, FiniteFloat, PositiveInt
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from patchright.async_api import TimeoutError as PatchrightTimeoutError
 
 from scrapling import __version__
@@ -26,12 +25,8 @@ from scrapling.core.utils import log
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.engines.static import ImpersonateType
-from scrapling.fetchers import (
-    FetcherSession,
-    AsyncDynamicSession,
-    AsyncStealthySession,
-)
-from scrapling.engines._browsers._types import PlaywrightFetchParams, StealthFetchParams
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
+from scrapling.engines._browsers._types import StealthFetchParams
 from scrapling.core._types import (
     Optional,
     Literal,
@@ -54,8 +49,7 @@ from scrapling.core._types import (
     SUPPORTED_HTTP_METHODS,
 )
 
-SessionType = Literal["dynamic", "stealthy", "static"]
-BrowserSessionType = Literal["dynamic", "stealthy"]
+SessionType = Literal["stealthy", "static"]
 SessionExtractionType = Literal[extraction_types, "snapshot"]
 ScreenshotType = Literal["png", "jpeg"]
 MouseButton = Literal["left", "right", "middle"]
@@ -78,7 +72,6 @@ def _typed_dict_keys(typed_dict: Any) -> frozenset:
 
 
 _EXCLUDED_FETCH_KEYS = frozenset({"page_action", "page_setup", "selector_config", "proxy"})
-_PLAYWRIGHT_FETCH_KEYS = _typed_dict_keys(PlaywrightFetchParams) - _EXCLUDED_FETCH_KEYS
 _STEALTH_FETCH_KEYS = _typed_dict_keys(StealthFetchParams) - _EXCLUDED_FETCH_KEYS
 
 
@@ -236,7 +229,7 @@ class SessionInfo(BaseModel):
     """Information about an open browser session."""
 
     session_id: str = Field(description="The unique identifier of the session.")
-    session_type: SessionType = Field(description="The type of the session: 'dynamic', 'stealthy', or 'static'.")
+    session_type: SessionType = Field(description="The type of the session: 'stealthy' or 'static'.")
     created_at: str = Field(description="ISO timestamp of when the session was created.")
     is_alive: bool = Field(description="Whether the session is still alive and usable.")
     settings: Dict[str, Any] = Field(
@@ -260,7 +253,7 @@ class SessionClosedModel(BaseModel):
 
 @dataclass
 class _SessionEntry:
-    session: Any  # AsyncDynamicSession | AsyncStealthySession | FetcherSession
+    session: Any
     session_type: SessionType
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -366,7 +359,6 @@ class ScraplingMCPServer:
 
     async def browser_open(
         self,
-        session_type: BrowserSessionType,
         session_id: Optional[str] = None,
         headless: bool = True,
         real_chrome: bool = False,
@@ -377,15 +369,13 @@ class ScraplingMCPServer:
         cdp_url: Optional[str] = None,
         executable_path: Optional[str] = None,
         cookies: Sequence[SetCookieParam] | None = None,
-        # Stealthy-only params (ignored for dynamic sessions)
         hide_canvas: bool = False,
         block_webrtc: bool = False,
         allow_webgl: bool = True,
         additional_args: Optional[Dict] = None,
     ) -> SessionCreatedModel:
-        """Open a reusable browser session with these settings. Pass per-request options to `browser_fetch`.
+        """Open a reusable stealthy browser session. Pass per-request options to `browser_fetch`.
 
-        :param session_type: "dynamic" for Playwright; "stealthy" for anti-bot bypass with fingerprint spoofing.
         :param session_id: Custom ID; a random 12-character hex ID if omitted.
         :param headless: Hide the browser window.
         :param real_chrome: Use locally installed Chrome.
@@ -396,13 +386,13 @@ class ScraplingMCPServer:
         :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
         :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
         :param cookies: Initial cookies as Playwright cookie dictionaries.
-        :param hide_canvas: Stealthy only. Add noise to canvas operations.
-        :param block_webrtc: Stealthy only. Disable non-proxied WebRTC UDP to reduce IP leaks.
-        :param allow_webgl: Stealthy only. Enable WebGL; disabling it can trigger bot detection.
-        :param additional_args: Stealthy only. Browser context options that override Scrapling settings.
+        :param hide_canvas: Add noise to canvas operations.
+        :param block_webrtc: Disable non-proxied WebRTC UDP to reduce IP leaks.
+        :param allow_webgl: Enable WebGL; disabling it can trigger bot detection.
+        :param additional_args: Browser context options that override Scrapling settings.
         """
         session_id = self._new_session_id(session_id)
-        common_kwargs: Dict[str, Any] = dict(
+        session = AsyncStealthySession(
             proxy=proxy,
             locale=locale,
             cookies=cookies,
@@ -413,22 +403,13 @@ class ScraplingMCPServer:
             timezone_id=timezone_id,
             real_chrome=real_chrome,
             executable_path=self._resolve_executable_path(executable_path),
+            hide_canvas=hide_canvas,
+            block_webrtc=block_webrtc,
+            allow_webgl=allow_webgl,
+            additional_args=additional_args,
         )
-
-        session: Union[AsyncDynamicSession, AsyncStealthySession]
-        if session_type == "stealthy":
-            session = AsyncStealthySession(
-                **common_kwargs,
-                hide_canvas=hide_canvas,
-                block_webrtc=block_webrtc,
-                allow_webgl=allow_webgl,
-                additional_args=additional_args,
-            )
-        else:
-            session = AsyncDynamicSession(**common_kwargs)
-
         await session.start()
-        return self._register_session(session_id, session, session_type)
+        return self._register_session(session_id, session, "stealthy")
 
     async def open_request_session(
         self,
@@ -509,7 +490,7 @@ class ScraplingMCPServer:
 
     @contextmanager
     def _browser_page(self, session_id: str) -> Iterator[Tuple[Any, Any]]:
-        entry = self._get_session(session_id, expected_type=["dynamic", "stealthy"])
+        entry = self._get_session(session_id, expected_type=["stealthy"])
         pool = entry.session.page_pool
         if not pool.pages_count:
             raise ValueError(f"Session '{session_id}' has no page. Use browser_fetch first.")
@@ -598,7 +579,7 @@ class ScraplingMCPServer:
                                         await locator.click(**options, timeout=timeout)
                                     else:
                                         await page.mouse.click(action.get("x"), action.get("y"), **options)
-                                except (CancelledError, PlaywrightTimeoutError, PatchrightTimeoutError) as exc:
+                                except (CancelledError, PatchrightTimeoutError) as exc:
                                     try:
                                         with CancelScope(shield=True):
                                             if not page.is_closed():
@@ -640,12 +621,11 @@ class ScraplingMCPServer:
         :param session_id: ID from `browser_open`; call `browser_fetch` first.
         :param expression: JavaScript expression or function to invoke.
         :param arg: JSON object passed to the function; use properties for scalar or array values.
-        :param isolated_context: Stealthy only: false accesses the page's own JS variables. Dynamic always uses that context.
+        :param isolated_context: False accesses the page's own JS variables; True uses a separate context with the same DOM.
         """
-        with self._browser_page(session_id) as (session, page):
-            options = {"isolated_context": isolated_context} if isinstance(session, AsyncStealthySession) else {}
+        with self._browser_page(session_id) as (_, page):
             return dumps(
-                await page.evaluate(expression, arg=arg, **options),
+                await page.evaluate(expression, arg=arg, isolated_context=isolated_context),
                 ensure_ascii=False,
                 allow_nan=False,
                 separators=(",", ":"),
@@ -866,159 +846,6 @@ class ScraplingMCPServer:
         locale: str | None = None,
         extra_headers: Optional[Dict[str, str]] = None,
         useragent: Optional[str] = None,
-        cdp_url: Optional[str] = None,
-        executable_path: Optional[str] = None,
-        timeout: int | float = 30000,
-        disable_resources: bool = False,
-        wait_selector: Optional[str] = None,
-        cookies: Sequence[SetCookieParam] | None = None,
-        network_idle: bool = False,
-        wait_selector_state: SelectorWaitStates = "attached",
-        pierce_shadow: bool = False,
-    ) -> ResponseModel:
-        """Fetch a page with Playwright and JavaScript. Suitable for low-to-mid protection.
-
-        :param url: URL to fetch.
-        :param extraction_type: Content output format.
-        :param css_selector: Select matching elements after `main_content_only` filtering.
-        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
-        :param headless: Hide the browser window.
-        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
-        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
-        :param cookies: Initial cookies as Playwright cookie dictionaries.
-        :param pierce_shadow: Include open Shadow DOM content.
-        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
-        :param timeout: Navigation and page-operation timeout in milliseconds.
-        :param wait: Extra milliseconds after the page is ready, before returning.
-        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
-        :param timezone_id: Browser timezone; uses the system timezone if omitted.
-        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
-        :param wait_selector_state: Target state of `wait_selector`.
-        :param real_chrome: Use locally installed Chrome.
-        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
-        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
-        :param google_search: Set a Google referer, overriding any supplied referer.
-        :param extra_headers: Additional request headers.
-        :param proxy: Proxy URL, or dictionary with server and optional username/password.
-        """
-        results = await self.browser_fetch_many_once(
-            urls=[url],
-            extraction_type=extraction_type,
-            css_selector=css_selector,
-            main_content_only=main_content_only,
-            headless=headless,
-            google_search=google_search,
-            real_chrome=real_chrome,
-            wait=wait,
-            proxy=proxy,
-            timezone_id=timezone_id,
-            locale=locale,
-            extra_headers=extra_headers,
-            useragent=useragent,
-            cdp_url=cdp_url,
-            executable_path=executable_path,
-            timeout=timeout,
-            disable_resources=disable_resources,
-            wait_selector=wait_selector,
-            cookies=cookies,
-            network_idle=network_idle,
-            pierce_shadow=pierce_shadow,
-            wait_selector_state=wait_selector_state,
-        )
-        return results[0]
-
-    async def browser_fetch_many_once(
-        self,
-        urls: List[str],
-        extraction_type: extraction_types = "markdown",
-        css_selector: Optional[str] = None,
-        main_content_only: bool = True,
-        headless: bool = True,  # noqa: F821
-        google_search: bool = True,
-        real_chrome: bool = False,
-        wait: int | float = 0,
-        proxy: Optional[str | Dict[str, str]] = None,
-        timezone_id: str | None = None,
-        locale: str | None = None,
-        extra_headers: Optional[Dict[str, str]] = None,
-        useragent: Optional[str] = None,
-        cdp_url: Optional[str] = None,
-        executable_path: Optional[str] = None,
-        timeout: int | float = 30000,
-        disable_resources: bool = False,
-        wait_selector: Optional[str] = None,
-        cookies: Sequence[SetCookieParam] | None = None,
-        network_idle: bool = False,
-        wait_selector_state: SelectorWaitStates = "attached",
-        pierce_shadow: bool = False,
-    ) -> List[ResponseModel]:
-        """Fetch pages concurrently with Playwright and JavaScript. Suitable for low-to-mid protection.
-
-        :param urls: URLs to fetch, with at most 50 concurrent pages.
-        :param extraction_type: Content output format.
-        :param css_selector: Select matching elements after `main_content_only` filtering.
-        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
-        :param headless: Hide the browser window.
-        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
-        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
-        :param cookies: Initial cookies as Playwright cookie dictionaries.
-        :param pierce_shadow: Include open Shadow DOM content.
-        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
-        :param timeout: Navigation and page-operation timeout in milliseconds.
-        :param wait: Extra milliseconds after the page is ready, before returning.
-        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
-        :param timezone_id: Browser timezone; uses the system timezone if omitted.
-        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
-        :param wait_selector_state: Target state of `wait_selector`.
-        :param real_chrome: Use locally installed Chrome.
-        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
-        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
-        :param google_search: Set a Google referer, overriding any supplied referer.
-        :param extra_headers: Additional request headers.
-        :param proxy: Proxy URL, or dictionary with server and optional username/password.
-        """
-        async with AsyncDynamicSession(
-            wait=wait,
-            proxy=proxy,
-            locale=locale,
-            timeout=timeout,
-            cookies=cookies,
-            cdp_url=cdp_url,
-            headless=headless,
-            block_ads=True,
-            max_pages=_page_pool_size(urls),
-            useragent=useragent,
-            timezone_id=timezone_id,
-            real_chrome=real_chrome,
-            network_idle=network_idle,
-            pierce_shadow=pierce_shadow,
-            wait_selector=wait_selector,
-            google_search=google_search,
-            extra_headers=extra_headers,
-            executable_path=self._resolve_executable_path(executable_path),
-            disable_resources=disable_resources,
-            wait_selector_state=wait_selector_state,
-        ) as session:
-            tasks = [session.fetch(url) for url in urls]
-            responses = await gather(*tasks)
-
-        return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
-
-    async def browser_stealth_fetch_once(
-        self,
-        url: str,
-        extraction_type: extraction_types = "markdown",
-        css_selector: Optional[str] = None,
-        main_content_only: bool = True,
-        headless: bool = True,  # noqa: F821
-        google_search: bool = True,
-        real_chrome: bool = False,
-        wait: int | float = 0,
-        proxy: Optional[str | Dict[str, str]] = None,
-        timezone_id: str | None = None,
-        locale: str | None = None,
-        extra_headers: Optional[Dict[str, str]] = None,
-        useragent: Optional[str] = None,
         hide_canvas: bool = False,
         cdp_url: Optional[str] = None,
         executable_path: Optional[str] = None,
@@ -1034,7 +861,7 @@ class ScraplingMCPServer:
         additional_args: Optional[Dict] = None,
         pierce_shadow: bool = False,
     ) -> ResponseModel:
-        """Fetch a page with a stealth browser for high-protection sites.
+        """Fetch a page with a stealth browser and JavaScript rendering.
 
         :param url: URL to fetch.
         :param extraction_type: Content output format.
@@ -1064,7 +891,7 @@ class ScraplingMCPServer:
         :param proxy: Proxy URL, or dictionary with server and optional username/password.
         :param additional_args: Browser context options that override Scrapling settings.
         """
-        results = await self.browser_stealth_fetch_many_once(
+        results = await self.browser_fetch_many_once(
             urls=[url],
             extraction_type=extraction_type,
             css_selector=css_selector,
@@ -1095,7 +922,7 @@ class ScraplingMCPServer:
         )
         return results[0]
 
-    async def browser_stealth_fetch_many_once(
+    async def browser_fetch_many_once(
         self,
         urls: List[str],
         extraction_type: extraction_types = "markdown",
@@ -1125,7 +952,7 @@ class ScraplingMCPServer:
         additional_args: Optional[Dict] = None,
         pierce_shadow: bool = False,
     ) -> List[ResponseModel]:
-        """Fetch pages concurrently with a stealth browser for high-protection sites.
+        """Fetch pages concurrently with a stealth browser and JavaScript rendering.
 
         :param urls: URLs to fetch, with at most 50 concurrent pages.
         :param extraction_type: Content output format.
@@ -1207,7 +1034,7 @@ class ScraplingMCPServer:
         solve_cloudflare: bool = False,
         pierce_shadow: bool = False,
     ) -> ResponseModel:
-        """Fetch a URL in an open browser session. Options apply only to this request.
+        """Fetch a URL in an open stealthy browser session. Options apply only to this request.
 
         :param url: URL to fetch.
         :param session_id: ID from `browser_open`.
@@ -1225,16 +1052,9 @@ class ScraplingMCPServer:
         :param wait_selector_state: Target state of `wait_selector`.
         :param extra_headers: Additional request headers.
         :param blocked_domains: Block requests to these domains and their subdomains.
-        :param solve_cloudflare: Attempt to solve Cloudflare Turnstile/interstitial challenges; stealthy sessions only.
+        :param solve_cloudflare: Attempt to solve Cloudflare Turnstile/interstitial challenges.
         """
-        entry = self._get_session(session_id, expected_type=["dynamic", "stealthy"])
-        if solve_cloudflare and entry.session_type != "stealthy":
-            raise ValueError(
-                f"Session '{session_id}' is a '{entry.session_type}' session, so it can't solve Cloudflare "
-                f"challenges. Open a 'stealthy' session for that."
-            )
-
-        fetch_keys = _STEALTH_FETCH_KEYS if entry.session_type == "stealthy" else _PLAYWRIGHT_FETCH_KEYS
+        entry = self._get_session(session_id, expected_type=["stealthy"])
         fetch_params = dict(
             wait=wait,
             timeout=timeout,
@@ -1250,7 +1070,7 @@ class ScraplingMCPServer:
             solve_cloudflare=solve_cloudflare,
         )
         page = await entry.session.fetch(
-            url, **{name: value for name, value in fetch_params.items() if name in fetch_keys}
+            url, **{name: value for name, value in fetch_params.items() if name in _STEALTH_FETCH_KEYS}
         )
         if extraction_type == "snapshot":
             return ResponseModel(
@@ -1353,14 +1173,14 @@ class ScraplingMCPServer:
             "instructions": """Follow these instructions precisely:
 1. When the `browser_open` or `open_request_session` tools are used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions or their effective settings.
 2. If the user didn't specify which tool to use, start with the `make_request` tool (a plain HTTP request, defaulting to GET; set `method` for POST/PUT/DELETE), then escalate. The `make_request` tool and `bulk_get` (its GET-only bulk version) are suitable only for low-to-mid protection levels.
-    For high-protection levels or websites that require JS loading, use the other tools directly.
+    For high-protection levels or websites that require JS loading, use the stealthy browser tools directly.
 3. For HTML, Markdown, and text extraction, if the `css_selector` resolves to more than one element, all the elements will be returned. Snapshot extraction requires a selector matching exactly one element, or no selector for the whole page.
 4. For all fetch tools, the `extraction_type` parameter controls the format of the returned content: "markdown" (default) converts the page content to Markdown, "html" returns the raw HTML, and "text" returns the text content of the page.
 5. For HTML, Markdown, and text extraction, `main_content_only` is enabled by default and returns only the content inside the page's `<body>` tag. Pass `main_content_only=False` when you need the full page instead.
 6. If the task consists of multiple sequential requests to the same website, open a session once, then fetch through it to be more efficient:
-    `browser_open` + `browser_fetch` per page for browsers, or `open_request_session` + `session_make_request` per request for plain HTTP.
+    `browser_open` + `browser_fetch` per page for stealthy browsers, or `open_request_session` + `session_make_request` per request for plain HTTP.
 7. Sessions hold the session-level configuration set when opened, while `browser_fetch`/`session_make_request` carry the per-request options and apply them on each call with the defaults shown in their schemas.
-    The one-shot tools (`make_request`, `bulk_get`, `browser_fetch_once`, `browser_fetch_many_once`, `browser_stealth_fetch_once`, `browser_stealth_fetch_many_once`) never touch sessions.
+    The one-shot tools (`make_request`, `bulk_get`, `browser_fetch_once`, `browser_fetch_many_once`) never touch sessions.
 8. If you are making multiple parallel one-shot requests, use the bulk version of the tool to be more efficient.
 9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
 10. The user can pass a CDP URL to connect to a remote browser session through the `browser_open` tool, then use it with the session tools.
@@ -1406,7 +1226,6 @@ class ScraplingMCPServer:
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
-        # Dynamic browser tools
         server.add_tool(
             self.browser_fetch_once,
             title="Fetch page in browser",
@@ -1418,21 +1237,6 @@ class ScraplingMCPServer:
             self.browser_fetch_many_once,
             title="Fetch pages in browser",
             description=self.browser_fetch_many_once.__doc__,
-            structured_output=True,
-            annotations=_FETCH_TOOL_ANNOTATIONS,
-        )
-        # Stealthy browser tools
-        server.add_tool(
-            self.browser_stealth_fetch_once,
-            title="Fetch page with stealthy browser",
-            description=self.browser_stealth_fetch_once.__doc__,
-            structured_output=True,
-            annotations=_FETCH_TOOL_ANNOTATIONS,
-        )
-        server.add_tool(
-            self.browser_stealth_fetch_many_once,
-            title="Fetch pages with stealthy browser",
-            description=self.browser_stealth_fetch_many_once.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )

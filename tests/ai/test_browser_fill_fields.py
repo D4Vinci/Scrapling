@@ -10,7 +10,6 @@ from anyio import CancelScope
 from mcp.client import Client
 from mcp.types import TextContent
 from patchright.async_api import TimeoutError as PatchrightTimeoutError
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import ValidationError
 
 from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
@@ -42,7 +41,7 @@ for (const type of ['input', 'change', 'keydown', 'keyup']) {
 </script></body></html>"""
 
 
-def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
+def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
     server = ScraplingMCPServer()
     session = AsyncSession()
     session._is_alive = True
@@ -323,14 +322,14 @@ def test_browser_actions_fields_rejects_nonfinite_timeout(timeout: float) -> Non
     [
         ("missing", "not found"),
         ("dead", "no longer alive"),
-        ("static", "'static'"),
+        ("static", "'stealthy'"),
         ("empty", "browser_fetch"),
         ("busy", "busy"),
         ("closed", "closed"),
     ],
 )
 async def test_browser_actions_fields_session_errors_reach_mcp(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "dynamic")
+    server, session, page = _server("static" if state == "static" else "stealthy")
     if state == "missing":
         server._sessions.clear()
     elif state == "dead":
@@ -354,16 +353,11 @@ async def test_browser_actions_fields_session_errors_reach_mcp(state: str, messa
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "session_type, error", [("dynamic", PlaywrightTimeoutError), ("stealthy", PatchrightTimeoutError)]
-)
 @pytest.mark.parametrize("clear, slowly", [(True, False), (False, False), (False, True)])
-async def test_browser_actions_fields_timeout_stops_and_releases_page(
-    session_type: SessionType, error: type[Exception], clear: bool, slowly: bool
-) -> None:
-    server, session, page = _server(session_type)
+async def test_browser_actions_fields_timeout_stops_and_releases_page(clear: bool, slowly: bool) -> None:
+    server, session, page = _server()
     action = page.locator.return_value.fill if clear else page.locator.return_value.press_sequentially
-    action.side_effect = error("typing timed out")
+    action.side_effect = PatchrightTimeoutError("typing timed out")
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
             "browser_actions",
@@ -479,14 +473,14 @@ async def test_browser_actions_fields_slow_cancellation_releases_page(
 
 
 @asynccontextmanager
-async def _browser(session_type: SessionType) -> AsyncGenerator[tuple[Client, Any, Any], None]:
+async def _browser() -> AsyncGenerator[tuple[Client, Any, Any], None]:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
 
     async def serve(route: Any) -> None:
         await route.fulfill(status=200, content_type="text/html", body=HTML)
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
@@ -502,9 +496,8 @@ async def _browser(session_type: SessionType) -> AsyncGenerator[tuple[Client, An
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_actions_fields_live_mixed_fields_and_clearing(session_type: SessionType) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_browser_actions_fields_live_mixed_fields_and_clearing() -> None:
+    async with _browser() as (client, session, page):
         snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
         assert not snapshot.is_error
         assert snapshot.content and isinstance(snapshot.content[0], TextContent)
@@ -573,9 +566,8 @@ async def test_browser_actions_fields_live_mixed_fields_and_clearing(session_typ
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_actions_fields_live_slow_typing_and_field_delays(session_type: SessionType) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_browser_actions_fields_live_slow_typing_and_field_delays() -> None:
+    async with _browser() as (client, session, page):
         snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
         assert not snapshot.is_error
         assert snapshot.content and isinstance(snapshot.content[0], TextContent)
@@ -628,10 +620,9 @@ async def test_browser_actions_fields_live_slow_typing_and_field_delays(session_
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize("slowly", [False, True])
-async def test_browser_actions_fields_live_caret_selection_and_submit(session_type: SessionType, slowly: bool) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_browser_actions_fields_live_caret_selection_and_submit(slowly: bool) -> None:
+    async with _browser() as (client, session, page):
         snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
         assert not snapshot.is_error
         assert snapshot.content and isinstance(snapshot.content[0], TextContent)
@@ -676,9 +667,8 @@ async def test_browser_actions_fields_live_caret_selection_and_submit(session_ty
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_actions_fields_live_failed_field_preserves_prior_changes(session_type: SessionType) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_browser_actions_fields_live_failed_field_preserves_prior_changes() -> None:
+    async with _browser() as (client, session, page):
         for selector in ("#missing", "input"):
             await page.locator("#name").fill("initial")
             result = await client.call_tool(

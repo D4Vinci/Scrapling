@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from mcp.client import Client
 from mcp.types import TextContent
+from patchright.async_api import TimeoutError as PatchrightTimeoutError
 
 from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
 from scrapling.core._types import Any
@@ -22,7 +23,7 @@ setTimeout(() => { document.querySelector('input').value = 'after wait'; }, 150)
 </script></body></html>"""
 
 
-def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
+def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
     server = ScraplingMCPServer()
     session = AsyncSession()
     session._is_alive = True
@@ -35,10 +36,9 @@ def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, 
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize("boxes", [None, False, True])
-async def test_browser_snapshot_returns_plain_mcp_text(session_type: SessionType, boxes: bool | None) -> None:
-    server, session, page = _server(session_type)
+async def test_browser_snapshot_returns_plain_mcp_text(boxes: bool | None) -> None:
+    server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         tools = {tool.name: tool for tool in (await client.list_tools()).tools}
         assert "session_snapshot" not in tools
@@ -74,14 +74,14 @@ async def test_browser_snapshot_returns_plain_mcp_text(session_type: SessionType
     [
         ("missing", "not found"),
         ("dead", "no longer alive"),
-        ("static", "'static'"),
+        ("static", "'stealthy'"),
         ("empty", "browser_fetch"),
         ("busy", "busy"),
         ("closed", "closed"),
     ],
 )
 async def test_browser_snapshot_errors_reach_the_mcp_client(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "dynamic")
+    server, session, page = _server("static" if state == "static" else "stealthy")
     if state == "missing":
         server._sessions.clear()
     elif state == "dead":
@@ -107,8 +107,8 @@ async def test_browser_snapshot_errors_reach_the_mcp_client(state: str, message:
 @pytest.mark.asyncio
 async def test_browser_snapshot_releases_the_page_after_failure() -> None:
     server, session, page = _server()
-    page.aria_snapshot.side_effect = TimeoutError("snapshot timeout")
-    with pytest.raises(TimeoutError, match="snapshot timeout"):
+    page.aria_snapshot.side_effect = PatchrightTimeoutError("snapshot timeout")
+    with pytest.raises(PatchrightTimeoutError, match="snapshot timeout"):
         await server.browser_snapshot("browser")
     assert session.page_pool.pages[0].state == "ready"
     page.close.assert_not_called()
@@ -117,9 +117,8 @@ async def test_browser_snapshot_releases_the_page_after_failure() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize("css_selector", [None, "main"])
-async def test_browser_snapshot_live_mcp_round_trip(session_type: SessionType, css_selector: str | None) -> None:
+async def test_browser_snapshot_live_mcp_round_trip(css_selector: str | None) -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
     requests: list[str] = []
 
@@ -133,7 +132,7 @@ async def test_browser_snapshot_live_mcp_round_trip(session_type: SessionType, c
         )
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
@@ -299,8 +298,8 @@ async def test_browser_fetch_snapshot_error_does_not_refetch() -> None:
     )
     fetch = AsyncMock(return_value=response)
     setattr(session, "fetch", fetch)
-    page.locator.return_value.aria_snapshot = AsyncMock(side_effect=TimeoutError("snapshot timeout"))
-    with pytest.raises(TimeoutError, match="snapshot timeout"):
+    page.locator.return_value.aria_snapshot = AsyncMock(side_effect=PatchrightTimeoutError("snapshot timeout"))
+    with pytest.raises(PatchrightTimeoutError, match="snapshot timeout"):
         await server.browser_fetch("https://snapshot.test/", "browser", extraction_type="snapshot", css_selector="main")
     fetch.assert_awaited_once()
     assert {"extraction_type", "css_selector", "depth", "boxes"}.isdisjoint(fetch.call_args.kwargs)

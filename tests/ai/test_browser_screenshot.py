@@ -12,7 +12,6 @@ from anyio import CancelScope
 from mcp.client import Client
 from mcp.types import ImageContent, TextContent
 from patchright.async_api import Error as PatchrightError
-from playwright.async_api import Error as PlaywrightError
 from pydantic import ValidationError
 
 from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
@@ -20,7 +19,7 @@ from scrapling.core._types import Any
 from scrapling.engines._browsers._base import AsyncSession
 
 
-def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
+def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
     server = ScraplingMCPServer()
     session = AsyncSession()
     session._is_alive = True
@@ -63,7 +62,6 @@ async def test_browser_screenshot_schema() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize(
     "options",
     [
@@ -73,10 +71,8 @@ async def test_browser_screenshot_schema() -> None:
         {"image_type": "jpeg", "quality": 100, "timeout": 12.5},
     ],
 )
-async def test_browser_screenshot_returns_native_image_without_navigation(
-    session_type: SessionType, options: dict[str, Any]
-) -> None:
-    server, session, page = _server(session_type)
+async def test_browser_screenshot_returns_native_image_without_navigation(options: dict[str, Any]) -> None:
+    server, session, page = _server()
 
     async def capture(**kwargs: Any) -> bytes:
         assert session.page_pool.pages[0].state == "busy"
@@ -106,13 +102,12 @@ async def test_browser_screenshot_returns_native_image_without_navigation(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize("target", [{"selector": "#card", "ref": None}, {"selector": None, "ref": "e2"}])
 @pytest.mark.parametrize("options", [{}, {"image_type": "jpeg", "quality": 70, "timeout": 250}])
 async def test_browser_screenshot_forwards_element_target_without_full_page(
-    session_type: SessionType, target: dict[str, Any], options: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+    target: dict[str, Any], options: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    server, session, page = _server(session_type)
+    server, session, page = _server()
     monkeypatch.setattr("scrapling.core.ai.monotonic", lambda: 10)
 
     async def capture(**kwargs: Any) -> bytes:
@@ -161,15 +156,12 @@ async def test_browser_screenshot_element_resolution_uses_capture_budget(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type, error_type", [("dynamic", PlaywrightError), ("stealthy", PatchrightError)])
-async def test_browser_screenshot_element_resolution_failure_does_not_capture_or_retry(
-    session_type: SessionType, error_type: type[Exception]
-) -> None:
-    server, session, page = _server(session_type)
-    native_error = error_type("element resolution failed")
+async def test_browser_screenshot_element_resolution_failure_does_not_capture_or_retry() -> None:
+    server, session, page = _server()
+    native_error = PatchrightError("element resolution failed")
     locator = page.locator.return_value
     locator.element_handle.side_effect = native_error
-    with pytest.raises(error_type) as error:
+    with pytest.raises(PatchrightError) as error:
         await server.browser_screenshot("browser", ref="e2", timeout=100)
     assert error.value is native_error
     locator.element_handle.assert_awaited_once_with(timeout=100)
@@ -180,15 +172,12 @@ async def test_browser_screenshot_element_resolution_failure_does_not_capture_or
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type, error_type", [("dynamic", PlaywrightError), ("stealthy", PatchrightError)])
 @pytest.mark.parametrize("outcome", ["success", "error", "cancel"])
-async def test_browser_screenshot_disposal_failure_preserves_capture_error_or_cancellation(
-    session_type: SessionType, error_type: type[Exception], outcome: str
-) -> None:
-    server, session, page = _server(session_type)
+async def test_browser_screenshot_disposal_failure_preserves_capture_error_or_cancellation(outcome: str) -> None:
+    server, session, page = _server()
     element = page.locator.return_value.element_handle.return_value
-    native_error = error_type("capture failed")
-    cleanup_error = error_type("dispose failed")
+    native_error = PatchrightError("capture failed")
+    cleanup_error = PatchrightError("dispose failed")
     entered = asyncio.Event()
     release = asyncio.Event()
 
@@ -205,7 +194,7 @@ async def test_browser_screenshot_disposal_failure_preserves_capture_error_or_ca
     try:
         await asyncio.wait_for(entered.wait(), 5)
         task.cancel() if outcome == "cancel" else release.set()
-        with pytest.raises(asyncio.CancelledError if outcome == "cancel" else error_type) as error:
+        with pytest.raises(asyncio.CancelledError if outcome == "cancel" else PatchrightError) as error:
             await task
         if outcome == "success":
             assert error.value is cleanup_error
@@ -298,14 +287,14 @@ async def test_browser_screenshot_png_quality_does_not_reserve_page(quality: int
     [
         ("missing", "not found"),
         ("dead", "no longer alive"),
-        ("static", "'dynamic' or 'stealthy'"),
+        ("static", "'stealthy'"),
         ("empty", "browser_fetch"),
         ("busy", "busy"),
         ("closed", "closed page"),
     ],
 )
 async def test_browser_screenshot_session_errors(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "dynamic")
+    server, session, page = _server("static" if state == "static" else "stealthy")
     if state == "missing":
         server._sessions.clear()
     elif state == "dead":
@@ -328,15 +317,14 @@ async def test_browser_screenshot_session_errors(state: str, message: str) -> No
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type, error_type", [("dynamic", PlaywrightError), ("stealthy", PatchrightError)])
 @pytest.mark.parametrize("closed", [False, True])
 @pytest.mark.parametrize("through_mcp", [False, True])
 @pytest.mark.parametrize("target", [{}, {"selector": "#card"}, {"ref": "e2"}])
 async def test_browser_screenshot_native_error_releases_page_without_retry(
-    session_type: SessionType, error_type: type[Exception], closed: bool, through_mcp: bool, target: dict[str, str]
+    closed: bool, through_mcp: bool, target: dict[str, str]
 ) -> None:
-    server, session, page = _server(session_type)
-    native_error = error_type("capture failed")
+    server, session, page = _server()
+    native_error = PatchrightError("capture failed")
 
     async def fail(**kwargs: Any) -> bytes:
         page.is_closed.return_value = closed
@@ -350,7 +338,7 @@ async def test_browser_screenshot_native_error_releases_page_without_retry(
         assert result.is_error and isinstance(result.content[0], TextContent)
         assert "capture failed" in result.content[0].text
     else:
-        with pytest.raises(error_type) as error:
+        with pytest.raises(PatchrightError) as error:
             await server.browser_screenshot("browser", **target)
         assert error.value is native_error
     capture.assert_awaited_once()
@@ -434,8 +422,7 @@ async def test_browser_screenshot_reserves_page_until_cancelled(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_screenshot_live_preserves_actions_and_current_page(session_type: SessionType) -> None:
+async def test_browser_screenshot_live_preserves_actions_and_current_page() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
     requests: list[str] = []
     html = """<!DOCTYPE html><html><head><style>
@@ -457,7 +444,7 @@ async def test_browser_screenshot_live_preserves_actions_and_current_page(sessio
         await route.fulfill(content_type="text/html", body=html)
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_id": "browser", "session_type": session_type})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session

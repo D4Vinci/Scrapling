@@ -35,7 +35,7 @@ for (const type of ['keydown', 'keyup']) {
 </script></body></html>"""
 
 
-def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
+def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
     server = ScraplingMCPServer()
     session = AsyncSession()
     session._is_alive = True
@@ -111,10 +111,10 @@ async def test_browser_actions_keys_invalid_input_does_not_reserve_page(values: 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "state, message", [("missing", "not found"), ("static", "'static'"), ("empty", "browser_fetch")]
+    "state, message", [("missing", "not found"), ("static", "'stealthy'"), ("empty", "browser_fetch")]
 )
 async def test_browser_actions_keys_session_errors_reach_mcp(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "dynamic")
+    server, session, page = _server("static" if state == "static" else "stealthy")
     if state == "missing":
         server._sessions.clear()
     elif state == "empty":
@@ -185,14 +185,14 @@ async def test_browser_actions_keys_reserves_page_until_cancelled(cancel_mode: s
 
 
 @asynccontextmanager
-async def _browser(session_type: SessionType) -> AsyncGenerator[tuple[Client, Any, Any], None]:
+async def _browser() -> AsyncGenerator[tuple[Client, Any, Any], None]:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
 
     async def serve(route: Any) -> None:
         await route.fulfill(status=200, content_type="text/html", body=HTML)
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
@@ -208,9 +208,8 @@ async def _browser(session_type: SessionType) -> AsyncGenerator[tuple[Client, An
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_actions_keys_live_focus_editing_and_shortcuts(session_type: SessionType) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_browser_actions_keys_live_focus_editing_and_shortcuts() -> None:
+    async with _browser() as (client, session, page):
 
         async def run(actions: list[dict[str, Any]]) -> None:
             result = await client.call_tool("browser_actions", {"session_id": "browser", "actions": actions})

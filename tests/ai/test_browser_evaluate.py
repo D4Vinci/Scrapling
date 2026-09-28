@@ -9,17 +9,15 @@ from anyio import CancelScope
 from mcp.client import Client
 from mcp.types import TextContent
 from patchright.async_api import Error as PatchrightError
-from playwright.async_api import Error as PlaywrightError
 
 from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
 from scrapling.core._types import Any
 from scrapling.engines._browsers._base import AsyncSession
-from scrapling.fetchers import AsyncStealthySession
 
 
-def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
+def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
     server = ScraplingMCPServer()
-    session = AsyncStealthySession() if session_type == "stealthy" else AsyncSession()
+    session = AsyncSession()
     session._is_alive = True
     page = Mock()
     page.is_closed.return_value = False
@@ -77,17 +75,18 @@ async def test_browser_evaluate_returns_one_compact_json_text_block(value: Any, 
         result = await client.call_tool("browser_evaluate", {"session_id": "browser", "expression": "document.title"})
     assert not result.is_error and result.structured_content is None
     assert result.content == [TextContent(type="text", text=expected)]
-    assert page.mock_calls == [call.is_closed(), call.evaluate("document.title", arg=None), call.is_closed()]
+    assert page.mock_calls == [
+        call.is_closed(),
+        call.evaluate("document.title", arg=None, isolated_context=True),
+        call.is_closed(),
+    ]
     assert session.page_pool.pages[0].state == "ready"
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
 @pytest.mark.parametrize("options", [{}, {"isolated_context": False}])
-async def test_browser_evaluate_forwards_argument_and_only_stealth_context(
-    session_type: SessionType, options: dict[str, Any]
-) -> None:
-    server, session, page = _server(session_type)
+async def test_browser_evaluate_forwards_argument_and_context(options: dict[str, Any]) -> None:
+    server, session, page = _server()
     expression = "({items}) => items.length"
     arg = {"items": ["a", "b"], "enabled": True, "empty": None, "strings": ["null", "[1]", '{"x":1}']}
     page.evaluate.return_value = 2
@@ -96,7 +95,7 @@ async def test_browser_evaluate_forwards_argument_and_only_stealth_context(
             "browser_evaluate", {"session_id": "browser", "expression": expression, "arg": arg, **options}
         )
     assert not result.is_error
-    expected = {"isolated_context": options.get("isolated_context", True)} if session_type == "stealthy" else {}
+    expected = {"isolated_context": options.get("isolated_context", True)}
     page.evaluate.assert_awaited_once_with(expression, arg=arg, **expected)
     assert result.content == [TextContent(type="text", text="2")]
     assert session.page_pool.pages[0].state == "ready"
@@ -157,14 +156,14 @@ async def test_browser_evaluate_serialization_error_releases_page(case: str, err
     [
         ("missing", "not found"),
         ("dead", "no longer alive"),
-        ("static", "'dynamic' or 'stealthy'"),
+        ("static", "'stealthy'"),
         ("empty", "browser_fetch"),
         ("busy", "busy"),
         ("closed", "closed page"),
     ],
 )
 async def test_browser_evaluate_session_errors(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "dynamic")
+    server, session, page = _server("static" if state == "static" else "stealthy")
     if state == "missing":
         server._sessions.clear()
     elif state == "dead":
@@ -187,20 +186,17 @@ async def test_browser_evaluate_session_errors(state: str, message: str) -> None
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type, error_type", [("dynamic", PlaywrightError), ("stealthy", PatchrightError)])
 @pytest.mark.parametrize("closed", [False, True])
-async def test_browser_evaluate_native_error_releases_page_without_retry(
-    session_type: SessionType, error_type: type[Exception], closed: bool
-) -> None:
-    server, session, page = _server(session_type)
-    native_error = error_type("script failed")
+async def test_browser_evaluate_native_error_releases_page_without_retry(closed: bool) -> None:
+    server, session, page = _server()
+    native_error = PatchrightError("script failed")
 
     async def fail(*args: Any, **kwargs: Any) -> None:
         page.is_closed.return_value = closed
         raise native_error
 
     page.evaluate.side_effect = fail
-    with pytest.raises(error_type) as error:
+    with pytest.raises(PatchrightError) as error:
         await server.browser_evaluate("browser", "badScript()")
     assert error.value is native_error
     page.evaluate.assert_awaited_once()
@@ -253,8 +249,7 @@ async def test_browser_evaluate_reserves_page_until_cancelled(cancel_mode: str) 
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_evaluate_live_expressions_promises_context_and_page_state(session_type: SessionType) -> None:
+async def test_browser_evaluate_live_expressions_promises_context_and_page_state() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
     requests: list[str] = []
     html = """<!DOCTYPE html><html><head><title>Evaluate test</title></head><body>
@@ -272,7 +267,7 @@ async def test_browser_evaluate_live_expressions_promises_context_and_page_state
         await route.fulfill(content_type="text/html", body=html)
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_id": "browser", "session_type": session_type})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
@@ -323,7 +318,7 @@ async def test_browser_evaluate_live_expressions_promises_context_and_page_state
                     {"value": "مرحبا"},
                     {"value": "مرحبا", "inputs": 2},
                 ),
-                ("typeof window.pageState", None, "undefined" if session_type == "stealthy" else "object"),
+                ("typeof window.pageState", None, "undefined"),
             ):
                 result = await client.call_tool(
                     "browser_evaluate", {"session_id": "browser", "expression": expression, "arg": arg}

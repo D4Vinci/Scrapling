@@ -33,7 +33,7 @@ document.addEventListener('wheel', event => {
 </script></body></html>"""
 
 
-def _server(session_type: SessionType = "dynamic") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
+def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
     server = ScraplingMCPServer()
     session = AsyncSession()
     session._is_alive = True
@@ -112,14 +112,14 @@ def test_browser_wheel_schema_rejects_nonfinite_deltas(value: float) -> None:
     [
         ("missing", "not found"),
         ("dead", "no longer alive"),
-        ("static", "'static'"),
+        ("static", "'stealthy'"),
         ("empty", "browser_fetch"),
         ("busy", "busy"),
         ("closed", "closed"),
     ],
 )
 async def test_browser_wheel_session_errors_reach_mcp(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "dynamic")
+    server, session, page = _server("static" if state == "static" else "stealthy")
     if state == "missing":
         server._sessions.clear()
     elif state == "dead":
@@ -192,14 +192,14 @@ async def test_browser_wheel_reserves_page_until_cancelled(cancel_mode: str) -> 
 
 
 @asynccontextmanager
-async def _browser(session_type: SessionType) -> AsyncGenerator[tuple[Client, Any, Any], None]:
+async def _browser() -> AsyncGenerator[tuple[Client, Any, Any], None]:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
 
     async def serve(route: Any) -> None:
         await route.fulfill(status=200, content_type="text/html", body=HTML)
 
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        opened = await client.call_tool("browser_open", {"session_type": session_type, "session_id": "browser"})
+        opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
@@ -215,9 +215,8 @@ async def _browser(session_type: SessionType) -> AsyncGenerator[tuple[Client, An
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", ["dynamic", "stealthy"])
-async def test_browser_wheel_live_scrolls_under_current_pointer(session_type: SessionType) -> None:
-    async with _browser(session_type) as (client, session, page):
+async def test_browser_wheel_live_scrolls_under_current_pointer() -> None:
+    async with _browser() as (client, session, page):
         expected = {"page": [0, 0], "panel": [0, 0]}
         events_count = 0
         for target, x, y in (("page", 400, 300), ("panel", 100, 100)):
