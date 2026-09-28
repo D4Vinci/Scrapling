@@ -36,8 +36,8 @@ async def test_mixed_actions_keep_order_and_sample_each_delay(slowly: bool, monk
     events = Mock()
     pause = AsyncMock()
     random = Mock(side_effect=[55, 145, 0.11, 0.12, 0.13, 0.14, 0.15])
-    monkeypatch.setattr("scrapling.core.ai.uniform", random)
-    monkeypatch.setattr("scrapling.core.ai.sleep", pause)
+    monkeypatch.setattr("scrapling.core._browser_actions.uniform", random)
+    monkeypatch.setattr("scrapling.core._browser_actions.sleep", pause)
 
     async def reserved(*args: Any, **kwargs: Any) -> None:
         assert session.page_pool.pages[0].state == "busy"

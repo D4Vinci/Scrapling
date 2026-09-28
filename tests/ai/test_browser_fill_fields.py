@@ -110,7 +110,7 @@ async def test_browser_actions_fields_forwards_native_actions_in_order(
 ) -> None:
     server, session, page = _server()
     pause = AsyncMock()
-    monkeypatch.setattr("scrapling.core.ai.sleep", pause)
+    monkeypatch.setattr("scrapling.core._browser_actions.sleep", pause)
     actions = [
         {**TEXT_FIELD, "ref": None},
         {"type": "textbox", "selector": None, "ref": "e2", "value": "", "clear": True},
@@ -164,7 +164,7 @@ async def test_browser_actions_fields_types_without_clearing(
     slowly: bool, value: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     server, session, page = _server()
-    monkeypatch.setattr("scrapling.core.ai.uniform", Mock(side_effect=[60, 140]))
+    monkeypatch.setattr("scrapling.core._browser_actions.uniform", Mock(side_effect=[60, 140]))
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
             "browser_actions",
@@ -187,9 +187,9 @@ async def test_browser_actions_fields_slow_pacing_and_empty_text(monkeypatch: py
     calls = Mock()
     calls.attach_mock(page.locator, "locator")
     calls.pause = AsyncMock()
-    monkeypatch.setattr("scrapling.core.ai.sleep", calls.pause)
+    monkeypatch.setattr("scrapling.core._browser_actions.sleep", calls.pause)
     intervals = Mock(side_effect=[60, 140, 0.12, 0.27, 0.18, 0.22])
-    monkeypatch.setattr("scrapling.core.ai.uniform", intervals)
+    monkeypatch.setattr("scrapling.core._browser_actions.uniform", intervals)
     actions = [
         {**TEXT_FIELD, "value": "ab"},
         {"type": "textbox", "ref": "e2", "value": ""},
@@ -236,7 +236,7 @@ async def test_browser_actions_fields_slow_failure_stops_before_next_pause(
         [None, RuntimeError("text failed")] if method == "press_sequentially" else RuntimeError("text failed")
     )
     pause = AsyncMock()
-    monkeypatch.setattr("scrapling.core.ai.sleep", pause)
+    monkeypatch.setattr("scrapling.core._browser_actions.sleep", pause)
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
             "browser_actions", {"session_id": "browser", "actions": [TEXT_FIELD, TEXT_FIELD], "slowly": True}
@@ -453,7 +453,7 @@ async def test_browser_actions_fields_slow_cancellation_releases_page(
     if stage == "typing":
         page.locator.return_value.press_sequentially.side_effect = pending
     else:
-        monkeypatch.setattr("scrapling.core.ai.sleep", pending)
+        monkeypatch.setattr("scrapling.core._browser_actions.sleep", pending)
     task = asyncio.create_task(fill())
     try:
         await asyncio.wait_for(entered.wait(), 5)

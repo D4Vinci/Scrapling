@@ -2,9 +2,8 @@ from uuid import uuid4
 from os import environ
 from json import dumps
 from time import monotonic
-from random import uniform
 from hmac import compare_digest
-from asyncio import CancelledError, gather, sleep
+from asyncio import gather
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
@@ -17,11 +16,17 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.caching import CacheHint
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import Icon, ImageContent, TextContent, ToolAnnotations
-from pydantic import AnyHttpUrl, BaseModel, Field, FiniteFloat, PositiveInt
-from patchright.async_api import TimeoutError as PatchrightTimeoutError
+from pydantic import AnyHttpUrl, BaseModel, Field
 
 from scrapling import __version__
 from scrapling.core.utils import log
+from scrapling.core._browser_actions import (
+    BrowserAction,
+    NonEmptyString,
+    NonNegativeFiniteFloat,
+    _run_actions,
+    _validate_actions,
+)
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.engines.static import ImpersonateType
@@ -30,12 +35,9 @@ from scrapling.engines._browsers._types import StealthFetchParams
 from scrapling.core._types import (
     Optional,
     Literal,
-    Union,
     Tuple,
     Mapping,
     Dict,
-    TypedDict,
-    NotRequired,
     List,
     Any,
     Annotated,
@@ -52,9 +54,6 @@ from scrapling.core._types import (
 SessionType = Literal["stealthy", "static"]
 SessionExtractionType = Literal[extraction_types, "snapshot"]
 ScreenshotType = Literal["png", "jpeg"]
-MouseButton = Literal["left", "right", "middle"]
-NonNegativeFiniteFloat = Annotated[float, Field(ge=0, allow_inf_nan=False)]
-NonEmptyString = Annotated[str, Field(min_length=1)]
 MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
 MCP_AUTH_TOKEN_ENV = "SCRAPLING_MCP_AUTH_TOKEN"  # nosec B105 - the name of the variable, not a token
 
@@ -102,119 +101,6 @@ _LIST_TOOL_ANNOTATIONS = ToolAnnotations(read_only_hint=True, open_world_hint=Fa
 _INPUT_TOOL_ANNOTATIONS = ToolAnnotations(
     read_only_hint=False, destructive_hint=True, idempotent_hint=False, open_world_hint=True
 )
-
-
-class _MouseTarget(TypedDict, total=False):
-    selector: Optional[NonEmptyString]
-    ref: Optional[NonEmptyString]
-    x: Optional[FiniteFloat]
-    y: Optional[FiniteFloat]
-    timeout: Annotated[
-        NonNegativeFiniteFloat, Field(default=30000, description="Selector/ref timeout in ms; 0 disables it.")
-    ]
-
-
-class _MouseMove(_MouseTarget):
-    type: Literal["move"]
-    steps: NotRequired[Annotated[PositiveInt, Field(default=1, description="Mousemove events for coordinates only.")]]
-
-
-class _MouseClick(_MouseTarget):
-    type: Literal["click"]
-    button: NotRequired[Annotated[MouseButton, Field(default="left")]]
-    click_count: NotRequired[Annotated[PositiveInt, Field(default=1, description="2 for a double-click.")]]
-    delay: NotRequired[
-        Annotated[NonNegativeFiniteFloat, Field(default=0, description="Milliseconds between press and release.")]
-    ]
-
-
-class _MouseWheel(TypedDict):
-    type: Literal["wheel"]
-    delta_x: NotRequired[
-        Annotated[FiniteFloat, Field(default=0, description="Horizontal CSS pixels; positive scrolls right.")]
-    ]
-    delta_y: NotRequired[
-        Annotated[FiniteFloat, Field(default=0, description="Vertical CSS pixels; positive scrolls down.")]
-    ]
-
-
-class _TimeWait(TypedDict):
-    type: Literal["wait_time"]
-    milliseconds: NonNegativeFiniteFloat
-
-
-class _ConditionWait(TypedDict, total=False):
-    timeout: Annotated[NonNegativeFiniteFloat, Field(default=30000, description="Wait limit in ms; 0 disables it.")]
-
-
-class _ElementWait(_ConditionWait):
-    type: Literal["wait_element"]
-    selector: Annotated[NonEmptyString, Field(description="Playwright selector for one element.")]
-    state: NotRequired[Annotated[SelectorWaitStates, Field(default="visible", description="Hidden includes removal.")]]
-
-
-class _LoadWait(_ConditionWait):
-    type: Literal["wait_load"]
-    state: Annotated[
-        Literal["domcontentloaded", "load", "networkidle"],
-        Field(description="Current document readiness; networkidle waits for 500 ms without active connections."),
-    ]
-
-
-class _KeyPress(TypedDict):
-    type: Literal["press_key"]
-    key: Annotated[
-        NonEmptyString, Field(description="Key or shortcut at current focus, e.g. Enter or ControlOrMeta+A.")
-    ]
-
-
-class _FormTarget(TypedDict, total=False):
-    selector: Optional[NonEmptyString]
-    ref: Optional[NonEmptyString]
-    timeout: Annotated[
-        NonNegativeFiniteFloat, Field(default=30000, description="Limit per native operation in ms; 0 disables it.")
-    ]
-
-
-class _TextFormField(_FormTarget):
-    type: Literal["textbox"]
-    value: str
-    clear: NotRequired[
-        Annotated[bool, Field(default=True, description="False types at the current caret or selection.")]
-    ]
-
-
-class _CheckboxFormField(_FormTarget):
-    type: Literal["checkbox"]
-    value: bool
-
-
-class _RadioFormField(_FormTarget):
-    type: Literal["radio"]
-    value: Literal[True]
-
-
-class _SelectFormField(_FormTarget):
-    type: Literal["combobox"]
-    value: Annotated[Union[str, List[str]], Field(description="Option label(s); [] clears selection.")]
-
-
-BrowserAction = Annotated[
-    Union[
-        _MouseMove,
-        _MouseClick,
-        _MouseWheel,
-        _TextFormField,
-        _CheckboxFormField,
-        _RadioFormField,
-        _SelectFormField,
-        _KeyPress,
-        _TimeWait,
-        _ElementWait,
-        _LoadWait,
-    ],
-    Field(discriminator="type"),
-]
 
 
 class ResponseModel(BaseModel):
@@ -523,88 +409,9 @@ class ScraplingMCPServer:
         :param actions: Ordered actions; fields need one selector/ref, mouse targets one selector/ref or viewport (x, y).
         :param slowly: Fresh random delays: 50-150 ms per character, 100-300 ms between all actions, including waits.
         """
-        for index, action in enumerate(actions, 1):
-            if action["type"] in ("move", "click") and (
-                sum(action.get(key) is not None for key in ("selector", "ref", "x")) != 1
-                or (action.get("x") is None) != (action.get("y") is None)
-            ):
-                raise ValueError(
-                    f"Action {index} ({action['type']}) needs exactly one target: 'selector', 'ref', or both 'x' and 'y'."
-                )
-            if action["type"] in ("textbox", "checkbox", "radio", "combobox") and (
-                (action.get("selector") is None) == (action.get("ref") is None)
-            ):
-                raise ValueError(f"Action {index} ({action['type']}) needs exactly one target: 'selector' or 'ref'.")
+        _validate_actions(actions)
         with self._browser_page(session_id) as (_, page):
-            for index, action in enumerate(actions, 1):
-                try:
-                    if slowly and index > 1:
-                        await sleep(uniform(0.1, 0.3))
-                    if action["type"] == "wait_time":
-                        await page.wait_for_timeout(action["milliseconds"])
-                    elif action["type"] == "wait_element":
-                        await page.locator(action["selector"]).wait_for(
-                            state=action.get("state", "visible"), timeout=action.get("timeout", 30000)
-                        )
-                    elif action["type"] == "wait_load":
-                        await page.wait_for_load_state(action["state"], timeout=action.get("timeout", 30000))
-                    elif action["type"] == "press_key":
-                        await page.keyboard.press(action["key"])
-                    elif action["type"] == "wheel":
-                        await page.mouse.wheel(action.get("delta_x", 0), action.get("delta_y", 0))
-                    else:
-                        selector, ref = action.get("selector"), action.get("ref")
-                        timeout = action.get("timeout", 30000)
-                        if action["type"] == "move" or action["type"] == "click":
-                            locator = (
-                                page.locator(selector or f"aria-ref={ref}")
-                                if selector is not None or ref is not None
-                                else None
-                            )
-                            if action["type"] == "move":
-                                if locator is not None:
-                                    await locator.hover(timeout=timeout)
-                                else:
-                                    await page.mouse.move(
-                                        action.get("x"), action.get("y"), steps=action.get("steps", 1)
-                                    )
-                            else:
-                                options = {
-                                    "button": action.get("button", "left"),
-                                    "click_count": action.get("click_count", 1),
-                                    "delay": action.get("delay", 0),
-                                }
-                                try:
-                                    if locator is not None:
-                                        await locator.click(**options, timeout=timeout)
-                                    else:
-                                        await page.mouse.click(action.get("x"), action.get("y"), **options)
-                                except (CancelledError, PatchrightTimeoutError) as exc:
-                                    try:
-                                        with CancelScope(shield=True):
-                                            if not page.is_closed():
-                                                await page.mouse.up(button=options["button"])
-                                    except Exception as cleanup_error:
-                                        raise exc from cleanup_error
-                                    raise
-                        else:
-                            locator = page.locator(selector or f"aria-ref={ref}")
-                            if action["type"] == "textbox":
-                                if action.get("clear", True):
-                                    await locator.fill("" if slowly else action["value"], timeout=timeout)
-                                if slowly and action["value"]:
-                                    for character in action["value"]:
-                                        await locator.press_sequentially(
-                                            character, delay=uniform(50, 150), timeout=timeout
-                                        )
-                                elif not action.get("clear", True):
-                                    await locator.press_sequentially(action["value"], timeout=timeout)
-                            elif action["type"] == "combobox":
-                                await locator.select_option(label=action["value"], timeout=timeout)
-                            else:
-                                await locator.set_checked(action["value"], timeout=timeout)
-                except Exception as exc:
-                    raise RuntimeError(f"Action {index} ({action['type']}) failed: {exc}") from exc
+            await _run_actions(page, actions, slowly)
         return "Actions completed."
 
     async def browser_evaluate(
