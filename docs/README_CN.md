@@ -216,7 +216,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：提供 2800 万个干净的住宅 IP，支持稳定的网页抓取和浏览器自动化。流量永不过期，低至 $2/GB。覆盖 195 个国家。支持固定和轮换会话，以及城市、ISP、ASN 定向。试用套餐：$1.95/350MB。使用优惠码 SCRAPEANDTAKE 可享 25% 折扣。
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：将封禁和 CAPTCHA 验证码减少 90%。提供 2800 万个优质住宅 IP，适用于大规模网页抓取。覆盖 195 个国家。支持城市、ISP、邮政编码（ZIP）定向。支持固定和轮换会话。流量永不过期，低至 $2/GB。使用优惠码 <strong>SCRAPEANDTAKE</strong> 可享 <em>25% 折扣</em>。
     </td>
   </tr>
 </table>

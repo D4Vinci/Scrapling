@@ -216,7 +216,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 안정적인 스크래핑과 브라우저 자동화를 위한 2,800만 개의 깨끗한 주거용 IP. 유효 기간이 없는 트래픽을 $2/GB부터 제공합니다. 195개 국가 지원. 고정 및 순환 세션. 도시, ISP, ASN 타겟팅. 체험 요금은 $1.95/350MB. 코드 SCRAPEANDTAKE를 사용하면 25% 할인.
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 차단과 CAPTCHA를 90% 줄입니다. 대규모 웹 스크래핑을 위한 2,800만 개의 프리미엄 주거용 IP. 195개 국가 지원. 도시, ISP, 우편번호(ZIP) 타겟팅. 고정 및 순환 세션. 유효 기간이 없는 트래픽을 $2/GB부터 제공합니다. 코드 <strong>SCRAPEANDTAKE</strong>를 사용하면 <em>25% 할인</em>.
     </td>
   </tr>
 </table>

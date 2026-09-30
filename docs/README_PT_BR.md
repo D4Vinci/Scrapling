@@ -218,7 +218,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 28 milhões de IPs residenciais limpos para scraping e automação de navegador confiáveis. Tráfego sem prazo de validade a partir de $2/GB. 195 países. Sessões fixas ou rotativas. Segmentação por cidade/ISP/ASN. Teste por $1.95/350MB. Código SCRAPEANDTAKE: 25% de desconto.
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Reduza os bloqueios e os CAPTCHAs em 90%. 28 milhões de IPs residenciais premium para scraping intensivo da web. 195 países. Segmentação por cidade/ISP/CEP. Sessões fixas ou rotativas. Tráfego sem prazo de validade a partir de $2/GB. Código <strong>SCRAPEANDTAKE</strong>: <em>25% de desconto</em>.
     </td>
   </tr>
 </table>

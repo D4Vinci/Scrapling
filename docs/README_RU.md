@@ -219,7 +219,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 28 млн чистых резидентных IP-адресов для надёжного веб-скрейпинга и автоматизации браузера. Трафик без срока действия от $2/GB. 195 стран. Сессии с постоянным IP или ротацией. Таргетинг по городу/ISP/ASN. Пробный пакет: $1.95/350MB. Код SCRAPEANDTAKE: скидка 25%.
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Сократите число блокировок и CAPTCHA на 90%. 28 млн премиальных резидентных IP-адресов для интенсивного веб-скрейпинга. 195 стран. Таргетинг по городу/ISP/почтовому индексу. Сессии с постоянным IP или ротацией. Трафик без срока действия от $2/GB. Код <strong>SCRAPEANDTAKE</strong>: <em>скидка 25%</em>.
     </td>
   </tr>
 </table>
