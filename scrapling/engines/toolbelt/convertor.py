@@ -2,6 +2,7 @@ from functools import lru_cache
 from re import compile as re_compile
 
 from curl_cffi.requests import Response as CurlResponse
+from w3lib.encoding import html_body_declared_encoding
 from playwright._impl._errors import Error as PlaywrightError
 from patchright._impl._errors import Error as PatchrightError
 from playwright.sync_api import Page as SyncPage, Response as SyncResponse
@@ -367,7 +368,7 @@ class ResponseFactory:
                 "content": response.content,
                 "status": response.status_code,
                 "reason": response.reason,
-                "encoding": response.encoding or "utf-8",
+                "encoding": response.charset_encoding or html_body_declared_encoding(response.content) or "utf-8",
                 "cookies": dict(response.cookies),
                 "headers": dict(response.headers),
                 "request_headers": dict(response.request.headers) if response.request else {},

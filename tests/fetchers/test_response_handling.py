@@ -64,6 +64,7 @@ class TestResponseFactory:
         mock_curl_response.status_code = 200
         mock_curl_response.reason = "OK"
         mock_curl_response.encoding = "utf-8"
+        mock_curl_response.charset_encoding = "utf-8"
         mock_curl_response.cookies = {"session": "abc"}
         mock_curl_response.headers = {"Content-Type": "text/html"}
         mock_curl_response.request.headers = {"User-Agent": "Test"}
@@ -78,6 +79,43 @@ class TestResponseFactory:
         assert response.status == 200
         assert response.url == "https://example.com"
         assert isinstance(response, Response)
+
+    @staticmethod
+    def make_curl_response(content: bytes, charset_encoding: str | None) -> Mock:
+        """Build a curl_cffi-like response with the given body and header charset."""
+        response = Mock()
+        response.url = "https://example.com"
+        response.content = content
+        response.status_code = 200
+        response.reason = "OK"
+        response.charset_encoding = charset_encoding
+        response.encoding = charset_encoding or "utf-8"
+        response.cookies = {}
+        response.headers = {}
+        response.request.headers = {}
+        response.request.method = "GET"
+        response.history = []
+        return response
+
+    def test_curl_response_uses_meta_charset_without_header_charset(self) -> None:
+        """A charset declared only in <meta> is honored when the header has none."""
+        html = '<html><head><meta charset="Shift_JIS"><title>価格</title></head><body>日本語</body></html>'
+        response = ResponseFactory.from_http_request(
+            self.make_curl_response(html.encode("cp932"), None), {"adaptive": False}
+        )
+
+        assert response.css("title::text").get() == "価格"
+        assert "日本語" in response.html_content
+
+    def test_curl_response_header_charset_wins_over_meta(self) -> None:
+        """The Content-Type charset still takes precedence over <meta charset>."""
+        html = '<html><head><meta charset="Shift_JIS"></head><body>Bürger</body></html>'
+        response = ResponseFactory.from_http_request(
+            self.make_curl_response(html.encode("iso-8859-15"), "iso-8859-15"), {"adaptive": False}
+        )
+
+        assert response.encoding == "iso-8859-15"
+        assert response.css("body::text").get() == "Bürger"
 
     def test_playwright_page_content_uses_utf8_encoding(self):
         """page.content() returns Unicode, so its encoded bytes are UTF-8."""
