@@ -25,6 +25,9 @@ if TYPE_CHECKING:
     from scrapling.spiders import Request
 
 
+_NON_INHERITABLE_KWARGS = frozenset({"method", "data", "json", "params", "files", "multipart"})
+
+
 class Response(Selector):
     """This class is returned by all engines as a way to unify the response type between different libraries.
 
@@ -118,6 +121,8 @@ class Response(Selector):
 
         **IMPORTANT**: The below arguments if left empty, the corresponding value from the previous request will be used. The only exception is `dont_filter`.
 
+        The session kwargs of the previous request are inherited as well, except `method`, `params`, `data`, `json`, `files`, and `multipart`, so a followed link is a plain GET unless you pass them again.
+
         :param url: The URL to follow (can be relative, will be joined with current URL)
         :param sid: The session id to use
         :param callback: Spider callback method to use
@@ -134,7 +139,8 @@ class Response(Selector):
             raise TypeError("This response has no request set yet.")
 
         # Merge original session kwargs with new kwargs (new takes precedence)
-        session_kwargs = {**self.request._session_kwargs, **kwargs}
+        inherited = {k: v for k, v in self.request._session_kwargs.items() if k not in _NON_INHERITABLE_KWARGS}
+        session_kwargs = {**inherited, **kwargs}
 
         if referer_flow:
             # For requests
