@@ -31,6 +31,24 @@ SECTIONS_HTML = """
 """
 
 
+NESTED_NOISE_HTML = """
+<html>
+  <head>
+    <noscript><style>.lazy { display: none; }</style></noscript>
+    <script>var token = "abc";</script>
+  </head>
+  <body>
+    <p>Article</p>
+    <svg><style>.a { fill: red; }</style><path d="M0"/></svg>
+    <p>More</p>
+    <noscript>Please enable JavaScript</noscript>
+    <svg><title>Logo</title></svg>
+    <script>window.dataLayer = [];</script>
+  </body>
+</html>
+"""
+
+
 def _make_response(url: str = "https://example.com/", content: str = HTML) -> Response:
     return Response(
         url=url,
@@ -57,6 +75,15 @@ class TestResponseMarkdown:
         assert "hidden instructions" not in md
         assert "console.log" not in md
         assert ".hint" not in md
+
+    def test_noise_tags_after_a_nested_noise_tag_are_stripped(self):
+        """Dropping a noise tag that contains another one must not end the scan early"""
+        md = _make_response(content=NESTED_NOISE_HTML).markdown()
+        assert "Article" in md
+        assert "More" in md
+        assert "Please enable JavaScript" not in md
+        assert "dataLayer" not in md
+        assert "Logo" not in md
 
     def test_main_content_only_scopes_to_body(self):
         md = _make_response().markdown(main_content_only=True)
