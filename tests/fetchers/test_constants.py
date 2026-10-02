@@ -21,3 +21,7 @@ class TestConstants:
         assert "--no-pings" in DEFAULT_ARGS
         # assert "--incognito" in STEALTH_ARGS
         assert "--disable-blink-features=AutomationControlled" in STEALTH_ARGS
+
+    def test_stealth_flags_do_not_override_driver_disabled_features(self) -> None:
+        """Let the browser driver keep ownership of its disabled feature list."""
+        assert not any(flag.startswith("--disable-features=") for flag in STEALTH_ARGS)
