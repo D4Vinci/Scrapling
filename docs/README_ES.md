@@ -191,16 +191,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: proxies móviles 4G/5G en SIMs y dispositivos reales. Dedicados o compartidos, sticky, rotativos, presets de huella p0f, API/MCP y soporte completo de protocolos. Usa el código SCRAPLING20 para obtener un 20% de descuento.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
       </a>
