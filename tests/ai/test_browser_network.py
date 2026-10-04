@@ -1,7 +1,6 @@
 from json import loads
 from os import getenv
 from asyncio import Event, create_task, sleep, wait_for
-from dataclasses import replace
 from types import SimpleNamespace
 from urllib.parse import urlsplit
 from unittest.mock import AsyncMock, Mock
@@ -13,13 +12,13 @@ from mcp.types import CallToolResult, TextContent
 from scrapling.core._types import Any
 from scrapling.core._network_formatting import NetworkRequestModel, _request_details
 from scrapling.core.ai import NetworkRequestsModel, ScraplingMCPServer, _SessionEntry
-from scrapling.engines._browsers._network import NetworkRecorder, NetworkRequest
+from scrapling.engines._browsers._network import NetworkRecorder
 from scrapling.engines.toolbelt.custom import Response
 
 
 def _server() -> tuple[ScraplingMCPServer, Mock]:
     server = ScraplingMCPServer()
-    saved = Response(
+    record = Response(
         url="https://network.test/api/items",
         content='{"name":"مرحبا"}'.encode(),
         status=201,
@@ -27,17 +26,8 @@ def _server() -> tuple[ScraplingMCPServer, Mock]:
         cookies={},
         headers={"content-type": "application/json; charset=utf-8", "set-cookie": "test=2"},
         request_headers={"content-type": "application/json", "cookie": "test=1"},
-    )
-    record = NetworkRequest(
-        id=4,
-        url=saved.url,
         method="POST",
-        resource_type="fetch",
-        status=201,
-        request_headers=saved.request_headers,
-        request_body=b'{"sent":true}',
-        response_headers=saved.headers,
-        response=saved,
+        meta={"network_id": 4, "resource_type": "fetch", "request_body": b'{"sent":true}'},
     )
     network = Mock(spec=["last_id", "dropped_count", "search", "get"], last_id=4, dropped_count=0)
     network.search.return_value = [record]
@@ -202,12 +192,16 @@ async def test_network_tools_schema_and_content() -> None:
 async def test_network_list_forwards_filters_and_reports_paging_eviction() -> None:
     server, network = _server()
     network.search.return_value.append(
-        replace(
-            network.get(4),
-            id=8,
+        Response(
             url="https://network.test/next",
+            content=b"next",
+            status=200,
+            reason="OK",
+            cookies={},
+            headers={"content-type": "text/plain"},
+            request_headers={},
             method="GET",
-            resource_type="document",
+            meta={"network_id": 8, "resource_type": "document", "request_body": None},
         )
     )
     network.last_id = 8
@@ -405,7 +399,7 @@ async def test_network_listing_preserves_url_characters_and_only_returns_summary
     network._detach()
     record = network.get(1)
     assert record is not None and record.url == native.url
-    assert record.request_body == b'{"secret":"request"}' and record.response.body == b'{"secret":"response"}'
+    assert record.meta["request_body"] == b'{"secret":"request"}' and record.body == b'{"secret":"response"}'
     readers = (native.all_headers, native.existing_response.all_headers, native.existing_response.body)
     for reader in readers:
         reader.assert_awaited_once()
@@ -434,12 +428,13 @@ async def test_network_detail_returns_only_selected_part(part: Any) -> None:
         if part == "summary":
             assert _detail(result) == _detail_info(4, part, _request_info(4, "/api/items", "POST", status=201))
         elif part.endswith("headers"):
-            expected = record.response.request_headers if part == "request_headers" else record.response.headers
+            expected = record.request_headers if part == "request_headers" else record.headers
             assert _detail(result) == _detail_info(4, part, expected)
         else:
             expected = '{"sent":true}' if part == "request_body" else '{"name":"مرحبا"}'
             assert _detail(result) == _detail_info(4, part, expected)
-        assert not hasattr(record, "request")
+        assert isinstance(record, Response) and record.request is None
+        assert not hasattr(record, "response")
     network.search.assert_not_called()
 
 
@@ -450,7 +445,7 @@ def test_saved_response_details_are_local(part: Any) -> None:
     result = _request_details(record, part)
     assert isinstance(result, NetworkRequestModel)
     if part.endswith("headers"):
-        expected = record.response.request_headers if part == "request_headers" else record.response.headers
+        expected = record.request_headers if part == "request_headers" else record.headers
         assert result.model_dump() == _detail_info(4, part, expected)
     else:
         assert result.model_dump() == _detail_info(4, part, '{"name":"مرحبا"}')
@@ -472,7 +467,7 @@ async def test_network_objects_keep_all_summary_fields_and_header_values(part: s
     if part == "request_headers":
         record.request_headers = headers
     elif part == "response_headers":
-        record.response_headers = headers
+        record.headers = headers
     expected = _request_info(4, "/api/items", "POST", status=201) if part == "summary" else headers
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
@@ -489,9 +484,9 @@ async def test_network_unicode_body_returns_the_full_original_text(part: str) ->
     record = network.get(4)
     text = 'Aمرحبا🙂e\u0301\n"z"'
     if part == "request_body":
-        record.request_body = text.encode()
+        record.meta["request_body"] = text.encode()
     else:
-        record.response._raw_body = text.encode()
+        record._raw_body = text.encode()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
             "browser_network_request", {"session_id": "browser", "request_id": 4, "part": part}
@@ -517,7 +512,7 @@ async def test_network_detail_returns_complete_empty_and_large_saved_bodies(part
     network._detach()
     record = network.get(1)
     assert record is not None
-    assert (record.request_body if part == "request_body" else record.response.body) == text.encode()
+    assert (record.meta["request_body"] if part == "request_body" else record.body) == text.encode()
     readers = (native.all_headers, native.existing_response.all_headers, native.existing_response.body)
     for reader in readers:
         reader.assert_awaited_once()
@@ -537,14 +532,14 @@ async def test_network_detail_body_availability(case: str) -> None:
     server, network = _server()
     record = network.get(4)
     if case == "empty":
-        record.response.status = 204
-        record.response._raw_body = b""
+        record.status = 204
+        record._raw_body = b""
     elif case == "binary":
-        record.response.headers["content-type"] = "image/png"
+        record.headers["content-type"] = "image/png"
     elif case == "too_large":
-        record.response.meta["body_note"] = "too large; not saved."
+        record.meta["body_note"] = "too large; not saved."
     else:
-        record.response.meta["body_note"] = "Context closed"
+        record.meta["body_note"] = "Context closed"
     result = await server.browser_network_request("browser", 4, "response_body")
     expected = {
         "empty": _detail_info(4, "response_body", ""),
@@ -561,9 +556,9 @@ async def test_network_detail_body_availability(case: str) -> None:
 async def test_network_detail_saved_headers_report_completeness(part: Any, partial: bool) -> None:
     server, network = _server()
     record = network.get(4)
-    headers = record.request_headers if part == "request_headers" else record.response_headers
+    headers = record.request_headers if part == "request_headers" else record.headers
     key = "request_headers_partial" if part == "request_headers" else "headers_partial"
-    record.response.meta[key] = partial
+    record.meta[key] = partial
     result = await server.browser_network_request("browser", 4, part)
     assert result.model_dump() == _detail_info(
         4, part, headers, note="Headers are partial; full headers unavailable." if partial else None
@@ -588,10 +583,10 @@ async def test_network_detail_decodes_text_for_any_resource(
 ) -> None:
     server, network = _server()
     record = network.get(4)
-    record.resource_type = "document"
-    record.response.headers["content-type"] = content_type
-    record.response._raw_body = body
-    record.response.encoding = encoding
+    record.meta["resource_type"] = "document"
+    record.headers["content-type"] = content_type
+    record._raw_body = body
+    record.encoding = encoding
     result = await server.browser_network_request("browser", 4, "response_body")
     assert result.model_dump() == _detail_info(4, "response_body", expected)
 
@@ -660,9 +655,9 @@ async def test_network_response_uses_saved_encoding_and_request_uses_its_header(
     network._detach()
     record = network.get(1)
     assert record is not None
-    assert record.response.encoding == response_encoding
-    assert record.response.body == native_body and record.request_body == request_body
-    assert record.response_headers == {"content-type": response_type}
+    assert record.encoding == response_encoding
+    assert record.body == native_body and record.meta["request_body"] == request_body
+    assert record.headers == {"content-type": response_type}
     assert record.request_headers == {"content-type": request_type}
     readers = (native.all_headers, native.existing_response.all_headers, native.existing_response.body)
     for reader in readers:
@@ -681,19 +676,18 @@ async def test_network_response_uses_saved_encoding_and_request_uses_its_header(
             assert _detail(result) == _detail_info(1, part, {"content-type": expected})
     for reader in readers:
         reader.assert_awaited_once()
-    assert record.response.body == native_body and record.request_body == request_body
+    assert record.body == native_body and record.meta["request_body"] == request_body
 
 
 @pytest.mark.asyncio
 async def test_network_request_body_absent_and_binary() -> None:
     server, network = _server()
     record = network.get(4)
-    record.request_body = None
+    record.meta["request_body"] = None
     result = await server.browser_network_request("browser", 4, "request_body")
     assert result.model_dump() == _detail_info(4, "request_body", note="Body is absent.")
-    record.request_body = b"binary"
+    record.meta["request_body"] = b"binary"
     record.request_headers["content-type"] = "application/octet-stream"
-    record.response.request_headers["content-type"] = "application/octet-stream"
     result = await server.browser_network_request("browser", 4, "request_body")
     assert result.model_dump() == _detail_info(4, "request_body", note="Only text bodies can be displayed.")
 
@@ -737,9 +731,14 @@ async def test_network_reads_saved_parts_without_native_access(
     record = network.get(1)
     assert record is not None
     skipped = part == "response_body" and note == "Non-text body; not saved."
-    assert record.response.meta == ({"body_note": note} if skipped else {})
+    assert record.meta == {
+        "network_id": 1,
+        "resource_type": "fetch",
+        "request_body": body if part == "request_body" else None,
+        **({"body_note": note} if skipped else {}),
+    }
     if part == "response_body":
-        assert record.response.body == (b"" if skipped else body)
+        assert record.body == (b"" if skipped else body)
         assert native.existing_response.body.await_count == (not skipped and status != 204)
     readers = (native.all_headers, native.existing_response.all_headers, native.existing_response.body)
     counts = [reader.await_count for reader in readers]
@@ -759,7 +758,7 @@ async def test_network_reads_saved_parts_without_native_access(
                 if saved_part == "summary"
                 else record.request_headers
                 if saved_part == "request_headers"
-                else record.response_headers
+                else record.headers
             )
             assert _detail(result) == _detail_info(1, saved_part, expected_data)
     assert [reader.await_count for reader in readers] == counts
@@ -791,8 +790,13 @@ async def test_network_body_note_does_not_replace_other_saved_parts(error: Excep
     await network._contexts[context]["requestfinished"](native)
     network._detach()
     record = network.get(1)
-    assert record is not None and record.response.meta == {"body_note": expected}
-    assert record.response.body == b"" and record.request_body == b'{"sent":true}'
+    assert record is not None and record.meta == {
+        "network_id": 1,
+        "resource_type": "fetch",
+        "request_body": b'{"sent":true}',
+        "body_note": expected,
+    }
+    assert record.body == b"" and record.meta["request_body"] == b'{"sent":true}'
     assert native.existing_response.body.await_count == (error is not None)
     readers = (native.all_headers, native.existing_response.all_headers, native.existing_response.body)
     counts = [reader.await_count for reader in readers]
@@ -890,7 +894,7 @@ async def test_network_live_capture_actions_navigation_and_reads() -> None:
         status, content_type, body = responses.get(path, (200, "text/html", html.encode()))
         await route.fulfill(status=status, content_type=content_type, body=body, headers={"x-recorded": "yes"})
 
-    async def captured(session: Any, pattern: str) -> NetworkRequest:
+    async def captured(session: Any, pattern: str) -> Response:
         while not (records := session.network.search(url_pattern=pattern)):
             await sleep(0.01)
         return records[0]
@@ -933,8 +937,13 @@ async def test_network_live_capture_actions_navigation_and_reads() -> None:
             }
             assert session.network.search(url_pattern="/api/failed$") == []
             for name, record in records.items():
-                assert record.response.body == (b"" if name == "binary" else responses[f"/api/{name}"][2])
-                assert record.response.meta == ({"body_note": "Non-text body; not saved."} if name == "binary" else {})
+                assert record.body == (b"" if name == "binary" else responses[f"/api/{name}"][2])
+                assert record.meta == {
+                    "network_id": record.meta["network_id"],
+                    "resource_type": "fetch",
+                    "request_body": None,
+                    **({"body_note": "Non-text body; not saved."} if name == "binary" else {}),
+                }
             before = list(seen)
             page = session.page_pool.get_ready_page()
             assert page is not None
@@ -942,14 +951,14 @@ async def test_network_live_capture_actions_navigation_and_reads() -> None:
                 listed = await client.call_tool("browser_network_requests", {"session_id": "browser"})
                 detail = await client.call_tool(
                     "browser_network_request",
-                    {"session_id": "browser", "request_id": request.id, "part": "response_body"},
+                    {"session_id": "browser", "request_id": request.meta["network_id"], "part": "response_body"},
                 )
                 assert not listed.is_error and not detail.is_error
-                assert request.response is not None and request.response.body == b'{"items":[1,2]}'
+                assert request is not None and request.body == b'{"items":[1,2]}'
                 expected_requests = sorted(
-                    [_request_info(request.id, "/api/items", "POST")]
+                    [_request_info(request.meta["network_id"], "/api/items", "POST")]
                     + [
-                        _request_info(record.id, f"/api/{name}", status=responses[f"/api/{name}"][0])
+                        _request_info(record.meta["network_id"], f"/api/{name}", status=responses[f"/api/{name}"][0])
                         for name, record in records.items()
                     ],
                     key=lambda item: item["id"],
@@ -961,12 +970,14 @@ async def test_network_live_capture_actions_navigation_and_reads() -> None:
                     "dropped_count": 0,
                 }
                 assert _listing(listed) == expected_listing
-                assert _detail(detail) == _detail_info(request.id, "response_body", '{"items":[1,2]}')
+                assert _detail(detail) == _detail_info(request.meta["network_id"], "response_body", '{"items":[1,2]}')
                 request_body = await client.call_tool(
                     "browser_network_request",
-                    {"session_id": "browser", "request_id": request.id, "part": "request_body"},
+                    {"session_id": "browser", "request_id": request.meta["network_id"], "part": "request_body"},
                 )
-                assert _detail(request_body) == _detail_info(request.id, "request_body", '{"sent":true}')
+                assert _detail(request_body) == _detail_info(
+                    request.meta["network_id"], "request_body", '{"sent":true}'
+                )
                 for name, expected, note in (
                     ("empty", "", None),
                     ("absent", "", None),
@@ -975,15 +986,25 @@ async def test_network_live_capture_actions_navigation_and_reads() -> None:
                 ):
                     result = await client.call_tool(
                         "browser_network_request",
-                        {"session_id": "browser", "request_id": records[name].id, "part": "response_body"},
+                        {
+                            "session_id": "browser",
+                            "request_id": records[name].meta["network_id"],
+                            "part": "response_body",
+                        },
                     )
-                    assert _detail(result) == _detail_info(records[name].id, "response_body", expected, note=note)
+                    assert _detail(result) == _detail_info(
+                        records[name].meta["network_id"], "response_body", expected, note=note
+                    )
                     headers = await client.call_tool(
                         "browser_network_request",
-                        {"session_id": "browser", "request_id": records[name].id, "part": "response_headers"},
+                        {
+                            "session_id": "browser",
+                            "request_id": records[name].meta["network_id"],
+                            "part": "response_headers",
+                        },
                     )
                     assert _detail(headers) == _detail_info(
-                        records[name].id, "response_headers", records[name].response_headers
+                        records[name].meta["network_id"], "response_headers", records[name].headers
                     )
                     assert _detail(headers)["data"]["x-recorded"] == "yes"
                 assert page.state == "busy" and seen == before
@@ -998,15 +1019,16 @@ async def test_network_live_capture_actions_navigation_and_reads() -> None:
             await session.close_pages()
             before = list(seen)
             detail = await client.call_tool(
-                "browser_network_request", {"session_id": "browser", "request_id": request.id, "part": "response_body"}
+                "browser_network_request",
+                {"session_id": "browser", "request_id": request.meta["network_id"], "part": "response_body"},
             )
-            assert _detail(detail) == _detail_info(request.id, "response_body", '{"items":[1,2]}')
+            assert _detail(detail) == _detail_info(request.meta["network_id"], "response_body", '{"items":[1,2]}')
             for record in records.values():
                 saved = await client.call_tool(
                     "browser_network_request",
-                    {"session_id": "browser", "request_id": record.id, "part": "response_headers"},
+                    {"session_id": "browser", "request_id": record.meta["network_id"], "part": "response_headers"},
                 )
-                assert _detail(saved) == _detail_info(record.id, "response_headers", record.response_headers)
+                assert _detail(saved) == _detail_info(record.meta["network_id"], "response_headers", record.headers)
                 assert _detail(saved)["data"]["x-recorded"] == "yes"
             assert seen == before
         finally:
@@ -1015,10 +1037,11 @@ async def test_network_live_capture_actions_navigation_and_reads() -> None:
             finally:
                 await session.close()
         assert not session.network._contexts
-        assert request.response.body == b'{"items":[1,2]}'
+        assert request.body == b'{"items":[1,2]}'
         closed = await client.call_tool("browser_network_requests", {"session_id": "browser"})
         assert closed.is_error
         closed_detail = await client.call_tool(
-            "browser_network_request", {"session_id": "browser", "request_id": request.id, "part": "response_body"}
+            "browser_network_request",
+            {"session_id": "browser", "request_id": request.meta["network_id"], "part": "response_body"},
         )
         assert closed_detail.is_error

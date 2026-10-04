@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from scrapling.parser import Selector
+from scrapling.engines._browsers._base import AsyncSession, SyncSession
 from scrapling.engines.toolbelt.convertor import ResponseFactory, Response
 
 
@@ -58,6 +59,54 @@ def make_async_page():
 
 class TestResponseFactory:
     """Test ResponseFactory functionality"""
+
+    @pytest.mark.parametrize("arguments,expected", [({}, "GET"), ({"method": "POST"}, "POST")])
+    def test_response_keeps_request_method(self, arguments, expected):
+        response = Response(
+            url="https://example.com",
+            content=b"saved",
+            status=200,
+            reason="OK",
+            cookies={},
+            headers={},
+            request_headers={},
+            **arguments,
+        )
+
+        assert response.method == expected
+        assert not hasattr(response, "captured_xhr")
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("asynchronous", [False, True])
+    async def test_response_handler_keeps_only_main_frame_navigation(self, asynchronous):
+        main_frame = Mock()
+        page_info = Mock(page=Mock(main_frame=main_frame))
+        responses = [None]
+        latest = None
+        handler = (
+            AsyncSession._create_response_handler(page_info, responses)
+            if asynchronous
+            else SyncSession._create_response_handler(page_info, responses)
+        )
+        for resource_type, navigation, main, captured in (
+            ("document", True, True, True),
+            ("xhr", False, True, False),
+            ("fetch", False, True, False),
+            ("image", False, True, False),
+            ("document", False, True, False),
+            ("document", True, False, False),
+            ("document", True, True, True),
+        ):
+            response = Mock()
+            response.request.resource_type = resource_type
+            response.request.is_navigation_request.return_value = navigation
+            response.request.frame = main_frame if main else Mock()
+            result = handler(response)
+            if result is not None:
+                await result
+            if captured:
+                latest = response
+            assert responses[0] is latest
 
     def test_response_from_curl(self):
         """Test creating response from curl_cffi response"""
@@ -454,21 +503,11 @@ class TestRecordedResponseFactory:
         with pytest.raises(ValueError, match="Failed to get a response"):
             await self.convert(None, asynchronous, max_body_bytes=100)
 
-    @pytest.mark.parametrize(
-        "content_type,body",
-        [("application/json", b'{"saved": true}'), ("application/octet-stream", b"\x00\xffbinary")],
-    )
-    async def test_recording_rules_do_not_change_captured_xhr(self, asynchronous, content_type, body):
+    async def test_factory_rejects_removed_xhr_capture_argument(self, asynchronous):
         native = self.native(asynchronous)
-        xhr = self.native(asynchronous, body, {"content-type": content_type})
-
-        response = await self.convert(native, asynchronous, max_body_bytes=4, xhr_captured=[xhr])
-
-        assert response.body == b"data"
-        assert response.captured_xhr[0].body == body
-        assert response.captured_xhr[0].headers == {"content-type": content_type}
-        assert response.captured_xhr[0].meta == {}
-        xhr.body.assert_called_once_with()
+        with pytest.raises(TypeError, match="unexpected keyword argument 'xhr_captured'"):
+            await self.convert(native, asynchronous, xhr_captured=[native])
+        native.body.assert_not_called()
 
 
 class TestErrorScenarios:

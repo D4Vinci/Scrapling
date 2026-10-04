@@ -21,6 +21,7 @@ from playwright.sync_api import Response as PlaywrightResponse
 from scrapling.core._types import Any, Generator
 from scrapling.core._network_formatting import _request_details
 from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, DynamicSession, StealthySession
+from scrapling.engines.toolbelt.custom import Response
 from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
 
 
@@ -73,6 +74,12 @@ MIME_FETCH = """async paths => {
         bodies[path] = Array.from(new Uint8Array(await response.arrayBuffer()));
     }
     return bodies;
+}"""
+SEARCH_FETCH = """async () => {
+    await Promise.all(Array.from({length: 150}, (_, index) => fetch(`/api/search/${index}`, index % 10 ? {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({index})
+    } : {}).then(response => response.json())));
+    return true;
 }"""
 CHARSET_BODY = "caf\u00e9 \u20ac".encode("iso-8859-15")
 CHARSET_PATHS = ("/wire/charset", "/wire/charset-spaced", "/wire/raw-charset")
@@ -262,7 +269,7 @@ async def test_async_network_disabled_by_default(session_type: Any) -> None:
 
 def _wait_saved(page: Any, network: Any, pattern: str, count: int = 1, after_id: int = 0) -> list[Any]:
     for _ in range(250):
-        records = network.search(url_pattern=pattern, after_id=after_id)
+        records = network.search(url_pattern=pattern, after_id=after_id, limit=None)
         if len(records) >= count:
             return records
         page.wait_for_timeout(20)
@@ -271,44 +278,54 @@ def _wait_saved(page: Any, network: Any, pattern: str, count: int = 1, after_id:
 
 async def _wait_saved_async(page: Any, network: Any, pattern: str, count: int = 1, after_id: int = 0) -> list[Any]:
     for _ in range(250):
-        records = network.search(url_pattern=pattern, after_id=after_id)
+        records = network.search(url_pattern=pattern, after_id=after_id, limit=None)
         if len(records) >= count:
             return records
         await asyncio.sleep(0.02)
     raise AssertionError(f"Expected {count} saved responses for {pattern!r}, got {len(records)}")
 
 
-def _check_initial(network: Any, response: Any) -> Any:
+def _check_initial(network: Any) -> Any:
     records = network.search()
     assert network.enabled
-    assert {record.resource_type for record in records} >= {"document", "script", "stylesheet", "image", "fetch", "xhr"}
-    assert len({record.id for record in records}) == len(records)
+    assert {record.meta["resource_type"] for record in records} >= {
+        "document",
+        "script",
+        "stylesheet",
+        "image",
+        "fetch",
+        "xhr",
+    }
+    assert len({record.meta["network_id"] for record in records}) == len(records)
     initial = network.search(url_pattern=r"/api/initial$", resource_type="fetch")
     assert len(initial) == 1
     assert initial[0].status == 200
-    assert initial[0].request_body is None
-    assert initial[0].response.json() == {"ok": True}
-    assert "body_note" not in initial[0].response.meta and not hasattr(initial[0], "request")
-    assert {urlsplit(item.url).path for item in response.captured_xhr} == {"/api/initial", "/api/xhr"}
-    assert all(item.json() == {"ok": True} for item in response.captured_xhr)
+    assert initial[0].meta["request_body"] is None
+    assert initial[0].json() == {"ok": True}
+    assert isinstance(initial[0], Response) and initial[0].request is None
+    assert "body_note" not in initial[0].meta and not hasattr(initial[0], "response")
+    assert network.get(initial[0].meta["network_id"]) is initial[0]
+    captured = network.search(url_pattern=r"/api/(initial|xhr)$")
+    assert {urlsplit(item.url).path for item in captured} == {"/api/initial", "/api/xhr"}
+    assert all(item.json() == {"ok": True} for item in captured)
     image = network.search(url_pattern=r"/image\.png$")[0]
-    assert image.response.body == b"" and image.response.meta.get("body_note") == "Non-text body; not saved."
+    assert image.body == b"" and image.meta.get("body_note") == "Non-text body; not saved."
     for path, body in ((r"/script\.js$", SCRIPT), (r"/style\.css$", b"body { color: black; }")):
         asset = network.search(url_pattern=path)[0]
-        assert asset.response.body == body and "body_note" not in asset.response.meta
+        assert asset.body == body and "body_note" not in asset.meta
     filtered = network.search(include_static=False)
-    assert filtered and all(record.resource_type in ("document", "xhr", "fetch") for record in filtered)
+    assert filtered and all(record.meta["resource_type"] in ("document", "xhr", "fetch") for record in filtered)
     return initial[0]
 
 
 def _check_later(network: Any, after_id: int) -> tuple[Any, Any, Any]:
     records = network.search(after_id=after_id)
-    assert records and all(record.id > after_id for record in records)
+    assert records and all(record.meta["network_id"] > after_id for record in records)
     post = network.search(method="POST", status=201)
     assert len(post) == 1
-    assert loads(post[0].request_body) == {"sent": True}
+    assert loads(post[0].meta["request_body"]) == {"sent": True}
     duplicate = network.search(url_pattern=r"/api/repeated$")
-    assert len(duplicate) == 2 and duplicate[0].id != duplicate[1].id
+    assert len(duplicate) == 2 and duplicate[0].meta["network_id"] != duplicate[1].meta["network_id"]
     assert len(network.search(url_pattern=r"/api/repeated$", limit=1)) == 1
     status = network.search(status=503)
     assert len(status) == 1
@@ -316,38 +333,34 @@ def _check_later(network: Any, after_id: int) -> tuple[Any, Any, Any]:
     redirect = network.search(url_pattern=r"/redirect$")
     assert len(redirect) == 1 and redirect[0].status == 302
     redirected = network.search(url_pattern=r"/redirected$", status=200)
-    assert len(redirected) == 1 and redirected[0].id != redirect[0].id
-    assert redirect[0].response_headers["location"] == "/redirected"
+    assert len(redirected) == 1 and redirected[0].meta["network_id"] != redirect[0].meta["network_id"]
+    assert redirect[0].headers["location"] == "/redirected"
     return post[0], status[0], network.search(url_pattern=r"/api/large$")[0]
 
 
 @pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
-@pytest.mark.parametrize("capture_xhr", [".*", r"/api/"])
-def test_sync_network_browser_history(
-    session_type: Any, network_url: str, release_pending: Event, capture_xhr: str
-) -> None:
+def test_sync_network_browser_history(session_type: Any, network_url: str, release_pending: Event) -> None:
     with session_type(
         **_options(
-            capture_xhr=capture_xhr,
             page_action=lambda page: page.locator("body[data-initial=ready]").wait_for(state="attached"),
         )
     ) as session:
-        response = session.fetch(network_url + "/")
+        session.fetch(network_url + "/")
         page = session.page_pool.pages[0].page
         _wait_saved(page, session.network, r"/(?:api/(?:initial|xhr)|script\.js|style\.css|image\.png)?$", 6)
-        initial = _check_initial(session.network, response)
-        assert initial.response.json() == {"ok": True}
+        initial = _check_initial(session.network)
+        assert initial.json() == {"ok": True}
         page = session.page_pool.pages[0].page
         after_id = session.network.last_id
         with page.expect_request_finished(lambda request: request.url.endswith("/api/large")):
             page.evaluate(LATER)
         _wait_saved(page, session.network, r"/(?:api/(?:post|repeated|status|large)|redirect|redirected)$", 7)
         post, status, large = _check_later(session.network, after_id)
-        assert post.response.request_headers["x-sent"] == "request"
-        assert post.response.headers["x-recorded"] == "response"
-        assert post.response.json() == {"sent": True}
-        assert status.response.body == b"Try later"
-        assert large.response.meta.get("body_note") == "too large; not saved." and large.response.body == b""
+        assert post.request_headers["x-sent"] == "request"
+        assert post.headers["x-recorded"] == "response"
+        assert post.json() == {"sent": True}
+        assert status.body == b"Try later"
+        assert large.meta.get("body_note") == "too large; not saved." and large.body == b""
         release_pending.clear()
         try:
             with page.expect_request_finished(lambda request: request.url.endswith("/api/pending")):
@@ -356,7 +369,7 @@ def test_sync_network_browser_history(
                 assert not session.network.search(url_pattern=r"/api/pending$")
                 release_pending.set()
             pending = _wait_saved(page, session.network, r"/api/pending$")[0]
-            assert pending.status == 200 and pending.response.json() == {"ok": True}
+            assert pending.status == 200 and pending.json() == {"ok": True}
         finally:
             release_pending.set()
         other = session.context.new_page()
@@ -370,7 +383,7 @@ def test_sync_network_browser_history(
         session.fetch(network_url + "/second")
         assert session.page_pool.pages[0].page is page
         session.close_pages()
-        assert page.is_closed() and session.network.get(post.id).url == post.url
+        assert page.is_closed() and session.network.get(post.meta["network_id"]).url == post.url
         fresh_id = session.network.last_id
         session.fetch(network_url + "/fresh")
         _wait_saved(session.page_pool.pages[0].page, session.network, r"/(?:fresh|api/initial)$", 2, fresh_id)
@@ -383,34 +396,31 @@ def test_sync_network_browser_history(
         _wait_saved(page, session.network, r"/api/closing$")
         last_id = session.network.last_id
     assert session.network.last_id == last_id
-    assert session.network.get(post.id).status == 201
-    assert session.network.get(post.id).method == "POST"
+    assert session.network.get(post.meta["network_id"]).status == 201
+    assert session.network.get(post.meta["network_id"]).method == "POST"
     closing = session.network.search(url_pattern=r"/api/closing$")[0]
-    assert closing.response.body == b"closing" and "body_note" not in closing.response.meta
-    assert unread.response.json() == {"ok": True}
-    assert initial.response.json() == {"ok": True}
-    assert post.response.json() == {"sent": True}
-    assert post.response.request_headers["x-sent"] == "request"
-    assert post.response.headers["x-recorded"] == "response"
+    assert closing.body == b"closing" and "body_note" not in closing.meta
+    assert unread.json() == {"ok": True}
+    assert initial.json() == {"ok": True}
+    assert post.json() == {"sent": True}
+    assert post.request_headers["x-sent"] == "request"
+    assert post.headers["x-recorded"] == "response"
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
-@pytest.mark.parametrize("capture_xhr", [".*", r"/api/"])
-async def test_async_network_browser_history(
-    session_type: Any, network_url: str, release_pending: Event, capture_xhr: str
-) -> None:
+async def test_async_network_browser_history(session_type: Any, network_url: str, release_pending: Event) -> None:
     async def initial_page(page: Any) -> None:
         await page.locator("body[data-initial=ready]").wait_for(state="attached")
 
-    async with session_type(**_options(capture_xhr=capture_xhr, page_action=initial_page)) as session:
-        response = await session.fetch(network_url + "/")
+    async with session_type(**_options(page_action=initial_page)) as session:
+        await session.fetch(network_url + "/")
         page = session.page_pool.pages[0].page
         await _wait_saved_async(
             page, session.network, r"/(?:api/(?:initial|xhr)|script\.js|style\.css|image\.png)?$", 6
         )
-        initial = _check_initial(session.network, response)
-        assert initial.response.json() == {"ok": True}
+        initial = _check_initial(session.network)
+        assert initial.json() == {"ok": True}
         page = session.page_pool.pages[0].page
         after_id = session.network.last_id
         async with page.expect_request_finished(lambda request: request.url.endswith("/api/large")):
@@ -419,11 +429,11 @@ async def test_async_network_browser_history(
             page, session.network, r"/(?:api/(?:post|repeated|status|large)|redirect|redirected)$", 7
         )
         post, status, large = _check_later(session.network, after_id)
-        assert post.response.request_headers["x-sent"] == "request"
-        assert post.response.headers["x-recorded"] == "response"
-        assert post.response.json() == {"sent": True}
-        assert status.response.body == b"Try later"
-        assert large.response.meta.get("body_note") == "too large; not saved." and large.response.body == b""
+        assert post.request_headers["x-sent"] == "request"
+        assert post.headers["x-recorded"] == "response"
+        assert post.json() == {"sent": True}
+        assert status.body == b"Try later"
+        assert large.meta.get("body_note") == "too large; not saved." and large.body == b""
         release_pending.clear()
         try:
             async with page.expect_request("**/api/pending"):
@@ -431,8 +441,7 @@ async def test_async_network_browser_history(
             assert not session.network.search(url_pattern=r"/api/pending$")
             release_pending.set()
             pending = (await _wait_saved_async(page, session.network, r"/api/pending$"))[0]
-            assert pending.status == 200 and pending.response.json() == {"ok": True}
-            assert not any("/api/pending" in record.url for record in response.captured_xhr)
+            assert pending.status == 200 and pending.json() == {"ok": True}
         finally:
             release_pending.set()
         other = await session.context.new_page()
@@ -446,7 +455,7 @@ async def test_async_network_browser_history(
         await session.fetch(network_url + "/second")
         assert session.page_pool.pages[0].page is page
         await session.close_pages()
-        assert page.is_closed() and session.network.get(post.id).url == post.url
+        assert page.is_closed() and session.network.get(post.meta["network_id"]).url == post.url
         fresh_id = session.network.last_id
         await session.fetch(network_url + "/fresh")
         await _wait_saved_async(
@@ -463,15 +472,15 @@ async def test_async_network_browser_history(
         await _wait_saved_async(page, session.network, r"/api/closing$")
         last_id = session.network.last_id
     assert session.network.last_id == last_id
-    assert session.network.get(post.id).status == 201
-    assert session.network.get(post.id).method == "POST"
+    assert session.network.get(post.meta["network_id"]).status == 201
+    assert session.network.get(post.meta["network_id"]).method == "POST"
     closing = session.network.search(url_pattern=r"/api/closing$")[0]
-    assert closing.response.body == b"closing" and "body_note" not in closing.response.meta
-    assert unread.response.json() == {"ok": True}
-    assert initial.response.json() == {"ok": True}
-    assert post.response.json() == {"sent": True}
-    assert post.response.request_headers["x-sent"] == "request"
-    assert post.response.headers["x-recorded"] == "response"
+    assert closing.body == b"closing" and "body_note" not in closing.meta
+    assert unread.json() == {"ok": True}
+    assert initial.json() == {"ok": True}
+    assert post.json() == {"sent": True}
+    assert post.request_headers["x-sent"] == "request"
+    assert post.headers["x-recorded"] == "response"
 
 
 def _check_eviction(network: Any) -> int:
@@ -500,8 +509,8 @@ def test_sync_network_browser_eviction_and_clear(session_type: Any, network_url:
             page.evaluate("fetch('/api/post', {method: 'POST', body: 'fresh'}).then(response => response.text())")
         _wait_saved(page, session.network, r"/api/post$")
         records = session.network.search()
-        assert len(records) == 1 and records[0].id > last_id
-        assert records[0].request_body == records[0].response.body == b"fresh"
+        assert len(records) == 1 and records[0].meta["network_id"] > last_id
+        assert records[0].meta["request_body"] == records[0].body == b"fresh"
 
 
 @pytest.mark.asyncio
@@ -521,8 +530,8 @@ async def test_async_network_browser_eviction_and_clear(session_type: Any, netwo
             await page.evaluate("fetch('/api/post', {method: 'POST', body: 'fresh'}).then(response => response.text())")
         await _wait_saved_async(page, session.network, r"/api/post$")
         records = session.network.search()
-        assert len(records) == 1 and records[0].id > last_id
-        assert records[0].request_body == records[0].response.body == b"fresh"
+        assert len(records) == 1 and records[0].meta["network_id"] > last_id
+        assert records[0].meta["request_body"] == records[0].body == b"fresh"
 
 
 PROXY_HTML = '<html><body><script>fetch("/api").then(response => response.json()).then(value => document.body.dataset.api = JSON.stringify(value));</script></body></html>'
@@ -549,10 +558,10 @@ def test_sync_network_browser_temporary_proxy_context(session_type: Any) -> None
         session.fetch("https://network.test/")
         assert not session.page_pool.pages
         record = session.network.search(url_pattern=r"/api$")[0]
-        assert record.status == 200 and record.resource_type == "fetch"
-        assert record.response.json() == {"temporary": True}
-    assert session.network.get(record.id).url == "https://network.test/api"
-    assert record.response.json() == {"temporary": True}
+        assert record.status == 200 and record.meta["resource_type"] == "fetch"
+        assert record.json() == {"temporary": True}
+    assert session.network.get(record.meta["network_id"]).url == "https://network.test/api"
+    assert record.json() == {"temporary": True}
 
 
 @pytest.mark.asyncio
@@ -577,10 +586,10 @@ async def test_async_network_browser_temporary_proxy_context(session_type: Any) 
         await session.fetch("https://network.test/")
         assert not session.page_pool.pages
         record = session.network.search(url_pattern=r"/api$")[0]
-        assert record.status == 200 and record.resource_type == "fetch"
-        assert record.response.json() == {"temporary": True}
-    assert session.network.get(record.id).url == "https://network.test/api"
-    assert record.response.json() == {"temporary": True}
+        assert record.status == 200 and record.meta["resource_type"] == "fetch"
+        assert record.json() == {"temporary": True}
+    assert session.network.get(record.meta["network_id"]).url == "https://network.test/api"
+    assert record.json() == {"temporary": True}
 
 
 def _check_saved_override(network: Any, network_url: str) -> None:
@@ -588,9 +597,8 @@ def _check_saved_override(network: Any, network_url: str) -> None:
     assert len(records) == 1
     record = records[0]
     assert record.url == network_url + "/api/overridden"
-    assert record.request_body == record.response.body == b"overridden"
+    assert record.meta["request_body"] == record.body == b"overridden"
     assert record.request_headers["x-overridden"] == "yes"
-    assert record.response.request_headers["x-overridden"] == "yes"
     assert not network.search(url_pattern=r"/api/original$")
 
 
@@ -670,7 +678,7 @@ def test_sync_network_close_during_unfinished_response(
             assert monotonic() - started < 5
             assert not gate.release.is_set() and not gate.finished.is_set()
             assert page.is_closed()
-            assert session.network.get(saved.id).response.body == BLANK
+            assert session.network.get(saved.meta["network_id"]).body == BLANK
             assert not session.network.search(url_pattern=r"/api/(?:held|fail)")
             assert bool(session.network._contexts) == (target == "page")
         finally:
@@ -678,7 +686,7 @@ def test_sync_network_close_during_unfinished_response(
             assert gate.finished.wait(5), "The server did not finish the released response"
     assert not session.network._contexts
     assert session.network.search() == [saved]
-    assert saved.response.body == BLANK
+    assert saved.body == BLANK
 
 
 @pytest.mark.asyncio
@@ -706,7 +714,7 @@ async def test_async_network_close_during_unfinished_response(
             await asyncio.wait_for(close(), timeout=5)
             assert not gate.release.is_set() and not gate.finished.is_set()
             assert page.is_closed()
-            assert session.network.get(saved.id).response.body == BLANK
+            assert session.network.get(saved.meta["network_id"]).body == BLANK
             assert not session.network.search(url_pattern=r"/api/(?:held|fail)")
             assert bool(session.network._contexts) == (target == "page")
         finally:
@@ -714,19 +722,19 @@ async def test_async_network_close_during_unfinished_response(
             assert await asyncio.to_thread(gate.finished.wait, 5), "The server did not finish the released response"
     assert not session.network._contexts
     assert session.network.search() == [saved]
-    assert saved.response.body == BLANK
+    assert saved.body == BLANK
 
 
 def _check_burst(network: Any, cursor: int, path: str, expected_paths: list[str]) -> int:
     newer = network.search(after_id=cursor, limit=1)
     assert len(newer) == 1 and urlsplit(newer[0].url).path == path
-    assert newer[0].id == cursor + 1
+    assert newer[0].meta["network_id"] == cursor + 1
     records = network.search(limit=2)
-    records += network.search(after_id=records[-1].id, limit=2)
+    records += network.search(after_id=records[-1].meta["network_id"], limit=2)
     assert [urlsplit(record.url).path for record in records] == expected_paths[-3:]
-    assert all(record.response.json() == {"ok": True} for record in records)
+    assert all(record.json() == {"ok": True} for record in records)
     assert network.dropped_count == max(0, len(expected_paths) - 3)
-    return newer[0].id
+    return newer[0].meta["network_id"]
 
 
 @pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
@@ -764,7 +772,7 @@ def test_sync_network_burst_completion_order_and_pagination(
     assert not session.network._contexts
     records = session.network.search()
     assert [urlsplit(record.url).path for record in records] == completed[-3:]
-    assert all(record.response.json() == {"ok": True} for record in records)
+    assert all(record.json() == {"ok": True} for record in records)
 
 
 @pytest.mark.asyncio
@@ -805,7 +813,7 @@ async def test_async_network_burst_completion_order_and_pagination(
     assert not session.network._contexts
     records = session.network.search()
     assert [urlsplit(record.url).path for record in records] == completed[-3:]
-    assert all(record.response.json() == {"ok": True} for record in records)
+    assert all(record.json() == {"ok": True} for record in records)
 
 
 def _check_wire_bodies(
@@ -814,29 +822,29 @@ def _check_wire_bodies(
     records = {urlsplit(record.url).path: record for record in network.search(url_pattern=r"/wire/")}
     assert set(records) == set(WIRE_PATHS)
     for path in ("/wire/chunked", "/wire/gzip"):
-        assert records[path].response.meta.get("body_note") == "too large; not saved."
-        assert records[path].response.body == b""
-    assert "content-length" not in records["/wire/chunked"].response_headers
-    assert records["/wire/chunked"].response_headers["transfer-encoding"] == "chunked"
-    assert int(records["/wire/gzip"].response_headers["content-length"]) < 1024 * 1024
-    assert records["/wire/gzip"].response_headers["content-encoding"] == "gzip"
+        assert records[path].meta.get("body_note") == "too large; not saved."
+        assert records[path].body == b""
+    assert "content-length" not in records["/wire/chunked"].headers
+    assert records["/wire/chunked"].headers["transfer-encoding"] == "chunked"
+    assert int(records["/wire/gzip"].headers["content-length"]) < 1024 * 1024
+    assert records["/wire/gzip"].headers["content-encoding"] == "gzip"
     assert bytes(wire["/wire/binary"]) == native_bodies["/wire/binary"] == BINARY
     for path in ("/wire/binary", "/wire/raw-charset"):
-        assert records[path].response.body == b""
-        assert records[path].response.meta.get("body_note") == "Non-text body; not saved."
+        assert records[path].body == b""
+        assert records[path].meta.get("body_note") == "Non-text body; not saved."
         details = _request_details(records[path], "response_body")
         assert details.data is None and details.note == "Non-text body; not saved."
     for path in CHARSET_PATHS:
         assert bytes(wire[path]) == CHARSET_BODY
-        assert records[path].response_headers["content-type"].lower().endswith(("iso-8859-15", '"iso-8859-15"'))
+        assert records[path].headers["content-type"].lower().endswith(("iso-8859-15", '"iso-8859-15"'))
     for path, text in native_texts.items():
-        assert records[path].response.body == native_bodies[path]
-        assert "body_note" not in records[path].response.meta
-        assert records[path].response.encoding == "utf-8"
+        assert records[path].body == native_bodies[path]
+        assert "body_note" not in records[path].meta
+        assert records[path].encoding == "utf-8"
         assert native_bodies[path].decode("utf-8") == text
-        assert records[path].response.get_all_text().strip() == text
+        assert records[path].get_all_text().strip() == text
         details = _request_details(records[path], "response_body")
-        assert details.data == text and details.request_id == records[path].id
+        assert details.data == text and details.request_id == records[path].meta["network_id"]
         assert details.part == "response_body" and details.note is None
     assert native_texts["/wire/charset"] == "caf\u00e9 \u20ac"
     assert native_bodies["/wire/charset"] == "caf\u00e9 \u20ac".encode("utf-8")
@@ -844,7 +852,7 @@ def _check_wire_bodies(
     assert records["/wire/head"].method == "HEAD" and records["/wire/head"].status == 200
     assert records["/wire/empty"].status == 204
     for path in ("/wire/head", "/wire/empty"):
-        assert records[path].response.body == b"" and "body_note" not in records[path].response.meta
+        assert records[path].body == b"" and "body_note" not in records[path].meta
 
 
 @pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
@@ -891,17 +899,17 @@ def _check_mime_bodies(network: Any, wire: dict[str, list[int]], reads: list[str
     for path, (content_type, body) in MIME_RESPONSES.items():
         record = records[path]
         assert bytes(wire[path]) == body
-        assert record.status == 200 and record.method == "GET" and record.resource_type == "fetch"
-        assert record.response_headers.get("content-type") == content_type
-        assert record.response_headers["x-recorded"] == "response"
-        assert int(record.response_headers["content-length"]) == len(body)
+        assert record.status == 200 and record.method == "GET" and record.meta["resource_type"] == "fetch"
+        assert record.headers.get("content-type") == content_type
+        assert record.headers["x-recorded"] == "response"
+        assert int(record.headers["content-length"]) == len(body)
         if path in TEXT_RESPONSES:
-            assert record.response.body == body and "body_note" not in record.response.meta
+            assert record.body == body and "body_note" not in record.meta
         else:
-            assert record.response.body == b""
-            assert record.response.meta.get("body_note") == "Non-text body; not saved."
+            assert record.body == b""
+            assert record.meta.get("body_note") == "Non-text body; not saved."
     for path in ("/mime/json", "/mime/vendor-json"):
-        assert records[path].response.json() == {"saved": True}
+        assert records[path].json() == {"saved": True}
 
 
 @pytest.mark.parametrize(
@@ -956,3 +964,61 @@ async def test_async_network_reads_only_text_bodies(
         _check_mime_bodies(session.network, wire, reads)
     assert not session.network._contexts
     _check_mime_bodies(session.network, wire, reads)
+
+
+def _check_unlimited_search(network: Any, after_id: int) -> None:
+    records = network.search(limit=None)
+    assert len(records) == 125 and network.dropped_count == 25 and network.last_id == after_id + 150
+    assert [record.meta["network_id"] for record in records] == list(range(after_id + 26, after_id + 151))
+    assert network.get(after_id + 25) is None
+    assert network.search() == records[:100]
+    for record in records:
+        index = int(urlsplit(record.url).path.rsplit("/", 1)[-1])
+        assert isinstance(record, Response) and network.get(record.meta["network_id"]) is record
+        assert record.request is None and record.meta["resource_type"] == "fetch"
+        assert record.method == ("POST" if index % 10 else "GET")
+        assert record.status == (201 if index % 10 else 200)
+        assert record.json() == ({"index": index} if index % 10 else {"ok": True})
+    filtered = network.search(
+        url_pattern=r"/api/search/\d+$",
+        method="post",
+        status=201,
+        resource_type="fetch",
+        include_static=False,
+        limit=None,
+    )
+    assert len(filtered) > 100 and filtered == [record for record in records if record.method == "POST"]
+    records.clear()
+    filtered.clear()
+    assert len(network.search(limit=None)) == 125 and len(network.search()) == 100
+
+
+@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+def test_sync_network_unlimited_search_respects_retention(session_type: Any, network_url: str) -> None:
+    with session_type(**_options(max_recorded_requests=125)) as session:
+        session.fetch(network_url + "/blank")
+        page = session.page_pool.pages[0].page
+        _wait_saved(page, session.network, r"/blank$")
+        after_id = session.network.last_id
+        session.network.clear()
+        assert page.evaluate(SEARCH_FETCH) is True
+        _wait_saved(page, session.network, r"/api/search/", after_id=after_id + 149)
+        _check_unlimited_search(session.network, after_id)
+    assert not session.network._contexts
+    _check_unlimited_search(session.network, after_id)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+async def test_async_network_unlimited_search_respects_retention(session_type: Any, network_url: str) -> None:
+    async with session_type(**_options(max_recorded_requests=125)) as session:
+        await session.fetch(network_url + "/blank")
+        page = session.page_pool.pages[0].page
+        await _wait_saved_async(page, session.network, r"/blank$")
+        after_id = session.network.last_id
+        session.network.clear()
+        assert await page.evaluate(SEARCH_FETCH) is True
+        await _wait_saved_async(page, session.network, r"/api/search/", after_id=after_id + 149)
+        _check_unlimited_search(session.network, after_id)
+    assert not session.network._contexts
+    _check_unlimited_search(session.network, after_id)

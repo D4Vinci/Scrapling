@@ -30,8 +30,10 @@ def _closed(session, context, browser, playwright):
 
 def test_sync_session_close_during_capture_does_not_restore_late_response():
     session, context, browser, playwright, capture = _session()
+    assert isinstance(session, SyncSession)
     capture(request(body=b"saved"))
     saved = session.network.get(1)
+    assert saved is not None
 
     def close_before_body_returns():
         session.close()
@@ -42,7 +44,7 @@ def test_sync_session_close_during_capture_does_not_restore_late_response():
     capture(native)
     session.close()
     _closed(session, context, browser, playwright)
-    assert session.network.search() == [saved] and saved.response.body == b"saved"
+    assert session.network.search() == [saved] and saved.body == b"saved"
     assert session.network.last_id == 1
 
 
@@ -50,8 +52,10 @@ def test_sync_session_close_during_capture_does_not_restore_late_response():
 @pytest.mark.parametrize("read_error", [False, True])
 async def test_async_session_close_does_not_wait_for_running_capture(read_error):
     session, context, browser, playwright, capture = _session(asynchronous=True)
+    assert isinstance(session, AsyncSession)
     await capture(request(body=b"saved", asynchronous=True))
     saved = session.network.get(1)
+    assert saved is not None
     reading, release = asyncio.Event(), asyncio.Event()
 
     async def held_body():
@@ -75,7 +79,7 @@ async def test_async_session_close_does_not_wait_for_running_capture(read_error)
         release.set()
         await asyncio.wait_for(task, timeout=2)
         await session.close()
-        assert session.network.search() == [saved] and saved.response.body == b"saved"
+        assert session.network.search() == [saved] and saved.body == b"saved"
         assert session.network.last_id == 1
     finally:
         release.set()

@@ -8,7 +8,7 @@ import pytest
 
 from scrapling.core._types import Any, Optional
 from scrapling.engines._browsers import _network
-from scrapling.engines._browsers._network import NetworkRecorder, NetworkRequest
+from scrapling.engines._browsers._network import NetworkRecorder
 from scrapling.engines.toolbelt.custom import Response
 
 
@@ -81,12 +81,14 @@ async def test_only_completed_responses_are_saved(asynchronous):
     assert network.search() == []
     await finish(context, native)
     record = network.get(1)
-    assert isinstance(record, NetworkRequest) and not hasattr(record, "request")
+    assert isinstance(record, Response) and record.request is None
     assert not hasattr(record, "state") and not hasattr(record, "failure")
-    assert record.id == 1 and record.url == native.url and record.method == "GET"
-    assert record.resource_type == "fetch" and record.status == 200
-    assert record.response.json() == {"ok": True}
-    assert "body_note" not in record.response.meta
+    assert not hasattr(record, "response")
+    assert record.meta["network_id"] == 1 and record.url == native.url and record.method == "GET"
+    assert record.meta["resource_type"] == "fetch" and record.status == 200
+    assert record.json() == {"ok": True}
+    assert record.meta == {"network_id": 1, "resource_type": "fetch", "request_body": None}
+    assert network.search()[0] is record and network.get(record.meta["network_id"]) is record
 
 
 @pytest.mark.asyncio
@@ -104,15 +106,15 @@ async def test_saved_response_has_final_request_data_and_survives_close(asynchro
     await finish(context, native)
     record = network.get(1)
     assert record is not None
-    assert record.url == native.url and record.response.url == native.url and record.method == "POST"
-    assert record.request_body == b"overridden"
-    assert record.request_headers == record.response.request_headers == native.headers
-    assert record.response_headers == record.response.headers == native.existing_response.headers
+    assert record.url == native.url and record.method == "POST"
+    assert record.meta["request_body"] == b"overridden"
+    assert record.request_headers == native.headers
+    assert record.headers == native.existing_response.headers
     assert network.search(url_pattern=original_url) == [] and network.search(method="POST") == [record]
     native.headers["x-overridden"] = "changed"
     native.existing_response.headers["content-type"] = "changed"
     assert record.request_headers["x-overridden"] == "yes"
-    assert record.response_headers["content-type"] == "application/json"
+    assert record.headers["content-type"] == "application/json"
     native.all_headers.assert_called_once_with()
     native.existing_response.all_headers.assert_called_once_with()
     native.existing_response.body.assert_called_once_with()
@@ -121,7 +123,7 @@ async def test_saved_response_has_final_request_data_and_survives_close(asynchro
     native.all_headers.side_effect = RuntimeError("Browser closed")
     native.existing_response.all_headers.side_effect = RuntimeError("Browser closed")
     native.existing_response.body.side_effect = RuntimeError("Browser closed")
-    assert record.response.json() == {"ok": True}
+    assert record.json() == {"ok": True}
     assert network.get(1) is record and network.search() == [record]
     native.existing_response.body.assert_called_once_with()
 
@@ -145,16 +147,18 @@ async def test_recording_skips_fetch_log_without_muting_normal_responses(monkeyp
     await finish(context, native)
     record = network.get(1)
     assert record is not None
-    assert (
-        record.response.meta
-        == {
+    assert record.meta == {
+        "network_id": 1,
+        "resource_type": "fetch",
+        "request_body": None,
+        **{
             "saved": {},
             "oversized": {"body_note": "too large; not saved."},
             "unreadable": {"body_note": "Body missing"},
             "invalid_charset": {},
             "non_text": {"body_note": "Non-text body; not saved."},
-        }[outcome]
-    )
+        }[outcome],
+    }
     logger.info.assert_not_called()
     response = Response(
         url="https://example.test/page",
@@ -178,8 +182,13 @@ async def test_oversized_response_keeps_headers_without_reading_body(monkeypatch
     await finish(context, native)
     record = network.get(1)
     assert record is not None
-    assert record.status == 200 and record.response.meta == {"body_note": "too large; not saved."}
-    assert record.response.body == b"" and record.response.headers["content-length"] == "5"
+    assert record.status == 200 and record.meta == {
+        "network_id": 1,
+        "resource_type": "fetch",
+        "request_body": None,
+        "body_note": "too large; not saved.",
+    }
+    assert record.body == b"" and record.headers["content-length"] == "5"
     native.existing_response.body.assert_not_called()
 
 
@@ -194,8 +203,13 @@ async def test_unreadable_response_keeps_headers_and_reports_unavailable(asynchr
     record = network.get(1)
     assert record is not None
     assert record.status == 200
-    assert record.response.meta == {"body_note": message or "could not be saved."}
-    assert record.response.body == b"" and record.response.headers == native.existing_response.headers
+    assert record.meta == {
+        "network_id": 1,
+        "resource_type": "fetch",
+        "request_body": None,
+        "body_note": message or "could not be saved.",
+    }
+    assert record.body == b"" and record.headers == native.existing_response.headers
 
 
 @pytest.mark.asyncio
@@ -224,16 +238,21 @@ async def test_non_text_records_keep_metadata_without_using_body_budget(monkeypa
         record = network.get(request_id)
         assert record is not None
         assert record.url == native.url and record.method == "POST" and record.status == 206
-        assert record.resource_type == "image" and record.request_body == b"submitted"
-        assert record.request_headers == native.headers and record.response_headers == response.headers
-        assert record.response.body == b"" and record.response.meta == {"body_note": "Non-text body; not saved."}
+        assert record.meta["resource_type"] == "image" and record.meta["request_body"] == b"submitted"
+        assert record.request_headers == native.headers and record.headers == response.headers
+        assert record.body == b"" and record.meta == {
+            "network_id": request_id,
+            "resource_type": "image",
+            "request_body": b"submitted",
+            "body_note": "Non-text body; not saved.",
+        }
         response.body.assert_not_called()
     await finish(context, request(body=b"5678", asynchronous=asynchronous))
-    assert [record.id for record in network.search()] == [1, 2, 3, 4, 5]
-    assert [record.response.body for record in network.search()] == [b"1234", b"", b"", b"", b"5678"]
+    assert [record.meta["network_id"] for record in network.search()] == [1, 2, 3, 4, 5]
+    assert [record.body for record in network.search()] == [b"1234", b"", b"", b"", b"5678"]
     assert network.dropped_count == 0
     await finish(context, request(body=b"9", asynchronous=asynchronous))
-    assert [record.id for record in network.search()] == [2, 3, 4, 5, 6]
+    assert [record.meta["network_id"] for record in network.search()] == [2, 3, 4, 5, 6]
     assert network.get(1) is None and network.dropped_count == 1
 
 
@@ -244,15 +263,15 @@ async def test_total_body_budget_evicts_oldest_records_and_clear_releases_budget
     network, context = recorder(asynchronous=asynchronous)
     for body in (b"one", b"two", b"three"):
         await finish(context, request(body=body, asynchronous=asynchronous))
-    assert [record.id for record in network.search()] == [3]
+    assert [record.meta["network_id"] for record in network.search()] == [3]
     record = network.get(3)
     assert record is not None
-    assert network.dropped_count == 2 and record.response.body == b"three"
+    assert network.dropped_count == 2 and record.body == b"three"
     network.clear()
     assert network.dropped_count == 0 and network.last_id == 3 and not network.search()
     for _ in range(2):
         await finish(context, request(body=b"new", asynchronous=asynchronous))
-    assert [record.id for record in network.search()] == [4, 5] and network.dropped_count == 0
+    assert [record.meta["network_id"] for record in network.search()] == [4, 5] and network.dropped_count == 0
 
 
 @pytest.mark.asyncio
@@ -262,13 +281,13 @@ async def test_count_eviction_releases_saved_body_budget(monkeypatch, asynchrono
     network, context = recorder(max_requests=1, asynchronous=asynchronous)
     for _ in range(3):
         await finish(context, request(body=b"new", asynchronous=asynchronous))
-    assert [record.id for record in network.search()] == [3]
+    assert [record.meta["network_id"] for record in network.search()] == [3]
     record = network.get(3)
     assert record is not None
-    assert record.response.body == b"new" and network.dropped_count == 2
+    assert record.body == b"new" and network.dropped_count == 2
     network.clear()
     await finish(context, request(body=b"new", asynchronous=asynchronous))
-    assert [record.id for record in network.search()] == [4] and network.dropped_count == 0
+    assert [record.meta["network_id"] for record in network.search()] == [4] and network.dropped_count == 0
 
 
 @pytest.mark.asyncio
@@ -302,7 +321,7 @@ async def test_late_callback_cannot_publish_after_clear_or_detach(change, starte
             await finish(context, request(body=b"new", asynchronous=True))
             record = network.get(1)
             assert record is not None
-            assert record.response.body == b"new"
+            assert record.body == b"new"
     finally:
         release.set()
         await asyncio.gather(*tasks)
@@ -328,10 +347,10 @@ async def test_records_are_published_in_save_order_without_waiting_for_other_bod
         await finish(context, request(body=b"second", asynchronous=True))
         record = network.get(1)
         assert record is not None
-        assert record.response.body == b"second"
+        assert record.body == b"second"
         release.set()
         await asyncio.wait_for(asyncio.gather(*tasks), timeout=2)
-        assert [record.response.body for record in network.search()] == [b"second", b"first"]
+        assert [record.body for record in network.search()] == [b"second", b"first"]
     finally:
         release.set()
         await asyncio.gather(*tasks)
@@ -374,11 +393,59 @@ def test_search_filters_include_completed_http_errors():
         request(url="https://example.test/api", resource_type="xhr"),
     ):
         context.emit("requestfinished", native)
-    assert [record.id for record in network.search(include_static=False)] == [2, 3, 4]
-    assert [record.id for record in network.search(after_id=2, limit=1)] == [3]
-    assert [record.id for record in network.search(url_pattern="/api$", method="post", status=503)] == [2]
-    assert [record.id for record in network.search(resource_type="xhr")] == [4]
+    assert [record.meta["network_id"] for record in network.search(include_static=False)] == [2, 3, 4]
+    assert [record.meta["network_id"] for record in network.search(after_id=2, limit=1)] == [3]
+    assert [record.meta["network_id"] for record in network.search(url_pattern="/api$", method="post", status=503)] == [
+        2
+    ]
+    assert [record.meta["network_id"] for record in network.search(resource_type="xhr")] == [4]
     assert network.get(100) is None and network.search(url_pattern="absent") == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_unlimited_search_returns_all_retained_matches_and_an_independent_list(asynchronous):
+    network, context = recorder(max_requests=250, asynchronous=asynchronous)
+    for request_id in range(1, 331):
+        native = request(
+            url=f"https://example.test/{'api' if request_id % 2 == 0 else 'page'}/{request_id}",
+            method="POST" if request_id % 2 == 0 else "GET",
+            resource_type="xhr" if request_id % 2 == 0 else "document",
+            status=503 if request_id % 2 == 0 else 200,
+            body=f'{{"index":{request_id}}}'.encode(),
+            asynchronous=asynchronous,
+        )
+        await finish(context, native)
+    records = network.search(limit=None)
+    assert len(records) == 250 and network.dropped_count == 80 and network.last_id == 330
+    assert [record.meta["network_id"] for record in records] == list(range(81, 331))
+    assert network.get(80) is None
+    assert network.search() == records[:100]
+    assert network.search(limit=7) == records[:7]
+    assert all(isinstance(record, Response) and network.get(record.meta["network_id"]) is record for record in records)
+    assert all(record.request is None and record.json() == {"index": index} for index, record in enumerate(records, 81))
+    filtered = network.search(
+        url_pattern=r"/api/\d+$",
+        method="post",
+        resource_type="xhr",
+        status=503,
+        after_id=100,
+        include_static=False,
+        limit=None,
+    )
+    assert len(filtered) == 115
+    assert [record.meta["network_id"] for record in filtered] == list(range(102, 331, 2))
+    assert network.search(url_pattern="absent", limit=None) == []
+    assert network.search(after_id=330, limit=None) == []
+    records.clear()
+    filtered.reverse()
+    filtered.pop()
+    assert len(network.search(limit=None)) == 250 and network.get(330) is not None
+    assert [record.meta["network_id"] for record in network.search(resource_type="xhr", limit=None)] == list(
+        range(82, 331, 2)
+    )
+    network.clear()
+    assert network.search(limit=None) == [] and network.get(330) is None
 
 
 @pytest.mark.parametrize("options", [{"limit": 0}, {"after_id": -1}, {"url_pattern": "["}])
@@ -428,7 +495,7 @@ async def test_native_handles_are_not_kept_in_history(asynchronous, outcome):
         record = network.get(1)
         assert record is not None
         assert record.status == 200
-        assert record.response.meta.get("body_note") == ("Body missing" if outcome == "body_error" else None)
+        assert record.meta.get("body_note") == ("Body missing" if outcome == "body_error" else None)
     del native
     gc.collect()
     assert native_ref() is None and response_ref() is None
@@ -454,7 +521,7 @@ def test_sync_conversion_cannot_restore_history_after_reentrant_reset(change):
     native.existing_response.body.side_effect = body
     context.emit("requestfinished", native)
     expected = [] if change == "detach" else [b"new"]
-    assert [record.response.body for record in network.search()] == expected
+    assert [record.body for record in network.search()] == expected
     assert network.last_id == len(expected)
 
 
@@ -480,7 +547,7 @@ async def test_cancelled_conversion_publishes_nothing_and_later_requests_still_s
         await finish(context, request(body=b"saved", asynchronous=True))
         record = network.get(1)
         assert record is not None
-        assert record.response.body == b"saved"
+        assert record.body == b"saved"
     finally:
         release.set()
         await asyncio.gather(*tasks, return_exceptions=True)
@@ -496,10 +563,10 @@ async def test_exact_storage_boundaries_keep_records_until_exceeded(monkeypatch,
     network, context = recorder(max_requests=3 if budget == "body" else 2, asynchronous=asynchronous)
     for body in (b"1111", b"2222"):
         await finish(context, request(body=body, asynchronous=asynchronous))
-    assert [record.response.body for record in network.search()] == [b"1111", b"2222"]
+    assert [record.body for record in network.search()] == [b"1111", b"2222"]
     assert network.dropped_count == 0
     await finish(context, request(body=b"3", asynchronous=asynchronous))
-    assert [record.response.body for record in network.search()] == [b"2222", b"3"]
+    assert [record.body for record in network.search()] == [b"2222", b"3"]
     assert network.get(1) is None and network.dropped_count == 1
 
 
@@ -517,7 +584,7 @@ async def test_unreadable_request_metadata_is_omitted_and_native_handles_are_rel
     gc.collect()
     assert native_ref() is None and response_ref() is None
     await finish(context, request(body=b"next", asynchronous=asynchronous))
-    assert [record.response.body for record in network.search()] == [b"next"]
+    assert [record.body for record in network.search()] == [b"next"]
 
 
 @pytest.mark.asyncio
@@ -552,8 +619,8 @@ async def test_saved_native_bytes_and_text_encoding_remain_valid_after_detach(as
     network._detach()
     record = network.get(1)
     assert record is not None
-    assert record.response.body == body
-    assert record.response_headers["content-type"] == content_type
-    assert record.response.encoding == encoding
-    assert record.response.get_all_text().strip() == expected
-    assert "body_note" not in record.response.meta
+    assert record.body == body
+    assert record.headers["content-type"] == content_type
+    assert record.encoding == encoding
+    assert record.get_all_text().strip() == expected
+    assert "body_note" not in record.meta
