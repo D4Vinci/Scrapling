@@ -86,12 +86,6 @@ MySpider().start()
   <a href="https://www.swiftproxy.net/?ref=D4Vinci" target="_blank" title="Scalable Solutions for Web Data Access">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SwiftProxy.png" class="ad">
   </a>
-  <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank" title="Affordable Residential in 190+ Countries">
-    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png" class="ad">
-  </a>
-  <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png" class="ad">
-  </a>
   <a href="https://byteful.com/?utm_source=scrapling_website&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png" class="ad">
   </a>
@@ -100,7 +94,6 @@ MySpider().start()
   </a>
   <br />
   <br />
-    <a href="https://www.novada.com/?d4vinci-scrapling" target="_blank" title="The All-in-One Solution for Every Data Scraping Scenario"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/novada.jpg"></a>
     <a href="https://cloro.dev/?utm_source=referral&utm_medium=scrapling" target="_blank" title="The search API for the AI era"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/cloro.jpg"></a>
 </div>
 

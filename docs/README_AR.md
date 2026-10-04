@@ -191,26 +191,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank" title="Affordable Residential in 190+ Countries">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png">
-      </a>
-    </td>
-    <td>
-    يوفر <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank">NiuProxy</a> بروكسيات سكنية دوّارة ابتداءً من $0.35 لكل جيجابايت. استخدم كود Scrapling الحصري PAY2 واحصل على خصم 10% عند شحن رصيدك.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: بروكسيات موبايل 4G/5G على شرائح SIM وأجهزة حقيقية. مخصصة أو مشتركة، ثابتة، دوّارة، إعدادات مسبقة لبصمة p0f، دعم API/MCP وجميع البروتوكولات. استخدم كود SCRAPLING20 للحصول على خصم 20%.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
       </a>
@@ -226,7 +206,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 28 مليون عنوان IP سكني نظيف لاستخراج بيانات الويب وأتمتة المتصفح بشكل موثوق. حركة بيانات لا تنتهي صلاحيتها تبدأ من $2/GB. 195 دولة. جلسات ثابتة أو دوّارة. استهداف حسب المدينة/ISP/ASN. تجربة بسعر $1.95/350MB. الكود SCRAPEANDTAKE: خصم 25%.
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: قلّل الحظر واختبارات CAPTCHA بنسبة 90%. 28 مليون عنوان IP سكني عالي الجودة لاستخراج بيانات الويب بكثافة. 195 دولة. استهداف حسب المدينة/ISP/الرمز البريدي (ZIP). جلسات ثابتة أو دوّارة. حركة بيانات لا تنتهي صلاحيتها تبدأ من $2/GB. الكود <strong>SCRAPEANDTAKE</strong>: <em>خصم 25%</em>.
     </td>
   </tr>
 </table>
@@ -236,7 +216,6 @@ MySpider().start()
 
 <!-- sponsors -->
 
-<a href="https://www.novada.com/?d4vinci-scrapling" target="_blank" title="The All-in-One Solution for Every Data Scraping Scenario"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/novada.jpg"></a>
 <a href="https://cloro.dev/?utm_source=referral&utm_medium=scrapling" target="_blank" title="The search API for the AI era"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/cloro.jpg"></a>
 
 <br/>
