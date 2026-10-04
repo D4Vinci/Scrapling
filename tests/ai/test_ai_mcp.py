@@ -740,7 +740,7 @@ class TestModeSplitContract:
             assert result.structured_content is not None
             assert result.structured_content["session_type"] == "stealthy"
             session = _FakeStealthySession.instances[-1]
-            assert session.kwargs == {**options, "block_ads": True}
+            assert session.kwargs == {**options, "block_ads": True, "record_requests": True}
             assert server._sessions["browser"].session is session
             closed = await client.call_tool("close_session", {"session_id": "browser"})
             assert not closed.is_error
@@ -980,7 +980,7 @@ class TestMCPServerAuthentication:
         monkeypatch.delenv(MCP_AUTH_TOKEN_ENV, raising=False)
         built = ScraplingMCPServer(auth_token=SHARED_KEY)._build_server("0.0.0.0", 8000)
 
-        assert len(built._tool_manager.list_tools()) == 14
+        assert len(built._tool_manager.list_tools()) == 16
 
     def test_http_without_a_token_refuses_to_serve(self, monkeypatch):
         """The streamable-http transport requires authentication unless the caller explicitly opts out"""
@@ -1037,7 +1037,7 @@ class TestServerToolRegistration:
 
     @pytest.mark.asyncio
     async def test_tools_are_listed_with_expected_schemas(self):
-        """All 14 tools are advertised, with plain content for screenshots, snapshots, actions, and JavaScript"""
+        """All 16 tools are advertised, with plain content for screenshots, snapshots, actions, and JavaScript"""
         server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
         async with Client(server) as client:
             assert client.instructions
@@ -1067,7 +1067,7 @@ class TestServerToolRegistration:
                 result = await client.call_tool(name, {})
                 assert result.is_error
 
-        assert len(tools) == 14
+        assert len(tools) == 16
         assert tools["browser_screenshot"].output_schema is None
         assert tools["browser_snapshot"].output_schema is None
         assert tools["browser_actions"].output_schema is None
@@ -1175,7 +1175,7 @@ class TestServerToolRegistration:
         assert result.ttl_ms == 3_600_000 and result.cache_scope == "public"
 
         annotations = {tool.name: tool.annotations for tool in result.tools if tool.annotations is not None}
-        assert len(annotations) == 14
+        assert len(annotations) == 16
         for name in (
             "make_request",
             "bulk_get",
