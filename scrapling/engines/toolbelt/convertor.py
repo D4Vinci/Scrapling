@@ -1,6 +1,8 @@
+from email.message import Message
+from email.utils import collapse_rfc2231_value
 from functools import lru_cache
-from re import compile as re_compile
 
+from lxml.etree import LxmlError
 from curl_cffi.requests import Response as CurlResponse
 from playwright._impl._errors import Error as PlaywrightError
 from patchright._impl._errors import Error as PatchrightError
@@ -10,9 +12,6 @@ from playwright.async_api import Page as AsyncPage, Response as AsyncResponse
 from scrapling.core.utils import log
 from .custom import Response, StatusText
 from scrapling.core._types import Dict, List, Optional
-
-__CHARSET_RE__ = re_compile(r"""charset=["']?([\w-]+)""")
-
 
 SHADOW_SNAPSHOT_JS = r"""
 () => {
@@ -61,17 +60,41 @@ class ResponseFactory:
     response objects, and managing encoding, headers, cookies, and other attributes.
     """
 
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=16)
-    def __extract_browser_encoding(cls, content_type: str | None, default: str = "utf-8") -> str:
-        """Extract browser encoding from headers.
-        Ex: from header "content-type: text/html; charset=utf-8" -> "utf-8
-        """
-        if content_type:
-            # Because Playwright can't do that by themselves like all libraries for some reason :3
-            match = __CHARSET_RE__.search(content_type)
-            return match.group(1) if match else default
-        return default
+    def _extract_encoding(content_type: Optional[str], default: str = "utf-8") -> str:
+        """Read the Content-Type charset, or use the default."""
+        message = Message()
+        message["content-type"] = content_type or ""
+        return collapse_rfc2231_value(message.get_param("charset") or default).strip("'\"") or default
+
+    @staticmethod
+    def _check_body_size(size: int | str, max_body_bytes: Optional[int]) -> None:
+        if max_body_bytes is not None:
+            try:
+                size = int(size)
+            except ValueError:
+                return
+            if size > max_body_bytes:
+                raise ValueError("too large; not saved.")
+
+    @staticmethod
+    def _build_browser_response(arguments: Dict, max_body_bytes: Optional[int]) -> Response:
+        if max_body_bytes is not None:
+            try:
+                arguments["content"].decode("utf-8")
+            except UnicodeDecodeError:
+                pass
+            else:
+                arguments["encoding"] = "utf-8"
+        try:
+            return Response(**arguments)
+        except (LookupError, ValueError, LxmlError):
+            if max_body_bytes is None:
+                raise
+            response = Response(**{**arguments, "content": b"", "encoding": "utf-8"})
+            response._raw_body = arguments["content"]
+            return response
 
     @classmethod
     def _process_response_history(cls, first_response: SyncResponse, parser_arguments: Dict) -> list[Response]:
@@ -94,9 +117,7 @@ class ResponseFactory:
                                 "reason": (current_response.status_text or StatusText.get(current_response.status))
                                 if current_response
                                 else StatusText.get(301),
-                                "encoding": cls.__extract_browser_encoding(
-                                    current_response.headers.get("content-type", "")
-                                )
+                                "encoding": cls._extract_encoding(current_response.headers.get("content-type", ""))
                                 if current_response
                                 else "utf-8",
                                 "cookies": tuple(),
@@ -127,6 +148,7 @@ class ResponseFactory:
         xhr_captured: Optional[List[SyncResponse]] = None,
         collect_history: bool = True,
         pierce_shadow: bool = False,
+        max_body_bytes: Optional[int] = None,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -146,6 +168,7 @@ class ResponseFactory:
         :param xhr_captured: Optional list of captured Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
         :param pierce_shadow: Include open shadow roots in the HTML snapshot. Disabled by default.
+        :param max_body_bytes: Optional recorded-body limit. Adds a note for skipped or unreadable bodies and preserves partial headers.
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
         """
@@ -154,41 +177,66 @@ class ResponseFactory:
         if not final_response:
             raise ValueError("Failed to get a response from the page")
 
-        encoding = cls.__extract_browser_encoding(final_response.headers.get("content-type", ""))
+        encoding = cls._extract_encoding(final_response.headers.get("content-type", ""))
         # PlayWright API sometimes give empty status text for some reason!
         status_text = final_response.status_text or StatusText.get(final_response.status)
 
         history = cls._process_response_history(first_response, parser_arguments) if collect_history else []
         snapshot = None
+        body_meta: Dict = {}
         try:
-            if page and "html" in final_response.all_headers().get("content-type", ""):
-                if pierce_shadow:
-                    try:
-                        snapshot = page.evaluate(SHADOW_SNAPSHOT_JS)
-                    except Exception as e:
-                        log.warning(f"Failed to extract shadow roots, using page HTML: {e}")
-                page_content = (snapshot or cls._get_page_content(page)).encode("utf-8")
-                encoding = "utf-8"
+            if max_body_bytes is not None and (
+                final_response.request.method == "HEAD" or final_response.status in (204, 205, 304)
+            ):
+                page_content = b""
             else:
-                page_content = final_response.body()
+                cls._check_body_size(final_response.headers.get("content-length", "0"), max_body_bytes)
+                if page and "html" in final_response.all_headers().get("content-type", ""):
+                    if pierce_shadow:
+                        try:
+                            snapshot = page.evaluate(SHADOW_SNAPSHOT_JS)
+                        except Exception as e:
+                            log.warning(f"Failed to extract shadow roots, using page HTML: {e}")
+                    page_content = (snapshot or cls._get_page_content(page)).encode("utf-8")
+                    encoding = "utf-8"
+                else:
+                    page_content = final_response.body()
+                cls._check_body_size(len(page_content), max_body_bytes)
         except Exception as e:  # pragma: no cover
-            log.error(f"Error getting page content: {e}")
+            if max_body_bytes is None:
+                log.error(f"Error getting page content: {e}")
             page_content = b""
+            body_meta["body_note"] = str(e) or "could not be saved."
 
-        response = Response(
-            **{
+        try:
+            headers = first_response.all_headers()
+        except Exception:
+            if max_body_bytes is None:
+                raise
+            headers = first_response.headers
+            body_meta["headers_partial"] = True
+        try:
+            request_headers = first_response.request.all_headers()
+        except Exception:
+            if max_body_bytes is None:
+                raise
+            request_headers = first_response.request.headers
+            body_meta["request_headers_partial"] = True
+        response = cls._build_browser_response(
+            {
                 "url": page.url if page else first_response.url,
                 "content": page_content,
                 "status": final_response.status,
                 "reason": status_text,
                 "encoding": encoding,
                 "cookies": tuple(dict(cookie) for cookie in page.context.cookies()) if page else {},
-                "headers": first_response.all_headers(),
-                "request_headers": first_response.request.all_headers(),
+                "headers": headers,
+                "request_headers": request_headers,
                 "history": history,
-                "meta": meta,
+                "meta": {**(meta or {}), **body_meta} if max_body_bytes is not None else meta,
                 **parser_arguments,
-            }
+            },
+            max_body_bytes,
         )
         if xhr_captured:
             response.captured_xhr = [
@@ -219,9 +267,7 @@ class ResponseFactory:
                                 "reason": (current_response.status_text or StatusText.get(current_response.status))
                                 if current_response
                                 else StatusText.get(301),
-                                "encoding": cls.__extract_browser_encoding(
-                                    current_response.headers.get("content-type", "")
-                                )
+                                "encoding": cls._extract_encoding(current_response.headers.get("content-type", ""))
                                 if current_response
                                 else "utf-8",
                                 "cookies": tuple(),
@@ -282,6 +328,7 @@ class ResponseFactory:
         xhr_captured: Optional[List[AsyncResponse]] = None,
         collect_history: bool = True,
         pierce_shadow: bool = False,
+        max_body_bytes: Optional[int] = None,
     ) -> Response:
         """
         Transforms a Playwright response into an internal `Response` object, encapsulating
@@ -301,6 +348,7 @@ class ResponseFactory:
         :param xhr_captured: Optional list of captured async Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
         :param pierce_shadow: Include open shadow roots in the HTML snapshot. Disabled by default.
+        :param max_body_bytes: Optional recorded-body limit. Adds a note for skipped or unreadable bodies and preserves partial headers.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -310,41 +358,66 @@ class ResponseFactory:
         if not final_response:
             raise ValueError("Failed to get a response from the page")
 
-        encoding = cls.__extract_browser_encoding(final_response.headers.get("content-type", ""))
+        encoding = cls._extract_encoding(final_response.headers.get("content-type", ""))
         # PlayWright API sometimes give empty status text for some reason!
         status_text = final_response.status_text or StatusText.get(final_response.status)
 
         history = await cls._async_process_response_history(first_response, parser_arguments) if collect_history else []
         snapshot = None
+        body_meta: Dict = {}
         try:
-            if page and "html" in (await final_response.all_headers()).get("content-type", ""):
-                if pierce_shadow:
-                    try:
-                        snapshot = await page.evaluate(SHADOW_SNAPSHOT_JS)
-                    except Exception as e:
-                        log.warning(f"Failed to extract shadow roots, using page HTML: {e}")
-                page_content = (snapshot or await cls._get_async_page_content(page)).encode("utf-8")
-                encoding = "utf-8"
+            if max_body_bytes is not None and (
+                final_response.request.method == "HEAD" or final_response.status in (204, 205, 304)
+            ):
+                page_content = b""
             else:
-                page_content = await final_response.body()
+                cls._check_body_size(final_response.headers.get("content-length", "0"), max_body_bytes)
+                if page and "html" in (await final_response.all_headers()).get("content-type", ""):
+                    if pierce_shadow:
+                        try:
+                            snapshot = await page.evaluate(SHADOW_SNAPSHOT_JS)
+                        except Exception as e:
+                            log.warning(f"Failed to extract shadow roots, using page HTML: {e}")
+                    page_content = (snapshot or await cls._get_async_page_content(page)).encode("utf-8")
+                    encoding = "utf-8"
+                else:
+                    page_content = await final_response.body()
+                cls._check_body_size(len(page_content), max_body_bytes)
         except Exception as e:  # pragma: no cover
-            log.error(f"Error getting page content in async: {e}")
+            if max_body_bytes is None:
+                log.error(f"Error getting page content in async: {e}")
             page_content = b""
+            body_meta["body_note"] = str(e) or "could not be saved."
 
-        response = Response(
-            **{
+        try:
+            headers = await first_response.all_headers()
+        except Exception:
+            if max_body_bytes is None:
+                raise
+            headers = first_response.headers
+            body_meta["headers_partial"] = True
+        try:
+            request_headers = await first_response.request.all_headers()
+        except Exception:
+            if max_body_bytes is None:
+                raise
+            request_headers = first_response.request.headers
+            body_meta["request_headers_partial"] = True
+        response = cls._build_browser_response(
+            {
                 "url": page.url if page else first_response.url,
                 "content": page_content,
                 "status": final_response.status,
                 "reason": status_text,
                 "encoding": encoding,
                 "cookies": tuple(dict(cookie) for cookie in await page.context.cookies()) if page else {},
-                "headers": await first_response.all_headers(),
-                "request_headers": await first_response.request.all_headers(),
+                "headers": headers,
+                "request_headers": request_headers,
                 "history": history,
-                "meta": meta,
+                "meta": {**(meta or {}), **body_meta} if max_body_bytes is not None else meta,
                 **parser_arguments,
-            }
+            },
+            max_body_bytes,
         )
         if xhr_captured:
             response.captured_xhr = [

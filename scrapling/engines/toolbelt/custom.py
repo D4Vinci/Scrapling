@@ -52,6 +52,8 @@ class Response(Selector):
         method: str = "GET",
         history: List | None = None,
         meta: Dict[str, Any] | None = None,
+        *,
+        _log: bool = True,
         **selector_config: Any,
     ):
         if isinstance(content, str):
@@ -70,8 +72,8 @@ class Response(Selector):
             encoding=encoding,
             **selector_config,
         )
-        # For easier debugging while working from a Python shell
-        log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
+        if _log:
+            log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
 
         if meta and not isinstance(meta, dict):
             raise TypeError(f"Response meta should be dictionary but got {type(meta).__name__} instead!")

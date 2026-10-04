@@ -91,6 +91,8 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     retries: RetriesCount = 3
     retry_delay: Seconds = 1
     capture_xhr: str | None = None
+    record_requests: bool = False
+    max_recorded_requests: Annotated[int, Meta(ge=1)] = 1000
     executable_path: Optional[str] = None
     dns_over_https: bool = False
 

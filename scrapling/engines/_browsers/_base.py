@@ -19,6 +19,7 @@ from playwright._impl._errors import Error as PlaywrightError
 
 from scrapling.parser import Selector
 from scrapling.engines._browsers._page import PageInfo, PagePool
+from scrapling.engines._browsers._network import NetworkRecorder
 from scrapling.engines._browsers._validators import validate, PlaywrightConfig, StealthConfig
 from scrapling.engines._browsers._config_tools import __default_chrome_useragent__, __default_useragent__
 from scrapling.engines.toolbelt.navigation import (
@@ -51,8 +52,9 @@ class SyncSession:
     if TYPE_CHECKING:
         _build_context_with_proxy: Callable[..., Dict[str, Any]]
 
-    def __init__(self, max_pages: int = 1):
+    def __init__(self, max_pages: int = 1, record_requests: bool = False, max_recorded_requests: int = 1000):
         self.max_pages = max_pages
+        self.network = NetworkRecorder(enabled=record_requests, max_requests=max_recorded_requests)
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
         self.playwright: Any = None
@@ -71,6 +73,7 @@ class SyncSession:
 
     def close(self):  # pragma: no cover
         """Close all resources"""
+        self.network._detach()
         if not self._is_alive:
             return
 
@@ -104,6 +107,7 @@ class SyncSession:
         if config.cookies:  # pragma: no cover
             ctx.add_cookies(config.cookies)
 
+        self.network._attach(ctx)
         return ctx
 
     def _get_page(
@@ -224,6 +228,7 @@ class SyncSession:
             finally:
                 if page_info is not None:
                     self.page_pool.remove_page(page_info)
+                self.network._detach(context)
                 context.close()
         else:
             # Standard mode: use PagePool with persistent context
@@ -245,8 +250,9 @@ class AsyncSession:
     if TYPE_CHECKING:
         _build_context_with_proxy: Callable[..., Dict[str, Any]]
 
-    def __init__(self, max_pages: int = 1):
+    def __init__(self, max_pages: int = 1, record_requests: bool = False, max_recorded_requests: int = 1000):
         self.max_pages = max_pages
+        self.network = NetworkRecorder(enabled=record_requests, max_requests=max_recorded_requests, asynchronous=True)
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
         self.playwright: Any = None
@@ -266,6 +272,7 @@ class AsyncSession:
 
     async def close(self):
         """Close all resources"""
+        self.network._detach()
         if not self._is_alive:  # pragma: no cover
             return
 
@@ -301,6 +308,7 @@ class AsyncSession:
         if config.cookies:  # pragma: no cover
             await ctx.add_cookies(config.cookies)
 
+        self.network._attach(ctx)
         return ctx
 
     async def _get_page(
@@ -441,6 +449,7 @@ class AsyncSession:
             finally:
                 if page_info is not None:
                     self.page_pool.remove_page(page_info)
+                self.network._detach(context)
                 await context.close()
         else:
             # Standard mode: use PagePool with persistent context
