@@ -355,6 +355,8 @@ with DynamicSession(capture_xhr=r"https://api\.example\.com/.*", headless=True) 
 
 Each item in `captured_xhr` is a full `Response` object with the same properties (`.url`, `.status`, `.headers`, `.body`, etc.). When `capture_xhr` is not set or is `None`, `captured_xhr` is an empty list.
 
+Use `capture_xhr=".*"` to capture all XHR/fetch URLs. Invalid regular expressions raise an error before the browser starts.
+
 ### Network History
 
 Enable `record_requests` on a browser session to inspect completed requests across page loads, actions, and tabs. The history covers the session's contexts, including temporary proxy contexts, and saves responses as Scrapling `Response` objects. Find API calls, HTTP errors, and redirects without sending requests again, then read saved headers and bodies even after the session closes. Failed and unfinished requests are omitted; completed HTTP 4xx and 5xx responses are included.

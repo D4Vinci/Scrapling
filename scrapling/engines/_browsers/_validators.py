@@ -1,4 +1,5 @@
 from pathlib import Path
+from re import compile as re_compile, error as RegexError
 from typing import Annotated
 from functools import lru_cache
 from urllib.parse import urlparse
@@ -124,6 +125,11 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
             self.additional_args = {}
         if not self.capture_xhr:
             self.capture_xhr = None
+        else:
+            try:
+                re_compile(self.capture_xhr)
+            except RegexError as error:
+                raise ValueError(f"Invalid capture_xhr regex: {error}. Use '.*' to match all URLs.") from error
 
         if self.init_script is not None:
             validation_msg = _is_invalid_file_path(self.init_script)

@@ -322,10 +322,13 @@ def _check_later(network: Any, after_id: int) -> tuple[Any, Any, Any]:
 
 
 @pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
-def test_sync_network_browser_history(session_type: Any, network_url: str, release_pending: Event) -> None:
+@pytest.mark.parametrize("capture_xhr", [".*", r"/api/"])
+def test_sync_network_browser_history(
+    session_type: Any, network_url: str, release_pending: Event, capture_xhr: str
+) -> None:
     with session_type(
         **_options(
-            capture_xhr=r"/api/",
+            capture_xhr=capture_xhr,
             page_action=lambda page: page.locator("body[data-initial=ready]").wait_for(state="attached"),
         )
     ) as session:
@@ -393,11 +396,14 @@ def test_sync_network_browser_history(session_type: Any, network_url: str, relea
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
-async def test_async_network_browser_history(session_type: Any, network_url: str, release_pending: Event) -> None:
+@pytest.mark.parametrize("capture_xhr", [".*", r"/api/"])
+async def test_async_network_browser_history(
+    session_type: Any, network_url: str, release_pending: Event, capture_xhr: str
+) -> None:
     async def initial_page(page: Any) -> None:
         await page.locator("body[data-initial=ready]").wait_for(state="attached")
 
-    async with session_type(**_options(capture_xhr=r"/api/", page_action=initial_page)) as session:
+    async with session_type(**_options(capture_xhr=capture_xhr, page_action=initial_page)) as session:
         response = await session.fetch(network_url + "/")
         page = session.page_pool.pages[0].page
         await _wait_saved_async(

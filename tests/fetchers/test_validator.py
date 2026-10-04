@@ -1,4 +1,5 @@
 import pytest
+from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, DynamicSession, StealthySession
 from scrapling.engines._browsers._validators import (
     validate,
     StealthConfig,
@@ -8,6 +9,19 @@ from scrapling.engines._browsers._validators import (
 
 class TestValidators:
     """Test configuration validators"""
+
+    @pytest.mark.parametrize("model", [PlaywrightConfig, StealthConfig])
+    @pytest.mark.parametrize("pattern", [None, "", ".*", r"/api/", r"(?i)/api/\d+$"])
+    def test_capture_xhr_valid(self, model, pattern):
+        assert validate({"capture_xhr": pattern}, model).capture_xhr == (pattern or None)
+
+    @pytest.mark.parametrize(
+        "session_type", [DynamicSession, StealthySession, AsyncDynamicSession, AsyncStealthySession]
+    )
+    @pytest.mark.parametrize("pattern", ["*/*", "[", "("])
+    def test_capture_xhr_invalid(self, session_type, pattern):
+        with pytest.raises(TypeError, match=r"Invalid capture_xhr regex: .*Use '\.\*' to match all URLs"):
+            session_type(capture_xhr=pattern)
 
     def test_playwright_config_valid(self):
         """Test valid PlaywrightConfig"""
