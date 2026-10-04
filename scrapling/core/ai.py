@@ -27,6 +27,7 @@ from scrapling.core._browser_actions import (
     _run_actions,
     _validate_actions,
 )
+from scrapling.core._network_formatting import NetworkPart, NetworkRequestInfo, NetworkRequestModel, _request_details
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.engines.static import ImpersonateType
@@ -109,6 +110,15 @@ class ResponseModel(BaseModel):
     status: int = Field(description="The status code returned by the website.")
     content: list[str] = Field(description="The page content as Markdown, HTML, text, or an AI ARIA snapshot.")
     url: str = Field(description="The URL given by the user that resulted in this response.")
+
+
+class NetworkRequestsModel(BaseModel):
+    """Recorded request summaries and pagination details."""
+
+    requests: List[NetworkRequestInfo]
+    next_cursor: int
+    has_more: bool
+    dropped_count: int
 
 
 class SessionInfo(BaseModel):
@@ -285,6 +295,7 @@ class ScraplingMCPServer:
             cdp_url=cdp_url,
             headless=headless,
             block_ads=True,
+            record_requests=True,
             useragent=useragent,
             timezone_id=timezone_id,
             real_chrome=real_chrome,
@@ -348,6 +359,54 @@ class ScraplingMCPServer:
             )
             for sid, entry in self._sessions.items()
         ]
+
+    async def browser_network_requests(
+        self,
+        session_id: str,
+        url_pattern: Optional[str] = None,
+        include_static: bool = False,
+        after_id: Annotated[int, Field(ge=0)] = 0,
+        limit: Annotated[int, Field(ge=1, le=200)] = 50,
+    ) -> NetworkRequestsModel:
+        """List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens.
+
+        :param session_id: Browser session ID.
+        :param url_pattern: Filter URLs by regular expression.
+        :param include_static: Include successful non-API requests too.
+        :param after_id: Return requests with a higher ID; use next_cursor for more.
+        :param limit: Maximum requests to return.
+        """
+        network = self._get_session(session_id, ["stealthy"]).session.network
+        records = network.search(
+            url_pattern=url_pattern, include_static=include_static, after_id=after_id, limit=limit + 1
+        )
+        shown = records[:limit]
+        return NetworkRequestsModel(
+            requests=[NetworkRequestInfo.model_validate(record, from_attributes=True) for record in shown],
+            next_cursor=shown[-1].id if shown else max(after_id, network.last_id),
+            has_more=len(records) > limit,
+            dropped_count=network.dropped_count,
+        )
+
+    async def browser_network_request(
+        self,
+        session_id: str,
+        request_id: Annotated[int, Field(ge=1)],
+        part: NetworkPart = "summary",
+    ) -> NetworkRequestModel:
+        """Read a complete saved request part without resending it, with structured data and availability notes.
+
+        :param session_id: Browser session ID.
+        :param request_id: ID from `browser_network_requests`.
+        :param part: Request summary, headers, or text body; incomplete headers are marked.
+        """
+        network = self._get_session(session_id, ["stealthy"]).session.network
+        record = network.get(request_id)
+        if record is None:
+            raise ValueError(
+                f"Request {request_id} was not found or is no longer retained. Use browser_network_requests."
+            )
+        return _request_details(record, part)
 
     async def browser_snapshot(
         self,
@@ -994,6 +1053,7 @@ class ScraplingMCPServer:
 11. Set `extraction_type="snapshot"` on `browser_fetch` to get an AI ARIA snapshot with element references and bounding boxes in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page without navigating; it returns plain text with boxes by default. Set `depth` to limit the tree or `boxes=False` to omit boxes.
 12. Use `browser_actions` for ordered mouse, field, key, and wait actions on the current page. Move/click targets use exactly one selector, current snapshot ref, or viewport (x, y) pair in CSS pixels; fields use one selector/ref. Wheel acts at the current pointer and does not wait for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document, so prefer a result-specific element for delayed navigation.
 13. Use `browser_snapshot` to inspect results before repeating failed actions or choosing targets that depend on page changes. Actions may partly complete before an error; completed effects are not undone or retried. To submit with Enter, focus the intended control and use a press_key action with key="Enter".
+14. Browser sessions save completed requests and responses across page changes. Failed and unfinished requests are omitted; closing does not wait for captures still running. Use `browser_network_requests` to find IDs, then `browser_network_request` to read one part. Successful non-API traffic is hidden unless include_static=True. Keep up to 1000 requests and 20 MiB of saved response bodies; oldest records are removed when either limit is reached. Only response bodies with a text Content-Type are read and saved; binary or unknown types keep headers and a skip note. Bodies over 1 MiB are skipped; unavailable bodies are marked. `browser_network_request` returns summary and headers as objects, and the full saved body as text. Closing an MCP session removes access to its history. Use next_cursor as after_id to continue the request list.
 """,
         }
         if self._auth_token:
@@ -1082,6 +1142,16 @@ class ScraplingMCPServer:
             description=self.browser_evaluate.__doc__,
             structured_output=False,
             annotations=_INPUT_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_network_requests,
+            title="List network requests",
+            annotations=_LIST_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            self.browser_network_request,
+            title="Read network request",
+            annotations=_LIST_TOOL_ANNOTATIONS,
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
         server.add_tool(
