@@ -1,8 +1,8 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes fourteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), plain HTTP requests and stealth browser rendering with anti-bot bypass, persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes sixteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), plain HTTP requests and stealth browser rendering with anti-bot bypass, persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, network history, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_snapshot` and `browser_actions` return plain text. `browser_evaluate` returns compact JSON in one plain text block.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_snapshot` and `browser_actions` return plain text. Both network tools return structured JSON; the request list supports pagination. `browser_evaluate` returns compact JSON in one plain text block.
 
 ## Shadow DOM
 
@@ -106,6 +106,8 @@ Opens a stealthy browser session that stays alive across multiple `browser_fetch
 Plus the other browser-level session parameters (`proxy`, `real_chrome`, `cdp_url`, `locale`, `timezone_id`, `useragent`, `cookies`, `executable_path`, `additional_args`). Per-request options (`timeout`, `wait`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `solve_cloudflare`) are not set here; pass them to `browser_fetch`.
 
 Use `solve_cloudflare` on `browser_fetch` to solve Cloudflare challenges through the session.
+
+Recording of completed requests starts automatically for this session. Use `browser_network_requests` to find traffic and `browser_network_request` to inspect a recorded request.
 
 ### `open_request_session` -- Create a persistent HTTP requests session
 
@@ -231,6 +233,50 @@ The result is compact JSON in one `TextContent` block with `structured_output=Fa
 
 The page stays reserved during evaluation and is released after success, failure, or cancellation. Scripts can change page state or make requests. Errors and cancellation do not undo those effects or guarantee that browser-side JavaScript stops. Use `browser_snapshot` or another read to check effects before repeating a script. Unknown or HTTP sessions and missing, closed, or busy pages return an error; JavaScript errors propagate.
 
+### `browser_network_requests` -- Search recorded browser requests
+
+Reads completed requests from a session opened with `browser_open`, across page loads, actions, tabs, and navigation. It does not navigate, reserve a page, or send requests. Recording starts automatically and saves response headers and supported text bodies. Completed HTTP 4xx and 5xx responses are included; failed and unfinished requests are omitted. The history retains up to 1,000 requests, with fixed limits of 1 MiB per response body and 20 MiB combined; old records are removed when retention limits are reached.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `session_id` | str | required | ID from `browser_open` |
+| `url_pattern` | str or null | null | Regular expression to match request URLs |
+| `include_static` | bool | false | Include all resource types; otherwise keep XHR/fetch and HTTP errors |
+| `after_id` | int | 0 | Nonnegative cursor; return requests with larger IDs |
+| `limit` | int | 50 | Maximum returned requests, from 1 to 200 |
+
+Returns structured JSON with `requests`, `next_cursor`, `has_more`, and `dropped_count`. Each request contains integer `id` and `status` fields, plus string `url`, `method`, and `resource_type` fields. `dropped_count` counts older entries removed by the history limits.
+
+Pass `next_cursor` as `after_id` to read later entries. `has_more` means more retained entries currently match the same filters. An empty result has `requests=[]` and `has_more=false`; `next_cursor` is the greater of `after_id` and the latest saved request ID. Use `include_static=true` to include successful document requests and saved redirects. Entries receive increasing IDs when capture finishes. Reads do not wait for captures; use browser actions to wait for the page when needed.
+
+Both network tools provide an MCP output schema and `structured_content`. The SDK also returns the JSON in a text block for clients that read text content.
+
+### `browser_network_request` -- Inspect one recorded request
+
+Reads one recorded request without navigating, reserving a page, or sending it again. All parts use saved data, which remains available after page changes and temporary-context closure. Reads do not call browser methods. An entry appears only after its response has been converted and saved.
+
+The recorder reads and saves response bodies only for supported text `Content-Type` values: `text/*`, `+json`/`+xml` types (including SVG), JSON, XML, JavaScript, GraphQL, and URL-encoded form data. Binary or unrecognized types, and responses without `Content-Type`, keep their metadata but no body bytes. The browser still loads resources normally.
+
+Saved response bytes come from Playwright and can differ from the server's original bytes. Recorded text uses UTF-8 when the saved bytes are valid UTF-8, matching Playwright; otherwise it uses the declared charset. Response headers stay unchanged.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `session_id` | str | required | ID from `browser_open` |
+| `request_id` | int | required | Positive recorded request ID from `browser_network_requests` |
+| `part` | str | `"summary"` | `"summary"`, `"request_headers"`, `"request_body"`, `"response_headers"`, or `"response_body"` |
+
+Returns structured JSON with `request_id`, `part`, `data`, and `note`.
+
+- Summary `data` is an object with `id`, `url`, `method`, `resource_type`, and `status`.
+- Header `data` is an object of header names and values. Partial headers keep that object and add a `note`.
+- Body `data` is the full saved text for any text resource type, including documents and API calls. JSON response bodies stay strings; they are not parsed into objects.
+
+Saved empty text, HEAD responses, and status codes 204, 205, and 304 return `data=""` and `note=null`. Missing, unreadable, oversized, or non-text body data returns `data=null` and a `note` with the reason. Skipped non-text responses use `Non-text body; not saved.`. A missing or evicted request ID returns an error.
+
+Saved response data survives browser cleanup. Closing a session does not wait for captures; captures still running at navigation or closure may be omitted. The limits cover retained request entries and response bytes, not total browser memory, concurrent captures, temporary full-body reads, parsed HTML, or request bodies.
+
+Both network tools reject unknown or HTTP sessions. Read needed details before `close_session`, which removes the MCP session.
+
 ### `session_make_request` -- HTTP request through an open requests session
 
 Makes an HTTP request (any method) through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint across calls. Same parameters as `make_request` plus a required `session_id`, minus the session-level `impersonate`, `proxy`, and `proxy_auth`. Raises on a browser session.
@@ -301,6 +347,8 @@ The page stays reserved during capture and is released after success, failure, o
 | Read the current page's AI ARIA snapshot  | `browser_snapshot` with `session_id`                          |
 | Chain mouse, field, keyboard, or wait actions | `browser_actions` with `session_id`                       |
 | Custom JavaScript extraction or page tasks | `browser_evaluate` with `session_id`                        |
+| Find API calls, HTTP errors, or redirects  | `browser_network_requests` with `session_id`                |
+| Read recorded request headers or body data | `browser_network_request` with `session_id` and `request_id` |
 
 Start with `make_request` (fastest, lowest resource cost). Use `browser_fetch_once` when JavaScript rendering is needed or HTTP requests are blocked. Enable `solve_cloudflare` for Cloudflare challenges. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
 
@@ -391,7 +439,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. The `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, `browser_evaluate`, and `browser_screenshot` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. The `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, and `browser_network_request` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 
