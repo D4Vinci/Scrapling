@@ -69,6 +69,23 @@ class ResponseFactory:
         return collapse_rfc2231_value(message.get_param("charset") or default).strip("'\"") or default
 
     @staticmethod
+    def _text_content(headers: Dict[str, str]) -> bool:
+        content_type = headers.get("content-type", "").partition(";")[0].strip().lower()
+        return (
+            content_type.startswith("text/")
+            or content_type.endswith(("+json", "+xml"))
+            or content_type
+            in {
+                "application/json",
+                "application/xml",
+                "application/javascript",
+                "application/x-javascript",
+                "application/graphql",
+                "application/x-www-form-urlencoded",
+            }
+        )
+
+    @staticmethod
     def _check_body_size(size: int | str, max_body_bytes: Optional[int]) -> None:
         if max_body_bytes is not None:
             try:
@@ -168,7 +185,7 @@ class ResponseFactory:
         :param xhr_captured: Optional list of captured Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
         :param pierce_shadow: Include open shadow roots in the HTML snapshot. Disabled by default.
-        :param max_body_bytes: Optional recorded-body limit. Adds a note for skipped or unreadable bodies and preserves partial headers.
+        :param max_body_bytes: Optional text-only recorded-body limit. Skips non-text or unknown content types before reading; preserves headers and notes for unavailable bodies.
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
         """
@@ -190,6 +207,8 @@ class ResponseFactory:
             ):
                 page_content = b""
             else:
+                if max_body_bytes is not None and not cls._text_content(final_response.headers):
+                    raise ValueError("Non-text body; not saved.")
                 cls._check_body_size(final_response.headers.get("content-length", "0"), max_body_bytes)
                 if page and "html" in final_response.all_headers().get("content-type", ""):
                     if pierce_shadow:
@@ -348,7 +367,7 @@ class ResponseFactory:
         :param xhr_captured: Optional list of captured async Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
         :param pierce_shadow: Include open shadow roots in the HTML snapshot. Disabled by default.
-        :param max_body_bytes: Optional recorded-body limit. Adds a note for skipped or unreadable bodies and preserves partial headers.
+        :param max_body_bytes: Optional text-only recorded-body limit. Skips non-text or unknown content types before reading; preserves headers and notes for unavailable bodies.
 
         :return: A fully populated `Response` object containing the page's URL, content, status, headers, cookies, and other derived metadata.
         :rtype: Response
@@ -371,6 +390,8 @@ class ResponseFactory:
             ):
                 page_content = b""
             else:
+                if max_body_bytes is not None and not cls._text_content(final_response.headers):
+                    raise ValueError("Non-text body; not saved.")
                 cls._check_body_size(final_response.headers.get("content-length", "0"), max_body_bytes)
                 if page and "html" in (await final_response.all_headers()).get("content-type", ""):
                     if pierce_shadow:
