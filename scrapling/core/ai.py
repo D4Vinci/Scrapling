@@ -4,19 +4,24 @@ from json import dumps
 from time import monotonic
 from hmac import compare_digest
 from asyncio import gather
+from functools import wraps
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
 from anyio import CancelScope
+from curl_cffi.curl import CurlError
 from mcp.server import MCPServer
 from mcp.server.mcpserver import Image
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.caching import CacheHint
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import Icon, ImageContent, TextContent, ToolAnnotations
+from msgspec import ValidationError as MsgspecValidationError
 from pydantic import AnyHttpUrl, BaseModel, Field
+from patchright.async_api import Error as PatchrightError
 
 from scrapling import __version__
 from scrapling.core.utils import log
@@ -41,6 +46,8 @@ from scrapling.core._types import (
     Dict,
     List,
     Any,
+    Awaitable,
+    Callable,
     Annotated,
     Set,
     Sequence,
@@ -197,6 +204,19 @@ class _StaticTokenVerifier(TokenVerifier):
         if compare_digest(token.encode(), self._token):
             return AccessToken(token=token, client_id="scrapling-mcp", scopes=[])
         return None
+
+
+def _mcp_tool(tool: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
+    @wraps(tool)
+    async def wrapped(*args: Any, **kwargs: Any) -> Any:
+        try:
+            return await tool(*args, **kwargs)
+        except (ValueError, RuntimeError, TypeError, PatchrightError, CurlError) as error:
+            if isinstance(error, TypeError) and not isinstance(error.__cause__, MsgspecValidationError):
+                raise
+            raise ToolError(str(error)) from error
+
+    return wrapped
 
 
 class ScraplingMCPServer:
@@ -1064,44 +1084,53 @@ class ScraplingMCPServer:
         server = MCPServer(name="Scrapling", **settings)
         # Session management tools
         server.add_tool(
-            self.browser_open, title="Open browser", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
+            _mcp_tool(self.browser_open),
+            title="Open browser",
+            structured_output=True,
+            annotations=_SESSION_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.open_request_session,
+            _mcp_tool(self.open_request_session),
             title="Open HTTP session",
             structured_output=True,
             annotations=_SESSION_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.close_session, title="Close session", structured_output=True, annotations=_SESSION_TOOL_ANNOTATIONS
+            _mcp_tool(self.close_session),
+            title="Close session",
+            structured_output=True,
+            annotations=_SESSION_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.list_sessions, title="List sessions", structured_output=True, annotations=_LIST_TOOL_ANNOTATIONS
+            _mcp_tool(self.list_sessions),
+            title="List sessions",
+            structured_output=True,
+            annotations=_LIST_TOOL_ANNOTATIONS,
         )
         # HTTP tools
         server.add_tool(
-            self.make_request,
+            _mcp_tool(self.make_request),
             title="Send HTTP request",
             description=self.make_request.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.bulk_get,
+            _mcp_tool(self.bulk_get),
             title="Get pages via HTTP requests",
             description=self.bulk_get.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.browser_fetch_once,
+            _mcp_tool(self.browser_fetch_once),
             title="Fetch page in browser",
             description=self.browser_fetch_once.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.browser_fetch_many_once,
+            _mcp_tool(self.browser_fetch_many_once),
             title="Fetch pages in browser",
             description=self.browser_fetch_many_once.__doc__,
             structured_output=True,
@@ -1109,53 +1138,53 @@ class ScraplingMCPServer:
         )
         # Session-scoped fetch tools
         server.add_tool(
-            self.browser_fetch,
+            _mcp_tool(self.browser_fetch),
             title="Fetch in browser session",
             description=self.browser_fetch.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.session_make_request,
+            _mcp_tool(self.session_make_request),
             title="Send HTTP request in HTTP session",
             description=self.session_make_request.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.browser_snapshot,
+            _mcp_tool(self.browser_snapshot),
             title="Browser page snapshot",
             description=self.browser_snapshot.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.browser_actions,
+            _mcp_tool(self.browser_actions),
             title="Browser actions",
             description=self.browser_actions.__doc__,
             structured_output=False,
             annotations=_INPUT_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.browser_evaluate,
+            _mcp_tool(self.browser_evaluate),
             title="Run JavaScript",
             description=self.browser_evaluate.__doc__,
             structured_output=False,
             annotations=_INPUT_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.browser_network_requests,
+            _mcp_tool(self.browser_network_requests),
             title="List network requests",
             annotations=_LIST_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            self.browser_network_request,
+            _mcp_tool(self.browser_network_request),
             title="Read network request",
             annotations=_LIST_TOOL_ANNOTATIONS,
         )
         # Screenshot tool (returns image + url content blocks, not structured JSON)
         server.add_tool(
-            self.browser_screenshot,
+            _mcp_tool(self.browser_screenshot),
             title="Take browser session screenshot",
             description=self.browser_screenshot.__doc__,
             structured_output=False,

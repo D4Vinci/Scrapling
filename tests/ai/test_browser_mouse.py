@@ -504,24 +504,27 @@ async def test_browser_mouse_cleanup_failure_preserves_click_error(
         page.is_closed.return_value = closed
         raise cleanup_error
 
-    page.locator.return_value.click.side_effect = press
-    page.mouse.up.side_effect = unpress
-    task = asyncio.create_task(
-        server.browser_actions(
-            "browser",
-            [{"type": "click", "selector": "#target", "button": "right"}, {"type": "wheel", "delta_y": 120}],
-        )
-    )
-    try:
-        await asyncio.wait_for(entered.wait(), 5)
-        task.cancel() if cancelled else release.set()
+    async def click() -> None:
         with pytest.raises(asyncio.CancelledError if cancelled else RuntimeError) as error:
-            await asyncio.wait_for(task, 5)
+            await server.browser_actions(
+                "browser",
+                [{"type": "click", "selector": "#target", "button": "right"}, {"type": "wheel", "delta_y": 120}],
+            )
         original = error.value if cancelled else error.value.__cause__
         if not cancelled:
             assert str(error.value) == "Action 1 (click) failed: click timed out"
             assert original is timeout
         assert original is not None and original.__cause__ is cleanup_error
+        raise error.value
+
+    page.locator.return_value.click.side_effect = press
+    page.mouse.up.side_effect = unpress
+    task = asyncio.create_task(click())
+    try:
+        await asyncio.wait_for(entered.wait(), 5)
+        task.cancel() if cancelled else release.set()
+        with pytest.raises(asyncio.CancelledError if cancelled else RuntimeError):
+            await asyncio.wait_for(task, 5)
     finally:
         if not task.done():
             task.cancel()

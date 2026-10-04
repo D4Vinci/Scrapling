@@ -188,20 +188,25 @@ async def test_browser_screenshot_disposal_failure_preserves_capture_error_or_ca
             raise native_error
         return b"captured pixels"
 
-    element.screenshot.side_effect = capture
-    element.dispose.side_effect = cleanup_error
-    task = asyncio.create_task(server.browser_screenshot("browser", selector="#card"))
-    try:
-        await asyncio.wait_for(entered.wait(), 5)
-        task.cancel() if outcome == "cancel" else release.set()
+    async def screenshot() -> None:
         with pytest.raises(asyncio.CancelledError if outcome == "cancel" else PatchrightError) as error:
-            await task
+            await server.browser_screenshot("browser", selector="#card")
         if outcome == "success":
             assert error.value is cleanup_error
         else:
             if outcome == "error":
                 assert error.value is native_error
             assert error.value.__cause__ is cleanup_error
+        raise error.value
+
+    element.screenshot.side_effect = capture
+    element.dispose.side_effect = cleanup_error
+    task = asyncio.create_task(screenshot())
+    try:
+        await asyncio.wait_for(entered.wait(), 5)
+        task.cancel() if outcome == "cancel" else release.set()
+        with pytest.raises(asyncio.CancelledError if outcome == "cancel" else PatchrightError):
+            await task
     finally:
         if not task.done():
             task.cancel()
