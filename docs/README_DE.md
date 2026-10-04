@@ -258,7 +258,7 @@ MySpider().start()
 - **Domain- & Werbeblockierung**: Anfragen an bestimmte Domains (und deren Subdomains) blockieren oder die integrierte Werbeblockierung (~3.500 bekannte Werbe-/Tracker-Domains) in browserbasierten Fetchern aktivieren.
 - **DNS-Leak-Prävention**: Optionale DNS-over-HTTPS-Unterstützung zur Weiterleitung von DNS-Anfragen über Cloudflares DoH, um DNS-Leaks bei der Verwendung von Proxys zu verhindern.
 - **Remote-Browser**: Statt lokal einen Browser zu starten, verbinden Sie sich per CDP mit `cdp_url` zu einem bereits laufenden Browser -- auf demselben Rechner, einem anderen Host oder bei einem Managed-Browser-Anbieter. Mit `executable_path` können Sie jeden Browser-Fetcher außerdem auf Ihren eigenen Chromium-Build verweisen.
-- **Hintergrund-API-Erfassung**: Übergeben Sie ein URL-Muster an `capture_xhr`, und alle passenden XHR-/Fetch-Antworten, die die Seite beim Laden erzeugt, werden als `Response`-Objekte in `response.captured_xhr` gesammelt -- so kommen Sie an die API-Daten einer Website, ohne die Requests selbst zu rekonstruieren.
+- **Hintergrund-API-Erfassung**: Aktivieren Sie `record_requests=True` in einer Browsersitzung und durchsuchen Sie die gespeicherten Antworten mit `session.network.search(limit=None)`. Lesen Sie API-Daten und HTTP-Fehler über mehrere Seitenaufrufe hinweg, ohne Anfragen erneut zu senden. Der Verlauf ist begrenzt und speichert Text-Antwortkörper.
 - **Async-Unterstützung**: Vollständige async-Unterstützung über alle Fetcher und dedizierte async Session-Klassen hinweg.
 
 ### Adaptives Scraping

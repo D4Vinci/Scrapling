@@ -149,30 +149,46 @@ def test_unknown_status_code():
     assert StatusText.get(1000) == "Unknown Status Code"
 
 
-# The private classmethod is name-mangled; resolve it once for the tests below.
-_extract_encoding = getattr(ResponseFactory, "_ResponseFactory__extract_browser_encoding")
-
-
 def test_browser_encoding_unquoted_charset():
     """A charset declared without quotes is returned verbatim."""
-    assert _extract_encoding("text/html; charset=utf-8") == "utf-8"
-    assert _extract_encoding("text/html; charset=ISO-8859-1") == "ISO-8859-1"
-    assert _extract_encoding("text/html;charset=windows-1252") == "windows-1252"
+    assert ResponseFactory._extract_encoding("text/html; charset=utf-8") == "utf-8"
+    assert ResponseFactory._extract_encoding("text/html; charset=ISO-8859-1") == "ISO-8859-1"
+    assert ResponseFactory._extract_encoding("text/html;charset=windows-1252") == "windows-1252"
 
 
 def test_browser_encoding_quoted_charset():
     """A quoted charset value (RFC 7231 allows quoting) is unwrapped, not dropped."""
-    assert _extract_encoding('text/html; charset="utf-8"') == "utf-8"
-    assert _extract_encoding('text/html; charset="ISO-8859-1"') == "ISO-8859-1"
-    assert _extract_encoding("text/html; charset='Shift_JIS'") == "Shift_JIS"
-    assert _extract_encoding('text/plain; charset="windows-1252"; boundary=x') == "windows-1252"
+    assert ResponseFactory._extract_encoding('text/html; charset="utf-8"') == "utf-8"
+    assert ResponseFactory._extract_encoding('text/html; charset="ISO-8859-1"') == "ISO-8859-1"
+    assert ResponseFactory._extract_encoding("text/html; charset='Shift_JIS'") == "Shift_JIS"
+    assert ResponseFactory._extract_encoding('text/plain; charset="windows-1252"; boundary=x') == "windows-1252"
 
 
 def test_browser_encoding_defaults_when_missing():
     """Fall back to the default when no charset is present or the header is empty."""
-    assert _extract_encoding("text/html") == "utf-8"
-    assert _extract_encoding("") == "utf-8"
-    assert _extract_encoding(None) == "utf-8"
+    assert ResponseFactory._extract_encoding("text/html") == "utf-8"
+    assert ResponseFactory._extract_encoding("") == "utf-8"
+    assert ResponseFactory._extract_encoding(None) == "utf-8"
+
+
+@pytest.mark.parametrize(
+    "header, expected",
+    [
+        ('text/plain; CHARSET = "ISO-8859-1"', "ISO-8859-1"),
+        ("text/plain; charset = utf-16", "utf-16"),
+        ('text/plain; charset=""', "utf-8"),
+        ('text/plain; note="charset=utf-16"', "utf-8"),
+        ("text/plain; x-charset=utf-16", "utf-8"),
+        ("text/plain; charset*=utf-8''UTF-16", "UTF-16"),
+    ],
+)
+def test_browser_encoding_header_parameters(header, expected):
+    assert ResponseFactory._extract_encoding(header) == expected
+
+
+def test_browser_encoding_custom_default():
+    assert ResponseFactory._extract_encoding(None, "ISO-8859-1") == "ISO-8859-1"
+    assert ResponseFactory._extract_encoding('text/plain; charset=""', "ISO-8859-1") == "ISO-8859-1"
 
 
 class TestConstructProxyDict:

@@ -258,7 +258,7 @@ MySpider().start()
 - **Bloqueo de Dominios y Anuncios**: Bloquea solicitudes a dominios específicos (y sus subdominios) o activa el bloqueo de anuncios integrado (~3,500 dominios de anuncios/rastreadores conocidos) en fetchers basados en navegador.
 - **Prevención de Fugas DNS**: Soporte opcional de DNS-over-HTTPS para enrutar consultas DNS a través del DoH de Cloudflare, previniendo fugas DNS al usar proxies.
 - **Navegadores Remotos**: En lugar de lanzar un navegador localmente, conéctate mediante CDP con `cdp_url` a uno que ya esté en ejecución, ya sea en la misma máquina, en otro host o en un proveedor de navegadores gestionados. También puedes apuntar cualquier fetcher de navegador a tu propia compilación de Chromium con `executable_path`.
-- **Captura de API en Segundo Plano**: Pasa un patrón de URL a `capture_xhr` y todas las respuestas XHR/fetch coincidentes que haga la página durante la carga se recopilarán como objetos `Response` en `response.captured_xhr` - obtén los datos de la API de un sitio sin tener que aplicar ingeniería inversa a las peticiones.
+- **Captura de API en Segundo Plano**: Activa `record_requests=True` en una sesión del navegador y busca las respuestas guardadas con `session.network.search(limit=None)`. Lee datos de API y errores HTTP entre cargas de páginas sin volver a enviar las peticiones. El historial tiene límites y guarda cuerpos de respuesta de texto.
 - **Soporte Async**: Soporte async completo en todos los fetchers y clases de sesión async dedicadas.
 
 ### Scraping Adaptativo
