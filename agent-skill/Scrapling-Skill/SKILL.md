@@ -402,12 +402,15 @@ async with AsyncStealthySession(max_pages=2) as session:
     results = await asyncio.gather(*tasks)
     print(session.get_pool_stats())
 
-# Capture XHR/fetch API calls during page load
-async with AsyncDynamicSession(capture_xhr=r"https://api\.example\.com/.*") as session:
-    page = await session.fetch('https://example.com')
-    for xhr in page.captured_xhr:  # Each is a full Response object
-        print(xhr.url, xhr.status, xhr.body)
+async with AsyncDynamicSession(record_requests=True) as session:
+    await session.fetch('https://example.com', network_idle=True)
+
+for response in session.network.search(url_pattern=r"https://api\.example\.com/.*", limit=None):
+    print(response.meta['network_id'], response.url, response.status)
+    print(response.meta.get('body_note') or response.body)
 ```
+
+Recorded responses belong to the whole browser session. `search()` and `get()` return `Response` objects directly, with `network_id`, `resource_type`, and `request_body` in `.meta`. Searches filter saved history and return 100 matches by default; `limit=None` returns all retained matches. Only supported text response bodies are saved. Saved reads remain local after closure; unfinished captures are not awaited. See [Migrating in v5](references/fetching/dynamic.md#migrating-in-v5) for the removed API capture interface.
 
 ## References
 You already had a good glimpse of what the library can do. Use the references below to dig deeper when needed

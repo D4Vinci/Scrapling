@@ -279,7 +279,7 @@ MySpider().start()
 - **域名和广告屏蔽**：在基于浏览器的 Fetcher 中屏蔽对特定域名（及其子域名）的请求，或启用内置广告屏蔽（约 3,500 个已知广告/追踪域名）。
 - **DNS 泄漏防护**：可选的 DNS-over-HTTPS 支持，通过 Cloudflare 的 DoH 路由 DNS 查询，防止使用代理时的 DNS 泄漏。
 - **远程浏览器**：无需在本地启动浏览器，通过 `cdp_url` 用 CDP 连接到已在运行的浏览器，无论它在同一台机器、另一台主机，还是托管的浏览器服务商。您也可以通过 `executable_path` 让任意浏览器 Fetcher 使用您自己的 Chromium 构建版本。
-- **后台 API 捕获**：向 `capture_xhr` 传入 URL 模式，页面加载过程中所有匹配的 XHR/fetch 响应都会作为 `Response` 对象收集到 `response.captured_xhr` 中--无需自己逆向分析请求即可获取网站的 API 数据。
+- **后台 API 捕获**：在浏览器会话中启用 `record_requests=True`，然后使用 `session.network.search(limit=None)` 搜索已保存的响应。无需再次发送请求，即可读取各个页面加载过程中产生的 API 数据和 HTTP 错误。历史记录有容量限制，并保存文本响应体。
 - **Async 支持**：所有 Fetcher 和专用 async Session 类的完整 async 支持。
 
 ### 自适应抓取

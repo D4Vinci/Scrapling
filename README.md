@@ -291,7 +291,7 @@ MySpider().start()
 - **Domain & Ad Blocking**: Block requests to specific domains (and their subdomains) or enable built-in ad blocking (~3,500 known ad/tracker domains) in browser-based fetchers.
 - **DNS Leak Prevention**: Optional DNS-over-HTTPS support to route DNS queries through Cloudflare's DoH, preventing DNS leaks when using proxies.
 - **Remote Browsers**: Instead of launching a browser locally, connect to one that's already running through CDP with `cdp_url`, whether it's on the same machine, another host, or a managed browser provider. You can also point any browser fetcher at your own Chromium build with `executable_path`.
-- **Background API Capture**: Pass a URL pattern to `capture_xhr`, and all matching XHR/fetch responses the page makes while loading are collected for you as `Response` objects in `response.captured_xhr` - grab a site's API data without reverse-engineering the requests yourself.
+- **Background API Capture**: Enable `record_requests=True` on a browser session, then search its saved responses with `session.network.search(limit=None)`. Read API data and HTTP errors across page loads without sending requests again. History is bounded and saves text response bodies.
 - **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 
 ### Adaptive Scraping
