@@ -159,6 +159,35 @@ class TestRequestProperties:
 
         assert r1.update_fingerprint() == r2.update_fingerprint()
 
+    def test_fingerprint_include_headers_order_independent(self):
+        """Header insertion order must not affect the fingerprint (issue #465)."""
+        r1 = Request("https://example.com", headers={"Accept": "text/html", "User-Agent": "x"})
+        r2 = Request("https://example.com", headers={"User-Agent": "x", "Accept": "text/html"})
+
+        fp1 = r1.update_fingerprint(include_headers=True)
+        fp2 = r2.update_fingerprint(include_headers=True)
+
+        assert fp1 == fp2, (
+            "Requests with the same headers in different insertion order "
+            "must produce the same fingerprint"
+        )
+
+    def test_fingerprint_include_headers_order_independent_multiple_headers(self):
+        """Order independence holds across 3+ headers (regression guard)."""
+        headers_a = {"Accept": "text/html", "User-Agent": "x", "X-Custom": "abc"}
+        headers_b = {"X-Custom": "abc", "Accept": "text/html", "User-Agent": "x"}
+        headers_c = {"User-Agent": "x", "X-Custom": "abc", "Accept": "text/html"}
+
+        r_a = Request("https://example.com", headers=headers_a)
+        r_b = Request("https://example.com", headers=headers_b)
+        r_c = Request("https://example.com", headers=headers_c)
+
+        fp_a = r_a.update_fingerprint(include_headers=True)
+        fp_b = r_b.update_fingerprint(include_headers=True)
+        fp_c = r_c.update_fingerprint(include_headers=True)
+
+        assert fp_a == fp_b == fp_c, "All orderings of the same headers must produce the same fingerprint"
+
 
 class TestRequestCopy:
     """Test Request copy functionality."""
