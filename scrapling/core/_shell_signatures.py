@@ -65,7 +65,6 @@ _FETCH_PARAMS = {
     "block_ads": bool,
     "retries": int,
     "retry_delay": int | float,
-    "capture_xhr": str | None,
     "record_requests": bool,
     "max_recorded_requests": int,
     "executable_path": Optional[str],

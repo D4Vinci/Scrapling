@@ -11,7 +11,7 @@ from playwright.async_api import Page as AsyncPage, Response as AsyncResponse
 
 from scrapling.core.utils import log
 from .custom import Response, StatusText
-from scrapling.core._types import Dict, List, Optional
+from scrapling.core._types import Dict, Optional
 
 SHADOW_SNAPSHOT_JS = r"""
 () => {
@@ -162,7 +162,6 @@ class ResponseFactory:
         final_response: Optional[SyncResponse],
         parser_arguments: Dict,
         meta: Optional[Dict] = None,
-        xhr_captured: Optional[List[SyncResponse]] = None,
         collect_history: bool = True,
         pierce_shadow: bool = False,
         max_body_bytes: Optional[int] = None,
@@ -182,7 +181,6 @@ class ResponseFactory:
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
         :param meta: Additional meta data to be saved with the response.
-        :param xhr_captured: Optional list of captured Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
         :param pierce_shadow: Include open shadow roots in the HTML snapshot. Disabled by default.
         :param max_body_bytes: Optional text-only recorded-body limit. Skips non-text or unknown content types before reading; preserves headers and notes for unavailable bodies.
@@ -241,7 +239,7 @@ class ResponseFactory:
                 raise
             request_headers = first_response.request.headers
             body_meta["request_headers_partial"] = True
-        response = cls._build_browser_response(
+        return cls._build_browser_response(
             {
                 "url": page.url if page else first_response.url,
                 "content": page_content,
@@ -257,11 +255,6 @@ class ResponseFactory:
             },
             max_body_bytes,
         )
-        if xhr_captured:
-            response.captured_xhr = [
-                cls.from_playwright_response(None, p, None, {}, collect_history=False) for p in xhr_captured
-            ]
-        return response
 
     @classmethod
     async def _async_process_response_history(
@@ -344,7 +337,6 @@ class ResponseFactory:
         final_response: Optional[AsyncResponse],
         parser_arguments: Dict,
         meta: Optional[Dict] = None,
-        xhr_captured: Optional[List[AsyncResponse]] = None,
         collect_history: bool = True,
         pierce_shadow: bool = False,
         max_body_bytes: Optional[int] = None,
@@ -364,7 +356,6 @@ class ResponseFactory:
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
             the `Response` object.
         :param meta: Additional meta data to be saved with the response.
-        :param xhr_captured: Optional list of captured async Playwright XHR/fetch responses to convert and attach to the returned Response.
         :param collect_history: Optional boolean indicating whether to collect redirections history or not.
         :param pierce_shadow: Include open shadow roots in the HTML snapshot. Disabled by default.
         :param max_body_bytes: Optional text-only recorded-body limit. Skips non-text or unknown content types before reading; preserves headers and notes for unavailable bodies.
@@ -424,7 +415,7 @@ class ResponseFactory:
                 raise
             request_headers = first_response.request.headers
             body_meta["request_headers_partial"] = True
-        response = cls._build_browser_response(
+        return cls._build_browser_response(
             {
                 "url": page.url if page else first_response.url,
                 "content": page_content,
@@ -440,11 +431,6 @@ class ResponseFactory:
             },
             max_body_bytes,
         )
-        if xhr_captured:
-            response.captured_xhr = [
-                await cls.from_async_playwright_response(None, p, None, {}, collect_history=False) for p in xhr_captured
-            ]
-        return response
 
     @staticmethod
     def from_http_request(response: CurlResponse, parser_arguments: Dict, meta: Optional[Dict] = None) -> Response:

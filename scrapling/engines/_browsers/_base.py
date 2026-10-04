@@ -1,5 +1,4 @@
 from time import time
-from re import search as re_search
 from asyncio import sleep as asyncio_sleep, Lock
 from contextlib import contextmanager, asynccontextmanager, suppress
 
@@ -174,15 +173,11 @@ class SyncSession:
     def _create_response_handler(
         page_info: PageInfo[Page],
         response_container: List,
-        xhr_pattern: Optional[str] = None,
-        xhr_container: Optional[List] = None,
     ) -> Callable[[SyncPlaywrightResponse], None]:
-        """Create a response handler that captures the final navigation response and optionally XHR/fetch responses.
+        """Create a response handler that captures the final navigation response.
 
         :param page_info: The PageInfo object containing the page
         :param response_container: A list to store the final response (mutable container)
-        :param xhr_pattern: Optional regex pattern to match XHR/fetch response URLs
-        :param xhr_container: Optional list to store captured XHR/fetch responses
         :return: A callback function for page.on("response", ...)
         """
 
@@ -193,13 +188,6 @@ class SyncSession:
                 and finished_response.request.frame == page_info.page.main_frame
             ):
                 response_container[0] = finished_response
-            elif (
-                xhr_pattern
-                and xhr_container is not None
-                and finished_response.request.resource_type in ("xhr", "fetch")
-                and re_search(xhr_pattern, finished_response.url)
-            ):
-                xhr_container.append(finished_response)
 
         return handle_response
 
@@ -393,15 +381,11 @@ class AsyncSession:
     def _create_response_handler(
         page_info: PageInfo[AsyncPage],
         response_container: List,
-        xhr_pattern: Optional[str] = None,
-        xhr_container: Optional[List] = None,
     ) -> Callable[[AsyncPlaywrightResponse], Awaitable[None]]:
-        """Create an async response handler that captures the final navigation response and optionally XHR/fetch responses.
+        """Create an async response handler that captures the final navigation response.
 
         :param page_info: The PageInfo object containing the page
         :param response_container: A list to store the final response (mutable container)
-        :param xhr_pattern: Optional regex pattern to match XHR/fetch response URLs
-        :param xhr_container: Optional list to store captured XHR/fetch responses
         :return: A callback function for page.on("response", ...)
         """
 
@@ -412,13 +396,6 @@ class AsyncSession:
                 and finished_response.request.frame == page_info.page.main_frame
             ):
                 response_container[0] = finished_response
-            elif (
-                xhr_pattern
-                and xhr_container is not None
-                and finished_response.request.resource_type in ("xhr", "fetch")
-                and re_search(xhr_pattern, finished_response.url)
-            ):
-                xhr_container.append(finished_response)
 
         return handle_response
 

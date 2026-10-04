@@ -383,7 +383,7 @@ class ScraplingMCPServer:
         shown = records[:limit]
         return NetworkRequestsModel(
             requests=[NetworkRequestInfo.model_validate(record, from_attributes=True) for record in shown],
-            next_cursor=shown[-1].id if shown else max(after_id, network.last_id),
+            next_cursor=shown[-1].meta["network_id"] if shown else max(after_id, network.last_id),
             has_more=len(records) > limit,
             dropped_count=network.dropped_count,
         )

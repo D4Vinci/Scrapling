@@ -243,14 +243,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
                 params.timeout, params.extra_headers, params.disable_resources, proxy, params.blocked_domains
             ) as page_info:
                 final_response: List = [None]
-                xhr_captured: List = []
                 page = page_info.page
-                handler = self._create_response_handler(
-                    page_info,
-                    final_response,
-                    xhr_pattern=self._config.capture_xhr,
-                    xhr_container=xhr_captured,
-                )
+                handler = self._create_response_handler(page_info, final_response)
                 page.on("response", handler)
                 try:
                     if params.page_setup:
@@ -293,7 +287,6 @@ class StealthySession(SyncSession, StealthySessionMixin):
                             final_response[0],
                             params.selector_config,
                             meta={"proxy": proxy},
-                            xhr_captured=xhr_captured,
                             pierce_shadow=params.pierce_shadow,
                         )
                         return response
@@ -540,14 +533,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                 params.timeout, params.extra_headers, params.disable_resources, proxy, params.blocked_domains
             ) as page_info:
                 final_response: List = [None]
-                xhr_captured: List = []
                 page = page_info.page
-                handler = self._create_response_handler(
-                    page_info,
-                    final_response,
-                    xhr_pattern=self._config.capture_xhr,
-                    xhr_container=xhr_captured,
-                )
+                handler = self._create_response_handler(page_info, final_response)
                 page.on("response", handler)
                 try:
                     if params.page_setup:
@@ -590,7 +577,6 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                             final_response[0],
                             params.selector_config,
                             meta={"proxy": proxy},
-                            xhr_captured=xhr_captured,
                             pierce_shadow=params.pierce_shadow,
                         )
                         return response

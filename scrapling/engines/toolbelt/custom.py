@@ -36,7 +36,6 @@ class Response(Selector):
     :param history: List of redirect responses, if any.
     :param meta: Metadata dictionary (e.g., proxy used).
     :param request: Associated spider Request object (set by crawler, in the spiders framework).
-    :param captured_xhr: List of captured XHR/fetch ``Response`` objects. Populated when ``capture_xhr`` is set on a browser session.
     """
 
     def __init__(
@@ -61,6 +60,7 @@ class Response(Selector):
 
         adaptive_domain: str = cast(str, selector_config.pop("adaptive_domain", ""))
         self.status = status
+        self.method = method
         self.reason = reason
         self.cookies = cookies
         self.headers = headers
@@ -80,7 +80,6 @@ class Response(Selector):
 
         self.meta: Dict[str, Any] = meta or {}
         self.request: Optional["Request"] = None  # Will be set by crawler
-        self.captured_xhr: List["Response"] = []
 
     @property
     def body(self) -> bytes:

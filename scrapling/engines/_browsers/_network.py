@@ -1,7 +1,6 @@
 from re import compile as compile_regex, error as RegexError
 from collections import OrderedDict
 from contextlib import suppress
-from dataclasses import dataclass
 
 from scrapling.core._types import Any, Callable, Dict, List, Optional
 from scrapling.engines.toolbelt.custom import Response
@@ -9,21 +8,6 @@ from scrapling.engines.toolbelt.convertor import ResponseFactory
 
 MAX_BODY_BYTES = 1024 * 1024
 MAX_TOTAL_BODY_BYTES = 20 * 1024 * 1024
-
-
-@dataclass(slots=True)
-class NetworkRequest:
-    """Saved request data and response, with a session-local ID."""
-
-    id: int
-    url: str
-    method: str
-    resource_type: str
-    request_headers: Dict[str, str]
-    request_body: Optional[bytes]
-    response_headers: Dict[str, str]
-    status: int
-    response: Response
 
 
 class NetworkRecorder:
@@ -36,7 +20,7 @@ class NetworkRecorder:
         self.max_requests = max_requests
         self.dropped_count = 0
         self.last_id = 0
-        self._records: OrderedDict[int, NetworkRequest] = OrderedDict()
+        self._records: OrderedDict[int, Response] = OrderedDict()
         self._contexts: Dict[Any, Dict[str, Callable[..., Any]]] = {}
         self._body_bytes = 0
         self._asynchronous = asynchronous
@@ -86,24 +70,17 @@ class NetworkRecorder:
         if generation != self._generation or self._contexts.get(context) is not listeners:
             return
         self.last_id += 1
-        self._records[self.last_id] = NetworkRequest(
-            self.last_id,
-            request.url,
-            request.method,
-            request.resource_type,
-            response.request_headers,
-            request.post_data_buffer,
-            response.headers,
-            response.status,
-            response,
+        response.meta.update(
+            network_id=self.last_id, resource_type=request.resource_type, request_body=request.post_data_buffer
         )
+        self._records[self.last_id] = response
         self._body_bytes += len(response.body)
         while len(self._records) > self.max_requests or self._body_bytes > MAX_TOTAL_BODY_BYTES:
-            self._body_bytes -= len(self._records.popitem(last=False)[1].response.body)
+            self._body_bytes -= len(self._records.popitem(last=False)[1].body)
             self.dropped_count += 1
 
-    def get(self, request_id: int) -> Optional[NetworkRequest]:
-        """Return one retained request, or None if its ID is unavailable."""
+    def get(self, request_id: int) -> Optional[Response]:
+        """Return one saved response, or None if its recording ID is unavailable."""
         return self._records.get(request_id)
 
     def search(
@@ -113,25 +90,25 @@ class NetworkRecorder:
         resource_type: Optional[str] = None,
         status: Optional[int] = None,
         after_id: int = 0,
-        limit: int = 100,
+        limit: Optional[int] = 100,
         include_static: bool = True,
-    ) -> List[NetworkRequest]:
-        """Return matching requests in ID order; the URL pattern is a regular expression."""
-        if limit < 1 or after_id < 0:
-            raise ValueError("limit must be positive and after_id must be nonnegative.")
+    ) -> List[Response]:
+        """Return responses in recording ID order; filter by URL regex and use limit=None for all matches."""
+        if (limit is not None and limit < 1) or after_id < 0:
+            raise ValueError("limit must be positive or None and after_id must be nonnegative.")
         try:
             pattern = compile_regex(url_pattern) if url_pattern is not None else None
         except RegexError as error:
             raise ValueError(f"Invalid URL pattern: {error}") from error
         found = []
-        for record in self._records.values():
+        for request_id, record in self._records.items():
             if (
-                record.id <= after_id
+                request_id <= after_id
                 or (pattern is not None and not pattern.search(record.url))
                 or (method is not None and record.method != method.upper())
-                or (resource_type is not None and record.resource_type != resource_type)
+                or (resource_type is not None and record.meta["resource_type"] != resource_type)
                 or (status is not None and record.status != status)
-                or (not include_static and record.resource_type not in {"xhr", "fetch"} and record.status < 400)
+                or (not include_static and record.meta["resource_type"] not in {"xhr", "fetch"} and record.status < 400)
             ):
                 continue
             found.append(record)
