@@ -36,6 +36,11 @@ from scrapling.core._types import (
 )
 from scrapling.core.custom_types import AttributesHandler, TextHandler, TextHandlers
 from scrapling.core.mixins import SelectorsGeneration
+from scrapling.core.schema import (
+    extract_json_ld as _extract_json_ld,
+    find_schema as _find_schema,
+    find_all_schemas as _find_all_schemas,
+)
 from scrapling.core.storage import (
     SQLiteStorageSystem,
     StorageSystemMixin,
@@ -944,6 +949,35 @@ class Selector(SelectorsGeneration):
             return self.text.json()
         else:
             return self.get_all_text(strip=True).json()
+
+    @property
+    def json_ld(self) -> List[Dict[str, Any]]:
+        """Return all parsed Schema.org / JSON-LD structured data found in the document.
+
+        Parses each `<script type="application/ld+json">` tag, stripping HTML comments and CDATA wrappers,
+        and normalizes top-level objects, arrays, and `@graph` containers while preserving nested properties intact.
+        Malformed script contents are skipped with a debug log.
+        """
+        if self._is_text_node(self._root):
+            return []
+        return _extract_json_ld(self._root, url=self.url)
+
+    def find_schema(self, schema_type: str = "") -> Optional[Dict[str, Any]]:
+        """Find the first JSON-LD schema matching the given @type (e.g., 'Product', 'Article', 'Recipe').
+
+        Case-insensitive and supports schema.org URIs (e.g. 'https://schema.org/Product' matches 'Product')
+        as well as schemas with a list of types (e.g. '@type': ['Product', 'Thing']).
+        If `schema_type` is empty, returns the first available schema or None.
+        """
+        return _find_schema(self.json_ld, schema_type)
+
+    def find_all_schemas(self, schema_type: str = "") -> List[Dict[str, Any]]:
+        """Find all JSON-LD schemas matching the given @type.
+
+        Case-insensitive and supports schema.org URIs as well as schemas with a list of types.
+        If `schema_type` is empty, returns all schemas on the page.
+        """
+        return _find_all_schemas(self.json_ld, schema_type)
 
     def re(
         self,
