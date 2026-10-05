@@ -73,13 +73,12 @@ class ProductSpider(Spider):
         # Fast HTTP for listing pages (default)
         manager.add("http", FetcherSession())
 
-        # Stealth browser for protected product pages
-        # capture_xhr captures background API calls matching the regex
-        manager.add("stealth", AsyncStealthySession(
+        self.browser_session = AsyncStealthySession(
             headless=True,
             network_idle=True,
-            capture_xhr=r"https://api\.shop\.example\.com/.*",
-        ))
+            record_requests=True,
+        )
+        manager.add("stealth", self.browser_session)
 
     async def parse(self, response: Response):
         for link in response.css("a.product::attr(href)").getall():
@@ -91,15 +90,19 @@ class ProductSpider(Spider):
             yield response.follow(next_page)
 
     async def parse_product(self, response: Response):
-        # Access captured XHR/fetch API calls (if capture_xhr was set on the session)
-        for xhr in response.captured_xhr:
-            self.logger.info(f"Captured API call: {xhr.url} ({xhr.status})")
-
         yield {
             "name": response.css("h1::text").get(""),
             "price": response.css(".price::text").get(""),
         }
+
+    async def on_close(self):
+        for api_response in self.browser_session.network.search(
+            url_pattern=r"https://api\.shop\.example\.com/.*", limit=None
+        ):
+            self.logger.info(f"Saved API response: {api_response.url} ({api_response.status})")
 ```
+
+The example keeps the browser instance and reads its retained API history once in `on_close()`, before the sessions close. The history covers all product pages and stays readable after closure. Pending captures are not awaited, and retention limits still apply.
 
 The key is the `sid` parameter - it tells the spider which session to use for each request. When you call `response.follow()` without `sid`, the session ID from the original request is inherited.
 

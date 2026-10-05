@@ -191,26 +191,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank" title="Affordable Residential in 190+ Countries">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank">NiuProxy</a> ofrece proxies residenciales rotativos desde $0.35/GB. Usa el código exclusivo de Scrapling PAY2 para obtener un 10% de descuento en tu recarga.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: proxies móviles 4G/5G en SIMs y dispositivos reales. Dedicados o compartidos, sticky, rotativos, presets de huella p0f, API/MCP y soporte completo de protocolos. Usa el código SCRAPLING20 para obtener un 20% de descuento.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
       </a>
@@ -226,7 +206,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 28 millones de IPs residenciales limpias para scraping y automatización del navegador fiables. Tráfico sin caducidad desde $2/GB. 195 países. Sesiones persistentes o rotativas. Segmentación por ciudad/ISP/ASN. Prueba por $1.95/350MB. Código SCRAPEANDTAKE: 25% de descuento.
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Reduce los bloqueos y los CAPTCHAs en un 90%. 28 millones de IPs residenciales premium para scraping web intensivo. 195 países. Segmentación por ciudad/ISP/código postal. Sesiones persistentes o rotativas. Tráfico sin caducidad desde $2/GB. Código <strong>SCRAPEANDTAKE</strong>: <em>25% de descuento</em>.
     </td>
   </tr>
 </table>
@@ -236,7 +216,6 @@ MySpider().start()
 
 <!-- sponsors -->
 
-<a href="https://www.novada.com/?d4vinci-scrapling" target="_blank" title="The All-in-One Solution for Every Data Scraping Scenario"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/novada.jpg"></a>
 <a href="https://cloro.dev/?utm_source=referral&utm_medium=scrapling" target="_blank" title="The search API for the AI era"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/cloro.jpg"></a>
 
 <br/>
@@ -279,7 +258,7 @@ MySpider().start()
 - **Bloqueo de Dominios y Anuncios**: Bloquea solicitudes a dominios específicos (y sus subdominios) o activa el bloqueo de anuncios integrado (~3,500 dominios de anuncios/rastreadores conocidos) en fetchers basados en navegador.
 - **Prevención de Fugas DNS**: Soporte opcional de DNS-over-HTTPS para enrutar consultas DNS a través del DoH de Cloudflare, previniendo fugas DNS al usar proxies.
 - **Navegadores Remotos**: En lugar de lanzar un navegador localmente, conéctate mediante CDP con `cdp_url` a uno que ya esté en ejecución, ya sea en la misma máquina, en otro host o en un proveedor de navegadores gestionados. También puedes apuntar cualquier fetcher de navegador a tu propia compilación de Chromium con `executable_path`.
-- **Captura de API en Segundo Plano**: Pasa un patrón de URL a `capture_xhr` y todas las respuestas XHR/fetch coincidentes que haga la página durante la carga se recopilarán como objetos `Response` en `response.captured_xhr` - obtén los datos de la API de un sitio sin tener que aplicar ingeniería inversa a las peticiones.
+- **Captura de API en Segundo Plano**: Activa `record_requests=True` en una sesión del navegador y busca las respuestas guardadas con `session.network.search(limit=None)`. Lee datos de API y errores HTTP entre cargas de páginas sin volver a enviar las peticiones. El historial tiene límites y guarda cuerpos de respuesta de texto.
 - **Soporte Async**: Soporte async completo en todos los fetchers y clases de sesión async dedicadas.
 
 ### Scraping Adaptativo

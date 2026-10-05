@@ -36,7 +36,6 @@ class Response(Selector):
     :param history: List of redirect responses, if any.
     :param meta: Metadata dictionary (e.g., proxy used).
     :param request: Associated spider Request object (set by crawler, in the spiders framework).
-    :param captured_xhr: List of captured XHR/fetch ``Response`` objects. Populated when ``capture_xhr`` is set on a browser session.
     """
 
     def __init__(
@@ -52,6 +51,8 @@ class Response(Selector):
         method: str = "GET",
         history: List | None = None,
         meta: Dict[str, Any] | None = None,
+        *,
+        _log: bool = True,
         **selector_config: Any,
     ):
         if isinstance(content, str):
@@ -59,6 +60,7 @@ class Response(Selector):
 
         adaptive_domain: str = cast(str, selector_config.pop("adaptive_domain", ""))
         self.status = status
+        self.method = method
         self.reason = reason
         self.cookies = cookies
         self.headers = headers
@@ -70,15 +72,14 @@ class Response(Selector):
             encoding=encoding,
             **selector_config,
         )
-        # For easier debugging while working from a Python shell
-        log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
+        if _log:
+            log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
 
         if meta and not isinstance(meta, dict):
             raise TypeError(f"Response meta should be dictionary but got {type(meta).__name__} instead!")
 
         self.meta: Dict[str, Any] = meta or {}
         self.request: Optional["Request"] = None  # Will be set by crawler
-        self.captured_xhr: List["Response"] = []
 
     @property
     def body(self) -> bytes:
