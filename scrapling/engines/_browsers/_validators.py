@@ -90,7 +90,8 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     block_ads: bool = False
     retries: RetriesCount = 3
     retry_delay: Seconds = 1
-    capture_xhr: str | None = None
+    record_requests: bool = False
+    max_recorded_requests: Annotated[int, Meta(ge=1)] = 1000
     executable_path: Optional[str] = None
     dns_over_https: bool = False
 
@@ -120,8 +121,6 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
             self.selector_config = {}
         if not self.additional_args:
             self.additional_args = {}
-        if not self.capture_xhr:
-            self.capture_xhr = None
 
         if self.init_script is not None:
             validation_msg = _is_invalid_file_path(self.init_script)
@@ -182,6 +181,8 @@ def validate_fetch(
     session: Any,
     model: type[PlaywrightConfig] | type[StealthConfig],
 ) -> _fetch_params:  # pragma: no cover
+    if "capture_xhr" in method_kwargs:
+        raise TypeError("capture_xhr was removed; use record_requests=True and session.network.")
     result: Dict[str, Any] = {}
     overrides: Dict[str, Any] = {}
     kwargs_dict: Dict[str, Any] = dict(method_kwargs)
@@ -246,6 +247,8 @@ def validate(params: Dict, model: type[PlaywrightConfig]) -> PlaywrightConfig: .
 
 
 def validate(params: Dict, model: type[PlaywrightConfig] | type[StealthConfig]) -> PlaywrightConfig | StealthConfig:
+    if "capture_xhr" in params:
+        raise TypeError("capture_xhr was removed; use record_requests=True and session.network.")
     try:
         # Filter out params with the default values (no need to validate them) to speed up validation
         filtered = _filter_defaults(params, model.__name__)
