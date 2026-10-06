@@ -3,7 +3,6 @@ from os import environ
 from json import dumps
 from time import monotonic
 from hmac import compare_digest
-from asyncio import gather
 from functools import wraps
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -64,13 +63,6 @@ SessionExtractionType = Literal[extraction_types, "snapshot"]
 ScreenshotType = Literal["png", "jpeg"]
 MCP_EXECUTABLE_PATH_ENV = "SCRAPLING_EXECUTABLE_PATH"
 MCP_AUTH_TOKEN_ENV = "SCRAPLING_MCP_AUTH_TOKEN"  # nosec B105 - the name of the variable, not a token
-
-_MAX_POOL_PAGES = 50  # Upper bound of `PagesCount` in scrapling/engines/_browsers/_validators.py
-
-
-def _page_pool_size(urls: Sequence[str]) -> int:
-    """Return a page pool size that covers the batch without leaving the validator's bounds."""
-    return min(max(len(urls), 1), _MAX_POOL_PAGES)
 
 
 def _typed_dict_keys(typed_dict: Any) -> frozenset:
@@ -644,86 +636,13 @@ class ScraplingMCPServer:
             page = await getattr(session, method.lower())(url, **request_kwargs)
             return _translate_response(page, extraction_type, css_selector, main_content_only)
 
-    @staticmethod
-    async def bulk_get(
-        urls: List[str],
-        impersonate: ImpersonateType = "chrome",
-        extraction_type: extraction_types = "markdown",
-        css_selector: Optional[str] = None,
-        main_content_only: bool = True,
-        params: Optional[Dict] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
-        cookies: Optional[Dict[str, str]] = None,
-        timeout: Optional[int | float] = 30,
-        follow_redirects: FollowRedirects = "safe",
-        max_redirects: int = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Dict[str, str]] = None,
-        auth: Optional[Dict[str, str]] = None,
-        verify: Optional[bool] = True,
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
-    ) -> List[ResponseModel]:
-        """GET multiple URLs concurrently without JavaScript. Suitable for low-to-mid protection.
-
-        :param urls: URLs to fetch.
-        :param impersonate: Browser/version to impersonate; "chrome" uses the latest supported Chrome profile.
-            Lists pick randomly per attempt; None disables impersonation.
-        :param extraction_type: Content output format.
-        :param css_selector: Select matching elements after `main_content_only` filtering.
-        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
-        :param params: Query parameters.
-        :param headers: Request headers.
-        :param cookies: Request cookies.
-        :param timeout: Timeout in seconds.
-        :param follow_redirects: "safe" blocks redirects to private/internal IPs; True allows all; False disables redirects.
-        :param max_redirects: Redirect limit; -1 means unlimited.
-        :param retries: Maximum attempts, including the first; None or values below 1 send once.
-        :param retry_delay: Seconds between retries.
-        :param proxy: Proxy URL, optionally including credentials.
-        :param proxy_auth: Proxy basic auth: {"username": ..., "password": ...}.
-        :param auth: Basic auth: {"username": ..., "password": ...}.
-        :param verify: Verify TLS certificates.
-        :param http3: Use HTTP/3; may conflict with browser impersonation.
-        :param stealthy_headers: Fill missing browser headers and use a Google referer if none was supplied.
-        """
-        normalized_proxy_auth = _normalize_credentials(proxy_auth)
-        normalized_auth = _normalize_credentials(auth)
-
-        async with FetcherSession() as session:
-            tasks: List[Any] = [
-                session.get(
-                    url,
-                    auth=normalized_auth,
-                    proxy=proxy,
-                    http3=http3,
-                    verify=verify,
-                    params=params,
-                    headers=headers,
-                    cookies=cookies,
-                    timeout=timeout,
-                    retries=retries,
-                    proxy_auth=normalized_proxy_auth,
-                    retry_delay=retry_delay,
-                    impersonate=impersonate,
-                    max_redirects=max_redirects,
-                    follow_redirects=follow_redirects,
-                    stealthy_headers=stealthy_headers,
-                )
-                for url in urls
-            ]
-            responses = await gather(*tasks)
-            return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
-
     async def browser_fetch_once(
         self,
         url: str,
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
-        headless: bool = True,  # noqa: F821
+        headless: bool = True,
         google_search: bool = True,
         real_chrome: bool = False,
         wait: int | float = 0,
@@ -777,97 +696,6 @@ class ScraplingMCPServer:
         :param proxy: Proxy URL, or dictionary with server and optional username/password.
         :param additional_args: Browser context options that override Scrapling settings.
         """
-        results = await self.browser_fetch_many_once(
-            urls=[url],
-            extraction_type=extraction_type,
-            css_selector=css_selector,
-            main_content_only=main_content_only,
-            headless=headless,
-            google_search=google_search,
-            real_chrome=real_chrome,
-            wait=wait,
-            proxy=proxy,
-            timezone_id=timezone_id,
-            locale=locale,
-            extra_headers=extra_headers,
-            useragent=useragent,
-            hide_canvas=hide_canvas,
-            cdp_url=cdp_url,
-            executable_path=executable_path,
-            timeout=timeout,
-            disable_resources=disable_resources,
-            wait_selector=wait_selector,
-            cookies=cookies,
-            network_idle=network_idle,
-            pierce_shadow=pierce_shadow,
-            wait_selector_state=wait_selector_state,
-            block_webrtc=block_webrtc,
-            allow_webgl=allow_webgl,
-            solve_cloudflare=solve_cloudflare,
-            additional_args=additional_args,
-        )
-        return results[0]
-
-    async def browser_fetch_many_once(
-        self,
-        urls: List[str],
-        extraction_type: extraction_types = "markdown",
-        css_selector: Optional[str] = None,
-        main_content_only: bool = True,
-        headless: bool = True,  # noqa: F821
-        google_search: bool = True,
-        real_chrome: bool = False,
-        wait: int | float = 0,
-        proxy: Optional[str | Dict[str, str]] = None,
-        timezone_id: str | None = None,
-        locale: str | None = None,
-        extra_headers: Optional[Dict[str, str]] = None,
-        useragent: Optional[str] = None,
-        hide_canvas: bool = False,
-        cdp_url: Optional[str] = None,
-        executable_path: Optional[str] = None,
-        timeout: int | float = 30000,
-        disable_resources: bool = False,
-        wait_selector: Optional[str] = None,
-        cookies: Sequence[SetCookieParam] | None = None,
-        network_idle: bool = False,
-        wait_selector_state: SelectorWaitStates = "attached",
-        block_webrtc: bool = False,
-        allow_webgl: bool = True,
-        solve_cloudflare: bool = False,
-        additional_args: Optional[Dict] = None,
-        pierce_shadow: bool = False,
-    ) -> List[ResponseModel]:
-        """Fetch pages concurrently with a stealth browser and JavaScript rendering.
-
-        :param urls: URLs to fetch, with at most 50 concurrent pages.
-        :param extraction_type: Content output format.
-        :param css_selector: Select matching elements after `main_content_only` filtering.
-        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
-        :param headless: Hide the browser window.
-        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
-        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
-        :param cookies: Initial cookies as Playwright cookie dictionaries.
-        :param solve_cloudflare: Attempt to solve Cloudflare Turnstile/interstitial challenges before returning.
-        :param allow_webgl: Enable WebGL; disabling it can trigger bot detection.
-        :param pierce_shadow: Include open Shadow DOM content.
-        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
-        :param wait: Extra milliseconds after the page is ready, before returning.
-        :param timeout: Navigation and page-operation timeout in milliseconds.
-        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
-        :param timezone_id: Browser timezone; uses the system timezone if omitted.
-        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
-        :param wait_selector_state: Target state of `wait_selector`.
-        :param real_chrome: Use locally installed Chrome.
-        :param hide_canvas: Add noise to canvas operations.
-        :param block_webrtc: Disable non-proxied WebRTC UDP to reduce IP leaks.
-        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
-        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
-        :param google_search: Set a Google referer, overriding any supplied referer.
-        :param extra_headers: Additional request headers.
-        :param proxy: Proxy URL, or dictionary with server and optional username/password.
-        :param additional_args: Browser context options that override Scrapling settings.
-        """
         async with AsyncStealthySession(
             wait=wait,
             proxy=proxy,
@@ -877,7 +705,7 @@ class ScraplingMCPServer:
             cookies=cookies,
             headless=headless,
             block_ads=True,
-            max_pages=_page_pool_size(urls),
+            max_pages=1,
             useragent=useragent,
             timezone_id=timezone_id,
             real_chrome=real_chrome,
@@ -895,10 +723,9 @@ class ScraplingMCPServer:
             disable_resources=disable_resources,
             wait_selector_state=wait_selector_state,
         ) as session:
-            tasks = [session.fetch(url) for url in urls]
-            responses = await gather(*tasks)
+            page = await session.fetch(url)
 
-        return [_translate_response(page, extraction_type, css_selector, main_content_only) for page in responses]
+        return _translate_response(page, extraction_type, css_selector, main_content_only)
 
     async def browser_fetch(
         self,
@@ -1056,25 +883,15 @@ class ScraplingMCPServer:
                 )
             ],
             "cache_hints": {"tools/list": CacheHint(ttl_ms=3_600_000, scope="public")},
-            "instructions": """Follow these instructions precisely:
-1. When the `browser_open` or `open_request_session` tools are used, make sure to close the session with `close_session` after you finish, and use `list_sessions` if you lose track of the open sessions or their effective settings.
-2. If the user didn't specify which tool to use, start with the `make_request` tool (a plain HTTP request, defaulting to GET; set `method` for POST/PUT/DELETE), then escalate. The `make_request` tool and `bulk_get` (its GET-only bulk version) are suitable only for low-to-mid protection levels.
-    For high-protection levels or websites that require JS loading, use the stealthy browser tools directly.
-3. For HTML, Markdown, and text extraction, if the `css_selector` resolves to more than one element, all the elements will be returned. Snapshot extraction requires a selector matching exactly one element, or no selector for the whole page.
-4. For all fetch tools, the `extraction_type` parameter controls the format of the returned content: "markdown" (default) converts the page content to Markdown, "html" returns the raw HTML, and "text" returns the text content of the page.
-5. For HTML, Markdown, and text extraction, `main_content_only` is enabled by default and returns only the content inside the page's `<body>` tag. Pass `main_content_only=False` when you need the full page instead.
-6. If the task consists of multiple sequential requests to the same website, open a session once, then fetch through it to be more efficient:
-    `browser_open` + `browser_fetch` per page for stealthy browsers, or `open_request_session` + `session_make_request` per request for plain HTTP.
-7. Sessions hold the session-level configuration set when opened, while `browser_fetch`/`session_make_request` carry the per-request options and apply them on each call with the defaults shown in their schemas.
-    The one-shot tools (`make_request`, `bulk_get`, `browser_fetch_once`, `browser_fetch_many_once`) never touch sessions.
-8. If you are making multiple parallel one-shot requests, use the bulk version of the tool to be more efficient.
-9. If you are crawling/browsing a website, be more efficient by using the `css_selector` parameter to only access the parts you are interested in and save money/time. Example: use the `a` selector to extract the urls right away.
-10. The user can pass a CDP URL to connect to a remote browser session through the `browser_open` tool, then use it with the session tools.
-11. Set `extraction_type="snapshot"` on `browser_fetch` to get an AI ARIA snapshot with element references and bounding boxes in its content field. Use `css_selector` to snapshot one element, or omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Use `browser_snapshot` to read the current page without navigating; it returns plain text with boxes by default. Set `depth` to limit the tree or `boxes=False` to omit boxes.
-12. Use `browser_actions` for ordered mouse, field, key, and wait actions on the current page. Move/click targets use exactly one selector, current snapshot ref, or viewport (x, y) pair in CSS pixels; fields use one selector/ref. Wheel acts at the current pointer and does not wait for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document, so prefer a result-specific element for delayed navigation.
-13. Use `browser_snapshot` to inspect results before repeating failed actions or choosing targets that depend on page changes. Actions may partly complete before an error; completed effects are not undone or retried. To submit with Enter, focus the intended control and use a press_key action with key="Enter".
-14. Browser sessions save completed requests and responses across page changes. Failed and unfinished requests are omitted; closing does not wait for captures still running. Use `browser_network_requests` to find IDs, then `browser_network_request` to read one part. Successful non-API traffic is hidden unless include_static=True. Keep up to 1000 requests and 20 MiB of saved response bodies; oldest records are removed when either limit is reached. Only response bodies with a text Content-Type are read and saved; binary or unknown types keep headers and a skip note. Bodies over 1 MiB are skipped; unavailable bodies are marked. `browser_network_request` returns summary and headers as objects, and the full saved body as text. Closing an MCP session removes access to its history. Use next_cursor as after_id to continue the request list.
-""",
+            "instructions": """1. Close sessions when done. Use `list_sessions` to check sessions and settings. Read needed network data before closing; closing removes access to its history.
+2. Unless the user chooses a tool, start with HTTP for low to mid protection; use browsers for strong protection or JavaScript.
+3. Use `make_request` or `browser_fetch_once` for standalone fetches; they close automatically. Use sessions for related requests or follow-up browser actions and network history.
+4. Use `css_selector` to reduce output. HTML/Markdown/text return all matches; snapshots require one match or no selector for the whole page.
+5. Session options persist from opening; fetch options apply per call, with schema defaults.
+6. Each browser session uses one page; finish each call before starting the next in that session.
+7. Snapshots include refs and boxes by default; `main_content_only` and `pierce_shadow` do not filter them.
+8. `browser_actions` chains mouse, field, key and wait actions on the current page. Move/click needs one selector, current snapshot ref, or viewport (x, y) in CSS pixels; fields need one selector/ref. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
+9. Network history saves completed requests and responses across page changes. Failed/unfinished requests are omitted; closing does not wait for running captures. Use `include_static=True` to list successful non-API traffic. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Only response bodies with a text Content-Type are read and saved. Response bodies over 1 MiB are skipped; unavailable bodies are marked.""",
         }
         if self._auth_token:
             base_url = AnyHttpUrl(f"http://{host}:{port}")
@@ -1107,7 +924,6 @@ class ScraplingMCPServer:
             structured_output=True,
             annotations=_LIST_TOOL_ANNOTATIONS,
         )
-        # HTTP tools
         server.add_tool(
             _mcp_tool(self.make_request),
             title="Send HTTP request",
@@ -1116,23 +932,9 @@ class ScraplingMCPServer:
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            _mcp_tool(self.bulk_get),
-            title="Get pages via HTTP requests",
-            description=self.bulk_get.__doc__,
-            structured_output=True,
-            annotations=_FETCH_TOOL_ANNOTATIONS,
-        )
-        server.add_tool(
             _mcp_tool(self.browser_fetch_once),
             title="Fetch page in browser",
             description=self.browser_fetch_once.__doc__,
-            structured_output=True,
-            annotations=_FETCH_TOOL_ANNOTATIONS,
-        )
-        server.add_tool(
-            _mcp_tool(self.browser_fetch_many_once),
-            title="Fetch pages in browser",
-            description=self.browser_fetch_many_once.__doc__,
             structured_output=True,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )

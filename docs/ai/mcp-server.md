@@ -6,18 +6,15 @@ The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful W
 
 ## Features
 
-The Scrapling MCP Server provides sixteen tools for web scraping and browser interaction, split into two modes: one-shot tools that each launch and close their own browser/client, and session tools that open a browser or an HTTP session once and then work through it.
+The Scrapling MCP Server provides fourteen tools for web scraping and browser interaction. One-shot tools fetch a single URL and close their own browser or client. Session tools keep cookies and settings across calls, so the AI can continue browser actions on the same tab and inspect network history.
 
 ### One-shot tools
 
 #### 🚀 Basic HTTP Scraping
 - **`make_request`**: Fast HTTP requests with any method (GET, POST, PUT, DELETE) and browser fingerprint impersonation, generating real browser headers matching the TLS version, HTTP/3, and more!
-- **`bulk_get`**: An async GET-only version of the above tool that allows scraping of multiple URLs at the same time!
 
 #### 🔒 Stealth Browser Scraping
-
 - **`browser_fetch_once`**: Render JavaScript and scrape dynamic pages with our Stealthy browser. Supports fingerprint spoofing, Cloudflare Turnstile/Interstitial bypass, and control over the browser and request!
-- **`browser_fetch_many_once`**: Scrape multiple URLs at the same time in separate browser tabs, with the same stealth features and protection controls!
 
 ### Session tools
 
@@ -28,8 +25,8 @@ The Scrapling MCP Server provides sixteen tools for web scraping and browser int
 - **`list_sessions`**: List all active sessions with their details and `settings`.
 
 #### 🎯 Fetching Through a Session
-- **`browser_fetch`**: Fetch a single URL through an open stealthy browser session, carrying the per-request options for that call. This is the session counterpart of `browser_fetch_once`. It can also capture a structured page snapshot with element references, positions, and sizes, helping the AI identify controls and plan mouse actions.
-- **`session_make_request`**: Make an HTTP request with any method through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint. This is the session counterpart of `make_request`.
+- **`browser_fetch`**: Render JavaScript and scrape a single URL through an open stealthy browser session, with fingerprint spoofing and Cloudflare Turnstile/Interstitial bypass. It can also capture a structured page snapshot with element references, positions, and sizes, helping the AI identify controls and plan mouse actions.
+- **`session_make_request`**: Make fast HTTP requests with any method (GET, POST, PUT, DELETE), browser fingerprint impersonation, matching browser headers, and HTTP/3 support. Reuse cookies, connections, and the browser fingerprint through a session opened with `open_request_session`.
 
 #### 📸 Screenshots
 
@@ -64,7 +61,7 @@ Only completed requests are saved, including HTTP 4xx and 5xx responses. Failed 
 
 ### Shadow DOM
 
-Set `pierce_shadow=true` on `browser_fetch_once`, `browser_fetch_many_once`, or `browser_fetch` to include open Shadow DOM content. It defaults to `false`. For persistent sessions, pass it on each `browser_fetch` call. See [Shadow DOM](../fetching/dynamic.md#shadow-dom) for selector examples and limits.
+Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](../fetching/dynamic.md#shadow-dom) for selector examples and limits.
 
 ### Key Capabilities
 - **Smart Content Extraction**: Convert web pages/elements to Markdown, HTML, or extract a clean version of the text content
@@ -72,7 +69,6 @@ Set `pierce_shadow=true` on `browser_fetch_once`, `browser_fetch_many_once`, or 
 - **Anti-Bot Bypass**: Handle Cloudflare Turnstile, Interstitial, and other protections
 - **Proxy Support**: Use proxies for anonymity and geo-targeting
 - **Browser Impersonation**: Mimic real browsers with TLS fingerprinting, real browser headers matching that version, and more
-- **Parallel Processing**: Scrape multiple URLs concurrently for efficiency
 - **Session Persistence**: Reuse browser sessions across multiple requests for better performance
 - **Ad Blocking**: All browser-based tools automatically block requests to ~3,500 known ad and tracker domains, saving tokens and speeding up page loads
 - **Prompt Injection Protection**: Automatic sanitization of hidden content (CSS-hidden elements, aria-hidden, zero-width characters, HTML comments, template tags) that could be used for prompt injection attacks
@@ -189,7 +185,7 @@ Then, after you've added the server, you need to completely quit and restart the
 
 ### Custom Browser Executable
 
-Browser-based tools (`browser_fetch_once`, `browser_fetch_many_once`, and `browser_open`) can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
+The `browser_fetch_once` and `browser_open` tools can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
 
 To configure it once for the whole MCP server, pass the executable path when starting the server:
 
@@ -213,7 +209,7 @@ In a Claude Desktop configuration, add the option to the server arguments:
 }
 ```
 
-You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. Tool calls can still pass `executable_path` directly when a single request or session needs a different browser executable.
+You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. The AI can still choose a different browser executable for a single fetch with `browser_fetch_once` or when opening a session with `browser_open`.
 
 ### Connecting to Remote Browsers
 
@@ -313,7 +309,7 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
     Scrape the main content from https://example.com and convert it to markdown format.
     ```
     
-    Claude will use the `make_request` tool to fetch the page and return clean, readable content. If it fails, it will continue retrying every second for 3 attempts, unless you instruct it otherwise. If it fails to retrieve content for any reason, such as protection or if it's a dynamic website, it will automatically try the other tools. If Claude didn't do that automatically for some reason, you can add that to the prompt.
+    Claude can use `make_request` to fetch the page and return clean, readable content. HTTP requests default to three attempts with a one-second delay between attempts. If the page needs JavaScript or blocks HTTP requests, the AI can use `browser_fetch_once` instead. Both tools close their own resources after the call.
     
     A more optimized version of the same prompt would be:
     ```
@@ -335,33 +331,32 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
 
     Another example of a bit more complex prompt:
     ```
-    Extract product information from these e-commerce URLs using bulk browser fetches:
+    Open a stealthy browser session and visit these e-commerce URLs one at a time:
     - https://shop1.com/product-a
     - https://shop2.com/product-b  
     - https://shop3.com/product-c
     
-    Get the product names, prices, and descriptions from each page.
+    Get the product names, prices, and descriptions from each page. Close the session when done.
     ```
     
-    Claude will use `browser_fetch_many_once` to concurrently scrape all URLs, then analyze the extracted data.
+    Claude can reuse one browser session, call `browser_fetch` for each URL in order, then analyze the extracted data.
 
 4. **More advanced workflow**
 
     Let's say I want to get all the action games available on PlayStation's store first page right now. I can use the following prompt to do that:
     ```
-    Extract the URLs of all games in this page, then do a bulk request to them and return a list of all action games: https://store.playstation.com/en-us/pages/browse
+    Extract the URLs of all games on this page, then visit each game in order and return a list of all action games: https://store.playstation.com/en-us/pages/browse
     ```
-    Note that I instructed it to use a bulk request for all the URLs collected. If I hadn't mentioned it, sometimes it works as intended, and other times it makes a separate request to each URL, which takes significantly longer. This prompt takes approximately one minute to complete.
-    
-    However, because I wasn't specific enough, it actually used the `browser_fetch_once` here and the `browser_fetch_many_once` in the second step, which unnecessarily consumed a large number of tokens. A better prompt would be:
+    Tell the AI to reuse an HTTP session to avoid launching a browser when the data is available through normal requests:
     ```
-    Use normal requests to extract the URLs of all games in this page, then do a bulk request to them and return a list of all action games: https://store.playstation.com/en-us/pages/browse
+    Open an HTTP session, extract the URLs of all games on this page, then fetch each game in order and return a list of all action games. Close the session when done: https://store.playstation.com/en-us/pages/browse
     ```
-    And if you know how to write CSS selectors, you can instruct Claude to apply the selectors to the elements you want, and it will nearly complete the task immediately.
+    And if you know how to write CSS selectors, you can narrow the content before the AI reads it:
     ```
-    Use normal requests to extract the URLs of all games on the page below, then perform a bulk request to them and return a list of all action games.
-    The selector for games in the first page is `[href*="/concept/"]` and the selector for the genre in the second request is `[data-qa="gameInfo#releaseInformation#genre-value"]`.
-    
+    Use an HTTP session to extract the URLs of all games on the page below, then fetch each game in order and return a list of all action games.
+    The selector for games in the first page is `[href*="/concept/"]` and the selector for the genre in each game page is `[data-qa="gameInfo#releaseInformation#genre-value"]`.
+    Close the session when done.
+
     URL: https://store.playstation.com/en-us/pages/browse
     ```
 
@@ -384,7 +379,7 @@ We will gradually go from simple prompts to more complex ones. We will use Claud
     ```
     But a better prompt would be:
     ```
-    Go to the following category URL and extract all product URLs using the CSS selector "a". Then, fetch the first 3 product pages in parallel and extract each product’s price and details.
+    Go to the following category URL and extract all product URLs using the CSS selector "a". Then, reuse the session to fetch the first 3 product pages in order and extract each product’s price and details. Close the session when done.
     
     Keep the output in markdown format to reduce irrelevant content.
     
@@ -427,11 +422,12 @@ And so on, you get the idea. Your creativity is the key here.
 Here is some technical advice for you.
 
 ### 1. Choose the Right Tool
-- **`make_request`**: Fast, simple websites
-- **`browser_fetch_once`**: JavaScript/dynamic content and protected sites, including Cloudflare
+- **`make_request`**: Fast HTTP requests for a single page or API call
+- **`browser_fetch_once`**: A single JavaScript/dynamic page or protected site, including Cloudflare
+- **Session tools**: Related requests, browser actions, screenshots, and network history
 
 ### 2. Optimize Performance
-- Use bulk tools for multiple URLs
+- Reuse a session and fetch each URL in order
 - Disable unnecessary resources
 - Set appropriate timeouts
 - Use CSS selectors for targeted extraction
@@ -456,12 +452,12 @@ The MCP server automatically sanitizes scraped content when `main_content_only` 
 
 This protection runs automatically for HTML, Markdown, and text extraction. Keep `main_content_only=true` (the default) for maximum protection.
 
-### 6. Use Sessions for Multiple Requests
+### 6. Manage Sessions
+- Use `make_request` or `browser_fetch_once` for a standalone fetch; they close their own resources and do not leave a session for later calls
 - Use `browser_open` to create a persistent browser session when scraping multiple pages, then call `browser_fetch` for each page through that session
 - For multiple plain HTTP requests, use `open_request_session` instead and call `session_make_request` per request; it keeps cookies, connections, and the browser fingerprint (`impersonate`) across calls without a browser
 - Sessions hold the session-level configuration set when opened (headless, locale, cookies, stealth toggles, etc. for browsers; `impersonate` and `proxy` for requests sessions); the per-request options (timeout, wait_selector, network_idle, solve_cloudflare, etc.) are passed to `browser_fetch`/`session_make_request` on each call, with their defaults shown in the tool schemas
 - `browser_fetch` can solve Cloudflare challenges through the open stealthy browser session
-- The one-shot tools (`make_request`, `bulk_get`, `browser_fetch_once`, `browser_fetch_many_once`) never take a session
 - Always close sessions with `close_session` when done to free resources
 - Use `list_sessions` to check which sessions are still active and see the `settings` each was created with (returned for the AI agent; empty for CDP sessions)
 - Pass a custom `session_id` to the open tools to give sessions meaningful names (e.g. `"search"`, `"checkout"`) instead of the random hex default. They raise if the chosen ID is already in use, so you can detect collisions up front

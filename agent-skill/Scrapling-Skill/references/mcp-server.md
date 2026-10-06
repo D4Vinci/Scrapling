@@ -1,19 +1,19 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes sixteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), plain HTTP requests and stealth browser rendering with anti-bot bypass, persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, network history, and page screenshots returned as real image content blocks. Fetch tools come in two modes: one-shot tools (`browser_fetch_once`, `browser_fetch_many_once`) each launch and close their own browser, while `browser_fetch` and `session_make_request` work through sessions opened with `browser_open`/`open_request_session`.
+The Scrapling MCP server exposes fourteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), plain HTTP requests and stealth browser rendering with anti-bot bypass, persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, network history, and page screenshots returned as real image content blocks. Every fetch takes one URL. One-shot tools (`make_request`, `browser_fetch_once`) close their own client or browser after the call. Use sessions opened with `browser_open` or `open_request_session` for related requests, browser actions, or network history. Browser session calls reuse one tab, so fetch pages and run actions in order. Close each persistent session when done.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). Bulk tools return a list of these responses. The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_snapshot` and `browser_actions` return plain text. Both network tools return structured JSON; the request list supports pagination. `browser_evaluate` returns compact JSON in one plain text block.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_snapshot` and `browser_actions` return plain text. Both network tools return structured JSON; the request list supports pagination. `browser_evaluate` returns compact JSON in one plain text block.
 
 ## Shadow DOM
 
-Set `pierce_shadow=true` on `browser_fetch_once`, `browser_fetch_many_once`, or `browser_fetch` to include open Shadow DOM content. It defaults to `false`. For persistent sessions, pass it on each `browser_fetch` call. See [Shadow DOM](fetching/dynamic.md#shadow-dom) for selector examples and limits.
+Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](fetching/dynamic.md#shadow-dom) for selector examples and limits.
 
 
 ## One-shot tools
 
 ### `make_request` -- HTTP request, any method (single URL)
 
-Fast HTTP request with browser fingerprint impersonation (TLS, headers). Supports GET (default), POST, PUT, and DELETE via the `method` parameter. Suitable for static pages with no/low bot protection.
+Fast HTTP request with browser fingerprint impersonation (TLS, headers). Supports GET (default), POST, PUT, and DELETE via the `method` parameter. Suitable for static pages with no/low bot protection. Closes its own HTTP client after the call; use `session_make_request` for a persistent session.
 
 **Key parameters:**
 
@@ -31,7 +31,7 @@ Fast HTTP request with browser fingerprint impersonation (TLS, headers). Support
 | `proxy_auth`        | dict or null                              | null         | `{"username": "...", "password": "..."}`                           |
 | `auth`              | dict or null                              | null         | HTTP basic auth, same format as proxy_auth                         |
 | `timeout`           | number                                    | 30           | Seconds before timeout                                             |
-| `retries`           | int                                       | 3            | Retry attempts on failure                                          |
+| `retries`           | int                                       | 3            | Maximum attempts, including the first                              |
 | `retry_delay`       | int                                       | 1            | Seconds between retries                                            |
 | `stealthy_headers`  | bool                                      | true         | Generate realistic browser headers and Google referer              |
 | `http3`             | bool                                      | false        | Use HTTP/3 (may conflict with `impersonate`)                       |
@@ -41,10 +41,6 @@ Fast HTTP request with browser fingerprint impersonation (TLS, headers). Support
 | `cookies`           | dict or null                              | null         | Request cookies                                                    |
 | `params`            | dict or null                              | null         | Query string parameters                                            |
 | `verify`            | bool                                      | true         | Verify HTTPS certificates                                          |
-
-### `bulk_get` -- HTTP GET request (multiple URLs)
-
-Async concurrent GET-only version of `make_request`. Same parameters except `url` is replaced by `urls` (list of strings) and there are no `method`/`data`/`json` parameters. All URLs are fetched in parallel. Returns a list of `ResponseModel`.
 
 ### `browser_fetch_once` -- Stealth browser fetch (single URL)
 
@@ -81,11 +77,7 @@ Uses a stealthy Chromium browser through Patchright for JavaScript rendering, fi
 | `allow_webgl`      | bool         | true    | Keep WebGL enabled; disabling it can trigger bot detection        |
 | `additional_args`  | dict or null | null    | Extra Playwright context args (overrides Scrapling defaults)     |
 
-This one-shot tool creates and closes its own stealthy browser session. To fetch through a persistent session, use `browser_fetch`.
-
-### `browser_fetch_many_once` -- Stealth browser fetch (multiple URLs)
-
-Concurrent stealth browser version of `browser_fetch_once`. Same parameters except `url` is replaced by `urls` (list of strings). Each URL opens in a separate browser tab. Returns a list of `ResponseModel`.
+This one-shot tool creates and closes its own stealthy browser session. For related fetches, later browser actions, or network history, use `browser_open` and `browser_fetch`.
 
 ## Session tools
 
@@ -121,7 +113,7 @@ Opens an HTTP session (no browser) that stays alive across multiple `session_mak
 
 ### `browser_fetch` -- Fetch through an open browser session (single URL)
 
-Fetches one URL through a stealthy browser session opened with `browser_open`. The session holds the browser-level configuration; every parameter here applies to this request only. Raises on a requests session; use `session_make_request` there instead.
+Fetches one URL through a stealthy Chromium session opened with `browser_open`, with JavaScript rendering, fingerprint spoofing, and Cloudflare Turnstile/Interstitial bypass. The session holds the browser-level configuration; every parameter here applies to this request only. Raises on a requests session; use `session_make_request` there instead.
 
 | Parameter             | Type         | Default      | Description                                                                            |
 |-----------------------|--------------|--------------|----------------------------------------------------------------------------------------|
@@ -335,14 +327,11 @@ The page stays reserved during capture and is released after success, failure, o
 
 | Scenario                                 | Tool                                                          |
 |------------------------------------------|---------------------------------------------------------------|
-| Static page, no bot protection           | `make_request`                                                |
-| Multiple static pages                    | `bulk_get`                                                    |
-| JavaScript-rendered / SPA page           | `browser_fetch_once`                                                       |
-| Multiple JS-rendered pages               | `browser_fetch_many_once`                                                  |
-| Cloudflare or strong anti-bot protection | `browser_fetch_once` (with `solve_cloudflare=true` for Turnstile) |
-| Multiple protected pages                 | `browser_fetch_many_once`                                         |
-| Multiple pages from the same site        | `browser_open` + `browser_fetch` per page                     |
-| Multiple plain HTTP requests to one site | `open_request_session` + `session_make_request` per request   |
+| Single static page or API request | `make_request` |
+| Single JavaScript-rendered / SPA page | `browser_fetch_once` |
+| Single page with Cloudflare protection | `browser_fetch_once` with `solve_cloudflare=true` |
+| Related HTTP requests | `open_request_session` + `session_make_request` per URL |
+| Browser automation or network history | `browser_open` + `browser_fetch` per URL |
 | Capture the current page or an element   | `browser_screenshot` after `browser_open` + `browser_fetch` |
 | Read the current page's AI ARIA snapshot  | `browser_snapshot` with `session_id`                          |
 | Chain mouse, field, keyboard, or wait actions | `browser_actions` with `session_id`                       |
@@ -350,7 +339,7 @@ The page stays reserved during capture and is released after success, failure, o
 | Find API calls, HTTP errors, or redirects  | `browser_network_requests` with `session_id`                |
 | Read recorded request headers or body data | `browser_network_request` with `session_id` and `request_id` |
 
-Start with `make_request` (fastest, lowest resource cost). Use `browser_fetch_once` when JavaScript rendering is needed or HTTP requests are blocked. Enable `solve_cloudflare` for Cloudflare challenges. For multiple pages from the same site, use a persistent session to avoid browser launch overhead.
+Start with `make_request` for a standalone HTTP request, then use `browser_fetch_once` if JavaScript rendering is needed or HTTP requests are blocked. Enable `solve_cloudflare` for Cloudflare challenges. Use persistent sessions for related requests, browser actions, screenshots, or network history. Reuse the session and fetch URLs in order. Always call `close_session` when done with a persistent session.
 
 ## Content extraction tips
 
@@ -373,7 +362,7 @@ Keep `main_content_only=true` for maximum protection.
 
 ## Ad blocking
 
-All browser-based tools (`browser_fetch_once`, `browser_fetch_many_once`) and persistent sessions (`browser_open`) automatically block requests to ~3,500 known ad and tracker domains. This is always enabled in the MCP server to save tokens and speed up page loads. No configuration needed.
+The `browser_fetch_once` tool and browser sessions opened with `browser_open` automatically block requests to ~3,500 known ad and tracker domains. This is always enabled in the MCP server to save tokens and speed up page loads. No configuration needed.
 
 ## Setup
 
@@ -409,7 +398,7 @@ docker run -p 8000:8000 -e SCRAPLING_MCP_AUTH_TOKEN="<your-token>" pyd4vinci/scr
 
 ## Custom browser executable
 
-Browser-based tools (`browser_fetch_once`, `browser_fetch_many_once`, and `browser_open`) can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
+The `browser_fetch_once` and `browser_open` tools can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
 
 To configure it once for the whole MCP server, pass the executable path when starting the server:
 
@@ -433,7 +422,7 @@ In a Claude Desktop configuration, add the option to the server arguments:
 }
 ```
 
-You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. Tool calls can still pass `executable_path` directly when a single request or session needs a different browser executable. The `scrapling extract fetch` and `scrapling extract stealthy-fetch` CLI commands support the same `--executable-path` option and environment variable fallback.
+You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. Pass `executable_path` to `browser_fetch_once` or `browser_open` when a single fetch or session needs a different browser executable. The `scrapling extract fetch` and `scrapling extract stealthy-fetch` CLI commands support the same `--executable-path` option and environment variable fallback.
 
 The MCP server name when registering with a client is `ScraplingServer`. The command is the path to the `scrapling-mcp` binary with no arguments (or the `scrapling` binary with `mcp` as the argument on versions before 0.4.13).
 
