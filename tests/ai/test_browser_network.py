@@ -10,8 +10,9 @@ from mcp.client import Client
 from mcp.types import CallToolResult, TextContent
 
 from scrapling.core._types import Any
-from scrapling.core._network_formatting import NetworkRequestModel, _request_details
-from scrapling.core.ai import NetworkRequestsModel, ScraplingMCPServer, _SessionEntry
+from scrapling.core.ai._network_formatting import _request_details
+from scrapling.core.ai import NetworkRequestModel, NetworkRequestsModel, ScraplingMCPServer
+from scrapling.core.ai.server import _SessionEntry
 from scrapling.engines._browsers._network import NetworkRecorder
 from scrapling.engines.toolbelt.custom import Response
 

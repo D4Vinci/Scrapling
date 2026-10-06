@@ -24,6 +24,8 @@ from scrapling.core.ai import (
     SessionCreatedModel,
     SessionClosedModel,
     SessionType,
+)
+from scrapling.core.ai.server import (
     _SessionEntry,
     _normalize_credentials,
     _session_settings,
@@ -133,7 +135,7 @@ class TestOneShotTools:
             sessions.append(session)
             return session
 
-        monkeypatch.setattr("scrapling.core.ai.FetcherSession", create_session)
+        monkeypatch.setattr("scrapling.core.ai.server.FetcherSession", create_session)
         server = ScraplingMCPServer()
         async with Client(server._build_server("127.0.0.1", 8000)) as client:
             fetched = await client.call_tool("make_request", {"url": f"{httpbin.url}/html", "css_selector": "h1"})
@@ -174,7 +176,7 @@ class TestOneShotTools:
             sessions.append(session)
             return session
 
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", create_session)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", create_session)
         server = ScraplingMCPServer()
         html = b"""<html><body><p id="answer">Initial</p><p>Outside</p><script>
 setTimeout(() => { const p = document.querySelector('#answer'); p.textContent = 'Rendered'; p.id = 'ready'; }, 50);
@@ -211,7 +213,7 @@ setTimeout(() => { const p = document.querySelector('#answer'); p.textContent = 
         context = AsyncMock()
         context.__aenter__.return_value = session
         factory = Mock(return_value=context)
-        monkeypatch.setattr("scrapling.core.ai.FetcherSession", factory)
+        monkeypatch.setattr("scrapling.core.ai.server.FetcherSession", factory)
         server = ScraplingMCPServer()
         existing = _SessionEntry(Mock(_is_alive=True), "static")
         server._sessions["existing"] = existing
@@ -258,7 +260,9 @@ setTimeout(() => { const p = document.querySelector('#answer'); p.textContent = 
         request.side_effect = RuntimeError("fetch failed")
         factory = Mock(return_value=context)
         monkeypatch.setattr(
-            "scrapling.core.ai.FetcherSession" if tool == "make_request" else "scrapling.core.ai.AsyncStealthySession",
+            "scrapling.core.ai.server.FetcherSession"
+            if tool == "make_request"
+            else "scrapling.core.ai.server.AsyncStealthySession",
             factory,
         )
         server = ScraplingMCPServer()
@@ -309,7 +313,7 @@ class TestRequestProfiles:
     @pytest.mark.parametrize("impersonate", ["unknown-browser", ["chrome", "unknown-browser"]])
     async def test_invalid_profiles_fail_before_opening_sessions(self, monkeypatch, tool, impersonate):
         factory = Mock()
-        monkeypatch.setattr("scrapling.core.ai.FetcherSession", factory)
+        monkeypatch.setattr("scrapling.core.ai.server.FetcherSession", factory)
         server = ScraplingMCPServer()
         args = {"url": "https://example.com"} if tool == "make_request" else {"session_id": "profiles"}
         args["impersonate"] = impersonate
@@ -599,7 +603,7 @@ class TestStaticSessionManagement:
     @pytest.mark.asyncio
     async def test_session_ids_are_shared_across_both_open_tools(self, server, monkeypatch):
         """A requests session and a browser session can't share the same ID"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         await server.open_request_session(session_id="shared")
         with pytest.raises(ValueError, match="already exists"):
             await server.browser_open(session_id="shared")
@@ -608,7 +612,7 @@ class TestStaticSessionManagement:
     @pytest.mark.asyncio
     async def test_session_make_request_requires_a_static_session(self, server, monkeypatch):
         """session_make_request rejects browser sessions"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         await server.browser_open(session_id="browser")
         with pytest.raises(ValueError, match="requires a 'static' session"):
             await server.session_make_request(url="https://example.com", session_id="browser")
@@ -635,7 +639,7 @@ class TestExecutablePath:
     @pytest.mark.asyncio
     async def test_browser_open_passes_executable_path(self, monkeypatch):
         """browser_open forwards per-session executable_path to the stealthy session"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer()
 
         created = await server.browser_open(executable_path="/tmp/chrome")
@@ -647,7 +651,7 @@ class TestExecutablePath:
     async def test_browser_open_uses_environment_default(self, monkeypatch):
         """browser_open uses SCRAPLING_EXECUTABLE_PATH when no per-call value is provided"""
         monkeypatch.setenv("SCRAPLING_EXECUTABLE_PATH", "/opt/custom-chromium")
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer()
 
         created = await server.browser_open()
@@ -658,7 +662,7 @@ class TestExecutablePath:
     @pytest.mark.asyncio
     async def test_browser_open_overrides_global_executable_path(self, monkeypatch):
         """browser_open prefers the supplied executable path to the server default."""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer(executable_path="/opt/default-chromium")
 
         created = await server.browser_open(executable_path="/opt/request-chromium")
@@ -669,7 +673,7 @@ class TestExecutablePath:
     @pytest.mark.asyncio
     async def test_browser_open_uses_global_executable_path(self, monkeypatch):
         """browser_open forwards the server executable path default."""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer(executable_path="/opt/default-chromium")
 
         created = await server.browser_open()
@@ -680,7 +684,7 @@ class TestExecutablePath:
     @pytest.mark.asyncio
     async def test_browser_fetch_once_overrides_global_executable_path(self, monkeypatch):
         """browser_fetch_once forwards a per-call executable_path instead of the server default"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer(executable_path="/opt/default-chromium")
 
         result = await server.browser_fetch_once(url="https://example.com", executable_path="/opt/request-chromium")
@@ -691,7 +695,7 @@ class TestExecutablePath:
     @pytest.mark.asyncio
     async def test_browser_fetch_once_uses_global_executable_path(self, monkeypatch):
         """browser_fetch_once forwards the server executable_path default"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer(executable_path="/opt/default-chromium")
 
         result = await server.browser_fetch_once(url="https://example.com")
@@ -702,7 +706,7 @@ class TestExecutablePath:
     @pytest.mark.asyncio
     async def test_browser_fetch_once_uses_environment_default(self, monkeypatch):
         monkeypatch.setenv("SCRAPLING_EXECUTABLE_PATH", "/opt/environment-chromium")
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         await ScraplingMCPServer().browser_fetch_once(url="https://example.com")
         assert _FakeStealthySession.instances[0].kwargs["executable_path"] == "/opt/environment-chromium"
         assert not _FakeStealthySession.instances[0]._is_alive
@@ -744,7 +748,7 @@ class TestOneShotBrowserForwarding:
     )
     async def test_each_call_uses_a_closed_stealth_session_with_all_options(self, monkeypatch, options):
         monkeypatch.delenv("SCRAPLING_EXECUTABLE_PATH", raising=False)
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         _FakeStealthySession.instances = []
         server = ScraplingMCPServer()
         existing = _SessionEntry(Mock(_is_alive=True), "stealthy")
@@ -804,7 +808,7 @@ class TestBrowserFetchForwarding:
     @pytest.mark.asyncio
     async def test_stealthy_browser_fetch_forwards_the_per_request_params(self, monkeypatch):
         """A stealthy session receives every stealthy per-request param, including explicit None values"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer()
         opened = await server.browser_open()
 
@@ -830,7 +834,7 @@ class TestBrowserFetchForwarding:
     @pytest.mark.asyncio
     async def test_stealthy_browser_fetch_forwards_solve_cloudflare(self, monkeypatch):
         """A stealthy session additionally receives solve_cloudflare"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer()
         opened = await server.browser_open()
 
@@ -842,7 +846,7 @@ class TestBrowserFetchForwarding:
     @pytest.mark.asyncio
     async def test_supplied_values_are_forwarded(self, monkeypatch):
         """Per-request overrides reach the session as given"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer()
         options = {
             "wait": 250,
@@ -925,7 +929,7 @@ class TestModeSplitContract:
     @pytest.mark.asyncio
     async def test_browser_open_forwards_proxy_to_the_session(self, monkeypatch):
         """The session-level proxy reaches the underlying session so it applies to every fetch"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         _FakeStealthySession.instances = []
         server = ScraplingMCPServer()
 
@@ -935,7 +939,7 @@ class TestModeSplitContract:
 
     @pytest.mark.asyncio
     async def test_browser_open_preserves_stealth_session_options(self, monkeypatch):
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer()
         options = {
             "headless": False,
@@ -1000,7 +1004,7 @@ class TestSessionSettingsReceipt:
     @pytest.mark.asyncio
     async def test_browser_open_and_list_report_the_receipt(self, monkeypatch):
         """browser_open returns the receipt and list_sessions reports the same one"""
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
         server = ScraplingMCPServer()
 
         created = await server.browser_open()
@@ -1405,8 +1409,8 @@ class TestServerToolRegistration:
     async def test_one_shot_tools_reject_batches_before_opening_sessions(self, monkeypatch, tool, args):
         static = Mock()
         browser = Mock()
-        monkeypatch.setattr("scrapling.core.ai.FetcherSession", static)
-        monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", browser)
+        monkeypatch.setattr("scrapling.core.ai.server.FetcherSession", static)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", browser)
         async with Client(ScraplingMCPServer()._build_server("127.0.0.1", 8000)) as client:
             result = await client.call_tool(tool, args)
         assert result.is_error
@@ -1479,7 +1483,7 @@ class TestServerToolRegistration:
 
 @pytest.mark.asyncio
 async def test_shadow_option_changes_per_session_request(monkeypatch):
-    monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+    monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
     server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
     async with Client(server) as client:
         opened = await client.call_tool("browser_open", {"session_id": "shadow-test"})
@@ -1499,7 +1503,7 @@ async def test_shadow_option_changes_per_session_request(monkeypatch):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("enabled", [False, True])
 async def test_shadow_option_reaches_browser_session(monkeypatch, enabled):
-    monkeypatch.setattr("scrapling.core.ai.AsyncStealthySession", _FakeStealthySession)
+    monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
     server = ScraplingMCPServer()._build_server("127.0.0.1", 8000)
     async with Client(server) as client:
         result = await client.call_tool("browser_fetch_once", {"url": "https://example.com", "pierce_shadow": enabled})

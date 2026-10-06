@@ -25,14 +25,14 @@ from patchright.async_api import Error as PatchrightError
 
 from scrapling import __version__
 from scrapling.core.utils import log
-from scrapling.core._browser_actions import (
+from ._browser_actions import (
     BrowserAction,
     NonEmptyString,
     NonNegativeFiniteFloat,
     _run_actions,
     _validate_actions,
 )
-from scrapling.core._network_formatting import NetworkPart, NetworkRequestInfo, NetworkRequestModel, _request_details
+from ._network_formatting import NetworkPart, NetworkRequestInfo, NetworkRequestModel, _request_details
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.fetchers import FetcherSession, AsyncStealthySession
