@@ -284,10 +284,10 @@ async def test_browser_evaluate_live_expressions_promises_context_and_page_state
                 {
                     "session_id": "browser",
                     "actions": [
-                        {"type": "textbox", "selector": "#name", "value": "before"},
-                        {"type": "checkbox", "selector": "#agree", "value": True},
-                        {"type": "click", "selector": "#toggle"},
-                        {"type": "click", "selector": "#name"},
+                        {"type": "textbox", "target": "#name", "value": "before"},
+                        {"type": "checkbox", "target": "#agree", "value": True},
+                        {"type": "click", "target": "#toggle"},
+                        {"type": "click", "target": "#name"},
                     ],
                 },
             )

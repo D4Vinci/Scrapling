@@ -481,7 +481,7 @@ class ScraplingMCPServer:
         Cancelled/timed-out clicks attempt button release. Load waits observe the current document, not future navigation.
 
         :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param actions: Ordered actions; fields need one selector/ref, mouse targets one selector/ref or viewport (x, y).
+        :param actions: Ordered actions; fields need target; mouse needs target or viewport (x, y).
         :param slowly: Fresh random delays: 50-150 ms per character, 100-300 ms between all actions, including waits.
         """
         _validate_actions(actions)
@@ -894,7 +894,7 @@ class ScraplingMCPServer:
 5. Session options persist from opening; fetch options apply per call, with schema defaults.
 6. Each browser session uses one page; finish each call before starting the next in that session.
 7. Snapshots include refs and boxes by default; `main_content_only` and `pierce_shadow` do not filter them.
-8. `browser_actions` chains mouse, field, key and wait actions on the current page. Move/click needs one selector, current snapshot ref, or viewport (x, y) in CSS pixels; fields need one selector/ref. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
+8. `browser_actions` chains mouse, field, key and wait actions on the current page. Element actions use `target`: a Playwright selector or `aria-ref=<ref>` from the current snapshot. Move/click can instead use viewport (x, y) in CSS pixels. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
 9. Network history saves completed requests and responses across page changes. Failed/unfinished requests are omitted; closing does not wait for running captures. Use `include_static=True` to list successful non-API traffic. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Only response bodies with a text Content-Type are read and saved. Response bodies over 1 MiB are skipped; unavailable bodies are marked.""",
         }
         if self._auth_token:

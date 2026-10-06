@@ -62,8 +62,8 @@ async def test_browser_wait_schema_and_annotations() -> None:
     assert len(items["oneOf"]) == 11
     assert variants["wait_time"]["required"] == ["type", "milliseconds"]
     assert variants["wait_time"]["properties"]["milliseconds"]["minimum"] == 0
-    assert variants["wait_element"]["required"] == ["type", "selector"]
-    assert variants["wait_element"]["properties"]["selector"]["minLength"] == 1
+    assert variants["wait_element"]["required"] == ["type", "target"]
+    assert variants["wait_element"]["properties"]["target"]["minLength"] == 1
     assert set(variants["wait_element"]["properties"]["state"]["enum"]) == {"attached", "detached", "visible", "hidden"}
     assert variants["wait_element"]["properties"]["state"]["default"] == "visible"
     assert variants["wait_load"]["required"] == ["type", "state"]
@@ -85,10 +85,10 @@ async def test_browser_wait_schema_and_annotations() -> None:
     [
         ({"type": "wait_time", "milliseconds": 0}, "wait_for_timeout", (0,), {}),
         ({"type": "wait_time", "milliseconds": 12.5}, "wait_for_timeout", (12.5,), {}),
-        ({"type": "wait_element", "selector": "#ready"}, "locator", (), {"state": "visible", "timeout": 30000}),
+        ({"type": "wait_element", "target": "#ready"}, "locator", (), {"state": "visible", "timeout": 30000}),
         *[
             (
-                {"type": "wait_element", "selector": "#ready", "state": state, "timeout": 0},
+                {"type": "wait_element", "target": "#ready", "state": state, "timeout": 0},
                 "locator",
                 (),
                 {"state": state, "timeout": 0},
@@ -147,9 +147,9 @@ async def test_browser_wait_mixed_chain_keeps_order_and_page_reservation() -> No
                 "session_id": "browser",
                 "actions": [
                     {"type": "wait_load", "state": "domcontentloaded"},
-                    {"type": "wait_element", "selector": "#ready", "timeout": 15},
+                    {"type": "wait_element", "target": "#ready", "timeout": 15},
                     {"type": "wait_time", "milliseconds": 2.5},
-                    {"type": "wait_element", "selector": "#ready", "state": "hidden", "timeout": 0},
+                    {"type": "wait_element", "target": "#ready", "state": "hidden", "timeout": 0},
                 ],
             },
         )
@@ -183,13 +183,17 @@ async def test_browser_wait_mixed_chain_keeps_order_and_page_reservation() -> No
                 {"type": "wait_time", "milliseconds": "NaN"},
                 {"type": "wait_time", "milliseconds": "Infinity"},
                 {"type": "wait_element"},
-                {"type": "wait_element", "selector": ""},
-                {"type": "wait_element", "selector": "#ready", "state": "missing"},
+                {"type": "wait_element", "target": ""},
+                {"type": "wait_element", "target": None},
+                {"type": "wait_element", "target": 123},
+                {"type": "wait_element", "selector": "#ready"},
+                {"type": "wait_element", "ref": "e2"},
+                {"type": "wait_element", "target": "#ready", "state": "missing"},
                 {"type": "wait_load"},
                 {"type": "wait_load", "state": "commit"},
                 {"type": "wait_load", "state": "load", "timeout": -1},
                 {"type": "wait_load", "state": "load", "timeout": "NaN"},
-                {"type": "wait_element", "selector": "#ready", "timeout": "Infinity"},
+                {"type": "wait_element", "target": "#ready", "timeout": "Infinity"},
             )
         ],
     ],
@@ -208,7 +212,7 @@ async def test_browser_wait_invalid_batch_does_not_start_or_reserve_page(actions
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "values", [{"type": "wait_element", "selector": "#missing"}, {"type": "wait_load", "state": "networkidle"}]
+    "values", [{"type": "wait_element", "target": "#missing"}, {"type": "wait_load", "state": "networkidle"}]
 )
 async def test_browser_wait_native_timeout_reaches_mcp_and_releases_page(values: dict[str, Any]) -> None:
     server, session, page = _server()
@@ -359,7 +363,7 @@ async def test_browser_wait_live_pause_and_element_states() -> None:
                 "browser_actions",
                 {
                     "session_id": "browser",
-                    "actions": [{"type": "wait_element", "selector": "#target", "state": state, "timeout": 5000}],
+                    "actions": [{"type": "wait_element", "target": "#target", "state": state, "timeout": 5000}],
                 },
             )
             assert not result.is_error
@@ -374,7 +378,7 @@ async def test_browser_wait_live_pause_and_element_states() -> None:
                     "browser_actions",
                     {
                         "session_id": "browser",
-                        "actions": [{"type": "wait_element", "selector": "#absent", "state": state, "timeout": 100}],
+                        "actions": [{"type": "wait_element", "target": "#absent", "state": state, "timeout": 100}],
                     },
                 )
             ).is_error
@@ -383,7 +387,7 @@ async def test_browser_wait_live_pause_and_element_states() -> None:
             "browser_actions",
             {
                 "session_id": "browser",
-                "actions": [{"type": "wait_element", "selector": ".duplicate", "state": "attached", "timeout": 100}],
+                "actions": [{"type": "wait_element", "target": ".duplicate", "state": "attached", "timeout": 100}],
             },
         )
         assert result.is_error and isinstance(result.content[0], TextContent)
@@ -463,8 +467,8 @@ async def test_browser_wait_live_load_visible_hidden_chain() -> None:
                 "session_id": "browser",
                 "actions": [
                     {"type": "wait_load", "state": "load", "timeout": 5000},
-                    {"type": "wait_element", "selector": "#target", "state": "visible", "timeout": 5000},
-                    {"type": "wait_element", "selector": "#target", "state": "hidden", "timeout": 5000},
+                    {"type": "wait_element", "target": "#target", "state": "visible", "timeout": 5000},
+                    {"type": "wait_element", "target": "#target", "state": "hidden", "timeout": 5000},
                 ],
             },
         )

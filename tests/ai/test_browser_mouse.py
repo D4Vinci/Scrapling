@@ -89,25 +89,26 @@ async def test_browser_mouse_schema_and_annotations() -> None:
         "press_key",
     }
     assert len(items["oneOf"]) == 11
+    assert "_Selector" not in schema["$defs"] and "_Ref" not in schema["$defs"]
     for kind in ("move", "click", "wheel"):
         variant = variants[kind]
         assert variant["required"] == ["type"]
         assert variant["properties"]["type"]["const"] == kind
     for kind in ("move", "click"):
-        for target in ("selector", "ref"):
-            reference = variants[kind]["properties"][target]["$ref"]
-            assert schema["$defs"][reference.rsplit("/", 1)[1]] == {
-                "anyOf": [{"minLength": 1, "type": "string"}, {"type": "null"}],
-                "title": target.title(),
-            }
+        assert variants[kind]["properties"]["target"] == {"$ref": "#/$defs/_Target"}
+        assert schema["$defs"]["_Target"] == {
+            "anyOf": [{"minLength": 1, "type": "string"}, {"type": "null"}],
+            "description": "Playwright selector or snapshot ref as aria-ref=<ref>.",
+            "title": "Target",
+        }
     move = variants["move"]["properties"]
-    assert set(move) == {"type", "x", "y", "steps", "selector", "ref", "timeout"}
+    assert set(move) == {"type", "x", "y", "steps", "target", "timeout"}
     assert move["steps"]["exclusiveMinimum"] == 0
     assert move["steps"]["default"] == 1
     assert move["timeout"]["minimum"] == 0
     assert move["timeout"]["default"] == 30000
     click = variants["click"]["properties"]
-    assert set(click) == {"type", "selector", "ref", "x", "y", "button", "click_count", "delay", "timeout"}
+    assert set(click) == {"type", "target", "x", "y", "button", "click_count", "delay", "timeout"}
     assert set(click["button"]["enum"]) == {"left", "right", "middle"}
     assert click["click_count"]["exclusiveMinimum"] == 0
     assert click["delay"]["minimum"] == click["timeout"]["minimum"] == 0
@@ -130,11 +131,14 @@ async def test_browser_mouse_schema_and_annotations() -> None:
     "tool, target, options, expected",
     [
         ("move", {"x": -12.5, "y": 23.5}, {}, {"steps": 1}),
+        ("move", {"x": -12.5, "y": 23.5, "target": None}, {}, {"steps": 1}),
         ("move", {"x": -12.5, "y": 23.5}, {"steps": 5, "timeout": 400}, {"steps": 5}),
-        ("move", {"selector": "button"}, {}, {"timeout": 30000}),
-        ("move", {"ref": "e4"}, {"steps": 5, "timeout": 500}, {"timeout": 500}),
-        ("move", {"selector": "button"}, {"timeout": 0}, {"timeout": 0}),
+        ("move", {"target": "button"}, {}, {"timeout": 30000}),
+        ("move", {"target": "aria-ref=e4"}, {"steps": 5, "timeout": 500}, {"timeout": 500}),
+        ("move", {"target": "button"}, {"timeout": 0}, {"timeout": 0}),
+        ("move", {"target": "e12", "x": None, "y": None}, {}, {"timeout": 30000}),
         ("click", {"x": -12.5, "y": 23.5}, {}, {"button": "left", "click_count": 1, "delay": 0}),
+        ("click", {"x": -12.5, "y": 23.5, "target": None}, {}, {"button": "left", "click_count": 1, "delay": 0}),
         (
             "click",
             {"x": -12.5, "y": 23.5},
@@ -143,13 +147,13 @@ async def test_browser_mouse_schema_and_annotations() -> None:
         ),
         (
             "click",
-            {"selector": "button"},
+            {"target": "button"},
             {},
             {"button": "left", "click_count": 1, "delay": 0, "timeout": 30000},
         ),
         (
             "click",
-            {"ref": "e4"},
+            {"target": "aria-ref=e4"},
             {"button": "right", "click_count": 2, "delay": 30, "timeout": 500},
             {"button": "right", "click_count": 2, "delay": 30, "timeout": 500},
         ),
@@ -166,16 +170,16 @@ async def test_browser_mouse_forwards_native_actions(
     assert not result.is_error
     assert result.structured_content is None
     assert result.content == [TextContent(type="text", text="Actions completed.")]
-    if tool == "move" and "x" in target:
+    if tool == "move" and target.get("x") is not None:
         page.mouse.move.assert_awaited_once_with(-12.5, 23.5, **expected)
         page.mouse.click.assert_not_awaited()
         page.locator.assert_not_called()
-    elif "x" in target:
+    elif target.get("x") is not None:
         page.mouse.click.assert_awaited_once_with(-12.5, 23.5, **expected)
         page.mouse.move.assert_not_awaited()
         page.locator.assert_not_called()
     else:
-        page.locator.assert_called_once_with(target["selector"] if "selector" in target else "aria-ref=e4")
+        page.locator.assert_called_once_with(target["target"])
         action = "hover" if tool == "move" else "click"
         getattr(page.locator.return_value, action).assert_awaited_once_with(**expected)
         getattr(page.locator.return_value, "click" if action == "hover" else "hover").assert_not_awaited()
@@ -205,8 +209,8 @@ async def test_browser_mouse_forwards_native_actions(
         ("move", {"steps": 1.5}),
         ("move", {"steps": 0}),
         ("move", {"steps": -1}),
-        ("move", {"selector": ""}),
-        ("move", {"ref": ""}),
+        ("move", {"target": ""}),
+        ("move", {"target": 123}),
         ("move", {"timeout": -1}),
         ("click", {"button": "back"}),
         ("click", {"click_count": 1.5}),
@@ -215,8 +219,8 @@ async def test_browser_mouse_forwards_native_actions(
         ("click", {"delay": -1}),
         ("click", {"delay": "invalid"}),
         ("click", {"timeout": -1}),
-        ("click", {"selector": ""}),
-        ("click", {"ref": ""}),
+        ("click", {"target": ""}),
+        ("click", {"target": 123}),
     ],
 )
 async def test_browser_mouse_invalid_input_does_not_reserve_or_use_page(tool: str, values: dict[str, Any]) -> None:
@@ -262,11 +266,13 @@ def test_browser_mouse_schema_rejects_nonfinite_values(tool: str, fields: tuple[
         {},
         {"x": 1},
         {"y": 2},
-        {"selector": "button", "ref": "e2"},
-        {"selector": "button", "x": 1},
-        {"ref": "e2", "y": 2},
-        {"selector": "button", "x": 1, "y": 2},
-        {"ref": "e2", "x": 1, "y": 2},
+        {"target": None},
+        {"selector": "button"},
+        {"ref": "e2"},
+        {"target": "button", "x": 1},
+        {"target": "aria-ref=e2", "y": 2},
+        {"target": "button", "x": 1, "y": 2},
+        {"target": "aria-ref=e2", "x": 1, "y": 2},
     ],
 )
 async def test_browser_mouse_requires_exactly_one_complete_target(tool: str, target: dict[str, Any]) -> None:
@@ -327,7 +333,7 @@ async def test_browser_mouse_session_errors_reach_mcp(tool: str, state: str, mes
 @pytest.mark.asyncio
 @pytest.mark.parametrize("tool", ["move", "click"])
 @pytest.mark.parametrize("closed", [False, True])
-@pytest.mark.parametrize("target", [{"x": 10, "y": 20}, {"selector": "button"}, {"ref": "e1"}])
+@pytest.mark.parametrize("target", [{"x": 10, "y": 20}, {"target": "button"}, {"target": "aria-ref=e1"}])
 async def test_browser_mouse_failure_is_not_retried_and_releases_page(
     tool: str, closed: bool, target: dict[str, Any]
 ) -> None:
@@ -362,7 +368,7 @@ async def test_browser_mouse_failure_is_not_retried_and_releases_page(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("target", [{"x": 10, "y": 20}, {"selector": "button"}, {"ref": "e1"}])
+@pytest.mark.parametrize("target", [{"x": 10, "y": 20}, {"target": "button"}, {"target": "aria-ref=e1"}])
 async def test_browser_mouse_reserves_page_until_cancelled(target: dict[str, Any]) -> None:
     server, session, page = _server()
     entered = asyncio.Event()
@@ -407,7 +413,7 @@ async def test_browser_mouse_click_timeout_holds_page_until_button_is_released()
     page.locator.return_value.click.side_effect = PatchrightTimeoutError("click timed out")
     page.mouse.up.side_effect = unpress
     task = asyncio.create_task(
-        server.browser_actions("browser", [{"type": "click", "selector": "button", "button": "right"}])
+        server.browser_actions("browser", [{"type": "click", "target": "button", "button": "right"}])
     )
     try:
         await asyncio.wait_for(releasing.wait(), 5)
@@ -432,7 +438,7 @@ async def test_browser_mouse_click_timeout_holds_page_until_button_is_released()
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("cancel_mode", ["task", "scope"])
-@pytest.mark.parametrize("target", [{"x": 10, "y": 20}, {"selector": "button"}, {"ref": "e1"}])
+@pytest.mark.parametrize("target", [{"x": 10, "y": 20}, {"target": "button"}, {"target": "aria-ref=e1"}])
 async def test_browser_mouse_cancelled_click_holds_page_until_button_is_released(
     cancel_mode: str, target: dict[str, Any]
 ) -> None:
@@ -516,7 +522,7 @@ async def test_browser_mouse_cleanup_failure_preserves_click_error(
         with pytest.raises(asyncio.CancelledError if cancelled else RuntimeError) as error:
             await server.browser_actions(
                 "browser",
-                [{"type": "click", "selector": "#target", "button": "right"}, {"type": "wheel", "delta_y": 120}],
+                [{"type": "click", "target": "#target", "button": "right"}, {"type": "wheel", "delta_y": 120}],
             )
         original = error.value if cancelled else error.value.__cause__
         if not cancelled:
@@ -576,9 +582,9 @@ async def test_browser_mouse_mixed_chain_keeps_one_page_reserved() -> None:
         action.side_effect = record
     actions = [
         {"type": "move", "x": 10, "y": 20, "steps": 4},
-        {"type": "move", "selector": "#panel", "timeout": 500},
+        {"type": "move", "target": "#panel", "timeout": 500},
         {"type": "wheel", "delta_y": 120},
-        {"type": "click", "ref": "e4", "button": "right"},
+        {"type": "click", "target": "aria-ref=e4", "button": "right"},
         {"type": "click", "x": 30, "y": 40, "click_count": 2},
     ]
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
@@ -613,7 +619,7 @@ async def test_browser_mouse_chain_reports_failed_index_and_keeps_completed_acti
     failing.side_effect = native_error
     actions = [
         {"type": "move", "x": 10, "y": 20},
-        {"type": kind, **({"selector": "#target"} if kind != "wheel" else {"delta_y": 120})},
+        {"type": kind, **({"target": "#target"} if kind != "wheel" else {"delta_y": 120})},
         {"type": "click", "x": 30, "y": 40},
     ]
     with pytest.raises(RuntimeError, match=rf"Action 2 \({kind}\) failed: native failure") as error:
@@ -732,7 +738,7 @@ async def test_browser_mouse_live_cancelled_click_releases_native_button(cancel_
             if target_type == "ref":
                 match = search(r'button "Target".*?\[ref=([^\]]+)\]', await server.browser_snapshot("browser"))
                 assert match is not None
-                target = {"ref": match[1]}
+                target = {"target": f"aria-ref={match[1]}"}
             task = asyncio.create_task(click())
             await page.wait_for_function(
                 "JSON.parse(document.querySelector('#events').value).some(event => event.type === 'mousedown')",
@@ -792,10 +798,10 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(tool: str) -> None:
             ref = match[1]
             initial_dom = await page.content()
             for target in (
-                {"selector": "#target"},
-                {"selector": 'xpath=//button[@id="target"]'},
-                {"ref": ref},
-                {"selector": "#below"},
+                {"target": "#target"},
+                {"target": 'xpath=//button[@id="target"]'},
+                {"target": f"aria-ref={ref}"},
+                {"target": "#below"},
             ):
                 await page.mouse.move(0, 0)
                 await page.locator("#events").evaluate("element => element.value = '[]'")
@@ -804,7 +810,7 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(tool: str) -> None:
                 )
                 assert not result.is_error
                 events = loads(await page.locator("#events").input_value())
-                expected_id = "below" if target.get("selector") == "#below" else "target"
+                expected_id = "below" if target.get("target") == "#below" else "target"
                 if tool == "move":
                     assert events and all(event["type"] == "mousemove" and event["trusted"] for event in events)
                     assert events[-1]["target"] == expected_id
@@ -816,15 +822,15 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(tool: str) -> None:
             assert await page.evaluate("window.scrollY") > 0
             assert await page.content() == initial_dom
             await page.locator("#target").evaluate("element => element.remove()")
-            for target in ({"selector": "button, a"}, {"selector": "#missing"}, {"ref": ref}):
+            for target in ({"target": "button, a"}, {"target": "#missing"}, {"target": f"aria-ref={ref}"}):
                 await page.locator("#events").evaluate("element => element.value = '[]'")
                 with pytest.raises(RuntimeError, match=rf"Action 1 \({tool}\) failed:") as error:
                     await server.browser_actions(
                         "browser",
-                        [{"type": tool, "selector": target.get("selector"), "ref": target.get("ref"), "timeout": 100}],
+                        [{"type": tool, **target, "timeout": 100}],
                     )
                 events = loads(await page.locator("#events").input_value())
-                if target.get("selector") != "button, a":
+                if target.get("target") != "button, a":
                     assert isinstance(error.value.__cause__, PatchrightTimeoutError)
                     assert not any(event["type"] in ("mousedown", "click") for event in events)
                     released = [event for event in events if event["type"] == "mouseup"]
@@ -865,7 +871,7 @@ async def test_browser_mouse_click_live_timeout_releases_native_button() -> None
                 "browser_actions",
                 {
                     "session_id": "browser",
-                    "actions": [{"type": "click", "selector": "#target", "delay": 1000, "timeout": 300}],
+                    "actions": [{"type": "click", "target": "#target", "delay": 1000, "timeout": 300}],
                 },
             )
             assert failed.is_error

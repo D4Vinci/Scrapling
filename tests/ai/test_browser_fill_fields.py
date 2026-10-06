@@ -18,7 +18,7 @@ from scrapling.core._types import Any, AsyncGenerator
 from scrapling.engines._browsers._base import AsyncSession
 
 
-TEXT_FIELD = {"type": "textbox", "selector": "#name", "value": "private value"}
+TEXT_FIELD = {"type": "textbox", "target": "#name", "value": "private value"}
 HTML = """<!DOCTYPE html><html><body><form>
 <label>Name<input id="name" value="initial"></label><label>Notes<textarea id="notes">initial notes</textarea></label>
 <div id="editor" contenteditable="true">initial editor</div>
@@ -87,7 +87,7 @@ async def test_browser_actions_fields_schema() -> None:
     for kind in ("textbox", "checkbox", "radio", "combobox"):
         variant = variants[kind]
         assert set(variant["required"]) == {"type", "value"}
-        assert set(variant["properties"]) == {"type", "value", "selector", "ref", "timeout"} | (
+        assert set(variant["properties"]) == {"type", "value", "target", "timeout"} | (
             {"clear"} if kind == "textbox" else set()
         )
         assert variant["properties"]["type"]["const"] == kind
@@ -99,12 +99,12 @@ async def test_browser_actions_fields_schema() -> None:
             "title": "Timeout",
             "type": "number",
         }
-        for target in ("selector", "ref"):
-            reference = variant["properties"][target]["$ref"]
-            assert schema["$defs"][reference.rsplit("/", 1)[1]] == {
-                "anyOf": [{"minLength": 1, "type": "string"}, {"type": "null"}],
-                "title": target.title(),
-            }
+        assert variant["properties"]["target"] == {"$ref": "#/$defs/_Target"}
+        assert schema["$defs"]["_Target"] == {
+            "anyOf": [{"minLength": 1, "type": "string"}, {"type": "null"}],
+            "description": "Playwright selector or snapshot ref as aria-ref=<ref>.",
+            "title": "Target",
+        }
     assert variants["textbox"]["properties"]["value"]["type"] == "string"
     assert variants["textbox"]["properties"]["clear"]["type"] == "boolean"
     assert variants["textbox"]["properties"]["clear"]["default"] is True
@@ -122,15 +122,15 @@ async def test_browser_actions_fields_forwards_native_actions_in_order(
     pause = AsyncMock()
     monkeypatch.setattr("scrapling.core.ai._browser_actions.sleep", pause)
     actions = [
-        {**TEXT_FIELD, "ref": None},
-        {"type": "textbox", "selector": None, "ref": "e2", "value": "", "clear": True},
-        {"type": "checkbox", "selector": "#agree", "value": True},
-        {"type": "checkbox", "selector": "#agree", "value": False},
-        {"type": "checkbox", "selector": "#agree", "value": "false"},
-        {"type": "radio", "selector": "#pro", "value": True},
-        {"type": "combobox", "selector": "#country", "value": "United Kingdom"},
-        {"type": "combobox", "selector": "#colors", "value": ["Red", "Blue"]},
-        {"type": "combobox", "selector": "#colors", "value": []},
+        TEXT_FIELD,
+        {"type": "textbox", "target": "aria-ref=e2", "value": "", "clear": True},
+        {"type": "checkbox", "target": "#agree", "value": True},
+        {"type": "checkbox", "target": "#agree", "value": False},
+        {"type": "checkbox", "target": "#agree", "value": "false"},
+        {"type": "radio", "target": "#pro", "value": True},
+        {"type": "combobox", "target": "#country", "value": "United Kingdom"},
+        {"type": "combobox", "target": "#colors", "value": ["Red", "Blue"]},
+        {"type": "combobox", "target": "#colors", "value": []},
     ]
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
@@ -202,10 +202,10 @@ async def test_browser_actions_fields_slow_pacing_and_empty_text(monkeypatch: py
     monkeypatch.setattr("scrapling.core.ai._browser_actions.uniform", intervals)
     actions = [
         {**TEXT_FIELD, "value": "ab"},
-        {"type": "textbox", "ref": "e2", "value": ""},
-        {"type": "checkbox", "selector": "#agree", "value": True},
-        {"type": "radio", "selector": "#pro", "value": True},
-        {"type": "combobox", "selector": "#country", "value": "United Kingdom"},
+        {"type": "textbox", "target": "aria-ref=e2", "value": ""},
+        {"type": "checkbox", "target": "#agree", "value": True},
+        {"type": "radio", "target": "#pro", "value": True},
+        {"type": "combobox", "target": "#country", "value": "United Kingdom"},
     ]
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
@@ -265,10 +265,10 @@ async def test_browser_actions_fields_slow_failure_stops_before_next_pause(
 @pytest.mark.parametrize(
     "invalid",
     [
-        {"selector": None},
-        {"ref": "e1"},
-        {"selector": ""},
-        {"selector": None, "ref": ""},
+        {"target": None},
+        {"target": 123},
+        {"target": ""},
+        {"target": []},
         {"type": "unknown"},
         {"type": None},
         {"value": None},
@@ -301,8 +301,11 @@ async def test_browser_actions_fields_invalid_later_field_prevents_all_actions(i
         {"actions": []},
         {"actions": None},
         {"actions": TEXT_FIELD},
-        {"actions": [{"type": "textbox", "selector": "#name"}]},
-        {"actions": [{"selector": "#name", "value": "value"}]},
+        {"actions": [{"type": "textbox", "target": "#name"}]},
+        {"actions": [{"type": "textbox", "value": "value"}]},
+        {"actions": [{"type": "textbox", "selector": "#name", "value": "value"}]},
+        {"actions": [{"type": "textbox", "ref": "e2", "value": "value"}]},
+        {"actions": [{"target": "#name", "value": "value"}]},
         {"actions": [{**TEXT_FIELD, "timeout": -1}]},
         {"actions": [{**TEXT_FIELD, "timeout": None}]},
         {"actions": [TEXT_FIELD], "slowly": "invalid"},
@@ -516,14 +519,14 @@ async def test_browser_actions_fields_live_mixed_fields_and_clearing() -> None:
         agree = search(r'checkbox "Agree".*?\[ref=([^\]]+)\]', snapshot.content[0].text)
         assert name is not None and agree is not None
         actions = [
-            {"type": "textbox", "ref": name[1], "value": "new α name"},
-            {"type": "textbox", "selector": 'xpath=//textarea[@id="notes"]', "value": "line one\nline two"},
-            {"type": "textbox", "selector": "#editor", "value": "edited content"},
-            {"type": "checkbox", "ref": agree[1], "value": True},
-            {"type": "checkbox", "selector": "#updates", "value": False},
-            {"type": "radio", "selector": "#pro", "value": True},
-            {"type": "combobox", "selector": "#country", "value": "United Kingdom"},
-            {"type": "combobox", "selector": "#colors", "value": ["Red", "Blue"]},
+            {"type": "textbox", "target": f"aria-ref={name[1]}", "value": "new α name"},
+            {"type": "textbox", "target": 'xpath=//textarea[@id="notes"]', "value": "line one\nline two"},
+            {"type": "textbox", "target": "#editor", "value": "edited content"},
+            {"type": "checkbox", "target": f"aria-ref={agree[1]}", "value": True},
+            {"type": "checkbox", "target": "#updates", "value": False},
+            {"type": "radio", "target": "#pro", "value": True},
+            {"type": "combobox", "target": "#country", "value": "United Kingdom"},
+            {"type": "combobox", "target": "#colors", "value": ["Red", "Blue"]},
         ]
         filled = await client.call_tool("browser_actions", {"session_id": "browser", "actions": actions})
         assert not filled.is_error
@@ -559,11 +562,11 @@ async def test_browser_actions_fields_live_mixed_fields_and_clearing() -> None:
             {
                 "session_id": "browser",
                 "actions": [
-                    {"type": "textbox", "selector": "#name", "value": ""},
-                    {"type": "checkbox", "selector": "#agree", "value": False},
-                    {"type": "checkbox", "selector": "#updates", "value": True},
-                    {"type": "radio", "selector": "#basic", "value": True},
-                    {"type": "combobox", "selector": "#colors", "value": []},
+                    {"type": "textbox", "target": "#name", "value": ""},
+                    {"type": "checkbox", "target": "#agree", "value": False},
+                    {"type": "checkbox", "target": "#updates", "value": True},
+                    {"type": "radio", "target": "#basic", "value": True},
+                    {"type": "combobox", "target": "#colors", "value": []},
                 ],
             },
         )
@@ -585,12 +588,12 @@ async def test_browser_actions_fields_live_slow_typing_and_field_delays() -> Non
         name = search(r'textbox "Name".*?\[ref=([^\]]+)\]', snapshot.content[0].text)
         assert name is not None
         actions = [
-            {"type": "textbox", "ref": name[1], "value": "abc"},
-            {"type": "textbox", "selector": "#notes", "value": "x\ny"},
-            {"type": "textbox", "selector": "#editor", "value": "xyα🙂"},
-            {"type": "checkbox", "selector": "#agree", "value": True},
-            {"type": "radio", "selector": "#pro", "value": True},
-            {"type": "combobox", "selector": "#country", "value": "United Kingdom"},
+            {"type": "textbox", "target": f"aria-ref={name[1]}", "value": "abc"},
+            {"type": "textbox", "target": "#notes", "value": "x\ny"},
+            {"type": "textbox", "target": "#editor", "value": "xyα🙂"},
+            {"type": "checkbox", "target": "#agree", "value": True},
+            {"type": "radio", "target": "#pro", "value": True},
+            {"type": "combobox", "target": "#country", "value": "United Kingdom"},
         ]
         result = await client.call_tool(
             "browser_actions", {"session_id": "browser", "actions": actions, "slowly": True}
@@ -648,7 +651,7 @@ async def test_browser_actions_fields_live_caret_selection_and_submit(slowly: bo
             assert session.page_pool.pages[0].state == "ready"
 
         await run([{**TEXT_FIELD, "value": "abcd"}, {"type": "press_key", "key": "ArrowLeft"}])
-        await run([{"type": "textbox", "ref": name[1], "value": "XY", "clear": False}])
+        await run([{"type": "textbox", "target": f"aria-ref={name[1]}", "value": "XY", "clear": False}])
         assert await page.locator("#name").input_value() == "abcXYd"
         await run(
             [
@@ -663,13 +666,13 @@ async def test_browser_actions_fields_live_caret_selection_and_submit(slowly: bo
         await run(
             [
                 {**TEXT_FIELD, "value": "!", "clear": False},
-                {"type": "textbox", "selector": "#notes", "value": "new notes"},
+                {"type": "textbox", "target": "#notes", "value": "new notes"},
             ]
         )
         assert await page.locator("#name").input_value() == "abcz!d"
         assert await page.locator("#notes").input_value() == "new notes"
         assert await page.locator("#submitted").inner_text() == "0"
-        await run([{"type": "click", "ref": name[1]}, {"type": "press_key", "key": "Enter"}])
+        await run([{"type": "click", "target": f"aria-ref={name[1]}"}, {"type": "press_key", "key": "Enter"}])
         assert await page.locator("#submitted").inner_text() == "1"
         events = loads(await page.locator("#events").input_value())
         assert [
@@ -688,8 +691,8 @@ async def test_browser_actions_fields_live_failed_field_preserves_prior_changes(
                     "session_id": "browser",
                     "actions": [
                         {**TEXT_FIELD, "value": "changed first"},
-                        {**TEXT_FIELD, "selector": selector, "value": "fails", "timeout": 100},
-                        {**TEXT_FIELD, "selector": "#notes", "value": "must not run"},
+                        {**TEXT_FIELD, "target": selector, "value": "fails", "timeout": 100},
+                        {**TEXT_FIELD, "target": "#notes", "value": "must not run"},
                     ],
                 },
             )

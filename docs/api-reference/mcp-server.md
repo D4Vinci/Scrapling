@@ -84,7 +84,7 @@ The main MCP server class that provides all web scraping tools:
 
     Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by label. Replace or clear text, or type at the current caret. Keyboard shortcuts use the current focus. Slow mode adds random pauses between typed characters and all actions.
 
-    Wait for content, loading overlays, page load events, or settled network activity, or add a fixed pause before continuing.
+    Wait for content or loading overlays through selectors or snapshot references, wait for page load events or settled network activity, or add a fixed pause before continuing.
 
 - **`browser_evaluate`**: Run JavaScript on the current page to extract custom data, calculate results, read application state, or update page content. Supports asynchronous scripts and returns their results as JSON.
 - **`browser_network_requests`**: Search completed browser requests across tabs, navigation, and actions. Find API calls, HTTP errors, and saved redirects, with static resources hidden by default for smaller results. Failed and unfinished requests are omitted. Returns structured request details with pagination.

@@ -162,10 +162,10 @@ Runs actions in order on the existing page in a stealthy browser session. Call `
 | `combobox` | Target, `value`, `timeout=30000` | Select native `<select>` options by label; use a string, a list of strings for multiple selections, or `[]` to clear |
 | `press_key` | `key` | Press a nonempty native key name, character, or shortcut at the current focus |
 | `wait_time` | `milliseconds` | Fixed pause in finite nonnegative milliseconds |
-| `wait_element` | `selector`, `state="visible"`, `timeout=30000` | Wait for a nonempty Playwright selector to reach `"visible"`, `"hidden"`, `"attached"`, or `"detached"` |
+| `wait_element` | `target`, `state="visible"`, `timeout=30000` | Wait for an element to reach `"visible"`, `"hidden"`, `"attached"`, or `"detached"` |
 | `wait_load` | `state`, `timeout=30000` | Wait for `"domcontentloaded"`, `"load"`, or `"networkidle"` |
 
-**Targets and timing.** Each move or click needs exactly one target: a nonempty Playwright `selector`, a nonempty snapshot `ref` such as `"e2"`, or both `x` and `y`. Coordinates must be finite viewport CSS pixels from the main frame's top-left, not full-page screenshot coordinates. Field actions need exactly one nonempty `selector` or `ref` and can target fields anywhere on the page without a `<form>` parent. Element waits use a selector only. Mouse and field selectors must match exactly one element. Use current snapshot references; do not build a chain with references that need a future snapshot.
+**Targets and timing.** Element actions use a nonempty `target`: a Playwright selector such as `"#search"` or a snapshot reference as `"aria-ref=e2"`. Bare reference strings such as `"e2"` are treated as selectors. Each move or click needs either `target` or both `x` and `y`. Coordinates must be finite viewport CSS pixels from the main frame's top-left, not full-page screenshot coordinates. Field actions need `target` and can target fields anywhere on the page without a `<form>` parent. Element waits also use `target`. Mouse and field targets must match exactly one element. Use current snapshot references; do not build a chain with references that need a future snapshot.
 
 Each action with a `timeout` accepts finite nonnegative milliseconds, default 30000; 0 disables the limit. Mouse coordinate actions ignore it. For text input, the limit applies separately to each native operation, including clearing and each character press in slow mode. Keyboard, wheel, and fixed-pause actions have no timeout option. Pauses between actions are outside action timeouts.
 
@@ -183,10 +183,10 @@ For example, fill and submit a search, wait for its results, then hover over the
 {
   "session_id": "browser",
   "actions": [
-    {"type": "textbox", "selector": "#search", "value": "books"},
+    {"type": "textbox", "target": "#search", "value": "books"},
     {"type": "press_key", "key": "Enter"},
-    {"type": "wait_element", "selector": "#results"},
-    {"type": "move", "selector": "#results"},
+    {"type": "wait_element", "target": "#results"},
+    {"type": "move", "target": "#results"},
     {"type": "wheel", "delta_y": 500}
   ]
 }

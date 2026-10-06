@@ -21,8 +21,13 @@ from scrapling.core._types import (
 MouseButton = Literal["left", "right", "middle"]
 NonNegativeFiniteFloat = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 NonEmptyString = Annotated[str, Field(min_length=1)]
-_Selector = TypeAliasType("_Selector", Annotated[Optional[NonEmptyString], Field(title="Selector")])
-_Ref = TypeAliasType("_Ref", Annotated[Optional[NonEmptyString], Field(title="Ref")])
+_Target = TypeAliasType(
+    "_Target",
+    Annotated[
+        Optional[NonEmptyString],
+        Field(title="Target", description="Playwright selector or snapshot ref as aria-ref=<ref>."),
+    ],
+)
 _FieldTimeout = TypeAliasType(
     "_FieldTimeout",
     Annotated[
@@ -32,12 +37,11 @@ _FieldTimeout = TypeAliasType(
 
 
 class _MouseTarget(TypedDict, total=False):
-    selector: _Selector
-    ref: _Ref
+    target: _Target
     x: Optional[FiniteFloat]
     y: Optional[FiniteFloat]
     timeout: Annotated[
-        NonNegativeFiniteFloat, Field(default=30000, description="Selector/ref timeout in ms; 0 disables it.")
+        NonNegativeFiniteFloat, Field(default=30000, description="Element timeout in ms; 0 disables it.")
     ]
 
 
@@ -76,7 +80,7 @@ class _ConditionWait(TypedDict, total=False):
 
 class _ElementWait(_ConditionWait):
     type: Literal["wait_element"]
-    selector: Annotated[NonEmptyString, Field(description="Playwright selector for one element.")]
+    target: Annotated[NonEmptyString, Field(description="Playwright selector or aria-ref=<ref> for one element.")]
     state: NotRequired[Annotated[SelectorWaitStates, Field(default="visible", description="Hidden includes removal.")]]
 
 
@@ -96,8 +100,7 @@ class _KeyPress(TypedDict):
 
 
 class _FormTarget(TypedDict, total=False):
-    selector: _Selector
-    ref: _Ref
+    target: _Target
     timeout: Annotated[_FieldTimeout, Field(default=30000)]
 
 
@@ -146,16 +149,12 @@ def _validate_actions(actions: List[BrowserAction]) -> None:
     """Validate every action target before reserving the page."""
     for index, action in enumerate(actions, 1):
         if action["type"] in ("move", "click") and (
-            sum(action.get(key) is not None for key in ("selector", "ref", "x")) != 1
+            (action.get("target") is None) == (action.get("x") is None)
             or (action.get("x") is None) != (action.get("y") is None)
         ):
-            raise ValueError(
-                f"Action {index} ({action['type']}) needs exactly one target: 'selector', 'ref', or both 'x' and 'y'."
-            )
-        if action["type"] in ("textbox", "checkbox", "radio", "combobox") and (
-            (action.get("selector") is None) == (action.get("ref") is None)
-        ):
-            raise ValueError(f"Action {index} ({action['type']}) needs exactly one target: 'selector' or 'ref'.")
+            raise ValueError(f"Action {index} ({action['type']}) needs 'target' or both 'x' and 'y', not both.")
+        if action["type"] in ("textbox", "checkbox", "radio", "combobox") and action.get("target") is None:
+            raise ValueError(f"Action {index} ({action['type']}) needs 'target'.")
 
 
 async def _run_actions(page: Any, actions: List[BrowserAction], slowly: bool = False) -> None:
@@ -167,7 +166,7 @@ async def _run_actions(page: Any, actions: List[BrowserAction], slowly: bool = F
             if action["type"] == "wait_time":
                 await page.wait_for_timeout(action["milliseconds"])
             elif action["type"] == "wait_element":
-                await page.locator(action["selector"]).wait_for(
+                await page.locator(action["target"]).wait_for(
                     state=action.get("state", "visible"), timeout=action.get("timeout", 30000)
                 )
             elif action["type"] == "wait_load":
@@ -177,12 +176,10 @@ async def _run_actions(page: Any, actions: List[BrowserAction], slowly: bool = F
             elif action["type"] == "wheel":
                 await page.mouse.wheel(action.get("delta_x", 0), action.get("delta_y", 0))
             else:
-                selector, ref = action.get("selector"), action.get("ref")
+                target = action.get("target")
                 timeout = action.get("timeout", 30000)
                 if action["type"] == "move" or action["type"] == "click":
-                    locator = (
-                        page.locator(selector or f"aria-ref={ref}") if selector is not None or ref is not None else None
-                    )
+                    locator = page.locator(target) if target is not None else None
                     if action["type"] == "move":
                         if locator is not None:
                             await locator.hover(timeout=timeout)
@@ -208,7 +205,7 @@ async def _run_actions(page: Any, actions: List[BrowserAction], slowly: bool = F
                                 raise exc from cleanup_error
                             raise
                 else:
-                    locator = page.locator(selector or f"aria-ref={ref}")
+                    locator = page.locator(target)
                     if action["type"] == "textbox":
                         if action.get("clear", True):
                             await locator.fill("" if slowly else action["value"], timeout=timeout)

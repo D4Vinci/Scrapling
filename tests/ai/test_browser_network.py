@@ -917,8 +917,8 @@ async def test_network_live_capture_actions_navigation_and_reads() -> None:
                 {
                     "session_id": "browser",
                     "actions": [
-                        {"type": "click", "selector": "#load"},
-                        {"type": "wait_element", "selector": "body[data-done=yes]", "timeout": 2000},
+                        {"type": "click", "target": "#load"},
+                        {"type": "wait_element", "target": "body[data-done=yes]", "timeout": 2000},
                     ],
                 },
             )

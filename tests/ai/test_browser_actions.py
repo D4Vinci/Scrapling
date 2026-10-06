@@ -62,11 +62,11 @@ async def test_mixed_actions_keep_order_and_sample_each_delay(slowly: bool, monk
                 "session_id": "browser",
                 "slowly": slowly,
                 "actions": [
-                    {"type": "textbox", "selector": "#name", "value": "ab", "timeout": 17},
+                    {"type": "textbox", "target": "#name", "value": "ab", "timeout": 17},
                     {"type": "press_key", "key": "Tab"},
                     {"type": "wait_time", "milliseconds": 12},
                     {"type": "wheel", "delta_y": 4},
-                    {"type": "wait_element", "selector": "#ready", "timeout": 23},
+                    {"type": "wait_element", "target": "#ready", "timeout": 23},
                     {"type": "wait_load", "state": "load", "timeout": 31},
                 ],
             },
@@ -99,11 +99,11 @@ async def test_mixed_actions_keep_order_and_sample_each_delay(slowly: bool, monk
 @pytest.mark.parametrize(
     "invalid",
     [
-        {"type": "textbox", "selector": "#name", "ref": "e1", "value": "bad"},
+        {"type": "textbox", "target": None, "value": "bad"},
         {"type": "click", "x": 10},
-        {"type": "combobox", "selector": "#kind", "value": {}},
+        {"type": "combobox", "target": "#kind", "value": {}},
         {"type": "press_key", "key": ""},
-        {"type": "wait_element", "selector": "#ready", "timeout": -1},
+        {"type": "wait_element", "target": "#ready", "timeout": -1},
     ],
 )
 async def test_invalid_later_action_prevents_other_action_kinds(invalid: dict[str, Any]) -> None:
@@ -115,7 +115,7 @@ async def test_invalid_later_action_prevents_other_action_kinds(invalid: dict[st
                 "session_id": "browser",
                 "actions": [
                     {"type": "wait_time", "milliseconds": 0},
-                    {"type": "textbox", "selector": "#name", "value": "unchanged"},
+                    {"type": "textbox", "target": "#name", "value": "unchanged"},
                     invalid,
                     {"type": "press_key", "key": "Enter"},
                 ],
@@ -168,15 +168,15 @@ async def test_live_mixed_chain_resolves_targets_created_by_earlier_actions(slow
                 "session_id": "browser",
                 "slowly": slowly,
                 "actions": [
-                    {"type": "textbox", "ref": ref[1], "value": "Scrapling"},
+                    {"type": "textbox", "target": f"aria-ref={ref[1]}", "value": "Scrapling"},
                     {"type": "press_key", "key": "Enter"},
-                    {"type": "wait_element", "selector": "#result", "timeout": 5000},
-                    {"type": "wait_element", "selector": "#loading", "state": "hidden", "timeout": 5000},
-                    {"type": "move", "selector": "#result", "timeout": 5000},
-                    {"type": "click", "selector": "#choose", "timeout": 5000},
-                    {"type": "textbox", "selector": "#note", "value": "Done", "timeout": 5000},
-                    {"type": "checkbox", "selector": "#agree", "value": True, "timeout": 5000},
-                    {"type": "combobox", "selector": "#kind", "value": "B", "timeout": 5000},
+                    {"type": "wait_element", "target": "#result", "timeout": 5000},
+                    {"type": "wait_element", "target": "#loading", "state": "hidden", "timeout": 5000},
+                    {"type": "move", "target": "#result", "timeout": 5000},
+                    {"type": "click", "target": "#choose", "timeout": 5000},
+                    {"type": "textbox", "target": "#note", "value": "Done", "timeout": 5000},
+                    {"type": "checkbox", "target": "#agree", "value": True, "timeout": 5000},
+                    {"type": "combobox", "target": "#kind", "value": "B", "timeout": 5000},
                 ],
             },
         )
@@ -189,7 +189,8 @@ async def test_live_mixed_chain_resolves_targets_created_by_earlier_actions(slow
 
 
 @pytest.mark.asyncio
-async def test_live_stale_ref_stops_mixed_chain_without_retargeting() -> None:
+@pytest.mark.parametrize("kind", ["textbox", "move", "click", "wait_element"])
+async def test_live_stale_ref_stops_mixed_chain_without_retargeting(kind: str) -> None:
     async with _browser() as (client, session, page):
         await page.set_content("""<label>Old<input id=field value=old></label><button id=replace>Replace</button>
             <script>
@@ -206,13 +207,50 @@ async def test_live_stale_ref_stops_mixed_chain_without_retargeting() -> None:
             {
                 "session_id": "browser",
                 "actions": [
-                    {"type": "click", "selector": "#replace"},
-                    {"type": "textbox", "ref": ref[1], "value": "wrong", "timeout": 100},
-                    {"type": "textbox", "selector": "#field", "value": "skipped"},
+                    {"type": "click", "target": "#replace"},
+                    {
+                        "type": kind,
+                        "target": f"aria-ref={ref[1]}",
+                        "timeout": 100,
+                        **({"value": "wrong"} if kind == "textbox" else {}),
+                    },
+                    {"type": "textbox", "target": "#field", "value": "skipped"},
                 ],
             },
         )
         assert result.is_error and isinstance(result.content[0], TextContent)
-        assert "Action 2 (textbox) failed:" in result.content[0].text
+        assert f"Action 2 ({kind}) failed:" in result.content[0].text
         assert await page.locator("#field").input_value() == "new"
+        assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_ref", [False, True])
+async def test_live_targets_keep_explicit_refs_and_ref_shaped_selectors_distinct(use_ref: bool) -> None:
+    async with _browser() as (client, session, page):
+        await page.set_content("""<e12 role=textbox aria-label=Literal contenteditable=true
+            style="display:block;width:200px;height:50px"
+            onmouseenter="this.dataset.hovered='yes'" onclick="this.dataset.clicked='yes'">initial</e12>""")
+        snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+        assert not snapshot.is_error and isinstance(snapshot.content[0], TextContent)
+        ref = search(r'textbox "Literal".*?\[ref=([^\]]+)\]', snapshot.content[0].text)
+        assert ref is not None
+        target = f"aria-ref={ref[1]}" if use_ref else "e12"
+        result = await client.call_tool(
+            "browser_actions",
+            {
+                "session_id": "browser",
+                "actions": [
+                    {"type": "wait_element", "target": target, "timeout": 1000},
+                    {"type": "move", "target": target, "timeout": 1000},
+                    {"type": "textbox", "target": target, "value": "changed", "timeout": 1000},
+                    {"type": "click", "target": target, "timeout": 1000},
+                ],
+            },
+        )
+        assert not result.is_error
+        element = page.locator("e12")
+        assert await element.text_content() == "changed"
+        assert await element.get_attribute("data-hovered") == "yes"
+        assert await element.get_attribute("data-clicked") == "yes"
         assert session.page_pool.pages[0].state == "ready"
