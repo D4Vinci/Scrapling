@@ -149,9 +149,9 @@ Search applies to each line of the captured snapshot, after the `depth` limit. R
 {"session_id": "browser", "search": "Next"}
 ```
 
-### `browser_actions` -- Chain mouse, field, keyboard, and wait actions
+### `browser_actions` -- Chain mouse, field, keyboard, dialog, and wait actions
 
-Runs actions in order on the existing page in a stealthy browser session. Call `browser_fetch` first. The flat `actions` list can mix any of the eleven action types below; use `browser_snapshot` when you need to inspect the page before choosing later actions.
+Runs actions in order on the existing page in a stealthy browser session. Call `browser_fetch` first. The flat `actions` list can mix any of the twelve action types below; use `browser_snapshot` when you need to inspect the page before choosing later actions.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -169,19 +169,26 @@ Runs actions in order on the existing page in a stealthy browser session. Call `
 | `radio` | Target, `value`, `timeout=30000` | Select the radio option; `value` is required and only `true` is supported |
 | `combobox` | Target, `value`, `timeout=30000` | Select native `<select>` options by label; use a string, a list of strings for multiple selections, or `[]` to clear |
 | `press_key` | `key` | Press a nonempty native key name, character, or shortcut at the current focus |
+| `dialog` | `accept`, optional `prompt_text` | Queue one reply for the next browser dialog; `true` accepts, `false` dismisses |
 | `wait_time` | `milliseconds` | Fixed pause in finite nonnegative milliseconds |
 | `wait_element` | `target`, `state="visible"`, `timeout=30000` | Wait for an element to reach `"visible"`, `"hidden"`, `"attached"`, or `"detached"` |
 | `wait_load` | `state`, `timeout=30000` | Wait for `"domcontentloaded"`, `"load"`, or `"networkidle"` |
 
 **Targets and timing.** Element actions use a nonempty `target`: a Playwright selector such as `"#search"` or a snapshot reference as `"aria-ref=e2"`. Bare reference strings such as `"e2"` are treated as selectors. Each move or click needs either `target` or both `x` and `y`. Coordinates must be finite viewport CSS pixels from the main frame's top-left, not full-page screenshot coordinates. Field actions need `target` and can target fields anywhere on the page without a `<form>` parent. Element waits also use `target`. Mouse and field targets must match exactly one element. Use current snapshot references; do not build a chain with references that need a future snapshot.
 
-Each action with a `timeout` accepts finite nonnegative milliseconds, default 30000; 0 disables the limit. Mouse coordinate actions ignore it. For text input, the limit applies separately to each native operation, including clearing and each character press in slow mode. Keyboard, wheel, and fixed-pause actions have no timeout option. Pauses between actions are outside action timeouts.
+Each action with a `timeout` accepts finite nonnegative milliseconds, default 30000; 0 disables the limit. Mouse coordinate actions ignore it. For text input, the limit applies separately to each native operation, including clearing and each character press in slow mode. Keyboard, dialog, wheel, and fixed-pause actions have no timeout option. Pauses between actions are outside action timeouts.
 
 **Mouse actions.** Element targets use native locator hover or click, which waits for readiness and scrolls into view. Coordinate actions use the native mouse without automatic waiting or scrolling. Coordinate clicks move the mouse, then press and release, without waiting for navigation. Wheel actions neither move the pointer nor wait for scrolling, animations, or loaded content to finish. The page may prevent scrolling, or the scrollable area may be at its edge.
 
 **Fields and keys.** Field actions use native locator `fill`, `press_sequentially`, `set_checked`, and `select_option(label=...)`. Combobox actions support native `<select>` elements, not custom dropdown widgets. With `clear=false`, text uses `press_sequentially` even when `slowly=false`; an empty value preserves existing content. With `slowly=true`, text clears first unless `clear=false`, then each character gets a fresh 50-150 ms delay. Every pair of actions also gets a fresh 100-300 ms pause, including explicit wait actions, with no leading or trailing pause.
 
 Each `press_key` uses native `page.keyboard.press` at the current focus. Keep a shortcut such as `"ControlOrMeta+A"` in one `key` string, then use another `press_key` action with `"Backspace"` to delete. A space (`" "`) and plus (`"+"`) are valid key strings. The native API validates key names and shortcuts when pressed. Use a click action to focus the intended control before an Enter press when needed. Key presses do not wait for navigation.
+
+**Dialogs.** Place `dialog` before the click, key, or other action that opens an alert, confirmation, prompt, or leave-page warning (`beforeunload`). Each reply handles one dialog; queue several replies before a trigger that opens several dialogs. Replies are used in order. For prompts, `prompt_text` supplies the accepted text; omitting it or passing an empty string returns empty text, even if the prompt has a default. It has no effect when dismissing or accepting other dialog types. Unused replies expire when the call ends; the action does not wait for a dialog by itself. For delayed dialogs, include a wait for the resulting page change in the same chain. HTML modal windows use normal element actions.
+
+```json
+{"session_id": "browser", "actions": [{"type": "dialog", "accept": true, "prompt_text": "books"}, {"type": "click", "target": "#open-prompt"}]}
+```
 
 **Waits.** Element waits are strict: multiple matches return an error. `attached` means present in the DOM, and `detached` means absent. `visible` requires a nonempty bounding box and no `visibility:hidden`; `hidden` also succeeds when the element is absent. Load waits observe the current committed document and return immediately if the state was already reached. A click or key press followed by `wait_load` does not guarantee waiting for delayed future navigation. `domcontentloaded` waits for DOMContentLoaded, not all future JavaScript work; `load` waits for the load event; `networkidle` requires no active network connections for at least 500 ms and does not prove application readiness. Prefer a specific result element when it signals readiness.
 

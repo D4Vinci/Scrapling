@@ -38,7 +38,7 @@ The Scrapling MCP Server provides fourteen tools for web scraping and browser in
 
 #### Browser Actions
 
-- **`browser_actions`**: Chain mouse actions, field filling, keyboard shortcuts, and waits in one call. For example, fill a search box, submit it, wait for results, and open a result. The AI can combine known steps while keeping snapshots separate when it needs to inspect a page change.
+- **`browser_actions`**: Chain mouse actions, field filling, keyboard shortcuts, dialog replies, and waits in one call. Accept or dismiss browser alerts and confirmations, or enter text in prompts. For example, fill a search box, submit it, wait for results, and open a result. The AI can combine known steps while keeping snapshots separate when it needs to inspect a page change.
 
     Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks support selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
 

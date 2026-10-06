@@ -87,8 +87,9 @@ async def test_browser_mouse_schema_and_annotations() -> None:
         "radio",
         "combobox",
         "press_key",
+        "dialog",
     }
-    assert len(items["oneOf"]) == 11
+    assert len(items["oneOf"]) == 12
     assert "_Selector" not in schema["$defs"] and "_Ref" not in schema["$defs"]
     for kind in ("move", "click", "wheel"):
         variant = variants[kind]

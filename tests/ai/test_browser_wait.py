@@ -58,8 +58,9 @@ async def test_browser_wait_schema_and_annotations() -> None:
         "radio",
         "combobox",
         "press_key",
+        "dialog",
     }
-    assert len(items["oneOf"]) == 11
+    assert len(items["oneOf"]) == 12
     assert variants["wait_time"]["required"] == ["type", "milliseconds"]
     assert variants["wait_time"]["properties"]["milliseconds"]["minimum"] == 0
     assert variants["wait_element"]["required"] == ["type", "target"]

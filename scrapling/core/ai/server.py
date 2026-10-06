@@ -491,7 +491,7 @@ class ScraplingMCPServer:
         actions: Annotated[List[BrowserAction], Field(min_length=1)],
         slowly: bool = False,
     ) -> str:
-        """Run mouse, field, key, and wait actions in order; return plain text without a snapshot.
+        """Run mouse, field, key, dialog, and wait actions in order; return plain text without a snapshot.
         Stop on the first error, identifying its action; partial effects remain. No retries.
         Element mouse targets auto-wait and scroll into view; coordinates and wheel do not wait for navigation or scrolling.
         Cancelled/timed-out clicks attempt button release. Load waits observe the current document, not future navigation.
@@ -910,7 +910,7 @@ class ScraplingMCPServer:
 5. Session options persist from opening; fetch options apply per call, with schema defaults.
 6. Each browser session uses one page; finish each call before starting the next in that session.
 7. Snapshots include refs and boxes by default; `main_content_only` and `pierce_shadow` do not filter them.
-8. `browser_actions` chains mouse, field, key and wait actions on the current page. Element actions use `target`: a Playwright selector or `aria-ref=<ref>` from the current snapshot. Move/click can instead use viewport (x, y) in CSS pixels. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
+8. `browser_actions` chains mouse, field, key, dialog and wait actions on the current page. Element actions use `target`: a Playwright selector or `aria-ref=<ref>` from the current snapshot. Move/click can instead use viewport (x, y) in CSS pixels. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
 9. Network history saves completed requests and responses across page changes. Failed/unfinished requests are omitted; closing does not wait for running captures. Use `include_static=True` to list successful non-API traffic. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Only response bodies with a text Content-Type are read and saved. Response bodies over 1 MiB are skipped; unavailable bodies are marked.""",
         }
         if self._auth_token:

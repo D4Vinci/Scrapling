@@ -79,11 +79,12 @@ async def test_browser_actions_fields_schema() -> None:
         "click",
         "wheel",
         "press_key",
+        "dialog",
         "wait_time",
         "wait_element",
         "wait_load",
     }
-    assert len(items["oneOf"]) == 11
+    assert len(items["oneOf"]) == 12
     for kind in ("textbox", "checkbox", "radio", "combobox"):
         variant = variants[kind]
         assert set(variant["required"]) == {"type", "value"}
