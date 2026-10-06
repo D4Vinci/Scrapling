@@ -91,11 +91,20 @@ async def test_browser_actions_fields_schema() -> None:
             {"clear"} if kind == "textbox" else set()
         )
         assert variant["properties"]["type"]["const"] == kind
-        assert variant["properties"]["timeout"]["default"] == 30000
-        assert variant["properties"]["timeout"]["minimum"] == 0
+        timeout = variant["properties"]["timeout"]
+        assert timeout["default"] == 30000
+        assert schema["$defs"][timeout["$ref"].rsplit("/", 1)[1]] == {
+            "description": "Limit per native operation in ms; 0 disables it.",
+            "minimum": 0,
+            "title": "Timeout",
+            "type": "number",
+        }
         for target in ("selector", "ref"):
-            assert {"type": "null"} in variant["properties"][target]["anyOf"]
-            assert any(option.get("minLength") == 1 for option in variant["properties"][target]["anyOf"])
+            reference = variant["properties"][target]["$ref"]
+            assert schema["$defs"][reference.rsplit("/", 1)[1]] == {
+                "anyOf": [{"minLength": 1, "type": "string"}, {"type": "null"}],
+                "title": target.title(),
+            }
     assert variants["textbox"]["properties"]["value"]["type"] == "string"
     assert variants["textbox"]["properties"]["clear"]["type"] == "boolean"
     assert variants["textbox"]["properties"]["clear"]["default"] is True
@@ -295,6 +304,7 @@ async def test_browser_actions_fields_invalid_later_field_prevents_all_actions(i
         {"actions": [{"type": "textbox", "selector": "#name"}]},
         {"actions": [{"selector": "#name", "value": "value"}]},
         {"actions": [{**TEXT_FIELD, "timeout": -1}]},
+        {"actions": [{**TEXT_FIELD, "timeout": None}]},
         {"actions": [TEXT_FIELD], "slowly": "invalid"},
     ],
 )

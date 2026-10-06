@@ -93,6 +93,13 @@ async def test_browser_mouse_schema_and_annotations() -> None:
         variant = variants[kind]
         assert variant["required"] == ["type"]
         assert variant["properties"]["type"]["const"] == kind
+    for kind in ("move", "click"):
+        for target in ("selector", "ref"):
+            reference = variants[kind]["properties"][target]["$ref"]
+            assert schema["$defs"][reference.rsplit("/", 1)[1]] == {
+                "anyOf": [{"minLength": 1, "type": "string"}, {"type": "null"}],
+                "title": target.title(),
+            }
     move = variants["move"]["properties"]
     assert set(move) == {"type", "x", "y", "steps", "selector", "ref", "timeout"}
     assert move["steps"]["exclusiveMinimum"] == 0

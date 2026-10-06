@@ -10,6 +10,7 @@ from scrapling.core._types import (
     Literal,
     Union,
     TypedDict,
+    TypeAliasType,
     NotRequired,
     List,
     Any,
@@ -20,11 +21,19 @@ from scrapling.core._types import (
 MouseButton = Literal["left", "right", "middle"]
 NonNegativeFiniteFloat = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 NonEmptyString = Annotated[str, Field(min_length=1)]
+_Selector = TypeAliasType("_Selector", Annotated[Optional[NonEmptyString], Field(title="Selector")])
+_Ref = TypeAliasType("_Ref", Annotated[Optional[NonEmptyString], Field(title="Ref")])
+_FieldTimeout = TypeAliasType(
+    "_FieldTimeout",
+    Annotated[
+        NonNegativeFiniteFloat, Field(title="Timeout", description="Limit per native operation in ms; 0 disables it.")
+    ],
+)
 
 
 class _MouseTarget(TypedDict, total=False):
-    selector: Optional[NonEmptyString]
-    ref: Optional[NonEmptyString]
+    selector: _Selector
+    ref: _Ref
     x: Optional[FiniteFloat]
     y: Optional[FiniteFloat]
     timeout: Annotated[
@@ -87,11 +96,9 @@ class _KeyPress(TypedDict):
 
 
 class _FormTarget(TypedDict, total=False):
-    selector: Optional[NonEmptyString]
-    ref: Optional[NonEmptyString]
-    timeout: Annotated[
-        NonNegativeFiniteFloat, Field(default=30000, description="Limit per native operation in ms; 0 disables it.")
-    ]
+    selector: _Selector
+    ref: _Ref
+    timeout: Annotated[_FieldTimeout, Field(default=30000)]
 
 
 class _TextFormField(_FormTarget):
