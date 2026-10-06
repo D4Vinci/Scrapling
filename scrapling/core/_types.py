@@ -8,6 +8,7 @@ from typing import (
     cast,
     overload,
     Any,
+    Annotated,
     Callable,
     Dict,
     Generator,
@@ -31,7 +32,7 @@ from typing import (
     Coroutine,
     SupportsIndex,
 )
-from typing_extensions import Self, Unpack, TypedDict
+from typing_extensions import Self, Unpack, TypedDict, NotRequired, TypeAliasType
 
 # Proxy can be a string URL or a dict (Playwright format: {"server": "...", "username": "...", "password": "..."})
 ProxyType = Union[str, Dict[str, str]]

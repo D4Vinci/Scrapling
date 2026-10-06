@@ -87,15 +87,6 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
-      <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png">
-      </a>
-    </td>
-    <td> <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank"><b>ColdProxy</b></a> предоставляет резидентные и дата-центровые прокси для стабильного веб-скрейпинга, сбора публичных данных и гео-таргетированного тестирования в более чем 195 странах. <i>Использование этой ссылки даёт скидку 5%</i>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
@@ -194,16 +185,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: мобильные 4G/5G прокси на реальных SIM-картах и устройствах. Выделенные или общие, sticky, ротационные, пресеты отпечатков p0f, API/MCP и поддержка всех протоколов. Код SCRAPLING20 даёт скидку 20%.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
       </a>
@@ -271,7 +252,7 @@ MySpider().start()
 - **Блокировка доменов и рекламы**: Блокируйте запросы к определённым доменам (и их поддоменам) или включите встроенную блокировку рекламы (~3 500 известных рекламных/трекерных доменов) в браузерных Fetcher'ах.
 - **Защита от утечки DNS**: Опциональная поддержка DNS-over-HTTPS для маршрутизации DNS-запросов через Cloudflare DoH, предотвращая утечку DNS при использовании прокси.
 - **Удалённые браузеры**: Вместо запуска браузера локально подключайтесь по CDP через `cdp_url` к уже запущенному браузеру - на той же машине, на другом хосте или у провайдера управляемых браузеров. С помощью `executable_path` можно также направить любой браузерный Fetcher на вашу собственную сборку Chromium.
-- **Перехват фоновых API-запросов**: Передайте шаблон URL в `capture_xhr`, и все подходящие XHR/fetch-ответы, которые страница делает во время загрузки, будут собраны как объекты `Response` в `response.captured_xhr` - получайте данные API сайта, не разбирая запросы вручную.
+- **Перехват фоновых API-запросов**: Включите `record_requests=True` в сессии браузера и ищите сохранённые ответы с помощью `session.network.search(limit=None)`. Читайте данные API и ошибки HTTP после загрузки разных страниц без повторной отправки запросов. История ограничена по размеру и сохраняет текстовые тела ответов.
 - **Поддержка async**: Полная async-поддержка во всех Fetcher'ах и выделенных async-классах сессий.
 
 ### Адаптивный скрапинг

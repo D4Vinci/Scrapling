@@ -1,5 +1,4 @@
 from time import time
-from re import search as re_search
 from asyncio import sleep as asyncio_sleep, Lock
 from contextlib import contextmanager, asynccontextmanager, suppress
 
@@ -19,6 +18,7 @@ from playwright._impl._errors import Error as PlaywrightError
 
 from scrapling.parser import Selector
 from scrapling.engines._browsers._page import PageInfo, PagePool
+from scrapling.engines._browsers._network import NetworkRecorder
 from scrapling.engines._browsers._validators import validate, PlaywrightConfig, StealthConfig
 from scrapling.engines._browsers._config_tools import __default_chrome_useragent__, __default_useragent__
 from scrapling.engines.toolbelt.navigation import (
@@ -51,8 +51,9 @@ class SyncSession:
     if TYPE_CHECKING:
         _build_context_with_proxy: Callable[..., Dict[str, Any]]
 
-    def __init__(self, max_pages: int = 1):
+    def __init__(self, max_pages: int = 1, record_requests: bool = False, max_recorded_requests: int = 1000):
         self.max_pages = max_pages
+        self.network = NetworkRecorder(enabled=record_requests, max_requests=max_recorded_requests)
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
         self.playwright: Any = None
@@ -71,6 +72,7 @@ class SyncSession:
 
     def close(self):  # pragma: no cover
         """Close all resources"""
+        self.network._detach()
         if not self._is_alive:
             return
 
@@ -104,6 +106,7 @@ class SyncSession:
         if config.cookies:  # pragma: no cover
             ctx.add_cookies(config.cookies)
 
+        self.network._attach(ctx)
         return ctx
 
     def _get_page(
@@ -139,6 +142,19 @@ class SyncSession:
         }
 
     @staticmethod
+    def _snapshot(
+        page: Page, depth: Optional[int] = None, boxes: bool = False, css_selector: Optional[str] = None
+    ) -> str:
+        """Return an AI ARIA snapshot of an existing browser page.
+
+        :param page: The browser page to snapshot.
+        :param depth: Limit the snapshot tree depth. Defaults to no limit.
+        :param boxes: Include element bounding boxes in viewport CSS pixels.
+        :param css_selector: Snapshot one matching element instead of the whole page.
+        """
+        return (page.locator(css_selector) if css_selector else page).aria_snapshot(mode="ai", depth=depth, boxes=boxes)
+
+    @staticmethod
     def _wait_for_networkidle(page: Page | Frame, timeout: Optional[int] = None):
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
@@ -157,15 +173,11 @@ class SyncSession:
     def _create_response_handler(
         page_info: PageInfo[Page],
         response_container: List,
-        xhr_pattern: Optional[str] = None,
-        xhr_container: Optional[List] = None,
     ) -> Callable[[SyncPlaywrightResponse], None]:
-        """Create a response handler that captures the final navigation response and optionally XHR/fetch responses.
+        """Create a response handler that captures the final navigation response.
 
         :param page_info: The PageInfo object containing the page
         :param response_container: A list to store the final response (mutable container)
-        :param xhr_pattern: Optional regex pattern to match XHR/fetch response URLs
-        :param xhr_container: Optional list to store captured XHR/fetch responses
         :return: A callback function for page.on("response", ...)
         """
 
@@ -176,13 +188,6 @@ class SyncSession:
                 and finished_response.request.frame == page_info.page.main_frame
             ):
                 response_container[0] = finished_response
-            elif (
-                xhr_pattern
-                and xhr_container is not None
-                and finished_response.request.resource_type in ("xhr", "fetch")
-                and re_search(xhr_pattern, finished_response.url)
-            ):
-                xhr_container.append(finished_response)
 
         return handle_response
 
@@ -211,6 +216,7 @@ class SyncSession:
             finally:
                 if page_info is not None:
                     self.page_pool.remove_page(page_info)
+                self.network._detach(context)
                 context.close()
         else:
             # Standard mode: use PagePool with persistent context
@@ -232,8 +238,9 @@ class AsyncSession:
     if TYPE_CHECKING:
         _build_context_with_proxy: Callable[..., Dict[str, Any]]
 
-    def __init__(self, max_pages: int = 1):
+    def __init__(self, max_pages: int = 1, record_requests: bool = False, max_recorded_requests: int = 1000):
         self.max_pages = max_pages
+        self.network = NetworkRecorder(enabled=record_requests, max_requests=max_recorded_requests, asynchronous=True)
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
         self.playwright: Any = None
@@ -253,6 +260,7 @@ class AsyncSession:
 
     async def close(self):
         """Close all resources"""
+        self.network._detach()
         if not self._is_alive:  # pragma: no cover
             return
 
@@ -288,6 +296,7 @@ class AsyncSession:
         if config.cookies:  # pragma: no cover
             await ctx.add_cookies(config.cookies)
 
+        self.network._attach(ctx)
         return ctx
 
     async def _get_page(
@@ -339,6 +348,21 @@ class AsyncSession:
         }
 
     @staticmethod
+    async def _snapshot(
+        page: AsyncPage, depth: Optional[int] = None, boxes: bool = False, css_selector: Optional[str] = None
+    ) -> str:
+        """Return an AI ARIA snapshot of an existing browser page.
+
+        :param page: The browser page to snapshot.
+        :param depth: Limit the snapshot tree depth. Defaults to no limit.
+        :param boxes: Include element bounding boxes in viewport CSS pixels.
+        :param css_selector: Snapshot one matching element instead of the whole page.
+        """
+        return await (page.locator(css_selector) if css_selector else page).aria_snapshot(
+            mode="ai", depth=depth, boxes=boxes
+        )
+
+    @staticmethod
     async def _wait_for_networkidle(page: AsyncPage | AsyncFrame, timeout: Optional[int] = None):
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
@@ -357,15 +381,11 @@ class AsyncSession:
     def _create_response_handler(
         page_info: PageInfo[AsyncPage],
         response_container: List,
-        xhr_pattern: Optional[str] = None,
-        xhr_container: Optional[List] = None,
     ) -> Callable[[AsyncPlaywrightResponse], Awaitable[None]]:
-        """Create an async response handler that captures the final navigation response and optionally XHR/fetch responses.
+        """Create an async response handler that captures the final navigation response.
 
         :param page_info: The PageInfo object containing the page
         :param response_container: A list to store the final response (mutable container)
-        :param xhr_pattern: Optional regex pattern to match XHR/fetch response URLs
-        :param xhr_container: Optional list to store captured XHR/fetch responses
         :return: A callback function for page.on("response", ...)
         """
 
@@ -376,13 +396,6 @@ class AsyncSession:
                 and finished_response.request.frame == page_info.page.main_frame
             ):
                 response_container[0] = finished_response
-            elif (
-                xhr_pattern
-                and xhr_container is not None
-                and finished_response.request.resource_type in ("xhr", "fetch")
-                and re_search(xhr_pattern, finished_response.url)
-            ):
-                xhr_container.append(finished_response)
 
         return handle_response
 
@@ -413,6 +426,7 @@ class AsyncSession:
             finally:
                 if page_info is not None:
                     self.page_pool.remove_page(page_info)
+                self.network._detach(context)
                 await context.close()
         else:
             # Standard mode: use PagePool with persistent context
