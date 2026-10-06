@@ -85,7 +85,8 @@ All arguments for `DynamicFetcher` and its session classes:
 |    proxy_rotator    | A `ProxyRotator` instance for automatic proxy rotation. Cannot be combined with `proxy`.                                                                                                                                            |    ✔️    |
 |       retries       | Number of retry attempts for failed requests. Defaults to 3.                                                                                                                                                                        |    ✔️    |
 |     retry_delay     | Seconds to wait between retry attempts. Defaults to 1.                                                                                                                                                                              |    ✔️    |
-|     capture_xhr     | Pass a regex URL pattern string to capture XHR/fetch requests matching it during page load. Captured responses are available via `response.captured_xhr`. Defaults to `None` (disabled).                                            |    ✔️    |
+|   record_requests   | Keep completed requests and saved responses in `session.network`. Session-only; defaults to `False`. |    ✔️    |
+| max_recorded_requests | Maximum retained request entries per session; defaults to 1,000. Saved bodies also have fixed size limits. |    ✔️    |
 |   executable_path   | Absolute path to a custom browser executable to use instead of the bundled Chromium. Useful for non-standard installations or custom browser builds.                                                                                |    ✔️    |
 
 In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `page_setup`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `pierce_shadow`, `blocked_domains`, `proxy`, and `selector_config`.
@@ -281,23 +282,52 @@ The states the fetcher can wait for can be any of the following ([source](https:
 - `visible`: wait for an element to have a non-empty bounding box and no `visibility:hidden`. Note that an element without any content or with `display:none` has an empty bounding box and is not considered visible.
 - `hidden`: wait for an element to be either detached from the DOM, or have an empty bounding box, or `visibility:hidden`. This is opposite to the `'visible'` option.
 
-### Capturing XHR/Fetch Requests
+### Network History
 
-Many SPAs load data through background API calls (XHR/fetch). You can capture these requests by passing a regex URL pattern to `capture_xhr` at the session level:
+Enable `record_requests` on a browser session to inspect completed requests across page loads, actions, and tabs. The history covers the session's contexts, including temporary proxy contexts, and saves responses as Scrapling `Response` objects. Find API calls, HTTP errors, and redirects without sending requests again, then read saved headers and bodies even after the session closes. Failed and unfinished requests are omitted; completed HTTP 4xx and 5xx responses are included.
 
 ```python
 from scrapling.fetchers import DynamicSession
 
-with DynamicSession(capture_xhr=r"https://api\.example\.com/.*", headless=True) as session:
-    page = session.fetch('https://example.com')
+with DynamicSession(record_requests=True, max_recorded_requests=1000) as session:
+    session.fetch('https://example.com', network_idle=True)
 
-    # Access captured XHR responses
-    for xhr in page.captured_xhr:
-        print(xhr.url, xhr.status)
-        print(xhr.body)  # Raw response body as bytes
+for response in session.network.search(resource_type='document', limit=None):
+    print(response.meta['network_id'], response.url, response.status)
+    if note := response.meta.get('body_note'):
+        print(note)
+    else:
+        print(response.body)
+        print(response.css('title::text').get())
+
+session.network.clear()
 ```
 
-Each item in `captured_xhr` is a full `Response` object with the same properties (`.url`, `.status`, `.headers`, `.body`, etc.). When `capture_xhr` is not set or is `None`, `captured_xhr` is an empty list.
+The same API works with `AsyncDynamicSession`, `StealthySession`, and `AsyncStealthySession`. Recording is off by default. Set `record_requests=True` and, if needed, `max_recorded_requests` when creating the session.
+
+- `session.network.search(url_pattern=None, method=None, resource_type=None, status=None, after_id=0, limit=100, include_static=True)` returns saved `Response` objects in network ID order. `limit=None` returns all retained matches. `url_pattern` is a regular expression applied when searching; invalid patterns raise an error at that point. `after_id` selects responses with a larger network ID. `include_static=False` keeps XHR/fetch requests and HTTP errors; use `True` for all resource types and saved redirects.
+- `session.network.get(request_id)` returns one saved `Response`, or `None` if it is no longer retained.
+- `session.network.clear()` removes the history. Request IDs keep increasing and are never reused.
+
+Each saved `Response` provides `.url`, `.method`, `.status`, `.headers`, `.request_headers`, `.body` bytes, `.json()`, and CSS/XPath methods directly. Its `.meta` contains `network_id`, `resource_type`, and `request_body` (bytes or `None`). Headers can be partial if full-header reads fail. These are local reads, including for async sessions; do not await them or call `.body()`. If saved content cannot be parsed, its bytes are kept, but CSS/XPath methods use an empty document.
+
+To find API traffic by URL, use `session.network.search(url_pattern=r'https://api\.example\.com/.*', limit=None)`. Add `resource_type='fetch'` or `resource_type='xhr'` when you need one request type.
+
+The recorder reads and saves response bodies only for supported text `Content-Type` values: `text/*`, `+json`/`+xml` types (including SVG), JSON, XML, JavaScript, GraphQL, and URL-encoded form data. Binary or unrecognized types, and responses without `Content-Type`, keep their metadata but no body bytes. The browser still loads resources normally.
+
+Saved response bytes come from Playwright and can differ from the server's original bytes. Recorded text uses UTF-8 when the saved bytes are valid UTF-8, matching Playwright; otherwise it uses the declared charset. Response headers stay unchanged.
+
+Skipped, oversized, or unreadable response bodies return `b''`, with the reason in `response.meta.get('body_note')`. Non-text bodies use `Non-text body; not saved.`. Response metadata and available headers are kept. Saved text, including empty text, has no note. HEAD responses and status codes 204, 205, and 304 remain empty with no note.
+
+The history's `search`, `get`, and `clear` methods are local, synchronous calls, even on async sessions. An entry appears only after its response has been converted and saved. Browser events run while Playwright is active; async captures also need the event loop to run. Reading the history does not wait for captures.
+
+Closing a session does not wait for captures. Captures still running when the page navigates or the browser context closes may be omitted. Already saved responses stay readable after closure.
+
+By default, the history keeps up to 1,000 requests. Saved response bodies have a 1 MiB limit each and a 20 MiB combined limit; old records are removed when retention limits are reached. The body limits are fixed, not session settings. These limits cover retained entries and response bytes, not total browser memory, concurrent captures, temporary full-body reads, parsed HTML, or request bodies.
+
+#### Migrating in v5
+
+`capture_xhr` and `response.captured_xhr` were removed in v5. Use an explicit browser session with `record_requests=True`, then read `session.network.search(url_pattern=..., limit=None)`. This also replaces API capture through one-shot fetchers, so keep the session instance. Filters apply to saved history across the whole session, not to capture or a single fetch. Only supported text response bodies are saved. `search()` returns at most 100 matches by default; `limit=None` returns all retained matches without changing the history's retention limits.
 
 ### Some Stealth Features
 

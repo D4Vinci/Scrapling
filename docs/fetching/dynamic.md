@@ -63,42 +63,43 @@ The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed br
 ## Full list of arguments
 Scrapling provides many options with this fetcher and its session classes. To make it as simple as possible, we will list the options here and give examples of how to use most of them.
 
-|      Argument       | Description                                                                                                                                                                                                                         | Optional |
-|:-------------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
-|         url         | Target url                                                                                                                                                                                                                          |    ❌     |
-|      headless       | Pass `True` to run the browser in headless/hidden (**default**) or `False` for headful/visible mode.                                                                                                                                |    ✔️    |
-|  disable_resources  | Drop requests for unnecessary resources for a speed boost. Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.                         |    ✔️    |
-|       cookies       | Set cookies for the next request.                                                                                                                                                                                                   |    ✔️    |
-|      useragent      | Pass a useragent string to be used. **Otherwise, the fetcher will generate and use a real Useragent of the same browser and version.**                                                                                              |    ✔️    |
-|    network_idle     | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                       |    ✔️    |
-|      load_dom       | Enabled by default, wait for all JavaScript on page(s) to fully load and execute (wait for the `domcontentloaded` state).                                                                                                           |    ✔️    |
-|    pierce_shadow    | Include open Shadow DOM content in the response HTML. Defaults to `False`. Can be set for the session or overridden for each request. |    ✔️    |
-|       timeout       | The timeout (milliseconds) used in all operations and waits through the page. The default is 30,000 ms (30 seconds).                                                                                                                |    ✔️    |
-|        wait         | The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the `Response` object.                                                                                                |    ✔️    |
-|     page_action     | Added for automation. Pass a function that takes the `page` object, runs after navigation, and does the necessary automation.                                                                                                       |    ✔️    |
-|     page_setup      | A function that takes the `page` object, runs before navigation. Use it to register event listeners or routes that must be set up before the page loads.                                                                            |    ✔️    |
-|    wait_selector    | Wait for a specific css selector to be in a specific state.                                                                                                                                                                         |    ✔️    |
-|     init_script     | An absolute path to a JavaScript file to be executed on page creation for all pages in this session.                                                                                                                                |    ✔️    |
-| wait_selector_state | Scrapling will wait for the given state to be fulfilled for the selector given with `wait_selector`. _Default state is `attached`._                                                                                                 |    ✔️    |
-|    google_search    | Enabled by default, Scrapling will set a Google referer header.                                                                                                                                                                     |    ✔️    |
-|    extra_headers    | A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._                                                                                |    ✔️    |
-|        proxy        | The proxy to be used with requests. It can be a string or a dictionary with only the keys 'server', 'username', and 'password'.                                                                                                     |    ✔️    |
-|     real_chrome     | If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch and use an instance of your browser.                                                                                                |    ✔️    |
-|       locale        | Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect `navigator.language` value, `Accept-Language` request header value, as well as number and date formatting rules. Defaults to the system default locale. |    ✔️    |
-|     timezone_id     | Changes the timezone of the browser. Defaults to the system timezone.                                                                                                                                                               |    ✔️    |
-|       cdp_url       | Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.                                                                                                                          |    ✔️    |
-|    user_data_dir    | Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory. **Only Works with sessions**                                                       |    ✔️    |
-|     extra_flags     | A list of additional browser flags to pass to the browser on launch.                                                                                                                                                                |    ✔️    |
-|   additional_args   | Additional arguments to be passed to Playwright's context as additional settings, and they take higher priority than Scrapling's settings.                                                                                          |    ✔️    |
-|   selector_config   | A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.                                                                                                                            |    ✔️    |
-|   blocked_domains   | A set of domain names to block requests to. Subdomains are also matched (e.g., `"example.com"` blocks `"sub.example.com"` too).                                                                                                     |    ✔️    |
-|      block_ads      | Block requests to ~3,500 known ad/tracking domains. Can be combined with `blocked_domains`.                                                                                                                                         |    ✔️    |
-|   dns_over_https    | Route DNS queries through Cloudflare's DNS-over-HTTPS to prevent DNS leaks when using proxies.                                                                                                                                      |    ✔️    |
-|    proxy_rotator    | A `ProxyRotator` instance for automatic proxy rotation. Cannot be combined with `proxy`.                                                                                                                                            |    ✔️    |
-|       retries       | Number of retry attempts for failed requests. Defaults to 3.                                                                                                                                                                        |    ✔️    |
-|     retry_delay     | Seconds to wait between retry attempts. Defaults to 1.                                                                                                                                                                              |    ✔️    |
-|     capture_xhr     | Pass a regex URL pattern string to capture XHR/fetch requests matching it during page load. Captured responses are available via `response.captured_xhr`. Defaults to `None` (disabled).                                            |    ✔️    |
-|   executable_path   | Absolute path to a custom browser executable to use instead of the bundled Chromium. Useful for non-standard installations or custom browser builds.                                                                                |    ✔️    |
+|       Argument        | Description                                                                                                                                                                                                                         | Optional |
+|:---------------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
+|          url          | Target url                                                                                                                                                                                                                          |    ❌     |
+|       headless        | Pass `True` to run the browser in headless/hidden (**default**) or `False` for headful/visible mode.                                                                                                                                |    ✔️    |
+|   disable_resources   | Drop requests for unnecessary resources for a speed boost. Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.                         |    ✔️    |
+|        cookies        | Set cookies for the next request.                                                                                                                                                                                                   |    ✔️    |
+|       useragent       | Pass a useragent string to be used. **Otherwise, the fetcher will generate and use a real Useragent of the same browser and version.**                                                                                              |    ✔️    |
+|     network_idle      | Wait for the page until there are no network connections for at least 500 ms.                                                                                                                                                       |    ✔️    |
+|       load_dom        | Enabled by default, wait for all JavaScript on page(s) to fully load and execute (wait for the `domcontentloaded` state).                                                                                                           |    ✔️    |
+|     pierce_shadow     | Include open Shadow DOM content in the response HTML. Defaults to `False`. Can be set for the session or overridden for each request.                                                                                               |    ✔️    |
+|        timeout        | The timeout (milliseconds) used in all operations and waits through the page. The default is 30,000 ms (30 seconds).                                                                                                                |    ✔️    |
+|         wait          | The time (milliseconds) the fetcher will wait after everything finishes before closing the page and returning the `Response` object.                                                                                                |    ✔️    |
+|      page_action      | Added for automation. Pass a function that takes the `page` object, runs after navigation, and does the necessary automation.                                                                                                       |    ✔️    |
+|      page_setup       | A function that takes the `page` object, runs before navigation. Use it to register event listeners or routes that must be set up before the page loads.                                                                            |    ✔️    |
+|     wait_selector     | Wait for a specific css selector to be in a specific state.                                                                                                                                                                         |    ✔️    |
+|      init_script      | An absolute path to a JavaScript file to be executed on page creation for all pages in this session.                                                                                                                                |    ✔️    |
+|  wait_selector_state  | Scrapling will wait for the given state to be fulfilled for the selector given with `wait_selector`. _Default state is `attached`._                                                                                                 |    ✔️    |
+|     google_search     | Enabled by default, Scrapling will set a Google referer header.                                                                                                                                                                     |    ✔️    |
+|     extra_headers     | A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._                                                                                |    ✔️    |
+|         proxy         | The proxy to be used with requests. It can be a string or a dictionary with only the keys 'server', 'username', and 'password'.                                                                                                     |    ✔️    |
+|      real_chrome      | If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch and use an instance of your browser.                                                                                                |    ✔️    |
+|        locale         | Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect `navigator.language` value, `Accept-Language` request header value, as well as number and date formatting rules. Defaults to the system default locale. |    ✔️    |
+|      timezone_id      | Changes the timezone of the browser. Defaults to the system timezone.                                                                                                                                                               |    ✔️    |
+|        cdp_url        | Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.                                                                                                                          |    ✔️    |
+|     user_data_dir     | Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory. **Only Works with sessions**                                                       |    ✔️    |
+|      extra_flags      | A list of additional browser flags to pass to the browser on launch.                                                                                                                                                                |    ✔️    |
+|    additional_args    | Additional arguments to be passed to Playwright's context as additional settings, and they take higher priority than Scrapling's settings.                                                                                          |    ✔️    |
+|    selector_config    | A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.                                                                                                                            |    ✔️    |
+|    blocked_domains    | A set of domain names to block requests to. Subdomains are also matched (e.g., `"example.com"` blocks `"sub.example.com"` too).                                                                                                     |    ✔️    |
+|       block_ads       | Block requests to ~3,500 known ad/tracking domains. Can be combined with `blocked_domains`.                                                                                                                                         |    ✔️    |
+|    dns_over_https     | Route DNS queries through Cloudflare's DNS-over-HTTPS to prevent DNS leaks when using proxies.                                                                                                                                      |    ✔️    |
+|     proxy_rotator     | A `ProxyRotator` instance for automatic proxy rotation. Cannot be combined with `proxy`.                                                                                                                                            |    ✔️    |
+|        retries        | Number of retry attempts for failed requests. Defaults to 3.                                                                                                                                                                        |    ✔️    |
+|      retry_delay      | Seconds to wait between retry attempts. Defaults to 1.                                                                                                                                                                              |    ✔️    |
+|    record_requests    | Keep completed requests and saved responses in `session.network`. Session-only; defaults to `False`.                                                                                                                                |    ✔️    |
+| max_recorded_requests | Maximum retained request entries per session; defaults to 1,000. Saved bodies also have fixed size limits.                                                                                                                          |    ✔️    |
+|    executable_path    | Absolute path to a custom browser executable to use instead of the bundled Chromium. Useful for non-standard installations or custom browser builds.                                                                                |    ✔️    |
 
 In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `page_setup`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `pierce_shadow`, `blocked_domains`, `proxy`, and `selector_config`.
 
@@ -335,23 +336,52 @@ The states the fetcher can wait for can be any of the following ([source](https:
 - `visible`: wait for an element to have a non-empty bounding box and no `visibility:hidden`. Note that an element without any content or with `display:none` has an empty bounding box and is not considered visible.
 - `hidden`: wait for an element to be either detached from the DOM, or have an empty bounding box, or `visibility:hidden`. This is opposite to the `'visible'` option.
 
-### Capturing XHR/Fetch Requests
+### Network History
 
-Many SPAs load data through background API calls (XHR/fetch). You can capture these requests by passing a regex URL pattern to `capture_xhr` at the session level:
+Enable `record_requests` on a browser session to inspect completed requests across page loads, actions, and tabs. The history covers the session's contexts, including temporary proxy contexts, and saves responses as Scrapling `Response` objects. Find API calls, HTTP errors, and redirects without sending requests again, then read saved headers and bodies even after the session closes. Failed and unfinished requests are omitted; completed HTTP 4xx and 5xx responses are included.
 
 ```python
 from scrapling.fetchers import DynamicSession
 
-with DynamicSession(capture_xhr=r"https://api\.example\.com/.*", headless=True) as session:
-    page = session.fetch('https://example.com')
+with DynamicSession(record_requests=True, max_recorded_requests=1000) as session:
+    session.fetch('https://example.com', network_idle=True)
 
-    # Access captured XHR responses
-    for xhr in page.captured_xhr:
-        print(xhr.url, xhr.status)
-        print(xhr.body)  # Raw response body as bytes
+for response in session.network.search(resource_type='document', limit=None):
+    print(response.meta['network_id'], response.url, response.status)
+    if note := response.meta.get('body_note'):
+        print(note)
+    else:
+        print(response.body)
+        print(response.css('title::text').get())
+
+session.network.clear()
 ```
 
-Each item in `captured_xhr` is a full `Response` object with the same properties (`.url`, `.status`, `.headers`, `.body`, etc.). When `capture_xhr` is not set or is `None`, `captured_xhr` is an empty list.
+The same API works with `AsyncDynamicSession`, `StealthySession`, and `AsyncStealthySession`. Recording is off by default. Set `record_requests=True` and, if needed, `max_recorded_requests` when creating the session.
+
+- `session.network.search(url_pattern=None, method=None, resource_type=None, status=None, after_id=0, limit=100, include_static=True)` returns saved `Response` objects in network ID order. `limit=None` returns all retained matches. `url_pattern` is a regular expression applied when searching; invalid patterns raise an error at that point. `after_id` selects responses with a larger network ID. `include_static=False` keeps XHR/fetch requests and HTTP errors; use `True` for all resource types and saved redirects.
+- `session.network.get(request_id)` returns one saved `Response`, or `None` if it is no longer retained.
+- `session.network.clear()` removes the history. Request IDs keep increasing and are never reused.
+
+Each saved `Response` provides `.url`, `.method`, `.status`, `.headers`, `.request_headers`, `.body` bytes, `.json()`, and CSS/XPath methods directly. Its `.meta` contains `network_id`, `resource_type`, and `request_body` (bytes or `None`). Headers can be partial if full-header reads fail. These are local reads, including for async sessions; do not await them or call `.body()`. If saved content cannot be parsed, its bytes are kept, but CSS/XPath methods use an empty document.
+
+To find API traffic by URL, use `session.network.search(url_pattern=r'https://api\.example\.com/.*', limit=None)`. Add `resource_type='fetch'` or `resource_type='xhr'` when you need one request type.
+
+The recorder reads and saves response bodies only for supported text `Content-Type` values: `text/*`, `+json`/`+xml` types (including SVG), JSON, XML, JavaScript, GraphQL, and URL-encoded form data. Binary or unrecognized types, and responses without `Content-Type`, keep their metadata but no body bytes. The browser still loads resources normally.
+
+Saved response bytes come from Playwright and can differ from the server's original bytes. Recorded text uses UTF-8 when the saved bytes are valid UTF-8, matching Playwright; otherwise it uses the declared charset. Response headers stay unchanged.
+
+Skipped, oversized, or unreadable response bodies return `b''`, with the reason in `response.meta.get('body_note')`. Non-text bodies use `Non-text body; not saved.`. Response metadata and available headers are kept. Saved text, including empty text, has no note. HEAD responses and status codes 204, 205, and 304 remain empty with no note.
+
+The history's `search`, `get`, and `clear` methods are local, synchronous calls, even on async sessions. An entry appears only after its response has been converted and saved. Browser events run while Playwright is active; async captures also need the event loop to run. Reading the history does not wait for captures.
+
+Closing a session does not wait for captures. Captures still running when the page navigates or the browser context closes may be omitted. Already saved responses stay readable after closure.
+
+By default, the history keeps up to 1,000 requests. Saved response bodies have a 1 MiB limit each and a 20 MiB combined limit; old records are removed when retention limits are reached. The body limits are fixed, not session settings. These limits cover retained entries and response bytes, not total browser memory, concurrent captures, temporary full-body reads, parsed HTML, or request bodies.
+
+#### Migrating in v5
+
+`capture_xhr` and `response.captured_xhr` were removed in v5. Use an explicit browser session with `record_requests=True`, then read `session.network.search(url_pattern=..., limit=None)`. This also replaces API capture through one-shot fetchers, so keep the session instance. Filters apply to saved history across the whole session, not to capture or a single fetch. Only supported text response bodies are saved. `search()` returns at most 100 matches by default; `limit=None` returns all retained matches without changing the history's retention limits.
 
 ### Some Stealth Features
 
