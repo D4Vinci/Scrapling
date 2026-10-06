@@ -1,6 +1,10 @@
 import pytest
+from types import SimpleNamespace
+
+from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, DynamicSession, StealthySession
 from scrapling.engines._browsers._validators import (
     validate,
+    validate_fetch,
     StealthConfig,
     PlaywrightConfig,
 )
@@ -8,6 +12,37 @@ from scrapling.engines._browsers._validators import (
 
 class TestValidators:
     """Test configuration validators"""
+
+    @pytest.mark.parametrize("model", [PlaywrightConfig, StealthConfig])
+    def test_request_recording_replaces_xhr_config(self, model):
+        config = validate({"record_requests": True, "max_recorded_requests": 50}, model)
+        assert config.record_requests and config.max_recorded_requests == 50
+        assert "capture_xhr" not in model.__struct_fields__
+
+    @pytest.mark.parametrize("model", [PlaywrightConfig, StealthConfig])
+    @pytest.mark.parametrize("value", [None, ".*"])
+    def test_removed_xhr_option_is_rejected_by_config_and_fetch(self, model, value):
+        kwargs = {"capture_xhr": value}
+        message = "capture_xhr was removed; use record_requests=True and session.network."
+        with pytest.raises(TypeError, match=message):
+            validate(kwargs, model)
+        with pytest.raises(TypeError, match=message):
+            validate_fetch(kwargs, SimpleNamespace(_config=model()), model)
+
+    @pytest.mark.parametrize("model", [PlaywrightConfig, StealthConfig])
+    def test_other_unknown_options_keep_existing_behavior(self, model):
+        config = validate({"unknown_option": True}, model)
+        assert not hasattr(config, "unknown_option")
+        params = validate_fetch({"unknown_option": True}, SimpleNamespace(_config=config), model)
+        assert params.timeout == config.timeout
+        assert not hasattr(params, "unknown_option")
+
+    @pytest.mark.parametrize(
+        "session_type", [DynamicSession, StealthySession, AsyncDynamicSession, AsyncStealthySession]
+    )
+    def test_removed_xhr_option_is_rejected_by_sessions(self, session_type):
+        with pytest.raises(TypeError, match="capture_xhr was removed"):
+            session_type(capture_xhr=".*")
 
     def test_playwright_config_valid(self):
         """Test valid PlaywrightConfig"""

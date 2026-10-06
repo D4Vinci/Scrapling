@@ -1,7 +1,7 @@
 ---
 name: scrapling-official
 description: Scrape web pages using Scrapling with anti-bot bypass (like Cloudflare Turnstile), stealth headless browsing, spiders framework, adaptive scraping, and JavaScript rendering. Use when asked to scrape, crawl, or extract data from websites; web_fetch fails; the site has anti-bot protections; write Python code to scrape/crawl; or write spiders.
-version: "0.4.15"
+version: "0.5"
 license: Complete terms in LICENSE.txt
 metadata:
   homepage: "https://scrapling.readthedocs.io/en/latest/index.html"
@@ -40,7 +40,7 @@ Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers fo
 
 Create a virtual Python environment through any way available, like `venv`, then inside the environment do:
 
-`pip install "scrapling[all]>=0.4.15"`
+`pip install "scrapling[all]>=0.5"`
 
 Then do this to download all the browsers' dependencies:
 
@@ -255,7 +255,7 @@ data = page.css('.quote .text::text').getall()
 
 ### Shadow DOM
 
-Use `pierce_shadow=True` with dynamic or stealth Python fetchers and sessions to include open shadow roots. It defaults to `False` and can be overridden per request. For MCP, pass `pierce_shadow=true` to `fetch`, `bulk_fetch`, `stealthy_fetch`, `bulk_stealthy_fetch`, or each `session_fetch` call.
+Use `pierce_shadow=True` with dynamic or stealth Python fetchers and sessions to include open shadow roots. It defaults to `False` and can be overridden per request. For MCP, pass `pierce_shadow=true` to `browser_fetch_once` or each `browser_fetch` call.
 
 Both browser CLI commands accept `--pierce-shadow` and `--no-pierce-shadow`:
 
@@ -402,12 +402,15 @@ async with AsyncStealthySession(max_pages=2) as session:
     results = await asyncio.gather(*tasks)
     print(session.get_pool_stats())
 
-# Capture XHR/fetch API calls during page load
-async with AsyncDynamicSession(capture_xhr=r"https://api\.example\.com/.*") as session:
-    page = await session.fetch('https://example.com')
-    for xhr in page.captured_xhr:  # Each is a full Response object
-        print(xhr.url, xhr.status, xhr.body)
+async with AsyncDynamicSession(record_requests=True) as session:
+    await session.fetch('https://example.com', network_idle=True)
+
+for response in session.network.search(url_pattern=r"https://api\.example\.com/.*", limit=None):
+    print(response.meta['network_id'], response.url, response.status)
+    print(response.meta.get('body_note') or response.body)
 ```
+
+Recorded responses belong to the whole browser session. `search()` and `get()` return `Response` objects directly, with `network_id`, `resource_type`, and `request_body` in `.meta`. Searches filter saved history and return 100 matches by default; `limit=None` returns all retained matches. Only supported text response bodies are saved. Saved reads remain local after closure; unfinished captures are not awaited. See [Migrating in v5](references/fetching/dynamic.md#migrating-in-v5) for the removed API capture interface.
 
 ## References
 You already had a good glimpse of what the library can do. Use the references below to dig deeper when needed

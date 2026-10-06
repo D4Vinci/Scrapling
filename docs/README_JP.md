@@ -87,15 +87,6 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
-      <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png">
-      </a>
-    </td>
-    <td> <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank"><b>ColdProxy</b></a> は、安定したウェブスクレイピング、公開データ収集、195以上の国・地域でのジオターゲティングテストのために、レジデンシャルおよびデータセンタープロキシを提供します。 <i>このリンクの利用で5%割引になります</i>。
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
@@ -191,26 +182,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank" title="Affordable Residential in 190+ Countries">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/niuproxy.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://niuproxy.com/?utm_source=scrapling&utm_medium=scrapling&ref=scrapling" target="_blank">NiuProxy</a> は$0.35/GBから利用できるローテーション型住宅用プロキシを提供します。Scrapling限定コードPAY2を使うと、チャージが10%オフになります。
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: 実際のSIMとデバイスを使った4G/5Gモバイルプロキシ。専用または共有、スティッキー、ローテーション、p0fフィンガープリントプリセット、API/MCPおよび全プロトコル対応。コードSCRAPLING20で20%オフ。
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
       </a>
@@ -226,7 +197,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：安定したスクレイピングとブラウザ自動化を支える、2,800万のクリーンなレジデンシャルIP。有効期限のない通信量を $2/GB から提供。195か国に対応。固定・ローテーションセッション。都市・ISP・ASNの指定が可能。お試しプランは $1.95/350MB。コード SCRAPEANDTAKE で25%オフ。
+    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：ブロックとCAPTCHAを90%削減。大規模なWebスクレイピング向けに、2,800万の高品質なレジデンシャルIPを提供。195か国に対応。都市・ISP・郵便番号（ZIP）の指定が可能。固定・ローテーションセッション。有効期限のない通信量を $2/GB から提供。コード <strong>SCRAPEANDTAKE</strong> で<em>25%オフ</em>。
     </td>
   </tr>
 </table>
@@ -236,7 +207,6 @@ MySpider().start()
 
 <!-- sponsors -->
 
-<a href="https://www.novada.com/?d4vinci-scrapling" target="_blank" title="The All-in-One Solution for Every Data Scraping Scenario"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/novada.jpg"></a>
 <a href="https://cloro.dev/?utm_source=referral&utm_medium=scrapling" target="_blank" title="The search API for the AI era"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/cloro.jpg"></a>
 
 <br/>
@@ -279,7 +249,7 @@ MySpider().start()
 - **ドメイン＆広告ブロック**：ブラウザベースの Fetcher で特定のドメイン（およびそのサブドメイン）へのリクエストをブロック、または内蔵広告ブロック（約3,500の既知の広告/トラッカードメイン）を有効化。
 - **DNS リーク防止**：Proxy 使用時の DNS リークを防ぐため、Cloudflare の DoH 経由で DNS クエリをルーティングするオプションの DNS-over-HTTPS サポート。
 - **リモートブラウザ**：ローカルでブラウザを起動する代わりに、`cdp_url` を使って CDP 経由で既に起動しているブラウザに接続できます。同じマシン上でも、別のホストでも、マネージドブラウザサービスでも構いません。`executable_path` を使えば、任意のブラウザ Fetcher を独自ビルドの Chromium に向けることもできます。
-- **バックグラウンド API キャプチャ**：`capture_xhr` に URL パターンを渡すと、読み込み中にページが発行した該当の XHR/fetch レスポンスがすべて `Response` オブジェクトとして `response.captured_xhr` に収集されます。リクエストを自分でリバースエンジニアリングすることなく、サイトの API データを取得できます。
+- **バックグラウンド API キャプチャ**：ブラウザーセッションで `record_requests=True` を有効にし、`session.network.search(limit=None)` で保存済みのレスポンスを検索できます。リクエストを再送信せずに、複数のページ読み込みで発生した API データや HTTP エラーを確認できます。履歴には保存上限があり、テキストのレスポンス本文を保存します。
 - **async サポート**：すべての Fetcher および専用 async Session クラス全体での完全な async サポート。
 
 ### 適応型スクレイピング
