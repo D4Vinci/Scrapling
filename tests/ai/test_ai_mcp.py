@@ -276,6 +276,69 @@ setTimeout(() => { const p = document.querySelector('#answer'); p.textContent = 
         assert existing.session.mock_calls == []
 
 
+class TestRequestProfiles:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("tool", ["make_request", "open_request_session"])
+    @pytest.mark.parametrize("impersonate", ["chrome", ["chrome", "firefox"], None])
+    async def test_profiles_fetch_through_mcp(self, httpbin, tool, impersonate):
+        server = ScraplingMCPServer()
+        async with Client(server._build_server("127.0.0.1", 8000)) as client:
+            args = {"url": f"{httpbin.url}/html", "css_selector": "h1"}
+            try:
+                if tool == "open_request_session":
+                    opened = await client.call_tool(tool, {"session_id": "profiles", "impersonate": impersonate})
+                    assert not opened.is_error and opened.structured_content is not None
+                    assert server._sessions["profiles"].session._default_impersonate == impersonate
+                    args["session_id"] = "profiles"
+                else:
+                    args["impersonate"] = impersonate
+                result = await client.call_tool(
+                    "session_make_request" if tool == "open_request_session" else tool, args
+                )
+                assert not result.is_error and result.structured_content is not None
+                assert result.structured_content["status"] == 200
+                assert "Herman Melville - Moby-Dick" in "".join(result.structured_content["content"])
+            finally:
+                if "profiles" in server._sessions:
+                    closed = await client.call_tool("close_session", {"session_id": "profiles"})
+                    assert not closed.is_error
+        assert not server._sessions
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("tool", ["make_request", "open_request_session"])
+    @pytest.mark.parametrize("impersonate", ["unknown-browser", ["chrome", "unknown-browser"]])
+    async def test_invalid_profiles_fail_before_opening_sessions(self, monkeypatch, tool, impersonate):
+        factory = Mock()
+        monkeypatch.setattr("scrapling.core.ai.FetcherSession", factory)
+        server = ScraplingMCPServer()
+        args = {"url": "https://example.com"} if tool == "make_request" else {"session_id": "profiles"}
+        args["impersonate"] = impersonate
+        async with Client(server._build_server("127.0.0.1", 8000)) as client:
+            result = await client.call_tool(tool, args)
+        assert result.is_error
+        assert result.content and isinstance(result.content[0], TextContent)
+        assert "impersonate" in result.content[0].text
+        factory.assert_not_called()
+        assert not server._sessions
+
+    @pytest.mark.asyncio
+    async def test_profile_schemas_share_the_enum_and_keep_titles(self):
+        async with Client(ScraplingMCPServer()._build_server("127.0.0.1", 8000)) as client:
+            tools = {tool.name: tool for tool in (await client.list_tools()).tools}
+        for name in ("make_request", "open_request_session"):
+            schema = tools[name].input_schema
+            profile = schema["properties"]["impersonate"]
+            assert profile["title"] == "Impersonate" and profile["default"] == "chrome"
+            choices = profile["anyOf"]
+            scalar = next(choice for choice in choices if "$ref" in choice)
+            array = next(choice for choice in choices if choice.get("type") == "array")
+            assert array["items"] == scalar
+            assert {"type": "null"} in choices
+            definition = schema["$defs"][scalar["$ref"].removeprefix("#/$defs/")]
+            assert definition["type"] == "string"
+            assert {"chrome", "firefox"} <= set(definition["enum"])
+
+
 class TestSessionTypeChecks:
     @pytest.mark.parametrize(
         "session_type, allowed, error",

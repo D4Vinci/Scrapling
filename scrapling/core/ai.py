@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 from anyio import CancelScope
 from curl_cffi.curl import CurlError
+from curl_cffi.requests import BrowserTypeLiteral
 from mcp.server import MCPServer
 from mcp.server.mcpserver import Image
 from mcp.server.mcpserver.exceptions import ToolError
@@ -34,7 +35,6 @@ from scrapling.core._browser_actions import (
 from scrapling.core._network_formatting import NetworkPart, NetworkRequestInfo, NetworkRequestModel, _request_details
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
-from scrapling.engines.static import ImpersonateType
 from scrapling.fetchers import FetcherSession, AsyncStealthySession
 from scrapling.engines._browsers._types import StealthFetchParams
 from scrapling.core._types import (
@@ -48,6 +48,7 @@ from scrapling.core._types import (
     Awaitable,
     Callable,
     Annotated,
+    TypeAliasType,
     Set,
     Sequence,
     Iterator,
@@ -57,6 +58,9 @@ from scrapling.core._types import (
     FollowRedirects,
     SUPPORTED_HTTP_METHODS,
 )
+
+_BrowserProfile = TypeAliasType("_BrowserProfile", BrowserTypeLiteral)
+_MCPImpersonateType = _BrowserProfile | List[_BrowserProfile] | None
 
 SessionType = Literal["stealthy", "static"]
 SessionExtractionType = Literal[extraction_types, "snapshot"]
@@ -323,7 +327,7 @@ class ScraplingMCPServer:
     async def open_request_session(
         self,
         session_id: Optional[str] = None,
-        impersonate: ImpersonateType = "chrome",
+        impersonate: _MCPImpersonateType = "chrome",
         proxy: Optional[str] = None,
     ) -> SessionCreatedModel:
         """Open a reusable HTTP session for `session_make_request`, keeping cookies, connections, and request settings.
@@ -562,7 +566,7 @@ class ScraplingMCPServer:
     async def make_request(
         url: str,
         method: SUPPORTED_HTTP_METHODS = "GET",
-        impersonate: ImpersonateType = "chrome",
+        impersonate: _MCPImpersonateType = "chrome",
         extraction_type: extraction_types = "markdown",
         css_selector: Optional[str] = None,
         main_content_only: bool = True,
