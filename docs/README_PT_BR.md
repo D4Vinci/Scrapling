@@ -89,15 +89,6 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
-      <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png">
-      </a>
-    </td>
-    <td> A <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank"><b>ColdProxy</b></a> oferece proxies residenciais e de datacenter para web scraping estável, coleta de dados públicos e testes com segmentação geográfica em mais de 195 países. <i>Usar este link dá 5% de desconto</i>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
