@@ -77,7 +77,7 @@ The main MCP server class that provides all web scraping tools:
 - **`make_request`**: Fetch one URL through HTTP with browser impersonation and automatic client cleanup. Supports GET, POST, PUT, and DELETE.
 - **`browser_fetch_once`**: Fetch one URL through a stealthy browser with JavaScript rendering and Cloudflare handling, then close the browser. Use a persistent session for later actions or network history.
 
-- **`browser_snapshot`**: Inspect the current page without reloading it. Structured text includes element roles, names, references, positions, and sizes to help the AI target page controls.
+- **`browser_snapshot`**: Inspect the current page without reloading it. Structured text includes element roles, names, references, positions, and sizes to help the AI target page controls. Search for text to return matching lines with nearby context and parent nodes, making large pages easier to inspect.
 - **`browser_actions`**: Chain mouse moves, hovers, clicks, scrolling, field filling, keyboard shortcuts, and waits in one call. Fill a search box, submit it, wait for results, and open a result without a separate call for each step.
 
     Moves and clicks target selectors, snapshot references, or coordinates; element targets wait and scroll into view. Supports movement in multiple steps, left, right, and middle clicks, double-clicks, and scrolling nested panels.

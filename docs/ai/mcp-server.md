@@ -34,7 +34,7 @@ The Scrapling MCP Server provides fourteen tools for web scraping and browser in
 
 #### AI Snapshots
 
-- **`browser_snapshot`**: Give the AI a structured text view of the current page without reloading it. Includes element roles, names, references, positions, and sizes to help the AI understand the page and target clicks.
+- **`browser_snapshot`**: Give the AI a structured text view of the current page without reloading it. Includes element roles, names, references, positions, and sizes to help the AI understand the page and target clicks. Search for text to return matching lines with nearby context and parent nodes, making large pages easier to inspect.
 
 #### Browser Actions
 

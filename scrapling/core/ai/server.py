@@ -1,3 +1,4 @@
+import re
 from uuid import uuid4
 from os import environ
 from json import dumps
@@ -33,6 +34,7 @@ from ._browser_actions import (
     _validate_actions,
 )
 from ._network_formatting import NetworkPart, NetworkRequestInfo, NetworkRequestModel, _request_details
+from ._snapshot_search import _search_snapshot
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.fetchers import FetcherSession, AsyncStealthySession
@@ -429,14 +431,28 @@ class ScraplingMCPServer:
         session_id: str,
         depth: Optional[int] = None,
         boxes: bool = True,
+        search: Optional[NonEmptyString] = None,
+        regex: bool = False,
     ) -> str:
-        """Return the current page's AI ARIA snapshot with element references as plain text, without navigating.
+        """Return the current page's AI ARIA snapshot or search results as plain text, without navigating.
+        Search keeps element refs, ancestor paths, and three lines of context around each matching line.
 
         :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param depth: Maximum snapshot depth; unlimited if omitted.
+        :param depth: Maximum snapshot depth before search; unlimited if omitted.
         :param boxes: Include element bounding boxes in viewport CSS pixels.
+        :param search: Case-insensitive literal text; omitted returns the full snapshot.
+        :param regex: Treat search as a Python regex; case-sensitive unless (?i) is used.
         """
-        return await self._browser_snapshot(session_id, depth=depth, boxes=boxes)
+        if regex and search is None:
+            raise ValueError("regex requires search.")
+        pattern = None
+        if search is not None:
+            try:
+                pattern = re.compile(search if regex else re.escape(search), 0 if regex else re.IGNORECASE)
+            except re.error as error:
+                raise ValueError(f"Invalid search regex: {error}") from error
+        snapshot = await self._browser_snapshot(session_id, depth=depth, boxes=boxes)
+        return _search_snapshot(snapshot, pattern) if pattern is not None else snapshot
 
     async def _browser_snapshot(
         self,

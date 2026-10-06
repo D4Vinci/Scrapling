@@ -141,6 +141,14 @@ With `extraction_type="snapshot"`, the response keeps `status` and `url` and ret
 
 Returns a plain-text AI ARIA snapshot of the current whole page, including element roles, names, and references. Takes `session_id` from `browser_open` and optional `depth` to limit the tree. Element positions and sizes in viewport CSS pixels are included by default; set `boxes=false` to omit them. Use it after `browser_fetch` finishes. Raises for an unknown or HTTP session, or a missing, closed, or busy page.
 
+Set `search` to nonempty text for a case-insensitive literal search. Set `regex=true` to treat it as a Python regular expression instead; regex matching is case-sensitive unless you use an inline flag such as `(?i)`. Regex mode requires `search`, and invalid patterns fail before capture. Omit `search` for the unchanged full snapshot.
+
+Search applies to each line of the captured snapshot, after the `depth` limit. Results include all matching lines, three lines before and after each match, and parent nodes. Overlapping context appears once; `...` marks omitted lines. Refs and boxes are preserved. If no lines match, the result is an empty string. Search does not navigate or reload the page.
+
+```json
+{"session_id": "browser", "search": "Next"}
+```
+
 ### `browser_actions` -- Chain mouse, field, keyboard, and wait actions
 
 Runs actions in order on the existing page in a stealthy browser session. Call `browser_fetch` first. The flat `actions` list can mix any of the eleven action types below; use `browser_snapshot` when you need to inspect the page before choosing later actions.
