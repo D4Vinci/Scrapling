@@ -19,7 +19,7 @@ from playwright.async_api import Response as AsyncPlaywrightResponse
 from playwright.sync_api import Response as PlaywrightResponse
 
 from scrapling.core._types import Any, Generator
-from scrapling.core._network_formatting import _request_details
+from scrapling.core.ai._network_formatting import _request_details
 from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, DynamicSession, StealthySession
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator

@@ -14,7 +14,8 @@ from mcp.types import ImageContent, TextContent
 from patchright.async_api import Error as PatchrightError
 from pydantic import ValidationError
 
-from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
+from scrapling.core.ai import ScraplingMCPServer, SessionType
+from scrapling.core.ai.server import _SessionEntry
 from scrapling.core._types import Any
 from scrapling.engines._browsers._base import AsyncSession
 
@@ -108,7 +109,7 @@ async def test_browser_screenshot_forwards_element_target_without_full_page(
     target: dict[str, Any], options: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     server, session, page = _server()
-    monkeypatch.setattr("scrapling.core.ai.monotonic", lambda: 10)
+    monkeypatch.setattr("scrapling.core.ai.server.monotonic", lambda: 10)
 
     async def capture(**kwargs: Any) -> bytes:
         assert session.page_pool.pages[0].state == "busy"
@@ -144,7 +145,7 @@ async def test_browser_screenshot_element_resolution_uses_capture_budget(
     timeout: float, elapsed: float, remaining: float, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     server, session, page = _server()
-    monkeypatch.setattr("scrapling.core.ai.monotonic", Mock(side_effect=[10, 10 + elapsed]))
+    monkeypatch.setattr("scrapling.core.ai.server.monotonic", Mock(side_effect=[10, 10 + elapsed]))
     await server.browser_screenshot("browser", selector="#card", timeout=timeout)
     locator = page.locator.return_value
     locator.element_handle.assert_awaited_once_with(timeout=timeout)

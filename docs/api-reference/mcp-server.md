@@ -5,7 +5,7 @@ search:
 
 # MCP Server API Reference
 
-The **Scrapling MCP Server** provides sixteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
+The **Scrapling MCP Server** provides fourteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
 
 You can start the MCP server by running:
 
@@ -30,9 +30,9 @@ server = ScraplingMCPServer(executable_path="/path/to/chromium")
 
 ## Response Model
 
-The standardized response structure returned by the fetch and HTTP request tools. Bulk tools return a list of these responses. Session management tools use the models below, `browser_screenshot` returns an image of the current page or one element, plus the current page URL, as image and text content blocks, and `browser_snapshot` and `browser_actions` return plain text. Both network tools return structured JSON using the models below. `browser_evaluate` returns its result as JSON in a plain text block.
+The standardized response structure returned by the fetch and HTTP request tools, with one response per call. Session management tools use the models below, `browser_screenshot` returns an image of the current page or one element, plus the current page URL, as image and text content blocks, and `browser_snapshot` and `browser_actions` return plain text. Both network tools return structured JSON using the models below. `browser_evaluate` returns its result as JSON in a plain text block.
 
-## ::: scrapling.core.ai.ResponseModel
+## ::: scrapling.core.ai.server.ResponseModel
     handler: python
     :docstring:
 
@@ -42,15 +42,15 @@ The standardized response structure returned by the fetch and HTTP request tools
 
 `browser_network_request` returns `NetworkRequestModel` with `request_id`, `part`, `data`, and `note`. Summaries and headers are objects; the full saved body text is returned as a string, including JSON response text. `note` explains missing body data or partial headers.
 
-## ::: scrapling.core.ai.NetworkRequestInfo
+## ::: scrapling.core.ai._network_formatting.NetworkRequestInfo
     handler: python
     :docstring:
 
-## ::: scrapling.core.ai.NetworkRequestsModel
+## ::: scrapling.core.ai.server.NetworkRequestsModel
     handler: python
     :docstring:
 
-## ::: scrapling.core.ai.NetworkRequestModel
+## ::: scrapling.core.ai._network_formatting.NetworkRequestModel
     handler: python
     :docstring:
 
@@ -58,21 +58,24 @@ The standardized response structure returned by the fetch and HTTP request tools
 
 Model classes for session management:
 
-## ::: scrapling.core.ai.SessionInfo
+## ::: scrapling.core.ai.server.SessionInfo
     handler: python
     :docstring:
 
-## ::: scrapling.core.ai.SessionCreatedModel
+## ::: scrapling.core.ai.server.SessionCreatedModel
     handler: python
     :docstring:
 
-## ::: scrapling.core.ai.SessionClosedModel
+## ::: scrapling.core.ai.server.SessionClosedModel
     handler: python
     :docstring:
 
 ## MCP Server Class
 
 The main MCP server class that provides all web scraping tools:
+
+- **`make_request`**: Fetch one URL through HTTP with browser impersonation and automatic client cleanup. Supports GET, POST, PUT, and DELETE.
+- **`browser_fetch_once`**: Fetch one URL through a stealthy browser with JavaScript rendering and Cloudflare handling, then close the browser. Use a persistent session for later actions or network history.
 
 - **`browser_snapshot`**: Inspect the current page without reloading it. Structured text includes element roles, names, references, positions, and sizes to help the AI target page controls.
 - **`browser_actions`**: Chain mouse moves, hovers, clicks, scrolling, field filling, keyboard shortcuts, and waits in one call. Fill a search box, submit it, wait for results, and open a result without a separate call for each step.
@@ -88,6 +91,6 @@ The main MCP server class that provides all web scraping tools:
 - **`browser_network_request`**: Read a recorded request's summary, headers, sent data, or text response body as structured JSON without repeating the request. Returns the selected part in full, including saved body text. Saved responses remain available after page changes, including HTTP 4xx and 5xx responses. Entries appear after capture finishes; reading history or closing the session does not wait. Captures still running at navigation or closure may be omitted. Saved bytes come from Playwright and can differ from the server's bytes. Recorded text follows Playwright's UTF-8 decoding when valid, with the declared charset as a fallback. Only response bodies with a supported text `Content-Type` are read and saved. Binary, missing, or unrecognized types keep metadata and headers without body reads; browser loading is unchanged. Size limits bound the saved history, and an optional note explains non-text, oversized, or unreadable bodies. Read needed details before closing the MCP session.
 - **`browser_fetch`**: Fetch a page through an open stealthy browser session and extract HTML, Markdown, text, or a structured snapshot. Snapshots can cover the whole page or a chosen element and include element references, positions, and sizes for later interaction.
 
-## ::: scrapling.core.ai.ScraplingMCPServer
+## ::: scrapling.core.ai.server.ScraplingMCPServer
     handler: python
     :docstring:

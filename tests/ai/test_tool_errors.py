@@ -9,7 +9,8 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import TextContent
 from patchright.async_api import Error as PatchrightError
 
-from scrapling.core.ai import ScraplingMCPServer, _mcp_tool
+from scrapling.core.ai import ScraplingMCPServer
+from scrapling.core.ai.server import _mcp_tool
 from scrapling.core._types import Any
 
 

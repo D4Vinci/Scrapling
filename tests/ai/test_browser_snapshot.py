@@ -8,7 +8,8 @@ from mcp.client import Client
 from mcp.types import TextContent
 from patchright.async_api import TimeoutError as PatchrightTimeoutError
 
-from scrapling.core.ai import ScraplingMCPServer, SessionType, _SessionEntry
+from scrapling.core.ai import ScraplingMCPServer, SessionType
+from scrapling.core.ai.server import _SessionEntry
 from scrapling.core._types import Any
 from scrapling.engines._browsers._base import AsyncSession
 from scrapling.engines.toolbelt.custom import Response
