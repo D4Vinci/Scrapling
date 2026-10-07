@@ -509,3 +509,26 @@ class TestResponseFollow:
         followed = self._response(parent).follow("/search", referer_flow=False, **override)
 
         assert followed._session_kwargs == override
+
+    def test_follow_drops_inherited_content_length(self):
+        parent = Request(
+            "https://example.com/login",
+            method="POST",
+            data={"password": "secret"},
+            headers={"Content-Length": "15", "X-Token": "abc"},
+            extra_headers={"content-length": "15"},
+        )
+
+        followed = self._response(parent).follow("/search", referer_flow=False)
+
+        assert followed._session_kwargs == {"headers": {"X-Token": "abc"}, "extra_headers": {}}
+        assert parent._session_kwargs["headers"] == {"Content-Length": "15", "X-Token": "abc"}
+
+    def test_follow_keeps_explicit_content_length(self):
+        parent = Request("https://example.com/login", method="POST", headers={"Content-Length": "15"})
+
+        followed = self._response(parent).follow(
+            "/search", referer_flow=False, method="POST", data="q=books", headers={"Content-Length": "7"}
+        )
+
+        assert followed._session_kwargs == {"method": "POST", "data": "q=books", "headers": {"Content-Length": "7"}}

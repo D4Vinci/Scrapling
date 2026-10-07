@@ -141,6 +141,9 @@ class Response(Selector):
 
         # Merge original session kwargs with new kwargs (new takes precedence)
         inherited = {k: v for k, v in self.request._session_kwargs.items() if k not in _NON_INHERITABLE_KWARGS}
+        for key in ("headers", "extra_headers"):
+            if inherited.get(key):
+                inherited[key] = {k: v for k, v in inherited[key].items() if k.lower() != "content-length"}
         session_kwargs = {**inherited, **kwargs}
 
         if referer_flow:
