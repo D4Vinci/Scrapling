@@ -231,7 +231,7 @@ async def test_browser_evaluate_reserves_page_until_cancelled(cancel_mode: str) 
         with pytest.raises(RuntimeError, match="busy"):
             await server.browser_evaluate("browser", "1")
         with pytest.raises(RuntimeError, match="busy"):
-            await server.browser_snapshot("browser")
+            await server.browser_extract("browser")
         scope.cancel() if cancel_mode == "scope" else task.cancel()
         if cancel_mode == "scope":
             await asyncio.wait_for(task, 5)

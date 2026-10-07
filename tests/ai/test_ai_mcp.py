@@ -46,7 +46,7 @@ MCP_TOOLS = {
     "browser_fetch",
     "browser_actions",
     "browser_evaluate",
-    "browser_snapshot",
+    "browser_extract",
     "browser_screenshot",
     "browser_network_requests",
     "browser_network_request",
@@ -373,7 +373,7 @@ class TestSessionTypeChecks:
         [
             ("browser_fetch", "static", "'stealthy'"),
             ("browser_screenshot", "static", "'stealthy'"),
-            ("browser_snapshot", "static", "'stealthy'"),
+            ("browser_extract", "static", "'stealthy'"),
             ("session_make_request", "stealthy", "'static'"),
         ],
     )
@@ -384,7 +384,7 @@ class TestSessionTypeChecks:
         session = Mock(_is_alive=True)
         server._sessions["test"] = _SessionEntry(session, session_type)
         args = {"session_id": "test"}
-        if tool not in ("browser_snapshot", "browser_screenshot"):
+        if tool not in ("browser_extract", "browser_screenshot"):
             args["url"] = "https://example.com"
         async with Client(server._build_server("127.0.0.1", 8000)) as client:
             result = await client.call_tool(tool, args)
@@ -1297,7 +1297,7 @@ class TestServerToolRegistration:
         assert set(tools) == MCP_TOOLS
         assert {"bulk_get", "browser_fetch_many_once"}.isdisjoint(tools)
         assert tools["browser_screenshot"].output_schema is None
-        assert tools["browser_snapshot"].output_schema is None
+        assert tools["browser_extract"].output_schema is None
         assert tools["browser_actions"].output_schema is None
         assert tools["browser_evaluate"].output_schema is None
         assert {
@@ -1328,7 +1328,7 @@ class TestServerToolRegistration:
             if name
             not in (
                 "browser_screenshot",
-                "browser_snapshot",
+                "browser_extract",
                 "browser_actions",
                 "browser_evaluate",
             )
@@ -1463,7 +1463,7 @@ class TestServerToolRegistration:
             "browser_fetch_once",
             "browser_fetch",
             "session_make_request",
-            "browser_snapshot",
+            "browser_extract",
             "browser_screenshot",
         ):
             assert annotations[name].read_only_hint is True

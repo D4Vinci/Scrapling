@@ -158,7 +158,7 @@ async def test_live_mixed_chain_resolves_targets_created_by_earlier_actions(slow
                 }, 80);
             };
             </script>""")
-        snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+        snapshot = await client.call_tool("browser_extract", {"session_id": "browser"})
         assert not snapshot.is_error and isinstance(snapshot.content[0], TextContent)
         ref = search(r'textbox "Query".*?\[ref=([^\]]+)\]', snapshot.content[0].text)
         assert ref is not None
@@ -198,7 +198,7 @@ async def test_live_stale_ref_stops_mixed_chain_without_retargeting(kind: str) -
                 document.querySelector('#field').outerHTML = '<input id=field value=new>';
             };
             </script>""")
-        snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+        snapshot = await client.call_tool("browser_extract", {"session_id": "browser"})
         assert not snapshot.is_error and isinstance(snapshot.content[0], TextContent)
         ref = search(r'textbox "Old".*?\[ref=([^\]]+)\]', snapshot.content[0].text)
         assert ref is not None
@@ -231,7 +231,7 @@ async def test_live_targets_keep_explicit_refs_and_ref_shaped_selectors_distinct
         await page.set_content("""<e12 role=textbox aria-label=Literal contenteditable=true
             style="display:block;width:200px;height:50px"
             onmouseenter="this.dataset.hovered='yes'" onclick="this.dataset.clicked='yes'">initial</e12>""")
-        snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+        snapshot = await client.call_tool("browser_extract", {"session_id": "browser"})
         assert not snapshot.is_error and isinstance(snapshot.content[0], TextContent)
         ref = search(r'textbox "Literal".*?\[ref=([^\]]+)\]', snapshot.content[0].text)
         assert ref is not None

@@ -391,7 +391,7 @@ async def test_browser_mouse_reserves_page_until_cancelled(target: dict[str, Any
         with pytest.raises(RuntimeError, match="busy"):
             await server.browser_actions("browser", [{"type": "click", "x": 10, "y": 20}])
         with pytest.raises(RuntimeError, match="busy"):
-            await server.browser_snapshot("browser")
+            await server.browser_extract("browser")
     finally:
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
@@ -697,7 +697,7 @@ async def test_browser_mouse_live_native_events_and_navigation() -> None:
             )
             assert not clicked.is_error
             await page.wait_for_url("https://mouse.test/next", timeout=5000)
-            snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+            snapshot = await client.call_tool("browser_extract", {"session_id": "browser"})
             assert not snapshot.is_error
             assert snapshot.content and isinstance(snapshot.content[0], TextContent)
             assert "Arrived" in snapshot.content[0].text
@@ -737,7 +737,7 @@ async def test_browser_mouse_live_cancelled_click_releases_native_button(cancel_
             page_info = session.page_pool.pages[0]
             page = page_info.page
             if target_type == "ref":
-                match = search(r'button "Target".*?\[ref=([^\]]+)\]', await server.browser_snapshot("browser"))
+                match = search(r'button "Target".*?\[ref=([^\]]+)\]', await server.browser_extract("browser"))
                 assert match is not None
                 target = {"target": f"aria-ref={match[1]}"}
             task = asyncio.create_task(click())
@@ -794,7 +794,7 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(tool: str) -> None:
             assert not fetched.is_error
             page_info = session.page_pool.pages[0]
             page = page_info.page
-            match = search(r'button "Target".*?\[ref=([^\]]+)\]', await server.browser_snapshot("browser"))
+            match = search(r'button "Target".*?\[ref=([^\]]+)\]', await server.browser_extract("browser"))
             assert match is not None
             ref = match[1]
             initial_dom = await page.content()
