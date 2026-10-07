@@ -513,7 +513,7 @@ async def _browser() -> AsyncGenerator[tuple[Client, Any, Any], None]:
 @pytest.mark.asyncio
 async def test_browser_actions_fields_live_mixed_fields_and_clearing() -> None:
     async with _browser() as (client, session, page):
-        snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+        snapshot = await client.call_tool("browser_extract", {"session_id": "browser"})
         assert not snapshot.is_error
         assert snapshot.content and isinstance(snapshot.content[0], TextContent)
         name = search(r'textbox "Name".*?\[ref=([^\]]+)\]', snapshot.content[0].text)
@@ -583,7 +583,7 @@ async def test_browser_actions_fields_live_mixed_fields_and_clearing() -> None:
 @pytest.mark.asyncio
 async def test_browser_actions_fields_live_slow_typing_and_field_delays() -> None:
     async with _browser() as (client, session, page):
-        snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+        snapshot = await client.call_tool("browser_extract", {"session_id": "browser"})
         assert not snapshot.is_error
         assert snapshot.content and isinstance(snapshot.content[0], TextContent)
         name = search(r'textbox "Name".*?\[ref=([^\]]+)\]', snapshot.content[0].text)
@@ -638,7 +638,7 @@ async def test_browser_actions_fields_live_slow_typing_and_field_delays() -> Non
 @pytest.mark.parametrize("slowly", [False, True])
 async def test_browser_actions_fields_live_caret_selection_and_submit(slowly: bool) -> None:
     async with _browser() as (client, session, page):
-        snapshot = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+        snapshot = await client.call_tool("browser_extract", {"session_id": "browser"})
         assert not snapshot.is_error
         assert snapshot.content and isinstance(snapshot.content[0], TextContent)
         name = search(r'textbox "Name".*?\[ref=([^\]]+)\]', snapshot.content[0].text)

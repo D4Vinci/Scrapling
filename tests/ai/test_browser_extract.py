@@ -41,16 +41,33 @@ def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer,
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("boxes", [None, False, True])
-async def test_browser_snapshot_returns_plain_mcp_text(boxes: bool | None) -> None:
+async def test_browser_extract_returns_plain_mcp_text(boxes: bool | None) -> None:
     server, session, page = _server()
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         tools = {tool.name: tool for tool in (await client.list_tools()).tools}
-        assert "session_snapshot" not in tools
-        tool = tools["browser_snapshot"]
+        assert {"session_snapshot", "browser_snapshot"}.isdisjoint(tools)
+        assert not hasattr(server, "browser_snapshot")
+        tool = tools["browser_extract"]
+        assert tool.title == "Extract page content"
         assert tool.output_schema is None
-        assert set(tool.input_schema["properties"]) == {"session_id", "depth", "boxes", "search", "regex"}
+        assert set(tool.input_schema["properties"]) == {
+            "session_id",
+            "extraction_type",
+            "target",
+            "depth",
+            "boxes",
+            "search",
+            "main_content_only",
+        }
+        assert tool.input_schema["properties"]["extraction_type"]["default"] == "snapshot"
+        assert set(tool.input_schema["properties"]["extraction_type"]["enum"]) == {
+            "snapshot",
+            "html",
+            "markdown",
+            "text",
+        }
         assert tool.input_schema["properties"]["boxes"]["default"] is True
-        assert tool.input_schema["properties"]["regex"]["default"] is False
+        assert tool.input_schema["properties"]["main_content_only"]["default"] is True
         assert tool.input_schema["properties"]["search"]["default"] is None
         assert {"type": "string", "minLength": 1} in tool.input_schema["properties"]["search"]["anyOf"]
         assert tool.input_schema["required"] == ["session_id"]
@@ -61,7 +78,7 @@ async def test_browser_snapshot_returns_plain_mcp_text(boxes: bool | None) -> No
         args: dict[str, Any] = {"session_id": "browser", "depth": 3}
         if boxes is not None:
             args["boxes"] = boxes
-        result = await client.call_tool("browser_snapshot", args)
+        result = await client.call_tool("browser_extract", args)
     assert not result.is_error
     assert result.structured_content is None
     assert result.content == [TextContent(type="text", text=SNAPSHOT)]
@@ -76,6 +93,37 @@ async def test_browser_snapshot_returns_plain_mcp_text(boxes: bool | None) -> No
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("target", ["main", "aria-ref=e2", "e12"])
+async def test_browser_extract_snapshot_target_uses_the_native_locator(target: str) -> None:
+    server, session, page = _server()
+    page.locator.return_value.aria_snapshot = AsyncMock(return_value=SNAPSHOT)
+    async with Client(server._build_server("127.0.0.1", 8000)) as client:
+        result = await client.call_tool(
+            "browser_extract",
+            {"session_id": "browser", "target": target, "depth": 2, "boxes": False, "search": "Save"},
+        )
+    assert not result.is_error
+    assert result.content == [TextContent(type="text", text=SNAPSHOT)]
+    page.locator.assert_called_once_with(target)
+    page.locator.return_value.aria_snapshot.assert_awaited_once_with(mode="ai", depth=2, boxes=False)
+    page.aria_snapshot.assert_not_awaited()
+    page.goto.assert_not_called()
+    assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
+async def test_browser_extract_rejects_empty_target_before_page_capture() -> None:
+    server, session, page = _server()
+    async with Client(server._build_server("127.0.0.1", 8000)) as client:
+        result = await client.call_tool("browser_extract", {"session_id": "browser", "target": ""})
+    assert result.is_error
+    page.is_closed.assert_not_called()
+    page.locator.assert_not_called()
+    page.aria_snapshot.assert_not_awaited()
+    assert session.page_pool.pages[0].state == "ready"
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state, message",
     [
@@ -87,7 +135,7 @@ async def test_browser_snapshot_returns_plain_mcp_text(boxes: bool | None) -> No
         ("closed", "closed"),
     ],
 )
-async def test_browser_snapshot_errors_reach_the_mcp_client(state: str, message: str) -> None:
+async def test_browser_extract_errors_reach_the_mcp_client(state: str, message: str) -> None:
     server, session, page = _server("static" if state == "static" else "stealthy")
     if state == "missing":
         server._sessions.clear()
@@ -100,7 +148,7 @@ async def test_browser_snapshot_errors_reach_the_mcp_client(state: str, message:
     elif state == "closed":
         page.is_closed.return_value = True
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+        result = await client.call_tool("browser_extract", {"session_id": "browser"})
     assert result.is_error
     assert result.content and isinstance(result.content[0], TextContent)
     assert message in result.content[0].text
@@ -112,20 +160,20 @@ async def test_browser_snapshot_errors_reach_the_mcp_client(state: str, message:
 
 
 @pytest.mark.asyncio
-async def test_browser_snapshot_releases_the_page_after_failure() -> None:
+async def test_browser_extract_releases_the_page_after_failure() -> None:
     server, session, page = _server()
     page.aria_snapshot.side_effect = PatchrightTimeoutError("snapshot timeout")
     with pytest.raises(PatchrightTimeoutError, match="snapshot timeout"):
-        await server.browser_snapshot("browser")
+        await server.browser_extract("browser")
     assert session.page_pool.pages[0].state == "ready"
     page.close.assert_not_called()
     page.aria_snapshot.side_effect = None
-    assert await server.browser_snapshot("browser") == SNAPSHOT
+    assert await server.browser_extract("browser") == SNAPSHOT
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("css_selector", [None, "main"])
-async def test_browser_snapshot_live_mcp_round_trip(css_selector: str | None) -> None:
+async def test_browser_extract_live_mcp_round_trip(css_selector: str | None) -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
     requests: list[str] = []
 
@@ -175,7 +223,7 @@ async def test_browser_snapshot_live_mcp_round_trip(css_selector: str | None) ->
             navigations: list[str] = []
             page.on("framenavigated", lambda frame: navigations.append(frame.url))
             previous_requests = requests.copy()
-            result = await client.call_tool("browser_snapshot", {"session_id": "browser"})
+            result = await client.call_tool("browser_extract", {"session_id": "browser"})
             assert not result.is_error
             assert result.structured_content is None
             assert len(result.content) == 1 and isinstance(result.content[0], TextContent)
@@ -189,11 +237,22 @@ async def test_browser_snapshot_live_mcp_round_trip(css_selector: str | None) ->
             assert match is not None
             await page.locator(f"aria-ref={match[1]}").click()
             assert await page.locator("output").inner_text() == "live value"
-            without_boxes = await client.call_tool("browser_snapshot", {"session_id": "browser", "boxes": False})
+            without_boxes = await client.call_tool("browser_extract", {"session_id": "browser", "boxes": False})
             assert not without_boxes.is_error
             assert len(without_boxes.content) == 1 and isinstance(without_boxes.content[0], TextContent)
             assert "[box=" not in without_boxes.content[0].text
             assert "[ref=" in without_boxes.content[0].text
+            for target in ("main", f"aria-ref={match[1]}"):
+                scoped = await client.call_tool("browser_extract", {"session_id": "browser", "target": target})
+                assert not scoped.is_error
+                assert scoped.structured_content is None
+                assert len(scoped.content) == 1 and isinstance(scoped.content[0], TextContent)
+                assert 'button "Save"' in scoped.content[0].text
+                assert "Outside scope" not in scoped.content[0].text
+                assert "[ref=" in scoped.content[0].text and "[box=" in scoped.content[0].text
+                assert requests == previous_requests and not navigations
+                assert await page.get_by_label("Name").input_value() == "live value"
+                assert session.page_pool.pages == [page_info] and page_info.state == "ready"
             for selector in ("#missing", "button", "["):
                 previous_count = len(requests)
                 failed = await client.call_tool(
@@ -215,7 +274,7 @@ async def test_browser_snapshot_live_mcp_round_trip(css_selector: str | None) ->
 
 
 @pytest.mark.asyncio
-async def test_browser_snapshot_reserves_and_releases_the_page_on_cancel() -> None:
+async def test_browser_extract_reserves_and_releases_the_page_on_cancel() -> None:
     server, session, page = _server()
     entered = asyncio.Event()
     release = asyncio.Event()
@@ -226,13 +285,13 @@ async def test_browser_snapshot_reserves_and_releases_the_page_on_cancel() -> No
         return SNAPSHOT
 
     page.aria_snapshot.side_effect = capture
-    task = asyncio.create_task(server.browser_snapshot("browser"))
+    task = asyncio.create_task(server.browser_extract("browser"))
     try:
         await asyncio.wait_for(entered.wait(), 5)
         assert session.page_pool.pages[0].state == "busy"
         assert session.page_pool.get_ready_page() is None
         with pytest.raises(RuntimeError):
-            await server.browser_snapshot("browser")
+            await server.browser_extract("browser")
     finally:
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
@@ -396,32 +455,32 @@ def test_snapshot_search_keeps_all_matches_without_a_result_limit() -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "snapshot, query, regex, expected",
+    "snapshot, query, expected",
     [
-        (SNAPSHOT, "save", False, SNAPSHOT),
-        (SNAPSHOT, "save", True, ""),
-        (SNAPSHOT, "(?i)save", True, SNAPSHOT),
-        (SNAPSHOT, '^.*button "S.ve"', True, SNAPSHOT),
-        (SNAPSHOT, "/Save/", True, ""),
+        (SNAPSHOT, "save", ""),
+        (SNAPSHOT, "(?i)save", SNAPSHOT),
+        (SNAPSHOT, '^.*button "S.ve"', SNAPSHOT),
+        (SNAPSHOT, "/Save/", ""),
+        (SNAPSHOT, "Save|Cancel", SNAPSHOT),
         (
             "- text: Price [USD]\n- text: Price USD",
-            "[USD]",
-            False,
+            r"\[USD\]",
             "- text: Price [USD]\n- text: Price USD",
         ),
-        ("- text: C++", "C++", False, "- text: C++"),
-        ("- text: Αθήνα", "ΑΘΉΝΑ", False, "- text: Αθήνα"),
-        (SNAPSHOT, None, False, SNAPSHOT),
-        ('- main:\n  - button "Save"\n', None, False, '- main:\n  - button "Save"\n'),
+        ("- text: C++", r"C\+\+", "- text: C++"),
+        ("- text: Αθήνα", "ΑΘΉΝΑ", ""),
+        ("- text: Αθήνα", "(?i)ΑΘΉΝΑ", "- text: Αθήνα"),
+        (SNAPSHOT, None, SNAPSHOT),
+        ('- main:\n  - button "Save"\n', None, '- main:\n  - button "Save"\n'),
     ],
 )
-async def test_browser_snapshot_search_mcp(snapshot: str, query: str | None, regex: bool, expected: str) -> None:
+async def test_browser_extract_search_mcp(snapshot: str, query: str | None, expected: str) -> None:
     server, session, page = _server()
     page.aria_snapshot.return_value = snapshot
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
-            "browser_snapshot",
-            {"session_id": "browser", "search": query, "regex": regex, "depth": 2, "boxes": False},
+            "browser_extract",
+            {"session_id": "browser", "search": query, "depth": 2, "boxes": False},
         )
     assert not result.is_error
     assert result.structured_content is None
@@ -433,16 +492,23 @@ async def test_browser_snapshot_search_mcp(snapshot: str, query: str | None, reg
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "args", [{"regex": True}, {"regex": True, "search": None}, {"regex": True, "search": "["}, {"search": ""}]
+    "args",
+    [
+        {"search": "["},
+        {"search": ""},
+        {"search": "Save", "extraction_type": "html"},
+        {"search": "Save", "extraction_type": "markdown"},
+        {"search": "Save", "extraction_type": "text"},
+    ],
 )
-async def test_browser_snapshot_search_rejects_invalid_input_before_page_capture(
+async def test_browser_extract_search_rejects_invalid_input_before_page_capture(
     args: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     server, session, page = _server()
     reserve = Mock(wraps=session.page_pool.get_ready_page)
     monkeypatch.setattr(type(session.page_pool), "get_ready_page", reserve)
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_snapshot", {"session_id": "browser", **args})
+        result = await client.call_tool("browser_extract", {"session_id": "browser", **args})
     assert result.is_error
     assert result.content and isinstance(result.content[0], TextContent)
     assert "search" in result.content[0].text.lower() or "regular expression" in result.content[0].text.lower()
@@ -452,17 +518,17 @@ async def test_browser_snapshot_search_rejects_invalid_input_before_page_capture
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("kwargs", [{"regex": True}, {"search": "[", "regex": True}])
-async def test_browser_snapshot_search_errors_are_value_errors(kwargs: dict[str, Any]) -> None:
+@pytest.mark.parametrize("kwargs", [{"search": "["}, {"search": "Save", "extraction_type": "html"}])
+async def test_browser_extract_search_errors_are_value_errors(kwargs: dict[str, Any]) -> None:
     server, session, page = _server()
     with pytest.raises(ValueError):
-        await server.browser_snapshot("browser", **kwargs)
+        await server.browser_extract("browser", **kwargs)
     page.aria_snapshot.assert_not_awaited()
     assert session.page_pool.pages[0].state == "ready"
 
 
 @pytest.mark.asyncio
-async def test_browser_snapshot_search_live_refs_and_state() -> None:
+async def test_browser_extract_search_live_refs_and_state() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
     requests: list[str] = []
     html = (
@@ -500,7 +566,7 @@ async def test_browser_snapshot_search_live_refs_and_state() -> None:
             navigations: list[str] = []
             page.on("framenavigated", lambda frame: navigations.append(frame.url))
             await page.evaluate("window.snapshotSearchState = 'retained'")
-            result = await client.call_tool("browser_snapshot", {"session_id": "browser", "search": "save RESULT"})
+            result = await client.call_tool("browser_extract", {"session_id": "browser", "search": "(?i)save RESULT"})
             assert not result.is_error and isinstance(result.content[0], TextContent)
             snapshot = result.content[0].text
             assert snapshot.startswith('- main "Results"')
@@ -518,15 +584,15 @@ async def test_browser_snapshot_search_live_refs_and_state() -> None:
             assert not clicked.is_error
             assert await page.locator("output").inner_text() == "Saved"
             without_boxes = await client.call_tool(
-                "browser_snapshot",
-                {"session_id": "browser", "search": '^ +-[ ]button "Save result"', "regex": True, "boxes": False},
+                "browser_extract",
+                {"session_id": "browser", "search": '^ +-[ ]button "Save result"', "boxes": False},
             )
             assert not without_boxes.is_error and isinstance(without_boxes.content[0], TextContent)
             assert without_boxes.content[0].text.startswith('- main "Results"')
             assert "[box=" not in without_boxes.content[0].text
             assert "[ref=" in without_boxes.content[0].text
             shallow = await client.call_tool(
-                "browser_snapshot", {"session_id": "browser", "search": "Save result", "depth": 1}
+                "browser_extract", {"session_id": "browser", "search": "Save result", "depth": 1}
             )
             assert not shallow.is_error
             assert shallow.content == [TextContent(type="text", text="")]
