@@ -5,6 +5,7 @@ import pickle
 import pytest
 
 from scrapling.spiders.request import Request
+from scrapling.engines.toolbelt.custom import Response
 from scrapling.core._types import Any, Dict, AsyncGenerator
 
 
@@ -446,3 +447,95 @@ class TestRequestRestoreCallback:
 
         # Should not raise an error
         request._restore_callback(spider)  # type: ignore[arg-type]
+
+
+class TestResponseFollow:
+    def _response(self, request: Request) -> Response:
+        response = Response(
+            url=request.url,
+            content=b"",
+            status=200,
+            reason="OK",
+            cookies={},
+            headers={},
+            request_headers={},
+        )
+        response.request = request
+        return response
+
+    def test_follow_does_not_inherit_method_or_payload(self):
+        parent = Request(
+            "https://example.com/login",
+            method="POST",
+            data={"username": "admin", "password": "secret"},
+            json={"key": "value"},
+            params={"page": "1"},
+            files={"file": b"content"},
+            multipart="mime",
+            proxy="http://proxy:8080",
+            timeout=30,
+        )
+
+        followed = self._response(parent).follow("/page/2/?page=2", referer_flow=False)
+
+        assert followed.url == "https://example.com/page/2/?page=2"
+        assert followed._session_kwargs == {"proxy": "http://proxy:8080", "timeout": 30}
+
+    def test_follow_to_another_host_is_a_plain_get(self):
+        parent = Request(
+            "https://example.com/login",
+            method="POST",
+            data={"username": "admin", "password": "secret"},
+            params={"page": "1"},
+            proxy="http://proxy:8080",
+        )
+
+        followed = self._response(parent).follow("https://httpbin.org/anything?page=2")
+
+        assert followed.url == "https://httpbin.org/anything?page=2"
+        assert followed._session_kwargs == {
+            "proxy": "http://proxy:8080",
+            "headers": {"referer": "https://example.com/login"},
+            "extra_headers": {"referer": "https://example.com/login"},
+            "google_search": False,
+        }
+
+    @pytest.mark.parametrize(
+        "override",
+        [
+            {"method": "POST", "data": {"q": "books"}},
+            {"method": "POST", "json": {"q": "books"}},
+            {"params": {"q": "books"}},
+            {"method": "POST", "files": {"file": b"content"}},
+            {"method": "POST", "multipart": "mime"},
+        ],
+    )
+    def test_follow_keeps_explicit_overrides(self, override):
+        parent = Request("https://example.com/login", method="POST", data={"password": "secret"})
+
+        followed = self._response(parent).follow("/search", referer_flow=False, **override)
+
+        assert followed._session_kwargs == override
+
+    def test_follow_drops_inherited_content_length(self):
+        parent = Request(
+            "https://example.com/login",
+            method="POST",
+            data={"password": "secret"},
+            headers={"Content-Length": "15", "X-Token": "abc"},
+            extra_headers={"content-length": "15"},
+        )
+
+        followed = self._response(parent).follow("/search", referer_flow=False)
+
+        assert followed._session_kwargs == {"headers": {"X-Token": "abc"}, "extra_headers": {}}
+        assert parent._session_kwargs["headers"] == {"Content-Length": "15", "X-Token": "abc"}
+
+    def test_follow_keeps_explicit_content_length(self):
+        parent = Request("https://example.com/login", method="POST", headers={"Content-Length": "15"})
+
+        followed = self._response(parent).follow(
+            "/search", referer_flow=False, method="POST", data="q=books", headers={"Content-Length": "7"}
+        )
+
+        assert followed._session_kwargs == {"method": "POST", "data": "q=books", "headers": {"Content-Length": "7"}}
