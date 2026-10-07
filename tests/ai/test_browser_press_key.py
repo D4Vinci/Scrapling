@@ -219,7 +219,7 @@ async def test_browser_actions_keys_live_focus_editing_and_shortcuts() -> None:
 
         typed = await client.call_tool(
             "browser_actions",
-            {"session_id": "browser", "actions": [{"type": "textbox", "selector": "#first", "value": "initial"}]},
+            {"session_id": "browser", "actions": [{"type": "textbox", "target": "#first", "value": "initial"}]},
         )
         assert not typed.is_error
         await page.locator("#events").evaluate("element => element.value = '[]'")

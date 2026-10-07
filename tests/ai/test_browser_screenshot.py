@@ -467,10 +467,10 @@ async def test_browser_screenshot_live_preserves_actions_and_current_page() -> N
                 {
                     "session_id": "browser",
                     "actions": [
-                        {"type": "textbox", "selector": "#name", "value": "Scrapling"},
-                        {"type": "checkbox", "selector": "#agree", "value": True},
-                        {"type": "click", "selector": "#toggle"},
-                        {"type": "click", "selector": "#name"},
+                        {"type": "textbox", "target": "#name", "value": "Scrapling"},
+                        {"type": "checkbox", "target": "#agree", "value": True},
+                        {"type": "click", "target": "#toggle"},
+                        {"type": "click", "target": "#name"},
                         {"type": "move", "x": 400, "y": 300},
                         {"type": "wheel", "delta_y": 600},
                     ],
@@ -508,7 +508,7 @@ async def test_browser_screenshot_live_preserves_actions_and_current_page() -> N
                 assert requests == initial_requests
                 assert session.page_pool.pages == [page_info] and page_info.state == "ready"
             assert dimensions[1][1] > dimensions[0][1]
-            snapshot = await server.browser_snapshot("browser")
+            snapshot = await server.browser_extract("browser")
             ref = search(r'button "Open menu".*?\[ref=([^\]]+)\]', snapshot)
             assert ref is not None
             for target in ({"selector": "#toggle"}, {"ref": ref[1]}):

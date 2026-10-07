@@ -32,13 +32,13 @@ The Scrapling MCP Server provides fourteen tools for web scraping and browser in
 
 - **`browser_screenshot`**: Capture the current page or a chosen element as PNG or JPEG without reloading it. Inspect filled fields, open menus, charts, or result cards, with less unrelated content in element captures. Supports the visible viewport, the full page, or one element, with adjustable JPEG quality. The screenshot is returned as a real image content block the model can see directly.
 
-#### AI Snapshots
+#### Current Page Content
 
-- **`browser_snapshot`**: Give the AI a structured text view of the current page without reloading it. Includes element roles, names, references, positions, and sizes to help the AI understand the page and target clicks.
+- **`browser_extract`**: Read the current page or one element as an AI snapshot, HTML, Markdown, or text without reloading it. Extract results after filling forms or loading more content. Snapshots include element roles, names, references, positions, and sizes for later actions. Regex search returns matching snapshot lines with nearby context and parent nodes.
 
 #### Browser Actions
 
-- **`browser_actions`**: Chain mouse actions, field filling, keyboard shortcuts, and waits in one call. For example, fill a search box, submit it, wait for results, and open a result. The AI can combine known steps while keeping snapshots separate when it needs to inspect a page change.
+- **`browser_actions`**: Chain mouse actions, field filling, keyboard shortcuts, dialog replies, and waits in one call. Accept or dismiss browser alerts and confirmations, or enter text in prompts. For example, fill a search box, submit it, wait for results, and open a result. The AI can combine known steps while keeping snapshots separate when it needs to inspect a page change.
 
     Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks support selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
 
@@ -217,7 +217,7 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-The `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, and `browser_network_request` as usual.
+The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, and `browser_network_request` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline

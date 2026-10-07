@@ -132,6 +132,13 @@ class TestRequestProperties:
 
         assert r1.update_fingerprint(include_headers=True) != r2.update_fingerprint(include_headers=True)
 
+    def test_fingerprint_include_headers_order_independent(self):
+        """Test header order does not affect request fingerprint."""
+        r1 = Request("https://example.com", headers={"Accept": "text/html", "User-Agent": "x"})
+        r2 = Request("https://example.com", headers={"User-Agent": "x", "Accept": "text/html"})
+
+        assert r1.update_fingerprint(include_headers=True) == r2.update_fingerprint(include_headers=True)
+
     def test_fingerprint_includes_params(self):
         r1 = Request("https://example.com/p?a=1", params={"skip": 1})
         r2 = Request("https://example.com/p?a=1", params={"skip": 2})

@@ -1,3 +1,4 @@
+import re
 from uuid import uuid4
 from os import environ
 from json import dumps
@@ -23,7 +24,7 @@ from msgspec import ValidationError as MsgspecValidationError
 from pydantic import AnyHttpUrl, BaseModel, Field
 from patchright.async_api import Error as PatchrightError
 
-from scrapling import __version__
+from scrapling import Selector, __version__
 from scrapling.core.utils import log
 from ._browser_actions import (
     BrowserAction,
@@ -33,8 +34,10 @@ from ._browser_actions import (
     _validate_actions,
 )
 from ._network_formatting import NetworkPart, NetworkRequestInfo, NetworkRequestModel, _request_details
+from ._snapshot_search import _search_snapshot
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
+from scrapling.engines.toolbelt.convertor import ResponseFactory
 from scrapling.fetchers import FetcherSession, AsyncStealthySession
 from scrapling.engines._browsers._types import StealthFetchParams
 from scrapling.core._types import (
@@ -424,19 +427,54 @@ class ScraplingMCPServer:
             )
         return _request_details(record, part)
 
-    async def browser_snapshot(
+    async def browser_extract(
         self,
         session_id: str,
+        extraction_type: SessionExtractionType = "snapshot",
+        target: Optional[NonEmptyString] = None,
         depth: Optional[int] = None,
         boxes: bool = True,
+        search: Optional[NonEmptyString] = None,
+        main_content_only: bool = True,
     ) -> str:
-        """Return the current page's AI ARIA snapshot with element references as plain text, without navigating.
+        """Read the current page or one element as snapshot, HTML, Markdown, or text without navigating.
+        Return plain text; snapshot search keeps refs, ancestor paths and three lines of nearby context.
 
         :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param depth: Maximum snapshot depth; unlimited if omitted.
-        :param boxes: Include element bounding boxes in viewport CSS pixels.
+        :param extraction_type: Output format; defaults to an AI ARIA snapshot.
+        :param target: Playwright selector or aria-ref=<ref> matching one element; omitted reads the page.
+        :param depth: Snapshot depth before search; unlimited if omitted. Ignored for other formats.
+        :param boxes: Include viewport bounding boxes in snapshots; ignored for other formats.
+        :param search: Snapshot-only Python regex; case-sensitive unless (?i). No matches returns empty text.
+        :param main_content_only: Clean body/target content for AI; ignored for snapshots.
         """
-        return await self._browser_snapshot(session_id, depth=depth, boxes=boxes)
+        pattern = None
+        if search is not None:
+            if extraction_type != "snapshot":
+                raise ValueError("search requires snapshot output.")
+            try:
+                pattern = re.compile(search)
+            except re.error as error:
+                raise ValueError(f"Invalid search regex: {error}") from error
+        if extraction_type == "snapshot":
+            snapshot = await self._browser_snapshot(session_id, css_selector=target, depth=depth, boxes=boxes)
+            return _search_snapshot(snapshot, pattern) if pattern is not None else snapshot
+        with self._browser_page(session_id) as (_, page):
+            content = (
+                await page.locator(target).evaluate("(element) => element.outerHTML")
+                if target is not None
+                else await ResponseFactory._get_async_page_content(page)
+            )
+            return _CONTROL_CHARS_PATTERN.sub(
+                "",
+                "".join(
+                    Convertor._extract_content(
+                        Selector(content=content, url=page.url),
+                        extraction_type=extraction_type,
+                        main_content_only=main_content_only,
+                    )
+                ),
+            )
 
     async def _browser_snapshot(
         self,
@@ -475,13 +513,13 @@ class ScraplingMCPServer:
         actions: Annotated[List[BrowserAction], Field(min_length=1)],
         slowly: bool = False,
     ) -> str:
-        """Run mouse, field, key, and wait actions in order; return plain text without a snapshot.
+        """Run mouse, field, key, dialog, and wait actions in order; return plain text without a snapshot.
         Stop on the first error, identifying its action; partial effects remain. No retries.
         Element mouse targets auto-wait and scroll into view; coordinates and wheel do not wait for navigation or scrolling.
         Cancelled/timed-out clicks attempt button release. Load waits observe the current document, not future navigation.
 
         :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param actions: Ordered actions; fields need one selector/ref, mouse targets one selector/ref or viewport (x, y).
+        :param actions: Ordered actions; fields need target; mouse needs target or viewport (x, y).
         :param slowly: Fresh random delays: 50-150 ms per character, 100-300 ms between all actions, including waits.
         """
         _validate_actions(actions)
@@ -890,11 +928,11 @@ class ScraplingMCPServer:
             "instructions": """1. Close sessions when done. Use `list_sessions` to check sessions and settings. Read needed network data before closing; closing removes access to its history.
 2. Unless the user chooses a tool, start with HTTP for low to mid protection; use browsers for strong protection or JavaScript.
 3. Use `make_request` or `browser_fetch_once` for standalone fetches; they close automatically. Use sessions for related requests or follow-up browser actions and network history.
-4. Use `css_selector` to reduce output. HTML/Markdown/text return all matches; snapshots require one match or no selector for the whole page.
+4. Fetch tools use `css_selector` to reduce output. HTML/Markdown/text return all matches; snapshots require one match or no selector for the whole page.
 5. Session options persist from opening; fetch options apply per call, with schema defaults.
 6. Each browser session uses one page; finish each call before starting the next in that session.
-7. Snapshots include refs and boxes by default; `main_content_only` and `pierce_shadow` do not filter them.
-8. `browser_actions` chains mouse, field, key and wait actions on the current page. Move/click needs one selector, current snapshot ref, or viewport (x, y) in CSS pixels; fields need one selector/ref. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
+7. `browser_extract` reads the current page without navigation, as a snapshot by default. Snapshots include refs and boxes; `main_content_only` and `pierce_shadow` do not filter them.
+8. `browser_actions` chains mouse, field, key, dialog and wait actions on the current page. Element actions use `target`: a Playwright selector or `aria-ref=<ref>` from the current snapshot. Move/click can instead use viewport (x, y) in CSS pixels. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
 9. Network history saves completed requests and responses across page changes. Failed/unfinished requests are omitted; closing does not wait for running captures. Use `include_static=True` to list successful non-API traffic. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Only response bodies with a text Content-Type are read and saved. Response bodies over 1 MiB are skipped; unavailable bodies are marked.""",
         }
         if self._auth_token:
@@ -958,9 +996,9 @@ class ScraplingMCPServer:
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
         server.add_tool(
-            _mcp_tool(self.browser_snapshot),
-            title="Browser page snapshot",
-            description=self.browser_snapshot.__doc__,
+            _mcp_tool(self.browser_extract),
+            title="Extract page content",
+            description=self.browser_extract.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )

@@ -2,7 +2,7 @@
 
 The Scrapling MCP server exposes fourteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), plain HTTP requests and stealth browser rendering with anti-bot bypass, persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, network history, and page screenshots returned as real image content blocks. Every fetch takes one URL. One-shot tools (`make_request`, `browser_fetch_once`) close their own client or browser after the call. Use sessions opened with `browser_open` or `open_request_session` for related requests, browser actions, or network history. Browser session calls reuse one tab, so fetch pages and run actions in order. Close each persistent session when done.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_snapshot` and `browser_actions` return plain text. Both network tools return structured JSON; the request list supports pagination. `browser_evaluate` returns compact JSON in one plain text block.
+Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_extract` and `browser_actions` return plain text. Both network tools return structured JSON; the request list supports pagination. `browser_evaluate` returns compact JSON in one plain text block.
 
 ## Shadow DOM
 
@@ -137,13 +137,31 @@ Fetches one URL through a stealthy Chromium session opened with `browser_open`, 
 
 With `extraction_type="snapshot"`, the response keeps `status` and `url` and returns one unchanged AI ARIA snapshot string in `content`. These snapshots always include element positions and sizes in viewport CSS pixels. `css_selector` must match exactly one element; omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Snapshot extraction is only available on `browser_fetch`.
 
-### `browser_snapshot` -- Read the current page without navigation
+### `browser_extract` -- Read current page content without navigation
 
-Returns a plain-text AI ARIA snapshot of the current whole page, including element roles, names, and references. Takes `session_id` from `browser_open` and optional `depth` to limit the tree. Element positions and sizes in viewport CSS pixels are included by default; set `boxes=false` to omit them. Use it after `browser_fetch` finishes. Raises for an unknown or HTTP session, or a missing, closed, or busy page.
+Returns one plain-text block from the current browser page. `extraction_type` defaults to `"snapshot"`; use `"html"`, `"markdown"`, or `"text"` for content extraction after page actions. Call `browser_fetch` first. Unknown or HTTP sessions and missing, closed, or busy pages return an error. The page stays reserved during capture and conversion and is released after success, failure, or cancellation.
 
-### `browser_actions` -- Chain mouse, field, keyboard, and wait actions
+Omit `target` for the whole page, or pass a nonempty Playwright selector or `aria-ref=<ref>` from a current snapshot. It must match exactly one element; select a container to read several child items. Selection does not click, scroll, or change the page. Bare ref strings such as `"e2"` are treated as selectors.
 
-Runs actions in order on the existing page in a stealthy browser session. Call `browser_fetch` first. The flat `actions` list can mix any of the eleven action types below; use `browser_snapshot` when you need to inspect the page before choosing later actions.
+Snapshots include element roles, names, refs, and viewport bounding boxes by default. Set `boxes=false` to omit boxes or use `depth` to limit the tree. Both settings are ignored for other formats.
+
+Set `search` to a nonempty Python regular expression to search snapshot lines. Matching is case-sensitive; use `(?i)` for case-insensitive matching and escape regex characters when matching them literally. Search requires snapshot output, and invalid patterns fail before capture. There is no `regex` switch. Omit `search` for the full page or target snapshot.
+
+Search runs after target selection and the depth limit. Results include all matching lines, three lines before and after each match, and parent nodes within that snapshot. Overlapping context appears once; `...` marks omitted lines. Refs and boxes are preserved. No matches returns an empty string with no status text.
+
+HTML, Markdown, and text reuse the normal content converter. `main_content_only=true` cleans body/target content for AI; set it to `false` to skip that cleaning. This setting is ignored for snapshots. HTML is parsed output and can include document wrappers around a selected fragment. Serialized HTML does not reflect every live form property or include a host's shadow root or an iframe's document; use snapshots for live control state. Capture does not reload the page or change its forms, focus, or scroll position.
+
+```json
+{"session_id": "browser", "search": "(?i)next|load more"}
+```
+
+```json
+{"session_id": "browser", "extraction_type": "markdown", "target": "#results"}
+```
+
+### `browser_actions` -- Chain mouse, field, keyboard, dialog, and wait actions
+
+Runs actions in order on the existing page in a stealthy browser session. Call `browser_fetch` first. The flat `actions` list can mix any of the twelve action types below; use `browser_extract` when you need to inspect the page before choosing later actions.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -161,19 +179,26 @@ Runs actions in order on the existing page in a stealthy browser session. Call `
 | `radio` | Target, `value`, `timeout=30000` | Select the radio option; `value` is required and only `true` is supported |
 | `combobox` | Target, `value`, `timeout=30000` | Select native `<select>` options by label; use a string, a list of strings for multiple selections, or `[]` to clear |
 | `press_key` | `key` | Press a nonempty native key name, character, or shortcut at the current focus |
+| `dialog` | `accept`, optional `prompt_text` | Queue one reply for the next browser dialog; `true` accepts, `false` dismisses |
 | `wait_time` | `milliseconds` | Fixed pause in finite nonnegative milliseconds |
-| `wait_element` | `selector`, `state="visible"`, `timeout=30000` | Wait for a nonempty Playwright selector to reach `"visible"`, `"hidden"`, `"attached"`, or `"detached"` |
+| `wait_element` | `target`, `state="visible"`, `timeout=30000` | Wait for an element to reach `"visible"`, `"hidden"`, `"attached"`, or `"detached"` |
 | `wait_load` | `state`, `timeout=30000` | Wait for `"domcontentloaded"`, `"load"`, or `"networkidle"` |
 
-**Targets and timing.** Each move or click needs exactly one target: a nonempty Playwright `selector`, a nonempty snapshot `ref` such as `"e2"`, or both `x` and `y`. Coordinates must be finite viewport CSS pixels from the main frame's top-left, not full-page screenshot coordinates. Field actions need exactly one nonempty `selector` or `ref` and can target fields anywhere on the page without a `<form>` parent. Element waits use a selector only. Mouse and field selectors must match exactly one element. Use current snapshot references; do not build a chain with references that need a future snapshot.
+**Targets and timing.** Element actions use a nonempty `target`: a Playwright selector such as `"#search"` or a snapshot reference as `"aria-ref=e2"`. Bare reference strings such as `"e2"` are treated as selectors. Each move or click needs either `target` or both `x` and `y`. Coordinates must be finite viewport CSS pixels from the main frame's top-left, not full-page screenshot coordinates. Field actions need `target` and can target fields anywhere on the page without a `<form>` parent. Element waits also use `target`. Mouse and field targets must match exactly one element. Use current snapshot references; do not build a chain with references that need a future snapshot.
 
-Each action with a `timeout` accepts finite nonnegative milliseconds, default 30000; 0 disables the limit. Mouse coordinate actions ignore it. For text input, the limit applies separately to each native operation, including clearing and each character press in slow mode. Keyboard, wheel, and fixed-pause actions have no timeout option. Pauses between actions are outside action timeouts.
+Each action with a `timeout` accepts finite nonnegative milliseconds, default 30000; 0 disables the limit. Mouse coordinate actions ignore it. For text input, the limit applies separately to each native operation, including clearing and each character press in slow mode. Keyboard, dialog, wheel, and fixed-pause actions have no timeout option. Pauses between actions are outside action timeouts.
 
 **Mouse actions.** Element targets use native locator hover or click, which waits for readiness and scrolls into view. Coordinate actions use the native mouse without automatic waiting or scrolling. Coordinate clicks move the mouse, then press and release, without waiting for navigation. Wheel actions neither move the pointer nor wait for scrolling, animations, or loaded content to finish. The page may prevent scrolling, or the scrollable area may be at its edge.
 
 **Fields and keys.** Field actions use native locator `fill`, `press_sequentially`, `set_checked`, and `select_option(label=...)`. Combobox actions support native `<select>` elements, not custom dropdown widgets. With `clear=false`, text uses `press_sequentially` even when `slowly=false`; an empty value preserves existing content. With `slowly=true`, text clears first unless `clear=false`, then each character gets a fresh 50-150 ms delay. Every pair of actions also gets a fresh 100-300 ms pause, including explicit wait actions, with no leading or trailing pause.
 
 Each `press_key` uses native `page.keyboard.press` at the current focus. Keep a shortcut such as `"ControlOrMeta+A"` in one `key` string, then use another `press_key` action with `"Backspace"` to delete. A space (`" "`) and plus (`"+"`) are valid key strings. The native API validates key names and shortcuts when pressed. Use a click action to focus the intended control before an Enter press when needed. Key presses do not wait for navigation.
+
+**Dialogs.** Place `dialog` before the click, key, or other action that opens an alert, confirmation, prompt, or leave-page warning (`beforeunload`). Each reply handles one dialog; queue several replies before a trigger that opens several dialogs. Replies are used in order. For prompts, `prompt_text` supplies the accepted text; omitting it or passing an empty string returns empty text, even if the prompt has a default. It has no effect when dismissing or accepting other dialog types. Unused replies expire when the call ends; the action does not wait for a dialog by itself. For delayed dialogs, include a wait for the resulting page change in the same chain. HTML modal windows use normal element actions.
+
+```json
+{"session_id": "browser", "actions": [{"type": "dialog", "accept": true, "prompt_text": "books"}, {"type": "click", "target": "#open-prompt"}]}
+```
 
 **Waits.** Element waits are strict: multiple matches return an error. `attached` means present in the DOM, and `detached` means absent. `visible` requires a nonempty bounding box and no `visibility:hidden`; `hidden` also succeeds when the element is absent. Load waits observe the current committed document and return immediately if the state was already reached. A click or key press followed by `wait_load` does not guarantee waiting for delayed future navigation. `domcontentloaded` waits for DOMContentLoaded, not all future JavaScript work; `load` waits for the load event; `networkidle` requires no active network connections for at least 500 ms and does not prove application readiness. Prefer a specific result element when it signals readiness.
 
@@ -183,10 +208,10 @@ For example, fill and submit a search, wait for its results, then hover over the
 {
   "session_id": "browser",
   "actions": [
-    {"type": "textbox", "selector": "#search", "value": "books"},
+    {"type": "textbox", "target": "#search", "value": "books"},
     {"type": "press_key", "key": "Enter"},
-    {"type": "wait_element", "selector": "#results"},
-    {"type": "move", "selector": "#results"},
+    {"type": "wait_element", "target": "#results"},
+    {"type": "move", "target": "#results"},
     {"type": "wheel", "delta_y": 500}
   ]
 }
@@ -194,7 +219,7 @@ For example, fill and submit a search, wait for its results, then hover over the
 
 MCP validates the entire action schema, and all target combinations are checked before execution. Targets are resolved only when their action runs, so earlier actions can create later targets. One page stays reserved for the whole sequence, including waits and random pauses. The first runtime failure stops the chain and reports its one-based action number, type, and native error. Earlier effects remain, and the failed action itself may partly apply. Nothing is retried or rolled back. Cancellation also stops the chain and remains cancellation. A cancelled or timed-out click attempts to release its button while the page is open, preserving the original error if release fails. The page reservation is released after success, failure, or cancellation.
 
-Returns `Actions completed.` as plain text without echoing field values or taking a snapshot. Use `browser_snapshot` before retrying after an error or when later actions depend on inspecting a page change. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
+Returns `Actions completed.` as plain text without echoing field values or taking a snapshot. Use `browser_extract` before retrying after an error or when later actions depend on inspecting a page change. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
 
 ### `browser_evaluate` -- Run JavaScript on the current page
 
@@ -223,7 +248,7 @@ Return JSON-compatible data: null, strings, booleans, finite numbers, arrays, or
 
 The result is compact JSON in one `TextContent` block with `structured_output=False`: strings are JSON-quoted, arrays stay in one block, and null is retained. No automatic snapshot, navigation, reload, retry, or tool timeout is added.
 
-The page stays reserved during evaluation and is released after success, failure, or cancellation. Scripts can change page state or make requests. Errors and cancellation do not undo those effects or guarantee that browser-side JavaScript stops. Use `browser_snapshot` or another read to check effects before repeating a script. Unknown or HTTP sessions and missing, closed, or busy pages return an error; JavaScript errors propagate.
+The page stays reserved during evaluation and is released after success, failure, or cancellation. Scripts can change page state or make requests. Errors and cancellation do not undo those effects or guarantee that browser-side JavaScript stops. Use `browser_extract` or another read to check effects before repeating a script. Unknown or HTTP sessions and missing, closed, or busy pages return an error; JavaScript errors propagate.
 
 ### `browser_network_requests` -- Search recorded browser requests
 
@@ -305,7 +330,7 @@ Call `browser_open`, then `browser_fetch` to open a page first. Use `browser_act
 | `quality` | int or null | null | JPEG quality 0-100; an error if supplied for PNG |
 | `timeout` | number | 30000 | Finite nonnegative capture timeout in milliseconds; 0 disables it |
 
-Omit both `selector` and `ref` for the viewport or full-page capture. For an element, pass exactly one target and leave `full_page=false`. Native element capture requires exactly one match, waits for the element to be ready, and may scroll it into view. Refresh stale references with `browser_snapshot`.
+Omit both `selector` and `ref` for the viewport or full-page capture. For an element, pass exactly one target and leave `full_page=false`. Native element capture requires exactly one match, waits for the element to be ready, and may scroll it into view. Refresh stale references with `browser_extract`.
 
 The element image is clipped to its bounding box. A scrollable container includes only its currently visible contents, not all content inside it. Content covered by another element stays covered in the image.
 
@@ -333,7 +358,7 @@ The page stays reserved during capture and is released after success, failure, o
 | Related HTTP requests | `open_request_session` + `session_make_request` per URL |
 | Browser automation or network history | `browser_open` + `browser_fetch` per URL |
 | Capture the current page or an element   | `browser_screenshot` after `browser_open` + `browser_fetch` |
-| Read the current page's AI ARIA snapshot  | `browser_snapshot` with `session_id`                          |
+| Read the current page or one element as a snapshot, HTML, Markdown, or text | `browser_extract` with `session_id`                          |
 | Chain mouse, field, keyboard, or wait actions | `browser_actions` with `session_id`                       |
 | Custom JavaScript extraction or page tasks | `browser_evaluate` with `session_id`                        |
 | Find API calls, HTTP errors, or redirects  | `browser_network_requests` with `session_id`                |
@@ -428,7 +453,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. The `session_id` you get back is used with `browser_fetch`, `browser_snapshot`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, and `browser_network_request` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, and `browser_network_request` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 
