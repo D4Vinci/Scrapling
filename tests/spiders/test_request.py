@@ -100,6 +100,20 @@ class TestRequestProperties:
         r2 = Request("https://example.com/page2")
         assert r1.update_fingerprint() != r2.update_fingerprint()
 
+    @pytest.mark.parametrize("payload", [{}, [], False, 0, ""])
+    def test_fingerprint_preserves_falsy_json_bodies(self, payload):
+        url = "https://example.com/api"
+        json_request = Request(url, method="POST", json=payload)
+        empty_request = Request(url, method="POST")
+        assert json_request.update_fingerprint() != empty_request.update_fingerprint()
+
+    def test_fingerprint_distinguishes_empty_json_values(self):
+        fingerprints = {
+            Request("https://example.com/api", method="POST", json=payload).update_fingerprint()
+            for payload in ({}, [], False, 0, "")
+        }
+        assert len(fingerprints) == 5
+
     def test_fingerprint_include_kwargs_uses_kwarg_values(self):
         """Test kwargs with different values produce different fingerprints."""
         r1 = Request("https://example.com", timeout=1)
