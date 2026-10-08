@@ -93,7 +93,7 @@ def __BuildRequest(headers: List[str], cookies: str, params: str, json: Optional
         "headers": parsed_headers if parsed_headers else None,
         "cookies": parsed_cookies if parsed_cookies else None,
     }
-    if parsed_json:
+    if parsed_json is not None:
         request_kwargs["json"] = parsed_json
     if parsed_params:
         request_kwargs["params"] = parsed_params
