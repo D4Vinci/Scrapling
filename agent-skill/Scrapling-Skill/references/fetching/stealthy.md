@@ -65,7 +65,8 @@ Scrapling provides many options with this fetcher and its session classes. Befor
 |    proxy_rotator    | A `ProxyRotator` instance for automatic proxy rotation. Cannot be combined with `proxy`.                                                                                                                                            |    ✔️    |
 |       retries       | Number of retry attempts for failed requests. Defaults to 3.                                                                                                                                                                        |    ✔️    |
 |     retry_delay     | Seconds to wait between retry attempts. Defaults to 1.                                                                                                                                                                              |    ✔️    |
-|     capture_xhr     | Pass a regex URL pattern string to capture XHR/fetch requests matching it during page load. Captured responses are available via `response.captured_xhr`. Defaults to `None` (disabled).                                            |    ✔️    |
+|   record_requests   | Keep completed requests and saved responses in `session.network`. Session-only; defaults to `False`. |    ✔️    |
+| max_recorded_requests | Maximum retained request entries per session; defaults to 1,000. Saved bodies also have fixed size limits. |    ✔️    |
 |   executable_path   | Absolute path to a custom browser executable to use instead of the bundled Chromium. Useful for non-standard installations or custom browser builds.                                                                                |    ✔️    |
 
 In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `page_setup`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `pierce_shadow`, `solve_cloudflare`, `blocked_domains`, `proxy`, and `selector_config`.
@@ -254,6 +255,31 @@ This logic allows for multiple URLs to be fetched at the same time in the same b
 Keeping the tabs open also means the page you fetched is still there for the next request, so a `page_setup` function on the next request runs on it before navigating away. That's the building block for chaining automation across requests.
 
 Versions 0.3.2 to 0.4.14 closed every tab after its request because reusing tabs used to leak settings between requests. Since 0.4.15, the settings are reset on every reuse, so the tabs stay open.
+
+### Network History
+
+Set `record_requests=True` on `StealthySession` or `AsyncStealthySession` to keep completed requests across page loads, actions, tabs, and temporary proxy contexts. Find API calls, HTTP errors, and redirects, then read saved Scrapling responses without sending requests again. Failed and unfinished requests are omitted; completed HTTP 4xx and 5xx responses are included. Saved headers and bodies remain readable after the session closes.
+
+```python
+from scrapling.fetchers import StealthySession
+
+with StealthySession(record_requests=True, max_recorded_requests=1000) as session:
+    session.fetch('https://example.com', network_idle=True)
+
+for response in session.network.search(resource_type='document', limit=None):
+    if note := response.meta.get('body_note'):
+        print(note)
+    else:
+        print(response.body)
+```
+
+Use `session.network.search(...)`, `.get(request_id)`, and `.clear()` to read or clear the history. `search()` and `get()` return saved `Response` objects directly. Their `.meta` contains `network_id`, `resource_type`, and `request_body`; read `.body`, `.headers`, `.request_headers`, `.status`, and `.url` on the response itself. Search returns at most 100 matches by default; `limit=None` returns all retained matches. These calls and saved response reads are local and synchronous, including on async sessions. Entries appear after conversion finishes. Reading history or closing the session does not wait for captures; captures still running at navigation or closure may be omitted.
+
+The recorder reads and saves response bodies only for supported text `Content-Type` values: `text/*`, `+json`/`+xml` types (including SVG), JSON, XML, JavaScript, GraphQL, and URL-encoded form data. Binary or unrecognized types, and responses without `Content-Type`, keep their metadata but no body bytes. The browser still loads resources normally.
+
+Saved response bytes come from Playwright and can differ from the server's original bytes. Recorded text uses UTF-8 when the saved bytes are valid UTF-8, matching Playwright; otherwise it uses the declared charset. Response headers stay unchanged.
+
+Recording is off by default. The default limit is 1,000 requests, with fixed limits of 1 MiB per saved response body and 20 MiB combined; old records are removed when retention limits are reached. These limits do not cover total browser memory, concurrent captures, temporary full-body reads, parsed HTML, or request bodies. Check `response.meta.get('body_note')` for non-text, oversized, or unreadable bodies. Saved text, including empty text, has no note. HEAD responses and status codes 204, 205, and 304 remain empty with no note. Clearing the history does not reuse IDs. See [Network History](dynamic.md#network-history) for filters and saved response access. See [Migrating in v5](dynamic.md#migrating-in-v5) for the API capture changes.
 
 ### Session Benefits
 

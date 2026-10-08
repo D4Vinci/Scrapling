@@ -87,15 +87,6 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
-      <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png">
-      </a>
-    </td>
-    <td> <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank"><b>ColdProxy</b></a>는 안정적인 웹 스크래핑, 공개 데이터 수집, 195개 이상의 국가에서의 지역 타겟팅 테스트를 위한 주거용 및 데이터센터 프록시를 제공합니다. <i>이 링크를 사용하면 5% 할인을 받습니다</i>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
@@ -191,16 +182,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: 실제 SIM과 기기 기반의 4G/5G 모바일 프록시. 전용 또는 공유, 스티키, 로테이팅, p0f 핑거프린트 프리셋, API/MCP 및 전체 프로토콜 지원. 코드 SCRAPLING20으로 20% 할인.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
       </a>
@@ -268,7 +249,7 @@ MySpider().start()
 - **도메인 및 광고 차단**: 브라우저 기반 Fetcher에서 특정 도메인(및 하위 도메인)으로의 요청을 차단하거나 내장 광고 차단(약 3,500개의 알려진 광고/트래커 도메인)을 활성화합니다.
 - **DNS 유출 방지**: 프록시 사용 시 DNS 유출을 방지하기 위해 Cloudflare DoH를 통해 DNS 쿼리를 라우팅하는 선택적 DNS-over-HTTPS 지원.
 - **원격 브라우저**: 로컬에서 브라우저를 실행하는 대신 `cdp_url`로 CDP를 통해 이미 실행 중인 브라우저에 연결합니다. 같은 컴퓨터든 다른 호스트든, 관리형 브라우저 서비스든 상관없습니다. `executable_path`로 브라우저 기반 Fetcher가 직접 빌드한 Chromium을 사용하도록 지정할 수도 있습니다.
-- **백그라운드 API 캡처**: `capture_xhr`에 URL 패턴을 전달하면, 페이지가 로드되는 동안 발생한 일치하는 XHR/fetch 응답이 모두 `Response` 객체로 `response.captured_xhr`에 수집됩니다. 요청을 직접 리버스 엔지니어링하지 않고도 사이트의 API 데이터를 얻을 수 있습니다.
+- **백그라운드 API 캡처**: 브라우저 세션에서 `record_requests=True`를 켜고 `session.network.search(limit=None)`으로 저장된 응답을 검색하세요. 요청을 다시 보내지 않고 여러 페이지를 로드하며 발생한 API 데이터와 HTTP 오류를 확인할 수 있습니다. 기록에는 저장 한도가 있으며 텍스트 응답 본문을 저장합니다.
 - **비동기 지원**: 모든 Fetcher와 전용 비동기 세션 클래스에서 완전한 비동기를 지원합니다.
 
 ### 적응형 스크레이핑

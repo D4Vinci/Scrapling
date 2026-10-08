@@ -39,6 +39,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
     def __init__(self, **kwargs: Unpack[StealthSession]):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
+        :param record_requests: Save completed browser requests and responses. Failed or unfinished requests are omitted. Defaults to False.
+        :param max_recorded_requests: Maximum retained requests per session. Defaults to 1000; older entries are removed.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
@@ -73,7 +75,10 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
         self.__validate__(**kwargs)
-        super().__init__()
+        super().__init__(
+            record_requests=self._config.record_requests,
+            max_recorded_requests=self._config.max_recorded_requests,
+        )
 
     def start(self) -> None:
         """Create a browser for this instance and context."""
@@ -238,14 +243,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
                 params.timeout, params.extra_headers, params.disable_resources, proxy, params.blocked_domains
             ) as page_info:
                 final_response: List = [None]
-                xhr_captured: List = []
                 page = page_info.page
-                handler = self._create_response_handler(
-                    page_info,
-                    final_response,
-                    xhr_pattern=self._config.capture_xhr,
-                    xhr_container=xhr_captured,
-                )
+                handler = self._create_response_handler(page_info, final_response)
                 page.on("response", handler)
                 try:
                     if params.page_setup:
@@ -288,7 +287,6 @@ class StealthySession(SyncSession, StealthySessionMixin):
                             final_response[0],
                             params.selector_config,
                             meta={"proxy": proxy},
-                            xhr_captured=xhr_captured,
                             pierce_shadow=params.pierce_shadow,
                         )
                         return response
@@ -328,6 +326,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
     def __init__(self, **kwargs: Unpack[StealthSession]):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
+        :param record_requests: Save completed browser requests and responses. Failed or unfinished requests are omitted. Defaults to False.
+        :param max_recorded_requests: Maximum retained requests per session. Defaults to 1000; older entries are removed.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
@@ -362,7 +362,11 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
         self.__validate__(**kwargs)
-        super().__init__(max_pages=self._config.max_pages)
+        super().__init__(
+            max_pages=self._config.max_pages,
+            record_requests=self._config.record_requests,
+            max_recorded_requests=self._config.max_recorded_requests,
+        )
 
     async def start(self) -> None:
         """Create a browser for this instance and context."""
@@ -529,14 +533,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                 params.timeout, params.extra_headers, params.disable_resources, proxy, params.blocked_domains
             ) as page_info:
                 final_response: List = [None]
-                xhr_captured: List = []
                 page = page_info.page
-                handler = self._create_response_handler(
-                    page_info,
-                    final_response,
-                    xhr_pattern=self._config.capture_xhr,
-                    xhr_container=xhr_captured,
-                )
+                handler = self._create_response_handler(page_info, final_response)
                 page.on("response", handler)
                 try:
                     if params.page_setup:
@@ -579,7 +577,6 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                             final_response[0],
                             params.selector_config,
                             meta={"proxy": proxy},
-                            xhr_captured=xhr_captured,
                             pierce_shadow=params.pierce_shadow,
                         )
                         return response

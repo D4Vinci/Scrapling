@@ -94,8 +94,8 @@ class Request:
             elif isinstance(post_data, bytes):
                 body = post_data
         else:
-            post_data = self._session_kwargs.get("json", {})
-            body = orjson.dumps(post_data) if post_data else b""
+            post_data = self._session_kwargs.get("json")
+            body = orjson.dumps(post_data) if post_data is not None else b""
 
         params = self._session_kwargs.get("params")
         url = update_url_params(self.url, params) if params else self.url
@@ -121,7 +121,7 @@ class Request:
             # Some header normalization
             for key, value in headers.items():
                 processed_headers[_convert_to_bytes(key.lower()).hex()] = _convert_to_bytes(value).hex()
-            data["headers"] = tuple(processed_headers.items())
+            data["headers"] = tuple(sorted(processed_headers.items()))
 
         fp = hashlib.sha1(orjson.dumps(data, option=orjson.OPT_SORT_KEYS), usedforsecurity=False).digest()
         self._fp = fp

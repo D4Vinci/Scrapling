@@ -637,7 +637,8 @@ class Convertor:
     def _strip_noise_tags(cls, page: Selector) -> Selector:
         """Return a copy of the Selector with noise tags removed."""
         clean_root = deepcopy(page._root)
-        for element in clean_root.iter(*{"script", "style", "noscript", "svg"}):
+        # Collect first: dropping a match mid-walk sends the iterator into the detached subtree, where it ends
+        for element in list(clean_root.iter(*{"script", "style", "noscript", "svg"})):
             element.drop_tree()
         return Selector(root=clean_root, url=page.url)
 

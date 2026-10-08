@@ -71,9 +71,8 @@ page.history         # Response history of redirections, if any
 page.body            # Raw response body as bytes
 page.encoding        # Response encoding
 page.meta            # Response metadata dictionary (e.g., proxy used). Mainly helpful with the spiders system.
-page.captured_xhr    # List of captured XHR/fetch responses (when capture_xhr is enabled on a browser session)
 ```
-All fetchers return the `Response` object.
+All fetchers return the `Response` object. Browser sessions with `record_requests=True` also return saved `Response` objects from `session.network.search(limit=None)` and `session.network.get(request_id)`. See [Network History](dynamic.md#network-history) for saved API responses and the v5 migration.
 
 The `Response` object can also convert the page to clean, LLM-ready Markdown in one line:
 ```python

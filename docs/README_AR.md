@@ -87,15 +87,6 @@ MySpider().start()
 <table>
   <tr>
     <td width="200">
-      <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank" title="Residential, IPv6 & Datacenter Proxies for Web Scraping">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/coldproxy.png">
-      </a>
-    </td>
-    <td> توفر <a href="https://coldproxy.com/?utm_source=scrapling&utm_medium=sponsorship&utm_campaign=202609-scrapling-readme&utm_content=platinum-badge&promo=SCRAPLING5" target="_blank"><b>ColdProxy</b></a> وكلاء سكنيين ووكلاء مراكز بيانات لاستخراج بيانات الويب بشكل مستقر، وجمع البيانات العامة، والاختبار الموجَّه جغرافياً في أكثر من 195 دولة. <i>استخدام هذا الرابط يمنحك خصم 5%</i>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
@@ -191,16 +182,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank" title="Premium Mobile Proxies from Real Carrier Networks">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/voidmob.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://voidmob.com/proxies?utm_source=scrapling" target="_blank">VoidMob</a>: بروكسيات موبايل 4G/5G على شرائح SIM وأجهزة حقيقية. مخصصة أو مشتركة، ثابتة، دوّارة، إعدادات مسبقة لبصمة p0f، دعم API/MCP وجميع البروتوكولات. استخدم كود SCRAPLING20 للحصول على خصم 20%.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank" title="Ethically sourced residential proxy infrastructure powering web scraping and AI agents">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/byteful.png">
       </a>
@@ -268,7 +249,7 @@ MySpider().start()
 - **حظر النطاقات والإعلانات**: حظر الطلبات إلى نطاقات محددة (ونطاقاتها الفرعية) أو تفعيل حظر الإعلانات المدمج (~3,500 نطاق إعلانات/تتبع معروف) في الجوالب المعتمدة على المتصفح.
 - **منع تسرب DNS**: دعم اختياري لـ DNS-over-HTTPS لتوجيه استعلامات DNS عبر Cloudflare DoH، مما يمنع تسرب DNS عند استخدام Proxy.
 - **متصفحات بعيدة**: بدلاً من تشغيل متصفح محلياً، اتصل بمتصفح يعمل بالفعل عبر CDP باستخدام `cdp_url`، سواء كان على نفس الجهاز أو على خادم آخر أو لدى مزود متصفحات مُدار. يمكنك أيضاً توجيه أي جالب معتمد على المتصفح إلى نسخة Chromium الخاصة بك عبر `executable_path`.
-- **التقاط طلبات API في الخلفية**: مرر نمط URL إلى `capture_xhr`، وسيتم جمع كل استجابات XHR/fetch المطابقة التي تصدرها الصفحة أثناء التحميل ككائنات `Response` في `response.captured_xhr` - احصل على بيانات API الموقع دون الحاجة لتحليل الطلبات بنفسك.
+- **التقاط طلبات API في الخلفية**: فعّل `record_requests=True` في جلسة المتصفح، ثم ابحث في الاستجابات المحفوظة باستخدام `session.network.search(limit=None)`. اقرأ بيانات API وأخطاء HTTP من الصفحات التي زرتها دون إرسال الطلبات مرة أخرى. السجل محدود الحجم ويحفظ أجسام الاستجابات النصية.
 - **دعم Async**: دعم async كامل عبر جميع الجوالب وفئات الجلسات async المخصصة.
 
 ### الاستخراج التكيفي
