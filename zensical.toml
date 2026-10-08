@@ -28,7 +28,8 @@ nav = [
             {"Fetchers basics" = "fetching/choosing.md"},
             {"HTTP requests" = "fetching/static.md"},
             {"Dynamic websites" = "fetching/dynamic.md"},
-            {"Dynamic websites with hard protections" = "fetching/stealthy.md"}
+            {"Dynamic websites with hard protections" = "fetching/stealthy.md"},
+            {"Anti-bot vendors and captcha solvers" = "fetching/antibot.md"}
         ]},
         {Spiders = [
             {"Architecture" = "spiders/architecture.md"},

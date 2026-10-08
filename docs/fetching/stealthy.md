@@ -65,6 +65,8 @@ Scrapling provides many options with this fetcher and its session classes. Befor
 |     user_data_dir     | Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory. **Only Works with sessions**                                                       |    ✔️    |
 |      extra_flags      | A list of additional browser flags to pass to the browser on launch.                                                                                                                                                                |    ✔️    |
 |   solve_cloudflare    | When enabled, fetcher solves all types of Cloudflare's Turnstile/Interstitial challenges before returning the response to you.                                                                                                      |    ✔️    |
+|     solve_antibot     | When enabled, the fetcher recognises DataDome, HUMAN (PerimeterX), Akamai, Imperva, AWS WAF, Kasada and Cloudflare challenges after navigation, solves them within `timeout`, and records the outcome in `response.meta['antibot']`. See [Anti-bot vendors](antibot.md). |    ✔️    |
+|    captcha_solver     | A `SolverRouter` with your CapMonster Cloud, CapSolver or 2Captcha keys, used by `solve_antibot` for the captchas a browser can't pass alone. See [Captcha solvers](antibot.md#captcha-solvers).                                  |    ✔️    |
 |     block_webrtc      | Forces WebRTC to respect proxy settings to prevent local IP address leak.                                                                                                                                                           |    ✔️    |
 |      hide_canvas      | Add random noise to canvas operations to prevent fingerprinting.                                                                                                                                                                    |    ✔️    |
 |      allow_webgl      | Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended, as many WAFs now check if WebGL is enabled.                                                                     |    ✔️    |
@@ -80,7 +82,7 @@ Scrapling provides many options with this fetcher and its session classes. Befor
 | max_recorded_requests | Maximum retained request entries per session; defaults to 1,000. Saved bodies also have fixed size limits.                                                                                                                          |    ✔️    |
 |    executable_path    | Absolute path to a custom browser executable to use instead of the bundled Chromium. Useful for non-standard installations or custom browser builds.                                                                                |    ✔️    |
 
-In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `page_setup`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `pierce_shadow`, `solve_cloudflare`, `blocked_domains`, `proxy`, and `selector_config`.
+In session classes, all these arguments can be set globally for the session. Still, you can configure each request individually by passing some of the arguments here that can be configured on the browser tab level like: `google_search`, `timeout`, `wait`, `page_action`, `page_setup`, `extra_headers`, `disable_resources`, `wait_selector`, `wait_selector_state`, `network_idle`, `load_dom`, `pierce_shadow`, `solve_cloudflare`, `solve_antibot`, `captcha_solver`, `blocked_domains`, `proxy`, and `selector_config`.
 
 !!! note "Notes:"
 
@@ -135,6 +137,17 @@ And even solves the custom pages with embedded captcha.
     1. Sometimes, with websites that use custom implementations, you will need to use `wait_selector` to make sure Scrapling waits for the real website content to be loaded after solving the captcha. Some websites can be the real definition of an edge case while we are trying to make the solver as generic as possible.
     2. The timeout should be at least 60 seconds when using the Cloudflare solver for sufficient challenge-solving time.
     3. This feature works seamlessly with proxies and other stealth options.
+
+### Other anti-bot vendors
+
+For DataDome, HUMAN (PerimeterX), Akamai, Imperva, AWS WAF and Kasada, enable `solve_antibot`:
+
+```python
+page = StealthyFetcher.fetch('https://protected-site.com', solve_antibot=True)
+print(page.meta['antibot'])  # which vendor was detected, and whether it was solved
+```
+
+The [Anti-bot vendors and captcha solvers](antibot.md) page explains what each handler does, the outcome fields, the headless hardening that comes with it, and how to plug in paid captcha solvers.
 
 ### Browser Automation
 This is where your knowledge about [Playwright's Page API](https://playwright.dev/python/docs/api/class-page) comes into play. The function you pass here takes the page object from Playwright's API, performs the desired action, and then the fetcher continues.
