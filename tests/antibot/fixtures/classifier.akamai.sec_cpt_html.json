@@ -1,0 +1,29 @@
+{
+ "name": "akamai.sec_cpt_html",
+ "source": "response-classifier golden fixture 'akamai.sec_cpt_html': capture over a residential connection (2026-10-07)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 200,
+  "headers": {
+   "akamai-grn": "0.d94f4317.1791402643.51c38e16",
+   "content-type": "text/html"
+  },
+  "cookies": {
+   "HD_DC": "redacted",
+   "_abck": "redacted",
+   "bm_s": "redacted",
+   "bm_sc": "redacted",
+   "bm_so": "redacted",
+   "bm_sz": "redacted",
+   "AKA_A2": "redacted",
+   "akacd_usbeta": "redacted"
+  },
+  "html": "<html><body><script type=\"text/javascript\" src=\"/RVR4L4Hyt/b/9/QxlmBusOW0L7M0Ko/bGfatSOG7h/FgZRWWlW/TlRILUx/vcSMR?REDACTED&amp;t=130700734\"></script><div id=\"sec-if-cpt-container\" role=\"main\" style=\"display: none\">\n    <div class=\"behavioral-content\">\n        <div id=\"sec-bc-text-container\"></div>\n        <div id=\"sec-bc-tile-parent\">\n            <div id=\"sec-bc-tile-container\"></div>\n        </div>\n        <div class=\"sec-bc-button-parent\">\n            <div class=\"behavioral-button progress-btn-disabled\">\n                <div class=\"btn\" id=\"progress-button\" role=\"button\" tabindex=\"0\" disabled></div>\n                <div class=\"progress\"></div>\n            </div>\n        </div>\n        <div class=\"scf-akamai-logo-sec-abc\">\n            <div class=\"scf-akamai-logo-msg\">\n                <p class=\"scf-akamai-protected-by\">Powered and protected by</p>\n            </div>\n            <div class=\"scf-akamai-logo-img\">\n                <img src=\"https://www.akamai.com/site/ko/images/logo/akamai-logo1.svg\" class=\"scf-akamai-logo\" loading=\"lazy\" alt=\"Akamai\"></div>\n            <div class=\"akamai-privacy\"><a href=\"https://www.akamai.com/privacy\" target=\"_blank\">Privacy<span class=\"_hidden\"></span></a></div>\n        </div>\n    </div>\n</div>\n<script>\n    (function() {\n        var chlgeId = '';\n        var context = 't';\n        var scripts = document.getElementsByTagName('script');\n        for (var i = 0; i < scripts.length; i++) {\n            if (scripts[i].src && scripts[i].src.match(/t=([^&#]*)/)) {\n                chlgeId = scripts[i].src.match(/t=([^&#]*)/)[1];\n                context = /[?&]ch=true/.test(scripts[i].src) ? 'i' : 't';\n            }\n        }\n        var proxied = window.XMLHttpRequest.prototype.send;\n        window.XMLHttpRequest.prototype.send = function() {\n            var pointer = this\n            var intervalId = window.setInterval(function() {\n                if (pointer.readyState === 4 && pointer.responseURL && pointer.responseURL.indexOf('t=' + chlgeId) > -1) {\n                    if (context === 't') {\n                        location.reload(true);\n                    }\n                    clearInterval(intervalId);\n                }\n            }, 1);\n            return proxied.apply(this, [].slice.call(arguments));\n        };\n    })();\n</script><script type=\"text/javascript\" src=\"https://www.homedepot.com/RVR4L4Hyt/b/9/QxlmBusOW0L7M0Ko/aufatS0hLmpmf4w3/KWVMWWlW/bC0iICh/gLQ4\"></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "akamai",
+  "kind": "challenge",
+  "rule": "akamai.sec_cpt_html"
+ }
+}

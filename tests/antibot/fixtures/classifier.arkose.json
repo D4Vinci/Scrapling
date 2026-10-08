@@ -1,0 +1,15 @@
+{
+ "name": "arkose",
+ "source": "response-classifier golden fixture 'arkose': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 200,
+  "headers": {
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title>Verification</title></head><body><div id=\"arkose\"></div><script src=\"https://client-api.arkoselabs.com/v2/ABCDEF12-3456-7890-ABCD-EF1234567890/api.js\"></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": null
+}

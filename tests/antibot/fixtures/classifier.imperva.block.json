@@ -1,0 +1,23 @@
+{
+ "name": "imperva.block",
+ "source": "response-classifier golden fixture 'imperva.block': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "x-iinfo": "10-12345678-0 0NNN RT(1791400000000 0) q(0 -1 -1 -1) r(0 -1)",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {
+   "visid_incap_123": "redacted",
+   "incap_ses_456_123": "redacted"
+  },
+  "html": "<!doctype html><html><head><title></title></head><body><iframe id=\"main-iframe\" src=\"/_Incapsula_Resource?CWUDNSAI=9&amp;xinfo=10-12345678-0\"></iframe><p>Request unsuccessful. Incapsula incident ID: 123000000000-456</p></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "imperva",
+  "kind": "captcha",
+  "rule": "imperva.incident"
+ }
+}

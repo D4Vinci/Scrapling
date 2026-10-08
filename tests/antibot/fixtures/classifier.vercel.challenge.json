@@ -1,0 +1,17 @@
+{
+ "name": "vercel.challenge",
+ "source": "response-classifier golden fixture 'vercel.challenge': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "x-vercel-mitigated": "challenge",
+   "server": "Vercel",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title>Vercel Security Checkpoint</title></head><body><p>We are verifying your browser</p></body></html>",
+  "frame_urls": []
+ },
+ "expect": null
+}

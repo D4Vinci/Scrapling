@@ -1,0 +1,21 @@
+{
+ "name": "imperva.dynamic",
+ "source": "response-classifier golden fixture 'imperva.dynamic': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 200,
+  "headers": {
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {
+   "reese84": "redacted"
+  },
+  "html": "<!doctype html><html><head><title>Pardon Our Interruption</title></head><body><h1>Pardon Our Interruption</h1><p>As you were browsing something about your browser made us think you were a bot.</p></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "imperva",
+  "kind": "challenge",
+  "rule": "imperva.interstitial"
+ }
+}

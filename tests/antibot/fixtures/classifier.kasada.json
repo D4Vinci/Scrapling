@@ -1,0 +1,25 @@
+{
+ "name": "kasada",
+ "source": "response-classifier golden fixture 'kasada': capture over a residential connection (2026-10-07)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 429,
+  "headers": {
+   "content-type": "text/html; charset=utf-8",
+   "x-kpsdk-ct": "REDACTED"
+  },
+  "cookies": {
+   "Country": "redacted",
+   "ew_bkt": "redacted",
+   "KP_UIDz-ssn": "redacted",
+   "KP_UIDz": "redacted"
+  },
+  "html": "<html><head></head><body><script>window.KPSDK={};KPSDK.now=typeof performance!=='undefined'&&performance.now?performance.now.bind(performance):Date.now.bind(Date);KPSDK.start=KPSDK.now();</script><script src=\"/149e9513-01fa-4fb0-aad4-566afd725d1b/2d206a39-8ed7-437e-a3be-862e0f06eea3/ips.js?REDACTED&amp;REDACTED\"></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "kasada",
+  "kind": "challenge",
+  "rule": "kasada.header"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "name": "aws.challenge",
+ "source": "response-classifier golden fixture 'aws.challenge': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 202,
+  "headers": {
+   "x-amzn-waf-action": "challenge",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title></title></head><body><script src=\"https://x.token.awswaf.com/x/challenge.js\"></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "aws_waf",
+  "kind": "challenge",
+  "rule": "aws.challenge"
+ }
+}

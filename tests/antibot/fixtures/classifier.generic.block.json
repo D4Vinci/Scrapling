@@ -1,0 +1,15 @@
+{
+ "name": "generic.block",
+ "source": "response-classifier golden fixture 'generic.block': capture over a residential connection (2026-10-07), browser copy after a 10 s wait; scripts and styles emptied",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Error Page</title><style></style></head><body>\n    <div class=\"hdr\">#1 Home Improvement Retailer</div>\n\n    <main class=\"err\"><div class=\"msg\">Oops!! Something went wrong. Please refresh page</div>\n        <button class=\"btn\" id=\"refreshBtn\" type=\"button\">Refresh</button>\n    </main><script></script><script defer type=\"text/javascript\" src=\"https://assets.thdstatic.com/core/global-privacy-control/v1.6.0/gpc.js\"></script><div class=\"ftr\">\n        How doers get more done™<br>\n        Need Help? Visit our\n        <a href=\"https://www.homedepot.com/c/customer-service\" target=\"_blank\" rel=\"noopener noreferrer\">Customer Service Center</a>\n    </div>\n\n</body></html>",
+  "frame_urls": []
+ },
+ "expect": null
+}

@@ -1,0 +1,22 @@
+{
+ "name": "dd.hard",
+ "source": "response-classifier golden fixture 'dd.hard': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "content-type": "text/html;charset=utf-8",
+   "x-datadome": "protected"
+  },
+  "cookies": {
+   "datadome": "redacted"
+  },
+  "html": "<html><head><title>example.com</title></head><body><p id=\"cmsg\">Please enable JS and disable any ad blocker</p><script>var dd={'rt':'c','cid':'AHrlqAAAAAMA','hsh':'0B','t':'bv','s':1,'host':'geo.captcha-delivery.com'}</script><script src=\"https://ct.captcha-delivery.com/c.js\"></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "datadome",
+  "kind": "ban",
+  "rule": "dd.hard"
+ }
+}

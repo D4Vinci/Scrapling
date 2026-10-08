@@ -1,0 +1,20 @@
+{
+ "name": "akamai.block",
+ "source": "response-classifier golden fixture 'akamai.block': synthetic, from vendor documentation (re-capture when first seen) (Akamai Reference # not re-verified)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "server": "AkamaiGHost",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title>Access Denied</title></head><body><h1>Access Denied</h1><p>You don't have permission to access \"http://www.example.com/\" on this server.</p><p>Reference #18.1a2b3c4d.1791400000.5e6f7a8b</p><p>https://errors.edgesuite.net/18.1a2b3c4d.1791400000.5e6f7a8b</p></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "akamai",
+  "kind": "block",
+  "rule": "akamai.block"
+ }
+}

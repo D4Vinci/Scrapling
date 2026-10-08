@@ -1,0 +1,20 @@
+{
+ "name": "cf.rate_limit",
+ "source": "response-classifier golden fixture 'cf.rate_limit': synthetic, from vendor documentation (re-capture when first seen) (Cloudflare 1015 copy not re-verified)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 429,
+  "headers": {
+   "server": "cloudflare",
+   "content-type": "text/plain"
+  },
+  "cookies": {},
+  "html": "error code: 1015",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "cloudflare",
+  "kind": "block",
+  "rule": "cf.rate_limit"
+ }
+}

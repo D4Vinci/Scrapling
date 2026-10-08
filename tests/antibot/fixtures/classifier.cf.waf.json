@@ -1,0 +1,20 @@
+{
+ "name": "cf.waf",
+ "source": "response-classifier golden fixture 'cf.waf': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "server": "cloudflare",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title>Attention Required! | Cloudflare</title></head><body><h1>Sorry, you have been blocked</h1><p>You are unable to access example.com</p><p>Cloudflare Ray ID: 8a1b2c3d4e5f6789</p></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "cloudflare",
+  "kind": "block",
+  "rule": "cf.waf"
+ }
+}

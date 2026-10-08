@@ -1,0 +1,20 @@
+{
+ "name": "aws.captcha",
+ "source": "response-classifier golden fixture 'aws.captcha': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 405,
+  "headers": {
+   "x-amzn-waf-action": "captcha",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title>Human Verification</title></head><body><div id=\"captcha-container\"></div></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "aws_waf",
+  "kind": "captcha",
+  "rule": "aws.captcha"
+ }
+}

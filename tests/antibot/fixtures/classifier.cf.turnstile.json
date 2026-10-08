@@ -1,0 +1,20 @@
+{
+ "name": "cf.turnstile",
+ "source": "response-classifier golden fixture 'cf.turnstile': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 200,
+  "headers": {
+   "server": "cloudflare",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title>Verify</title></head><body><h1>Verify you are human</h1><form><div class=\"cf-turnstile\" data-sitekey=\"0x4AAAAAAA\"></div></form><script src=\"https://challenges.cloudflare.com/turnstile/v0/api.js\"></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "cloudflare",
+  "kind": "captcha",
+  "rule": "cf.turnstile"
+ }
+}

@@ -1,0 +1,22 @@
+{
+ "name": "cf.challenge",
+ "source": "response-classifier golden fixture 'cf.challenge': capture over a residential connection (2026-10-07)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "cf-mitigated": "challenge",
+   "cf-ray": "a46f6ae20b04236d-SJC",
+   "content-type": "text/html; charset=UTF-8",
+   "server": "cloudflare"
+  },
+  "cookies": {},
+  "html": "<html lang=\"en-US\"><head><title>Just a moment...</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"content-security-policy\" content=\"default-src 'none'; script-src 'nonce-QbaiplqCaxPVMdhWq1qPuo' 'unsafe-eval' https://challenges.cloudflare.com; script-src-attr 'none'; style-src 'unsafe-inline'; img-src 'self' https://challenges.cloudflare.com; connect-src 'self' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com blob:; child-src 'self' https://challenges.cloudflare.com blob:; worker-src blob:; form-action http: https:; base-uri 'self'\"><style>*{box-sizing:border-box;margin:0;padding:0}html{line-height:1.15;-webkit-text-size-adjust:100%;color:#313131;font-family:system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,\"Helvetica Neue\",Arial,\"Noto Sans\",sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\",\"Segoe UI Symbol\",\"Noto Color Emoji\"}body{display:flex;flex-direction:column;height:100vh;min-height:100vh}.main-content{margin:8rem auto;padding-left:1.5rem;max-width:60rem}@media (width <= 720px){.main-content{margin-top:4rem}}#challenge-error-text{background-image:url(\"data:image/svg+xml;base64,REDACTED\");background-repeat:no-repeat;background-size:contain;padding-left:34px}</style><meta http-equiv=\"refresh\" content=\"360\"></head><body><div class=\"main-wrapper\" role=\"main\"><div class=\"main-content\"><noscript><div class=\"h2\"><span id=\"challenge-error-text\">Enable JavaScript and cookies to continue</span></div></noscript></div></div><script nonce=\"QbaiplqCaxPVMdhWq1qPuo\">(function(){window._cf_chl_opt = {cFPWv: 'g',cH: '4.REDACTED.2.1.REDACTED',cITimeS: '1791402445',cN: 'QbaiplqCaxPVMdhWq1qPuo',cRay: 'a46f6ae20b04236d',cTplB: '0',cTplC:0,cTplO:0,cTplV:5,cType: 'managed',cUPMDTk:\"/cloudflare-challenge?REDACTED.0.1.1-Ja.REDACTED\",cvId: '3',cZone: 'www.scrapingcourse.com',fa:\"/cloudflare-challenge?REDACTED.0.1.1-Ja.REDACTED\",md: '1JU71TtLcmcqOgzR9._.REDACTED.2.1.1-9R5k1Okos.EAcBLbmvbAx.REDACTED.REDACTED.BRMHMZjFfAjXqOdl.REDACTED.REDACTED.REDACTED.REDACTED.HmSPWzKJK3ZvR64K1ad.REDACTED.REDACTED.SAY87LVOo.REDACTED.Y.sdIQ_Fm.DZYQ4lwA7wn6.REDACTED.VBfxfT_40ApIWKx.REDACTED',mdrd: 'REDACTED.2.1.1-Kvt.UOmtgnFQuf2Wk10cQgmi.REDACTED.REDACTED.REDACTED.REDACTED.BTIxuq8lynM9XZKt2JPwFXL4LdeuQ.REDACTED.EinrT70McVn2IL5.Y3CS.u4pFzVjSPyA3qbMe4lr.QJQ.REDACTED',};var a = document.createElement('script');a.nonce = 'QbaiplqCaxPVMdhWq1qPuo';a.src = '/cdn-cgi/challenge-platform/h/g/orchestrate/chl_page/v1?ray=a46f6ae20b04236d';window._cf_chl_opt.cOgUHash = location.hash === '' && location.href.indexOf('#') !== -1 ? '#' : location.hash;window._cf_chl_opt.cOgUQuery = location.search === '' && location.href.slice(0, location.href.length - window._cf_chl_opt.cOgUHash.length).indexOf('?') !== -1 ? '?' : location.search;if (window.history && window.history.replaceState) {var ogU = location.pathname + window._cf_chl_opt.cOgUQuery + window._cf_chl_opt.cOgUHash;history.replaceState(null, null,\"/cloudflare-challenge?REDACTED.0.1.1-Ja.REDACTED\"+ window._cf_chl_opt.cOgUHash);a.onload = function() {history.replaceState(null, null, ogU);}}document.getElementsByTagName('head')[0].appendChild(a);}());</script></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "cloudflare",
+  "kind": "challenge",
+  "rule": "cf.challenge"
+ }
+}

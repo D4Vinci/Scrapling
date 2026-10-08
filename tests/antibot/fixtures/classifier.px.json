@@ -1,0 +1,21 @@
+{
+ "name": "px",
+ "source": "response-classifier golden fixture 'px': synthetic, from vendor documentation (re-capture when first seen) (PX JSON variant not re-verified)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {
+   "_pxhd": "redacted"
+  },
+  "html": "<!doctype html><html><head><title>Access to this page has been denied</title></head><body><div id=\"px-captcha\"></div><p>Press &amp; Hold to confirm you are a human (and not a bot).</p><script>window._pxAppId = \"PXabcdef12\";</script><script src=\"https://captcha.px-cdn.net/PXabcdef12/captcha.js\"></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "perimeterx",
+  "kind": "captcha",
+  "rule": "px.hold"
+ }
+}

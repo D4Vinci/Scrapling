@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Challenge</title></head>
+<body>
+<p>Checking your browser before you access the site.</p>
+<script>
+  // With ?self=1 the challenge page "solves itself" after the duration (the real one runs the proof of work).
+  var frame = window.frameElement, duration = frame ? parseInt(frame.getAttribute("data-duration"), 10) : 1;
+  if (location.search.indexOf("loop=1") >= 0) {
+    // An interstitial that keeps reloading into itself and never clears.
+    setTimeout(function () { top.location.reload(); }, 1500);
+  }
+  if (location.search.indexOf("self=1") >= 0) {
+    setTimeout(function () {
+      fetch("/_sec/cp_challenge/self-solve", {method: "POST"}).then(function () { top.location.reload(); });
+    }, duration * 1000);
+  }
+</script>
+</body></html>

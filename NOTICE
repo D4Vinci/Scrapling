@@ -1,0 +1,119 @@
+Scrapling
+Copyright (c) 2024, Karim shoair. Licensed under the BSD 3-Clause License (see LICENSE).
+
+The anti-bot handlers in scrapling/engines/antibot/ include code and ideas derived from the projects below. Each is
+used under its own license, reproduced or referenced here as that license requires. Every listed file carries a
+pointer back to this notice, and all of them were modified (async Patchright API, deadline-bounded waits, no
+recorded traces, isolated-world reads).
+
+------------------------------------------------------------------------------------------------------------------
+Averyy/wafer - https://github.com/Averyy/wafer (commit 4d5f70e)
+Copyright 2026 Avery
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use these files except in compliance
+with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless
+required by applicable law or agreed to in writing, software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+Derived from wafer/_challenge.py, wafer/browser/_solver.py, _datadome.py, _perimeterx.py, _akamai.py, _imperva.py,
+_awswaf.py and _kasada.py:
+  - scrapling/engines/antibot/headless.py (macOS display query, --screen-info switch, toolbar height, unflattened
+    target router, child-target commands)
+  - scrapling/engines/antibot/datadome.py (cookie-and-frame wait, confirm click, t=bv stop)
+  - scrapling/engines/antibot/_px_solver.py and _pointer.py (press-and-hold flow, progress-bar read, decoy frames,
+    honeypot floor, release timing)
+  - scrapling/engines/antibot/_akamai_solver.py (challenge-document wait)
+  - scrapling/engines/antibot/imperva.py and _imperva_solver.py (interstitial hooks and rules, cookie wait)
+  - scrapling/engines/antibot/awswaf.py and _awswaf_solver.py (markers, challenge wait)
+  - scrapling/engines/antibot/kasada.py and _kasada_solver.py (status gating, markers, token listener)
+  - scrapling/engines/antibot/cloudflare.py (_cf_chl_ctx marker, error-page check)
+
+------------------------------------------------------------------------------------------------------------------
+Crawl4AI - https://github.com/unclecode/crawl4ai
+Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+
+This product includes software developed by UncleCode (https://x.com/unclecode) as part of the Crawl4AI project
+(https://github.com/unclecode/crawl4ai).
+
+Derived from crawl4ai/antibot_detector.py: the Akamai "Reference #" block-page pattern in
+scrapling/engines/antibot/akamai.py.
+
+------------------------------------------------------------------------------------------------------------------
+Hyper Solutions hyper-sdk-py - https://github.com/Hyper-Solutions/hyper-sdk-py (commit c494cbb)
+Used in scrapling/engines/antibot/_akamai_solver.py (hyper_sdk/akamai/sec_cpt.py, stop_signal.py, script_path.py),
+modified.
+
+MIT License
+
+Copyright (c) 2024 Hyper Solutions
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------------------------------------------------------------------------------------------------
+SeleniumBase - https://github.com/seleniumbase/SeleniumBase
+Used in scrapling/engines/antibot/datadome.py (slider selectors div.slider / div.sliderTarget, from
+seleniumbase/core/sb_cdp.py) and _imperva_solver.py (the Incapsula hCaptcha checkbox offset).
+
+The MIT License (MIT)
+
+Copyright (c) 2014-2026 Michael Mintz
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------------------------------------------------------------------------------------------------
+xKiian/awswaf - https://github.com/xKiian/awswaf
+Used in scrapling/engines/antibot/_awswaf_solver.py (the /problem, /verify and /voucher endpoint shapes and the
+gokuProps layout).
+
+MIT License
+
+Copyright (c) 2025
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -1,0 +1,24 @@
+{
+ "name": "dd.device",
+ "source": "response-classifier golden fixture 'dd.device': verdict shape from the 2026-10-07 probe (fk2 §1: rt:i, x-dd-b 259); identifiers shortened",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "content-type": "text/html;charset=utf-8",
+   "server": "DataDome",
+   "x-datadome": "protected",
+   "x-dd-b": "259"
+  },
+  "cookies": {
+   "datadome": "redacted"
+  },
+  "html": "<html lang=\"en\"><head><title>example.com</title><style>#cmsg{animation: A 1.5s;}</style></head><body style=\"margin:0\"><p id=\"cmsg\">Please enable JS and disable any ad blocker</p><script data-cfasync=\"false\">var dd={'rt':'i','cid':'AHrlqAAAAAMA','hsh':'0B','t':'fe','s':1,'e':'00','host':'geo.captcha-delivery.com'}</script><script data-cfasync=\"false\" src=\"https://ct.captcha-delivery.com/i.js\"></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "datadome",
+  "kind": "device_check",
+  "rule": "dd.device"
+ }
+}

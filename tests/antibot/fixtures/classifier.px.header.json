@@ -1,0 +1,20 @@
+{
+ "name": "px.header",
+ "source": "response-classifier golden fixture 'px.header': synthetic, from the x-px-blocked header our zillow client reads",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "x-px-blocked": "1",
+   "content-type": "application/json"
+  },
+  "cookies": {},
+  "html": "{\"appId\":\"PXabcdef12\",\"jsClientSrc\":\"/abcdef12/init.js\",\"blockScript\":\"/abcdef12/captcha/captcha.js\"}",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "perimeterx",
+  "kind": "block",
+  "rule": "px.header"
+ }
+}

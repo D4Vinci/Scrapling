@@ -1,0 +1,21 @@
+{
+ "name": "akamai.sec_cpt",
+ "source": "response-classifier golden fixture 'akamai.sec_cpt': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 428,
+  "headers": {
+   "content-type": "application/json"
+  },
+  "cookies": {
+   "sec_cpt": "redacted"
+  },
+  "html": "{\"sec-cp-challenge\":\"true\",\"provider\":\"crypto\",\"branding_url_content\":\"/_sec/cp_challenge/crypto_message-4-3.htm\",\"chlg_duration\":30}",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "akamai",
+  "kind": "challenge",
+  "rule": "akamai.sec_cpt"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "name": "order.header_beats_body",
+ "source": "response-classifier golden fixture 'order.header_beats_body': synthetic: an explicit header wins over body markers",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "cf-mitigated": "challenge",
+   "server": "cloudflare",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title>example.com</title></head><body><script>var dd={'rt':'c','host':'geo.captcha-delivery.com'}</script><div id=\"px-captcha\"></div></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "cloudflare",
+  "kind": "challenge",
+  "rule": "cf.challenge"
+ }
+}

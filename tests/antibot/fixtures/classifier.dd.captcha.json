@@ -1,0 +1,24 @@
+{
+ "name": "dd.captcha",
+ "source": "response-classifier golden fixture 'dd.captcha': capture over a residential connection (2026-10-07)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "content-type": "text/html;charset=utf-8",
+   "via": "1.1 REDACTED.cloudfront.net (CloudFront)",
+   "x-cache": "Error from cloudfront",
+   "x-datadome": "protected"
+  },
+  "cookies": {
+   "datadome": "redacted"
+  },
+  "html": "<html lang=\"en\"><head><title>leboncoin.fr</title><style>#cmsg{animation: A 1.5s;}@keyframes A{0%{opacity:0;}99%{opacity:0;}100%{opacity:1;}}</style></head><body style=\"margin:0\"><p id=\"cmsg\">Please enable JS and disable any ad blocker</p><script data-cfasync=\"false\">var dd={'rt':'c','cid':'REDACTED','hsh':'REDACTED','t':'fe','qp':'','s':2089,'e':'REDACTED','host':'geo.captcha-delivery.com','cookie':'REDACTED'}</script><script data-cfasync=\"false\" src=\"https://ct.captcha-delivery.com/c.js\"></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "datadome",
+  "kind": "captcha",
+  "rule": "dd.captcha"
+ }
+}

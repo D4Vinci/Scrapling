@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Access to this page has been denied</title>
+<style>.px-captcha-container{margin:40px auto;width:320px}</style>
+</head>
+<body>
+<div class="px-captcha-container">
+  <p class="px-captcha-message">Press &amp; Hold to confirm you are a human (and not a bot).</p>
+  <div id="px-captcha"></div>
+  <p class="px-captcha-refid">Reference ID 0f1e2d3c-test</p>
+</div>
+<script>
+  window._pxAppId = "PXtest1234";
+  window._pxJsClientSrc = "/px/client.js";
+  // Like captcha.js: a few invisible decoy frames with the same title, then the real widget.
+  setTimeout(function () {
+    var box = document.getElementById("px-captcha");
+    for (var i = 0; i < 3; i++) {
+      var decoy = document.createElement("iframe");
+      decoy.style.cssText = "width:0;height:0;border:0;position:absolute;left:-9999px";
+      decoy.srcdoc = '<title>Human verification challenge</title><div role="button" style="width:0;height:0"></div>';
+      box.appendChild(decoy);
+    }
+    var widget = document.createElement("iframe");
+    widget.src = "/px/widget";
+    widget.style.cssText = "width:310px;height:100px;border:0;display:block";
+    box.appendChild(widget);
+  }, 400);
+  window.addEventListener("message", function (event) {
+    if (event.data === "px-solved") { location.reload(); }
+  });
+</script>
+</body>
+</html>

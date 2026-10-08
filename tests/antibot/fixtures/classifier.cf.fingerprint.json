@@ -1,0 +1,20 @@
+{
+ "name": "cf.fingerprint",
+ "source": "response-classifier golden fixture 'cf.fingerprint': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "server": "cloudflare",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title>Access denied</title></head><body><h1>Error 1010</h1><p>Access denied</p><p>The owner of this website has banned your access based on your browser's signature.</p><p>error code: 1010</p></body></html>",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "cloudflare",
+  "kind": "block",
+  "rule": "cf.fingerprint"
+ }
+}

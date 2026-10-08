@@ -1,0 +1,22 @@
+{
+ "name": "akamai.sbsd",
+ "source": "response-classifier golden fixture 'akamai.sbsd': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 429,
+  "headers": {
+   "content-type": "application/json"
+  },
+  "cookies": {
+   "bm_sz": "redacted",
+   "sbsd_o": "redacted"
+  },
+  "html": "{\"t\":\"8c1a\",\"s\":\"/_sbsd/x\"}",
+  "frame_urls": []
+ },
+ "expect": {
+  "vendor": "akamai",
+  "kind": "challenge",
+  "rule": "akamai.sbsd"
+ }
+}

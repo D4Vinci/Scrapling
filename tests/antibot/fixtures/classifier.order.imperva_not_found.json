@@ -1,0 +1,20 @@
+{
+ "name": "order.imperva_not_found",
+ "source": "response-classifier golden fixture 'order.imperva_not_found': synthetic: a 404 page from an Imperva-fronted site, which carries X-Iinfo on every response (negative case)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 404,
+  "headers": {
+   "x-iinfo": "10-12345678-12345679 NNNN CT(0 0 0) RT(1791400000000 0) q(0 0 0 -1) r(0 0) U6",
+   "x-cdn": "Imperva",
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {
+   "visid_incap_123": "redacted",
+   "incap_ses_456_123": "redacted"
+  },
+  "html": "<!doctype html><html><head><title>Product not found</title></head><body><main><h1>Product not found</h1><p>The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item. The product you followed a link to is no longer sold here; browse the catalogue or search for a similar item.</p></main></body></html>",
+  "frame_urls": []
+ },
+ "expect": null
+}

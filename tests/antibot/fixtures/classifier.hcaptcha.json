@@ -1,0 +1,15 @@
+{
+ "name": "hcaptcha",
+ "source": "response-classifier golden fixture 'hcaptcha': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 200,
+  "headers": {
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {},
+  "html": "<!doctype html><html><head><title>Checking</title></head><body><div class=\"h-captcha\" data-sitekey=\"10000000-ffff-ffff-ffff-000000000001\"></div><script src=\"https://js.hcaptcha.com/1/api.js\" async defer></script></body></html>",
+  "frame_urls": []
+ },
+ "expect": null
+}

@@ -1,0 +1,17 @@
+{
+ "name": "f5.asm",
+ "source": "response-classifier golden fixture 'f5.asm': synthetic, from vendor documentation (re-capture when first seen) (F5 copy not re-verified)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 200,
+  "headers": {
+   "content-type": "text/html; charset=utf-8"
+  },
+  "cookies": {
+   "TS01abcdef": "redacted"
+  },
+  "html": "<!doctype html><html><head><title>Request Rejected</title></head><body>The requested URL was rejected. Please consult with your administrator.<br><br>Your support ID is: 1234567890123456789</body></html>",
+  "frame_urls": []
+ },
+ "expect": null
+}

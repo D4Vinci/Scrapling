@@ -1,0 +1,17 @@
+{
+ "name": "vercel.deny",
+ "source": "response-classifier golden fixture 'vercel.deny': synthetic, from vendor documentation (re-capture when first seen)",
+ "signal": {
+  "url": "https://www.example.com/",
+  "status": 403,
+  "headers": {
+   "x-vercel-mitigated": "deny",
+   "server": "Vercel",
+   "content-type": "text/plain"
+  },
+  "cookies": {},
+  "html": "Forbidden",
+  "frame_urls": []
+ },
+ "expect": null
+}

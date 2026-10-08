@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Human verification challenge</title>
+<style>
+  body { margin: 0; font: 14px sans-serif; }
+  #btn { position: relative; z-index: 0; width: 280px; height: 70px; margin: 10px; border: 2px solid #333;
+         display: flex; align-items: center; justify-content: center; user-select: none; }
+  #bar { position: absolute; z-index: -1; left: 0; top: 0; height: 100%; width: 0; background: #9cf; }
+</style></head>
+<body>
+<div role="button" id="btn" aria-label="Press &amp; Hold"><div id="bar"></div><span>Press &amp; Hold</span></div>
+<p id="msg"></p>
+<script>
+  // NEED_MS: how long the server-side check wants the hold; FILL_MS: how fast the bar fills (a honeypot when
+  // shorter than NEED_MS); ALWAYS_FAIL: never accept the hold.
+  var NEED_MS = %NEED_MS%, FILL_MS = %FILL_MS%, ALWAYS_FAIL = %ALWAYS_FAIL%;
+  var btn = document.getElementById("btn"), bar = document.getElementById("bar"), msg = document.getElementById("msg");
+  var start = null, moves = 0, timer = null;
+  btn.addEventListener("mousedown", function () {
+    start = performance.now(); moves = 0; msg.textContent = "";
+    timer = setInterval(function () {
+      bar.style.width = Math.min(100, (performance.now() - start) / FILL_MS * 100) + "%";
+    }, 50);
+  });
+  document.addEventListener("mousemove", function () { if (start !== null) { moves++; } });
+  document.addEventListener("mouseup", function () {
+    if (start === null) { return; }
+    var held = performance.now() - start;
+    clearInterval(timer); start = null;
+    if (!ALWAYS_FAIL && held >= NEED_MS && moves >= 5) {
+      fetch("/px/collect", {method: "POST", body: JSON.stringify({held: held, moves: moves})})
+        .then(function () { parent.postMessage("px-solved", "*"); });
+    } else {
+      bar.style.width = "0";
+      msg.textContent = "Please try again";
+      fetch("/px/fail", {method: "POST", body: JSON.stringify({held: held, moves: moves})});
+    }
+  });
+</script>
+</body>
+</html>
