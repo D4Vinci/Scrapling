@@ -22,6 +22,9 @@ from scrapling.core._types import Any
         RuntimeError("page busy"),
         PatchrightError("page closed"),
         CurlError("connection failed"),
+        FileNotFoundError("state file missing"),
+        PermissionError("state file denied"),
+        IsADirectoryError("state path is a directory"),
     ],
 )
 async def test_expected_tool_errors_keep_their_message(error: Exception) -> None:

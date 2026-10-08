@@ -43,6 +43,8 @@ MCP_TOOLS = {
     "open_request_session",
     "session_make_request",
     "browser_open",
+    "browser_save_state",
+    "browser_load_state",
     "browser_fetch",
     "browser_actions",
     "browser_evaluate",
@@ -1300,6 +1302,8 @@ class TestServerToolRegistration:
         assert tools["browser_extract"].output_schema is None
         assert tools["browser_actions"].output_schema is None
         assert tools["browser_evaluate"].output_schema is None
+        assert tools["browser_save_state"].output_schema is None
+        assert tools["browser_load_state"].output_schema is None
         assert {
             "browser_type",
             "browser_fill_form",
@@ -1331,6 +1335,8 @@ class TestServerToolRegistration:
                 "browser_extract",
                 "browser_actions",
                 "browser_evaluate",
+                "browser_save_state",
+                "browser_load_state",
             )
         )
 
@@ -1474,7 +1480,7 @@ class TestServerToolRegistration:
             assert annotations[name].open_world_hint is True
         assert annotations["list_sessions"].read_only_hint is True
         assert annotations["list_sessions"].open_world_hint is False
-        for name in ("browser_actions", "browser_evaluate"):
+        for name in ("browser_actions", "browser_evaluate", "browser_save_state", "browser_load_state"):
             assert annotations[name].read_only_hint is False
             assert annotations[name].destructive_hint is True
             assert annotations[name].idempotent_hint is False

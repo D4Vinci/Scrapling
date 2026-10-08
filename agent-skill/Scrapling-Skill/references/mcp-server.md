@@ -1,6 +1,6 @@
 # Scrapling MCP Server
 
-The Scrapling MCP server exposes fourteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), plain HTTP requests and stealth browser rendering with anti-bot bypass, persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, network history, and page screenshots returned as real image content blocks. Every fetch takes one URL. One-shot tools (`make_request`, `browser_fetch_once`) close their own client or browser after the call. Use sessions opened with `browser_open` or `open_request_session` for related requests, browser actions, or network history. Browser session calls reuse one tab, so fetch pages and run actions in order. Close each persistent session when done.
+The Scrapling MCP server exposes sixteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), plain HTTP requests and stealth browser rendering with anti-bot bypass, persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, network history, and page screenshots returned as real image content blocks. Every fetch takes one URL. One-shot tools (`make_request`, `browser_fetch_once`) close their own client or browser after the call. Use sessions opened with `browser_open` or `open_request_session` for related requests, browser actions, or network history. Browser session calls reuse one tab, so fetch pages and run actions in order. Close each persistent session when done.
 
 Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_extract` and `browser_actions` return plain text. Both network tools return structured JSON; the request list supports pagination. `browser_evaluate` returns compact JSON in one plain text block.
 
@@ -110,6 +110,23 @@ Opens an HTTP session (no browser) that stays alive across multiple `session_mak
 | `session_id`  | str or null | null       | Custom ID for the session. If omitted, a random 12-char hex ID is generated. Raises if already in use |
 | `impersonate` | str         | `"chrome"` | Browser fingerprint to impersonate on every request                                                   |
 | `proxy`       | str or null | null       | Proxy URL used for every request, e.g. `"http://user:pass@host:port"`                                 |
+
+### `browser_save_state` and `browser_load_state` -- Save or restore browser storage
+
+Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file, or replace an open browser session's stored state from that file. Both tools use the session's `save_state` and `load_state` methods. They work immediately after `browser_open`; no `browser_fetch` is required. HTTP sessions are not supported.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `session_id` | str | required | ID from `browser_open` |
+| `path` | nonempty str | required | JSON file path on the MCP server host; relative paths use its working directory |
+
+Saving overwrites the file, and its parent directory must exist. Loading replaces cookies, local storage and IndexedDB. It leaves `sessionStorage` and open tabs unchanged; fetch or reload pages to use the restored login. The file does not save `sessionStorage`, tabs or browser settings. Finish other calls in the session before saving or loading.
+
+```json
+{"session_id": "browser", "path": "state.json"}
+```
+
+Save returns `State saved.` and load returns `State loaded.` as plain text, with no storage values in the response. Unknown, closed or HTTP sessions, invalid paths, unreadable files and malformed JSON return errors. These tools do not open or close sessions.
 
 ### `browser_fetch` -- Fetch through an open browser session (single URL)
 
@@ -356,6 +373,7 @@ The page stays reserved during capture and is released after success, failure, o
 | Single JavaScript-rendered / SPA page | `browser_fetch_once` |
 | Single page with Cloudflare protection | `browser_fetch_once` with `solve_cloudflare=true` |
 | Related HTTP requests | `open_request_session` + `session_make_request` per URL |
+| Reuse browser login state across sessions | `browser_save_state` / `browser_load_state` with `session_id` and `path` |
 | Browser automation or network history | `browser_open` + `browser_fetch` per URL |
 | Capture the current page or an element   | `browser_screenshot` after `browser_open` + `browser_fetch` |
 | Read the current page or one element as a snapshot, HTML, Markdown, or text | `browser_extract` with `session_id`                          |
@@ -453,7 +471,7 @@ The MCP server name when registering with a client is `ScraplingServer`. The com
 
 ## Connecting to remote browsers
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, and `browser_network_request` as usual.
+`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, and `browser_load_state` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
 
