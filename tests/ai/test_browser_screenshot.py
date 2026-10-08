@@ -427,6 +427,7 @@ async def test_browser_screenshot_reserves_page_until_cancelled(
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_screenshot_live_preserves_actions_and_current_page() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))

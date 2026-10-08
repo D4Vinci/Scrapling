@@ -1,17 +1,18 @@
 import pytest
 import pytest_httpbin
 
-from scrapling import DynamicFetcher
+from scrapling import StealthyFetcher
 
-DynamicFetcher.adaptive = True
+StealthyFetcher.adaptive = True
 
 
+@pytest.mark.browser
 @pytest_httpbin.use_class_based_httpbin
-class TestDynamicFetcher:
+class TestStealthyFetcher:
     @pytest.fixture(scope="class")
     def fetcher(self):
         """Fixture to create a StealthyFetcher instance for the entire test class"""
-        return DynamicFetcher
+        return StealthyFetcher
 
     @pytest.fixture(autouse=True)
     def setup_urls(self, httpbin):
@@ -21,20 +22,17 @@ class TestDynamicFetcher:
         self.status_501 = f"{httpbin.url}/status/501"
         self.basic_url = f"{httpbin.url}/get"
         self.html_url = f"{httpbin.url}/html"
-        self.delayed_url = f"{httpbin.url}/delay/10"  # 10 Seconds delay response
+        self.delayed_url = f"{httpbin.url}/delay/10"
         self.cookies_url = f"{httpbin.url}/cookies/set/test/value"
 
     def test_basic_fetch(self, fetcher):
         """Test doing a basic fetch request with multiple statuses"""
         assert fetcher.fetch(self.status_200).status == 200
-        # There's a bug with playwright makes it crashes if a URL returns status code 4xx/5xx without body, let's disable this till they reply to my issue report
-        # assert fetcher.fetch(self.status_404).status == 404
-        # assert fetcher.fetch(self.status_501).status == 501
 
     def test_cookies_loading(self, fetcher):
         """Test if cookies are set after the request"""
         response = fetcher.fetch(self.cookies_url)
-        cookies = {response.cookies[0]['name']: response.cookies[0]['value']}
+        cookies = {response.cookies[0]["name"]: response.cookies[0]["value"]}
         assert cookies == {"test": "value"}
 
     def test_automation(self, fetcher):
@@ -75,9 +73,6 @@ class TestDynamicFetcher:
 
     def test_cdp_url_invalid(self, fetcher):
         """Test if invalid CDP URLs raise appropriate exceptions"""
-        with pytest.raises(TypeError):
-            fetcher.fetch(self.html_url, cdp_url="blahblah")
-
         with pytest.raises(TypeError):
             fetcher.fetch(self.html_url, cdp_url="blahblah")
 

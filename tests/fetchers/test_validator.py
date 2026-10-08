@@ -1,7 +1,7 @@
 import pytest
 from types import SimpleNamespace
 
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, DynamicSession, StealthySession
+from scrapling.fetchers import AsyncStealthySession, StealthySession
 from scrapling.engines._browsers._validators import (
     validate,
     validate_fetch,
@@ -37,9 +37,7 @@ class TestValidators:
         assert params.timeout == config.timeout
         assert not hasattr(params, "unknown_option")
 
-    @pytest.mark.parametrize(
-        "session_type", [DynamicSession, StealthySession, AsyncDynamicSession, AsyncStealthySession]
-    )
+    @pytest.mark.parametrize("session_type", [StealthySession, AsyncStealthySession])
     def test_removed_xhr_option_is_rejected_by_sessions(self, session_type):
         with pytest.raises(TypeError, match="capture_xhr was removed"):
             session_type(capture_xhr=".*")

@@ -25,6 +25,7 @@ def check_clean_output(response: Response, visible: tuple[str, ...], hidden: tup
         assert all(value not in output for value in hidden)
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("attrs", "key", "value"), HIDDEN_ATTRIBUTES)
 async def test_hidden_slots_keep_attributes_and_assigned_content(attrs: str, key: str, value: str) -> None:
@@ -66,6 +67,7 @@ async def test_hidden_slots_keep_attributes_and_assigned_content(attrs: str, key
     assert response.body.decode() == body
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("assigned", [False, True])
 @pytest.mark.parametrize(("attrs", "key", "value"), HIDDEN_ATTRIBUTES)

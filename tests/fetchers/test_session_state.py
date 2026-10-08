@@ -6,7 +6,7 @@ import pytest
 
 from scrapling.core._types import Any
 from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, DynamicSession, StealthySession
+from scrapling.fetchers import AsyncStealthySession, StealthySession
 
 
 URL = "http://state.test/"
@@ -82,7 +82,8 @@ def _check_json(path: Path, native_state: dict[str, Any]) -> None:
     assert "sessionStorage" not in origin
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_state_round_trip(session_type: Any, tmp_path: Path) -> None:
     path, native_path = tmp_path / "state.json", tmp_path / "native.json"
     with session_type(**_options()) as source:
@@ -114,8 +115,9 @@ def test_sync_state_round_trip(session_type: Any, tmp_path: Path) -> None:
         _check_json(path, loads(native_path.read_text()))
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_state_round_trip(session_type: Any, tmp_path: Path) -> None:
     async def route_page(route: Any) -> None:
         await route.fulfill(body=HTML, content_type="text/html")
@@ -150,7 +152,8 @@ async def test_async_state_round_trip(session_type: Any, tmp_path: Path) -> None
         _check_json(path, loads(native_path.read_text()))
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_state_file_errors(session_type: Any, tmp_path: Path) -> None:
     invalid = tmp_path / "invalid.json"
     invalid.write_text("{")
@@ -166,8 +169,9 @@ def test_sync_state_file_errors(session_type: Any, tmp_path: Path) -> None:
             session.save_state("")
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_state_file_errors(session_type: Any, tmp_path: Path) -> None:
     invalid = tmp_path / "invalid.json"
     invalid.write_text("{")
@@ -183,7 +187,7 @@ async def test_async_state_file_errors(session_type: Any, tmp_path: Path) -> Non
             await session.save_state("")
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_state_before_start(session_type: Any, tmp_path: Path) -> None:
     session = session_type(**_options())
     for method in (session.save_state, session.load_state):
@@ -192,7 +196,7 @@ def test_sync_state_before_start(session_type: Any, tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_state_before_start(session_type: Any, tmp_path: Path) -> None:
     session = session_type(**_options())
     for method in (session.save_state, session.load_state):
@@ -200,7 +204,8 @@ async def test_async_state_before_start(session_type: Any, tmp_path: Path) -> No
             await method(tmp_path / "state.json")
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_state_with_proxy_rotation(session_type: Any, tmp_path: Path) -> None:
     with session_type(**_options(proxy_rotator=ProxyRotator(["http://127.0.0.1:1"]))) as session:
         for method in (session.save_state, session.load_state):
@@ -208,8 +213,9 @@ def test_sync_state_with_proxy_rotation(session_type: Any, tmp_path: Path) -> No
                 method(tmp_path / "state.json")
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_state_with_proxy_rotation(session_type: Any, tmp_path: Path) -> None:
     async with session_type(**_options(proxy_rotator=ProxyRotator(["http://127.0.0.1:1"]))) as session:
         for method in (session.save_state, session.load_state):

@@ -169,6 +169,7 @@ class TestOneShotTools:
         assert len(sessions) == 4 and all(not session._is_alive for session in sessions)
         assert not server._sessions
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_browser_fetch_once_renders_and_closes_through_mcp(self, monkeypatch):
         sessions: list[AsyncStealthySession] = []
@@ -409,6 +410,7 @@ class TestSessionManagement:
     def server(self):
         return ScraplingMCPServer()
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_open_and_close_session(self, server):
         """Test opening and closing a stealthy session"""
@@ -423,6 +425,7 @@ class TestSessionManagement:
         assert isinstance(closed, SessionClosedModel)
         assert closed.session_id == session_id
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_list_sessions(self, server):
         """Test listing sessions"""
@@ -445,6 +448,7 @@ class TestSessionManagement:
         # Cleanup
         await server.close_session(session_id)
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_browser_fetch_reuses_the_session(self, server, test_url):
         """Test fetching a page twice through a persistent stealthy session"""
@@ -462,6 +466,7 @@ class TestSessionManagement:
 
         await server.close_session(session_id)
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_browser_fetch_accepts_per_request_overrides(self, server, test_url):
         """A per-request override is honored on a session fetch"""
@@ -486,6 +491,7 @@ class TestSessionManagement:
         with pytest.raises(ValueError, match="not found"):
             await server.browser_fetch(url=test_url, session_id="nonexistent")
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_browser_fetch_with_closed_session(self, server, test_url):
         """Test fetching with a session that has been closed"""
@@ -496,6 +502,7 @@ class TestSessionManagement:
         with pytest.raises(ValueError, match="not found"):
             await server.browser_fetch(url=test_url, session_id=session_id)
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_browser_open_with_custom_id(self, server):
         """Test opening a session with a custom session_id"""
@@ -505,6 +512,7 @@ class TestSessionManagement:
 
         await server.close_session("my-session")
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_browser_open_duplicate_id_raises(self, server):
         """Test that opening a session with a duplicate session_id raises an error"""
@@ -1058,6 +1066,7 @@ class TestScreenshot:
     def server(self):
         return ScraplingMCPServer()
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_screenshot_png_with_stealthy_session(self, server, test_url):
         """PNG screenshot via a stealthy session returns image and url content blocks"""
@@ -1074,6 +1083,7 @@ class TestScreenshot:
         finally:
             await server.close_session(opened.session_id)
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_screenshot_jpeg_with_quality(self, server, test_url):
         """JPEG screenshot with quality parameter via a stealthy session"""
@@ -1088,6 +1098,7 @@ class TestScreenshot:
         finally:
             await server.close_session(opened.session_id)
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_screenshot_full_page_taller_than_viewport(self, server):
         """full_page=True produces an image taller than the viewport-only capture"""
@@ -1112,6 +1123,7 @@ class TestScreenshot:
         with pytest.raises(ValueError, match="not found"):
             await server.browser_screenshot(session_id="does-not-exist")
 
+    @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_screenshot_quality_with_png_raises(self, server, test_url):
         """quality is rejected when image_type is png"""

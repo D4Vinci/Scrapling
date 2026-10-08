@@ -873,6 +873,7 @@ async def test_network_missing_id_and_search_error_reach_client() -> None:
         assert result.is_error and "regular expression" in result.content[0].text
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_network_live_capture_actions_navigation_and_reads() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))

@@ -633,6 +633,7 @@ async def test_browser_mouse_chain_reports_failed_index_and_keeps_completed_acti
     assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_mouse_live_native_events_and_navigation() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
@@ -708,6 +709,7 @@ async def test_browser_mouse_live_native_events_and_navigation() -> None:
             assert not closed.is_error
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("cancel_mode", ["task", "scope"])
 @pytest.mark.parametrize("target_type", ["xy", "ref"])
@@ -774,6 +776,7 @@ async def test_browser_mouse_live_cancelled_click_releases_native_button(cancel_
             assert not closed.is_error
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("tool", ["move", "click"])
 async def test_browser_mouse_live_selectors_refs_and_scroll(tool: str) -> None:
@@ -849,6 +852,7 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(tool: str) -> None:
             assert not closed.is_error
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_mouse_click_live_timeout_releases_native_button() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))

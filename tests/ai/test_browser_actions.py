@@ -129,6 +129,7 @@ async def test_invalid_later_action_prevents_other_action_kinds(invalid: dict[st
     assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("slowly", [False, True])
 async def test_live_mixed_chain_resolves_targets_created_by_earlier_actions(slowly: bool) -> None:
@@ -188,6 +189,7 @@ async def test_live_mixed_chain_resolves_targets_created_by_earlier_actions(slow
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("kind", ["textbox", "move", "click", "wait_element"])
 async def test_live_stale_ref_stops_mixed_chain_without_retargeting(kind: str) -> None:
@@ -224,6 +226,7 @@ async def test_live_stale_ref_stops_mixed_chain_without_retargeting(kind: str) -
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_ref", [False, True])
 async def test_live_targets_keep_explicit_refs_and_ref_shaped_selectors_distinct(use_ref: bool) -> None:

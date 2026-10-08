@@ -83,6 +83,7 @@ async def test_browser_state_requires_live_browser(operation: str, kind: str, me
     session.load_state.assert_not_awaited()
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_state_live_round_trip(tmp_path: Path) -> None:
     path, native_path = tmp_path / "state.json", tmp_path / "native.json"
@@ -118,6 +119,7 @@ async def test_browser_state_live_round_trip(tmp_path: Path) -> None:
         assert await page.evaluate(READ_STATE) == SAVED_STATE
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_state_live_file_errors(tmp_path: Path) -> None:
     invalid = tmp_path / "invalid.json"

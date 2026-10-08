@@ -1,7 +1,7 @@
 from os import getenv
 
 import pytest
-from playwright.async_api import async_playwright
+from patchright.async_api import async_playwright
 
 from scrapling.core._types import extraction_types
 from scrapling.core.shell import Convertor
@@ -26,6 +26,7 @@ def check_roundtrip(content: bytes) -> None:
     assert response.body == content
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_shadow_wrappers_roundtrip_across_host_tags() -> None:
     async with async_playwright() as driver:

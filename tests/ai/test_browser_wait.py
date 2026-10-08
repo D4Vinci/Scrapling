@@ -339,6 +339,7 @@ async def _browser() -> AsyncGenerator[tuple[Client, Any, Any], None]:
             assert not (await client.call_tool("close_session", {"session_id": "browser"})).is_error
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_wait_live_pause_and_element_states() -> None:
     async with _browser() as (client, session, page):
@@ -396,6 +397,7 @@ async def test_browser_wait_live_pause_and_element_states() -> None:
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_wait_live_current_document_load_states() -> None:
     async with _browser() as (client, session, page):
@@ -452,6 +454,7 @@ async def test_browser_wait_live_current_document_load_states() -> None:
                 await asyncio.gather(task, return_exceptions=True)
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_wait_live_load_visible_hidden_chain() -> None:
     async with _browser() as (client, session, page):
