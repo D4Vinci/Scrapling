@@ -1,4 +1,5 @@
 from time import time
+from pathlib import Path
 from asyncio import sleep as asyncio_sleep, Lock
 from contextlib import contextmanager, asynccontextmanager, suppress
 
@@ -63,6 +64,24 @@ class SyncSession:
 
     def start(self) -> None:
         pass
+
+    def save_state(self, path: str | Path) -> None:
+        """Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Does not save sessionStorage.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        self.context.storage_state(path=Path(path), indexed_db=True)
+
+    def load_state(self, path: str | Path) -> None:
+        """Replace cookies, local storage and IndexedDB from a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Fetch or reload pages to use the restored login.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        self.context.set_storage_state(path)
 
     def close_pages(self) -> None:
         """Close every open tab in the session's pool. The next request opens a fresh tab."""
@@ -251,6 +270,24 @@ class AsyncSession:
 
     async def start(self) -> None:
         pass
+
+    async def save_state(self, path: str | Path) -> None:
+        """Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Does not save sessionStorage.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        await self.context.storage_state(path=Path(path), indexed_db=True)
+
+    async def load_state(self, path: str | Path) -> None:
+        """Replace cookies, local storage and IndexedDB from a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Fetch or reload pages to use the restored login.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        await self.context.set_storage_state(path)
 
     async def close_pages(self) -> None:
         """Close every open tab in the session's pool. The next request opens a fresh tab."""

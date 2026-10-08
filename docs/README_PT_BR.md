@@ -99,15 +99,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png">
-      </a>
-    </td>
-    <td> A <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank"><b>Proxidize</b></a> oferece proxies móveis e residenciais para scraping, automação de navegador, monitoramento de SEO, agentes de IA e coleta de dados. <i>Use o código <b>scrapling20</b> para 20% de desconto</i>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -200,6 +191,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Reduza os bloqueios e os CAPTCHAs em 90%. 28 milhões de IPs residenciais premium para scraping intensivo da web. 195 países. Segmentação por cidade/ISP/CEP. Sessões fixas ou rotativas. Tráfego sem prazo de validade a partir de $2/GB. Código <strong>SCRAPEANDTAKE</strong>: <em>25% de desconto</em>.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
+      </a>
+    </td>
+    <td>
+    $1/GB na <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank">DataImpulse</a>. Proxies de origem ética, direto da fonte. Mais de 90 milhões de IPs, mais de 195 países. Residenciais, de datacenter e móveis. Pagamento por uso = sem assinatura. O tráfego nunca expira.
     </td>
   </tr>
 </table>

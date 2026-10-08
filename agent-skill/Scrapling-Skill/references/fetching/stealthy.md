@@ -281,6 +281,10 @@ Saved response bytes come from Playwright and can differ from the server's origi
 
 Recording is off by default. The default limit is 1,000 requests, with fixed limits of 1 MiB per saved response body and 20 MiB combined; old records are removed when retention limits are reached. These limits do not cover total browser memory, concurrent captures, temporary full-body reads, parsed HTML, or request bodies. Check `response.meta.get('body_note')` for non-text, oversized, or unreadable bodies. Saved text, including empty text, has no note. HEAD responses and status codes 204, 205, and 304 remain empty with no note. Clearing the history does not reuse IDs. See [Network History](dynamic.md#network-history) for filters and saved response access. See [Migrating in v5](dynamic.md#migrating-in-v5) for the API capture changes.
 
+### Save and Load Session State
+
+`StealthySession` supports `session.save_state('state.json')` and `session.load_state('state.json')`. Use `await` for both methods with `AsyncStealthySession`. The JSON file contains cookies, local storage and IndexedDB; loading replaces the current stored state. Call these methods inside a started session, after pending fetches finish. `sessionStorage` is not saved, and sessions with `proxy_rotator` are not supported. See [Save and Load Session State](dynamic.md#save-and-load-session-state) for examples and scope.
+
 ### Session Benefits
 
 - **Browser reuse**: Much faster subsequent requests by reusing the same browser instance.

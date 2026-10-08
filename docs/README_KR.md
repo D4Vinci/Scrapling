@@ -97,15 +97,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png">
-      </a>
-    </td>
-    <td> <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank"><b>Proxidize</b></a>는 스크래핑, 브라우저 자동화, SEO 모니터링, AI 에이전트, 데이터 수집을 위한 모바일 및 주거용 프록시를 제공합니다. <i>코드 <b>scrapling20</b>으로 20% 할인</i>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -198,6 +189,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 차단과 CAPTCHA를 90% 줄입니다. 대규모 웹 스크래핑을 위한 2,800만 개의 프리미엄 주거용 IP. 195개 국가 지원. 도시, ISP, 우편번호(ZIP) 타겟팅. 고정 및 순환 세션. 유효 기간이 없는 트래픽을 $2/GB부터 제공합니다. 코드 <strong>SCRAPEANDTAKE</strong>를 사용하면 <em>25% 할인</em>.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank">DataImpulse</a>에서 $1/GB로 이용하세요. 윤리적으로 확보한 자체 프록시. 9,000만 개 이상의 IP, 195개 이상의 국가. 주거용, 데이터센터, 모바일 프록시. 사용량 기반 요금 = 구독 불필요. 트래픽에 유효 기간이 없습니다.
     </td>
   </tr>
 </table>

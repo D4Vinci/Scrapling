@@ -97,15 +97,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png">
-      </a>
-    </td>
-    <td> توفر <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank"><b>Proxidize</b></a> وكلاء جوّالين وسكنيين للاستخراج، وأتمتة المتصفح، ومراقبة تحسين محركات البحث (SEO)، ووكلاء الذكاء الاصطناعي، وجمع البيانات. <i>استخدم الرمز <b>scrapling20</b> للحصول على خصم 20%</i>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -198,6 +189,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: قلّل الحظر واختبارات CAPTCHA بنسبة 90%. 28 مليون عنوان IP سكني عالي الجودة لاستخراج بيانات الويب بكثافة. 195 دولة. استهداف حسب المدينة/ISP/الرمز البريدي (ZIP). جلسات ثابتة أو دوّارة. حركة بيانات لا تنتهي صلاحيتها تبدأ من $2/GB. الكود <strong>SCRAPEANDTAKE</strong>: <em>خصم 25%</em>.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
+      </a>
+    </td>
+    <td>
+    $1/GB لدى <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank">DataImpulse</a>. بروكسيات من الطرف الأول بمصادر أخلاقية. أكثر من 90 مليون عنوان IP في أكثر من 195 دولة. بروكسيات سكنية ومراكز بيانات ومحمولة. الدفع حسب الاستخدام = بدون اشتراك. حركة البيانات لا تنتهي صلاحيتها.
     </td>
   </tr>
 </table>

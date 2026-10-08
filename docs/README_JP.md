@@ -97,15 +97,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png">
-      </a>
-    </td>
-    <td> <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank"><b>Proxidize</b></a> は、スクレイピング、ブラウザ自動化、SEO監視、AIエージェント、データ収集のためのモバイルおよびレジデンシャルプロキシを提供します。<i>コード <b>scrapling20</b> で20%オフ</i>。
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -198,6 +189,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：ブロックとCAPTCHAを90%削減。大規模なWebスクレイピング向けに、2,800万の高品質なレジデンシャルIPを提供。195か国に対応。都市・ISP・郵便番号（ZIP）の指定が可能。固定・ローテーションセッション。有効期限のない通信量を $2/GB から提供。コード <strong>SCRAPEANDTAKE</strong> で<em>25%オフ</em>。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank">DataImpulse</a> なら $1/GB。倫理的に調達された自社提供のプロキシ。9,000万以上のIP、195か国以上に対応。レジデンシャル、データセンター、モバイル。従量課金 = サブスクリプション不要。通信量に有効期限はありません。
     </td>
   </tr>
 </table>

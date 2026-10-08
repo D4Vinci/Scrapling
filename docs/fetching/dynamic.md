@@ -167,6 +167,41 @@ Keeping the tabs open also means the page you fetched is still there for the nex
 
 Versions 0.3.2 to 0.4.14 closed every tab after its request because reusing tabs used to leak settings between requests. Since 0.4.15, the settings are reset on every reuse, so the tabs stay open.
 
+### Save and Load Session State
+
+Use `save_state(path)` to save cookies, local storage and IndexedDB to a JSON file. Use `load_state(path)` to restore that file in another session, or replace the current session's stored state. Both methods accept a string or `pathlib.Path` and return `None`. The format is compatible with Playwright's storage state files.
+
+```python
+from scrapling.fetchers import DynamicSession
+
+with DynamicSession() as session:
+    session.fetch('https://example.com')
+    session.save_state('state.json')
+
+with DynamicSession() as session:
+    session.load_state('state.json')
+    page = session.fetch('https://example.com')
+```
+
+Save after your login or other browser actions finish. Call both methods inside a started session, after any pending fetches finish. Loading replaces existing cookies, local storage and IndexedDB. Fetch or reload the page to use the restored login; loading does not navigate existing tabs.
+
+The same methods work with `StealthySession`. Use `await` with `AsyncDynamicSession` and `AsyncStealthySession`:
+
+```python
+from scrapling.fetchers import AsyncDynamicSession
+
+async def restore_session():
+    async with AsyncDynamicSession() as session:
+        await session.load_state('state.json')
+        page = await session.fetch('https://example.com')
+        await session.save_state('state.json')
+        return page
+```
+
+These methods save and restore only the shared browser context. They do not affect temporary per-request proxy contexts. Sessions with `proxy_rotator` have no shared context, so these methods raise `RuntimeError`. A fixed session `proxy` works as usual.
+
+The file does not contain `sessionStorage`, open tabs or browser settings. Saving overwrites the file; its parent directory must exist. File and JSON errors are raised to the caller.
+
 ### Session Benefits
 
 - **Browser reuse**: Much faster subsequent requests by reusing the same browser instance.
