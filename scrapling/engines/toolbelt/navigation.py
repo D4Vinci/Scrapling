@@ -4,9 +4,9 @@ Functions related to files and URLs
 
 from urllib.parse import urlparse
 
-from playwright.async_api import Route as async_Route
+from patchright.async_api import Route as async_Route
 from msgspec import Struct, structs, convert, ValidationError
-from playwright.sync_api import Route
+from patchright.sync_api import Route
 
 from scrapling.core.utils import log
 from scrapling.core._types import Dict, Set, Tuple, Optional, Callable

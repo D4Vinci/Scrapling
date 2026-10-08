@@ -3,7 +3,6 @@ from scrapling.engines.toolbelt import ProxyRotator
 
 if TYPE_CHECKING:
     from scrapling.fetchers.requests import Fetcher, AsyncFetcher, FetcherSession
-    from scrapling.fetchers.chrome import DynamicFetcher, DynamicSession, AsyncDynamicSession
     from scrapling.fetchers.stealth_chrome import StealthyFetcher, StealthySession, AsyncStealthySession
 
 
@@ -12,9 +11,6 @@ _LAZY_IMPORTS = {
     "Fetcher": ("scrapling.fetchers.requests", "Fetcher"),
     "AsyncFetcher": ("scrapling.fetchers.requests", "AsyncFetcher"),
     "FetcherSession": ("scrapling.fetchers.requests", "FetcherSession"),
-    "DynamicFetcher": ("scrapling.fetchers.chrome", "DynamicFetcher"),
-    "DynamicSession": ("scrapling.fetchers.chrome", "DynamicSession"),
-    "AsyncDynamicSession": ("scrapling.fetchers.chrome", "AsyncDynamicSession"),
     "StealthyFetcher": ("scrapling.fetchers.stealth_chrome", "StealthyFetcher"),
     "StealthySession": ("scrapling.fetchers.stealth_chrome", "StealthySession"),
     "AsyncStealthySession": ("scrapling.fetchers.stealth_chrome", "AsyncStealthySession"),
@@ -25,9 +21,6 @@ __all__ = [
     "AsyncFetcher",
     "ProxyRotator",
     "FetcherSession",
-    "DynamicFetcher",
-    "DynamicSession",
-    "AsyncDynamicSession",
     "StealthyFetcher",
     "StealthySession",
     "AsyncStealthySession",

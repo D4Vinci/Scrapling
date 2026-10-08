@@ -3,8 +3,8 @@ from re import compile as re_compile
 from time import sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
-from playwright.sync_api import Locator, Page
-from playwright.async_api import Page as async_Page, Locator as AsyncLocator
+from patchright.sync_api import Locator, Page
+from patchright.async_api import Page as async_Page, Locator as AsyncLocator
 from patchright.sync_api import sync_playwright
 from patchright.async_api import async_playwright
 

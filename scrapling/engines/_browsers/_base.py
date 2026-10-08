@@ -3,19 +3,18 @@ from pathlib import Path
 from asyncio import sleep as asyncio_sleep, Lock
 from contextlib import contextmanager, asynccontextmanager, suppress
 
-from playwright.sync_api._generated import Page
-from playwright.sync_api import (
+from patchright.sync_api import Page
+from patchright.sync_api import (
     Frame,
     BrowserContext,
     Response as SyncPlaywrightResponse,
 )
-from playwright.async_api._generated import Page as AsyncPage
-from playwright.async_api import (
+from patchright.async_api import Page as AsyncPage
+from patchright.async_api import (
     Frame as AsyncFrame,
     Response as AsyncPlaywrightResponse,
     BrowserContext as AsyncBrowserContext,
 )
-from playwright._impl._errors import Error as PlaywrightError
 
 from scrapling.parser import Selector
 from scrapling.engines._browsers._page import PageInfo, PagePool
@@ -178,7 +177,7 @@ class SyncSession:
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
             page.wait_for_load_state("networkidle", timeout=timeout)
-        except (PlaywrightError, Exception):
+        except Exception:
             pass
 
     def _wait_for_page_stability(self, page: Page | Frame, load_dom: bool, network_idle: bool):
@@ -404,7 +403,7 @@ class AsyncSession:
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
             await page.wait_for_load_state("networkidle", timeout=timeout)
-        except (PlaywrightError, Exception):
+        except Exception:
             pass
 
     async def _wait_for_page_stability(self, page: AsyncPage | AsyncFrame, load_dom: bool, network_idle: bool):
@@ -582,12 +581,6 @@ class BaseSessionMixin:
             context_options["proxy"] = construct_proxy_dict(proxy)
 
         return context_options
-
-
-class DynamicSessionMixin(BaseSessionMixin):
-    def __validate__(self, **params):
-        self._config = self.__validate_routine__(params, model=PlaywrightConfig)
-        self.__generate_options__()
 
 
 class StealthySessionMixin(BaseSessionMixin):
