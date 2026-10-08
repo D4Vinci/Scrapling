@@ -9,29 +9,29 @@ This feature was introduced because, before v0.2, Scrapling was only a parsing e
 
 ## Fetchers Overview
 
-Scrapling provides three different fetcher classes with their session classes; each fetcher is designed for a specific use case.
+Scrapling provides HTTP fetchers (`Fetcher` and `AsyncFetcher`) and a browser fetcher (`StealthyFetcher`), with session classes for repeated requests.
 
 The following table compares them and can be quickly used for guidance.
 
 
-| Feature            | Fetcher                                           | DynamicFetcher                                                                    | StealthyFetcher                                                                            |
-|--------------------|---------------------------------------------------|-----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
-| Relative speed     | 🐇🐇🐇🐇🐇                                        | 🐇🐇🐇                                                                            | 🐇🐇🐇                                                                                     |
-| Stealth            | ⭐⭐                                                | ⭐⭐⭐                                                                               | ⭐⭐⭐⭐⭐                                                                                      |
-| Anti-Bot options   | ⭐⭐                                                | ⭐⭐⭐                                                                               | ⭐⭐⭐⭐⭐                                                                                      |
-| JavaScript loading | ❌                                                 | ✅                                                                                 | ✅                                                                                          |
-| Memory Usage       | ⭐                                                 | ⭐⭐⭐                                                                               | ⭐⭐⭐                                                                                        |
-| Best used for      | Basic scraping when HTTP requests alone can do it | - Dynamically loaded websites <br/>- Small automation<br/>- Small-Mid protections | - Dynamically loaded websites <br/>- Small automation <br/>- Small-Complicated protections |
-| Browser(s)         | ❌                                                 | Chromium and Google Chrome                                                        | Chromium and Google Chrome                                                                 |
-| Browser API used   | ❌                                                 | PlayWright                                                                        | PlayWright                                                                                 |
-| Setup Complexity   | Simple                                            | Simple                                                                            | Simple                                                                                     |
+| Feature            | Fetcher                                           | StealthyFetcher                                                                            |
+|--------------------|---------------------------------------------------|--------------------------------------------------------------------------------------------|
+| Relative speed     | 🐇🐇🐇🐇🐇                                        | 🐇🐇🐇                                                                                     |
+| Stealth            | ⭐⭐                                                | ⭐⭐⭐⭐⭐                                                                                      |
+| Anti-Bot options   | ⭐⭐                                                | ⭐⭐⭐⭐⭐                                                                                      |
+| JavaScript loading | ❌                                                 | ✅                                                                                          |
+| Memory Usage       | ⭐                                                 | ⭐⭐⭐                                                                                        |
+| Best used for      | Basic scraping when HTTP requests alone can do it | - Dynamically loaded websites <br/>- Small automation <br/>- Small-Complicated protections |
+| Browser(s)         | ❌                                                 | Chromium and Google Chrome                                                                 |
+| Browser API used   | ❌                                                 | Playwright                                                                                 |
+| Setup Complexity   | Simple                                            | Simple                                                                                     |
 
 In the following pages, we will talk about each one in detail.
 
 ## Parser configuration in all fetchers
 All fetchers share the same import method, as you will see in the upcoming pages
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
 ```
 Then you use it right away without initializing like this, and it will use the default parser settings:
 ```python
@@ -78,7 +78,7 @@ page.body            # Raw response body as bytes
 page.encoding        # Response encoding
 page.meta            # Response metadata dictionary (e.g., proxy used). Mainly helpful with the spiders system.
 ```
-All fetchers return the `Response` object. Browser sessions with `record_requests=True` also return saved `Response` objects from `session.network.search(limit=None)` and `session.network.get(request_id)`. See [Network History](dynamic.md#network-history) for saved API responses and the v5 migration.
+All fetchers return the `Response` object. Browser sessions with `record_requests=True` also return saved `Response` objects from `session.network.search(limit=None)` and `session.network.get(request_id)`. See [Network History](stealthy.md#network-history) for saved API responses and the v5 migration.
 
 The `Response` object can also convert the page to clean, LLM-ready Markdown in one line:
 ```python

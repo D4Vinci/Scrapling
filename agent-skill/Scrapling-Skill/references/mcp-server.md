@@ -6,7 +6,7 @@ Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int
 
 ## Shadow DOM
 
-Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](fetching/dynamic.md#shadow-dom) for selector examples and limits.
+Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](fetching/stealthy.md#shadow-dom) for selector examples and limits.
 
 
 ## One-shot tools
@@ -465,7 +465,7 @@ In a Claude Desktop configuration, add the option to the server arguments:
 }
 ```
 
-You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. Pass `executable_path` to `browser_fetch_once` or `browser_open` when a single fetch or session needs a different browser executable. The `scrapling extract fetch` and `scrapling extract stealthy-fetch` CLI commands support the same `--executable-path` option and environment variable fallback.
+You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. Pass `executable_path` to `browser_fetch_once` or `browser_open` when a single fetch or session needs a different browser executable. The `scrapling extract fetch` CLI command supports the same `--executable-path` option and environment variable fallback.
 
 The MCP server name when registering with a client is `ScraplingServer`. The command is the path to the `scrapling-mcp` binary with no arguments (or the `scrapling` binary with `mcp` as the argument on versions before 0.4.13).
 

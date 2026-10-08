@@ -73,8 +73,7 @@ Commands:
   post            Perform a POST request and save the content to a file.
   put             Perform a PUT request and save the content to a file.
   delete          Perform a DELETE request and save the content to a file.
-  fetch           Use a browser to fetch content with browser automation and flexible options.
-  stealthy-fetch  Use a stealthy browser to fetch content with advanced stealth features.
+  fetch           Use StealthyFetcher for browser automation and anti-bot protection.
 ```
 
 ### Usage pattern
@@ -87,10 +86,9 @@ Commands:
 
 Which command to use generally:
 - Use **`get`** with simple websites, blogs, or news articles.
-- Use **`fetch`** with modern web apps, or sites with dynamic content.
-- Use **`stealthy-fetch`** with protected sites, Cloudflare, or anti-bot systems.
+- Use **`fetch`** with JavaScript pages, browser automation, or protected sites, including Cloudflare.
 
-> When unsure, start with `get`. If it fails or returns empty content, escalate to `fetch`, then `stealthy-fetch`. The speed of `fetch` and `stealthy-fetch` is nearly the same, so you are not sacrificing anything.
+> When unsure, start with `get`. If the page needs JavaScript or blocks HTTP requests, use `fetch`. Enable `--solve-cloudflare` when the page has a Cloudflare challenge.
 
 #### Key options (requests)
 
@@ -141,7 +139,7 @@ scrapling extract get "https://site.com" page.html -H "Accept: text/html" -H "Ac
 
 #### Key options (browsers)
 
-Both (`fetch` / `stealthy-fetch`) share options:
+The `fetch` command accepts these options:
 
 
 | Option                                   | Input type | Description                                                                                                                                              |
@@ -161,21 +159,11 @@ Both (`fetch` / `stealthy-fetch`) share options:
 | --block-ads / --no-block-ads             |    None    | Block requests to ~3,500 known ad and tracker domains (default: False)                                                                                   |
 | --executable-path                        |    TEXT    | Path to a custom Chromium-compatible browser executable. Falls back to the SCRAPLING_EXECUTABLE_PATH environment variable when not set.                  |
 | --ai-targeted                            |    None    | Extract only main content and sanitize hidden elements for AI consumption (default: False). Also enables ad blocking automatically.                      |
-
-This option is specific to `fetch` only:
-
-| Option   | Input type | Description                                                 |
-|:---------|:----------:|:------------------------------------------------------------|
-| --locale |    TEXT    | Specify user locale. Defaults to the system default locale. |
-
-And these options are specific to `stealthy-fetch` only:
-
-| Option                                     | Input type | Description                                     |
-|:-------------------------------------------|:----------:|:------------------------------------------------|
-| --block-webrtc / --allow-webrtc            |    None    | Block WebRTC entirely (default: False)          |
-| --solve-cloudflare / --no-solve-cloudflare |    None    | Solve Cloudflare challenges (default: False)    |
-| --allow-webgl / --block-webgl              |    None    | Allow WebGL (default: True)                     |
-| --hide-canvas / --show-canvas              |    None    | Add noise to canvas operations (default: False) |
+| --locale | TEXT | Specify user locale. Defaults to the system default locale. |
+| --block-webrtc / --allow-webrtc | None | Force WebRTC to respect proxy settings (default: False). |
+| --solve-cloudflare / --no-solve-cloudflare | None | Solve Cloudflare challenges (default: False). |
+| --allow-webgl / --block-webgl | None | Allow WebGL (default: True). |
+| --hide-canvas / --show-canvas | None | Add noise to canvas operations (default: False). |
 
 
 Examples:
@@ -191,13 +179,13 @@ scrapling extract fetch "https://scrapling.requestcatcher.com/" data.txt --wait-
 scrapling extract fetch "https://scrapling.requestcatcher.com/" page.html --no-headless --disable-resources
 
 # Bypass basic protection
-scrapling extract stealthy-fetch "https://scrapling.requestcatcher.com" content.md
+scrapling extract fetch "https://scrapling.requestcatcher.com" content.md
 
 # Solve Cloudflare challenges
-scrapling extract stealthy-fetch "https://nopecha.com/demo/cloudflare" data.txt --solve-cloudflare --css-selector "#padded_content a"
+scrapling extract fetch "https://nopecha.com/demo/cloudflare" data.txt --solve-cloudflare --css-selector "#padded_content a"
 
 # Use a proxy for anonymity.
-scrapling extract stealthy-fetch "https://site.com" content.md --proxy "http://proxy-server:8080"
+scrapling extract fetch "https://site.com" content.md --proxy "http://proxy-server:8080"
 ```
 
 
@@ -242,29 +230,28 @@ data = page.css('#padded_content a').getall()
 ```
 Full browser automation
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # Keep the browser open until you finish
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # Keep the browser open until you finish
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # XPath selector if you prefer it
 
 # Or use one-off request style, it opens the browser for this request, then closes it after finishing
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
 ### Shadow DOM
 
-Use `pierce_shadow=True` with dynamic or stealth Python fetchers and sessions to include open shadow roots. It defaults to `False` and can be overridden per request. For MCP, pass `pierce_shadow=true` to `browser_fetch_once` or each `browser_fetch` call.
+Use `pierce_shadow=True` with StealthyFetcher and its session classes to include open shadow roots. It defaults to `False` and can be overridden per request. For MCP, pass `pierce_shadow=true` to `browser_fetch_once` or each `browser_fetch` call.
 
-Both browser CLI commands accept `--pierce-shadow` and `--no-pierce-shadow`:
+The browser CLI command accepts `--pierce-shadow` and `--no-pierce-shadow`:
 
 ```bash
 scrapling extract fetch "https://example.com" content.md --pierce-shadow --ai-targeted
-scrapling extract stealthy-fetch "https://example.com" content.md --pierce-shadow --ai-targeted
 ```
 
-The response includes `<shadow-root>` wrappers and `<slot>` elements. Use descendant selectors, or include those elements in direct-child paths. See [Shadow DOM](references/fetching/dynamic.md#shadow-dom) for assigned content, hidden slots, and extraction limits.
+The response includes `<shadow-root>` wrappers and `<slot>` elements. Use descendant selectors, or include those elements in direct-child paths. See [Shadow DOM](references/fetching/stealthy.md#shadow-dom) for assigned content, hidden slots, and extraction limits.
 
 ### Spiders
 Build full crawlers with concurrent requests, multiple session types, and pause/resume:
@@ -383,7 +370,7 @@ And it works precisely the same way!
 ### Async Session Management Examples
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
 async with FetcherSession(http3=True) as session:  # `FetcherSession` is context-aware and can work in both sync/async patterns
     page1 = session.get('https://quotes.toscrape.com/')
@@ -402,7 +389,7 @@ async with AsyncStealthySession(max_pages=2) as session:
     results = await asyncio.gather(*tasks)
     print(session.get_pool_stats())
 
-async with AsyncDynamicSession(record_requests=True) as session:
+async with AsyncStealthySession(record_requests=True) as session:
     await session.fetch('https://example.com', network_idle=True)
 
 for response in session.network.search(url_pattern=r"https://api\.example\.com/.*", limit=None):
@@ -410,7 +397,7 @@ for response in session.network.search(url_pattern=r"https://api\.example\.com/.
     print(response.meta.get('body_note') or response.body)
 ```
 
-Recorded responses belong to the whole browser session. `search()` and `get()` return `Response` objects directly, with `network_id`, `resource_type`, and `request_body` in `.meta`. Searches filter saved history and return 100 matches by default; `limit=None` returns all retained matches. Only supported text response bodies are saved. Saved reads remain local after closure; unfinished captures are not awaited. See [Migrating in v5](references/fetching/dynamic.md#migrating-in-v5) for the removed API capture interface.
+Recorded responses belong to the whole browser session. `search()` and `get()` return `Response` objects directly, with `network_id`, `resource_type`, and `request_body` in `.meta`. Searches filter saved history and return 100 matches by default; `limit=None` returns all retained matches. Only supported text response bodies are saved. Saved reads remain local after closure; unfinished captures are not awaited. See [Migrating in v5](references/fetching/stealthy.md#migrating-in-v5) for the removed API capture interface.
 
 ## References
 You already had a good glimpse of what the library can do. Use the references below to dig deeper when needed

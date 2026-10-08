@@ -56,7 +56,7 @@ Scrapling هو إطار عمل تكيفي لـ Web Scraping يتعامل مع ك
 زحف سريع للغاية مع إحصائيات فورية و Streaming. مبني بواسطة مستخرجي الويب لمستخرجي الويب والمستخدمين العاديين، هناك شيء للجميع.
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
 StealthyFetcher.adaptive = True
 p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # احصل على الموقع بشكل خفي!
 products = p.css('.product', auto_save=True)                                        # استخرج بيانات تنجو من تغييرات تصميم الموقع!
@@ -243,9 +243,9 @@ MySpider().start()
 
 ### جلب متقدم للمواقع مع دعم الجلسات
 - **طلبات HTTP**: طلبات HTTP سريعة وخفية مع فئة `Fetcher`. يمكنها تقليد بصمة TLS للمتصفح والرؤوس واستخدام HTTP/3.
-- **التحميل الديناميكي**: جلب المواقع الديناميكية مع أتمتة كاملة للمتصفح من خلال فئة `DynamicFetcher` التي تدعم Chromium من Playwright و Google Chrome.
+- **التحميل الديناميكي**: جلب المواقع الديناميكية مع أتمتة كاملة للمتصفح من خلال فئة `StealthyFetcher` التي تدعم Chromium من Playwright و Google Chrome.
 - **تجاوز مكافحة الروبوتات**: قدرات تخفي متقدمة مع `StealthyFetcher` وانتحال fingerprint. يمكنه تجاوز جميع أنواع Turnstile/Interstitial من Cloudflare بسهولة بالأتمتة.
-- **إدارة الجلسات**: دعم الجلسات المستمرة مع فئات `FetcherSession` و`StealthySession` و`DynamicSession` لإدارة ملفات تعريف الارتباط والحالة عبر الطلبات.
+- **إدارة الجلسات**: دعم الجلسات المستمرة مع فئات `FetcherSession` و`StealthySession` لإدارة ملفات تعريف الارتباط والحالة عبر الطلبات.
 - **تدوير Proxy**: `ProxyRotator` مدمج مع استراتيجيات التدوير الدوري أو المخصصة عبر جميع أنواع الجلسات، بالإضافة إلى تجاوزات Proxy لكل طلب.
 - **حظر النطاقات والإعلانات**: حظر الطلبات إلى نطاقات محددة (ونطاقاتها الفرعية) أو تفعيل حظر الإعلانات المدمج (~3,500 نطاق إعلانات/تتبع معروف) في الجوالب المعتمدة على المتصفح.
 - **منع تسرب DNS**: دعم اختياري لـ DNS-over-HTTPS لتوجيه استعلامات DNS عبر Cloudflare DoH، مما يمنع تسرب DNS عند استخدام Proxy.
@@ -259,7 +259,7 @@ MySpider().start()
 - 🔍 **البحث عن عناصر مشابهة**: تحديد العناصر المشابهة للعناصر الموجودة تلقائياً.
 
 ### ميزات الذكاء الاصطناعي
-- 🤖 **خادم MCP**: دع روبوتات الدردشة ووكلاء الذكاء الاصطناعي (Claude/Cursor/إلخ) يستخرجون البيانات عبر Scrapling بأدوات تعمل لمرة واحدة أو عبر جلسات، وتغطي طلبات HTTP العادية (بأي طريقة)، وجلب الصفحات بالمتصفح، والجلب الخفي الذي يتجاوز Cloudflare. يتم تضييق الصفحات بمحددات CSS وتنظيفها من محتوى حقن الأوامر قبل أن يراها الذكاء الاصطناعي، فيقرأ الوكيل أقل، ويكلف أقل، ولا يمكن اختطافه بنص مخفي. كما تتوفر لقطات الشاشة، والمتصفحات البعيدة عبر CDP، ونقل HTTP آمن افتراضياً. ([فيديو توضيحي](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **خادم MCP**: دع روبوتات الدردشة ووكلاء الذكاء الاصطناعي (Claude/Cursor/إلخ) يستخرجون البيانات عبر Scrapling بأدوات تعمل لمرة واحدة أو عبر جلسات، وتغطي طلبات HTTP العادية (بأي طريقة) وجلب الصفحات بالمتصفح الخفي الذي يتجاوز Cloudflare. يتم تضييق الصفحات بمحددات CSS وتنظيفها من محتوى حقن الأوامر قبل أن يراها الذكاء الاصطناعي، فيقرأ الوكيل أقل، ويكلف أقل، ولا يمكن اختطافه بنص مخفي. كما تتوفر لقطات الشاشة، والمتصفحات البعيدة عبر CDP، ونقل HTTP آمن افتراضياً. ([فيديو توضيحي](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 - 🧠 **Agent Skill**: [مهارة جاهزة للتثبيت](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html) تُعلّم وكلاء البرمجة المكتبة بالكامل، حتى يكون الكود الذي يكتبونه بـ Scrapling مطابقاً للواجهة الحالية بدلاً من التخمين.
 - 📚 **Markdown جاهز لأنظمة RAG**: حوّل أي صفحة إلى Markdown نظيف ومعقّم وجاهز لنماذج اللغة بسطر واحد (`page.markdown()`)، أو ازحف موقعاً كاملاً إلى مجموعة ملفات Markdown باستخدام القالب `SiteToMarkdownSpider`، كل ذلك بدون استخدام أي نموذج لغوي في العملية. ([الوثائق](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
 
@@ -311,14 +311,14 @@ data = page.css('#padded_content a').getall()
 ```
 أتمتة المتصفح الكاملة
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # أبقِ المتصفح مفتوحاً حتى تنتهي
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # أبقِ المتصفح مفتوحاً حتى تنتهي
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # محدد XPath إذا كنت تفضله
 
 # أو استخدم نمط الطلب لمرة واحدة، يفتح المتصفح لهذا الطلب، ثم يغلقه بعد الانتهاء
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
@@ -424,7 +424,7 @@ page = Selector("<html>...</html>")
 ### أمثلة إدارة الجلسات بشكل Async
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
 async with FetcherSession(http3=True) as session:  # `FetcherSession` واعٍ بالسياق ويعمل في كلا النمطين المتزامن/async
     page1 = session.get('https://quotes.toscrape.com/')
@@ -459,7 +459,7 @@ scrapling shell
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # جميع العناصر المطابقة لمحدد CSS '#fromSkipToProducts'
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
-scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
+scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
 > [!NOTE]

@@ -56,7 +56,7 @@ Scrapling 是一个自适应 Web Scraping 框架，能处理从单个请求到�
 极速爬取，实时统计和 Streaming。由 Web Scraper 为 Web Scraper 和普通用户而构建，每个人都能找到适合自己的功能。
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
 StealthyFetcher.adaptive = True
 p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # 隐秘地获取网站！
 products = p.css('.product', auto_save=True)                                        # 抓取在网站设计变更后仍能存活的数据！
@@ -243,9 +243,9 @@ MySpider().start()
 
 ### 支持 Session 的高级网站获取
 - **HTTP 请求**：使用 `Fetcher` 类进行快速和隐秘的 HTTP 请求。可以模拟浏览器的 TLS fingerprint、标头并使用 HTTP/3。
-- **动态加载**：通过 `DynamicFetcher` 类使用完整的浏览器自动化获取动态网站，支持 Playwright 的 Chromium 和 Google Chrome。
+- **动态加载**：通过 `StealthyFetcher` 类使用完整的浏览器自动化获取动态网站，支持 Playwright 的 Chromium 和 Google Chrome。
 - **反机器人绕过**：使用 `StealthyFetcher` 的高级隐秘功能和 fingerprint 伪装。可以轻松自动绕过所有类型的 Cloudflare Turnstile/Interstitial。
-- **Session 管理**：使用 `FetcherSession`、`StealthySession` 和 `DynamicSession` 类实现持久化 Session 支持，用于跨请求的 cookie 和状态管理。
+- **Session 管理**：使用 `FetcherSession` 和 `StealthySession` 类实现持久化 Session 支持，用于跨请求的 cookie 和状态管理。
 - **Proxy 轮换**：内置 `ProxyRotator`，支持轮询或自定义策略，适用于所有 Session 类型，并支持按请求覆盖 Proxy。
 - **域名和广告屏蔽**：在基于浏览器的 Fetcher 中屏蔽对特定域名（及其子域名）的请求，或启用内置广告屏蔽（约 3,500 个已知广告/追踪域名）。
 - **DNS 泄漏防护**：可选的 DNS-over-HTTPS 支持，通过 Cloudflare 的 DoH 路由 DNS 查询，防止使用代理时的 DNS 泄漏。
@@ -259,7 +259,7 @@ MySpider().start()
 - 🔍 **查找相似元素**：自动定位与已找到元素相似的元素。
 
 ### AI 功能
-- 🤖 **MCP 服务器**：让 AI 聊天机器人和智能体（Claude/Cursor 等）通过 Scrapling 抓取网页，提供一次性工具和基于会话的工具，覆盖普通 HTTP 请求（任意方法）、浏览器抓取以及可绕过 Cloudflare 的隐身抓取。页面在交给 AI 之前会先用 CSS 选择器缩小范围并清除提示注入内容，因此智能体读得更少、花得更少，也不会被隐藏文本劫持。还包含页面截图、通过 CDP 控制远程浏览器，以及默认安全的 HTTP 传输。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
+- 🤖 **MCP 服务器**：让 AI 聊天机器人和智能体（Claude/Cursor 等）通过 Scrapling 抓取网页，提供一次性工具和基于会话的工具，覆盖普通 HTTP 请求（任意方法）以及可绕过 Cloudflare 的隐身浏览器抓取。页面在交给 AI 之前会先用 CSS 选择器缩小范围并清除提示注入内容，因此智能体读得更少、花得更少，也不会被隐藏文本劫持。还包含页面截图、通过 CDP 控制远程浏览器，以及默认安全的 HTTP 传输。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
 - 🧠 **Agent Skill**：[开箱即用的 Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html)，让编码智能体全面掌握本库，使它们用 Scrapling 写出的代码符合当前 API，而不是靠猜测。
 - 📚 **RAG 就绪的 Markdown**：用一行代码（`page.markdown()`）把任意页面转换为干净、经过净化、可直接供 LLM 使用的 Markdown，或使用 `SiteToMarkdownSpider` 模板把整个网站抓取为 Markdown 语料库，整个过程无需调用 LLM。（[文档](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html)）
 
@@ -311,14 +311,14 @@ data = page.css('#padded_content a').getall()
 ```
 完整的浏览器自动化
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # 保持浏览器打开直到完成
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # 保持浏览器打开直到完成
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # 如果您偏好 XPath 选择器
 
 # 或使用一次性请求样式，为此请求打开浏览器，完成后关闭
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
@@ -424,7 +424,7 @@ page = Selector("<html>...</html>")
 ### Async Session 管理示例
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
 async with FetcherSession(http3=True) as session:  # `FetcherSession`是上下文感知的，可以在 sync/async 模式下工作
     page1 = session.get('https://quotes.toscrape.com/')
@@ -459,7 +459,7 @@ scrapling shell
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # 所有匹配 CSS 选择器'#fromSkipToProducts' 的元素
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
-scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
+scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
 > [!NOTE]

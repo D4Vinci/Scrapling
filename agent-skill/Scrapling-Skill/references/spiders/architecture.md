@@ -51,7 +51,6 @@ A priority queue with built-in URL deduplication. Requests are fingerprinted bas
 Manages one or more named session instances. Each session is one of:
 
 - [FetcherSession](../fetching/static.md)
-- [AsyncDynamicSession](../fetching/dynamic.md)
 - [AsyncStealthySession](../fetching/stealthy.md)
 
 When a request comes in, the Session Manager routes it to the correct session based on the request's `sid` field. Sessions can be started with the spider start (default) or lazily (started on the first use).

@@ -12,8 +12,7 @@ By default, every spider creates a single [FetcherSession](../fetching/static.md
 | Session Type                                    | Use Case                                 |
 |-------------------------------------------------|------------------------------------------|
 | [FetcherSession](../fetching/static.md)         | Fast HTTP requests, no JavaScript        |
-| [AsyncDynamicSession](../fetching/dynamic.md)   | Browser automation, JavaScript rendering |
-| [AsyncStealthySession](../fetching/stealthy.md) | Anti-bot bypass, Cloudflare, etc.        |
+| [AsyncStealthySession](../fetching/stealthy.md) | JavaScript, browser automation, anti-bot bypass        |
 
 
 ## Configuring Sessions
@@ -158,7 +157,7 @@ async def parse(self, response: Response):
 
 **Warning:** When using `FetcherSession` in spiders, you cannot use `.get()` and `.post()` methods directly. By default, the request is an HTTP GET request; to use another HTTP method, pass it to the `method` argument as in the above example. This unifies the `Request` interface across all session types.
 
-For browser sessions (`AsyncDynamicSession`, `AsyncStealthySession`), you can pass browser-specific arguments like `wait_selector`, `page_action`, or `extra_headers`:
+For browser sessions (`AsyncStealthySession`), you can pass browser-specific arguments like `wait_selector`, `page_action`, or `extra_headers`:
 
 ```python
 async def parse(self, response: Response):

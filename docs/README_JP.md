@@ -56,7 +56,7 @@ Scrapling は、単一のリクエストから本格的なクロールまです�
 リアルタイム統計と Streaming による超高速クロール。Web Scraper によって、Web Scraper と一般ユーザーのために構築され、誰にでも何かがあります。
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
 StealthyFetcher.adaptive = True
 p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # レーダーの下でウェブサイトを取得！
 products = p.css('.product', auto_save=True)                                        # ウェブサイトのデザイン変更に耐えるデータをスクレイプ！
@@ -243,9 +243,9 @@ MySpider().start()
 
 ### Session サポート付き高度なウェブサイト取得
 - **HTTP リクエスト**：`Fetcher` クラスで高速かつステルスな HTTP リクエスト。ブラウザの TLS fingerprint、ヘッダーを模倣し、HTTP/3 を使用可能。
-- **動的読み込み**：Playwright の Chromium と Google Chrome をサポートする `DynamicFetcher` クラスによる完全なブラウザ自動化で動的ウェブサイトを取得。
+- **動的読み込み**：Playwright の Chromium と Google Chrome をサポートする `StealthyFetcher` クラスによる完全なブラウザ自動化で動的ウェブサイトを取得。
 - **アンチボット回避**：`StealthyFetcher` と fingerprint 偽装による高度なステルス機能。自動化で Cloudflare の Turnstile/Interstitial のすべてのタイプを簡単に回避。
-- **Session 管理**：リクエスト間で Cookie と状態を管理するための `FetcherSession`、`StealthySession`、`DynamicSession` クラスによる永続的な Session サポート。
+- **Session 管理**：リクエスト間で Cookie と状態を管理するための `FetcherSession`、`StealthySession` クラスによる永続的な Session サポート。
 - **Proxy 回転**：すべての Session タイプに対応したラウンドロビンまたはカスタム戦略の組み込み `ProxyRotator`、さらにリクエストごとの Proxy オーバーライド。
 - **ドメイン＆広告ブロック**：ブラウザベースの Fetcher で特定のドメイン（およびそのサブドメイン）へのリクエストをブロック、または内蔵広告ブロック（約3,500の既知の広告/トラッカードメイン）を有効化。
 - **DNS リーク防止**：Proxy 使用時の DNS リークを防ぐため、Cloudflare の DoH 経由で DNS クエリをルーティングするオプションの DNS-over-HTTPS サポート。
@@ -259,7 +259,7 @@ MySpider().start()
 - 🔍 **類似要素の検出**：見つかった要素に類似した要素を自動的に特定。
 
 ### AI 機能
-- 🤖 **MCP サーバー**：AI チャットボットやエージェント（Claude/Cursor など）が Scrapling を通じてスクレイピングできるようにします。単発ツールとセッションベースのツールがあり、通常の HTTP リクエスト（任意のメソッド）、ブラウザ取得、Cloudflare を回避するステルス取得をカバーします。ページは AI に渡す前に CSS セレクターで絞り込まれ、プロンプトインジェクションの内容が除去されるため、エージェントは読む量もコストも減り、隠しテキストに乗っ取られることもありません。スクリーンショット、CDP 経由のリモートブラウザ、デフォルトで安全な HTTP トランスポートも含まれます。（[デモ動画](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
+- 🤖 **MCP サーバー**：AI チャットボットやエージェント（Claude/Cursor など）が Scrapling を通じてスクレイピングできるようにします。単発ツールとセッションベースのツールがあり、通常の HTTP リクエスト（任意のメソッド）と、Cloudflare を回避するステルスブラウザ取得をカバーします。ページは AI に渡す前に CSS セレクターで絞り込まれ、プロンプトインジェクションの内容が除去されるため、エージェントは読む量もコストも減り、隠しテキストに乗っ取られることもありません。スクリーンショット、CDP 経由のリモートブラウザ、デフォルトで安全な HTTP トランスポートも含まれます。（[デモ動画](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
 - 🧠 **Agent Skill**：ライブラリ全体をコーディングエージェントに教える、インストールするだけの [Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html)。エージェントが Scrapling で書くコードが、推測ではなく現在の API に沿ったものになります。
 - 📚 **RAG 対応の Markdown**：1 行（`page.markdown()`）で任意のページをクリーンでサニタイズ済みの LLM 向け Markdown に変換したり、`SiteToMarkdownSpider` テンプレートでサイト全体を Markdown コーパスとしてクロールしたりできます。処理に LLM は一切使いません。（[ドキュメント](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html)）
 
@@ -311,14 +311,14 @@ data = page.css('#padded_content a').getall()
 ```
 完全なブラウザ自動化
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # 完了するまでブラウザを開いたままにする
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # 完了するまでブラウザを開いたままにする
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # お好みであれば XPath セレクタを使用
 
 # または一回限りのリクエストスタイル、このリクエストのためにブラウザを開き、完了後に閉じる
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
@@ -424,7 +424,7 @@ page = Selector("<html>...</html>")
 ### 非同期 Session 管理の例
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
 async with FetcherSession(http3=True) as session:  # `FetcherSession` はコンテキストアウェアで、同期/非同期両方のパターンで動作可能
     page1 = session.get('https://quotes.toscrape.com/')
@@ -459,7 +459,7 @@ scrapling shell
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # CSS セレクタ'#fromSkipToProducts'に一致するすべての要素
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
-scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
+scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
 > [!NOTE]

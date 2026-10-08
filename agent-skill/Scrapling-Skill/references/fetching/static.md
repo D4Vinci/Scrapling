@@ -89,7 +89,7 @@ page = await AsyncFetcher.get('https://example.com', impersonate='chrome110')
 # HTTP/3 support
 page = await AsyncFetcher.get('https://example.com', http3=True)
 ```
-The `page` object in all cases is a [Response](choosing.md#response-object) object, which is a [Selector](parsing/main_classes.md#selector), so you can use it directly
+The `page` object in all cases is a [Response](choosing.md#response-object) object, which is a [Selector](../parsing/main_classes.md#selector), so you can use it directly
 ```python
 >>> page.css('.something.something')
 

@@ -58,7 +58,7 @@ Seu parser aprende com as mudanças nos sites e relocaliza automaticamente seus 
 Crawls extremamente rápidos com estatísticas em tempo real e streaming. Feito por Web Scrapers para Web Scrapers e usuários comuns, há algo para todo mundo.
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
 StealthyFetcher.adaptive = True
 p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Busque o site sem chamar atenção!
 products = p.css('.product', auto_save=True)                                        # Extraia dados que sobrevivem a mudanças no design do site!
@@ -245,9 +245,9 @@ MySpider().start()
 
 ### Busca Avançada de Sites com Suporte a Sessões
 - **Requisições HTTP**: Requisições HTTP rápidas e furtivas com a classe `Fetcher`. Pode imitar fingerprint TLS de navegadores, cabeçalhos e usar HTTP/3.
-- **Carregamento Dinâmico**: Busque sites dinâmicos com automação completa de navegador através da classe `DynamicFetcher`, compatível com o Chromium do Playwright e o Google Chrome.
+- **Carregamento Dinâmico**: Busque sites dinâmicos com automação completa de navegador através da classe `StealthyFetcher`, compatível com o Chromium do Playwright e o Google Chrome.
 - **Bypass Anti-Bot**: Capacidades avançadas de stealth com `StealthyFetcher` e spoofing de fingerprint. Pode contornar facilmente todos os tipos de Turnstile/Interstitial do Cloudflare com automação.
-- **Gerenciamento de Sessão**: Suporte a sessões persistentes com as classes `FetcherSession`, `StealthySession` e `DynamicSession` para gerenciar cookies e estado entre requisições.
+- **Gerenciamento de Sessão**: Suporte a sessões persistentes com as classes `FetcherSession` e `StealthySession` para gerenciar cookies e estado entre requisições.
 - **Rotação de Proxy**: `ProxyRotator` nativo com estratégias cíclicas ou personalizadas em todos os tipos de sessão, além de sobrescritas de proxy por requisição.
 - **Bloqueio de Domínios e Anúncios**: Bloqueie requisições para domínios específicos (e seus subdomínios) ou habilite o bloqueio nativo de anúncios (~3.500 domínios conhecidos de anúncios/rastreadores) nos fetchers baseados em navegador.
 - **Prevenção de Vazamento de DNS**: Suporte opcional a DNS-over-HTTPS para rotear consultas DNS através do DoH da Cloudflare, evitando vazamentos de DNS ao usar proxies.
@@ -261,7 +261,7 @@ MySpider().start()
 - 🔍 **Encontrar Elementos Semelhantes**: Localize automaticamente elementos parecidos com os elementos encontrados.
 
 ### Recursos de IA
-- 🤖 **Servidor MCP**: Permita que chatbots e agentes de IA (Claude/Cursor/etc) façam scraping através do Scrapling com ferramentas de uso único ou baseadas em sessão, cobrindo requisições HTTP simples (qualquer método), carregamentos com navegador e carregamentos furtivos que contornam o Cloudflare. As páginas são reduzidas com seletores CSS e limpas de conteúdo de injeção de prompt antes que a IA as veja, então o agente lê menos, custa menos e não pode ser sequestrado por texto oculto. Screenshots, navegadores remotos via CDP e um transporte HTTP seguro por padrão estão incluídos. ([vídeo demo](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **Servidor MCP**: Permita que chatbots e agentes de IA (Claude/Cursor/etc) façam scraping através do Scrapling com ferramentas de uso único ou baseadas em sessão, cobrindo requisições HTTP simples (qualquer método) e carregamentos com navegador furtivo que contornam o Cloudflare. As páginas são reduzidas com seletores CSS e limpas de conteúdo de injeção de prompt antes que a IA as veja, então o agente lê menos, custa menos e não pode ser sequestrado por texto oculto. Screenshots, navegadores remotos via CDP e um transporte HTTP seguro por padrão estão incluídos. ([vídeo demo](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 - 🧠 **Agent Skill**: Um [Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html) pronto para instalar que ensina a biblioteca inteira aos agentes de codificação, para que o código que eles escrevem com Scrapling corresponda à API atual em vez de ser adivinhado.
 - 📚 **Markdown pronto para RAG**: Transforme qualquer página em Markdown limpo, sanitizado e pronto para LLMs com uma linha (`page.markdown()`), ou rastreie um site inteiro em um corpus de Markdown com o template `SiteToMarkdownSpider`, tudo sem nenhum LLM no processo. ([documentação](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
 
@@ -313,14 +313,14 @@ data = page.css('#padded_content a').getall()
 ```
 Automação completa de navegador
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # Mantenha o navegador aberto até terminar
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # Mantenha o navegador aberto até terminar
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # Se preferir, use seletor XPath
 
 # Ou use o estilo de requisição avulsa, ele abre o navegador para esta requisição e o fecha ao finalizar
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
@@ -426,7 +426,7 @@ E ele funciona exatamente da mesma maneira!
 ### Exemplos de Gerenciamento de Sessão Assíncrona
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
 async with FetcherSession(http3=True) as session:  # `FetcherSession` entende o contexto e funciona tanto em padrões sync quanto async
     page1 = session.get('https://quotes.toscrape.com/')
@@ -461,7 +461,7 @@ Extraia páginas diretamente para um arquivo sem programar (por padrão, extrai 
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # Todos os elementos que correspondem ao seletor CSS '#fromSkipToProducts'
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
-scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
+scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
 > [!NOTE]

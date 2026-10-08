@@ -68,7 +68,7 @@ Its parser learns from website changes and automatically relocates your elements
 Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
 StealthyFetcher.adaptive = True
 p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Fetch website under the radar!
 products = p.css('.product', auto_save=True)                                        # Scrape data that survives website design changes!
@@ -255,9 +255,9 @@ MySpider().start()
 
 ### Advanced Websites Fetching with Session Support
 - **HTTP Requests**: Fast and stealthy HTTP requests with the `Fetcher` class. Can impersonate browsers' TLS fingerprint, headers, and use HTTP/3.
-- **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `DynamicFetcher` class supporting Playwright's Chromium and Google's Chrome.
+- **Dynamic Loading**: Fetch dynamic websites with full browser automation through the `StealthyFetcher` class supporting Playwright's Chromium and Google's Chrome.
 - **Anti-bot Bypass**: Advanced stealth capabilities with `StealthyFetcher` and fingerprint spoofing. Can easily bypass all types of Cloudflare's Turnstile/Interstitial with automation.
-- **Session Management**: Persistent session support with `FetcherSession`, `StealthySession`, and `DynamicSession` classes for cookie and state management across requests.
+- **Session Management**: Persistent session support with `FetcherSession` and `StealthySession` classes for cookie and state management across requests.
 - **Proxy Rotation**: Built-in `ProxyRotator` with cyclic or custom rotation strategies across all session types, plus per-request proxy overrides.
 - **Domain & Ad Blocking**: Block requests to specific domains (and their subdomains) or enable built-in ad blocking (~3,500 known ad/tracker domains) in browser-based fetchers.
 - **DNS Leak Prevention**: Optional DNS-over-HTTPS support to route DNS queries through Cloudflare's DoH, preventing DNS leaks when using proxies.
@@ -271,7 +271,7 @@ MySpider().start()
 - 🔍 **Find Similar Elements**: Automatically locate elements similar to found elements.
 
 ### AI Features
-- 🤖 **MCP Server**: Let AI chatbots and agents (Claude/Cursor/etc) scrape through Scrapling with one-shot or session-based tools covering plain HTTP requests (any method), browser fetches, and stealth fetches that bypass Cloudflare. Pages are narrowed with CSS selectors and stripped of prompt-injection content before the AI sees them, so the agent reads less, costs less, and can't be hijacked by hidden text. Screenshots, remote browsers over CDP, and a secure-by-default HTTP transport are included. ([demo video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **MCP Server**: Let AI chatbots and agents (Claude/Cursor/etc) scrape through Scrapling with one-shot or session-based tools covering plain HTTP requests (any method) and stealth browser fetches that bypass Cloudflare. Pages are narrowed with CSS selectors and stripped of prompt-injection content before the AI sees them, so the agent reads less, costs less, and can't be hijacked by hidden text. Screenshots, remote browsers over CDP, and a secure-by-default HTTP transport are included. ([demo video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 - 🧠 **Agent Skill**: A ready-to-install [Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html) that teaches coding agents the whole library, so the code they write with Scrapling matches the current API instead of guessing.
 - 📚 **RAG-ready Markdown**: Turn any page into clean, sanitized, LLM-ready Markdown with one line (`page.markdown()`), or crawl a whole website into a Markdown corpus with the `SiteToMarkdownSpider` template, all without an LLM in the loop. ([docs](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
 
@@ -323,14 +323,14 @@ data = page.css('#padded_content a').getall()
 ```
 Full browser automation
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # Keep the browser open until you finish
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # Keep the browser open until you finish
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # XPath selector if you prefer it
 
 # Or use one-off request style, it opens the browser for this request, then closes it after finishing
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
@@ -436,7 +436,7 @@ And it works precisely the same way!
 ### Async Session Management Examples
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
 async with FetcherSession(http3=True) as session:  # `FetcherSession` is context-aware and can work in both sync/async patterns
     page1 = session.get('https://quotes.toscrape.com/')
@@ -471,7 +471,7 @@ Extract pages to a file directly without programming (Extracts the content insid
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # All elements matching the CSS selector '#fromSkipToProducts'
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
-scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
+scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
 > [!NOTE]

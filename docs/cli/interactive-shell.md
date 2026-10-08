@@ -11,7 +11,7 @@ The Scrapling Interactive Shell is an enhanced IPython-based environment designe
     1. You've completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
     2. You've completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
     3. You've completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
-    4. You've completed or read at least one page from the fetchers section to use here for requests: [HTTP requests](../fetching/static.md), [Dynamic websites](../fetching/dynamic.md), or [Dynamic websites with hard protections](../fetching/stealthy.md).
+    4. You've completed or read at least one page from the fetchers section to use here for requests: [HTTP requests](../fetching/static.md) or [browser fetching](../fetching/stealthy.md).
 
 
 ## Why use the Interactive Shell?
@@ -71,10 +71,9 @@ The shell provides convenient shortcuts that eliminate boilerplate code:
 - **`post(url, **kwargs)`** - HTTP POST request (instead of `Fetcher.post`)
 - **`put(url, **kwargs)`** - HTTP PUT request (instead of `Fetcher.put`)
 - **`delete(url, **kwargs)`** - HTTP DELETE request (instead of `Fetcher.delete`)
-- **`fetch(url, **kwargs)`** - Browser-based fetch (instead of `DynamicFetcher.fetch`) 
-- **`stealthy_fetch(url, **kwargs)`** - Stealthy browser fetch (instead of `StealthyFetcher.fetch`)
+- **`fetch(url, **kwargs)`** - Stealthy browser fetch (instead of `StealthyFetcher.fetch`)
 
-The most commonly used classes are automatically available without any import, including `Fetcher`, `AsyncFetcher`, `DynamicFetcher`, `StealthyFetcher`, and `Selector`.
+The most commonly used classes are automatically available without any import, including `Fetcher`, `AsyncFetcher`, `StealthyFetcher`, and `Selector`.
 
 ### Smart Page Management
 

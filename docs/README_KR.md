@@ -56,7 +56,7 @@ Scrapling은 단일 요청부터 대규모 크롤링까지 모든 것을 처리�
 실시간 통계와 스트리밍을 통한 초고속 크롤링. Web Scraper가 만들고, Web Scraper와 일반 사용자 모두를 위해 설계했습니다.
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
 StealthyFetcher.adaptive = True
 p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # 탐지를 피해 웹사이트를 가져옵니다!
 products = p.css('.product', auto_save=True)                                        # 웹사이트 디자인 변경에도 살아남는 데이터를 스크레이핑!
@@ -243,9 +243,9 @@ MySpider().start()
 
 ### 세션을 지원하는 고급 웹사이트 가져오기
 - **HTTP 요청**: `Fetcher` 클래스로 빠르고 은밀한 HTTP 요청. 브라우저의 TLS fingerprint, 헤더를 모방하고, HTTP/3를 사용할 수 있습니다.
-- **동적 로딩**: Playwright의 Chromium과 Google Chrome을 지원하는 `DynamicFetcher` 클래스로 완전한 브라우저 자동화를 통해 동적 웹사이트를 가져옵니다.
+- **동적 로딩**: Playwright의 Chromium과 Google Chrome을 지원하는 `StealthyFetcher` 클래스로 완전한 브라우저 자동화를 통해 동적 웹사이트를 가져옵니다.
 - **안티봇 우회**: `StealthyFetcher`와 fingerprint 위장을 통한 고급 스텔스 기능. 자동화로 모든 유형의 Cloudflare Turnstile/Interstitial을 손쉽게 우회합니다.
-- **세션 관리**: `FetcherSession`, `StealthySession`, `DynamicSession` 클래스로 요청 간 쿠키와 상태를 관리하는 영속적 세션을 지원합니다.
+- **세션 관리**: `FetcherSession`, `StealthySession` 클래스로 요청 간 쿠키와 상태를 관리하는 영속적 세션을 지원합니다.
 - **프록시 로테이션**: 모든 세션 타입에 대응하는 순환 또는 커스텀 전략의 내장 `ProxyRotator`와 요청별 프록시 오버라이드를 제공합니다.
 - **도메인 및 광고 차단**: 브라우저 기반 Fetcher에서 특정 도메인(및 하위 도메인)으로의 요청을 차단하거나 내장 광고 차단(약 3,500개의 알려진 광고/트래커 도메인)을 활성화합니다.
 - **DNS 유출 방지**: 프록시 사용 시 DNS 유출을 방지하기 위해 Cloudflare DoH를 통해 DNS 쿼리를 라우팅하는 선택적 DNS-over-HTTPS 지원.
@@ -259,7 +259,7 @@ MySpider().start()
 - 🔍 **유사 요소 찾기**: 발견된 요소와 유사한 요소를 자동으로 찾아냅니다.
 
 ### AI 기능
-- 🤖 **MCP 서버**: AI 챗봇과 에이전트(Claude/Cursor 등)가 Scrapling을 통해 스크래핑하도록 해줍니다. 일회성 도구와 세션 기반 도구가 일반 HTTP 요청(모든 메서드), 브라우저 가져오기, Cloudflare를 우회하는 스텔스 가져오기를 모두 지원합니다. 페이지는 AI에 전달되기 전에 CSS 선택자로 범위가 좁혀지고 프롬프트 인젝션 콘텐츠가 제거되므로, 에이전트는 더 적게 읽고 더 적게 비용을 쓰며 숨겨진 텍스트에 탈취당하지 않습니다. 스크린샷, CDP를 통한 원격 브라우저, 기본적으로 안전한 HTTP 전송도 포함됩니다. ([데모 영상](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **MCP 서버**: AI 챗봇과 에이전트(Claude/Cursor 등)가 Scrapling을 통해 스크래핑하도록 해줍니다. 일회성 도구와 세션 기반 도구가 일반 HTTP 요청(모든 메서드)과 Cloudflare를 우회하는 스텔스 브라우저 가져오기를 모두 지원합니다. 페이지는 AI에 전달되기 전에 CSS 선택자로 범위가 좁혀지고 프롬프트 인젝션 콘텐츠가 제거되므로, 에이전트는 더 적게 읽고 더 적게 비용을 쓰며 숨겨진 텍스트에 탈취당하지 않습니다. 스크린샷, CDP를 통한 원격 브라우저, 기본적으로 안전한 HTTP 전송도 포함됩니다. ([데모 영상](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 - 🧠 **Agent Skill**: 설치만 하면 되는 [Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html)이 코딩 에이전트에게 라이브러리 전체를 가르쳐, 에이전트가 Scrapling으로 작성하는 코드가 추측이 아니라 현재 API에 맞도록 해줍니다.
 - 📚 **RAG용 Markdown**: 한 줄(`page.markdown()`)로 어떤 페이지든 깨끗하고 정제된 LLM용 Markdown으로 변환하거나, `SiteToMarkdownSpider` 템플릿으로 웹사이트 전체를 Markdown 코퍼스로 크롤링할 수 있습니다. 과정에 LLM을 전혀 사용하지 않습니다. ([문서](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
 
@@ -311,14 +311,14 @@ data = page.css('#padded_content a').getall()
 ```
 완전한 브라우저 자동화
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # 작업이 끝날 때까지 브라우저를 열어둡니다
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # 작업이 끝날 때까지 브라우저를 열어둡니다
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # 원하시면 XPath selector도 사용 가능
 
 # 또는 일회성 요청 스타일 - 이 요청을 위해 브라우저를 열고, 완료 후 닫습니다
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
@@ -424,7 +424,7 @@ page = Selector("<html>...</html>")
 ### 비동기 세션 관리 예시
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
 async with FetcherSession(http3=True) as session:  # `FetcherSession`은 컨텍스트 인식이 가능하며 동기/비동기 패턴 모두에서 작동
     page1 = session.get('https://quotes.toscrape.com/')
@@ -459,7 +459,7 @@ scrapling shell
 scrapling extract get 'https://example.com' content.md
 scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # CSS selector '#fromSkipToProducts'에 매칭되는 모든 요소
 scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
-scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
+scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
 > [!NOTE]

@@ -64,11 +64,11 @@ State files are stored on the machine running the MCP server. They do not includ
 
 Response bodies are read and saved only for supported text `Content-Type` values, such as HTML, JSON, XML, or JavaScript. Binary, missing, or unrecognized content types keep request metadata and headers without reading or saving their response bodies. The browser still loads resources normally.
 
-Only completed requests are saved, including HTTP 4xx and 5xx responses. Failed and unfinished requests are omitted. Entries appear after capture finishes; reading history or closing the session does not wait. Captures still running at navigation or closure may be omitted. Saved bytes come from Playwright and can differ from the server's bytes. Recorded text follows Playwright's UTF-8 decoding when valid, with the declared charset as a fallback.
+Only completed requests are saved, including HTTP 4xx and 5xx responses. Failed and unfinished requests are omitted. Entries appear after capture finishes; reading history or closing the session does not wait. Captures still running at navigation or closure may be omitted. Saved bytes come from the Browser and can differ from the server's bytes. Recorded text follows Playwright's UTF-8 decoding when valid, with the declared charset as a fallback.
 
 ### Shadow DOM
 
-Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](../fetching/dynamic.md#shadow-dom) for selector examples and limits.
+Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](../fetching/stealthy.md#shadow-dom) for selector examples and limits.
 
 ### Key Capabilities
 - **Smart Content Extraction**: Convert web pages/elements to Markdown, HTML, or extract a clean version of the text content
