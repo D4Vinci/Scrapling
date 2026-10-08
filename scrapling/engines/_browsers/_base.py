@@ -569,6 +569,34 @@ class StealthySessionMixin(BaseSessionMixin):
             }
         )
         self.__generate_stealth_options()
+        if self._antibot_hardened_launch() and not (
+            {"viewport", "no_viewport", "screen", "device_scale_factor"} & set(self._config.additional_args or {})
+        ):
+            from scrapling.engines.antibot.headless import context_options
+
+            # Viewport emulation reaches the main frame only; without it every frame sees the hardened window.
+            self._context_options = context_options(self._context_options)
+
+    def _antibot_hardened_launch(self) -> bool:
+        """True when `solve_antibot` is on for a headless browser this session launches itself."""
+        config = cast(StealthConfig, self._config)
+        return bool(config.solve_antibot and config.headless and not config.cdp_url)
+
+    def _launch_options(self) -> Dict[str, Any]:
+        """The options the browser is launched with.
+
+        With `solve_antibot` on a headless launch, the launch switches that make headless Chrome stand out (the window
+        pinned at the screen origin, a forced sRGB profile, hidden scrollbars) are replaced by an ordinary desktop
+        screen, window size and colour profile (one common display by default, see
+        `scrapling.engines.antibot.headless.launch_args` and `set_display_policy`). This happens here, at launch, so it
+        also applies after callers edited the session's launch options.
+        """
+        options = dict(self._browser_options)
+        if self._antibot_hardened_launch() and options.get("args") is not None:
+            from scrapling.engines.antibot.headless import launch_args
+
+            options["args"] = launch_args(options["args"], user_agent=self._config.useragent or None)
+        return options
 
     def __generate_stealth_options(self) -> None:
         config = cast(StealthConfig, self._config)

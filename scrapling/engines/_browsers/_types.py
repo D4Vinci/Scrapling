@@ -7,6 +7,7 @@ from curl_cffi.requests import (
 )
 
 from scrapling.core._types import (
+    Any,
     Dict,
     List,
     Set,
@@ -122,7 +123,11 @@ class StealthSession(PlaywrightSession, total=False):
     hide_canvas: bool
     block_webrtc: bool
     solve_cloudflare: bool
+    solve_antibot: bool
+    captcha_solver: Optional[Any]
 
 
 class StealthFetchParams(PlaywrightFetchParams, total=False):
     solve_cloudflare: bool
+    solve_antibot: bool
+    captcha_solver: Optional[Any]

@@ -146,6 +146,8 @@ class StealthConfig(PlaywrightConfig, kw_only=True, frozen=False, weakref=True):
     hide_canvas: bool = False
     block_webrtc: bool = False
     solve_cloudflare: bool = False
+    solve_antibot: bool = False
+    captcha_solver: Optional[Any] = None
 
     def __post_init__(self):
         """Custom validation after msgspec validation"""
@@ -153,6 +155,13 @@ class StealthConfig(PlaywrightConfig, kw_only=True, frozen=False, weakref=True):
         # Cloudflare timeout adjustment
         if self.solve_cloudflare and self.timeout < 60_000:
             self.timeout = 60_000
+        if self.captcha_solver is not None and not all(
+            callable(getattr(self.captcha_solver, name, None)) for name in ("supports", "solve_token", "recognize")
+        ):
+            raise TypeError(
+                "captcha_solver must be a SolverRouter (or an object with supports, solve_token and recognize), "
+                f"got {type(self.captcha_solver).__name__}"
+            )
 
 
 @dataclass
@@ -174,6 +183,8 @@ class _fetch_params:
     blocked_domains: Optional[Set[str]]
     solve_cloudflare: bool
     selector_config: Dict
+    solve_antibot: bool = False
+    captcha_solver: Optional[Any] = None
 
 
 def validate_fetch(

@@ -36,6 +36,8 @@ class StealthyFetcher(BaseFetcher):
         :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
+        :param solve_antibot: Detects DataDome, HUMAN (PerimeterX), Akamai, Imperva, AWS WAF, Kasada and Cloudflare challenges after navigation, solves them within the timeout, and records the outcome in `response.meta["antibot"]`.
+        :param captcha_solver: A `SolverRouter` with your captcha-solver keys (CapMonster Cloud, CapSolver, 2Captcha), used by `solve_antibot` for the captchas a browser can't pass alone.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
@@ -89,6 +91,8 @@ class StealthyFetcher(BaseFetcher):
         :param timezone_id: Changes the timezone of the browser. Defaults to the system timezone.
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
+        :param solve_antibot: Detects DataDome, HUMAN (PerimeterX), Akamai, Imperva, AWS WAF, Kasada and Cloudflare challenges after navigation, solves them within the timeout, and records the outcome in `response.meta["antibot"]`.
+        :param captcha_solver: A `SolverRouter` with your captcha-solver keys (CapMonster Cloud, CapSolver, 2Captcha), used by `solve_antibot` for the captchas a browser can't pass alone.
         :param real_chrome: If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it.
         :param hide_canvas: Add random noise to canvas operations to prevent fingerprinting.
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.

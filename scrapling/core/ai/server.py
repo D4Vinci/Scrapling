@@ -77,7 +77,10 @@ def _typed_dict_keys(typed_dict: Any) -> frozenset:
     return frozenset(typed_dict.__required_keys__ | typed_dict.__optional_keys__)
 
 
-_EXCLUDED_FETCH_KEYS = frozenset({"page_action", "page_setup", "selector_config", "proxy"})
+# The anti-bot options are not offered through MCP yet: `captcha_solver` is a Python object that holds paid API keys.
+_EXCLUDED_FETCH_KEYS = frozenset(
+    {"page_action", "page_setup", "selector_config", "proxy", "solve_antibot", "captcha_solver"}
+)
 _STEALTH_FETCH_KEYS = _typed_dict_keys(StealthFetchParams) - _EXCLUDED_FETCH_KEYS
 
 
