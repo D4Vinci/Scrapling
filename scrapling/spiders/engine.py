@@ -379,6 +379,7 @@ class CrawlerEngine:
 
             await self._prefetch_robots_txt()
 
+            finished = False
             try:
                 if not resuming:
                     async for request in self.spider.start_requests():
@@ -435,10 +436,11 @@ class CrawlerEngine:
                         self._active_tasks += 1
                         tg.start_soon(self._task_wrapper, request)
 
+                finished = True
             finally:
                 await self.spider.on_close()
-                # Clean up checkpoint files on successful completion (not paused)
-                if not self.paused and self._checkpoint_system_enabled:
+                # Clean up checkpoint files only on successful completion (not paused, not crashed)
+                if finished and not self.paused and self._checkpoint_system_enabled:
                     await self._checkpoint_manager.cleanup()
 
         if self._autothrottle:
