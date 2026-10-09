@@ -11,7 +11,7 @@ from scrapling.spiders.request import Request
 from scrapling.spiders.robotstxt import RobotsTxtManager
 from scrapling.spiders.session import SessionManager
 from scrapling.spiders.result import CrawlStats, ItemList
-from scrapling.spiders.checkpoint import CheckpointData
+from scrapling.spiders.checkpoint import CheckpointData, CheckpointManager
 from scrapling.core._types import Any, Dict, Set, AsyncGenerator
 
 
@@ -632,6 +632,103 @@ class TestCheckpointMethods:
     async def test_restore_from_checkpoint_raises_when_disabled(self):
         engine = _make_engine()  # no crawldir → checkpoint disabled
         assert (await engine._restore_from_checkpoint()) is False
+
+
+class Unpicklable:
+    """A value that cannot be pickled, e.g. a Selector stored in ``meta``."""
+
+    def __reduce__(self):
+        raise TypeError("cannot pickle 'Unpicklable' object")
+
+
+class SlowSession(MockSession):
+    """Session that takes a moment per fetch so several checkpoint intervals pass."""
+
+    async def fetch(self, url: str, **kwargs):
+        await anyio.sleep(0.05)
+        return await super().fetch(url, **kwargs)
+
+
+def _unpicklable_requests() -> list[Request]:
+    return [Request(f"https://example.com/p{i}", sid="default", meta={"ctx": Unpicklable()}) for i in range(3)]
+
+
+class TestPeriodicCheckpointFailure:
+    """A checkpoint that cannot be written must not end a running crawl."""
+
+    @staticmethod
+    def _make_engine(tmpdir: str, interval: float) -> CrawlerEngine:
+        async def parse(response) -> AsyncGenerator:
+            yield {"url": str(response)}
+            if str(response) == "https://example.com":
+                for request in _unpicklable_requests():
+                    yield request
+
+        spider = MockSpider(concurrent_requests=1)
+        spider.parse = parse  # type: ignore[assignment]
+        return _make_engine(spider=spider, session=SlowSession(), crawldir=tmpdir, interval=interval)
+
+    @pytest.mark.asyncio
+    async def test_unpicklable_meta_does_not_end_the_crawl(self, caplog: pytest.LogCaptureFixture):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            engine = self._make_engine(tmpdir, interval=0.001)
+
+            await engine.crawl()
+
+            assert len(engine.items) == 4
+            warnings = [
+                r for r in caplog.records if r.levelname == "WARNING" and "Failed to save checkpoint" in r.message
+            ]
+            assert len(warnings) == 1  # once per distinct message, not on every interval
+            assert "cannot pickle 'Unpicklable' object" in warnings[0].message
+            assert engine.paused is False
+            assert list(Path(tmpdir).iterdir()) == []  # no checkpoint and no temp file left
+
+    @pytest.mark.asyncio
+    async def test_failed_periodic_save_keeps_previous_checkpoint(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
+            temp_path = checkpoint_path.with_suffix(".tmp")
+            await CheckpointManager(tmpdir).save(
+                CheckpointData(requests=[Request("https://example.com", sid="default")])
+            )
+            engine = self._make_engine(tmpdir, interval=0.001)
+
+            save = engine._checkpoint_manager.save
+            failed_saves: list[tuple[bool, bool]] = []
+
+            async def spy(data: CheckpointData, raise_on_error: bool = True) -> None:
+                before = checkpoint_path.read_bytes()
+                await save(data, raise_on_error=raise_on_error)
+                if any(isinstance(v, Unpicklable) for r in data.requests for v in r.meta.values()):
+                    failed_saves.append((checkpoint_path.read_bytes() == before, temp_path.exists()))
+
+            engine._checkpoint_manager.save = spy  # type: ignore[method-assign]
+
+            await engine.crawl()
+
+            assert len(engine.items) == 4
+            assert failed_saves  # the periodic save was attempted with an unpicklable request queued
+            assert all(unchanged and not temp_left for unchanged, temp_left in failed_saves)
+
+    @pytest.mark.asyncio
+    async def test_failed_save_on_pause_still_raises(self, caplog: pytest.LogCaptureFixture):
+        with tempfile.TemporaryDirectory() as tmpdir:
+
+            async def parse_and_pause(response) -> AsyncGenerator:
+                engine.request_pause()
+                for request in _unpicklable_requests():
+                    yield request
+
+            spider = MockSpider()
+            spider.parse = parse_and_pause  # type: ignore[assignment]
+            engine = _make_engine(spider=spider, crawldir=tmpdir)  # default interval: no periodic save
+
+            with pytest.raises(Exception):
+                await engine.crawl()
+
+            assert engine.paused is False
+            assert any(r.levelname == "ERROR" and "Failed to save checkpoint" in r.message for r in caplog.records)
 
 
 # ---------------------------------------------------------------------------

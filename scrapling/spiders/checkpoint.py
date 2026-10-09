@@ -29,6 +29,7 @@ class CheckpointManager:
         self.crawldir = AsyncPath(crawldir)
         self._checkpoint_path = self.crawldir / self.CHECKPOINT_FILE
         self.interval = interval
+        self._reported_failures: Set[str] = set()
         if not isinstance(interval, (int, float)):
             raise TypeError("Checkpoints interval must be integer or float.")
         else:
@@ -39,13 +40,17 @@ class CheckpointManager:
         """Check if a checkpoint exists."""
         return await self._checkpoint_path.exists()
 
-    async def save(self, data: CheckpointData) -> None:
-        """Save checkpoint data to disk atomically."""
-        await self.crawldir.mkdir(parents=True, exist_ok=True)
+    async def save(self, data: CheckpointData, raise_on_error: bool = True) -> None:
+        """Save checkpoint data to disk atomically.
 
+        :param data: The checkpoint data to save.
+        :param raise_on_error: If False, a failure is logged as a warning (once per distinct message) and swallowed,
+            leaving the previous checkpoint, if any, untouched.
+        """
         temp_path = self._checkpoint_path.with_suffix(".tmp")
 
         try:
+            await self.crawldir.mkdir(parents=True, exist_ok=True)
             serialized = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
             async with await anyio.open_file(temp_path, "wb") as f:
                 await f.write(serialized)
@@ -57,8 +62,14 @@ class CheckpointManager:
             # Clean up temp file if it exists
             if await temp_path.exists():
                 await temp_path.unlink()
-            log.error(f"Failed to save checkpoint: {e}")
-            raise
+            if raise_on_error:
+                log.error(f"Failed to save checkpoint: {e}")
+                raise
+
+            # A periodic save would otherwise repeat the same warning at every interval
+            if str(e) not in self._reported_failures:
+                self._reported_failures.add(str(e))
+                log.warning(f"Failed to save checkpoint, the previous checkpoint, if any, is kept: {e}")
 
     async def load(self) -> Optional[CheckpointData]:
         """Load checkpoint data from disk.

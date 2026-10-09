@@ -295,11 +295,11 @@ class CrawlerEngine:
                 "Pause requested, waiting for in-flight requests to complete (press Ctrl+C again to force stop)..."
             )
 
-    async def _save_checkpoint(self) -> None:
+    async def _save_checkpoint(self, raise_on_error: bool = True) -> None:
         """Save current state to checkpoint files."""
         requests, seen = self.scheduler.snapshot()
         data = CheckpointData(requests=requests, seen=seen)
-        await self._checkpoint_manager.save(data)
+        await self._checkpoint_manager.save(data, raise_on_error=raise_on_error)
         self._last_checkpoint_time = anyio.current_time()
 
     def _is_checkpoint_time(self) -> bool:
@@ -412,7 +412,7 @@ class CrawlerEngine:
                             continue
 
                         if self._checkpoint_system_enabled and self._is_checkpoint_time():
-                            await self._save_checkpoint()
+                            await self._save_checkpoint(raise_on_error=False)
 
                         if self.scheduler.is_empty:
                             # Empty queue + no active tasks = done
