@@ -2,6 +2,7 @@ import pytest
 import pytest_httpbin
 
 from scrapling import Fetcher
+from scrapling.fetchers import FetcherSession
 
 Fetcher.adaptive = True
 
@@ -156,3 +157,36 @@ class TestFetcher:
         """``retries`` below 1 means "send the request once", not "send nothing"."""
         assert fetcher.get(self.status_200, retries=0).status == 200
         assert fetcher.get(self.status_200, retries=-1).status == 200
+
+    def test_post_dict_data_list_values_are_repeated_keys(self, fetcher):
+        """List values in a dict ``data`` are sent as repeated keys, not as their repr."""
+        body = fetcher.post(self.post_url, data={"tags": ["a", "b"], "ids": [1, 2]}).json()
+        assert body["form"] == {"tags": ["a", "b"], "ids": ["1", "2"]}
+
+    def test_post_dict_data_none_values_are_dropped(self, fetcher):
+        """A ``None`` value in a dict ``data`` leaves the key out of the body."""
+        body = fetcher.post(self.post_url, data={"opt": None, "q": "x"}).json()
+        assert body["form"] == {"q": "x"}
+
+    def test_post_dict_data_scalars_and_form_content_type(self, fetcher):
+        body = fetcher.post(self.post_url, data={"a": "x y", "b": 2}).json()
+        assert body["form"] == {"a": "x y", "b": "2"}
+        assert body["headers"]["Content-Type"] == "application/x-www-form-urlencoded"
+
+    def test_post_string_data_is_untouched(self, fetcher):
+        body = fetcher.post(self.post_url, data="a=1&a=2").json()
+        assert body["data"] == "a=1&a=2"
+
+    def test_get_params_none_values_are_dropped(self, fetcher):
+        """A ``None`` value in ``params`` leaves the key out of the query string."""
+        body = fetcher.get(self.basic_url, params={"page": None, "q": "x"}).json()
+        assert body["args"] == {"q": "x"}
+
+    def test_get_params_list_values_are_repeated_keys(self, fetcher):
+        body = fetcher.get(self.basic_url, params={"tag": ["a", "b"]}).json()
+        assert body["args"] == {"tag": ["a", "b"]}
+
+    def test_session_post_dict_data_matches_fetcher(self):
+        with FetcherSession() as session:
+            body = session.post(self.post_url, data={"ids": [1, 2], "opt": None}).json()
+        assert body["form"] == {"ids": ["1", "2"]}
