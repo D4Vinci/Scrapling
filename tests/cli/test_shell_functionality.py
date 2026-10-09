@@ -68,6 +68,36 @@ class TestCurlParser:
 
         assert "http://user:pass@proxy:8080" in request.proxy["http"]
 
+    def test_curl_with_user_agent_option(self, parser):
+        """Test that -A adds a User-Agent header unless -H already sets one"""
+        request = parser.parse("curl https://example.com -A 'MyBot/1.0'")
+        assert request.headers == {"User-Agent": "MyBot/1.0"}
+
+        request = parser.parse("curl https://example.com --user-agent 'MyBot/1.0'")
+        assert request.headers == {"User-Agent": "MyBot/1.0"}
+
+        request = parser.parse("curl https://example.com -A 'MyBot/1.0' -H 'user-agent: Mozilla/5.0'")
+        assert request.headers == {"user-agent": "Mozilla/5.0"}
+
+        request = parser.parse("curl https://example.com -H 'Accept: text/html'")
+        assert request.headers == {"Accept": "text/html"}
+
+    @pytest.mark.parametrize(
+        "curl_cmd, expected",
+        [
+            ("curl https://example.com -x proxy:8080", "http://proxy:8080"),
+            ("curl https://example.com -x http://proxy:8080", "http://proxy:8080"),
+            ("curl https://example.com -x http://proxy:8080 --proxy-user u:p", "http://u:p@proxy:8080"),
+        ],
+    )
+    def test_curl2fetcher_proxy_is_a_url_string(self, parser, curl_cmd, expected):
+        """Test that the proxy reaches the fetcher as a single URL string"""
+        with patch("scrapling.fetchers.Fetcher.get") as mock_get:
+            _ = parser.convert2fetcher(curl_cmd)
+
+            mock_get.assert_called_once()
+            assert mock_get.call_args.kwargs["proxy"] == expected
+
     def test_curl2fetcher(self, parser):
         """Test converting curl to fetcher request"""
         with patch("scrapling.fetchers.Fetcher.get") as mock_get:
