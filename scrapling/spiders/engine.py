@@ -75,7 +75,11 @@ class CrawlerEngine:
 
         self._global_limiter = CapacityLimiter(spider.concurrent_requests)
         self._domain_limiters: dict[str, CapacityLimiter] = {}
-        self._allowed_domains: set[str] = spider.allowed_domains or set()
+        self._allowed_domains: set[str] = {
+            (urlparse(d if "://" in d else f"//{d}").netloc or d).lower().lstrip(".")
+            for d in (spider.allowed_domains or ())
+            if d
+        }
 
         if self.spider.robots_txt_obey:
             self._domain_delays: dict[str, float] = {}
@@ -97,9 +101,12 @@ class CrawlerEngine:
         if not self._allowed_domains:
             return True
 
-        domain = request.domain
+        parsed = urlparse(request.url)
+        host = (parsed.hostname or "").lower()
+        netloc = (parsed.netloc or "").lower()
+
         for allowed in self._allowed_domains:
-            if domain == allowed or domain.endswith("." + allowed):
+            if host == allowed or host.endswith("." + allowed) or netloc == allowed or netloc.endswith("." + allowed):
                 return True
         return False
 
@@ -113,7 +120,7 @@ class CrawlerEngine:
         if robots_manager is None:
             return self.spider.download_delay
 
-        domain = request.domain
+        domain = request.domain.lower()
 
         if domain in self._domain_delays:
             return self._domain_delays[domain]
@@ -138,6 +145,7 @@ class CrawlerEngine:
     def _rate_limiter(self, domain: str) -> CapacityLimiter:
         """Get or create a per-domain concurrency limiter if enabled, otherwise use the global limiter."""
         if self.spider.concurrent_requests_per_domain:
+            domain = domain.lower()
             self._domain_limiters.setdefault(domain, CapacityLimiter(self.spider.concurrent_requests_per_domain))
             return self._domain_limiters[domain]
         return self._global_limiter
@@ -346,8 +354,9 @@ class CrawlerEngine:
         seed_urls: list[str] = []
         for url in self.spider.start_urls:
             parsed = urlparse(url)
-            if parsed.netloc not in seen:
-                seen.add(parsed.netloc)
+            netloc_lower = (parsed.netloc or "").lower()
+            if netloc_lower not in seen:
+                seen.add(netloc_lower)
                 seed_urls.append(f"{parsed.scheme}://{parsed.netloc}/")
 
         await self._robots_manager.prefetch(seed_urls, self.session_manager.default_session_id)

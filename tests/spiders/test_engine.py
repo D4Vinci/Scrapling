@@ -274,6 +274,44 @@ class TestIsDomainAllowed:
         assert engine._is_domain_allowed(Request("https://b.org/")) is True
         assert engine._is_domain_allowed(Request("https://c.net/")) is False
 
+    def test_domain_with_port(self):
+        spider = MockSpider(allowed_domains={"example.com", "localhost"})
+        engine = _make_engine(spider=spider)
+
+        assert engine._is_domain_allowed(Request("https://example.com:8080/page")) is True
+        assert engine._is_domain_allowed(Request("http://localhost:3000/api")) is True
+        assert engine._is_domain_allowed(Request("https://sub.example.com:8443/x")) is True
+        assert engine._is_domain_allowed(Request("https://other.com:8080/x")) is False
+
+    def test_case_insensitive_domain(self):
+        spider = MockSpider(allowed_domains={"example.com"})
+        engine = _make_engine(spider=spider)
+
+        assert engine._is_domain_allowed(Request("https://EXAMPLE.COM/page")) is True
+        assert engine._is_domain_allowed(Request("https://Sub.Example.COM/page")) is True
+        assert engine._is_domain_allowed(Request("https://EXAMPLE.COM:8080/page")) is True
+
+    def test_case_insensitive_allowed_domains_definition(self):
+        spider = MockSpider(allowed_domains={"Example.COM", "TEST.ORG"})
+        engine = _make_engine(spider=spider)
+
+        assert engine._is_domain_allowed(Request("https://example.com/page")) is True
+        assert engine._is_domain_allowed(Request("https://test.org/page")) is True
+
+    def test_allowed_domains_with_scheme_or_leading_dot(self):
+        spider = MockSpider(allowed_domains={"https://example.com", ".test.org"})
+        engine = _make_engine(spider=spider)
+
+        assert engine._is_domain_allowed(Request("https://example.com/page")) is True
+        assert engine._is_domain_allowed(Request("https://sub.test.org/page")) is True
+
+    def test_allowed_domain_with_port(self):
+        spider = MockSpider(allowed_domains={"localhost:8080"})
+        engine = _make_engine(spider=spider)
+
+        assert engine._is_domain_allowed(Request("http://localhost:8080/page")) is True
+        assert engine._is_domain_allowed(Request("http://localhost:9090/page")) is False
+
 
 # ---------------------------------------------------------------------------
 # Tests: _rate_limiter
@@ -309,6 +347,14 @@ class TestRateLimiter:
         l1 = engine._rate_limiter("a.com")
         l2 = engine._rate_limiter("b.com")
         assert l1 is not l2
+
+    def test_same_domain_case_insensitive_returns_same_limiter(self):
+        spider = MockSpider(concurrent_requests_per_domain=2)
+        engine = _make_engine(spider=spider)
+
+        l1 = engine._rate_limiter("example.com")
+        l2 = engine._rate_limiter("EXAMPLE.COM")
+        assert l1 is l2
 
 
 # ---------------------------------------------------------------------------
@@ -998,3 +1044,15 @@ class TestPrefetchRobotsTxt:
         # set of Request.domain values deduplicates to one task per domain
         assert len(calls) == 1
         assert calls[0][0] == "https://example.com/robots.txt"
+
+    @pytest.mark.asyncio
+    async def test_prefetch_deduplicates_case_insensitive_domains_in_start_urls(self):
+        fetch_fn, calls = self._make_counting_fetch()
+        spider = MockSpider(robots_txt_obey=True, start_urls=["https://EXAMPLE.COM/a", "https://example.com/b"])
+        engine = _make_engine(spider=spider)
+        engine._robots_manager = RobotsTxtManager(fetch_fn)
+
+        await engine._prefetch_robots_txt()
+
+        assert len(calls) == 1
+        assert calls[0][0] == "https://EXAMPLE.COM/robots.txt"
