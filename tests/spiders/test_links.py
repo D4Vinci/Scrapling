@@ -135,6 +135,49 @@ class TestRestrict:
         urls = LinkExtractor(restrict_xpath='//div[@id="content"]').extract(resp)
         assert urls == ["https://example.com/c"]
 
+    def test_restrict_css_matching_the_link_itself(self):
+        html = """
+        <html><body>
+            <div id="nav"><a class="next" href="/next">next</a></div>
+            <a class="other" href="/other">other</a>
+        </body></html>
+        """
+        resp = _make_response(html)
+        assert LinkExtractor(restrict_css="a.next").extract(resp) == ["https://example.com/next"]
+
+    def test_restrict_xpath_matching_the_link_itself(self):
+        html = """
+        <html><body>
+            <div id="nav"><a class="next" href="/next">next</a></div>
+            <a class="other" href="/other">other</a>
+        </body></html>
+        """
+        resp = _make_response(html)
+        assert LinkExtractor(restrict_xpath='//a[@class="next"]').extract(resp) == ["https://example.com/next"]
+
+    def test_restrict_container_and_link_keep_order_without_duplicates(self):
+        html = """
+        <html><body>
+            <div id="nav"><a href="/first">first</a><a class="next" href="/next">next</a></div>
+            <a href="/outer"><area href="/inner"></a>
+        </body></html>
+        """
+        resp = _make_response(html)
+        assert LinkExtractor(restrict_css="#nav").extract(resp) == [
+            "https://example.com/first",
+            "https://example.com/next",
+        ]
+        # The matched <a> still contributes its own link, then the links inside it
+        assert LinkExtractor(restrict_css="a[href='/outer']").extract(resp) == [
+            "https://example.com/outer",
+            "https://example.com/inner",
+        ]
+        # A container and the links inside it are both matched, but each link is returned once
+        assert LinkExtractor(restrict_css="#nav, #nav a").extract(resp) == [
+            "https://example.com/first",
+            "https://example.com/next",
+        ]
+
     def test_restrict_matching_nothing_extracts_nothing(self):
         html = """
         <html><body>
