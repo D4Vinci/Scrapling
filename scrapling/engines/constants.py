@@ -93,5 +93,4 @@ STEALTH_ARGS = (
     "--disable-component-extensions-with-background-pages",
     "--enable-features=NetworkService,NetworkServiceInProcess,TrustTokens,TrustTokensAlwaysAllowIssuance",
     "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
-    "--disable-features=AudioServiceOutOfProcess,TranslateUI,BlinkGenPropertyTrees",
 )
