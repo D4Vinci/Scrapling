@@ -1,6 +1,6 @@
 from random import randint
 from re import compile as re_compile
-from time import sleep as time_sleep
+from time import monotonic, sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
 from patchright.sync_api import Locator, Page
@@ -18,6 +18,18 @@ from scrapling.engines._browsers._validators import validate_fetch as _validate,
 
 __CF_PATTERN__ = re_compile(r"^https?://challenges\.cloudflare\.com/cdn-cgi/challenge-platform/.*")
 __CF_MAX_SOLVE_ATTEMPTS__ = 3
+__CF_SOLVE_TIMEOUT__ = 30_000
+
+
+def _solve_budget(deadline: Optional[float]) -> int:
+    """Milliseconds left before the solver's deadline, never negative.
+
+    :param deadline: A `time.monotonic()` reading, or None to fall back to `__CF_SOLVE_TIMEOUT__`.
+    :return: The remaining budget in milliseconds.
+    """
+    if deadline is None:
+        return __CF_SOLVE_TIMEOUT__
+    return max(0, int((deadline - monotonic()) * 1000))
 
 
 class StealthySession(SyncSession, StealthySessionMixin):
@@ -111,13 +123,27 @@ class StealthySession(SyncSession, StealthySessionMixin):
         else:
             raise RuntimeError("Session has been already started")
 
-    def _cloudflare_solver(self, page: Page, _attempts: int = 0) -> None:  # pragma: no cover
+    def _cloudflare_solver(
+        self, page: Page, _attempts: int = 0, _deadline: Optional[float] = None
+    ) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
+
+        The solve is bounded by `_deadline` so it can never outlive the `timeout` the caller
+        requested; once the budget is spent the page is returned as is, exactly like a
+        challenge that outlives `__CF_MAX_SOLVE_ATTEMPTS__`.
 
         :param page: The targeted page
         :param _attempts: The number of solve attempts done so far, used internally to cap the retries.
+        :param _deadline: A `time.monotonic()` reading the solve must finish before, used internally.
+            Defaults to `__CF_SOLVE_TIMEOUT__` from now; the fetchers pass the request's own `timeout`.
         :return:
         """
+        if _deadline is None:
+            _deadline = monotonic() + (__CF_SOLVE_TIMEOUT__ / 1000)
+        if _solve_budget(_deadline) <= 0:
+            log.error("Ran out of time before solving the Cloudflare challenge, returning the page as is")
+            return None
+
         self._wait_for_networkidle(page, timeout=5000)
         challenge_type = self._detect_cloudflare(ResponseFactory._get_page_content(page))
         if not challenge_type:
@@ -130,19 +156,24 @@ class StealthySession(SyncSession, StealthySessionMixin):
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":
                 while self._detect_cloudflare(ResponseFactory._get_page_content(page)) == "non-interactive":
+                    if _solve_budget(_deadline) <= 0:
+                        log.info("Cloudflare wait page is still there, continuing...")
+                        break
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     page.wait_for_timeout(1000)
                     page.wait_for_load_state()
                 if self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
                     log.info("Cloudflare captcha is solved")
                     return None
-                return self._cloudflare_solver(page, _attempts + 1)
+                return self._cloudflare_solver(page, _attempts + 1, _deadline)
 
             else:
                 box_selector = "#cf_turnstile div, #cf-turnstile div, .turnstile>div>div"
                 if challenge_type != "embedded":
                     box_selector = ".main-content p+div>div>div"
                     for _ in range(20):
+                        if _solve_budget(_deadline) <= 0:
+                            break
                         # Waiting for the verify spinner to resolve into the widget iframe or pass on its own
                         if page.frame(url=__CF_PATTERN__) is not None or self._challenge_cleared(
                             ResponseFactory._get_page_content(page), challenge_type
@@ -157,6 +188,9 @@ class StealthySession(SyncSession, StealthySessionMixin):
 
                     if challenge_type != "embedded":
                         while not iframe.frame_element().is_visible():
+                            if _solve_budget(_deadline) <= 0:
+                                log.info("Cloudflare iframe didn't become visible in time, continuing...")
+                                break
                             # Double-checking that the iframe is loaded
                             page.wait_for_timeout(500)
 
@@ -167,23 +201,25 @@ class StealthySession(SyncSession, StealthySessionMixin):
                         log.info("Cloudflare captcha is solved")
                         return None
 
-                    outer_box = page.locator(box_selector).last.bounding_box()
+                    # This locator never matches some challenge variants, so it's bound by the
+                    # remaining budget instead of blocking for the browser's default timeout.
+                    outer_box = page.locator(box_selector).last.bounding_box(timeout=_solve_budget(_deadline))
                     if not outer_box:
-                        page.wait_for_timeout(1000)
-                        return self._cloudflare_solver(page, _attempts + 1)
+                        page.wait_for_timeout(min(1000, _solve_budget(_deadline)))
+                        return self._cloudflare_solver(page, _attempts + 1, _deadline)
 
                 # Calculate the Captcha coordinates for any viewport
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
 
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 page.mouse.click(captcha_x, captcha_y, delay=randint(100, 200), button="left")
-                self._wait_for_networkidle(page)
+                self._wait_for_networkidle(page, timeout=_solve_budget(_deadline))
 
                 if challenge_type != "embedded":
                     attempts = 0
                     while not self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
                         # Wait for the page
-                        if attempts >= 100:
+                        if attempts >= 100 or _solve_budget(_deadline) <= 0:
                             log.info("Cloudflare page didn't disappear after 10s, continuing...")
                             break
                         page.wait_for_timeout(100)
@@ -196,7 +232,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     return None
                 else:
                     log.info("Looks like Cloudflare captcha is still present, solving again")
-                    return self._cloudflare_solver(page, _attempts + 1)
+                    return self._cloudflare_solver(page, _attempts + 1, _deadline)
 
     def fetch(self, url: str, **kwargs: Unpack[StealthFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -261,7 +297,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
                             raise RuntimeError(f"Failed to get response for {url}")
 
                         if params.solve_cloudflare:
-                            self._cloudflare_solver(page)
+                            # The solve is bounded by the same timeout the caller asked for
+                            self._cloudflare_solver(page, _deadline=monotonic() + (params.timeout / 1000))
                             # Make sure the page is fully loaded after the captcha
                             self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
@@ -398,13 +435,27 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         else:
             raise RuntimeError("Session has been already started")
 
-    async def _cloudflare_solver(self, page: async_Page, _attempts: int = 0) -> None:  # pragma: no cover
+    async def _cloudflare_solver(
+        self, page: async_Page, _attempts: int = 0, _deadline: Optional[float] = None
+    ) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
+
+        The solve is bounded by `_deadline` so it can never outlive the `timeout` the caller
+        requested; once the budget is spent the page is returned as is, exactly like a
+        challenge that outlives `__CF_MAX_SOLVE_ATTEMPTS__`.
 
         :param page: The targeted page
         :param _attempts: The number of solve attempts done so far, used internally to cap the retries.
+        :param _deadline: A `time.monotonic()` reading the solve must finish before, used internally.
+            Defaults to `__CF_SOLVE_TIMEOUT__` from now; the fetchers pass the request's own `timeout`.
         :return:
         """
+        if _deadline is None:
+            _deadline = monotonic() + (__CF_SOLVE_TIMEOUT__ / 1000)
+        if _solve_budget(_deadline) <= 0:
+            log.error("Ran out of time before solving the Cloudflare challenge, returning the page as is")
+            return None
+
         await self._wait_for_networkidle(page, timeout=5000)
         challenge_type = self._detect_cloudflare(await ResponseFactory._get_async_page_content(page))
         if not challenge_type:
@@ -417,19 +468,24 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":
                 while self._detect_cloudflare(await ResponseFactory._get_async_page_content(page)) == "non-interactive":
+                    if _solve_budget(_deadline) <= 0:
+                        log.info("Cloudflare wait page is still there, continuing...")
+                        break
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     await page.wait_for_timeout(1000)
                     await page.wait_for_load_state()
                 if self._challenge_cleared(await ResponseFactory._get_async_page_content(page), challenge_type):
                     log.info("Cloudflare captcha is solved")
                     return None
-                return await self._cloudflare_solver(page, _attempts + 1)
+                return await self._cloudflare_solver(page, _attempts + 1, _deadline)
 
             else:
                 box_selector = "#cf_turnstile div, #cf-turnstile div, .turnstile>div>div"
                 if challenge_type != "embedded":
                     box_selector = ".main-content p+div>div>div"
                     for _ in range(20):
+                        if _solve_budget(_deadline) <= 0:
+                            break
                         # Waiting for the verify spinner to resolve into the widget iframe or pass on its own
                         if page.frame(url=__CF_PATTERN__) is not None or self._challenge_cleared(
                             await ResponseFactory._get_async_page_content(page), challenge_type
@@ -444,6 +500,9 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
 
                     if challenge_type != "embedded":
                         while not await (await iframe.frame_element()).is_visible():
+                            if _solve_budget(_deadline) <= 0:
+                                log.info("Cloudflare iframe didn't become visible in time, continuing...")
+                                break
                             # Double-checking that the iframe is loaded
                             await page.wait_for_timeout(500)
 
@@ -454,17 +513,19 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         log.info("Cloudflare captcha is solved")
                         return None
 
-                    outer_box = await page.locator(box_selector).last.bounding_box()
+                    # This locator never matches some challenge variants, so it's bound by the
+                    # remaining budget instead of blocking for the browser's default timeout.
+                    outer_box = await page.locator(box_selector).last.bounding_box(timeout=_solve_budget(_deadline))
                     if not outer_box:
-                        await page.wait_for_timeout(1000)
-                        return await self._cloudflare_solver(page, _attempts + 1)
+                        await page.wait_for_timeout(min(1000, _solve_budget(_deadline)))
+                        return await self._cloudflare_solver(page, _attempts + 1, _deadline)
 
                 # Calculate the Captcha coordinates for any viewport
                 captcha_x, captcha_y = outer_box["x"] + randint(26, 28), outer_box["y"] + randint(25, 27)
 
                 # Move the mouse to the center of the window, then press and hold the left mouse button
                 await page.mouse.click(captcha_x, captcha_y, delay=randint(100, 200), button="left")
-                await self._wait_for_networkidle(page)
+                await self._wait_for_networkidle(page, timeout=_solve_budget(_deadline))
 
                 if challenge_type != "embedded":
                     attempts = 0
@@ -472,7 +533,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         await ResponseFactory._get_async_page_content(page), challenge_type
                     ):
                         # Wait for the page
-                        if attempts >= 100:
+                        if attempts >= 100 or _solve_budget(_deadline) <= 0:
                             log.info("Cloudflare page didn't disappear after 10s, continuing...")
                             break
                         await page.wait_for_timeout(100)
@@ -485,7 +546,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     return None
                 else:
                     log.info("Looks like Cloudflare captcha is still present, solving again")
-                    return await self._cloudflare_solver(page, _attempts + 1)
+                    return await self._cloudflare_solver(page, _attempts + 1, _deadline)
 
     async def fetch(self, url: str, **kwargs: Unpack[StealthFetchParams]) -> Response:
         """Opens up the browser and do your request based on your chosen options.
@@ -551,7 +612,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                             raise RuntimeError(f"Failed to get response for {url}")
 
                         if params.solve_cloudflare:
-                            await self._cloudflare_solver(page)
+                            # The solve is bounded by the same timeout the caller asked for
+                            await self._cloudflare_solver(page, _deadline=monotonic() + (params.timeout / 1000))
                             # Make sure the page is fully loaded after the captcha
                             await self._wait_for_page_stability(page, params.load_dom, params.network_idle)
 
