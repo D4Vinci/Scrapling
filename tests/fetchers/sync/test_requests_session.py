@@ -1,3 +1,7 @@
+import json
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
 import pytest
 from unittest.mock import patch, MagicMock
 from curl_cffi.curl import CurlError
@@ -105,3 +109,49 @@ class TestFetcherSession:
                 session.get("http://example.com", retries=0)
 
             assert mocked_request.call_count == 1
+
+    def test_request_headers_replace_session_headers_regardless_of_case(self):
+        """The server must receive one value per header, the per-request one, whatever the case"""
+
+        class EchoHeaders(BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = json.dumps(
+                    {
+                        "user_agent": self.headers.get_all("User-Agent") or [],
+                        "authorization": self.headers.get_all("Authorization") or [],
+                        "accept": self.headers.get_all("Accept") or [],
+                    }
+                ).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *args):
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), EchoHeaders)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        url = f"http://127.0.0.1:{server.server_address[1]}/"
+        session_headers = {"User-Agent": "SessionUA/1.0", "Authorization": "Bearer SESSION", "Accept": "text/plain"}
+        try:
+            with FetcherSession(headers=session_headers) as session:
+                lowercase = session.get(url, headers={"user-agent": "RequestUA/2.0", "authorization": "Bearer REQUEST"})
+                same_case = session.get(url, headers={"User-Agent": "RequestUA/2.0"})
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
+        assert lowercase.json() == {
+            "user_agent": ["RequestUA/2.0"],
+            "authorization": ["Bearer REQUEST"],
+            "accept": ["text/plain"],
+        }
+        assert same_case.json() == {
+            "user_agent": ["RequestUA/2.0"],
+            "authorization": ["Bearer SESSION"],
+            "accept": ["text/plain"],
+        }
