@@ -175,7 +175,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank">LundProxy</a>：GB単位の課金はもう不要。レジデンシャルプロキシの通信量は無制限。1億以上のIP、190か国以上に対応。帯域幅に応じた料金。50 Mbps のレジデンシャルプロキシの無料トライアルをお申し込みください。
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>：GB単位の課金はもう不要。レジデンシャルプロキシの通信量は無制限。1億以上のIP、190か国以上に対応。帯域幅に応じた料金。50 Mbps のレジデンシャルプロキシの無料トライアルをお申し込みください。
     </td>
   </tr>
   <tr>

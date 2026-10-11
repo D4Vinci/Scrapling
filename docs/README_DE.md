@@ -175,7 +175,7 @@ MySpider().start()
       </a>
     </td>
     <td>
-    <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank">LundProxy</a>: Zahlen Sie nicht länger pro GB. Unbegrenzter Residential-Traffic, über 100 Mio. IPs, mehr als 190 Länder. Zahlen Sie nach Bandbreite. Fordern Sie einen kostenlosen Test der Residential-Proxys mit 50 Mbps an.
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: Zahlen Sie nicht länger pro GB. Unbegrenzter Residential-Traffic, über 100 Mio. IPs, mehr als 190 Länder. Zahlen Sie nach Bandbreite. Fordern Sie einen kostenlosen Test der Residential-Proxys mit 50 Mbps an.
     </td>
   </tr>
   <tr>
