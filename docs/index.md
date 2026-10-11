@@ -80,6 +80,9 @@ MySpider().start()
   <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png" class="ad">
   </a>
+  <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+    <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png" class="ad">
+  </a>
   <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
     <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png" class="ad">
   </a>

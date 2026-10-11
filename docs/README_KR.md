@@ -170,6 +170,16 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank">LundProxy</a>: GB당 요금은 이제 그만. 무제한 주거용 프록시 트래픽, 1억 개 이상의 IP, 190개 이상의 국가. 대역폭에 따라 요금을 지불하세요. 50 Mbps 주거용 프록시 무료 체험을 신청하세요.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
       </a>

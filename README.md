@@ -182,6 +182,16 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank">LundProxy</a>: Stop paying per GB. Unlimited residential traffic, 100M+ IPs, 190+ countries. Pay by bandwidth. Request a free 50 Mbps residential proxies trial.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
       </a>
