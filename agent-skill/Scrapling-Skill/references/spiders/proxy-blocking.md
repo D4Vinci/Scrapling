@@ -34,7 +34,7 @@ Each request automatically gets the next proxy in the rotation. The proxy used i
 Browser sessions support both string and dict proxy formats:
 
 ```python
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, ProxyRotator
+from scrapling.fetchers import AsyncStealthySession, ProxyRotator
 
 # String proxies work for all session types
 rotator = ProxyRotator([

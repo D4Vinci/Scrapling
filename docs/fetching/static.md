@@ -46,6 +46,12 @@ All methods for making requests here share some arguments, so let's discuss them
 
 Other than this, for further customization, you can pass any arguments that `curl_cffi` supports for any method if that method doesn't already support them.
 
+### Text encoding
+
+If text looks garbled on a non-UTF-8 page, pass `default_encoding="shift_jis"` (or the page's encoding) with your request. This sets the fallback encoding when the `Content-Type` header has no charset. It does not override a charset supplied by the server.
+
+If the server supplies an incorrect charset, you can force the correct encoding with `selector_config={"encoding": "shift_jis"}`.
+
 ### HTTP Methods
 There are additional arguments for each method, depending on the method, such as `params` for GET requests and `data`/`json` for POST/PUT/DELETE requests.
 

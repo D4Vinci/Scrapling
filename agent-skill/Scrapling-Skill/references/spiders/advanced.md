@@ -211,7 +211,7 @@ Key differences from `start()`:
 - Items are yielded one by one as they're scraped, not collected into a list
 - You can access `spider.stats` during iteration for real-time statistics
 
-**Note:** The full list of all stats that can be accessed by `spider.stats` is explained below [here](#results--statistics).
+**Note:** The full list of all stats that can be accessed by `spider.stats` is explained below [here](#results-statistics).
 
 You can use it with the checkpoint system too, so it's easy to build UI on top of spiders. UIs that have real-time data and can be paused/resumed.
 

@@ -12,8 +12,7 @@ By default, every spider creates a single [FetcherSession](../fetching/static.md
 | Session Type                                    | Use Case                                 |
 |-------------------------------------------------|------------------------------------------|
 | [FetcherSession](../fetching/static.md)         | Fast HTTP requests, no JavaScript        |
-| [AsyncDynamicSession](../fetching/dynamic.md)   | Browser automation, JavaScript rendering |
-| [AsyncStealthySession](../fetching/stealthy.md) | Anti-bot bypass, Cloudflare, etc.        |
+| [AsyncStealthySession](../fetching/stealthy.md) | JavaScript, browser automation, anti-bot bypass        |
 
 
 ## Configuring Sessions
@@ -68,11 +67,12 @@ class ProductSpider(Spider):
         # Fast HTTP for listing pages (default)
         manager.add("http", FetcherSession())
 
-        # Stealth browser for protected product pages
-        manager.add("stealth", AsyncStealthySession(
+        self.browser_session = AsyncStealthySession(
             headless=True,
             network_idle=True,
-        ))
+            record_requests=True,
+        )
+        manager.add("stealth", self.browser_session)
 
     async def parse(self, response: Response):
         for link in response.css("a.product::attr(href)").getall():
@@ -88,7 +88,15 @@ class ProductSpider(Spider):
             "name": response.css("h1::text").get(""),
             "price": response.css(".price::text").get(""),
         }
+
+    async def on_close(self):
+        for api_response in self.browser_session.network.search(
+            url_pattern=r"https://api\.shop\.example\.com/.*", limit=None
+        ):
+            self.logger.info(f"Saved API response: {api_response.url} ({api_response.status})")
 ```
+
+The example keeps the browser instance and reads its retained API history once in `on_close()`, before the sessions close. The history covers all product pages and stays readable after closure. Pending captures are not awaited, and retention limits still apply.
 
 The key is the `sid` parameter - it tells the spider which session to use for each request. When you call `response.follow()` without `sid`, the session ID from the original request is inherited.
 
@@ -149,7 +157,7 @@ async def parse(self, response: Response):
 
 **Warning:** When using `FetcherSession` in spiders, you cannot use `.get()` and `.post()` methods directly. By default, the request is an HTTP GET request; to use another HTTP method, pass it to the `method` argument as in the above example. This unifies the `Request` interface across all session types.
 
-For browser sessions (`AsyncDynamicSession`, `AsyncStealthySession`), you can pass browser-specific arguments like `wait_selector`, `page_action`, or `extra_headers`:
+For browser sessions (`AsyncStealthySession`), you can pass browser-specific arguments like `wait_selector`, `page_action`, or `extra_headers`:
 
 ```python
 async def parse(self, response: Response):
@@ -173,7 +181,7 @@ async def parse(self, response: Response):
     )
 ```
 
-**Warning:** Session arguments (**kwargs) passed from the original request are inherited by `response.follow()`. New kwargs take precedence over inherited ones.
+**Warning:** Session arguments (**kwargs) passed from the original request are inherited by `response.follow()`, except `method`, `params`, `data`, `json`, `files`, and `multipart`, so following a link after a POST issues a plain GET. New kwargs take precedence over inherited ones.
 
 ```python
 from scrapling.spiders import Spider, Response

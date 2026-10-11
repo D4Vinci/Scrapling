@@ -232,6 +232,11 @@ class TestCSVFeedSpider:
         assert len(rows) == 2
 
     @pytest.mark.asyncio
+    async def test_leading_byte_order_mark_stays_out_of_the_first_column(self):
+        rows = await _collect(_PriceSpider().parse(_make_response(b"\xef\xbb\xbf" + CSV_BODY)))
+        assert rows[0] == {"title": "First", "price": "10.5", "url": "https://example.com/products/1"}
+
+    @pytest.mark.asyncio
     async def test_empty_body_yields_nothing(self):
         assert await _collect(_PriceSpider().parse(_make_response(b""))) == []
 

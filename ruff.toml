@@ -16,6 +16,7 @@ target-version = "py310"
 line-length = 120
 
 [lint]
+typing-modules = ["scrapling.core._types"]
 select = ["E", "F", "W"]
 ignore = ["E501", "F401", "F811"]
 

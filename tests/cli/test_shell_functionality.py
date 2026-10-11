@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from scrapling.parser import Selector
+from scrapling.core._types import cast, extraction_types
 from scrapling.core.shell import CustomShell, CurlParser, Convertor
 
 
@@ -15,11 +16,11 @@ class TestCurlParser:
     def test_basic_curl_parse(self, parser):
         """Test parsing basic curl commands"""
         # Simple GET
-        curl_cmd = 'curl https://example.com'
+        curl_cmd = "curl https://example.com"
         request = parser.parse(curl_cmd)
 
-        assert request.url == 'https://example.com'
-        assert request.method == 'get'
+        assert request.url == "https://example.com"
+        assert request.method == "get"
         assert request.data is None
 
     def test_curl_with_headers(self, parser):
@@ -30,8 +31,8 @@ class TestCurlParser:
 
         request = parser.parse(curl_cmd)
 
-        assert request.headers['User-Agent'] == 'Mozilla/5.0'
-        assert request.headers['Accept'] == 'application/json'
+        assert request.headers["User-Agent"] == "Mozilla/5.0"
+        assert request.headers["Accept"] == "application/json"
 
     def test_curl_with_data(self, parser):
         """Test parsing curl with data"""
@@ -39,8 +40,8 @@ class TestCurlParser:
         curl_cmd = 'curl https://example.com -X POST -d "key=value&foo=bar"'
         request = parser.parse(curl_cmd)
 
-        assert request.method == 'post'
-        assert request.data == 'key=value&foo=bar'
+        assert request.method == "post"
+        assert request.data == "key=value&foo=bar"
 
         # JSON data
         curl_cmd = """curl https://example.com -X POST --data-raw '{"key": "value"}'"""
@@ -56,24 +57,24 @@ class TestCurlParser:
 
         request = parser.parse(curl_cmd)
 
-        assert request.cookies['session'] == 'abc123'
-        assert request.cookies['user'] == 'john'
-        assert request.cookies['extra'] == 'cookie'
+        assert request.cookies["session"] == "abc123"
+        assert request.cookies["user"] == "john"
+        assert request.cookies["extra"] == "cookie"
 
     def test_curl_with_proxy(self, parser):
         """Test parsing curl with proxy"""
-        curl_cmd = 'curl https://example.com -x http://proxy:8080 -U user:pass'
+        curl_cmd = "curl https://example.com -x http://proxy:8080 -U user:pass"
         request = parser.parse(curl_cmd)
 
-        assert 'http://user:pass@proxy:8080' in request.proxy['http']
+        assert "http://user:pass@proxy:8080" in request.proxy["http"]
 
     def test_curl2fetcher(self, parser):
         """Test converting curl to fetcher request"""
-        with patch('scrapling.fetchers.Fetcher.get') as mock_get:
+        with patch("scrapling.fetchers.Fetcher.get") as mock_get:
             mock_response = MagicMock()
             mock_get.return_value = mock_response
 
-            curl_cmd = 'curl https://example.com'
+            curl_cmd = "curl https://example.com"
             _ = parser.convert2fetcher(curl_cmd)
 
             mock_get.assert_called_once()
@@ -82,7 +83,7 @@ class TestCurlParser:
         """Test handling invalid curl commands"""
         # Invalid format
         with pytest.raises(AttributeError):
-            parser.parse('not a curl command')
+            parser.parse("not a curl command")
 
 
 class TestConvertor:
@@ -129,11 +130,7 @@ class TestConvertor:
     def test_extract_with_selector(self, sample_html):
         """Test extracting with CSS selector"""
         page = Selector(sample_html)
-        content = list(Convertor._extract_content(
-            page,
-            "text",
-            css_selector=".content"
-        ))
+        content = list(Convertor._extract_content(page, "text", css_selector=".content"))
 
         assert len(content) > 0
 
@@ -162,7 +159,7 @@ class TestConvertor:
 
         # Invalid extraction type
         with pytest.raises(ValueError):
-            list(Convertor._extract_content(page, "invalid"))
+            list(Convertor._extract_content(page, cast(extraction_types, "invalid")))
 
         # Invalid filename
         with pytest.raises(ValueError):
@@ -190,9 +187,9 @@ class TestCustomShell:
         namespace = shell.get_namespace()
 
         # Check all expected functions/classes are available
-        assert 'get' in namespace
-        assert 'post' in namespace
-        assert 'Fetcher' in namespace
-        assert 'DynamicFetcher' in namespace
-        assert 'view' in namespace
-        assert 'uncurl' in namespace
+        assert "get" in namespace
+        assert "post" in namespace
+        assert "Fetcher" in namespace
+        assert "StealthyFetcher" in namespace
+        assert "view" in namespace
+        assert "uncurl" in namespace

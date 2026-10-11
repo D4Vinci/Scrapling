@@ -79,7 +79,8 @@ class SitemapSpider(Spider):
         """Extract `Sitemap` directives from a robots.txt body via protego."""
         try:
             text = response.body.decode(response.encoding, errors="replace")
-            parser = Protego.parse(text)
+            # Left in place, a BOM hides the first directive from protego
+            parser = Protego.parse(text.removeprefix("\N{BYTE ORDER MARK}"))
         except Exception as e:
             self.logger.warning(f"Failed to parse robots.txt: {e}")
             return []
@@ -103,6 +104,8 @@ class SitemapSpider(Spider):
 
     @staticmethod
     def _get_type(el: Any) -> str:
+        if not isinstance(el.tag, str):
+            return ""
         return etree.QName(el.tag).localname
 
     def _sm_body(self, body: bytes, content_type: Optional[str] = None) -> SitemapResult:
@@ -161,13 +164,13 @@ class SitemapSpider(Spider):
             if req is not None:
                 yield req
 
-    @staticmethod
-    def _dispatch(response: "Response", url: str, rules: List[CrawlRule]) -> Optional[Request]:
+    def _dispatch(self, response: "Response", url: str, rules: List[CrawlRule]) -> Optional[Request]:
+        # The callback is always set explicitly, otherwise `follow()` would inherit `_parse_sitemap` from the sitemap request
         if not rules:
-            return response.follow(url)
+            return response.follow(url, callback=self.parse)
         for rule in rules:
             if rule.link_extractor.matches(url):
-                req = response.follow(url, callback=rule.callback)
+                req = response.follow(url, callback=rule.callback or self.parse)
                 if rule.priority is not None:
                     req.priority = rule.priority
                 if rule.process_request is not None:

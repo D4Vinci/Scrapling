@@ -1,24 +1,24 @@
 from time import time
-from re import search as re_search
+from pathlib import Path
 from asyncio import sleep as asyncio_sleep, Lock
 from contextlib import contextmanager, asynccontextmanager, suppress
 
-from playwright.sync_api._generated import Page
-from playwright.sync_api import (
+from patchright.sync_api import Page
+from patchright.sync_api import (
     Frame,
     BrowserContext,
     Response as SyncPlaywrightResponse,
 )
-from playwright.async_api._generated import Page as AsyncPage
-from playwright.async_api import (
+from patchright.async_api import Page as AsyncPage
+from patchright.async_api import (
     Frame as AsyncFrame,
     Response as AsyncPlaywrightResponse,
     BrowserContext as AsyncBrowserContext,
 )
-from playwright._impl._errors import Error as PlaywrightError
 
 from scrapling.parser import Selector
 from scrapling.engines._browsers._page import PageInfo, PagePool
+from scrapling.engines._browsers._network import NetworkRecorder
 from scrapling.engines._browsers._validators import validate, PlaywrightConfig, StealthConfig
 from scrapling.engines._browsers._config_tools import __default_chrome_useragent__, __default_useragent__
 from scrapling.engines.toolbelt.navigation import (
@@ -51,8 +51,9 @@ class SyncSession:
     if TYPE_CHECKING:
         _build_context_with_proxy: Callable[..., Dict[str, Any]]
 
-    def __init__(self, max_pages: int = 1):
+    def __init__(self, max_pages: int = 1, record_requests: bool = False, max_recorded_requests: int = 1000):
         self.max_pages = max_pages
+        self.network = NetworkRecorder(enabled=record_requests, max_requests=max_recorded_requests)
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
         self.playwright: Any = None
@@ -63,6 +64,24 @@ class SyncSession:
     def start(self) -> None:
         pass
 
+    def save_state(self, path: str | Path) -> None:
+        """Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Does not save sessionStorage.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        self.context.storage_state(path=Path(path), indexed_db=True)
+
+    def load_state(self, path: str | Path) -> None:
+        """Replace cookies, local storage and IndexedDB from a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Fetch or reload pages to use the restored login.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        self.context.set_storage_state(path)
+
     def close_pages(self) -> None:
         """Close every open tab in the session's pool. The next request opens a fresh tab."""
         for page_info in self.page_pool.clear():
@@ -71,6 +90,7 @@ class SyncSession:
 
     def close(self):  # pragma: no cover
         """Close all resources"""
+        self.network._detach()
         if not self._is_alive:
             return
 
@@ -104,6 +124,7 @@ class SyncSession:
         if config.cookies:  # pragma: no cover
             ctx.add_cookies(config.cookies)
 
+        self.network._attach(ctx)
         return ctx
 
     def _get_page(
@@ -139,11 +160,24 @@ class SyncSession:
         }
 
     @staticmethod
+    def _snapshot(
+        page: Page, depth: Optional[int] = None, boxes: bool = False, css_selector: Optional[str] = None
+    ) -> str:
+        """Return an AI ARIA snapshot of an existing browser page.
+
+        :param page: The browser page to snapshot.
+        :param depth: Limit the snapshot tree depth. Defaults to no limit.
+        :param boxes: Include element bounding boxes in viewport CSS pixels.
+        :param css_selector: Snapshot one matching element instead of the whole page.
+        """
+        return (page.locator(css_selector) if css_selector else page).aria_snapshot(mode="ai", depth=depth, boxes=boxes)
+
+    @staticmethod
     def _wait_for_networkidle(page: Page | Frame, timeout: Optional[int] = None):
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
             page.wait_for_load_state("networkidle", timeout=timeout)
-        except (PlaywrightError, Exception):
+        except Exception:
             pass
 
     def _wait_for_page_stability(self, page: Page | Frame, load_dom: bool, network_idle: bool):
@@ -157,15 +191,11 @@ class SyncSession:
     def _create_response_handler(
         page_info: PageInfo[Page],
         response_container: List,
-        xhr_pattern: Optional[str] = None,
-        xhr_container: Optional[List] = None,
     ) -> Callable[[SyncPlaywrightResponse], None]:
-        """Create a response handler that captures the final navigation response and optionally XHR/fetch responses.
+        """Create a response handler that captures the final navigation response.
 
         :param page_info: The PageInfo object containing the page
         :param response_container: A list to store the final response (mutable container)
-        :param xhr_pattern: Optional regex pattern to match XHR/fetch response URLs
-        :param xhr_container: Optional list to store captured XHR/fetch responses
         :return: A callback function for page.on("response", ...)
         """
 
@@ -176,13 +206,6 @@ class SyncSession:
                 and finished_response.request.frame == page_info.page.main_frame
             ):
                 response_container[0] = finished_response
-            elif (
-                xhr_pattern
-                and xhr_container is not None
-                and finished_response.request.resource_type in ("xhr", "fetch")
-                and re_search(xhr_pattern, finished_response.url)
-            ):
-                xhr_container.append(finished_response)
 
         return handle_response
 
@@ -211,6 +234,7 @@ class SyncSession:
             finally:
                 if page_info is not None:
                     self.page_pool.remove_page(page_info)
+                self.network._detach(context)
                 context.close()
         else:
             # Standard mode: use PagePool with persistent context
@@ -232,8 +256,9 @@ class AsyncSession:
     if TYPE_CHECKING:
         _build_context_with_proxy: Callable[..., Dict[str, Any]]
 
-    def __init__(self, max_pages: int = 1):
+    def __init__(self, max_pages: int = 1, record_requests: bool = False, max_recorded_requests: int = 1000):
         self.max_pages = max_pages
+        self.network = NetworkRecorder(enabled=record_requests, max_requests=max_recorded_requests, asynchronous=True)
         self.page_pool = PagePool(max_pages)
         self._max_wait_for_page = 60
         self.playwright: Any = None
@@ -245,6 +270,24 @@ class AsyncSession:
     async def start(self) -> None:
         pass
 
+    async def save_state(self, path: str | Path) -> None:
+        """Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Does not save sessionStorage.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        await self.context.storage_state(path=Path(path), indexed_db=True)
+
+    async def load_state(self, path: str | Path) -> None:
+        """Replace cookies, local storage and IndexedDB from a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Fetch or reload pages to use the restored login.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        await self.context.set_storage_state(path)
+
     async def close_pages(self) -> None:
         """Close every open tab in the session's pool. The next request opens a fresh tab."""
         for page_info in self.page_pool.clear():
@@ -253,6 +296,7 @@ class AsyncSession:
 
     async def close(self):
         """Close all resources"""
+        self.network._detach()
         if not self._is_alive:  # pragma: no cover
             return
 
@@ -288,6 +332,7 @@ class AsyncSession:
         if config.cookies:  # pragma: no cover
             await ctx.add_cookies(config.cookies)
 
+        self.network._attach(ctx)
         return ctx
 
     async def _get_page(
@@ -339,11 +384,26 @@ class AsyncSession:
         }
 
     @staticmethod
+    async def _snapshot(
+        page: AsyncPage, depth: Optional[int] = None, boxes: bool = False, css_selector: Optional[str] = None
+    ) -> str:
+        """Return an AI ARIA snapshot of an existing browser page.
+
+        :param page: The browser page to snapshot.
+        :param depth: Limit the snapshot tree depth. Defaults to no limit.
+        :param boxes: Include element bounding boxes in viewport CSS pixels.
+        :param css_selector: Snapshot one matching element instead of the whole page.
+        """
+        return await (page.locator(css_selector) if css_selector else page).aria_snapshot(
+            mode="ai", depth=depth, boxes=boxes
+        )
+
+    @staticmethod
     async def _wait_for_networkidle(page: AsyncPage | AsyncFrame, timeout: Optional[int] = None):
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
             await page.wait_for_load_state("networkidle", timeout=timeout)
-        except (PlaywrightError, Exception):
+        except Exception:
             pass
 
     async def _wait_for_page_stability(self, page: AsyncPage | AsyncFrame, load_dom: bool, network_idle: bool):
@@ -357,15 +417,11 @@ class AsyncSession:
     def _create_response_handler(
         page_info: PageInfo[AsyncPage],
         response_container: List,
-        xhr_pattern: Optional[str] = None,
-        xhr_container: Optional[List] = None,
     ) -> Callable[[AsyncPlaywrightResponse], Awaitable[None]]:
-        """Create an async response handler that captures the final navigation response and optionally XHR/fetch responses.
+        """Create an async response handler that captures the final navigation response.
 
         :param page_info: The PageInfo object containing the page
         :param response_container: A list to store the final response (mutable container)
-        :param xhr_pattern: Optional regex pattern to match XHR/fetch response URLs
-        :param xhr_container: Optional list to store captured XHR/fetch responses
         :return: A callback function for page.on("response", ...)
         """
 
@@ -376,13 +432,6 @@ class AsyncSession:
                 and finished_response.request.frame == page_info.page.main_frame
             ):
                 response_container[0] = finished_response
-            elif (
-                xhr_pattern
-                and xhr_container is not None
-                and finished_response.request.resource_type in ("xhr", "fetch")
-                and re_search(xhr_pattern, finished_response.url)
-            ):
-                xhr_container.append(finished_response)
 
         return handle_response
 
@@ -413,6 +462,7 @@ class AsyncSession:
             finally:
                 if page_info is not None:
                     self.page_pool.remove_page(page_info)
+                self.network._detach(context)
                 await context.close()
         else:
             # Standard mode: use PagePool with persistent context
@@ -479,7 +529,7 @@ class BaseSessionMixin:
         if not config.cdp_url:
             flags = self._browser_options["args"]
             if config.extra_flags or extra_flags:
-                flags = list(set(tuple(flags) + tuple(config.extra_flags or extra_flags or ())))
+                flags = list(set(tuple(flags) + tuple(extra_flags or ()) + tuple(config.extra_flags or ())))
 
             if config.dns_over_https:
                 doh_flag = "--dns-over-https-templates=https://cloudflare-dns.com/dns-query"
@@ -531,12 +581,6 @@ class BaseSessionMixin:
             context_options["proxy"] = construct_proxy_dict(proxy)
 
         return context_options
-
-
-class DynamicSessionMixin(BaseSessionMixin):
-    def __validate__(self, **params):
-        self._config = self.__validate_routine__(params, model=PlaywrightConfig)
-        self.__generate_options__()
 
 
 class StealthySessionMixin(BaseSessionMixin):

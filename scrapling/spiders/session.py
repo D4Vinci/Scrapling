@@ -4,9 +4,9 @@ from scrapling.spiders.request import Request
 from scrapling.engines.static import _ASyncSessionLogic
 from scrapling.engines.toolbelt.convertor import Response
 from scrapling.core._types import Set, cast, SUPPORTED_HTTP_METHODS
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, FetcherSession
+from scrapling.fetchers import AsyncStealthySession, FetcherSession
 
-Session = FetcherSession | AsyncDynamicSession | AsyncStealthySession
+Session = FetcherSession | AsyncStealthySession
 
 
 class SessionManager:
@@ -116,6 +116,9 @@ class SessionManager:
                 if isinstance(client, _ASyncSessionLogic):
                     kwargs = request._session_kwargs.copy()
                     method = cast(SUPPORTED_HTTP_METHODS, kwargs.pop("method", "GET"))
+                    if "stealthy_headers" in kwargs:
+                        # Same mapping as the public session methods (`get`, `post`, ...), so it doesn't reach curl_cffi
+                        kwargs["stealth"] = kwargs.pop("stealthy_headers")
                     response = await client._make_request(
                         method=method,
                         url=request.url,

@@ -28,11 +28,18 @@ class RobotsTxtManager:
             response = await self._fetch_fn(robots_url, sid)
             if response.status == 200:
                 content = response.body.decode(response.encoding, errors="replace")
+            elif 400 <= response.status < 500:
+                content = ""
+            else:
+                log.warning(f"robots.txt for {domain} returned status {response.status}; assuming full disallow")
+                content = "User-agent: *\nDisallow: /"
         except Exception as e:
-            log.warning(f"Failed to fetch robots.txt for {domain}: {e}")
+            log.warning(f"Failed to fetch robots.txt for {domain}: {e}; assuming full disallow")
+            content = "User-agent: *\nDisallow: /"
 
         try:
-            parser = Protego.parse(content)
+            # Left in place, a BOM hides the first line (usually `User-agent: *`) from protego
+            parser = Protego.parse(content.removeprefix("\N{BYTE ORDER MARK}"))
         except Exception as e:
             log.warning(f"Failed to parse robots.txt for {domain}: {e}")
             parser = Protego.parse("")

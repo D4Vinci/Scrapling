@@ -27,8 +27,7 @@ nav = [
         {Fetching = [
             {"Fetchers basics" = "fetching/choosing.md"},
             {"HTTP requests" = "fetching/static.md"},
-            {"Dynamic websites" = "fetching/dynamic.md"},
-            {"Dynamic websites with hard protections" = "fetching/stealthy.md"}
+            {"Browser fetching" = "fetching/stealthy.md"}
         ]},
         {Spiders = [
             {"Architecture" = "spiders/architecture.md"},
@@ -73,7 +72,7 @@ nav = [
     ]},
     {"Support and Advertisement" = "donate.md"},
     {Contributing = "https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md"},
-    {Changelog = "https://github.com/D4Vinci/Scrapling/releases"}
+    {Changelog = "https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md"}
 ]
 
 [project.theme]

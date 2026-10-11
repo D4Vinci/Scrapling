@@ -5,15 +5,15 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "scrapling"
 # Static version instead of a dynamic version so we can get better layer caching while building docker, check the docker file to understand
-version = "0.4.15"
+version = "0.5"
 description = "Scrapling is an undetectable, powerful, flexible, high-performance Python library that makes Web Scraping easy and effortless as it should be!"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
 authors = [
-    {name = "Karim Shoair", email = "karim.shoair@pm.me"}
+    {name = "Karim Shoair", email = "scrapling@proton.me"}
 ]
 maintainers = [
-    {name = "Karim Shoair", email = "karim.shoair@pm.me"}
+    {name = "Karim Shoair", email = "scrapling@proton.me"}
 ]
 keywords = [
     "web-scraping",
@@ -101,7 +101,7 @@ all = [
 
 [project.urls]
 Homepage = "https://github.com/D4Vinci/Scrapling"
-Changelog = "https://github.com/D4Vinci/Scrapling/releases"
+Changelog = "https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md"
 Documentation = "https://scrapling.readthedocs.io/en/latest/"
 Repository = "https://github.com/D4Vinci/Scrapling"
 "Bug Tracker" = "https://github.com/D4Vinci/Scrapling/issues"

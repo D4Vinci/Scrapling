@@ -43,10 +43,10 @@ def get_os_name() -> OSName | Tuple:
 
 
 @lru_cache(2, typed=True)
-def driven_browser_version(package: str = "playwright") -> int | None:
+def driven_browser_version(package: str = "patchright") -> int | None:
     """Get the Chromium major version the installed automation package drives, read from its bundled `browsers.json`.
 
-    :param package: The automation package to inspect, e.g. `"playwright"` or `"patchright"`
+    :param package: The automation package to inspect. Defaults to `"patchright"`
     :return: The Chromium major version, or `None` if it couldn't be determined
     """
     spec = find_spec(package)
@@ -66,7 +66,7 @@ def driven_browser_version(package: str = "playwright") -> int | None:
 def generate_headers(browser_mode: bool | str = False) -> Dict:
     """Generate real browser-like headers using browserforge's generator
 
-    :param browser_mode: If enabled, the headers created are used for playwright, so it has to match everything
+    :param browser_mode: If enabled, the headers created are used for the browser, so it has to match everything
     :return: A dictionary of the generated headers
     """
     os_name = get_os_name()
@@ -84,7 +84,7 @@ def generate_headers(browser_mode: bool | str = False) -> Dict:
         headers = HeaderGenerator(
             browser=[Browser(name=b.name) for b in browsers], os=os_name, device=device
         ).generate()
-    if browser_mode and (driven := driven_browser_version() or driven_browser_version("patchright")):
+    if browser_mode and (driven := driven_browser_version()):
         if user_agent := headers.get("User-Agent"):
             headers["User-Agent"] = re.sub(r"Chrome/[\d.]+", f"Chrome/{driven}.0.0.0", user_agent)
     return headers

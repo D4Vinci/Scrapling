@@ -227,7 +227,7 @@ Key differences from `start()`:
 
 !!! abstract 
 
-    The full list of all stats that can be accessed by `spider.stats` is explained below [here](#results--statistics)
+    The full list of all stats that can be accessed by `spider.stats` is explained below [here](#results-statistics)
 
 You can use it with the checkpoint system too, so it's easy to build UI on top of spiders. UIs that have real-time data and can be paused/resumed.
 

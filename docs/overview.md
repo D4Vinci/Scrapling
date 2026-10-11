@@ -289,28 +289,19 @@ This is just the tip of the iceberg with this fetcher; check out the rest from [
 ### Dynamic loading
 We have you covered if you deal with dynamic websites like most today!
 
-The `DynamicFetcher` class (formerly `PlayWrightFetcher`) offers many options for fetching and loading web pages using Chromium-based browsers.
+The `StealthyFetcher` class offers many options for fetching and loading web pages using Chromium-based browsers.
 ```python
-from scrapling.fetchers import DynamicFetcher
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/js/', disable_resources=True, block_ads=True)
+from scrapling.fetchers import StealthyFetcher
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/js/', disable_resources=True, block_ads=True)
 print(len(page.css(".quote")))  # -> 10
 
 # The async version of fetch
-page = await DynamicFetcher.async_fetch('https://quotes.toscrape.com/js/', disable_resources=True, block_ads=True)
+page = await StealthyFetcher.async_fetch('https://quotes.toscrape.com/js/', disable_resources=True, block_ads=True)
 print(len(page.css(".quote")))  # -> 10
 ```
-It's built on top of [Playwright](https://playwright.dev/python/), and it's currently providing two main run options that can be mixed as you want:
+It's built on top of [Playwright](https://playwright.dev/python/) with stealth patches. Use the bundled Chromium browser, your installed Google Chrome with `real_chrome=True`, or a running browser through `cdp_url`.
 
-- Vanilla Playwright without any modifications other than the ones you chose. It uses the Chromium browser.
-- Real browsers like your Chrome browser by passing the `real_chrome` argument or the CDP URL of your browser to be controlled by the Fetcher, and most of the options can be enabled on it.
-
-
-Again, this is just the tip of the iceberg with this fetcher. Check out the rest from [here](fetching/dynamic.md) for all details and the complete list of arguments.
-
-### Dynamic anti-protection loading
-We also have you covered if you deal with dynamic websites with annoying anti-protections!
-
-The `StealthyFetcher` class uses a stealthy version of the `DynamicFetcher` explained above. 
+### Anti-bot features
 
 Some of the things it does:
 

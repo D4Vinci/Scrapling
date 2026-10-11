@@ -4,6 +4,7 @@ from functools import cached_property
 from urllib.parse import urlparse, urlencode
 
 import orjson
+from curl_cffi.requests.utils import update_url_params
 from w3lib.url import canonicalize_url
 
 from scrapling.engines.toolbelt.custom import Response
@@ -93,14 +94,17 @@ class Request:
             elif isinstance(post_data, bytes):
                 body = post_data
         else:
-            post_data = self._session_kwargs.get("json", {})
-            body = orjson.dumps(post_data) if post_data else b""
+            post_data = self._session_kwargs.get("json")
+            body = orjson.dumps(post_data) if post_data is not None else b""
+
+        params = self._session_kwargs.get("params")
+        url = update_url_params(self.url, params) if params else self.url
 
         data: Dict[str, str | Tuple] = {
             "sid": self.sid,
             "body": body.hex(),
             "method": self._session_kwargs.get("method", "GET"),
-            "url": canonicalize_url(self.url, keep_fragments=keep_fragments),
+            "url": canonicalize_url(url, keep_fragments=keep_fragments),
         }
 
         if include_kwargs:
@@ -117,7 +121,7 @@ class Request:
             # Some header normalization
             for key, value in headers.items():
                 processed_headers[_convert_to_bytes(key.lower()).hex()] = _convert_to_bytes(value).hex()
-            data["headers"] = tuple(processed_headers.items())
+            data["headers"] = tuple(sorted(processed_headers.items()))
 
         fp = hashlib.sha1(orjson.dumps(data, option=orjson.OPT_SORT_KEYS), usedforsecurity=False).digest()
         self._fp = fp
