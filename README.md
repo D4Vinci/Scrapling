@@ -142,17 +142,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
-      </a>
-    </td>
-    <td>
-    Close your laptop. Your scrapers keep running. <br />
-    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - cloud servers built for nonstop automation. Windows and Linux machines with full control. From €6.99/mo.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank" title="The #1 newsletter dedicated to Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TWSC.png">
       </a>
@@ -189,6 +178,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Reduce blocks and CAPTCHAs by 90%. 28M Premium Residential IPs for Heavy Web Scraping. 195 countries. City/ISP/ZIP targeting. Sticky/rotating sessions. Non-expiring traffic from $2/GB. Code <strong>SCRAPEANDTAKE</strong>: <em>25% off</em>.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: Stop paying per GB. Unlimited residential traffic, 100M+ IPs, 190+ countries. Pay by bandwidth. Request a free 50 Mbps residential proxies trial.
     </td>
   </tr>
   <tr>

@@ -130,17 +130,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
-      </a>
-    </td>
-    <td>
-    合上笔记本电脑，您的爬虫仍在运行。<br />
-    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - 为不间断自动化而生的云服务器。Windows 和 Linux 系统，完全掌控。低至 €6.99/月。
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank" title="The #1 newsletter dedicated to Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TWSC.png">
       </a>
@@ -177,6 +166,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：将封禁和 CAPTCHA 验证码减少 90%。提供 2800 万个优质住宅 IP，适用于大规模网页抓取。覆盖 195 个国家。支持城市、ISP、邮政编码（ZIP）定向。支持固定和轮换会话。流量永不过期，低至 $2/GB。使用优惠码 <strong>SCRAPEANDTAKE</strong> 可享 <em>25% 折扣</em>。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>：无需再按 GB 付费。住宅代理流量不限量，1 亿+ IP，覆盖 190+ 个国家。按带宽付费。申请免费试用 50 Mbps 住宅代理。
     </td>
   </tr>
   <tr>

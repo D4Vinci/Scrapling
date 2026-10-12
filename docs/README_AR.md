@@ -130,17 +130,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
-      </a>
-    </td>
-    <td>
-    أغلق حاسوبك. أدوات الكشط تواصل العمل. <br />
-    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - خوادم سحابية مصممة للأتمتة المتواصلة. أجهزة Windows وLinux مع تحكم كامل. بدءًا من 6.99 يورو/شهريًا.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank" title="The #1 newsletter dedicated to Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TWSC.png">
       </a>
@@ -177,6 +166,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: قلّل الحظر واختبارات CAPTCHA بنسبة 90%. 28 مليون عنوان IP سكني عالي الجودة لاستخراج بيانات الويب بكثافة. 195 دولة. استهداف حسب المدينة/ISP/الرمز البريدي (ZIP). جلسات ثابتة أو دوّارة. حركة بيانات لا تنتهي صلاحيتها تبدأ من $2/GB. الكود <strong>SCRAPEANDTAKE</strong>: <em>خصم 25%</em>.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: توقّف عن الدفع لكل GB. حركة بيانات سكنية غير محدودة، وأكثر من 100 مليون عنوان IP في أكثر من 190 دولة. ادفع حسب عرض النطاق الترددي. اطلب تجربة مجانية للبروكسيات السكنية بسرعة 50 Mbps.
     </td>
   </tr>
   <tr>

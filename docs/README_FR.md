@@ -130,17 +130,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
-      </a>
-    </td>
-    <td>
-    Fermez votre ordinateur. Vos scrapers continuent de tourner. <br />
-    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - des serveurs cloud conçus pour l'automatisation sans interruption. Machines Windows et Linux avec contrôle total. À partir de 6,99 €/mois.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank" title="The #1 newsletter dedicated to Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TWSC.png">
       </a>
@@ -177,6 +166,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a> : Réduisez les blocages et les CAPTCHAs de 90 %. 28 millions d’adresses IP résidentielles premium pour le scraping web intensif. 195 pays. Ciblage par ville/ISP/code postal. Sessions fixes ou rotatives. Trafic sans expiration à partir de $2/GB. Code <strong>SCRAPEANDTAKE</strong> : <em>25 % de réduction</em>.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a> : Ne payez plus par GB. Trafic résidentiel illimité, plus de 100 millions d’IP, plus de 190 pays. Payez selon la bande passante. Demandez un essai gratuit de proxies résidentiels à 50 Mbps.
     </td>
   </tr>
   <tr>

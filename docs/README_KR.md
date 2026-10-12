@@ -130,17 +130,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
-      </a>
-    </td>
-    <td>
-    노트북을 닫으세요. 스크래퍼는 계속 작동합니다. <br />
-    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - 논스톱 자동화를 위한 클라우드 서버. Windows 및 Linux 머신을 완벽하게 제어. 월 €6.99부터.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank" title="The #1 newsletter dedicated to Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TWSC.png">
       </a>
@@ -177,6 +166,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 차단과 CAPTCHA를 90% 줄입니다. 대규모 웹 스크래핑을 위한 2,800만 개의 프리미엄 주거용 IP. 195개 국가 지원. 도시, ISP, 우편번호(ZIP) 타겟팅. 고정 및 순환 세션. 유효 기간이 없는 트래픽을 $2/GB부터 제공합니다. 코드 <strong>SCRAPEANDTAKE</strong>를 사용하면 <em>25% 할인</em>.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: GB당 요금은 이제 그만. 무제한 주거용 프록시 트래픽, 1억 개 이상의 IP, 190개 이상의 국가. 대역폭에 따라 요금을 지불하세요. 50 Mbps 주거용 프록시 무료 체험을 신청하세요.
     </td>
   </tr>
   <tr>
