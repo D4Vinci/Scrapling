@@ -43,14 +43,15 @@ class SelectorsGeneration:
                     #     part += f".{'.'.join(classes)}"
                     # else:
                     counter: Dict[str, int] = {}
+                    position = 1
                     for child in target.parent.children:
                         counter.setdefault(child.tag, 0)
                         counter[child.tag] += 1
                         if child._root == target._root:
-                            break
+                            position = counter[child.tag]
 
                     if counter[target.tag] > 1:
-                        part += f":nth-of-type({counter[target.tag]})" if css else f"[{counter[target.tag]}]"
+                        part += f":nth-of-type({position})" if css else f"[{position}]"
 
                     selectorPath.append(part)
                 target = target.parent
