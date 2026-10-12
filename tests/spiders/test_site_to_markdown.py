@@ -4,6 +4,7 @@ import pytest
 
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.spiders.links import LinkExtractor
+from scrapling.spiders.engine import CrawlerEngine
 from scrapling.spiders.request import Request
 from scrapling.spiders.templates import CrawlRule, ContentSpider
 from scrapling.core._types import AsyncGenerator
@@ -51,6 +52,21 @@ def _spider(**attrs) -> ContentSpider:
 
 
 class TestContentSpider:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "strategy, paths", [("bfs", ["/docs/page-1", "/blog/post-1"]), ("dfs", ["/blog/post-1", "/docs/page-1"])]
+    )
+    async def test_inherited_crawl_strategy(self, strategy, paths):
+        spider = _spider(crawl_strategy=strategy)
+        engine = CrawlerEngine(spider, spider._session_manager)
+        response = _make_response()
+        await engine._run_callbacks(response.request, response)
+
+        assert engine.stats.items_scraped == 1
+        assert [(await engine.scheduler.dequeue()).url for _ in paths] == [
+            f"https://example.com{path}" for path in paths
+        ]
+
     def test_requires_allowed_domains(self):
         class S(ContentSpider):
             name = "s"

@@ -36,6 +36,21 @@ A `CrawlRule` pairs a `LinkExtractor` with an optional `callback` (a bound metho
 
 If a rule has no callback, the matched URLs fall through to the spider's default `parse()` (or stay uncallback'd if you didn't override it). This is convenient for pagination: extract the next-page links to keep the crawl going, but don't need a separate handler.
 
+### Crawl order
+
+Set `crawl_strategy` on `CrawlSpider` or its subclasses, including `ContentSpider`, to choose the next pending request:
+
+| `crawl_strategy` | Order within the same `Request.priority` |
+|------------------|------------------------------------------|
+| `"bfs"` (default) | Oldest queued request first |
+| `"dfs"` | Newest queued request first |
+
+The scheduler takes pending requests with higher `Request.priority` first. The strategy only orders requests with equal priority.
+
+Set `concurrent_requests = 1` to process one request at a time in the selected queue order. Duplicate URLs are still filtered; finding a URL again does not move its queued request. With parallel requests, pages can finish in a different order, and levels or branches can overlap.
+
+Keep the same `crawl_strategy` when resuming from a checkpoint.
+
 ### Combining rules with custom logic
 
 Override `parse()` and call `super().parse(response)` to get the rule behavior plus your own yields:

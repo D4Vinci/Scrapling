@@ -1,6 +1,7 @@
 """Tests for `CrawlSpider` and `CrawlRule`."""
 
 import pickle
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -21,11 +22,11 @@ HTML = """
 """
 
 
-def _make_response(url: str = "https://example.com/") -> Response:
+def _make_response(url: str = "https://example.com/", html: str = HTML) -> Response:
     """Build a Response with a Request attached so `response.follow()` works."""
     resp = Response(
         url=url,
-        content=HTML,
+        content=html,
         status=200,
         reason="OK",
         cookies={},
@@ -52,6 +53,49 @@ async def _collect(agen: AsyncGenerator) -> list:
 
 
 class TestCrawlSpider:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "strategy, order", [("bfs", ["/", "/a", "/b", "/a/1", "/b/1"]), ("dfs", ["/", "/b", "/b/1", "/a", "/a/1"])]
+    )
+    async def test_crawl_strategy_with_callbacks(self, strategy, order):
+        pages = {
+            "/": '<a href="/a">A</a><a href="/b">B</a>',
+            "/a": '<a href="/a/1">A1</a>',
+            "/b": '<a href="/b/1">B1</a>',
+            "/a/1": '<a href="/">Home</a>',
+            "/b/1": '<a href="/">Home</a>',
+        }
+
+        async def fetch(url, **kwargs):
+            return _make_response(url, pages[url.removeprefix("https://example.com")])
+
+        session = AsyncMock()
+        session._is_alive = False
+        session.fetch.side_effect = fetch
+
+        class OrderedSpider(CrawlSpider):
+            name = "ordered"
+            start_urls = ["https://example.com/"]
+            concurrent_requests = 1
+            crawl_strategy = strategy
+
+            def configure_sessions(self, manager):
+                manager.add("graph", session)
+
+            def rules(self):
+                return [CrawlRule(LinkExtractor(), callback=self.parse_page)]
+
+            async def parse_page(self, response):
+                yield {"url": response.url}
+                async for request in self.parse(response):
+                    yield request
+
+        items = [item async for item in OrderedSpider().stream()]
+        urls = [f"https://example.com{path}" for path in order]
+        assert [call.kwargs["url"] for call in session.fetch.await_args_list] == urls
+        assert [item["url"] for item in items] == urls[1:]
+        session.__aexit__.assert_awaited_once()
+
     @pytest.mark.asyncio
     async def test_empty_rules_yields_nothing(self):
         class S(CrawlSpider):

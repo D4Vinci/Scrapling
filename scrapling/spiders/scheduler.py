@@ -3,7 +3,7 @@ from itertools import count
 
 from scrapling.core.utils import log
 from scrapling.spiders.request import Request
-from scrapling.core._types import List, Set, Tuple, TYPE_CHECKING
+from scrapling.core._types import List, Set, Tuple, Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scrapling.spiders.checkpoint import CheckpointData
@@ -14,13 +14,23 @@ class Scheduler:
     Priority queue with URL deduplication. (heapq)
 
     Higher priority requests are processed first.
+    For equal priorities, bfs takes the oldest queued request and dfs takes the newest.
     Duplicate URLs are filtered unless dont_filter=True.
     """
 
-    def __init__(self, include_kwargs: bool = False, include_headers: bool = False, keep_fragments: bool = False):
+    def __init__(
+        self,
+        include_kwargs: bool = False,
+        include_headers: bool = False,
+        keep_fragments: bool = False,
+        crawl_strategy: Literal["bfs", "dfs"] = "bfs",
+    ):
+        if crawl_strategy not in ("bfs", "dfs"):
+            raise ValueError("crawl_strategy must be 'bfs' or 'dfs'")
         self._queue: asyncio.PriorityQueue[tuple[int, int, Request]] = asyncio.PriorityQueue()
         self._seen: set[bytes] = set()
-        self._counter = count()
+        self._lifo = crawl_strategy == "dfs"
+        self._counter = count(step=-1 if self._lifo else 1)
         # Mirror dict for snapshot without draining queue
         self._pending: dict[int, tuple[int, int, Request]] = {}
         self._inflight: dict[int, list[int]] = {}
@@ -81,8 +91,7 @@ class Scheduler:
         """
         self._seen = data.seen.copy()
 
-        # Restore pending requests in order (they're already sorted by priority)
-        for request in data.requests:
+        for request in reversed(data.requests) if self._lifo else data.requests:
             counter = next(self._counter)
             item = (-request.priority, counter, request)
             self._pending[counter] = item

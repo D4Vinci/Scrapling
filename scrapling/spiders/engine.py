@@ -42,6 +42,7 @@ class CrawlerEngine:
             include_kwargs=spider.fp_include_kwargs,
             include_headers=spider.fp_include_headers,
             keep_fragments=spider.fp_keep_fragments,
+            crawl_strategy=getattr(spider, "crawl_strategy", "bfs"),
         )
         self.stats = CrawlStats()
 
