@@ -402,7 +402,7 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
 ## References
 You already had a good glimpse of what the library can do. Use the references below to dig deeper when needed
 - `references/mcp-server.md` - MCP server tools, persistent session management, remote browsers over CDP, authentication, and capabilities
-- `references/building-rag-systems.md` - Converting pages/websites to LLM-ready Markdown with `Response.markdown()` and `SiteToMarkdownSpider` for RAG pipelines
+- `references/building-rag-systems.md` - Converting pages/websites to LLM-ready Markdown with `Response.markdown()` and `ContentSpider` for RAG pipelines
 - `references/parsing` - Everything you need for parsing HTML
 - `references/fetching` - Everything you need to fetch websites and session persistence
 - `references/spiders` - Everything you need to write spiders, proxy rotation, and advanced features. It follows a Scrapy-like format

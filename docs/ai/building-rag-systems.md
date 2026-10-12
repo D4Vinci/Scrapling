@@ -43,12 +43,12 @@ Whatever you pass, scripts, styles, and hidden content are always removed before
 
 ## A whole website to a Markdown corpus
 
-The `SiteToMarkdownSpider` template crawls a website and converts every page, powered by the [spiders framework](../spiders/architecture.md), so you get concurrency, autothrottle, robots.txt compliance, and pause/resume for free:
+The `ContentSpider` template crawls a website and converts every page, powered by the [spiders framework](../spiders/architecture.md), so you get concurrency, autothrottle, robots.txt compliance, and pause/resume for free:
 
 ```python
-from scrapling.spiders import SiteToMarkdownSpider
+from scrapling.spiders import ContentSpider
 
-class DocsSpider(SiteToMarkdownSpider):
+class DocsSpider(ContentSpider):
     name = "docs"
     start_urls = ["https://example.com/docs/"]
     allowed_domains = {"example.com"}
@@ -70,9 +70,9 @@ The template requires `allowed_domains` so the crawl stays bound to the target w
 Every page link inside `allowed_domains` is followed by default. Since the template builds on [CrawlSpider](../spiders/generic-templates.md#crawlspider), override `rules()` with your own [LinkExtractor](../spiders/generic-templates.md#linkextractor-reference) to control the crawl: `allow` narrows it to the URL patterns you want, and `deny` drops the patterns you don't (login pages, tag listings, print views, etc.):
 
 ```python
-from scrapling.spiders import CrawlRule, LinkExtractor, SiteToMarkdownSpider
+from scrapling.spiders import CrawlRule, LinkExtractor, ContentSpider
 
-class DocsSpider(SiteToMarkdownSpider):
+class DocsSpider(ContentSpider):
     name = "docs"
     start_urls = ["https://example.com/"]
     allowed_domains = {"example.com"}

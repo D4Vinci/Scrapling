@@ -192,14 +192,16 @@ class PriceSpider(CSVFeedSpider):
 
 Gzipped feeds are decompressed automatically here as well, as shown above for **XMLFeedSpider**.
 
-## SiteToMarkdownSpider
+<a id="sitetomarkdownspider"></a>
 
-`SiteToMarkdownSpider` builds on **CrawlSpider** to crawl a website and convert every page to clean, LLM-ready Markdown, yielding one item per page and optionally writing one Markdown file per page:
+## ContentSpider
+
+`ContentSpider` builds on **CrawlSpider** to crawl a website and convert every page to clean, LLM-ready Markdown, yielding one item per page and optionally writing one Markdown file per page:
 
 ```python
-from scrapling.spiders import SiteToMarkdownSpider
+from scrapling.spiders import ContentSpider
 
-class DocsSpider(SiteToMarkdownSpider):
+class DocsSpider(ContentSpider):
     name = "docs"
     start_urls = ["https://example.com/docs/"]
     allowed_domains = {"example.com"}

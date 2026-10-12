@@ -249,7 +249,7 @@ MySpider().start()
 ### AI 機能
 - 🤖 **MCP サーバー**：AI チャットボットやエージェント（Claude/Cursor など）が Scrapling を通じてスクレイピングできるようにします。単発ツールとセッションベースのツールがあり、通常の HTTP リクエスト（任意のメソッド）と、Cloudflare を回避するステルスブラウザ取得をカバーします。ページは AI に渡す前に CSS セレクターで絞り込まれ、プロンプトインジェクションの内容が除去されるため、エージェントは読む量もコストも減り、隠しテキストに乗っ取られることもありません。スクリーンショット、CDP 経由のリモートブラウザ、デフォルトで安全な HTTP トランスポートも含まれます。（[デモ動画](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
 - 🧠 **Agent Skill**：ライブラリ全体をコーディングエージェントに教える、インストールするだけの [Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html)。エージェントが Scrapling で書くコードが、推測ではなく現在の API に沿ったものになります。
-- 📚 **RAG 対応の Markdown**：1 行（`page.markdown()`）で任意のページをクリーンでサニタイズ済みの LLM 向け Markdown に変換したり、`SiteToMarkdownSpider` テンプレートでサイト全体を Markdown コーパスとしてクロールしたりできます。処理に LLM は一切使いません。（[ドキュメント](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html)）
+- 📚 **RAG 対応の Markdown**：1 行（`page.markdown()`）で任意のページをクリーンでサニタイズ済みの LLM 向け Markdown に変換したり、`ContentSpider` テンプレートでサイト全体を Markdown コーパスとしてクロールしたりできます。処理に LLM は一切使いません。（[ドキュメント](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html)）
 
 ### 高性能で実戦テスト済みのアーキテクチャ
 - 🚀 **超高速**：ほとんどの Python スクレイピングライブラリを上回る最適化されたパフォーマンス。

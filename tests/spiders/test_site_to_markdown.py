@@ -1,11 +1,11 @@
-"""Tests for `SiteToMarkdownSpider`."""
+"""Tests for `ContentSpider`."""
 
 import pytest
 
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.spiders.links import LinkExtractor
 from scrapling.spiders.request import Request
-from scrapling.spiders.templates import CrawlRule, SiteToMarkdownSpider
+from scrapling.spiders.templates import CrawlRule, ContentSpider
 from scrapling.core._types import AsyncGenerator
 
 HTML = """
@@ -39,8 +39,8 @@ async def _collect(agen: AsyncGenerator) -> list:
     return [item async for item in agen]
 
 
-def _spider(**attrs) -> SiteToMarkdownSpider:
-    class S(SiteToMarkdownSpider):
+def _spider(**attrs) -> ContentSpider:
+    class S(ContentSpider):
         name = "s"
         start_urls = ["https://example.com/"]
         allowed_domains = {"example.com"}
@@ -50,9 +50,9 @@ def _spider(**attrs) -> SiteToMarkdownSpider:
     return S()
 
 
-class TestSiteToMarkdownSpider:
+class TestContentSpider:
     def test_requires_allowed_domains(self):
-        class S(SiteToMarkdownSpider):
+        class S(ContentSpider):
             name = "s"
             start_urls = ["https://example.com/"]
 

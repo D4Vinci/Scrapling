@@ -1,4 +1,4 @@
-"""Site-to-Markdown template spider for building RAG/LLM ingestion pipelines."""
+"""Content template spider for building RAG/LLM ingestion pipelines."""
 
 from re import sub as re_sub
 from hashlib import sha1
@@ -24,10 +24,10 @@ if TYPE_CHECKING:
     from scrapling.engines.toolbelt.custom import Response
 
 
-__all__ = ["SiteToMarkdownSpider"]
+__all__ = ["ContentSpider", "SiteToMarkdownSpider"]
 
 
-class SiteToMarkdownSpider(CrawlSpider):
+class ContentSpider(CrawlSpider):
     """A spider that crawls a website and converts every page to clean, LLM-ready Markdown.
 
     Yields one item per page with `url`, `title`, and `markdown` keys, and when `output_dir` is set, it also
@@ -91,3 +91,6 @@ class SiteToMarkdownSpider(CrawlSpider):
             name = f"{name}-{sha1(url.encode(), usedforsecurity=False).hexdigest()[:8]}"
         self._used_names.add(name)
         return name
+
+
+SiteToMarkdownSpider = ContentSpider

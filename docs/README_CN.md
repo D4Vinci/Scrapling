@@ -249,7 +249,7 @@ MySpider().start()
 ### AI 功能
 - 🤖 **MCP 服务器**：让 AI 聊天机器人和智能体（Claude/Cursor 等）通过 Scrapling 抓取网页，提供一次性工具和基于会话的工具，覆盖普通 HTTP 请求（任意方法）以及可绕过 Cloudflare 的隐身浏览器抓取。页面在交给 AI 之前会先用 CSS 选择器缩小范围并清除提示注入内容，因此智能体读得更少、花得更少，也不会被隐藏文本劫持。还包含页面截图、通过 CDP 控制远程浏览器，以及默认安全的 HTTP 传输。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
 - 🧠 **Agent Skill**：[开箱即用的 Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html)，让编码智能体全面掌握本库，使它们用 Scrapling 写出的代码符合当前 API，而不是靠猜测。
-- 📚 **RAG 就绪的 Markdown**：用一行代码（`page.markdown()`）把任意页面转换为干净、经过净化、可直接供 LLM 使用的 Markdown，或使用 `SiteToMarkdownSpider` 模板把整个网站抓取为 Markdown 语料库，整个过程无需调用 LLM。（[文档](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html)）
+- 📚 **RAG 就绪的 Markdown**：用一行代码（`page.markdown()`）把任意页面转换为干净、经过净化、可直接供 LLM 使用的 Markdown，或使用 `ContentSpider` 模板把整个网站抓取为 Markdown 语料库，整个过程无需调用 LLM。（[文档](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html)）
 
 ### 高性能和经过实战测试的架构
 - 🚀 **闪电般快速**：优化性能超越大多数 Python 抓取库。
