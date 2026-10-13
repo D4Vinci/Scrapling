@@ -95,6 +95,14 @@ class TextHandler(str):
     def lower(self) -> Union[str, "TextHandler"]:
         return TextHandler(super().lower())
 
+    def removeprefix(self, prefix: str) -> "TextHandler":
+        """Remove a prefix while retaining text extraction methods."""
+        return TextHandler(super().removeprefix(prefix))
+
+    def removesuffix(self, suffix: str) -> "TextHandler":
+        """Remove a suffix while retaining text extraction methods."""
+        return TextHandler(super().removesuffix(suffix))
+
     ##############
 
     def sort(self, reverse: bool = False) -> Union[str, "TextHandler"]:
