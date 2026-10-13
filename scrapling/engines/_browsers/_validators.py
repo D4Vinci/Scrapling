@@ -25,9 +25,8 @@ from scrapling.engines._browsers._types import PlaywrightFetchParams, StealthFet
 
 
 # Custom validators for msgspec
-@lru_cache(8)
 def _is_invalid_file_path(value: str, label: str = "Init script") -> bool | str:  # pragma: no cover
-    """Fast file path validation"""
+    """Validate a file against the current filesystem state."""
     path = Path(value)
     if not path.exists():
         return f"{label} path not found: {value}"
