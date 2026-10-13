@@ -1127,6 +1127,8 @@ class Selector(SelectorsGeneration):
             return Selectors()
 
         results = Selectors()
+        if clean_match:
+            text = str(TextHandler(text).clean())
         if not case_sensitive:
             text = text.lower()
 
