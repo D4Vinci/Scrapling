@@ -605,7 +605,7 @@ class Selector(SelectorsGeneration):
             return Selectors()
 
         try:
-            if not self.__adaptive_enabled or "," not in selector:
+            if not self.__adaptive_enabled or "," not in selector or not (adaptive or auto_save):
                 # No need to split selectors in this case, let's save some CPU cycles :)
                 xpath_selector = _css_to_xpath(selector)
                 return self.xpath(
