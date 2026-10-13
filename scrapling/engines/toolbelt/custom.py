@@ -148,14 +148,13 @@ class Response(Selector):
 
         if referer_flow:
             # For requests
-            headers = session_kwargs.get("headers", {})
-            headers["referer"] = self.url
-            session_kwargs["headers"] = headers
+            session_kwargs["headers"] = {**(session_kwargs.get("headers") or {}), "referer": self.url}
 
             # For browsers
-            extra_headers = session_kwargs.get("extra_headers", {})
-            extra_headers["referer"] = self.url
-            session_kwargs["extra_headers"] = extra_headers
+            session_kwargs["extra_headers"] = {
+                **(session_kwargs.get("extra_headers") or {}),
+                "referer": self.url,
+            }
 
             session_kwargs["google_search"] = False
 
