@@ -1,6 +1,6 @@
 from hashlib import sha256
 from threading import RLock
-from functools import lru_cache
+from functools import lru_cache, wraps
 from abc import ABC, abstractmethod
 from sqlite3 import connect as db_connect
 
@@ -70,7 +70,27 @@ class StorageSystemMixin(ABC):  # pragma: no cover
         return f"{hash_value}_{len(_identifier_bytes)}"  # Length to reduce collision chance
 
 
-@lru_cache(1, typed=True)
+def _cache_storage(storage_class: Any) -> Any:
+    """Reuse open storage instances while reopening a previously closed cache hit."""
+    cached = lru_cache(1, typed=True)(storage_class)
+
+    @wraps(storage_class)
+    def get_storage(*args: Any, **kwargs: Any) -> Any:
+        """Return a cached open connection or create its replacement after close."""
+        storage = cached(*args, **kwargs)
+        if storage._closed:
+            cached.cache_clear()
+            storage = cached(*args, **kwargs)
+        return storage
+
+    wrapped: Any = get_storage
+    wrapped.cache_clear = cached.cache_clear
+    wrapped.cache_info = cached.cache_info
+    wrapped.cache_parameters = cached.cache_parameters
+    return wrapped
+
+
+@_cache_storage
 class SQLiteStorageSystem(StorageSystemMixin):
     """The recommended system to use, it's race condition safe and thread safe.
     Mainly built, so the library can run in threaded frameworks like scrapy or threaded tools
@@ -85,6 +105,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         super().__init__(url)
         self.storage_file = storage_file
         self.lock = RLock()  # Better than Lock for reentrancy
+        self._closed = False
         # >SQLite default mode in the earlier version is 1 not 2 (1=thread-safe 2=serialized)
         # `check_same_thread=False` to allow it to be used across different threads.
         self.connection = db_connect(self.storage_file, check_same_thread=False)
@@ -143,12 +164,15 @@ class SQLiteStorageSystem(StorageSystemMixin):
                 return loads(result[0])
             return None
 
-    def close(self):
+    def close(self) -> None:
         """Close all connections. It will be useful when with some things like scrapy Spider.closed() function/signal"""
         with self.lock:
+            if self._closed:
+                return
             self.connection.commit()
             self.cursor.close()
             self.connection.close()
+            self._closed = True
 
     def __del__(self):
         """To ensure all connections are closed when the object is destroyed."""
