@@ -2,7 +2,7 @@
 Functions related to files and URLs
 """
 
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from patchright.async_api import Route as async_Route
 from msgspec import Struct, structs, convert, ValidationError
@@ -107,10 +107,11 @@ def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple) -> Dict:
             raise ValueError("Invalid proxy string!")
 
         try:
+            hostname = f"[{proxy.hostname}]" if ":" in proxy.hostname else proxy.hostname
             result = {
-                "server": f"{proxy.scheme}://{proxy.hostname}",
-                "username": proxy.username or "",
-                "password": proxy.password or "",
+                "server": f"{proxy.scheme}://{hostname}",
+                "username": unquote(proxy.username or ""),
+                "password": unquote(proxy.password or ""),
             }
             if proxy.port:
                 result["server"] += f":{proxy.port}"
