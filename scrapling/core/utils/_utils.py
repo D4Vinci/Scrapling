@@ -109,9 +109,12 @@ class _StorageTools:
         return result
 
     @classmethod
-    def _get_element_path(cls, element: html.HtmlElement):
-        parent = element.getparent()
-        return tuple((element.tag,) if parent is None else (cls._get_element_path(parent) + (element.tag,)))
+    def _get_element_path(cls, element: html.HtmlElement) -> tuple[str, ...]:
+        """Collect the root-to-element path without recursing through a deep DOM."""
+        path = [element.tag]
+        for parent in element.iterancestors():
+            path.append(parent.tag)
+        return tuple(reversed(path))
 
 
 @lru_cache(128, typed=True)
