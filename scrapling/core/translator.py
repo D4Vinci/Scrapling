@@ -46,7 +46,12 @@ class XPathExpr(OriginalXPathExpr):
         if self.attribute is not None:
             if path.endswith("::*/*"):  # pragma: no cover
                 path = path[:-2]
-            path += f"/@{self.attribute}"
+            if self.attribute == "*":
+                path += "/@*"
+            else:
+                # HTML names such as xlink:href do not require an XML namespace binding.
+                name = OriginalHTMLTranslator.xpath_literal(self.attribute)
+                path += f"/@*[name() = {name}]"
 
         return path
 
