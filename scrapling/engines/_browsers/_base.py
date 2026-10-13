@@ -26,6 +26,7 @@ from scrapling.engines.toolbelt.navigation import (
     create_intercept_handler,
     create_async_intercept_handler,
 )
+from scrapling.engines.toolbelt.proxy_timezone import resolve_proxy_timezone
 from scrapling.core._types import (
     Any,
     Awaitable,
@@ -566,9 +567,43 @@ class BaseSessionMixin:
         if config.additional_args:
             self._context_options.update(config.additional_args)
 
+        # Sync the timezone of a session-level static proxy once here. Per-request
+        # and rotation proxies are handled later in `_build_context_with_proxy`.
+        if config.proxy:
+            timezone_id = self._resolve_proxy_timezone(config.proxy)
+            if timezone_id:
+                self._context_options["timezone_id"] = timezone_id
+
+    def _resolve_proxy_timezone(self, proxy: Optional[str | Dict[str, str] | Tuple]) -> Optional[str]:
+        """Resolve the timezone for a proxy, falling back to the session timezone.
+
+        Returns the session ``timezone_id`` untouched unless the timezone-sync
+        options are configured, so the default behavior is unchanged.
+        """
+        config = self._config
+        if not isinstance(proxy, (str, dict)) or not (
+            config.auto_match_timezone or config.proxy_timezone_map or config.timezone_resolver
+        ):
+            return config.timezone_id
+        try:
+            return resolve_proxy_timezone(
+                proxy,
+                fallback=config.timezone_id,
+                proxy_timezone_map=config.proxy_timezone_map,
+                timezone_resolver=config.timezone_resolver,
+                auto_match_timezone=config.auto_match_timezone,
+            )
+        except Exception:  # Never break crawling on timezone resolution failure
+            return config.timezone_id
+
     def _build_context_with_proxy(self, proxy: Optional[ProxyType] = None) -> Dict[str, Any]:
         """
         Build context options with a specific proxy for rotation mode.
+
+        When ``auto_match_timezone``, ``proxy_timezone_map`` or a custom
+        ``timezone_resolver`` is configured, the timezone is synced to the
+        proxy location so the exit IP and ``Intl`` timezone match. Any lookup
+        failure keeps the session ``timezone_id``.
 
         :param proxy: Proxy URL string or Playwright-style proxy dict to use for this context.
         :return: Dictionary of context options for browser.new_context().
@@ -579,6 +614,9 @@ class BaseSessionMixin:
         # Override proxy if provided
         if proxy:
             context_options["proxy"] = construct_proxy_dict(proxy)
+            timezone_id = self._resolve_proxy_timezone(proxy)
+            if timezone_id:
+                context_options["timezone_id"] = timezone_id
 
         return context_options
 

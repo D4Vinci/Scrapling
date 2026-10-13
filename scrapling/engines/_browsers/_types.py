@@ -78,6 +78,9 @@ class PlaywrightSession(TypedDict, total=False):
     page_setup: Optional[Callable]
     proxy: Optional[str | Dict[str, str] | Tuple]
     proxy_rotator: Optional[ProxyRotator]
+    auto_match_timezone: bool
+    proxy_timezone_map: Optional[Dict[str, str]]
+    timezone_resolver: Optional[Callable]
     extra_headers: Optional[Dict[str, str]]
     timeout: int | float
     init_script: Optional[str]

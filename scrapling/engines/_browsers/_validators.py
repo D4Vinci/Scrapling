@@ -75,6 +75,9 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     page_setup: Optional[Callable] = None
     proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
     proxy_rotator: Optional[ProxyRotator] = None
+    auto_match_timezone: bool = False
+    proxy_timezone_map: Optional[Dict[str, str]] = None
+    timezone_resolver: Optional[Callable] = None
     extra_headers: Optional[Dict[str, str]] = None
     timeout: Seconds = 30000
     init_script: Optional[str] = None
@@ -101,6 +104,8 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
             raise TypeError(f"page_action must be callable, got {type(self.page_action).__name__}")
         if self.page_setup and not callable(self.page_setup):
             raise TypeError(f"page_setup must be callable, got {type(self.page_setup).__name__}")
+        if self.timezone_resolver and not callable(self.timezone_resolver):
+            raise TypeError(f"timezone_resolver must be callable, got {type(self.timezone_resolver).__name__}")
         if self.proxy and self.proxy_rotator:
             raise ValueError(
                 "Cannot use 'proxy_rotator' together with 'proxy'. "
