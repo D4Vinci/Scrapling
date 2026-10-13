@@ -98,7 +98,11 @@ class _StorageTools:
                 }
             )
 
-            siblings = [child.tag for child in parent.iterchildren() if child != element]
+            siblings = [
+                child.tag
+                for child in parent.iterchildren()
+                if child != element and not isinstance(child, html_forbidden)
+            ]
             if siblings:
                 result.update({"siblings": tuple(siblings)})
 
