@@ -58,8 +58,7 @@ class Response(Selector):
         _log: bool = True,
         **selector_config: Any,
     ):
-        if isinstance(content, str):
-            content = content.encode("utf-8")
+        raw_content = content.encode(encoding) if isinstance(content, str) else content
 
         adaptive_domain: str = cast(str, selector_config.pop("adaptive_domain", ""))
         self.status = status
@@ -75,6 +74,7 @@ class Response(Selector):
             encoding=encoding,
             **selector_config,
         )
+        self._raw_body = raw_content
         if _log:
             log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
 
