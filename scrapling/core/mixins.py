@@ -1,4 +1,17 @@
+from re import fullmatch
+
+from cssselect import HTMLTranslator
+
 from scrapling.core._types import Any, Dict
+
+
+def _css_id(identifier: str) -> str:
+    """Escape IDs that cannot be represented as a plain CSS identifier."""
+    if fullmatch(r"-?[A-Za-z_][A-Za-z0-9_-]*", identifier):
+        return identifier
+    # Keep backslashes as simple escapes: cssselect unescapes hex values before
+    # simple escapes, so a decoded hex backslash would consume the next character.
+    return "".join("\\\\" if character == "\\" else f"\\{ord(character):x} " for character in identifier)
 
 
 class SelectorsGeneration:
@@ -26,12 +39,13 @@ class SelectorsGeneration:
             if target.parent:
                 if target.attrib.get("id"):
                     # id is enough
+                    identifier = str(target.attrib["id"])
                     if css:
-                        part = f"#{target.attrib['id']}"
+                        part = f"#{_css_id(identifier)}"
                     elif full_path:
-                        part = f"*[@id='{target.attrib['id']}']"
+                        part = f"*[@id={HTMLTranslator.xpath_literal(identifier)}]"
                     else:
-                        part = f"[@id='{target.attrib['id']}']"
+                        part = f"[@id={HTMLTranslator.xpath_literal(identifier)}]"
                     selectorPath.append(part)
                     if not full_path:
                         return " > ".join(reversed(selectorPath)) if css else "//*" + "/".join(reversed(selectorPath))
