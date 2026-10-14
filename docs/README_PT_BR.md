@@ -51,20 +51,31 @@
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html"><strong>MCP</strong></a>
 </p>
 
-Scrapling é um framework adaptativo de Web Scraping que lida com tudo, desde uma única requisição até um crawl em larga escala.
+Scrapling é um framework de Web Scraping em Python que reúne requisições HTTP rápidas, navegadores furtivos, um parser poderoso e crawling concorrente em uma única biblioteca.
 
-Seu parser aprende com as mudanças nos sites e relocaliza automaticamente seus elementos quando as páginas são atualizadas. Seus fetchers contornam sistemas anti-bot como o Cloudflare Turnstile de forma nativa. E seu framework de spiders permite escalar para crawls concorrentes com múltiplas sessões, pausa/retomada, rotação automática de proxies e uma velocidade de crawl que se adapta à rapidez com que cada site responde e recua quando ele começa a bloquear você, tudo em poucas linhas de Python. Uma biblioteca, zero concessões.
+Extraia dados de páginas estáticas, renderize JavaScript, interaja com sites e extraia dados das chamadas de API que os alimentam. Crie crawlers com sessões reutilizáveis, rotação de proxies, retries automáticos, pausa/retomada e exportação de dados integrada.
 
-Crawls extremamente rápidos com estatísticas em tempo real e streaming. Feito por Web Scrapers para Web Scrapers e usuários comuns, há algo para todo mundo.
+Use pelo Python, pelo terminal ou pelo seu agente de IA com o servidor MCP e o Agent Skill. Da extração de alguns campos à coleta de um site inteiro em Markdown limpo, Scrapling cobre todo o processo de scraping.
+
+## O que você pode fazer com Scrapling
+
+- **Buscar páginas e interagir**: Requisições HTTP rápidas, navegadores furtivos, renderização de JavaScript, tratamento de Cloudflare Turnstile/Interstitial, sessões persistentes e captura de chamadas de API em segundo plano.
+- **Analisar e extrair**: CSS, XPath, busca por texto e expressões regulares, rastreamento adaptativo de elementos, busca de elementos semelhantes e saída em Markdown limpo.
+- **Rastrear e exportar**: Spiders concorrentes, rotação de proxies, retries, AutoThrottle, pausa/retomada, streaming, templates prontos e exportação para JSON/JSONL/CSV/XML.
+- **Fazer scraping com IA ou pelo terminal**: Um servidor MCP para agentes de IA navegarem e extraírem dados, um Agent Skill, comandos CLI e um shell interativo.
+
+Comece com uma única página:
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
-StealthyFetcher.adaptive = True
-p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Busque o site sem chamar atenção!
-products = p.css('.product', auto_save=True)                                        # Extraia dados que sobrevivem a mudanças no design do site!
-products = p.css('.product', adaptive=True)                                         # Depois, se a estrutura do site mudar, passe `adaptive=True` para encontrá-los!
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-Ou escale para crawls completos
+
+Ou escale para crawls completos:
+
 ```python
 from scrapling.spiders import Spider, Response
 
@@ -242,7 +253,7 @@ MySpider().start()
 - **Captura de API em Segundo Plano**: Ative `record_requests=True` em uma sessão do navegador e busque as respostas salvas com `session.network.search(limit=None)`. Leia dados de API e erros HTTP entre carregamentos de páginas sem enviar as requisições novamente. O histórico tem limites e salva corpos de resposta de texto.
 - **Suporte Async**: Suporte assíncrono completo em todos os fetchers e classes dedicadas de sessão async.
 
-### Scraping Adaptativo
+### Análise e Extração de Dados
 - 🔄 **Rastreamento Inteligente de Elementos**: Relocalize elementos após mudanças no site usando algoritmos inteligentes de similaridade.
 - 🎯 **Seleção Flexível Inteligente**: Seletores CSS, seletores XPath, busca baseada em filtros, busca por texto, busca por regex e muito mais.
 - 🔍 **Encontrar Elementos Semelhantes**: Localize automaticamente elementos parecidos com os elementos encontrados.

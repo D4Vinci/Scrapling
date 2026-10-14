@@ -49,20 +49,31 @@
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html"><strong>MCP モード</strong></a>
 </p>
 
-Scrapling は、単一のリクエストから本格的なクロールまですべてを処理する適応型 Web Scraping フレームワークです。
+Scrapling は、高速な HTTP リクエスト、ステルスブラウザ、強力なパース機能、並行クロールを 1 つのライブラリにまとめた Python Web スクレイピングフレームワークです。
 
-そのパーサーはウェブサイトの変更から学習し、ページが更新されたときに要素を自動的に再配置します。Fetcher はすぐに使える Cloudflare Turnstile などのアンチボットシステムを回避します。そして Spider フレームワークにより、Pause & Resume、自動 Proxy 回転、そして各ウェブサイトの応答速度に合わせて調整され、ブロックされ始めると減速するクロール速度を備えた並行マルチ Session クロールへとスケールアップできます - すべてわずか数行の Python で。1 つのライブラリ、妥協なし。
+静的ページのスクレイピング、JavaScript のレンダリング、ウェブサイトの操作、ページの裏で呼ばれる API からのデータ抽出に対応します。再利用可能なセッション、プロキシローテーション、自動リトライ、一時停止/再開、組み込みのデータエクスポート機能を備えたクローラーを構築できます。
 
-リアルタイム統計と Streaming による超高速クロール。Web Scraper によって、Web Scraper と一般ユーザーのために構築され、誰にでも何かがあります。
+Python やターミナルから、または MCP サーバーと Agent Skill を通じて AI エージェントから利用できます。いくつかのフィールドの抽出から、ウェブサイト全体を読みやすい Markdown として収集する作業まで、Scrapling がスクレイピングの全工程をカバーします。
+
+## Scrapling でできること
+
+- **取得と操作**：高速な HTTP リクエスト、ステルスブラウザ、JavaScript のレンダリング、Cloudflare Turnstile/Interstitial への対応、セッションの維持、バックグラウンドの API 通信の記録。
+- **パースと抽出**：CSS、XPath、テキストと正規表現による検索、適応型の要素追跡、類似要素のマッチング、読みやすい Markdown 出力。
+- **クロールとエクスポート**：並行クロール、プロキシローテーション、リトライ、AutoThrottle、一時停止/再開、ストリーミング、すぐに使える Spider テンプレート、JSON/JSONL/CSV/XML エクスポート。
+- **AI やターミナルからスクレイピング**：AI エージェントがウェブを閲覧してデータを抽出するための MCP サーバー、Agent Skill、CLI コマンド、インタラクティブ Shell。
+
+まずは 1 ページから：
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
-StealthyFetcher.adaptive = True
-p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # レーダーの下でウェブサイトを取得！
-products = p.css('.product', auto_save=True)                                        # ウェブサイトのデザイン変更に耐えるデータをスクレイプ！
-products = p.css('.product', adaptive=True)                                         # 後でウェブサイトの構造が変わったら、`adaptive=True`を渡して見つける！
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-または本格的なクロールへスケールアップ
+
+または本格的なクロールへスケールアップ：
+
 ```python
 from scrapling.spiders import Spider, Response
 
@@ -240,7 +251,7 @@ MySpider().start()
 - **バックグラウンド API キャプチャ**：ブラウザーセッションで `record_requests=True` を有効にし、`session.network.search(limit=None)` で保存済みのレスポンスを検索できます。リクエストを再送信せずに、複数のページ読み込みで発生した API データや HTTP エラーを確認できます。履歴には保存上限があり、テキストのレスポンス本文を保存します。
 - **async サポート**：すべての Fetcher および専用 async Session クラス全体での完全な async サポート。
 
-### 適応型スクレイピング
+### パースとデータ抽出
 - 🔄 **スマート要素追跡**：インテリジェントな類似性アルゴリズムを使用してウェブサイトの変更後に要素を再配置。
 - 🎯 **スマート柔軟選択**：CSS セレクタ、XPath セレクタ、フィルタベース検索、テキスト検索、正規表現検索など。
 - 🔍 **類似要素の検出**：見つかった要素に類似した要素を自動的に特定。

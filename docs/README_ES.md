@@ -49,20 +49,31 @@
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html"><strong>Modo MCP</strong></a>
 </p>
 
-Scrapling es un framework de Web Scraping adaptativo que se encarga de todo, desde una sola solicitud hasta un rastreo a gran escala.
+Scrapling es un framework de Web Scraping en Python que reúne solicitudes HTTP rápidas, navegadores sigilosos, un potente parser y rastreo concurrente en una sola biblioteca.
 
-Su parser aprende de los cambios de los sitios web y relocaliza automáticamente tus elementos cuando las páginas se actualizan. Sus fetchers evaden sistemas anti-bot como Cloudflare Turnstile de forma nativa. Y su framework Spider te permite escalar a rastreos concurrentes con múltiples sesiones, con Pause & Resume, rotación automática de Proxy y una velocidad de rastreo que se adapta a la rapidez con la que responde cada sitio y se reduce cuando empieza a bloquearte, todo en unas pocas líneas de Python. Una biblioteca, cero compromisos.
+Extrae datos de páginas estáticas, renderiza JavaScript, interactúa con sitios web y extrae datos de las llamadas API que usan. Crea crawlers con sesiones reutilizables, rotación de proxies, reintentos automáticos, pausa/reanudación y exportación de datos integrada.
 
-Rastreos ultrarrápidos con estadísticas en tiempo real y Streaming. Construido por Web Scrapers para Web Scrapers y usuarios regulares, hay algo para todos.
+Úsalo desde Python, la terminal o tu agente de IA a través de su servidor MCP y Agent Skill. Desde extraer unos pocos campos hasta recopilar un sitio web completo como Markdown limpio, Scrapling cubre todo el proceso de scraping.
+
+## Qué puedes hacer con Scrapling
+
+- **Obtener páginas e interactuar**: Solicitudes HTTP rápidas, navegadores sigilosos, renderizado de JavaScript, manejo de Cloudflare Turnstile/Interstitial, sesiones persistentes y captura de llamadas API en segundo plano.
+- **Analizar y extraer**: CSS, XPath, búsqueda por texto y expresiones regulares, seguimiento adaptativo de elementos, búsqueda de elementos similares y salida en Markdown limpio.
+- **Rastrear y exportar**: Spiders concurrentes, rotación de proxies, reintentos, AutoThrottle, pausa/reanudación, streaming, plantillas listas para usar y exportación a JSON/JSONL/CSV/XML.
+- **Hacer scraping con IA o desde tu terminal**: Un servidor MCP para que los agentes de IA naveguen y extraigan datos, un Agent Skill, comandos CLI y una consola interactiva.
+
+Empieza con una sola página:
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
-StealthyFetcher.adaptive = True
-p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # ¡Obtén el sitio web bajo el radar!
-products = p.css('.product', auto_save=True)                                        # ¡Extrae datos que sobreviven a cambios de diseño del sitio web!
-products = p.css('.product', adaptive=True)                                         # Más tarde, si la estructura del sitio web cambia, ¡pasa `adaptive=True` para encontrarlos!
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-O escala a rastreos completos
+
+O escala a rastreos completos:
+
 ```python
 from scrapling.spiders import Spider, Response
 
@@ -240,7 +251,7 @@ MySpider().start()
 - **Captura de API en Segundo Plano**: Activa `record_requests=True` en una sesión del navegador y busca las respuestas guardadas con `session.network.search(limit=None)`. Lee datos de API y errores HTTP entre cargas de páginas sin volver a enviar las peticiones. El historial tiene límites y guarda cuerpos de respuesta de texto.
 - **Soporte Async**: Soporte async completo en todos los fetchers y clases de sesión async dedicadas.
 
-### Scraping Adaptativo
+### Análisis y Extracción de Datos
 - 🔄 **Seguimiento Inteligente de Elementos**: Relocaliza elementos después de cambios en el sitio web usando algoritmos inteligentes de similitud.
 - 🎯 **Selección Flexible Inteligente**: Selectores CSS, selectores XPath, búsqueda basada en filtros, búsqueda de texto, búsqueda regex y más.
 - 🔍 **Encontrar Elementos Similares**: Localiza automáticamente elementos similares a los elementos encontrados.

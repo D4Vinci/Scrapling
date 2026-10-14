@@ -16,20 +16,31 @@
 
 <h2 align="center"><i>Effortless Web Scraping for the Modern Web</i></h2><br>
 
-Scrapling is an adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl.
+Scrapling is a Python Web Scraping framework that brings fast HTTP requests, stealth browsers, powerful parsing, and concurrent crawling into one library.
 
-Its parser learns from website changes and automatically relocates your elements when pages update. Its fetchers bypass anti-bot systems like Cloudflare Turnstile out of the box. And its spider framework lets you scale up to concurrent, multi-session crawls with pause/resume, automatic proxy rotation, and a crawl speed that adapts to how fast each website responds and backs off when it starts blocking you - all in a few lines of Python. One library, zero compromises.
+Scrape static pages, render JavaScript, interact with websites, and extract data from the API calls behind them. Build crawlers with reusable sessions, proxy rotation, automatic retries, pause/resume, and built-in data exports.
 
-Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers for Web Scrapers and regular users, there's something for everyone.
+Use it from Python, the terminal, or your AI agent through its MCP server and Agent Skill. From extracting a few fields to collecting a whole website as clean Markdown, Scrapling covers the full scraping workflow.
+
+## What you can do with Scrapling
+
+- **Fetch & interact**: Fast HTTP requests, stealth browsers, JavaScript rendering, Cloudflare Turnstile/Interstitial handling, persistent sessions, and background API capture.
+- **Parse & extract**: CSS, XPath, text and regex search, adaptive element tracking, similar-element matching, and clean Markdown output.
+- **Crawl & export**: Concurrent spiders, proxy rotation, retries, AutoThrottle, pause/resume, streaming, ready-made templates, and JSON/JSONL/CSV/XML exports.
+- **Scrape with AI or from your terminal**: An MCP server for AI agents to browse and extract data, an Agent Skill, CLI commands, and an interactive shell.
+
+Start with a single page:
 
 ```python
-from scrapling.fetchers import Fetcher, StealthyFetcher
-StealthyFetcher.adaptive = True
-page = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Fetch website under the radar!
-products = page.css('.product', auto_save=True)                                        # Scrape data that survives website design changes!
-products = page.css('.product', adaptive=True)                                         # Later, if the website structure changes, pass `adaptive=True` to find them!
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-Or scale up to full crawls
+
+Or scale up to full crawls:
+
 ```python
 from scrapling.spiders import Spider, Response
 
@@ -123,7 +134,7 @@ MySpider().start()
 - **Background API Capture**: Enable `record_requests=True` on a browser session, then search its saved responses with `session.network.search(limit=None)`. Read API data and HTTP errors across page loads without sending requests again. History is bounded and saves text response bodies.
 - **Async Support**: Complete async support across all fetchers and dedicated async session classes.
 
-### Adaptive Scraping
+### Parsing and Data Extraction
 - 🔄 **Smart Element Tracking**: Relocate elements after website changes using intelligent similarity algorithms.
 - 🎯 **Smart Flexible Selection**: CSS selectors, XPath selectors, filter-based search, text search, regex search, and more.
 - 🔍 **Find Similar Elements**: Automatically locate elements similar to found elements.

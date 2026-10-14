@@ -49,20 +49,31 @@
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html"><strong>MCP 서버</strong></a>
 </p>
 
-Scrapling은 단일 요청부터 대규모 크롤링까지 모든 것을 처리하는 적응형 Web Scraping 프레임워크입니다.
+Scrapling은 빠른 HTTP 요청, 스텔스 브라우저, 강력한 파싱, 동시 크롤링을 하나의 라이브러리에 담은 Python 웹 스크래핑 프레임워크입니다.
 
-파서는 웹사이트 변경 사항을 학습하고, 페이지가 업데이트되면 요소를 자동으로 재배치합니다. Fetcher는 Cloudflare Turnstile 같은 안티봇 시스템을 별도 설정 없이 우회합니다. Spider 프레임워크를 사용하면 일시정지/재개, 자동 프록시 로테이션, 그리고 각 웹사이트의 응답 속도에 맞춰 조절되고 차단이 시작되면 속도를 늦추는 크롤링 속도를 갖춘 동시 멀티 세션 크롤링으로 확장할 수 있습니다 - 모두 Python 몇 줄이면 됩니다. 하나의 라이브러리, 타협 없는 성능.
+정적 페이지를 스크래핑하고, JavaScript를 렌더링하고, 웹사이트를 조작하고, 페이지 뒤에서 호출되는 API의 데이터를 추출하세요. 재사용 가능한 세션, 프록시 로테이션, 자동 재시도, 일시정지/재개, 내장 데이터 내보내기 기능을 갖춘 크롤러를 만들 수 있습니다.
 
-실시간 통계와 스트리밍을 통한 초고속 크롤링. Web Scraper가 만들고, Web Scraper와 일반 사용자 모두를 위해 설계했습니다.
+Python이나 터미널에서, 또는 MCP 서버와 Agent Skill을 통해 AI 에이전트에서 사용할 수 있습니다. 몇 개의 필드 추출부터 웹사이트 전체를 깔끔한 Markdown으로 수집하는 작업까지, Scrapling이 스크래핑의 전 과정을 지원합니다.
+
+## Scrapling으로 할 수 있는 일
+
+- **가져오기와 조작**: 빠른 HTTP 요청, 스텔스 브라우저, JavaScript 렌더링, Cloudflare Turnstile/Interstitial 처리, 세션 유지, 백그라운드 API 통신 캡처.
+- **파싱과 추출**: CSS, XPath, 텍스트와 정규식 검색, 적응형 요소 추적, 유사 요소 매칭, 깔끔한 Markdown 출력.
+- **크롤링과 내보내기**: 동시 크롤링, 프록시 로테이션, 재시도, AutoThrottle, 일시정지/재개, 스트리밍, 바로 쓸 수 있는 Spider 템플릿, JSON/JSONL/CSV/XML 내보내기.
+- **AI나 터미널에서 스크래핑**: AI 에이전트가 웹을 탐색하고 데이터를 추출할 수 있는 MCP 서버, Agent Skill, CLI 명령어, 인터랙티브 Shell.
+
+먼저 한 페이지부터 시작하세요:
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
-StealthyFetcher.adaptive = True
-p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # 탐지를 피해 웹사이트를 가져옵니다!
-products = p.css('.product', auto_save=True)                                        # 웹사이트 디자인 변경에도 살아남는 데이터를 스크레이핑!
-products = p.css('.product', adaptive=True)                                         # 나중에 웹사이트 구조가 바뀌면, `adaptive=True`를 전달해서 찾으세요!
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-또는 본격적인 크롤링으로 확장
+
+또는 본격적인 크롤링으로 확장:
+
 ```python
 from scrapling.spiders import Spider, Response
 
@@ -240,7 +251,7 @@ MySpider().start()
 - **백그라운드 API 캡처**: 브라우저 세션에서 `record_requests=True`를 켜고 `session.network.search(limit=None)`으로 저장된 응답을 검색하세요. 요청을 다시 보내지 않고 여러 페이지를 로드하며 발생한 API 데이터와 HTTP 오류를 확인할 수 있습니다. 기록에는 저장 한도가 있으며 텍스트 응답 본문을 저장합니다.
 - **비동기 지원**: 모든 Fetcher와 전용 비동기 세션 클래스에서 완전한 비동기를 지원합니다.
 
-### 적응형 스크레이핑
+### 파싱과 데이터 추출
 - 🔄 **스마트 요소 추적**: 지능적인 유사도 알고리즘으로 웹사이트 변경 후에도 요소를 재배치합니다.
 - 🎯 **유연한 스마트 선택**: CSS selector, XPath selector, 필터 기반 검색, 텍스트 검색, 정규식 검색 등을 지원합니다.
 - 🔍 **유사 요소 찾기**: 발견된 요소와 유사한 요소를 자동으로 찾아냅니다.

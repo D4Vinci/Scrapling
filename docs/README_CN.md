@@ -49,20 +49,31 @@
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html"><strong>MCP 模式</strong></a>
 </p>
 
-Scrapling 是一个自适应 Web Scraping 框架，能处理从单个请求到大规模爬取的一切需求。
+Scrapling 是一个 Python 网页抓取框架，将快速 HTTP 请求、隐身浏览器、强大的解析功能和并发爬取整合到一个库中。
 
-它的解析器能够从网站变化中学习，并在页面更新时自动重新定位您的元素。它的 Fetcher 能够开箱即用地绕过 Cloudflare Turnstile 等反机器人系统。它的 Spider 框架让您可以扩展到并发、多 Session 爬取，支持暂停/恢复、自动 Proxy 轮换，以及根据每个网站的响应速度自动调整、并在网站开始封锁时自动减速的爬取速度--只需几行 Python 代码。一个库，零妥协。
+抓取静态页面、渲染 JavaScript、与网站交互，并从页面背后的 API 调用中提取数据。构建爬虫时，可复用会话、轮换代理、自动重试、暂停/恢复，并使用内置的数据导出功能。
 
-极速爬取，实时统计和 Streaming。由 Web Scraper 为 Web Scraper 和普通用户而构建，每个人都能找到适合自己的功能。
+通过 Python、终端，或借助 MCP 服务器和 Agent Skill 在 AI 智能体中使用它。从提取几个字段到将整个网站采集为干净的 Markdown，Scrapling 覆盖完整的抓取流程。
+
+## 用 Scrapling 能做什么
+
+- **获取与交互**：快速 HTTP 请求、隐身浏览器、JavaScript 渲染、Cloudflare Turnstile/Interstitial 处理、持久会话，以及后台 API 通信捕获。
+- **解析与提取**：CSS、XPath、文本和正则表达式搜索、自适应元素跟踪、相似元素匹配，以及干净的 Markdown 输出。
+- **爬取与导出**：并发爬虫、代理轮换、重试、AutoThrottle、暂停/恢复、流式输出、现成的爬虫模板，以及 JSON/JSONL/CSV/XML 导出。
+- **使用 AI 或终端抓取**：供 AI 智能体浏览网页和提取数据的 MCP 服务器、Agent Skill、CLI 命令和交互式 Shell。
+
+从单个页面开始：
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
-StealthyFetcher.adaptive = True
-p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # 隐秘地获取网站！
-products = p.css('.product', auto_save=True)                                        # 抓取在网站设计变更后仍能存活的数据！
-products = p.css('.product', adaptive=True)                                         # 之后，如果网站结构改变，传递 `adaptive=True` 来找到它们！
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-或扩展为完整爬取
+
+或扩展为完整爬取：
+
 ```python
 from scrapling.spiders import Spider, Response
 
@@ -240,7 +251,7 @@ MySpider().start()
 - **后台 API 捕获**：在浏览器会话中启用 `record_requests=True`，然后使用 `session.network.search(limit=None)` 搜索已保存的响应。无需再次发送请求，即可读取各个页面加载过程中产生的 API 数据和 HTTP 错误。历史记录有容量限制，并保存文本响应体。
 - **Async 支持**：所有 Fetcher 和专用 async Session 类的完整 async 支持。
 
-### 自适应抓取
+### 解析与数据提取
 - 🔄 **智能元素跟踪**：使用智能相似性算法在网站更改后重新定位元素。
 - 🎯 **智能灵活选择**：CSS 选择器、XPath 选择器、基于过滤器的搜索、文本搜索、正则表达式搜索等。
 - 🔍 **查找相似元素**：自动定位与已找到元素相似的元素。
