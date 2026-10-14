@@ -19,8 +19,8 @@ The Scrapling MCP Server provides sixteen tools for web scraping and browser int
 ### Session tools
 
 #### 🔌 Session Management
-- **`browser_open`**: Create a persistent stealthy browser session that stays open across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns the session's effective `settings` for the AI agent (empty for CDP sessions).
-- **`open_request_session`**: Create a persistent HTTP requests session (no browser) used with `session_make_request`, keeping cookies, connections, and the browser fingerprint (`impersonate`) between requests. It returns the same `settings` receipt and shows in `list_sessions` as a `static` session.
+- **`browser_open`**: Create a persistent stealthy browser session that stays open across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns only `session_id` and `session_type`. Use `list_sessions` to see its effective `settings` (empty for CDP sessions).
+- **`open_request_session`**: Create a persistent HTTP requests session (no browser) used with `session_make_request`, keeping cookies, connections, and the browser fingerprint (`impersonate`) between requests. It returns only `session_id` and `session_type`, with type `static`. Use `list_sessions` to see its effective `settings`.
 - **`close_session`**: Close a persistent session (browser or requests) and free its resources.
 - **`list_sessions`**: List all active sessions with their details and `settings`.
 

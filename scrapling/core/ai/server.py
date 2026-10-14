@@ -127,23 +127,22 @@ class NetworkRequestsModel(BaseModel):
     dropped_count: int
 
 
-class SessionInfo(BaseModel):
-    """Information about an open browser session."""
+class SessionCreatedModel(BaseModel):
+    """Response returned when a new session is created."""
 
     session_id: str = Field(description="The unique identifier of the session.")
     session_type: SessionType = Field(description="The type of the session: 'stealthy' or 'static'.")
+
+
+class SessionInfo(SessionCreatedModel):
+    """Information about an open browser session."""
+
     created_at: str = Field(description="ISO timestamp of when the session was created.")
     is_alive: bool = Field(description="Whether the session is still alive and usable.")
     settings: Dict[str, Any] = Field(
         default_factory=dict,
         description="The effective settings this session was created with.",
     )
-
-
-class SessionCreatedModel(SessionInfo):
-    """Response returned when a new session is created."""
-
-    message: str = Field(description="A confirmation message.")
 
 
 class SessionClosedModel(BaseModel):
@@ -261,16 +260,8 @@ class ScraplingMCPServer:
 
     def _register_session(self, session_id: str, session: Any, session_type: SessionType) -> SessionCreatedModel:
         """Store a started session and build its creation receipt."""
-        entry = _SessionEntry(session=session, session_type=session_type)
-        self._sessions[session_id] = entry
-        return SessionCreatedModel(
-            session_id=session_id,
-            session_type=session_type,
-            created_at=entry.created_at,
-            is_alive=True,
-            settings=_session_settings(session),
-            message=f"Session '{session_id}' ({session_type}) created successfully.",
-        )
+        self._sessions[session_id] = _SessionEntry(session=session, session_type=session_type)
+        return SessionCreatedModel(session_id=session_id, session_type=session_type)
 
     async def browser_open(
         self,
