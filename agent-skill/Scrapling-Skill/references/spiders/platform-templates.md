@@ -48,7 +48,3 @@ These fields are not mandatory; override the `_process_product()` method in your
 - The JSON endpoints only expose products published to the online-store channel, so a collection's `products_count` can be higher than what's actually retrievable. The spider treats it as "nonzero means fetch this collection", never as an expected total.
 - This template most likely won't work on stores behind extra protections or password-protected ones, and if it can work at all, it will need a lot of overrides from your side.
 - Everything from `Spider` still applies: concurrency settings, delays, robots.txt compliance, checkpoints, and the lifecycle hooks.
-
-### What qualifies as a platform template
-
-Platform templates are accepted for platforms that expose a uniform, machine-readable structure across many independent websites, like Shopify does. Spiders for one specific website don't belong in the library, no matter how popular the website is.

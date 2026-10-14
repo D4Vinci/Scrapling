@@ -1,8 +1,8 @@
 # Generic Spider Templates
 
-Most crawls fall into one of two patterns: "follow links matching this regex" or "crawl every URL listed in the site's sitemap". Scrapling ships templates for both so you don't have to hand-write the same `parse()` boilerplate every time.
+Most crawls fall into one of two patterns: "follow links matching this pattern" or "crawl every URL listed in the site's sitemap". Scrapling ships templates for both so you don't have to hand-write the same `parse()` boilerplate every time.
 
-Both templates build on `LinkExtractor`, which pulls URLs out of a `Response` (or filters a single URL via `matches()`). `SitemapSpider` additionally parses sitemap.xml / sitemap_index.xml bodies internally (gzip-compressed or not).
+`CrawlSpider` and `SitemapSpider` build on `LinkExtractor`, which pulls URLs out of a `Response` (or filters a single URL via `matches()`). `SitemapSpider` additionally parses sitemap.xml / sitemap_index.xml bodies internally (gzip-compressed or not).
 
 You can use `LinkExtractor` directly inside any plain `Spider.parse()`. The templates just save you the wiring.
 
@@ -13,28 +13,29 @@ You can use `LinkExtractor` directly inside any plain `Spider.parse()`. The temp
 ```python
 from scrapling.spiders import CrawlSpider, CrawlRule, LinkExtractor
 
-class BlogCrawler(CrawlSpider):
+class QuotesSpider(CrawlSpider):
     name = "blog"
-    start_urls = ["https://example.com"]
+    start_urls = ["https://quotes.toscrape.com/"]
 
     def rules(self):
         return [
-            CrawlRule(LinkExtractor(allow=r"/posts/"), callback=self.parse_post),
+            CrawlRule(LinkExtractor(allow=r"/author/"), callback=self.parse_author),
             CrawlRule(LinkExtractor(allow=r"/page/\d+/")),  # follow pagination, no callback
         ]
 
-    async def parse_post(self, response):
+    async def parse_author(self, response):
         yield {
-            "title": response.css("h1::text").get(),
+            '.author-title': response.css('.author-title::text').get(),
+            "birthday": response.css('.author-born-date::text').get(),
             "url": response.url,
         }
 
-result = BlogCrawler().start()
+result = QuotesSpider().start()
 ```
 
 A `CrawlRule` pairs a `LinkExtractor` with an optional `callback` (a bound method on the spider), an optional `priority` override for the dispatched `Request`, and an optional `process_request` (a bound method that mutates each `Request` before it's yielded). The default `parse()` runs every rule against every response and yields a `Request` per matched URL.
 
-If a rule has no callback, the matched URLs fall through to the spider's default `parse()` (or stay uncallback'd if you didn't override it). This is convenient for pagination: extract the next-page links to keep the crawl going, but don't need a separate handler.
+If a rule has no callback, the matched URLs fall through to the spider's default `parse()`. This is convenient for pagination: extract the next-page links to keep the crawl going, without needing a separate handler.
 
 ### Crawl order
 
@@ -109,7 +110,7 @@ result = MySitemap().start()
 
 ### How URLs are dispatched
 
-For each URL in the sitemap, `SitemapSpider` checks every rule's `LinkExtractor.matches(url)` in order. The first matching rule wins, and a `Request` is yielded with that rule's callback. If no rule matches and `rules()` is non-empty, the URL is dropped (matches Scrapy's behavior). If `rules()` returns an empty list, every URL is routed to the spider's `parse()` method, which raises `NotImplementedError` by default - override it to handle them.
+For each URL in the sitemap, `SitemapSpider` checks every rule's `LinkExtractor.matches(url)` in order. The first matching rule wins, and a `Request` is yielded with that rule's callback. If no rule matches and `rules()` is non-empty, the URL is dropped. If `rules()` returns an empty list, every URL is routed to the spider's `parse()` method, which raises `NotImplementedError` by default if not overridden.
 
 ### Sitemap indexes
 
@@ -124,12 +125,12 @@ class MySitemap(SitemapSpider):
 
 ### Robots.txt support
 
-Put a `robots.txt` URL directly in `sitemap_urls` and `SitemapSpider` will detect it, extract every `Sitemap:` directive (via `protego`), and follow each one:
+Put a `robots.txt` URL directly in `sitemap_urls` and `SitemapSpider` will detect it, extract every sitemap shown, and follow each one:
 
 ```python
 class MySitemap(SitemapSpider):
     name = "sm"
-    sitemap_urls = ["https://example.com/robots.txt"]  # Sitemap: directives discovered automatically
+    sitemap_urls = ["https://example.com/robots.txt"]
 ```
 
 ### Alternate-language URLs
@@ -208,7 +209,7 @@ Gzipped feeds are decompressed automatically here as well, as shown above for **
 
 ## ContentSpider
 
-`ContentSpider` builds on **CrawlSpider** to crawl a website and convert every page to clean, LLM-ready Markdown, yielding one item per page (`url`, `title`, `markdown` keys) and optionally writing one Markdown file per page:
+`ContentSpider` builds on **CrawlSpider** to crawl a website and convert every page to clean, LLM-ready Markdown, yielding one item per page and optionally writing one Markdown file per page:
 
 ```python
 from scrapling.spiders import ContentSpider
@@ -222,7 +223,7 @@ class DocsSpider(ContentSpider):
 result = DocsSpider().start()
 ```
 
-It requires `allowed_domains` to keep the crawl bound to the target website. Options: `css_selector`/`main_content_only` (passed to `markdown()` per page, `main_content_only` enabled by default), `output_dir`, and `max_pages` (max pages to convert, `0` disables). Every page link inside `allowed_domains` is followed by default; override `rules()` with a `LinkExtractor` (`allow` to narrow the crawl, `deny` to drop URL patterns) to control it. The full guide is in `../building-rag-systems.md`.
+It requires `allowed_domains` to keep the crawl bound to the target website. The full guide, including all its options and how to feed the output to RAG pipelines, is on the [Building RAG systems](../building-rag-systems.md) page.
 
 ## Using `LinkExtractor` directly
 
@@ -249,21 +250,21 @@ class CustomSpider(Spider):
 
 ## LinkExtractor reference
 
-| Argument | Default | Description |
-|---|---|---|
-| `allow` | `()` | URL patterns to keep. Empty means "match all". String, compiled `Pattern`, or iterable of either. |
-| `deny` | `()` | URL patterns to drop. Always overrides `allow`. |
-| `allow_domains` | `()` | Hostnames to keep. Subdomains match automatically (`example.com` matches `api.example.com`). |
-| `deny_domains` | `()` | Hostnames to drop. |
-| `restrict_css` | `()` | CSS selectors that scope DOM extraction to a region. |
-| `restrict_xpath` | `()` | XPath selectors that scope DOM extraction to a region. |
-| `tags` | `("a", "area")` | Element tags to look for links in. |
-| `attrs` | `("href",)` | Attributes on those tags to read URLs from. |
-| `canonicalize` | `True` | Sort query params and normalize the path. |
-| `strip` | `True` | Strip whitespace from extracted URLs. |
-| `keep_fragment` | `False` | Preserve the `#fragment` when canonicalizing. |
-| `deny_extensions` | `IGNORED_EXTENSIONS` | File extensions to drop (pdf, zip, images, video, etc.). |
-| `process` | `None` | Optional callable applied to each extracted URL before filtering. Return a falsy value to drop. |
+| Argument          | Default              | Description                                                                                       |
+|-------------------|----------------------|---------------------------------------------------------------------------------------------------|
+| `allow`           | `()`                 | URL patterns to keep. Empty means "match all". String, compiled `Pattern`, or iterable of either. |
+| `deny`            | `()`                 | URL patterns to drop. Always overrides `allow`.                                                   |
+| `allow_domains`   | `()`                 | Hostnames to keep. Subdomains match automatically (`example.com` matches `api.example.com`).      |
+| `deny_domains`    | `()`                 | Hostnames to drop.                                                                                |
+| `restrict_css`    | `()`                 | CSS selectors that scope DOM extraction to a region.                                              |
+| `restrict_xpath`  | `()`                 | XPath selectors that scope DOM extraction to a region.                                            |
+| `tags`            | `("a", "area")`      | Element tags to look for links in.                                                                |
+| `attrs`           | `("href",)`          | Attributes on those tags to read URLs from.                                                       |
+| `canonicalize`    | `True`               | Sort query params and normalize the path.                                                         |
+| `strip`           | `True`               | Strip whitespace from extracted URLs.                                                             |
+| `keep_fragment`   | `False`              | Preserve the `#fragment` when canonicalizing.                                                     |
+| `deny_extensions` | `IGNORED_EXTENSIONS` | File extensions to drop (pdf, zip, images, video, etc.).                                          |
+| `process`         | `None`               | Optional callable applied to each extracted URL before filtering. Return a falsy value to drop.   |
 
 `LinkExtractor.extract(response)` returns a `list[str]` of absolute, filtered, deduped URLs.
 

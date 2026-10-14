@@ -1,5 +1,9 @@
 # Getting started
 
+## Introduction
+
+The spider system lets you build concurrent, multi-page crawlers in just a few lines of code.
+
 ## Your First Spider
 
 A spider is a class that defines how to crawl and extract data from websites. Here's the simplest possible spider:
@@ -21,11 +25,11 @@ class QuotesSpider(Spider):
 
 Every spider needs three things:
 
-1. **`name`**: A unique identifier for the spider.
-2. **`start_urls`**: A list of URLs to start crawling from.
-3. **`parse()`**: An async generator method that processes each response and yields results.
+1. **`name`** - A unique identifier for the spider.
+2. **`start_urls`** - A list of URLs to start crawling from.
+3. **`parse()`** - An async generator method that processes each response and yields results.
 
-The `parse()` method processes each response. You use the same selection methods you'd use with Scrapling's [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object), and `yield` dictionaries to output scraped items.
+The `parse()` method is where the magic happens. You use the same selection methods you'd use with Scrapling's [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object), and `yield` dictionaries to output scraped items.
 
 ## Running the Spider
 
@@ -35,7 +39,7 @@ To run your spider, create an instance and call `start()`:
 result = QuotesSpider().start()
 ```
 
-The `start()` method handles all the async machinery internally, so there is no need to worry about event loops. While the spider is running, everything that happens is logged to the terminal, and at the end of the crawl, you get very detailed stats.
+The `start()` method handles all the async machinery internally, so no need to worry about event loops. While the spider is running, everything that happens is logged to the terminal, and at the end of the crawl, you get very detailed stats.
 
 Those stats are in the returned `CrawlResult` object, which gives you everything you need:
 
@@ -96,7 +100,9 @@ async def parse_product(self, response: Response):
     }
 ```
 
-**Note:** All callback methods must be async generators (using `async def` and `yield`).
+**Note:**
+
+All callback methods must be async generators (using `async def` and `yield`).
 
 ## Exporting Data
 
@@ -164,11 +170,10 @@ When enabled, the spider will:
 
 1. **Pre-fetch robots.txt** for all domains in `start_urls` before the crawl begins (concurrently).
 2. **Check every request** against the domain's robots.txt `Disallow` rules. Disallowed requests are silently dropped and counted in `stats.robots_disallowed_count`.
-3. **Respect `Crawl-delay` and `Request-rate` directives** by taking the maximum of the directive and your configured `download_delay`. This means robots.txt delays never reduce your configured delay, only increase it when needed.
+3. **Respect `Crawl-delay` and `Request-rate` directives** by taking the maximum of the directive and your configured `download_delay`. This means robots.txt delays never reduce your configured delay, only increase it when needed. When AutoThrottle is enabled, its maximum delay also caps this value. Set `autothrottle_max_delay` high enough to honor the required delay.
 
 Robots.txt files are fetched using the spider's default session and cached per domain for the entire crawl. Domains discovered mid-crawl (not in `start_urls`) have their robots.txt fetched on the first request to that domain.
 
-**Note:** `robots_txt_obey` is turned off by default. It does not affect your concurrency settings -- only the delay between requests is adjusted.
+**Note:** `robots_txt_obey` is turned off by default to avoid surprising behavior. If you enable it, it does not affect your concurrency settings (`concurrent_requests`, `concurrent_requests_per_domain`) -- only the delay between requests is adjusted.
 
 If you don't want to pick a `download_delay` by hand, set `autothrottle_enabled = True` and the spider will tune the delay of every domain on its own from how fast it responds, backing off when it gets blocked. See [AutoThrottle](advanced.md#autothrottle).
-

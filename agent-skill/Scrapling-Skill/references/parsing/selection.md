@@ -1,5 +1,5 @@
 # Querying elements
-Scrapling currently supports parsing HTML pages exclusively (no XML feeds), because the adaptive feature does not work with XML.
+The `Selector` class parses HTML. This decision was made because the adaptive feature won't work with XML. For XML, RSS, or Atom feeds, use [XMLFeedSpider](../spiders/generic-templates.md#xmlfeedspider), which uses an XML parser and gives you each feed node directly.
 
 In Scrapling, there are five main ways to find elements:
 
@@ -9,7 +9,7 @@ In Scrapling, there are five main ways to find elements:
 4. Finding elements whose content contains a specific text
 5. Finding elements whose content matches a specific regex
 
-There are also other indirect ways to find elements. Scrapling can also find elements similar to a given element; see [Finding Similar Elements](#finding-similar-elements).
+One of the most remarkable features of Scrapling is the ability to [find elements that are similar to the element you have](#finding-similar-elements).
 
 ## CSS/XPath selectors
 
@@ -23,18 +23,18 @@ Also, Scrapling implements some non-standard pseudo-elements like:
 * To select text nodes, use ``::text``.
 * To select attribute values, use ``::attr(name)`` where name is the name of the attribute that you want the value of
 
-The selector logic follows the same conventions as Scrapy/Parsel.
+In short, if you come from Scrapy/Parsel, you will find the same logic for selectors here to make it easier. No need to implement a stranger logic to the one that most of us are used to :)
 
 To select elements with CSS selectors, use the `css` method, which returns `Selectors`. Use `[0]` to get the first element, or `.get()` / `.getall()` to extract text values from text/attribute pseudo-selectors.
 
 ### What are XPath selectors?
 [XPath](https://en.wikipedia.org/wiki/XPath) is a language for selecting nodes in XML documents, which can also be used with HTML. This [cheatsheet](https://devhints.io/xpath) is a good resource for learning about [XPath](https://en.wikipedia.org/wiki/XPath). Scrapling adds XPath selectors directly through [lxml](https://lxml.de/).
 
-The logic follows the same conventions as Scrapy/Parsel. However, Scrapling does not implement the XPath extension function `has-class` as Scrapy/Parsel does. Instead, it provides the `has_class` method on returned elements.
+In short, it is the same situation as CSS Selectors; if you come from Scrapy/Parsel, you will find the same logic for selectors here. However, Scrapling doesn't implement the XPath extension function `has-class` as Scrapy/Parsel does. Instead, it provides the `has_class` method, which can be used on elements returned for the same purpose.
 
-To select elements with XPath selectors, use the `xpath` method, which follows the same logic as the CSS selectors method above.
+To select elements with XPath selectors, you have the `xpath` method. Again, this method follows the same logic as the CSS selectors method above.
 
-> Note that each method of `css` and `xpath` has additional arguments, but we didn't explain them here, as they are all about the adaptive feature. The adaptive feature will have its own page later to be described in detail.
+> The `css` and `xpath` methods have additional arguments for the [adaptive feature](adaptive.md).
 
 ### Selectors examples
 Let's see some shared examples of using CSS and XPath Selectors.
@@ -44,7 +44,9 @@ Select all elements with the class `product`.
 products = page.css('.product')
 products = page.xpath('//*[@class="product"]')
 ```
-**Note:** The XPath version won't be accurate if there's another class; it's always better to rely on CSS for selecting by class.
+**Note:**
+
+The XPath one won't be accurate if there's another class; **it's always better to rely on CSS for selecting by class**
 
 Select the first element with the class `product`.
 ```python
@@ -74,9 +76,11 @@ title = page.xpath('//*[@class="product"]//h1[contains(text(),"Phone")]/text()')
 You can nest and chain selectors as you want, given that they return results
 ```python
 page.css('.product')[0].css('h1:contains("Phone")::text').get()
-page.xpath('//*[@class="product"]')[0].xpath('//h1[contains(text(),"Phone")]/text()').get()
+page.xpath('//*[@class="product"]')[0].xpath('.//h1[contains(text(),"Phone")]/text()').get()
 page.xpath('//*[@class="product"]')[0].css('h1:contains("Phone")::text').get()
 ```
+Use `.//` for an XPath relative to the current element. A leading `//` searches the whole document, even after selecting a product.
+
 Another example
 
 All links that have 'image' in their 'href' attribute
@@ -90,12 +94,12 @@ for index, link in enumerate(links):
 ```
 
 ## Text-content selection
-Scrapling provides two ways to select elements based on their direct text content:
+Scrapling provides the ability to select elements based on their direct text content, and you have two ways to do this:
 
 1. Elements whose direct text content contains the given text with many options through the `find_by_text` method.
 2. Elements whose direct text content matches the given regex pattern with many options through the `find_by_regex` method.
 
-Anything achievable with `find_by_text` can also be done with `find_by_regex`, but both are provided for convenience.
+What you can do with `find_by_text` can be done with `find_by_regex` if you are good enough with regular expressions (regex), but we are providing more options to make them easier for all users to access.
 
 With `find_by_text`, you pass the text as the first argument; with `find_by_regex`, the regex pattern is the first argument. Both methods share the following arguments:
 
@@ -107,25 +111,33 @@ By default, Scrapling searches for the exact matching of the text/pattern you pa
 
 * **partial**: If enabled, `find_by_text` will return elements that contain the input text. So it's not an exact match anymore
 
-**Note:** The method `find_by_regex` can accept both regular strings and a compiled regex pattern as its first argument.
+**Note:**
+
+The method `find_by_regex` can accept both regular strings and a compiled regex pattern as its first argument, as you will see in the upcoming examples.
 
 ### Finding Similar Elements
-Scrapling can find elements similar to a given element, inspired by the AutoScraper library but usable with elements found by any method.
+One of the most remarkable new features Scrapling puts on the table is the ability to tell Scrapling to find elements similar to the element at hand. This feature's inspiration came from the AutoScraper library, but in Scrapling, it can be used on elements found by any method. Most of its usage would likely occur after finding elements through text content, similar to how AutoScraper works, making it convenient to explain here.
 
-Given an element (e.g., a product found by title), calling `.find_similar()` on it causes Scrapling to:
+So, how does it work?
 
-1. Find all page elements with the same DOM tree depth as this element. 
+Imagine a scenario where you found a product by its title, for example, and you want to extract other products listed in the same table/container. With the element you have, you can call the method `.find_similar()` on it, and Scrapling will:
+
+1. Find all page elements with the same DOM tree depth as this element.
 2. All found elements will be checked, and those without the same tag name, parent tag name, and grandparent tag name will be dropped.
-3. As a final check, Scrapling uses fuzzy matching to drop elements whose attributes don't resemble the original element's attributes. A configurable percentage controls this step (see arguments below).
+3. Now we are sure (like 99% sure) that these elements are the ones we want, but as a last check, Scrapling will use fuzzy matching to drop the elements whose attributes don't look like the attributes of our element. There's a percentage to control this step, and I recommend you not play with it unless the default settings don't get the elements you want.
 
-Arguments for `find_similar()`:
+These are the arguments that can be passed to this method:
 
-* **similarity_threshold**: The percentage for comparing elements' attributes (step 3). Default is 0.2 (tag attributes must be at least 20% similar). Set to 0 to disable this check entirely.
+* **similarity_threshold**: This is the percentage we discussed in step 3 for comparing elements' attributes. The default value is 0.2. In Simpler words, the tag attributes of both elements should be at least 20% similar. If you want to turn off this check (basically Step 3), you can set this attribute to 0.
 * **ignore_attributes**: The attribute names passed will be ignored while matching the attributes in the last step. The default value is `('href', 'src',)` because URLs can change significantly across elements, making them unreliable.
 * **match_text**: If `True`, the element's text content will be considered when matching (Step 3). Using this argument in typical cases is not recommended, but it depends.
 
+Now, let's check out the examples below.
+
 ### Examples
-Examples of finding elements with raw text, regex, and `find_similar`.
+Let's see some shared examples of finding elements with raw text and regex.
+
+These examples use the `Fetcher` class.
 ```python
 from scrapling.fetchers import Fetcher
 page = Fetcher.get('https://books.toscrape.com/index.html')
@@ -161,7 +173,7 @@ Get all elements that contain the word `the` (Partial matching)
  'Mesaerion: The Best Science ...',
  "It's Only the Himalayas"]
 ```
-The search is case-insensitive by default, so those results include `The`, not just the lowercase `the`. To limit to exact case:
+The search is case-insensitive, so those results include `The`, not just the lowercase `the`; let's limit the search to elements with `the` only.
 ```python
 >>> results = page.find_by_text('the', partial=True, first_match=False, case_sensitive=True)
 >>> [i.text for i in results]
@@ -206,7 +218,7 @@ Find all elements similar to the current element in location and attributes. For
  <data='<a href="catalogue/sharp-objects_997/ind...' parent='<h3><a href="catalogue/sharp-objects_997...'>,
 ...]
 ```
-The number of elements is 19, not 20, because the current element is not included in the results:
+Notice that the number of elements is 19, not 20, because the current element is not included in the results.
 ```python
 >>> len(element.find_similar(ignore_attributes=['title']))
 19
@@ -222,21 +234,23 @@ Get the `href` attribute from all similar elements
  'catalogue/sharp-objects_997/index.html',
  ...]
 ```
-Getting all books' data using that element as a starting point:
+To increase the complexity a little bit, let's say we want to get all the books' data using that element as a starting point for some reason
 ```python
->>> for product in element.parent.parent.find_similar():
+>>> first_product = element.parent.parent
+>>> for product in [first_product, *first_product.find_similar()]:
         print({
             "name": product.css('h3 a::text').get(),
             "price": product.css('.price_color')[0].re_first(r'[\d\.]+'),
             "stock": product.css('.availability::text').getall()[-1].clean()
         })
+{'name': 'Tipping the Velvet', 'price': '53.74', 'stock': 'In stock'}
 {'name': 'A Light in the ...', 'price': '51.77', 'stock': 'In stock'}
 {'name': 'Soumission', 'price': '50.10', 'stock': 'In stock'}
 {'name': 'Sharp Objects', 'price': '47.82', 'stock': 'In stock'}
 ...
 ```
 ### Advanced examples
-Advanced examples using the `find_similar` method:
+See more advanced or real-world examples using the `find_similar` method.
 
 E-commerce Product Extraction
 ```python
@@ -247,13 +261,13 @@ def extract_product_grid(page):
     )
 
     # Find similar product cards
-    products = first_product.find_similar()
+    products = [first_product, *first_product.find_similar()]
 
     return [
         {
             'name': p.css('h3::text').get(),
             'price': p.css('.price::text').re_first(r'\d+\.\d{2}'),
-            'stock': 'In stock' in p.text,
+            'stock': 'In stock' in p.get_all_text(),
             'rating': p.css('.rating')[0].attrib.get('data-rating')
         }
         for p in products
@@ -266,7 +280,7 @@ def extract_table_data(page):
     first_row = page.css('table tbody tr')[0]
 
     # Find similar rows
-    rows = first_row.find_similar()
+    rows = [first_row, *first_row.find_similar()]
 
     return [
         {
@@ -286,7 +300,7 @@ def extract_form_fields(page):
     )
 
     # Find similar field containers
-    fields = first_field.find_similar()
+    fields = [first_field, *first_field.find_similar()]
 
     return [
         {
@@ -305,10 +319,10 @@ def extract_reviews(page):
     review_container = first_review.find_ancestor(
         lambda e: e.has_class('review')
     )
-    
+
     # Find similar reviews
-    all_reviews = review_container.find_similar()
-    
+    all_reviews = [review_container, *review_container.find_similar()]
+
     return [
         {
             'text': r.css('.review-text::text').get(),
@@ -319,7 +333,9 @@ def extract_reviews(page):
     ]
 ```
 ## Filters-based searching
-Inspired by BeautifulSoup's `find_all` function, elements can be found using the `find_all` and `find` methods. Both methods accept multiple filters and return all elements on the pages where all filters apply.
+This search method is arguably the best way to find elements in Scrapling, as it is powerful and easier for newcomers to Web Scraping to learn than writing selectors.
+
+Inspired by BeautifulSoup's `find_all` function, you can find elements using the `find_all` and `find` methods. Both methods can accept multiple filters and return all elements on the pages where all these filters apply.
 
 To be more specific:
 
@@ -341,8 +357,10 @@ It filters all elements in the current page/element in the following order:
 
 **Notes:**
 
-1. The filtering process always starts from the first filter it finds in the filtering order above. If no tag name(s) are passed but attributes are passed, the process starts from step 2, and so on.
-2. The order in which arguments are passed does not matter. The only order considered is the one explained above.
+1. As you probably understood, the filtering process always starts from the first filter it finds in the filtering order above. So, if no tag name(s) are passed but attributes are passed, the process starts from that step (number 2), and so on.
+2. The order in which you pass the arguments doesn't matter. The only order considered is the one explained above.
+
+Check examples to clear any confusion :)
 
 ### Examples
 ```python
@@ -433,7 +451,7 @@ Another pro tip: Find all elements whose `href` attribute's value has '/author/'
 And so on...
 
 ## Generating selectors
-CSS/XPath selectors can be generated for any element, regardless of the method used to find it.
+You can always generate CSS/XPath selectors for any element that can be reused here or anywhere else, and the most remarkable thing is that it doesn't matter what method you used to find that element!
 
 Generate a short CSS selector for the `url_element` element (if possible, create a short one; otherwise, it's a full selector)
 ```python
@@ -456,12 +474,14 @@ Generate a full XPath selector for the `url_element` element from the start of t
 >>> url_element.generate_full_xpath_selector
 '//body/div/div[2]/div/div/span[2]/a'
 ```
-**Note:** When generating a short selector, Scrapling tries to find a unique element (e.g., one with an `id` attribute) as a stop point. If none exists, the short and full selectors will be identical.
+**Note:**
+
+When you tell Scrapling to create a short selector, it tries to find a unique element to use in generation as a stop point, like an element with an `id` attribute, but in our case, there wasn't any, so that's why the short and the full selector will be the same.
 
 ## Using selectors with regular expressions
-Similar to `parsel`/`scrapy`, `re` and `re_first` methods are available for extracting data using regular expressions. These methods exist in `Selector`, `Selectors`, `TextHandler`, and `TextHandlers`, so they can be used directly on elements even without selecting a text node. See the [TextHandler](main_classes.md#texthandler) class for details.
+Similar to `parsel`/`scrapy`, `re` and `re_first` methods are available for extracting data using regular expressions. However, unlike the former libraries, these methods are in nearly all classes like `Selector`/`Selectors`/`TextHandler` and `TextHandlers`, which means you can use them directly on the element even if you didn't select a text node.
 
-Examples:
+See [TextHandler](main_classes.md#texthandler) for details on these methods.
 ```python
 >>> page.css('.price_color')[0].re_first(r'[\d\.]+')
 '51.77'
@@ -491,4 +511,3 @@ Examples:
 >>> page.find_by_text('Tipping the Velvet').attrib['href'].re(r'catalogue/(.*)/index.html')
 ['tipping-the-velvet_999']
 ```
-See the [TextHandler](main_classes.md#texthandler) class for more details on regex methods.

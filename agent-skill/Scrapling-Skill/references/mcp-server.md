@@ -1,445 +1,189 @@
-# Scrapling MCP Server
+# Scrapling MCP Server Guide
 
-The Scrapling MCP server exposes sixteen tools over the MCP protocol. It supports CSS-selector-based content narrowing (reducing tokens by extracting only relevant elements before returning results), plain HTTP requests and stealth browser rendering with anti-bot bypass, persistent browser session management, mouse actions, batch field filling, keyboard shortcuts, page waits, custom JavaScript, network history, and page screenshots returned as real image content blocks. Every fetch takes one URL. One-shot tools (`make_request`, `browser_fetch_once`) close their own client or browser after the call. Use sessions opened with `browser_open` or `open_request_session` for related requests, browser actions, or network history. Browser session calls reuse one tab, so fetch pages and run actions in order. Close each persistent session when done.
+The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful Web Scraping capabilities directly to your favorite AI chatbot or AI agent. This integration allows you to scrape websites, extract data, and bypass anti-bot protections conversationally through Claude's AI interface or any interface that supports MCP.
 
-Fetch and HTTP request tools return a `ResponseModel` with fields: `status` (int), `content` (list of strings), `url` (str). The `browser_screenshot` tool returns a list of MCP content blocks: an `ImageContent` (the screenshot bytes) followed by a `TextContent` (the current page URL). `browser_extract` and `browser_actions` return plain text. Both network tools return structured JSON; the request list supports pagination. `browser_evaluate` returns compact JSON in one plain text block.
+## Features
 
-## Shadow DOM
+The Scrapling MCP Server provides sixteen tools for web scraping and browser interaction. One-shot tools fetch a single URL and close their own browser or client. Session tools keep cookies and settings across calls, so the AI can continue browser actions on the same tab and inspect network history.
+
+### One-shot tools
+
+#### 🚀 Basic HTTP Scraping
+- **`make_request`**: Fast HTTP requests with any method (GET, POST, PUT, DELETE) and browser fingerprint impersonation, generating real browser headers matching the TLS version, HTTP/3, and more!
+
+#### 🔒 Stealth Browser Scraping
+- **`browser_fetch_once`**: Render JavaScript and scrape dynamic pages with our Stealthy browser. Supports fingerprint spoofing, Cloudflare Turnstile/Interstitial bypass, and control over the browser and request!
+
+### Session tools
+
+#### 🔌 Session Management
+- **`browser_open`**: Create a persistent stealthy browser session that stays open across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns only `session_id` and `session_type`. Use `list_sessions` to see its effective `settings` (empty for CDP sessions).
+- **`open_request_session`**: Create a persistent HTTP requests session (no browser) used with `session_make_request`, keeping cookies, connections, and the browser fingerprint (`impersonate`) between requests. It returns only `session_id` and `session_type`, with type `static`. Use `list_sessions` to see its effective `settings`.
+- **`close_session`**: Close a persistent session (browser or requests) and free its resources.
+- **`list_sessions`**: List all active sessions with their details and `settings`.
+
+#### Browser State
+
+- **`browser_save_state`**: Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file, so login state can be reused after the browser session ends. Saving replaces an existing file.
+- **`browser_load_state`**: Restore a saved file into an open browser session, including before its first page load. This replaces the current stored state without closing or navigating existing tabs. Fetch or reload the page to use the restored login.
+
+State files are stored on the machine running the MCP server. They do not include `sessionStorage`, open tabs or browser settings.
+
+#### 🎯 Fetching Through a Session
+- **`browser_fetch`**: Render JavaScript and scrape a single URL through an open stealthy browser session, with fingerprint spoofing and Cloudflare Turnstile/Interstitial bypass. It can also capture a structured page snapshot with element references, positions, and sizes, helping the AI identify controls and plan mouse actions.
+- **`session_make_request`**: Make fast HTTP requests with any method (GET, POST, PUT, DELETE), browser fingerprint impersonation, matching browser headers, and HTTP/3 support. Reuse cookies, connections, and the browser fingerprint through a session opened with `open_request_session`.
+
+#### 📸 Screenshots
+
+- **`browser_screenshot`**: Capture the current page or a chosen element as PNG or JPEG without reloading it. Inspect filled fields, open menus, charts, or result cards, with less unrelated content in element captures. Supports the visible viewport, the full page, or one element, with adjustable JPEG quality. The screenshot is returned as a real image content block the model can see directly.
+
+#### Current Page Content
+
+- **`browser_extract`**: Read the current page or one element as an AI snapshot, HTML, Markdown, or text without reloading it. Extract results after filling forms or loading more content. Snapshots include element roles, names, references, positions, and sizes for later actions. Regex search returns matching snapshot lines with nearby context and parent nodes.
+
+#### Browser Actions
+
+- **`browser_actions`**: Chain mouse actions, field filling, keyboard shortcuts, dialog replies, and waits in one call. Accept or dismiss browser alerts and confirmations, or enter text in prompts. For example, fill a search box, submit it, wait for results, and open a result. The AI can combine known steps while keeping snapshots separate when it needs to inspect a page change.
+
+    Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks support selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
+
+    Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by their visible labels. Text can replace existing content, clear it, or continue at the current caret. Keyboard shortcuts can select and delete text, move focus, submit forms, or dismiss menus. Slow mode types one character at a time with random pauses between characters and all actions.
+
+    Wait for results to appear, loading overlays to disappear, or page load events before the next action. Also supports fixed pauses and waiting for network activity to settle.
+
+#### JavaScript
+
+- **`browser_evaluate`**: Run JavaScript on the current page for custom data extraction, calculations, and page-specific tasks. The AI can collect data from several elements, read application state, or update page content. Supports asynchronous scripts and returns their results as JSON.
+
+#### Network History
+
+- **`browser_network_requests`**: Find completed requests across tabs, page loads, and browser actions. Discover the API calls behind a page's data, inspect HTTP errors, and follow saved redirects. Static resources are hidden by default to keep results small. Returns request details as JSON, with pagination for long histories.
+- **`browser_network_request`**: Inspect one recorded request's summary, headers, sent data, or text response body as structured JSON. Returns the selected part in full without loading the page or sending the request again. Saved responses remain available after page changes. Size limits keep the history bounded; a note explains non-text, oversized, or unreadable bodies. Read needed details before closing the MCP session.
+
+Response bodies are read and saved only for supported text `Content-Type` values, such as HTML, JSON, XML, or JavaScript. Binary, missing, or unrecognized content types keep request metadata and headers without reading or saving their response bodies. The browser still loads resources normally.
+
+Only completed requests are saved, including HTTP 4xx and 5xx responses. Failed and unfinished requests are omitted. Entries appear after capture finishes; reading history or closing the session does not wait. Captures still running at navigation or closure may be omitted. Saved bytes come from the Browser and can differ from the server's bytes. Recorded text follows Playwright's UTF-8 decoding when valid, with the declared charset as a fallback.
+
+### Shadow DOM
 
 Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](fetching/stealthy.md#shadow-dom) for selector examples and limits.
 
+### Key Capabilities
+- **Smart Content Extraction**: Convert web pages/elements to Markdown, HTML, or extract a clean version of the text content
+- **CSS Selector Support**: Use the Scrapling engine to target specific elements with precision before handing the content to the AI
+- **Anti-Bot Bypass**: Handle Cloudflare Turnstile, Interstitial, and other protections
+- **Proxy Support**: Use proxies for anonymity and geo-targeting
+- **Browser Impersonation**: Mimic real browsers with TLS fingerprinting, real browser headers matching that version, and more
+- **Session Persistence**: Reuse browser sessions across multiple requests for better performance
+- **Ad Blocking**: All browser-based tools automatically block requests to ~3,500 known ad and tracker domains, saving tokens and speeding up page loads
+- **Prompt Injection Protection**: Automatic sanitization of hidden content (inline hidden elements, aria-hidden, hidden slots, zero-width characters, HTML comments, template tags) that could be used for prompt injection attacks
 
-## One-shot tools
+#### But why use Scrapling MCP Server instead of other available tools?
 
-### `make_request` -- HTTP request, any method (single URL)
+Aside from its stealth capabilities and ability to bypass Cloudflare Turnstile/Interstitial, Scrapling's server is the only one that lets you select specific elements to pass to the AI, saving a lot of time and tokens!
 
-Fast HTTP request with browser fingerprint impersonation (TLS, headers). Supports GET (default), POST, PUT, and DELETE via the `method` parameter. Suitable for static pages with no/low bot protection. Closes its own HTTP client after the call; use `session_make_request` for a persistent session.
+The way other servers work is that they extract the content, then pass it all to the AI to extract the fields you want. This causes the AI to consume far more tokens than needed (from irrelevant content). Scrapling solves this problem by allowing you to pass a CSS selector to narrow down the content you want before passing it to the AI, which makes the whole process much faster and more efficient.
 
-**Key parameters:**
+## Installation
 
-| Parameter           | Type                                      | Default      | Description                                                        |
-|---------------------|-------------------------------------------|--------------|--------------------------------------------------------------------|
-| `url`               | str                                       | required     | URL to fetch                                                       |
-| `method`            | `"GET"` / `"POST"` / `"PUT"` / `"DELETE"` | `"GET"`      | HTTP method                                                        |
-| `data`              | dict or str or null                       | null         | Request body (form data). POST/PUT/DELETE only                     |
-| `json`              | dict or list or null                      | null         | Request body (JSON). POST/PUT/DELETE only                          |
-| `extraction_type`   | `"markdown"` / `"html"` / `"text"`        | `"markdown"` | Output format                                                      |
-| `css_selector`      | str or null                               | null         | CSS selector to narrow content (applied after `main_content_only`) |
-| `main_content_only` | bool                                      | true         | Restrict to `<body>` content                                       |
-| `impersonate`       | str                                       | `"chrome"`   | Browser fingerprint to impersonate                                 |
-| `proxy`             | str or null                               | null         | Proxy URL, e.g. `"http://user:pass@host:port"`                     |
-| `proxy_auth`        | dict or null                              | null         | `{"username": "...", "password": "..."}`                           |
-| `auth`              | dict or null                              | null         | HTTP basic auth, same format as proxy_auth                         |
-| `timeout`           | number                                    | 30           | Seconds before timeout                                             |
-| `retries`           | int                                       | 3            | Maximum attempts, including the first                              |
-| `retry_delay`       | int                                       | 1            | Seconds between retries                                            |
-| `stealthy_headers`  | bool                                      | true         | Generate realistic browser headers and Google referer              |
-| `http3`             | bool                                      | false        | Use HTTP/3 (may conflict with `impersonate`)                       |
-| `follow_redirects`  | bool or "safe"                            | "safe"       | Follow redirects. "safe" rejects redirects to internal/private IPs |
-| `max_redirects`     | int                                       | 30           | Max redirects (-1 for unlimited)                                   |
-| `headers`           | dict or null                              | null         | Custom request headers                                             |
-| `cookies`           | dict or null                              | null         | Request cookies                                                    |
-| `params`            | dict or null                              | null         | Query string parameters                                            |
-| `verify`            | bool                                      | true         | Verify HTTPS certificates                                          |
-
-### `browser_fetch_once` -- Stealth browser fetch (single URL)
-
-Uses a stealthy Chromium browser through Patchright for JavaScript rendering, fingerprint spoofing, and anti-bot bypass. Supports dynamic/SPA pages and sites with Cloudflare Turnstile/Interstitial or other strong protections.
-
-**Key parameters:**
-
-| Parameter             | Type                | Default      | Description                                                                     |
-|-----------------------|---------------------|--------------|---------------------------------------------------------------------------------|
-| `url`                 | str                 | required     | URL to fetch                                                                    |
-| `extraction_type`     | str                 | `"markdown"` | `"markdown"` / `"html"` / `"text"`                                              |
-| `css_selector`        | str or null         | null         | Narrow content before extraction                                                |
-| `main_content_only`   | bool                | true         | Restrict to `<body>`                                                            |
-| `headless`            | bool                | true         | Run browser hidden (true) or visible (false)                                    |
-| `proxy`               | str or dict or null | null         | String URL or `{"server": "...", "username": "...", "password": "..."}`         |
-| `timeout`             | number              | 30000        | Timeout in **milliseconds**                                                     |
-| `wait`                | number              | 0            | Extra wait (ms) after page load before extraction                               |
-| `wait_selector`       | str or null         | null         | CSS selector to wait for before extraction                                      |
-| `wait_selector_state` | str                 | `"attached"` | State for wait_selector: `"attached"` / `"visible"` / `"hidden"` / `"detached"` |
-| `network_idle`        | bool                | false        | Wait until no network activity for 500ms                                        |
-| `pierce_shadow`       | bool                | false        | Include open Shadow DOM content in this request.                                |
-| `disable_resources`   | bool                | false        | Block fonts, images, media, stylesheets, etc. for speed                         |
-| `google_search`       | bool                | true         | Set a Google referer header                                                     |
-| `real_chrome`         | bool                | false        | Use locally installed Chrome instead of bundled Chromium                        |
-| `cdp_url`             | str or null         | null         | Connect to existing browser via CDP URL                                         |
-| `extra_headers`       | dict or null        | null         | Additional request headers                                                      |
-| `useragent`           | str or null         | null         | Custom user-agent (auto-generated if null)                                      |
-| `cookies`             | list or null        | null         | Playwright-format cookies                                                       |
-| `timezone_id`         | str or null         | null         | Browser timezone, e.g. `"America/New_York"`                                     |
-| `locale`              | str or null         | null         | Browser locale, e.g. `"en-GB"`                                                  |
-| `solve_cloudflare` | bool         | false   | Automatically solve Cloudflare Turnstile/Interstitial challenges |
-| `hide_canvas`      | bool         | false   | Add noise to canvas operations                                  |
-| `block_webrtc`     | bool         | false   | Disable non-proxied WebRTC UDP to reduce IP leaks                 |
-| `allow_webgl`      | bool         | true    | Keep WebGL enabled; disabling it can trigger bot detection        |
-| `additional_args`  | dict or null | null    | Extra Playwright context args (overrides Scrapling defaults)     |
-
-This one-shot tool creates and closes its own stealthy browser session. For related fetches, later browser actions, or network history, use `browser_open` and `browser_fetch`.
-
-## Session tools
-
-### `browser_open` -- Create a persistent stealthy browser session
-
-Opens a stealthy browser session that stays alive across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration only; per-request options are passed to `browser_fetch`. For plain HTTP requests without a browser, use `open_request_session` instead. Returns a `SessionCreatedModel` with `session_id`, `session_type="stealthy"`, `created_at`, `is_alive`, `settings` (the session's effective configuration for the AI agent; empty for CDP sessions), and `message`.
-
-**Key parameters:**
-
-| Parameter          | Type                        | Default      | Description                                                                                           |
-|--------------------|-----------------------------|--------------|-------------------------------------------------------------------------------------------------------|
-| `session_id`       | str or null                 | null         | Custom ID for the session. If omitted, a random 12-char hex ID is generated. Raises if already in use |
-| `headless`         | bool                        | true         | Run browser hidden or visible                                                                         |
-| `hide_canvas`      | bool                        | false        | Canvas fingerprint noise                                                              |
-| `block_webrtc`     | bool                        | false        | Block WebRTC IP leak                                                                  |
-| `allow_webgl`      | bool                        | true         | Keep WebGL enabled                                                                    |
-
-Plus the other browser-level session parameters (`proxy`, `real_chrome`, `cdp_url`, `locale`, `timezone_id`, `useragent`, `cookies`, `executable_path`, `additional_args`). Per-request options (`timeout`, `wait`, `google_search`, `network_idle`, `disable_resources`, `wait_selector`, `wait_selector_state`, `extra_headers`, `solve_cloudflare`) are not set here; pass them to `browser_fetch`.
-
-Use `solve_cloudflare` on `browser_fetch` to solve Cloudflare challenges through the session.
-
-Recording of completed requests starts automatically for this session. Use `browser_network_requests` to find traffic and `browser_network_request` to inspect a recorded request.
-
-### `open_request_session` -- Create a persistent HTTP requests session
-
-Opens an HTTP session (no browser) that stays alive across multiple `session_make_request` calls, keeping cookies, connections, and the browser fingerprint between requests. Returns the same `SessionCreatedModel` receipt and shows in `list_sessions` as a `static` session.
-
-| Parameter     | Type        | Default    | Description                                                                                           |
-|---------------|-------------|------------|-------------------------------------------------------------------------------------------------------|
-| `session_id`  | str or null | null       | Custom ID for the session. If omitted, a random 12-char hex ID is generated. Raises if already in use |
-| `impersonate` | str         | `"chrome"` | Browser fingerprint to impersonate on every request                                                   |
-| `proxy`       | str or null | null       | Proxy URL used for every request, e.g. `"http://user:pass@host:port"`                                 |
-
-### `browser_save_state` and `browser_load_state` -- Save or restore browser storage
-
-Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file, or replace an open browser session's stored state from that file. Both tools use the session's `save_state` and `load_state` methods. They work immediately after `browser_open`; no `browser_fetch` is required. HTTP sessions are not supported.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID from `browser_open` |
-| `path` | nonempty str | required | JSON file path on the MCP server host; relative paths use its working directory |
-
-Saving overwrites the file, and its parent directory must exist. Loading replaces cookies, local storage and IndexedDB. It leaves `sessionStorage` and open tabs unchanged; fetch or reload pages to use the restored login. The file does not save `sessionStorage`, tabs or browser settings. Finish other calls in the session before saving or loading.
-
-```json
-{"session_id": "browser", "path": "state.json"}
-```
-
-Save returns `State saved.` and load returns `State loaded.` as plain text, with no storage values in the response. Unknown, closed or HTTP sessions, invalid paths, unreadable files and malformed JSON return errors. These tools do not open or close sessions.
-
-### `browser_fetch` -- Fetch through an open browser session (single URL)
-
-Fetches one URL through a stealthy Chromium session opened with `browser_open`, with JavaScript rendering, fingerprint spoofing, and Cloudflare Turnstile/Interstitial bypass. The session holds the browser-level configuration; every parameter here applies to this request only. Raises on a requests session; use `session_make_request` there instead.
-
-| Parameter             | Type         | Default      | Description                                                                            |
-|-----------------------|--------------|--------------|----------------------------------------------------------------------------------------|
-| `url`                 | str          | required     | URL to fetch                                                                           |
-| `session_id`          | str          | required     | ID of an open session created with `browser_open`                                      |
-| `extraction_type`     | str          | `"markdown"` | `"markdown"` / `"html"` / `"text"` / `"snapshot"`                                      |
-| `css_selector`        | str or null  | null         | Narrow content before extraction                                                       |
-| `main_content_only`   | bool         | true         | Restrict to `<body>`                                                                   |
-| `wait`                | number       | 0            | Extra wait (ms) after page load before extraction                                      |
-| `timeout`             | number       | 30000        | Timeout in **milliseconds**                                                            |
-| `google_search`       | bool         | true         | Set a Google referer header                                                            |
-| `network_idle`        | bool         | false        | Wait until no network activity for 500ms                                               |
-| `pierce_shadow`       | bool         | false        | Include open Shadow DOM content in this request.                                       |
-| `load_dom`            | bool         | true         | Wait for the page's JavaScript to fully load and execute                               |
-| `disable_resources`   | bool         | false        | Block fonts, images, media, stylesheets, etc. for speed                                |
-| `wait_selector`       | str or null  | null         | CSS selector to wait for before extraction                                             |
-| `wait_selector_state` | str          | `"attached"` | State for wait_selector: `"attached"` / `"visible"` / `"hidden"` / `"detached"`        |
-| `extra_headers`       | dict or null | null         | Additional request headers                                                             |
-| `blocked_domains`     | list or null | null         | Domain names to block for this request (subdomains matched too)                        |
-| `solve_cloudflare`    | bool         | false        | Auto-solve Cloudflare Turnstile/Interstitial challenges |
-
-With `extraction_type="snapshot"`, the response keeps `status` and `url` and returns one unchanged AI ARIA snapshot string in `content`. These snapshots always include element positions and sizes in viewport CSS pixels. `css_selector` must match exactly one element; omit it for the whole page. `main_content_only` and `pierce_shadow` do not filter snapshots. Snapshot extraction is only available on `browser_fetch`.
-
-### `browser_extract` -- Read current page content without navigation
-
-Returns one plain-text block from the current browser page. `extraction_type` defaults to `"snapshot"`; use `"html"`, `"markdown"`, or `"text"` for content extraction after page actions. Call `browser_fetch` first. Unknown or HTTP sessions and missing, closed, or busy pages return an error. The page stays reserved during capture and conversion and is released after success, failure, or cancellation.
-
-Omit `target` for the whole page, or pass a nonempty Playwright selector or `aria-ref=<ref>` from a current snapshot. It must match exactly one element; select a container to read several child items. Selection does not click, scroll, or change the page. Bare ref strings such as `"e2"` are treated as selectors.
-
-Snapshots include element roles, names, refs, and viewport bounding boxes by default. Set `boxes=false` to omit boxes or use `depth` to limit the tree. Both settings are ignored for other formats.
-
-Set `search` to a nonempty Python regular expression to search snapshot lines. Matching is case-sensitive; use `(?i)` for case-insensitive matching and escape regex characters when matching them literally. Search requires snapshot output, and invalid patterns fail before capture. There is no `regex` switch. Omit `search` for the full page or target snapshot.
-
-Search runs after target selection and the depth limit. Results include all matching lines, three lines before and after each match, and parent nodes within that snapshot. Overlapping context appears once; `...` marks omitted lines. Refs and boxes are preserved. No matches returns an empty string with no status text.
-
-HTML, Markdown, and text reuse the normal content converter. `main_content_only=true` cleans body/target content for AI; set it to `false` to skip that cleaning. This setting is ignored for snapshots. HTML is parsed output and can include document wrappers around a selected fragment. Serialized HTML does not reflect every live form property or include a host's shadow root or an iframe's document; use snapshots for live control state. Capture does not reload the page or change its forms, focus, or scroll position.
-
-```json
-{"session_id": "browser", "search": "(?i)next|load more"}
-```
-
-```json
-{"session_id": "browser", "extraction_type": "markdown", "target": "#results"}
-```
-
-### `browser_actions` -- Chain mouse, field, keyboard, dialog, and wait actions
-
-Runs actions in order on the existing page in a stealthy browser session. Call `browser_fetch` first. The flat `actions` list can mix any of the twelve action types below; use `browser_extract` when you need to inspect the page before choosing later actions.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID of an open browser session |
-| `actions` | list[object] | required | Nonempty ordered list; each item has a `type` and that type's fields |
-| `slowly` | bool | false | Fresh random delays of 50-150 ms per typed character and 100-300 ms between all actions, including waits |
-
-| Action `type` | Fields | Behavior |
-|---------------|--------|----------|
-| `move` | Target, `steps=1`, `timeout=30000` | Hover over an element or move to coordinates; `steps` is the number of coordinate mousemove events, at least 1, and is ignored for element targets |
-| `click` | Target, `button="left"`, `click_count=1`, `delay=0`, `timeout=30000` | Click with the left, right, or middle button; `click_count` must be at least 1, with 2 for a double-click; `delay` is finite nonnegative milliseconds between press and release |
-| `wheel` | `delta_x=0`, `delta_y=0` | Scroll at the current pointer position; finite CSS pixel deltas allow fractions and zero; positive moves right/down, negative moves left/up |
-| `textbox` | Target, `value`, `clear=true`, `timeout=30000` | By default, replace text in an input, textarea, or contenteditable element with a string; an empty string clears it; `clear=false` types at the current caret or selection without clearing |
-| `checkbox` | Target, `value`, `timeout=30000` | Boolean `true` checks the box; `false` unchecks it |
-| `radio` | Target, `value`, `timeout=30000` | Select the radio option; `value` is required and only `true` is supported |
-| `combobox` | Target, `value`, `timeout=30000` | Select native `<select>` options by label; use a string, a list of strings for multiple selections, or `[]` to clear |
-| `press_key` | `key` | Press a nonempty native key name, character, or shortcut at the current focus |
-| `dialog` | `accept`, optional `prompt_text` | Queue one reply for the next browser dialog; `true` accepts, `false` dismisses |
-| `wait_time` | `milliseconds` | Fixed pause in finite nonnegative milliseconds |
-| `wait_element` | `target`, `state="visible"`, `timeout=30000` | Wait for an element to reach `"visible"`, `"hidden"`, `"attached"`, or `"detached"` |
-| `wait_load` | `state`, `timeout=30000` | Wait for `"domcontentloaded"`, `"load"`, or `"networkidle"` |
-
-**Targets and timing.** Element actions use a nonempty `target`: a Playwright selector such as `"#search"` or a snapshot reference as `"aria-ref=e2"`. Bare reference strings such as `"e2"` are treated as selectors. Each move or click needs either `target` or both `x` and `y`. Coordinates must be finite viewport CSS pixels from the main frame's top-left, not full-page screenshot coordinates. Field actions need `target` and can target fields anywhere on the page without a `<form>` parent. Element waits also use `target`. Mouse and field targets must match exactly one element. Use current snapshot references; do not build a chain with references that need a future snapshot.
-
-Each action with a `timeout` accepts finite nonnegative milliseconds, default 30000; 0 disables the limit. Mouse coordinate actions ignore it. For text input, the limit applies separately to each native operation, including clearing and each character press in slow mode. Keyboard, dialog, wheel, and fixed-pause actions have no timeout option. Pauses between actions are outside action timeouts.
-
-**Mouse actions.** Element targets use native locator hover or click, which waits for readiness and scrolls into view. Coordinate actions use the native mouse without automatic waiting or scrolling. Coordinate clicks move the mouse, then press and release, without waiting for navigation. Wheel actions neither move the pointer nor wait for scrolling, animations, or loaded content to finish. The page may prevent scrolling, or the scrollable area may be at its edge.
-
-**Fields and keys.** Field actions use native locator `fill`, `press_sequentially`, `set_checked`, and `select_option(label=...)`. Combobox actions support native `<select>` elements, not custom dropdown widgets. With `clear=false`, text uses `press_sequentially` even when `slowly=false`; an empty value preserves existing content. With `slowly=true`, text clears first unless `clear=false`, then each character gets a fresh 50-150 ms delay. Every pair of actions also gets a fresh 100-300 ms pause, including explicit wait actions, with no leading or trailing pause.
-
-Each `press_key` uses native `page.keyboard.press` at the current focus. Keep a shortcut such as `"ControlOrMeta+A"` in one `key` string, then use another `press_key` action with `"Backspace"` to delete. A space (`" "`) and plus (`"+"`) are valid key strings. The native API validates key names and shortcuts when pressed. Use a click action to focus the intended control before an Enter press when needed. Key presses do not wait for navigation.
-
-**Dialogs.** Place `dialog` before the click, key, or other action that opens an alert, confirmation, prompt, or leave-page warning (`beforeunload`). Each reply handles one dialog; queue several replies before a trigger that opens several dialogs. Replies are used in order. For prompts, `prompt_text` supplies the accepted text; omitting it or passing an empty string returns empty text, even if the prompt has a default. It has no effect when dismissing or accepting other dialog types. Unused replies expire when the call ends; the action does not wait for a dialog by itself. For delayed dialogs, include a wait for the resulting page change in the same chain. HTML modal windows use normal element actions.
-
-```json
-{"session_id": "browser", "actions": [{"type": "dialog", "accept": true, "prompt_text": "books"}, {"type": "click", "target": "#open-prompt"}]}
-```
-
-**Waits.** Element waits are strict: multiple matches return an error. `attached` means present in the DOM, and `detached` means absent. `visible` requires a nonempty bounding box and no `visibility:hidden`; `hidden` also succeeds when the element is absent. Load waits observe the current committed document and return immediately if the state was already reached. A click or key press followed by `wait_load` does not guarantee waiting for delayed future navigation. `domcontentloaded` waits for DOMContentLoaded, not all future JavaScript work; `load` waits for the load event; `networkidle` requires no active network connections for at least 500 ms and does not prove application readiness. Prefer a specific result element when it signals readiness.
-
-For example, fill and submit a search, wait for its results, then hover over the results panel and scroll it:
-
-```json
-{
-  "session_id": "browser",
-  "actions": [
-    {"type": "textbox", "target": "#search", "value": "books"},
-    {"type": "press_key", "key": "Enter"},
-    {"type": "wait_element", "target": "#results"},
-    {"type": "move", "target": "#results"},
-    {"type": "wheel", "delta_y": 500}
-  ]
-}
-```
-
-MCP validates the entire action schema, and all target combinations are checked before execution. Targets are resolved only when their action runs, so earlier actions can create later targets. One page stays reserved for the whole sequence, including waits and random pauses. The first runtime failure stops the chain and reports its one-based action number, type, and native error. Earlier effects remain, and the failed action itself may partly apply. Nothing is retried or rolled back. Cancellation also stops the chain and remains cancellation. A cancelled or timed-out click attempts to release its button while the page is open, preserving the original error if release fails. The page reservation is released after success, failure, or cancellation.
-
-Returns `Actions completed.` as plain text without echoing field values or taking a snapshot. Use `browser_extract` before retrying after an error or when later actions depend on inspecting a page change. Unknown or HTTP sessions and missing, closed, or busy pages return an error.
-
-### `browser_evaluate` -- Run JavaScript on the current page
-
-Runs a native JavaScript expression or function on the existing page. Call `browser_open`, then `browser_fetch` first. Functions are invoked with the optional JSON object argument, and returned promises are awaited.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID of an open browser session with a page |
-| `expression` | str | required | Nonempty JavaScript expression or function to invoke |
-| `arg` | object or null | null | One JSON object passed to the function; nested values can contain any JSON data |
-| `isolated_context` | bool | true | Use a separate JavaScript context; `false` accesses the page's own variables |
-
-The isolated context shares the page's DOM but does not share its JavaScript variables. Use `isolated_context=false` to access application globals.
-
-For example, collect text from the first matching links:
-
-```json
-{
-  "session_id": "browser",
-  "expression": "({selector, limit}) => [...document.querySelectorAll(selector)].slice(0, limit).map(element => element.textContent)",
-  "arg": {"selector": "a", "limit": 10}
-}
-```
-
-Return JSON-compatible data: null, strings, booleans, finite numbers, arrays, or objects. Convert special objects such as DOM nodes, dates, maps, and sets into plain data in JavaScript. Both `null` and `undefined` return `null`. Circular data, non-finite numbers, and other results that cannot be encoded as JSON return an error.
-
-The result is compact JSON in one `TextContent` block with `structured_output=False`: strings are JSON-quoted, arrays stay in one block, and null is retained. No automatic snapshot, navigation, reload, retry, or tool timeout is added.
-
-The page stays reserved during evaluation and is released after success, failure, or cancellation. Scripts can change page state or make requests. Errors and cancellation do not undo those effects or guarantee that browser-side JavaScript stops. Use `browser_extract` or another read to check effects before repeating a script. Unknown or HTTP sessions and missing, closed, or busy pages return an error; JavaScript errors propagate.
-
-### `browser_network_requests` -- Search recorded browser requests
-
-Reads completed requests from a session opened with `browser_open`, across page loads, actions, tabs, and navigation. It does not navigate, reserve a page, or send requests. Recording starts automatically and saves response headers and supported text bodies. Completed HTTP 4xx and 5xx responses are included; failed and unfinished requests are omitted. The history retains up to 1,000 requests, with fixed limits of 1 MiB per response body and 20 MiB combined; old records are removed when retention limits are reached.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID from `browser_open` |
-| `url_pattern` | str or null | null | Regular expression to match request URLs |
-| `include_static` | bool | false | Include all resource types; otherwise keep XHR/fetch and HTTP errors |
-| `after_id` | int | 0 | Nonnegative cursor; return requests with larger IDs |
-| `limit` | int | 50 | Maximum returned requests, from 1 to 200 |
-
-Returns structured JSON with `requests`, `next_cursor`, `has_more`, and `dropped_count`. Each request contains integer `id` and `status` fields, plus string `url`, `method`, and `resource_type` fields. `dropped_count` counts older entries removed by the history limits.
-
-Pass `next_cursor` as `after_id` to read later entries. `has_more` means more retained entries currently match the same filters. An empty result has `requests=[]` and `has_more=false`; `next_cursor` is the greater of `after_id` and the latest saved request ID. Use `include_static=true` to include successful document requests and saved redirects. Entries receive increasing IDs when capture finishes. Reads do not wait for captures; use browser actions to wait for the page when needed.
-
-Both network tools provide an MCP output schema and `structured_content`. The SDK also returns the JSON in a text block for clients that read text content.
-
-### `browser_network_request` -- Inspect one recorded request
-
-Reads one recorded request without navigating, reserving a page, or sending it again. All parts use saved data, which remains available after page changes and temporary-context closure. Reads do not call browser methods. An entry appears only after its response has been converted and saved.
-
-The recorder reads and saves response bodies only for supported text `Content-Type` values: `text/*`, `+json`/`+xml` types (including SVG), JSON, XML, JavaScript, GraphQL, and URL-encoded form data. Binary or unrecognized types, and responses without `Content-Type`, keep their metadata but no body bytes. The browser still loads resources normally.
-
-Saved response bytes come from Playwright and can differ from the server's original bytes. Recorded text uses UTF-8 when the saved bytes are valid UTF-8, matching Playwright; otherwise it uses the declared charset. Response headers stay unchanged.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID from `browser_open` |
-| `request_id` | int | required | Positive recorded request ID from `browser_network_requests` |
-| `part` | str | `"summary"` | `"summary"`, `"request_headers"`, `"request_body"`, `"response_headers"`, or `"response_body"` |
-
-Returns structured JSON with `request_id`, `part`, `data`, and `note`.
-
-- Summary `data` is an object with `id`, `url`, `method`, `resource_type`, and `status`.
-- Header `data` is an object of header names and values. Partial headers keep that object and add a `note`.
-- Body `data` is the full saved text for any text resource type, including documents and API calls. JSON response bodies stay strings; they are not parsed into objects.
-
-Saved empty text, HEAD responses, and status codes 204, 205, and 304 return `data=""` and `note=null`. Missing, unreadable, oversized, or non-text body data returns `data=null` and a `note` with the reason. Skipped non-text responses use `Non-text body; not saved.`. A missing or evicted request ID returns an error.
-
-Saved response data survives browser cleanup. Closing a session does not wait for captures; captures still running at navigation or closure may be omitted. The limits cover retained request entries and response bytes, not total browser memory, concurrent captures, temporary full-body reads, parsed HTML, or request bodies.
-
-Both network tools reject unknown or HTTP sessions. Read needed details before `close_session`, which removes the MCP session.
-
-### `session_make_request` -- HTTP request through an open requests session
-
-Makes an HTTP request (any method) through a session opened with `open_request_session`, reusing its cookies, connections, and browser fingerprint across calls. Same parameters as `make_request` plus a required `session_id`, minus the session-level `impersonate`, `proxy`, and `proxy_auth`. Raises on a browser session.
-
-### `close_session` -- Close a persistent session
-
-Closes a session (browser or requests) and frees its resources. Always close sessions when done.
-
-| Parameter    | Type | Default  | Description                      |
-|--------------|------|----------|----------------------------------|
-| `session_id` | str  | required | Session ID from `browser_open`   |
-
-Returns a `SessionClosedModel` with `session_id` and `message`.
-
-### `list_sessions` -- List active sessions
-
-Returns a list of `SessionInfo` objects, each with `session_id`, `session_type`, `created_at`, `is_alive`, and `settings` (same as `browser_open` returns).
-
-No parameters.
-
-### `browser_screenshot` -- Capture the current page or an element
-
-Captures the existing page or one element without reloading or navigating. Element capture can scroll the target into view. Returns an MCP `ImageContent` block followed by a `TextContent` block with the current page URL. The tool uses `structured_output=False`, so the model receives real image content rather than image data duplicated in a structured JSON result.
-
-Call `browser_open`, then `browser_fetch` to open a page first. Use `browser_actions` for waits or interactions before capture; this tool does not accept a URL or readiness controls.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `session_id` | str | required | ID of an open browser session with a page |
-| `selector` | str or null | null | Nonempty Playwright selector for one element; cannot combine with `ref` |
-| `ref` | str or null | null | Nonempty current snapshot reference, such as `e2`; cannot combine with `selector` |
-| `image_type` | `"png"` / `"jpeg"` | `"png"` | Image format; JPEG allows smaller payloads |
-| `full_page` | bool | false | Capture the full scrollable page; cannot combine with an element target |
-| `quality` | int or null | null | JPEG quality 0-100; an error if supplied for PNG |
-| `timeout` | number | 30000 | Finite nonnegative capture timeout in milliseconds; 0 disables it |
-
-Omit both `selector` and `ref` for the viewport or full-page capture. For an element, pass exactly one target and leave `full_page=false`. Native element capture requires exactly one match, waits for the element to be ready, and may scroll it into view. Refresh stale references with `browser_extract`.
-
-The element image is clipped to its bounding box. A scrollable container includes only its currently visible contents, not all content inside it. Content covered by another element stays covered in the image.
-
-For example, capture a result card through its selector:
-
-```json
-{"session_id": "browser", "selector": "#result-card"}
-```
-
-Or use a reference from the current snapshot:
-
-```json
-{"session_id": "browser", "ref": "e2"}
-```
-
-The page stays reserved during capture and is released after success, failure, or cancellation. Unknown or HTTP sessions and missing, closed, or busy pages return an error. Capture errors propagate.
-
-## Tool selection guide
-
-| Scenario                                 | Tool                                                          |
-|------------------------------------------|---------------------------------------------------------------|
-| Single static page or API request | `make_request` |
-| Single JavaScript-rendered / SPA page | `browser_fetch_once` |
-| Single page with Cloudflare protection | `browser_fetch_once` with `solve_cloudflare=true` |
-| Related HTTP requests | `open_request_session` + `session_make_request` per URL |
-| Reuse browser login state across sessions | `browser_save_state` / `browser_load_state` with `session_id` and `path` |
-| Browser automation or network history | `browser_open` + `browser_fetch` per URL |
-| Capture the current page or an element   | `browser_screenshot` after `browser_open` + `browser_fetch` |
-| Read the current page or one element as a snapshot, HTML, Markdown, or text | `browser_extract` with `session_id`                          |
-| Chain mouse, field, keyboard, or wait actions | `browser_actions` with `session_id`                       |
-| Custom JavaScript extraction or page tasks | `browser_evaluate` with `session_id`                        |
-| Find API calls, HTTP errors, or redirects  | `browser_network_requests` with `session_id`                |
-| Read recorded request headers or body data | `browser_network_request` with `session_id` and `request_id` |
-
-Start with `make_request` for a standalone HTTP request, then use `browser_fetch_once` if JavaScript rendering is needed or HTTP requests are blocked. Enable `solve_cloudflare` for Cloudflare challenges. Use persistent sessions for related requests, browser actions, screenshots, or network history. Reuse the session and fetch URLs in order. Always call `close_session` when done with a persistent session.
-
-## Content extraction tips
-
-- Use `css_selector` to narrow results before they reach the model -- this saves significant tokens.
-- `main_content_only=true` (default) restricts HTML, Markdown, and text extraction to `<body>`.
-- `extraction_type="markdown"` (default) is best for readability. Use `"text"` for minimal output, `"html"` when structure matters.
-- If a `css_selector` matches multiple elements, HTML, Markdown, and text extraction return all matches in the `content` list. Snapshot extraction requires exactly one match.
-
-## Prompt injection protection
-
-For HTML, Markdown, and text extraction, `main_content_only=true` (the default) sanitizes scraped content to prevent prompt injection from malicious websites. It strips:
-
-- CSS-hidden elements (`display:none`, `visibility:hidden`, `opacity:0`, `font-size:0`, `height:0`, `width:0`)
-- `aria-hidden="true"` elements
-- `<template>` tags
-- HTML comments
-- Zero-width unicode characters
-
-Keep `main_content_only=true` for maximum protection.
-
-## Ad blocking
-
-The `browser_fetch_once` tool and browser sessions opened with `browser_open` automatically block requests to ~3,500 known ad and tracker domains. This is always enabled in the MCP server to save tokens and speed up page loads. No configuration needed.
-
-## Setup
-
-Start the server (stdio transport, used by most MCP clients):
+Install Scrapling with MCP Support, then double-check that the browser dependencies are installed.
 
 ```bash
-scrapling-mcp
+# Install Scrapling with MCP server dependencies
+pip install "scrapling[ai]"
+
+# Install browser dependencies
+scrapling install
 ```
 
-**Note:** The `scrapling-mcp` command was added in v0.4.13 as a shortcut that maps directly to `scrapling mcp`, making it easier to add Scrapling to MCP registries and clients that expect a single command. On older versions, use the `scrapling` command with `mcp` as the first argument instead.
-
-Or with Streamable HTTP transport:
-
-```bash
-scrapling-mcp --http
-scrapling-mcp --http --host 0.0.0.0 --port 8000
-```
-
-The host defaults to `127.0.0.1`, so the server only accepts connections from the same machine. Pass `--host 0.0.0.0` to make it reachable from the network.
-
-Docker alternative:
-
+Or use the Docker image directly from the Docker registry:
 ```bash
 docker pull pyd4vinci/scrapling
-docker run -i --rm pyd4vinci/scrapling mcp
+```
+Or download it from the GitHub registry:
+```bash
+docker pull ghcr.io/d4vinci/scrapling:latest
 ```
 
-That runs the stdio transport. To use Streamable HTTP inside Docker, bind to `0.0.0.0` yourself and set a token, since the container's `127.0.0.1` is not reachable through the published port:
+## Setting up the MCP Server
+
+The setup below works with [Claude Desktop](https://claude.ai/download), [Claude Code](https://www.anthropic.com/claude-code), and other clients that support MCP.
+
+**Note:**
+The `scrapling-mcp` command used below was added in v0.4.13 as a shortcut that maps directly to `scrapling mcp`, making it easier to add Scrapling to MCP registries and clients that expect a single command. If you are on an older version, use the `scrapling` command with `mcp` as the first argument instead.
+
+### Claude Desktop
+
+Scrapling MCP server configuration:
+```json
+"ScraplingServer": {
+  "command": "scrapling-mcp"
+}
+```
+If that's the first MCP server you're adding, set the content of the file to this:
+```json
+{
+  "mcpServers": {
+    "ScraplingServer": {
+      "command": "scrapling-mcp"
+    }
+  }
+}
+```
+Configuration file locations:
+
+1. **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+2. **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+To ensure it's working, use the full path to the `scrapling-mcp` executable:
+
+1. **MacOS**: `which scrapling-mcp`
+2. **Windows**: `where scrapling-mcp`
+
+For me, on my Mac, it returned `/Users/<MyUsername>/.venv/bin/scrapling-mcp`, so the config I used in the end is:
+```json
+{
+  "mcpServers": {
+    "ScraplingServer": {
+      "command": "/Users/<MyUsername>/.venv/bin/scrapling-mcp"
+    }
+  }
+}
+```
+#### Docker
+If you are using the Docker image, then it would be something like
+```json
+{
+  "mcpServers": {
+    "ScraplingServer": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "pyd4vinci/scrapling", "mcp"
+      ]
+    }
+  }
+}
+```
+
+The same logic applies to [Cursor](https://cursor.com/docs/context/mcp), [WindSurf](https://windsurf.com/university/tutorials/configuring-first-mcp-server), and others.
+
+### Claude Code
+Here it's much simpler to do. With [Claude Code](https://www.anthropic.com/claude-code):
 
 ```bash
-docker run -p 8000:8000 -e SCRAPLING_MCP_AUTH_TOKEN="<your-token>" pyd4vinci/scrapling mcp --http --host 0.0.0.0
+claude mcp add ScraplingServer "/Users/<MyUsername>/.venv/bin/scrapling-mcp"
 ```
+To get Scrapling's executable path:
 
-## Custom browser executable
+1. **MacOS**: `which scrapling-mcp`
+2. **Windows**: `where scrapling-mcp`
+
+Here's the main article from Anthropic on [how to add MCP servers to Claude code](https://docs.anthropic.com/en/docs/claude-code/mcp#option-1%3A-add-a-local-stdio-server) for further details.
+
+
+Restart the client after adding the server.
+
+### Custom Browser Executable
 
 The `browser_fetch_once` and `browser_open` tools can use a custom Chromium-compatible browser executable instead of the bundled Chromium. This is useful for custom browser builds or lightweight browser engines.
 
@@ -465,31 +209,56 @@ In a Claude Desktop configuration, add the option to the server arguments:
 }
 ```
 
-You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. Pass `executable_path` to `browser_fetch_once` or `browser_open` when a single fetch or session needs a different browser executable. The `scrapling extract fetch` CLI command supports the same `--executable-path` option and environment variable fallback.
+You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before starting the server. The AI can still choose a different browser executable for a single fetch with `browser_fetch_once` or when opening a session with `browser_open`.
 
-The MCP server name when registering with a client is `ScraplingServer`. The command is the path to the `scrapling-mcp` binary with no arguments (or the `scrapling` binary with `mcp` as the argument on versions before 0.4.13).
+### Connecting to Remote Browsers
 
-## Connecting to remote browsers
+`browser_open` doesn't have to launch a browser locally. Pass a CDP url and it will connect to an already-running browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/), whether that browser is on the same machine, another host, or a managed browser provider:
+```
+Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
+```
+The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, and `browser_load_state` as usual.
 
-`browser_open` doesn't have to launch a browser locally. Pass a `cdp_url` and it connects to an already-running browser through the Chrome DevTools Protocol, whether that browser is on the same machine, another host, or a managed browser provider. The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, and `browser_load_state` as usual.
-
-The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser started with `--remote-debugging-port=9222`, reached as `cdp_url="http://localhost:9222"`.
+The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
+```commandline
+chrome --remote-debugging-port=9222
+```
+That one is reached with `cdp_url="http://localhost:9222"`, or with the host's address if the browser is running on another machine.
 
 **Notes:**
 
-- The browser is already running, so options that only apply while launching one are ignored for CDP sessions: `headless`, `real_chrome`, and `executable_path` (including the server-wide default).
-- Everything else still applies (`locale`, `useragent`, `proxy`, `cookies`, `timezone_id`, and so on), as each session creates its own browser context on the remote browser.
+* The browser is already running, so options that only apply while launching one are ignored for CDP sessions: `headless`, `real_chrome`, and `executable_path` (including the server-wide default above).
+* Everything else still applies (`locale`, `useragent`, `proxy`, `cookies`, `timezone_id`, and so on), as each session creates its own browser context on the remote browser.
 
-## Authentication
+### Streamable HTTP
+Since version 0.3.6, we have added the ability to make the MCP server use the 'Streamable HTTP' transport mode instead of the traditional 'stdio' transport.
 
-The stdio transport is only reachable by the program that started it, but with Streamable HTTP anyone who can reach the port can call every tool, including fetching any URL from the machine running the server. That's why Streamable HTTP requires authentication, so `--http` on its own refuses to start and asks you for a token:
+So instead of using the following command (the 'stdio' one):
+```bash
+scrapling-mcp
+```
+Use the following to enable 'Streamable HTTP' transport mode:
+```bash
+scrapling-mcp --http
+```
+Hence, the default value for the host the server is listening to is '127.0.0.1' and the port is 8000, which both can be configured as below:
+```bash
+scrapling-mcp --http --host '0.0.0.0' --port 8000
+```
+The default only accepts connections from the same machine. Pass `--host '0.0.0.0'` when you want the server to be reachable from the network, which is a separate decision from authentication below.
 
+If you run the 'Streamable HTTP' transport inside Docker, you have to bind to '0.0.0.0' yourself and set a token, otherwise the published port can't reach the server (the container's '127.0.0.1' is only visible inside the container):
+```bash
+docker run -p 8000:8000 -e SCRAPLING_MCP_AUTH_TOKEN="<your-token>" pyd4vinci/scrapling mcp --http --host '0.0.0.0'
+```
+
+### Authentication
+
+The 'stdio' transport is only reachable by the program that started it, but the moment you switch to 'Streamable HTTP', anyone who can reach the port can call every tool, and that includes fetching any URL from the machine running the server. That's why 'Streamable HTTP' requires authentication, so `--http` on its own refuses to start and asks you for a token:
 ```bash
 scrapling-mcp --http --auth-token "$(openssl rand -hex 32)"
 ```
-
 Clients then have to send that token in an `Authorization` header, and any request without it is rejected with a `401`:
-
 ```json
 {
   "mcpServers": {
@@ -502,32 +271,190 @@ Clients then have to send that token in an `Authorization` header, and any reque
   }
 }
 ```
-
-Passing the token on the command line leaves it in the shell history and the process list, so prefer the `SCRAPLING_MCP_AUTH_TOKEN` environment variable:
-
+Passing the token on the command line leaves it in your shell history and in the process list, so prefer the `SCRAPLING_MCP_AUTH_TOKEN` environment variable:
 ```bash
 export SCRAPLING_MCP_AUTH_TOKEN="<your-token>"
 scrapling-mcp --http
 ```
-
-If you really want an unauthenticated server, for example while testing locally on the default `127.0.0.1`, you have to ask for it with `--no-auth`:
-
+If you really want an unauthenticated server, for example while testing locally on the default '127.0.0.1', you have to ask for it with `--no-auth`:
 ```bash
 scrapling-mcp --http --no-auth
 ```
+Combining `--no-auth` with `--host '0.0.0.0'` leaves every tool open to anyone who can reach the port, so avoid that pair outside a trusted network.
 
-Combining `--no-auth` with `--host 0.0.0.0` leaves every tool open to anyone who can reach the port, so avoid that pair outside a trusted network.
-
-When the server listens on a public address, also tell it which host names to accept, which turns on protection against DNS-rebinding attacks. The option can be repeated:
-
+When the server listens on a public address, you should also tell it which host names to accept, which turns on protection against DNS-rebinding attacks (a website your browser visits trying to talk to your server). The option can be repeated:
 ```bash
 scrapling-mcp --http --allowed-host 'your-server.example.com:8000'
 ```
 
 **Notes:**
 
-- Authentication applies to the Streamable HTTP transport only. It's ignored with stdio, and the server logs a warning to say so.
-- Plain HTTP sends the token in cleartext, so put the server behind a reverse proxy that terminates TLS before exposing it to the internet.
-- This is a single shared key, not per-client credentials, so every client uses the same token and rotating it means restarting the server.
-- Starting with `--http --no-auth` still logs a warning that it's unauthenticated.
-- Passing both `--auth-token` and `--no-auth` keeps the token, so the server stays authenticated instead of quietly dropping it.
+* Authentication applies to the 'Streamable HTTP' transport only. It's ignored with 'stdio', and the server logs a warning to tell you so.
+* Plain HTTP sends the token in cleartext, so put the server behind a reverse proxy that terminates TLS before exposing it to the internet.
+* This is a single shared key, not per-client credentials, so every client uses the same token, and rotating it means restarting the server.
+* Starting the server with `--http --no-auth` still logs a warning telling you that it's unauthenticated.
+* Passing both `--auth-token` and `--no-auth` keeps the token, so the server stays authenticated instead of quietly dropping it.
+
+## Examples
+
+1. **Basic Web Scraping**
+
+    Extract the main content from a webpage as Markdown:
+
+    ```
+    Scrape the main content from https://example.com and convert it to markdown format.
+    ```
+
+    Claude can use `make_request` to fetch the page and return clean, readable content. HTTP requests default to three attempts with a one-second delay between attempts. If the page needs JavaScript or blocks HTTP requests, the AI can use `browser_fetch_once` instead. Both tools close their own resources after the call.
+
+    A more optimized version of the same prompt would be:
+    ```
+    Use regular requests to scrape the main content from https://example.com and convert it to markdown format.
+    ```
+
+2. **Targeted Data Extraction**
+
+    Extract specific elements using CSS selectors:
+
+    ```
+    Get all product titles from https://shop.example.com using the CSS selector '.product-title'. If the request fails, retry up to 5 times every 10 seconds.
+    ```
+
+    The server will extract only the elements matching your selector and return them as a structured list. The prompt sets five attempts for connection issues.
+
+3. **E-commerce Data Collection**
+
+    Another example of a bit more complex prompt:
+    ```
+    Open a stealthy browser session and visit these e-commerce URLs one at a time:
+    - https://shop1.com/product-a
+    - https://shop2.com/product-b
+    - https://shop3.com/product-c
+
+    Get the product names, prices, and descriptions from each page. Close the session when done.
+    ```
+
+    Claude can reuse one browser session, call `browser_fetch` for each URL in order, then analyze the extracted data.
+
+4. **More advanced workflow**
+
+    Get all the action games on PlayStation's store first page:
+    ```
+    Extract the URLs of all games on this page, then visit each game in order and return a list of all action games: https://store.playstation.com/en-us/pages/browse
+    ```
+    Reuse an HTTP session to avoid launching a browser when the data is available through normal requests:
+    ```
+    Open an HTTP session, extract the URLs of all games on this page, then fetch each game in order and return a list of all action games. Close the session when done: https://store.playstation.com/en-us/pages/browse
+    ```
+    Use CSS selectors to narrow the content before the AI reads it:
+    ```
+    Use an HTTP session to extract the URLs of all games on the page below, then fetch each game in order and return a list of all action games.
+    The selector for games in the first page is `[href*="/concept/"]` and the selector for the genre in each game page is `[data-qa="gameInfo#releaseInformation#genre-value"]`.
+    Close the session when done.
+
+    URL: https://store.playstation.com/en-us/pages/browse
+    ```
+
+5. **Get data from a website with Cloudflare protection**
+
+    ```
+    What's the price of this product? Be cautious, as it utilizes Cloudflare's Turnstile protection. Make the browser visible while you work.
+
+    https://ao.com/product/oo101uk-ninja-woodfire-outdoor-pizza-oven-brown-99357-685.aspx
+    ```
+
+6. **Long workflow**
+
+    You can, for example, use a prompt like this:
+    ```
+    Extract all product URLs for the following category, then return the prices and details for the first 3 products.
+
+    https://www.arnotts.ie/furniture/bedroom/bed-frames/
+    ```
+    But a better prompt would be:
+    ```
+    Go to the following category URL and extract all product URLs using the CSS selector "a". Then, reuse the session to fetch the first 3 product pages in order and extract each product’s price and details. Close the session when done.
+
+    Keep the output in markdown format to reduce irrelevant content.
+
+    Category URL:
+    https://www.arnotts.ie/furniture/bedroom/bed-frames/
+    ```
+
+7. **Using Persistent Sessions**
+
+    When scraping multiple pages from the same site, use a persistent browser session to avoid the overhead of launching a new browser for each request:
+    ```
+    Open a stealthy browser session, then use it to scrape the main details from the first 5 product pages on https://shop.example.com. Close the session when you're done.
+    ```
+    Claude will use `browser_open` to create a persistent browser, call `browser_fetch` for each product page through that session, and then call `close_session` at the end. This is significantly faster than launching a new browser for each page.
+
+    **Danger:**
+
+    When using persistent sessions, always remember to close the session after you finish or it will stay open!
+
+
+8. **Using Persistent Session on a long flow**
+
+    ```
+    Use Scrapling MCP to do the following in this order:
+
+    1. Open a stealthy browser session with headless mode off.
+    2. Go to this page and collect the number of stars: https://github.com/D4Vinci/Scrapling
+    3. From the README, get the URL that shows the number of downloads and go to it.
+    4. Get the number of downloads and the top 3 countries from the graph.
+    5. Prepare a report with the results.
+    6. Close the browser.
+    ```
+
+## Best Practices
+
+### 1. Choose the Right Tool
+- **`make_request`**: Fast HTTP requests for a single page or API call
+- **`browser_fetch_once`**: A single JavaScript/dynamic page or protected site, including Cloudflare
+- **Session tools**: Related requests, browser actions, screenshots, and network history
+
+### 2. Optimize Performance
+- Reuse a session and fetch each URL in order
+- Disable unnecessary resources
+- Set appropriate timeouts
+- Use CSS selectors for targeted extraction
+
+### 3. Handle Dynamic Content
+- Use `network_idle` for SPAs
+- Set `wait_selector` for specific elements
+- Increase timeout for slow-loading sites
+
+### 4. Data Quality
+- Use `main_content_only=true` to select and clean the page's body
+- Choose an appropriate `extraction_type` for your use case
+
+### 5. Prompt Injection Protection
+The MCP server automatically sanitizes scraped content when `main_content_only` is enabled (the default). This strips hidden content that malicious websites could use to inject instructions into the AI's context:
+
+- **Inline hidden styles**: `display:none`, `visibility:hidden`, and zero values for opacity, font size, height, width, max-height, and max-width
+- **Accessibility-hidden elements**: `aria-hidden="true"`
+- **Template tags and hidden slots**: `<template>` and `<slot hidden>` elements
+- **HTML comments**: `<!-- ... -->`
+- **Zero-width characters**: Invisible unicode characters like zero-width spaces
+
+This protection runs automatically for HTML, Markdown, and text extraction. Keep `main_content_only=true` (the default) for maximum protection.
+
+### 6. Manage Sessions
+- Use `make_request` or `browser_fetch_once` for a standalone fetch; they close their own resources and do not leave a session for later calls
+- Use `browser_open` to create a persistent browser session when scraping multiple pages, then call `browser_fetch` for each page through that session
+- For multiple plain HTTP requests, use `open_request_session` instead and call `session_make_request` per request; it keeps cookies, connections, and the browser fingerprint (`impersonate`) across calls without a browser
+- Sessions hold the session-level configuration set when opened (headless, locale, cookies, stealth toggles, etc. for browsers; `impersonate` and `proxy` for requests sessions); the per-request options (timeout, wait_selector, network_idle, solve_cloudflare, etc.) are passed to `browser_fetch`/`session_make_request` on each call, with their defaults shown in the tool schemas
+- `browser_fetch` can solve Cloudflare challenges through the open stealthy browser session
+- Always close sessions with `close_session` when done to free resources
+- Use `list_sessions` to check which sessions are still active and see the `settings` each was created with (returned for the AI agent; empty for CDP sessions)
+- Pass a custom `session_id` to the open tools to give sessions meaningful names (e.g. `"search"`, `"checkout"`) instead of the random hex default. They raise if the chosen ID is already in use, so you can detect collisions up front
+
+### 7. Capturing Screenshots
+
+- `browser_screenshot` captures the page already opened through `browser_fetch` in a stealthy browser session. It does not reload the page, so the AI can inspect filled fields, open menus, and other results of its actions.
+- The image is returned as a real `ImageContent` block, so the model sees the page directly.
+- Capture the visible viewport or the full page, including content below the fold.
+- Capture one field, chart, card, or result to inspect it with less surrounding content. Element capture can scroll the target into view.
+- Choose PNG for lossless images or JPEG with adjustable quality for smaller payloads.
+- The AI can use `browser_actions` to wait for content or finish interactions before capture.
