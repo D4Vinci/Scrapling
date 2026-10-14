@@ -1,6 +1,6 @@
 ---
-search:
-  exclude: true
+title: "HTTP and Browser Fetchers API Reference"
+description: "Look up Fetcher, AsyncFetcher, StealthyFetcher and session APIs. Check request options, browser settings and return types."
 ---
 
 # Fetchers Classes

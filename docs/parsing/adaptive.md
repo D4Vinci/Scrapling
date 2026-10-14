@@ -1,3 +1,8 @@
+---
+title: "Track and Relocate HTML Elements with Adaptive Parsing"
+description: "Save element details and find matches after HTML changes. Learn how to enable adaptive parsing and use save, retrieve and relocate."
+---
+
 # Adaptive scraping
 
 !!! success "Prerequisites"

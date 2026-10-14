@@ -1,4 +1,4 @@
-zensical>=0.0.54
+zensical>=0.0.70
 mkdocstrings>=1.0.6
 mkdocstrings-python>=2.0.5
 griffe-inherited-docstrings>=1.1.3

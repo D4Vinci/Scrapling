@@ -1,3 +1,8 @@
+---
+title: "Crawl Websites into Markdown for RAG with Scrapling"
+description: "Convert page responses to Markdown or use ContentSpider to collect a website. Prepare a corpus for chunking and indexing in a RAG system."
+---
+
 # Building RAG Systems with Scrapling
 
 RAG pipelines are only as good as the text you feed them. Raw HTML wastes tokens on markup, navigation, scripts, and tracking noise, and it can even carry hidden prompt-injection content straight into your LLM. Scrapling turns pages and whole websites into clean, sanitized Markdown with no LLM in the loop, so your ingestion runs fast and costs nothing per page.
@@ -39,7 +44,7 @@ Two arguments control the output:
 markdown = Fetcher.get("https://example.com/docs/page").markdown(css_selector="article")
 ```
 
-Whatever you pass, scripts, styles, and hidden content are always removed before conversion. This is the same cleaning the [MCP server](mcp-server.md) uses to protect AI agents from prompt injection: CSS-hidden elements, `aria-hidden` elements, `<template>` tags, HTML comments, and zero-width characters never reach your model.
+Whatever you pass, scripts, styles, and hidden content are always removed before conversion. This is the same cleaning the [MCP server](mcp-server.md) uses to protect AI agents from prompt injection: inline hidden elements, `aria-hidden="true"` elements, hidden slots, `<template>` tags, HTML comments, and zero-width characters are removed before conversion. The MCP server uses this cleaning with `main_content_only=True`.
 
 ## A whole website to a Markdown corpus
 
@@ -90,7 +95,7 @@ The JSONL output plugs into any embedding pipeline. A minimal example:
 ```python
 import json
 
-with open("docs.jsonl") as f:
+with open("docs.jsonl", encoding="utf-8") as f:
     for line in f:
         page = json.loads(line)
         for chunk in split_into_chunks(page["markdown"]):

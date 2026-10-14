@@ -1,6 +1,6 @@
 ---
-search:
-  exclude: true
+title: "TextHandler and AttributesHandler API Reference"
+description: "Look up Scrapling text, text-list and attribute-mapping helpers, including regex extraction, JSON conversion and value search."
 ---
 
 # Custom Types API Reference

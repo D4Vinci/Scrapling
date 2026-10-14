@@ -1,6 +1,6 @@
 ---
-search:
-  exclude: true
+title: "Selector and Selectors API Reference"
+description: "Look up HTML parsing, selection, extraction, navigation and adaptive tracking methods on Scrapling Selector and Selectors."
 ---
 
 # Selector Class

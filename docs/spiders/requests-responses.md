@@ -1,3 +1,8 @@
+---
+title: "Spider Requests, Callbacks and Response.follow"
+description: "Create crawl requests, pass metadata and follow links with response.follow. Learn callbacks, priorities and request deduplication."
+---
+
 # Requests & Responses
 
 !!! success "Prerequisites"

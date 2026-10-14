@@ -1,3 +1,8 @@
+---
+title: "Rotate Proxies and Retry Blocked Crawl Requests"
+description: "Use proxies and rotation strategies in Scrapling spiders. Detect blocked responses, retry requests and switch from HTTP to browser sessions."
+---
+
 # Proxy management and handling Blocks
 
 ## Introduction

@@ -1,3 +1,8 @@
+---
+title: "Scrapling MCP Server: Setup and Scraping Workflows"
+description: "Connect an AI client to Scrapling for HTTP and browser scraping. Use sessions, saved login state, actions, focused extraction and API history."
+---
+
 # Scrapling MCP Server Guide
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
@@ -78,7 +83,7 @@ Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to
 - **Browser Impersonation**: Mimic real browsers with TLS fingerprinting, real browser headers matching that version, and more
 - **Session Persistence**: Reuse browser sessions across multiple requests for better performance
 - **Ad Blocking**: All browser-based tools automatically block requests to ~3,500 known ad and tracker domains, saving tokens and speeding up page loads
-- **Prompt Injection Protection**: Automatic sanitization of hidden content (CSS-hidden elements, aria-hidden, zero-width characters, HTML comments, template tags) that could be used for prompt injection attacks
+- **Prompt Injection Protection**: Automatic sanitization of hidden content (inline hidden elements, aria-hidden, hidden slots, zero-width characters, HTML comments, template tags) that could be used for prompt injection attacks
 
 #### But why use Scrapling MCP Server instead of other available tools?
 
@@ -142,7 +147,7 @@ As per the [official article](https://modelcontextprotocol.io/quickstart/user), 
 1. **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 2. **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-To ensure it's working, use the full path to the `scrapling-mcp` executable. Open the terminal and execute the following command:
+To ensure it's working, use the full path to the `scrapling-mcp` executable:
 
 1. **MacOS**: `which scrapling-mcp`
 2. **Windows**: `where scrapling-mcp`
@@ -175,12 +180,12 @@ If you are using the Docker image, then it would be something like
 The same logic applies to [Cursor](https://cursor.com/docs/context/mcp), [WindSurf](https://windsurf.com/university/tutorials/configuring-first-mcp-server), and others.
 
 ### Claude Code
-Here it's much simpler to do. If you have [Claude Code](https://www.anthropic.com/claude-code) installed, open the terminal and execute the following command:
+Here it's much simpler to do. With [Claude Code](https://www.anthropic.com/claude-code):
 
 ```bash
 claude mcp add ScraplingServer "/Users/<MyUsername>/.venv/bin/scrapling-mcp"
 ```
-Same as above, to get Scrapling's executable path, open the terminal and execute the following command:
+To get Scrapling's executable path:
 
 1. **MacOS**: `which scrapling-mcp`
 2. **Windows**: `where scrapling-mcp`
@@ -445,15 +450,15 @@ Here is some technical advice for you.
 - Increase timeout for slow-loading sites
 
 ### 4. Data Quality
-- Use `main_content_only=true` to avoid navigation/ads
+- Use `main_content_only=true` to select and clean the page's body
 - Choose an appropriate `extraction_type` for your use case
 
 ### 5. Prompt Injection Protection
 The MCP server automatically sanitizes scraped content when `main_content_only` is enabled (the default). This strips hidden content that malicious websites could use to inject instructions into the AI's context:
 
-- **CSS-hidden elements**: `display:none`, `visibility:hidden`, `opacity:0`, `font-size:0`, `height:0`, `width:0`
+- **Inline hidden styles**: `display:none`, `visibility:hidden`, and zero values for opacity, font size, height, width, max-height, and max-width
 - **Accessibility-hidden elements**: `aria-hidden="true"`
-- **Template tags**: `<template>` elements
+- **Template tags and hidden slots**: `<template>` and `<slot hidden>` elements
 - **HTML comments**: `<!-- ... -->`
 - **Zero-width characters**: Invisible unicode characters like zero-width spaces
 
