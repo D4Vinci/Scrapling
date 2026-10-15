@@ -1,11 +1,11 @@
 ---
-search:
-  exclude: true
+title: "Scrapling MCP Server API Reference"
+description: "Look up MCP server tools, request models, response models and session operations for HTTP and browser scraping."
 ---
 
 # MCP Server API Reference
 
-The **Scrapling MCP Server** provides fourteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
+The **Scrapling MCP Server** provides sixteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
 
 You can start the MCP server by running:
 

@@ -1,3 +1,8 @@
+---
+title: "Save Web Pages as Markdown, HTML or Text from the CLI"
+description: "Use scrapling extract to save HTTP or browser results. Filter content with CSS, set request options and choose a supported output format."
+---
+
 # Scrapling Extract Command Guide
 
 **Web Scraping through the terminal without requiring any programming!**
@@ -24,7 +29,7 @@ The extract command is a set of simple terminal tools that:
 
 !!! tip "AI-Targeted Mode"
 
-    All extract commands support an `--ai-targeted` flag. When enabled, it extracts only the main body content, strips noise tags (script, style, noscript, svg), removes hidden elements that could be used for prompt injection (CSS-hidden, aria-hidden, template tags), strips zero-width unicode characters, and removes HTML comments. For the browser command (`fetch`), it also automatically enables ad blocking. This is ideal when the output is destined for an AI model.
+    All extract commands support an `--ai-targeted` flag. When enabled, it extracts only the main body content, strips noise tags (script, style, noscript, svg), removes hidden elements that could be used for prompt injection (inline hidden elements, aria-hidden, hidden slots, template tags), strips zero-width unicode characters, and removes HTML comments. For the browser command (`fetch`), it also automatically enables ad blocking. This is ideal when the output is destined for an AI model.
 
 ## Quick Start
 
@@ -103,7 +108,7 @@ We will go through each command in detail below.
     scrapling extract get "https://scrapling.requestcatcher.com" content.md --cookies "session=abc123; user=john"
    
     # Add user agent
-    scrapling extract get "https://api.site.com" data.json -H "User-Agent: MyBot 1.0"
+    scrapling extract get "https://api.site.com" data.txt -H "User-Agent: MyBot 1.0"
     
     # Add multiple headers
     scrapling extract get "https://site.com" page.html -H "Accept: text/html" -H "Accept-Language: en-US"
@@ -145,7 +150,7 @@ We will go through each command in detail below.
     scrapling extract post "https://api.site.com/search" results.html --data "query=python&type=tutorial"
     
     # Send JSON data
-    scrapling extract post "https://api.site.com" response.json --json '{"username": "test", "action": "search"}'
+    scrapling extract post "https://api.site.com" response.txt --json '{"username": "test", "action": "search"}'
     ```
     Get the available options for the command with `scrapling extract post --help` as follows:
     ```bash
@@ -185,7 +190,7 @@ We will go through each command in detail below.
     scrapling extract put "https://scrapling.requestcatcher.com/put" results.html --data "update=info" --impersonate "firefox"
     
     # Send JSON data
-    scrapling extract put "https://scrapling.requestcatcher.com/put" response.json --json '{"username": "test", "action": "search"}'
+    scrapling extract put "https://scrapling.requestcatcher.com/put" response.txt --json '{"username": "test", "action": "search"}'
     ```
     Get the available options for the command with `scrapling extract put --help` as follows:
     ```bash

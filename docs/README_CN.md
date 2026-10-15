@@ -49,33 +49,51 @@
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html"><strong>MCP 模式</strong></a>
 </p>
 
-Scrapling 是一个自适应 Web Scraping 框架，能处理从单个请求到大规模爬取的一切需求。
+Scrapling 是一个 Python 网页抓取框架，将快速 HTTP 请求、隐身浏览器、强大的解析功能和并发爬取整合到一个库中。
 
-它的解析器能够从网站变化中学习，并在页面更新时自动重新定位您的元素。它的 Fetcher 能够开箱即用地绕过 Cloudflare Turnstile 等反机器人系统。它的 Spider 框架让您可以扩展到并发、多 Session 爬取，支持暂停/恢复、自动 Proxy 轮换，以及根据每个网站的响应速度自动调整、并在网站开始封锁时自动减速的爬取速度--只需几行 Python 代码。一个库，零妥协。
+抓取静态页面、渲染 JavaScript、与网站交互，并从页面背后的 API 调用中提取数据。构建爬虫时，可复用会话、轮换代理、自动重试、暂停/恢复，并使用内置的数据导出功能。
 
-极速爬取，实时统计和 Streaming。由 Web Scraper 为 Web Scraper 和普通用户而构建，每个人都能找到适合自己的功能。
+通过 Python、终端，或借助 MCP 服务器和 Agent Skill 在 AI 智能体中使用它。从提取几个字段到将整个网站采集为干净的 Markdown，Scrapling 覆盖完整的抓取流程。
+
+## 用 Scrapling 能做什么
+
+- **[获取与交互](https://scrapling.readthedocs.io/en/latest/fetching/choosing.html)**：快速 HTTP 请求、隐身浏览器、JavaScript 渲染、Cloudflare Turnstile/Interstitial 处理、持久会话，以及后台 API 通信捕获。
+- **[解析与提取](https://scrapling.readthedocs.io/en/latest/parsing/selection.html)**：CSS、XPath、文本和正则表达式搜索、自适应元素跟踪、相似元素匹配，以及干净的 Markdown 输出。
+- **[爬取与导出](https://scrapling.readthedocs.io/en/latest/spiders/getting-started.html)**：并发爬虫、代理轮换、重试、AutoThrottle、暂停/恢复、流式输出、现成的爬虫模板，以及 JSON/JSONL/CSV/XML 导出。
+- **[使用 AI 或终端抓取](https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html)**：供 AI 智能体浏览网页和提取数据的 MCP 服务器、Agent Skill、CLI 命令和交互式 Shell。
+
+从单个页面开始：
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
-StealthyFetcher.adaptive = True
-p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # 隐秘地获取网站！
-products = p.css('.product', auto_save=True)                                        # 抓取在网站设计变更后仍能存活的数据！
-products = p.css('.product', adaptive=True)                                         # 之后，如果网站结构改变，传递 `adaptive=True` 来找到它们！
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-或扩展为完整爬取
+
+也可以用 Spider 扩大抓取规模：
+
 ```python
 from scrapling.spiders import Spider, Response
 
-class MySpider(Spider):
-  name = "demo"
-  start_urls = ["https://example.com/"]
+class QuotesSpider(Spider):
+    name = "quotes"
+    start_urls = ["https://quotes.toscrape.com/"]
 
-  async def parse(self, response: Response):
-      for item in response.css('.product'):
-          yield {"title": item.css('h2::text').get()}
+    async def parse(self, response: Response):
+        for quote in response.css('.quote'):
+            yield {
+                "text": quote.css('.text::text').get(),
+                "author": quote.css('.author::text').get(),
+            }
 
-MySpider().start()
+result = QuotesSpider().start()
+print(len(result.items))
+result.items.to_json("quotes.json")
 ```
+
+输出 `10`，并将名言和作者保存到 `quotes.json`。
 
 <p align="center">
     <a href="https://dataimpulse.com/?utm_source=scrapling&utm_medium=banner&utm_campaign=scrapling" target="_blank" style="display:flex; justify-content:center; padding:4px 0;">
@@ -130,17 +148,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
-      </a>
-    </td>
-    <td>
-    合上笔记本电脑，您的爬虫仍在运行。<br />
-    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - 为不间断自动化而生的云服务器。Windows 和 Linux 系统，完全掌控。低至 €6.99/月。
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank" title="The #1 newsletter dedicated to Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TWSC.png">
       </a>
@@ -177,6 +184,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：将封禁和 CAPTCHA 验证码减少 90%。提供 2800 万个优质住宅 IP，适用于大规模网页抓取。覆盖 195 个国家。支持城市、ISP、邮政编码（ZIP）定向。支持固定和轮换会话。流量永不过期，低至 $2/GB。使用优惠码 <strong>SCRAPEANDTAKE</strong> 可享 <em>25% 折扣</em>。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>：无需再按 GB 付费。住宅代理流量不限量，1 亿+ IP，覆盖 190+ 个国家。按带宽付费。申请免费试用 50 Mbps 住宅代理。
     </td>
   </tr>
   <tr>
@@ -219,20 +236,20 @@ MySpider().start()
 - 🕷️ **类 Scrapy 的 Spider API**：使用 `start_urls`、async `parse` callback 和`Request`/`Response` 对象定义 Spider。
 - ⚡ **并发爬取**：可配置的并发限制、按域名节流和下载延迟。
 - 🔄 **多 Session 支持**：统一接口，支持 HTTP 请求和隐秘无头浏览器在同一个 Spider 中使用--通过 ID 将请求路由到不同的 Session。
-- 💾 **暂停与恢复**：基于 Checkpoint 的爬取持久化。按 Ctrl+C 优雅关闭；重启后从上次停止的地方继续。
+- 💾 **暂停与恢复**：通过 `crawldir` 保存待处理请求和已访问 URL。按 Ctrl+C 正常停止，再使用同一目录重启。
 - 📡 **Streaming 模式**：通过 `async for item in spider.stream()` 以实时统计 Streaming 抓取的数据--非常适合 UI、管道和长时间运行的爬取。
 - 🛡️ **被阻止请求检测**：自动检测并重试被阻止的请求，支持自定义逻辑。
 - 🚦 **AutoThrottle 自动限速**：不用再猜延迟。Spider 会根据网站的响应速度自动调整每个域名的延迟，当网站开始封禁或限流时把延迟翻倍（或按 `Retry-After` 要求等待），并在恢复正常后重新提速。
 - 🤖 **robots.txt 合规**：可选的 `robots_txt_obey` 标志，支持 `Disallow`、`Crawl-delay` 和 `Request-rate` 指令，并按域名缓存。
 - 🧪 **开发模式**：首次运行时将响应缓存到磁盘，后续运行时直接回放 - 在不重新请求目标服务器的情况下迭代你的 `parse()` 逻辑。
-- 🧩 **现成的 Spider 模板**：跳过样板代码--使用 `CrawlSpider` 基于规则跟踪链接，`SitemapSpider` 基于 sitemap/robots.txt 爬取，`XMLFeedSpider`/`CSVFeedSpider` 用于遍历 XML/RSS 和 CSV 数据源，以及 `ShopifySpider` 通过 JSON API 抓取任意 Shopify 商店的全部商品，每个变体一条数据。
+- 🧩 **现成的 Spider 模板**：跳过样板代码--使用 `CrawlSpider` 基于规则跟踪链接，`SitemapSpider` 基于 sitemap/robots.txt 爬取，`XMLFeedSpider`/`CSVFeedSpider` 用于遍历 XML/RSS 和 CSV 数据源，以及 `ShopifySpider` 用于收集公开 Shopify 店铺中的商品，每个变体一条记录。
 - 🔗 **链接提取**：独立的 `LinkExtractor` 组件，支持 allow/deny 模式、域名过滤、CSS/XPath 范围限定、扩展名过滤和链接规范化--可在模板中使用，也可单独使用。
 - 📦 **内置导出**：通过钩子和您自己的管道导出结果，或使用内置的 JSON/JSONL/CSV/XML 导出器：`result.items.to_json()`、`to_jsonl()`、`to_csv()` 和 `to_xml()`。
 
 ### 支持 Session 的高级网站获取
 - **HTTP 请求**：使用 `Fetcher` 类进行快速和隐秘的 HTTP 请求。可以模拟浏览器的 TLS fingerprint、标头并使用 HTTP/3。
 - **动态加载**：通过 `StealthyFetcher` 类使用完整的浏览器自动化获取动态网站，支持 Playwright 的 Chromium 和 Google Chrome。
-- **反机器人绕过**：使用 `StealthyFetcher` 的高级隐秘功能和 fingerprint 伪装。可以轻松自动绕过所有类型的 Cloudflare Turnstile/Interstitial。
+- **反机器人绕过**：`StealthyFetcher` 提供高级隐身能力和指纹伪装，可通过自动化轻松绕过所有类型的 Cloudflare Turnstile/Interstitial。
 - **Session 管理**：使用 `FetcherSession` 和 `StealthySession` 类实现持久化 Session 支持，用于跨请求的 cookie 和状态管理。
 - **Proxy 轮换**：内置 `ProxyRotator`，支持轮询或自定义策略，适用于所有 Session 类型，并支持按请求覆盖 Proxy。
 - **域名和广告屏蔽**：在基于浏览器的 Fetcher 中屏蔽对特定域名（及其子域名）的请求，或启用内置广告屏蔽（约 3,500 个已知广告/追踪域名）。
@@ -241,15 +258,15 @@ MySpider().start()
 - **后台 API 捕获**：在浏览器会话中启用 `record_requests=True`，然后使用 `session.network.search(limit=None)` 搜索已保存的响应。无需再次发送请求，即可读取各个页面加载过程中产生的 API 数据和 HTTP 错误。历史记录有容量限制，并保存文本响应体。
 - **Async 支持**：所有 Fetcher 和专用 async Session 类的完整 async 支持。
 
-### 自适应抓取
+### 解析与数据提取
 - 🔄 **智能元素跟踪**：使用智能相似性算法在网站更改后重新定位元素。
 - 🎯 **智能灵活选择**：CSS 选择器、XPath 选择器、基于过滤器的搜索、文本搜索、正则表达式搜索等。
 - 🔍 **查找相似元素**：自动定位与已找到元素相似的元素。
 
 ### AI 功能
-- 🤖 **MCP 服务器**：让 AI 聊天机器人和智能体（Claude/Cursor 等）通过 Scrapling 抓取网页，提供一次性工具和基于会话的工具，覆盖普通 HTTP 请求（任意方法）以及可绕过 Cloudflare 的隐身浏览器抓取。页面在交给 AI 之前会先用 CSS 选择器缩小范围并清除提示注入内容，因此智能体读得更少、花得更少，也不会被隐藏文本劫持。还包含页面截图、通过 CDP 控制远程浏览器，以及默认安全的 HTTP 传输。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
+- 🤖 **MCP 服务器**：让 AI 聊天机器人和智能体（Claude/Cursor 等）通过 Scrapling 抓取网页，使用 HTTP 请求、浏览器操作、截图、已保存的登录状态和后台 API 响应。借助我们的隐身浏览器和合适的工具，让具备相应能力的 AI 模型能够绕过工作中遇到的任何 CAPTCHA（更不用说我们自带的 Cloudflare 自动解题功能）。通过多种方法减少发送给模型的内容、屏蔽广告，并保护模型免受提示注入。还支持通过 CDP 连接远程浏览器，以及带身份验证选项的 HTTP 传输。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
 - 🧠 **Agent Skill**：[开箱即用的 Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html)，让编码智能体全面掌握本库，使它们用 Scrapling 写出的代码符合当前 API，而不是靠猜测。
-- 📚 **RAG 就绪的 Markdown**：用一行代码（`page.markdown()`）把任意页面转换为干净、经过净化、可直接供 LLM 使用的 Markdown，或使用 `SiteToMarkdownSpider` 模板把整个网站抓取为 Markdown 语料库，整个过程无需调用 LLM。（[文档](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html)）
+- 📚 **RAG 就绪的 Markdown**：用一行代码（`page.markdown()`）把任意页面转换为干净、经过净化、可直接供 LLM 使用的 Markdown，或使用 `ContentSpider` 模板把整个网站抓取为 Markdown 语料库，整个过程无需调用 LLM。（[文档](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html)）
 
 ### 高性能和经过实战测试的架构
 - 🚀 **闪电般快速**：优化性能超越大多数 Python 抓取库。
@@ -294,7 +311,7 @@ with StealthySession(headless=True, solve_cloudflare=True) as session:  # 保持
     data = page.css('#padded_content a').getall()
 
 # 或使用一次性请求样式，为此请求打开浏览器，完成后关闭
-page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare')
+page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare', solve_cloudflare=True)
 data = page.css('#padded_content a').getall()
 ```
 完整的浏览器自动化
@@ -313,7 +330,7 @@ data = page.css('.quote .text::text').getall()
 ### Spider
 构建具有并发请求、多种 Session 类型和暂停/恢复功能的完整爬虫：
 ```python
-from scrapling.spiders import Spider, Request, Response
+from scrapling.spiders import Spider, Response
 
 class QuotesSpider(Spider):
     name = "quotes"
@@ -360,17 +377,18 @@ class MultiSessionSpider(Spider):
 ```python
 QuotesSpider(crawldir="./crawl_data").start()
 ```
-按 Ctrl+C 优雅暂停--进度会自动保存。之后，当您再次启动 Spider 时，传递相同的 `crawldir`，它将从上次停止的地方继续。
+设置 `crawldir` 后，按 Ctrl+C 保存待处理请求和已访问 URL。使用同一个 `crawldir` 重启即可继续。请单独保存提取的数据。
 
-或者使用现成的模板，完全跳过爬取逻辑的编写，例如抓取整个 Shopify 商店的商品目录：
+也可以用现成模板直接省去编写爬取逻辑，比如获取整个 Shopify 店铺的商品目录：
 ```python
 from scrapling.spiders import ShopifySpider
 
 class MyStore(ShopifySpider):
     target_website = "example.com"
 
-result = MyStore().start()  # 商店中的每件商品，每个变体一条数据
+result = MyStore().start()  # 店铺中的所有商品，每个变体一条记录
 ```
+模板读取公开集合接口中提供的商品，每个变体一条记录。
 
 ### 高级解析与导航
 ```python
@@ -388,18 +406,19 @@ quotes = page.find_all('div', class_='quote')
 quotes = page.find_all(['div'], class_='quote')
 quotes = page.find_all(class_='quote')  # 等等...
 # 按文本内容查找元素
-quotes = page.find_by_text('quote', tag='div')
+quotes = page.find_by_text('Albert Einstein', first_match=False)
 
 # 高级导航
 quote_text = page.css('.quote')[0].css('.text::text').get()
-quote_text = page.css('.quote').css('.text::text').getall()  # 链式选择器
+quote_texts = page.css('.quote').css('.text::text').getall()  # 链式选择器
 first_quote = page.css('.quote')[0]
-author = first_quote.next_sibling.css('.author::text')
+author = first_quote.css('.author::text').get()
+next_quote = first_quote.next
 parent_container = first_quote.parent
 
 # 元素关系和相似性
 similar_elements = first_quote.find_similar()
-below_elements = first_quote.below_elements()
+below_elements = first_quote.below_elements
 ```
 如果您不想获取网站，可以直接使用解析器，如下所示：
 ```python
@@ -414,22 +433,18 @@ page = Selector("<html>...</html>")
 import asyncio
 from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
-async with FetcherSession(http3=True) as session:  # `FetcherSession`是上下文感知的，可以在 sync/async 模式下工作
-    page1 = session.get('https://quotes.toscrape.com/')
-    page2 = session.get('https://quotes.toscrape.com/', impersonate='firefox135')
+async def main():
+    async with FetcherSession(http3=True) as http_session:  # `FetcherSession` 能识别上下文，同时支持同步和异步用法
+        page1 = await http_session.get('https://quotes.toscrape.com/')
+        page2 = await http_session.get('https://quotes.toscrape.com/page/2/', impersonate='chrome')
+        print(len(page1.css('.quote')), len(page2.css('.quote')))
 
-# Async Session 用法
-async with AsyncStealthySession(max_pages=2) as session:
-    tasks = []
-    urls = ['https://example.com/page1', 'https://example.com/page2']
+    async with AsyncStealthySession(max_pages=2) as browser_session:
+        urls = ['https://quotes.toscrape.com/js/', 'https://quotes.toscrape.com/js/page/2/']
+        pages = await asyncio.gather(*(browser_session.fetch(url, wait_selector='.quote') for url in urls))
+        print([len(page.css('.quote')) for page in pages])
 
-    for url in urls:
-        task = session.fetch(url)
-        tasks.append(task)
-
-    print(session.get_pool_stats())  # 可选 - 浏览器标签池的状态（忙/空闲/错误）
-    results = await asyncio.gather(*tasks)
-    print(session.get_pool_stats())
+asyncio.run(main())
 ```
 
 ## CLI 和交互式 Shell
@@ -440,13 +455,14 @@ Scrapling 包含强大的命令行界面：
 
 启动交互式 Web Scraping Shell
 ```bash
+pip install "scrapling[shell]"
 scrapling shell
 ```
-直接将页面提取到文件而无需编程（默认提取 `body` 标签内的内容）。如果输出文件以`.txt` 结尾，则将提取目标的文本内容。如果以`.md` 结尾，它将是 HTML 内容的 Markdown 表示；如果以`.html` 结尾，它将是 HTML 内容本身。
+无需编程即可将页面直接提取到文件。使用 `--css-selector` 选择内容，或用 `--ai-targeted` 选择并清理 `body` 内容。使用 `.txt` 输出文本、`.md` 输出 Markdown，或 `.html` 输出 HTML。
 ```bash
-scrapling extract get 'https://example.com' content.md
-scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # 所有匹配 CSS 选择器'#fromSkipToProducts' 的元素
-scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
+scrapling extract get 'https://quotes.toscrape.com/' quotes.md
+scrapling extract get 'https://quotes.toscrape.com/' quotes.txt --css-selector '.quote' --impersonate 'chrome'
+scrapling extract fetch 'https://quotes.toscrape.com/js/' quotes.md --css-selector '.quote' --wait-selector '.quote' --no-headless
 scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
@@ -467,7 +483,7 @@ Scrapling 不仅功能强大--它还速度极快。以下基准测试将 Scrapli
 | 4 |      PyQuery      |   23.98   |     ~12x     |
 | 5 |    Selectolax     |  197.02   |     ~99x     |
 | 6 |  MechanicalSoup   |  1545.15  |   ~776.5x    |
-| 7 |   BS4 with Lxml   |  1562.1  |   ~785.0x    |
+| 7 |   BS4 with Lxml   |  1562.1   |   ~785.0x    |
 | 8 | BS4 with html5lib |  3412.73  |   ~1714.9x   |
 
 
@@ -477,8 +493,8 @@ Scrapling 的自适应元素查找功能明显优于替代方案：
 
 | 库           | 时间 (ms) | vs Scrapling |
 |-------------|:---------:|:------------:|
-| Scrapling   |   2.3    |     1.0x     |
-| AutoScraper |   12.58   |    5.47x    |
+| Scrapling   |    2.3    |     1.0x     |
+| AutoScraper |   12.58   |    5.47x     |
 
 
 > 所有基准测试代表 100+ 次运行的平均值。请参阅 [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) 了解方法。
@@ -531,7 +547,7 @@ pip install scrapling
        ```bash
        pip install "scrapling[all]"
        ```
-   请记住，在安装任何这些额外功能后（如果您还没有安装），您需要使用 `scrapling install` 安装浏览器依赖项
+   需要浏览器抓取时再运行 `scrapling install`。HTTP 请求无需安装浏览器。
 
 ### Docker
 您还可以使用以下命令从 DockerHub 安装包含所有额外功能和浏览器的 Docker 镜像：
@@ -561,7 +577,7 @@ docker pull ghcr.io/d4vinci/scrapling:latest
     title = {Scrapling},
     year = {2024},
     url = {https://github.com/D4Vinci/Scrapling},
-    note = {An adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl!}
+    note = {A Python Web Scraping framework for everything from a single request to a full-scale crawl!}
   }
 ```
 

@@ -1,5 +1,10 @@
+---
+title: "Extract HTML Data with CSS, XPath, Text and Regex"
+description: "Select HTML elements with CSS, XPath, text and regex. Find similar elements and extract fields with Scrapling code examples."
+---
+
 # Querying elements
-Scrapling currently supports parsing HTML pages exclusively, so it doesn't support XML feeds. This decision was made because the adaptive feature won't work with XML, but that might change soon, so stay tuned :)
+The `Selector` class parses HTML. This decision was made because the adaptive feature won't work with XML. For XML, RSS, or Atom feeds, use [XMLFeedSpider](../spiders/generic-templates.md#xmlfeedspider), which uses an XML parser and gives you each feed node directly.
 
 In Scrapling, there are five main ways to find elements:
 
@@ -78,9 +83,11 @@ title = page.xpath('//*[@class="product"]//h1[contains(text(),"Phone")]/text()')
 You can nest and chain selectors as you want, given that they return results
 ```python
 page.css('.product')[0].css('h1:contains("Phone")::text').get()
-page.xpath('//*[@class="product"]')[0].xpath('//h1[contains(text(),"Phone")]/text()').get()
+page.xpath('//*[@class="product"]')[0].xpath('.//h1[contains(text(),"Phone")]/text()').get()
 page.xpath('//*[@class="product"]')[0].css('h1:contains("Phone")::text').get()
 ```
+Use `.//` for an XPath relative to the current element. A leading `//` searches the whole document, even after selecting a product.
+
 Another example
 
 All links that have 'image' in their 'href' attribute
@@ -236,12 +243,14 @@ Get the `href` attribute from all similar elements
 ```
 To increase the complexity a little bit, let's say we want to get all the books' data using that element as a starting point for some reason
 ```python
->>> for product in element.parent.parent.find_similar():
+>>> first_product = element.parent.parent
+>>> for product in [first_product, *first_product.find_similar()]:
         print({
             "name": product.css('h3 a::text').get(),
             "price": product.css('.price_color')[0].re_first(r'[\d\.]+'),
             "stock": product.css('.availability::text').getall()[-1].clean()
         })
+{'name': 'Tipping the Velvet', 'price': '53.74', 'stock': 'In stock'}
 {'name': 'A Light in the ...', 'price': '51.77', 'stock': 'In stock'}
 {'name': 'Soumission', 'price': '50.10', 'stock': 'In stock'}
 {'name': 'Sharp Objects', 'price': '47.82', 'stock': 'In stock'}
@@ -259,13 +268,13 @@ def extract_product_grid(page):
     )
 
     # Find similar product cards
-    products = first_product.find_similar()
+    products = [first_product, *first_product.find_similar()]
 
     return [
         {
             'name': p.css('h3::text').get(),
             'price': p.css('.price::text').re_first(r'\d+\.\d{2}'),
-            'stock': 'In stock' in p.text,
+            'stock': 'In stock' in p.get_all_text(),
             'rating': p.css('.rating')[0].attrib.get('data-rating')
         }
         for p in products
@@ -278,7 +287,7 @@ def extract_table_data(page):
     first_row = page.css('table tbody tr')[0]
 
     # Find similar rows
-    rows = first_row.find_similar()
+    rows = [first_row, *first_row.find_similar()]
 
     return [
         {
@@ -298,7 +307,7 @@ def extract_form_fields(page):
     )
 
     # Find similar field containers
-    fields = first_field.find_similar()
+    fields = [first_field, *first_field.find_similar()]
 
     return [
         {
@@ -319,7 +328,7 @@ def extract_reviews(page):
     )
     
     # Find similar reviews
-    all_reviews = review_container.find_similar()
+    all_reviews = [review_container, *review_container.find_similar()]
     
     return [
         {

@@ -1,6 +1,11 @@
+---
+title: "Python HTML Parser Benchmarks: Scrapling and Other Libraries"
+description: "See how Scrapling performs in HTML parsing, text extraction and element similarity tests against other popular Python libraries."
+---
+
 # Performance Benchmarks
 
-Scrapling isn't just powerful - it's also blazing fast. The following benchmarks compare Scrapling's parser with the latest versions of other popular libraries.
+Scrapling isn't just powerful - it's also blazing fast. The following benchmarks compare Scrapling's parser with other popular libraries.
 
 ### Text Extraction Speed Test (5000 nested elements)
 
@@ -25,4 +30,4 @@ Scrapling's adaptive element finding capabilities significantly outperform alter
 | Scrapling   |   2.3    |     1.0x     |
 | AutoScraper |   12.58   |    5.47x    |
 
-> All benchmarks represent averages of 100+ runs. See [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology.
+> All benchmarks represent averages of 100 timed runs. See [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py) for methodology.

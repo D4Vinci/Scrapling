@@ -237,7 +237,7 @@ class LinkExtractor:
             scopes = [response]
 
         out: List[str] = []
-        search_selector = "| ".join([f".//{tag}/@{attr}" for tag in self.tags for attr in self.attrs])
+        search_selector = "| ".join([f"descendant-or-self::{tag}/@{attr}" for tag in self.tags for attr in self.attrs])
         for scope in scopes:
             for url in scope._root.xpath(search_selector):
                 if not url:

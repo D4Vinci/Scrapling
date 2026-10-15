@@ -1,3 +1,8 @@
+---
+title: "Choose HTTP Requests or a Browser for Web Scraping"
+description: "Choose Fetcher or StealthyFetcher for your scraping task. Learn when to use direct HTTP, JavaScript rendering and reusable sessions."
+---
+
 # Fetchers basics
 
 ## Introduction

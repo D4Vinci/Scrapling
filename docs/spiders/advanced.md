@@ -1,3 +1,8 @@
+---
+title: "Crawl Control: AutoThrottle, Checkpoints, Cache and Streaming"
+description: "Control crawl speed and concurrency. Learn response caching, pause and resume, item streaming and the state saved in checkpoints."
+---
+
 # Advanced usages
 
 ## Introduction
@@ -92,7 +97,7 @@ print(result.stats.autothrottle_delays)  # {'example.com': 0.62}
 
 !!! note "Notes:"
 
-    * `download_delay` and any `Crawl-delay` from robots.txt act as a floor. AutoThrottle only ever adjusts the delay above them, so politeness settings are never undercut.<br/>
+    * `download_delay` and robots.txt delays act as a floor, but `autothrottle_max_delay` also caps that floor. Set the maximum at least as high as the configured or robots.txt delay you need to honor.<br/>
     * `concurrent_requests_per_domain` does double duty here: it caps how many requests may be in flight to a domain and doubles as AutoThrottle's target, so there's usually no separate target to configure. Setting it is recommended, because while a throttled domain sleeps it holds a slot of the global limiter, and leaving the per-domain limit unlimited means those sleeping slots come out of the budget shared with every other domain.<br/>
     * The measured latency is the full fetch, so it includes any internal retries and, for browser sessions, the page render time.<br/>
     * `autothrottle_max_delay` caps everything, including `Retry-After`. If a website asks for longer than your ceiling, raise `autothrottle_max_delay` to honor it.<br/>
@@ -142,7 +147,7 @@ The writing to the disk is atomic, so it's totally safe.
 
 !!! tip
 
-    Pressing `Ctrl+C` during a crawl always causes the spider to close gracefully, even if the checkpoint system is not enabled. Doing it again without waiting forces the spider to close immediately.
+    With `start()`, pressing `Ctrl+C` during a crawl causes the spider to close gracefully, even if the checkpoint system is not enabled. Doing it again without waiting forces the spider to close immediately.
 
 ### Knowing If You're Resuming
 
@@ -158,7 +163,7 @@ async def on_start(self, resuming: bool = False):
 
 ## Development Mode
 
-When you're iterating on a spider's `parse()` logic, re-hitting the target servers on every run is slow and noisy. Development mode caches every response to disk on the first run and replays them from disk on subsequent runs, so you can tweak your selectors and re-run the spider as many times as you want without making a single network request.
+When you're iterating on a spider's `parse()` logic, re-hitting the target servers on every run is slow and noisy. Development mode caches every response to disk on the first run and replays them from disk on subsequent runs, so you can tweak your selectors and re-run the spider as many times as you want without fetching those pages again.
 
 Enable it by setting `development_mode = True` on your spider:
 
@@ -172,7 +177,7 @@ class MySpider(Spider):
         yield {"title": response.css("title::text").get("")}
 ```
 
-The first run fetches normally and stores each response on disk. Every subsequent run serves the same requests from the cache, skipping the network entirely.
+The first run fetches normally and stores each response on disk. Every subsequent run serves the same requests from the cache, skipping the page fetch. With `robots_txt_obey=True`, robots.txt checks run before cache lookup.
 
 ### Cache Location
 
@@ -190,7 +195,7 @@ class MySpider(Spider):
 
 1. **Cache key**: Each response is keyed by the request's fingerprint, so any change to fingerprint-affecting attributes (`fp_include_kwargs`, `fp_include_headers`, `fp_keep_fragments`) will produce a fresh fetch.
 2. **Storage format**: One JSON file per response, named `{fingerprint_hex}.json`. The body is base64-encoded so binary content is preserved exactly. Writes are atomic (temp file + rename).
-3. **Replay**: On a cache hit, the engine skips the network entirely, including `download_delay`, rate limiting, and the `is_blocked()` retry path. The cached response goes straight to your callback.
+3. **Replay**: On a cache hit, the engine skips the page fetch, including `download_delay`, rate limiting, and the `is_blocked()` retry path. The cached response goes straight to your callback.
 4. **Stats**: Cached requests still count toward `requests_count`, `response_bytes`, and the per-status counters, so your stat output looks the same as a normal crawl. Two extra counters, `cache_hits` and `cache_misses`, let you see how the cache performed.
 
 ### Clearing the Cache

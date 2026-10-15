@@ -1,6 +1,8 @@
 # Proxy management and handling Blocks
 
-Scrapling's `ProxyRotator` manages proxy rotation across requests. It works with all session types and integrates with the spider's blocked request retry system.
+## Introduction
+
+When scraping at scale, you'll often need to rotate through multiple proxies to avoid rate limits and blocks. Scrapling's `ProxyRotator` makes this straightforward. It works with all session types and integrates with the spider's blocked request retry system.
 
 ## ProxyRotator
 
@@ -31,7 +33,7 @@ class MySpider(Spider):
 Each request automatically gets the next proxy in the rotation. The proxy used is stored in `response.meta["proxy"]` so you can track which proxy fetched which page.
 
 
-Browser sessions support both string and dict proxy formats:
+When you use it with browser sessions, you will need some adjustments, like below:
 
 ```python
 from scrapling.fetchers import AsyncStealthySession, ProxyRotator
@@ -54,14 +56,14 @@ def configure_sessions(self, manager):
     manager.add("browser", AsyncStealthySession(proxy_rotator=rotator))
 ```
 
-**Important:**
+**Info:**
 
-1. You cannot use the `proxy_rotator` argument together with the static `proxy` or `proxies` parameters on the same session. Pick one approach when configuring the session, and override it per request later if needed.
-2. By default, all browser-based sessions use a persistent browser context with a pool of tabs. However, since browsers can't set a proxy per tab, when you use a `ProxyRotator`, the fetcher will automatically open a separate context for each proxy, with one tab per context. Once the tab's job is done, both the tab and its context are closed.
+1. You cannot use the `proxy_rotator` argument together with the static `proxy` or `proxies` parameters on the same session. Pick one approach when configuring the session, and override it per request later if you want.
+2. Remember that by default, all browser-based sessions use a persistent browser context with a pool of tabs. However, since browsers can't set a proxy per tab, when you use a `ProxyRotator`, the fetcher will automatically open a separate context for each proxy, with one tab per context. Once the tab's job is done, both the tab and its context are closed.
 
 ## Custom Rotation Strategies
 
-By default, `ProxyRotator` uses cyclic rotation - it iterates through proxies sequentially, wrapping around at the end.
+By default, `ProxyRotator` uses cyclic rotation, iterating through proxies sequentially and wrapping around at the end.
 
 You can provide a custom strategy function to change this behavior, but it has to match the below signature:
 

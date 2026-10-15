@@ -906,7 +906,10 @@ async def test_network_live_capture_actions_navigation_and_reads() -> None:
         assert not opened.is_error
         session = server._sessions["browser"].session
         try:
-            assert session.network.enabled and opened.structured_content["settings"]["record_requests"] is True
+            listed = await client.call_tool("list_sessions", {})
+            assert not listed.is_error and listed.structured_content is not None
+            assert session.network.enabled
+            assert listed.structured_content["result"][0]["settings"]["record_requests"] is True
             empty = await client.call_tool("browser_network_requests", {"session_id": "browser"})
             assert _listing(empty) == {"requests": [], "next_cursor": 0, "has_more": False, "dropped_count": 0}
             await session.context.route("**/*", serve)

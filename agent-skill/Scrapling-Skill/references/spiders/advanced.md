@@ -9,7 +9,7 @@ The spider system uses three class attributes to control how aggressively it cra
 | `concurrent_requests`            | `4`     | Maximum number of requests being processed at the same time      |
 | `concurrent_requests_per_domain` | `0`     | Maximum concurrent requests per domain (0 = no per-domain limit) |
 | `download_delay`                 | `0.0`   | Seconds to wait before each request                              |
-| `robots_txt_obey`               | `False` | Respect robots.txt rules (Disallow, Crawl-delay, Request-rate)   |
+| `robots_txt_obey`                | `False` | Respect robots.txt rules (Disallow, Crawl-delay, Request-rate)   |
 
 ```python
 class PoliteSpider(Spider):
@@ -25,9 +25,11 @@ class PoliteSpider(Spider):
         yield {"title": response.css("title::text").get("")}
 ```
 
-When `concurrent_requests_per_domain` is set, each domain gets its own concurrency limiter in addition to the global limit. This is useful when crawling multiple domains simultaneously - you can allow high global concurrency while being polite to each individual domain.
+When `concurrent_requests_per_domain` is set, each domain gets its own concurrency limiter in addition to the global limit. This is useful when crawling multiple domains simultaneously, as you can allow high global concurrency while being polite to each individual domain.
 
-**Tip:** The `download_delay` parameter adds a fixed wait before every request, regardless of the domain. Use it for simple rate limiting.
+**Tip:**
+
+The `download_delay` parameter adds a fixed wait before every request, regardless of the domain. Use it for simple rate limiting.
 
 ## AutoThrottle
 
@@ -82,13 +84,13 @@ print(result.stats.autothrottle_delays)  # {'example.com': 0.62}
 
 **Notes:**
 
-- `download_delay` and any `Crawl-delay` from robots.txt act as a floor. AutoThrottle only ever adjusts the delay above them, so politeness settings are never undercut.
-- `concurrent_requests_per_domain` does double duty here: it caps how many requests may be in flight to a domain and doubles as AutoThrottle's target, so there's usually no separate target to configure. Setting it is recommended, because while a throttled domain sleeps it holds a slot of the global limiter, and leaving the per-domain limit unlimited means those sleeping slots come out of the budget shared with every other domain.
-- The measured latency is the full fetch, so it includes any internal retries and, for browser sessions, the page render time.
-- `autothrottle_max_delay` caps everything, including `Retry-After`. If a website asks for longer than your ceiling, raise `autothrottle_max_delay` to honor it.
-- The learned delays are not checkpointed. After a pause and resume, each domain starts again from `autothrottle_start_delay`.
+* `download_delay` and robots.txt delays act as a floor, but `autothrottle_max_delay` also caps that floor. Set the maximum at least as high as the configured or robots.txt delay you need to honor.
+* `concurrent_requests_per_domain` does double duty here: it caps how many requests may be in flight to a domain and doubles as AutoThrottle's target, so there's usually no separate target to configure. Setting it is recommended, because while a throttled domain sleeps it holds a slot of the global limiter, and leaving the per-domain limit unlimited means those sleeping slots come out of the budget shared with every other domain.
+* The measured latency is the full fetch, so it includes any internal retries and, for browser sessions, the page render time.
+* `autothrottle_max_delay` caps everything, including `Retry-After`. If a website asks for longer than your ceiling, raise `autothrottle_max_delay` to honor it.
+* The learned delays are not checkpointed. After a pause and resume, each domain starts again from `autothrottle_start_delay`.
 
-### Using uvloop
+## Using uvloop
 
 The `start()` method accepts a `use_uvloop` parameter to use the faster [uvloop](https://github.com/MagicStack/uvloop)/[winloop](https://github.com/nicktimko/winloop) event loop implementation, if available:
 
@@ -119,7 +121,7 @@ else:
 3. **Resuming**: Run the spider again with the same `crawldir`. It detects the checkpoint, restores the queue and seen set, and continues from where it left off, skipping `start_requests()`.
 4. **Cleanup**: When a crawl completes normally (not paused), the checkpoint files are deleted automatically.
 
-**Checkpoints are also saved periodically during the crawl (every 5 minutes by default).** 
+**Checkpoints are also saved periodically during the crawl (every 5 minutes by default).**
 
 You can change the interval as follows:
 
@@ -130,7 +132,9 @@ spider = MySpider(crawldir="crawl_data/my_spider", interval=120.0)
 
 The writing to the disk is atomic, so it's totally safe.
 
-**Tip:** Pressing `Ctrl+C` during a crawl always causes the spider to close gracefully, even if the checkpoint system is not enabled. Doing it again without waiting forces the spider to close immediately.
+**Tip:**
+
+With `start()`, pressing `Ctrl+C` during a crawl causes the spider to close gracefully, even if the checkpoint system is not enabled. Doing it again without waiting forces the spider to close immediately.
 
 ### Knowing If You're Resuming
 
@@ -146,7 +150,7 @@ async def on_start(self, resuming: bool = False):
 
 ## Development Mode
 
-When you're iterating on a spider's `parse()` logic, re-hitting the target servers on every run is slow and noisy. Development mode caches every response to disk on the first run and replays them from disk on subsequent runs, so you can tweak your selectors and re-run the spider as many times as you want without making a single network request.
+When you're iterating on a spider's `parse()` logic, re-hitting the target servers on every run is slow and noisy. Development mode caches every response to disk on the first run and replays them from disk on subsequent runs, so you can tweak your selectors and re-run the spider as many times as you want without fetching those pages again.
 
 Enable it by setting `development_mode = True` on your spider:
 
@@ -160,7 +164,7 @@ class MySpider(Spider):
         yield {"title": response.css("title::text").get("")}
 ```
 
-The first run fetches normally and stores each response on disk. Every subsequent run serves the same requests from the cache, skipping the network entirely.
+The first run fetches normally and stores each response on disk. Every subsequent run serves the same requests from the cache, skipping the page fetch. With `robots_txt_obey=True`, robots.txt checks run before cache lookup.
 
 ### Cache Location
 
@@ -178,14 +182,16 @@ class MySpider(Spider):
 
 1. **Cache key**: Each response is keyed by the request's fingerprint, so any change to fingerprint-affecting attributes (`fp_include_kwargs`, `fp_include_headers`, `fp_keep_fragments`) will produce a fresh fetch.
 2. **Storage format**: One JSON file per response, named `{fingerprint_hex}.json`. The body is base64-encoded so binary content is preserved exactly. Writes are atomic (temp file + rename).
-3. **Replay**: On a cache hit, the engine skips the network entirely, including `download_delay`, rate limiting, and the `is_blocked()` retry path. The cached response goes straight to your callback.
+3. **Replay**: On a cache hit, the engine skips the page fetch, including `download_delay`, rate limiting, and the `is_blocked()` retry path. The cached response goes straight to your callback.
 4. **Stats**: Cached requests still count toward `requests_count`, `response_bytes`, and the per-status counters, so your stat output looks the same as a normal crawl. Two extra counters, `cache_hits` and `cache_misses`, let you see how the cache performed.
 
 ### Clearing the Cache
 
 There's no automatic expiration. To force a fresh crawl, delete the cache directory or call the manager's `clear()` method directly.
 
-**Warning:** Development mode is meant for development, not production. Cached responses never expire, and replay bypasses rate limiting and blocked-request retries. Don't ship a spider with `development_mode = True`.
+**Warning:**
+
+Development mode is meant for development, not production. Cached responses never expire, and replay bypasses rate limiting and blocked-request retries. Don't ship a spider with `development_mode = True`.
 
 ## Streaming
 
@@ -211,7 +217,9 @@ Key differences from `start()`:
 - Items are yielded one by one as they're scraped, not collected into a list
 - You can access `spider.stats` during iteration for real-time statistics
 
-**Note:** The full list of all stats that can be accessed by `spider.stats` is explained below [here](#results-statistics).
+**Abstract:**
+
+The full list of all stats that can be accessed by `spider.stats` is explained below [here](#results-statistics)
 
 You can use it with the checkpoint system too, so it's easy to build UI on top of spiders. UIs that have real-time data and can be paused/resumed.
 
@@ -279,7 +287,9 @@ async def on_scraped_item(self, item: dict) -> dict | None:
     return item
 ```
 
-**Tip:** This hook can also be used to direct items through your own pipelines and drop them from the spider.
+**Tip:**
+
+This hook can also be used to direct items through your own pipelines and drop them from the spider.
 
 ### start_requests
 

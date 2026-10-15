@@ -1,3 +1,8 @@
+---
+title: "Use HTTP and Browser Sessions in One Crawler"
+description: "Set up named sessions and route spider requests through HTTP or browser fetchers. Reuse cookies, start sessions on demand and inspect API history."
+---
+
 # Spiders sessions
 
 !!! success "Prerequisites"
@@ -166,7 +171,7 @@ async def parse(self, response: Response):
 
     Normally, when you use `FetcherSession`, `Fetcher`, or `AsyncFetcher`, you specify the HTTP method to use with the corresponding method like `.get()` and `.post()`. But while using `FetcherSession` in spiders, you can't do this. By default, the request is an _HTTP GET_ request; if you want to use another HTTP method, you have to pass it to the `method` argument, as in the above example. The reason for this is to unify the `Request` interface across all session types.
 
-For browser sessions (`AsyncStealthySession`), you can pass browser-specific arguments like `wait_selector`, `page_action`, or `extra_headers`:
+With the `"stealth"` session (`AsyncStealthySession`) registered in the multi-session example above, you can pass browser-specific arguments like `wait_selector`, `page_action`, or `extra_headers`:
 
 ```python
 async def parse(self, response: Response):
@@ -183,7 +188,7 @@ async def parse(self, response: Response):
 
     yield response.follow(
         "/dynamic-page",
-        sid="browser",
+        sid="stealth",
         callback=self.parse_dynamic,
         wait_selector="div.loaded",
         network_idle=True,
@@ -213,7 +218,7 @@ class ProductSpider(Spider):
 
         next_page = response.css("a.next::attr(href)").get()
         if next_page:
-            yield Request(next_page)
+            yield response.follow(next_page)
 
     async def parse_product(self, response: Response):
         yield {

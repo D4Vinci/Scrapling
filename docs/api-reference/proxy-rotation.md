@@ -1,6 +1,6 @@
 ---
-search:
-  exclude: true
+title: "ProxyRotator API Reference"
+description: "Look up ProxyRotator, proxy selection and rotation strategies. Configure proxies for HTTP and browser sessions."
 ---
 
 # Proxy Rotation
