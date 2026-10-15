@@ -1,4 +1,4 @@
-name: Tests (Windows)
+name: Tests Windows
 
 on:
   push:
@@ -10,7 +10,11 @@ on:
       - '**/*.md'
       - 'docs/**'
       - 'images/**'
+      - '.github/**'
       - 'agent-skill/**'
+      - '*.yml'
+      - '*.yaml'
+      - 'ruff.toml'
   pull_request:
     branches:
       - main
@@ -20,7 +24,11 @@ on:
       - '**/*.md'
       - 'docs/**'
       - 'images/**'
+      - '.github/**'
       - 'agent-skill/**'
+      - '*.yml'
+      - '*.yaml'
+      - 'ruff.toml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
