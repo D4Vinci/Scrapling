@@ -45,18 +45,17 @@ page = StealthyFetcher.fetch('https://example.com')
 If you want to configure the parser ([Selector class](../parsing/main_classes.md#selector)) that will be used on the response before returning it for you, then do this first:
 ```python
 from scrapling.fetchers import Fetcher
-Fetcher.configure(adaptive=True, keep_comments=False, keep_cdata=False)  # and the rest
+Fetcher.configure(adaptive=True, keep_comments=False)  # and the rest
 ```
 or
 ```python
 from scrapling.fetchers import Fetcher
 Fetcher.adaptive=True
 Fetcher.keep_comments=False
-Fetcher.keep_cdata=False  # and the rest
 ```
 Then, continue your code as usual.
 
-The available configuration arguments are: `adaptive`, `adaptive_domain`, `huge_tree`, `keep_comments`, `keep_cdata`, `storage`, and `storage_args`, which are the same ones you give to the [Selector](../parsing/main_classes.md#selector) class. You can display the current configuration anytime by running `<fetcher_class>.display_config()`.
+The available configuration arguments are: `adaptive`, `adaptive_domain`, `huge_tree`, `keep_comments`, `storage`, and `storage_args`, which are the same ones you give to the [Selector](../parsing/main_classes.md#selector) class. You can display the current configuration anytime by running `<fetcher_class>.display_config()`.
 
 !!! info
 

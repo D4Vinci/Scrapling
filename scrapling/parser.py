@@ -86,7 +86,6 @@ class Selector(SelectorsGeneration):
         "__attributes",
         "__text",
         "__tag",
-        "__keep_cdata",
         "_raw_body",
     )
 
@@ -98,7 +97,6 @@ class Selector(SelectorsGeneration):
         huge_tree: bool = True,
         root: Optional[HtmlElement] = None,
         keep_comments: Optional[bool] = False,
-        keep_cdata: Optional[bool] = False,
         adaptive: Optional[bool] = False,
         _storage: Optional[StorageSystemMixin] = None,
         storage: Any = SQLiteStorageSystem,
@@ -121,7 +119,6 @@ class Selector(SelectorsGeneration):
         :param root: Used internally to pass etree objects instead of text/body arguments, it takes the highest priority.
             Don't use it unless you know what you are doing!
         :param keep_comments: While parsing the HTML body, drop comments or not. Disabled by default for obvious reasons
-        :param keep_cdata: While parsing the HTML body, drop cdata or not. Disabled by default for cleaner HTML.
         :param adaptive: Globally turn off the adaptive feature in all functions, this argument takes higher
             priority over all adaptive related arguments/functions in the class.
         :param storage: The storage class to be passed for adaptive functionalities, see ``Docs`` for more info.
@@ -134,7 +131,6 @@ class Selector(SelectorsGeneration):
         self.url = url
         self._raw_body: str | bytes = ""
         self.encoding = encoding
-        self.__keep_cdata = keep_cdata
         self.__huge_tree_enabled = huge_tree
         self.__keep_comments = keep_comments
         # For selector stuff
@@ -160,7 +156,6 @@ class Selector(SelectorsGeneration):
                 compact=True,
                 huge_tree=huge_tree,
                 default_doctype=True,  # Supported by lxml but missing from stubs
-                strip_cdata=(not keep_cdata),
             )
             parser = HTMLParser(**_parser_kwargs)
             self._root = cast(HtmlElement, fromstring(body or "<html/>", parser=parser, base_url=url or ""))
@@ -225,7 +220,6 @@ class Selector(SelectorsGeneration):
             adaptive=self.__adaptive_enabled,
             _storage=self._storage,
             keep_comments=self.__keep_comments,
-            keep_cdata=self.__keep_cdata,
             huge_tree=self.__huge_tree_enabled,
         )
 
@@ -236,7 +230,6 @@ class Selector(SelectorsGeneration):
         adaptive = self.__adaptive_enabled
         storage = self._storage
         comments = self.__keep_comments
-        cdata = self.__keep_cdata
         huge_tree = self.__huge_tree_enabled
 
         return Selectors(
@@ -247,7 +240,6 @@ class Selector(SelectorsGeneration):
                 adaptive=adaptive,
                 _storage=storage,
                 keep_comments=comments,
-                keep_cdata=cdata,
                 huge_tree=huge_tree,
             )
             for el in elements

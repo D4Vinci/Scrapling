@@ -54,7 +54,7 @@ If you have a Scrapy response at hand outside a callback (middlewares, pipelines
 ```python
 from scrapling.integrations.scrapy import convert_response
 
-scrapling_response = convert_response(scrapy_response, keep_comments=False, keep_cdata=False)
+scrapling_response = convert_response(scrapy_response, keep_comments=False)
 ```
 
 ## Notes

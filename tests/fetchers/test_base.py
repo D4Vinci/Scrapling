@@ -13,7 +13,6 @@ class TestBaseFetcher:
         assert config['huge_tree'] is True
         assert config['adaptive'] is False
         assert config['keep_comments'] is False
-        assert config['keep_cdata'] is False
 
     def test_configure_single_parameter(self):
         """Test configuring single parameter"""
