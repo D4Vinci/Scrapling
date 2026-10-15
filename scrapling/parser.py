@@ -160,7 +160,6 @@ class Selector(SelectorsGeneration):
                 compact=True,
                 huge_tree=huge_tree,
                 default_doctype=True,  # Supported by lxml but missing from stubs
-                strip_cdata=(not keep_cdata),
             )
             parser = HTMLParser(**_parser_kwargs)
             self._root = cast(HtmlElement, fromstring(body or "<html/>", parser=parser, base_url=url or ""))
