@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from scrapling.core._types import Any
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, DynamicSession, StealthySession
+from scrapling.fetchers import AsyncStealthySession, StealthySession
 
 
 HTML = """<!DOCTYPE html><html><body>
@@ -15,7 +15,7 @@ HTML = """<!DOCTYPE html><html><body>
 </body></html>"""
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.parametrize("session_type", [StealthySession])
 @pytest.mark.parametrize("css_selector", [None, "main"])
 def test_sync_snapshot_forwards_options_and_errors(session_type: Any, css_selector: str | None) -> None:
     page = Mock()
@@ -34,7 +34,7 @@ def test_sync_snapshot_forwards_options_and_errors(session_type: Any, css_select
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 @pytest.mark.parametrize("css_selector", [None, "main"])
 async def test_async_snapshot_forwards_options_and_errors(session_type: Any, css_selector: str | None) -> None:
     page = Mock()
@@ -61,7 +61,8 @@ def _button_ref(snapshot: str) -> str:
     return match[1]
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_snapshot_live_state_and_refs(session_type: Any) -> None:
     def setup(page: Any) -> None:
         page.route("**/*", lambda route: route.fulfill(status=200, content_type="text/html", body=HTML))
@@ -83,8 +84,9 @@ def test_sync_snapshot_live_state_and_refs(session_type: Any) -> None:
         assert session.page_pool.pages_count == 1
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_snapshot_live_state_and_refs(session_type: Any) -> None:
     async def setup(page: Any) -> None:
         await page.route("**/*", lambda route: route.fulfill(status=200, content_type="text/html", body=HTML))

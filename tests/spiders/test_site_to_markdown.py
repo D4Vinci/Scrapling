@@ -1,11 +1,12 @@
-"""Tests for `SiteToMarkdownSpider`."""
+"""Tests for `ContentSpider`."""
 
 import pytest
 
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.spiders.links import LinkExtractor
+from scrapling.spiders.engine import CrawlerEngine
 from scrapling.spiders.request import Request
-from scrapling.spiders.templates import CrawlRule, SiteToMarkdownSpider
+from scrapling.spiders.templates import CrawlRule, ContentSpider
 from scrapling.core._types import AsyncGenerator
 
 HTML = """
@@ -39,8 +40,8 @@ async def _collect(agen: AsyncGenerator) -> list:
     return [item async for item in agen]
 
 
-def _spider(**attrs) -> SiteToMarkdownSpider:
-    class S(SiteToMarkdownSpider):
+def _spider(**attrs) -> ContentSpider:
+    class S(ContentSpider):
         name = "s"
         start_urls = ["https://example.com/"]
         allowed_domains = {"example.com"}
@@ -50,9 +51,24 @@ def _spider(**attrs) -> SiteToMarkdownSpider:
     return S()
 
 
-class TestSiteToMarkdownSpider:
+class TestContentSpider:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "strategy, paths", [("bfs", ["/docs/page-1", "/blog/post-1"]), ("dfs", ["/blog/post-1", "/docs/page-1"])]
+    )
+    async def test_inherited_crawl_strategy(self, strategy, paths):
+        spider = _spider(crawl_strategy=strategy)
+        engine = CrawlerEngine(spider, spider._session_manager)
+        response = _make_response()
+        await engine._run_callbacks(response.request, response)
+
+        assert engine.stats.items_scraped == 1
+        assert [(await engine.scheduler.dequeue()).url for _ in paths] == [
+            f"https://example.com{path}" for path in paths
+        ]
+
     def test_requires_allowed_domains(self):
-        class S(SiteToMarkdownSpider):
+        class S(ContentSpider):
             name = "s"
             start_urls = ["https://example.com/"]
 

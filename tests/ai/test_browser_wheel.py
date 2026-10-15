@@ -215,6 +215,7 @@ async def _browser() -> AsyncGenerator[tuple[Client, Any, Any], None]:
             assert not closed.is_error
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_wheel_live_scrolls_under_current_pointer() -> None:
     async with _browser() as (client, session, page):

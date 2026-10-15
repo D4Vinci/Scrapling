@@ -49,33 +49,51 @@
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html"><strong>MCP-Modus</strong></a>
 </p>
 
-Scrapling ist ein adaptives Web-Scraping-Framework, das alles abdeckt -- von einer einzelnen Anfrage bis hin zu einem umfassenden Crawl.
+Scrapling ist ein Web-Scraping-Framework für Python, das schnelle HTTP-Anfragen, Stealth-Browser, leistungsstarkes Parsing und paralleles Crawling in einer Bibliothek vereint.
 
-Sein Parser lernt aus Website-Änderungen und lokalisiert Ihre Elemente automatisch neu, wenn sich Seiten aktualisieren. Seine Fetcher umgehen Anti-Bot-Systeme wie Cloudflare Turnstile direkt ab Werk. Und sein Spider-Framework ermöglicht es Ihnen, auf parallele Multi-Session-Crawls mit Pause & Resume, automatischer Proxy-Rotation und einer Crawl-Geschwindigkeit, die sich daran anpasst, wie schnell jede Website antwortet, und zurückfährt, sobald sie Sie zu blockieren beginnt, hochzuskalieren -- alles in wenigen Zeilen Python. Eine Bibliothek, keine Kompromisse.
+Scrapen Sie statische Seiten, rendern Sie JavaScript, interagieren Sie mit Websites und extrahieren Sie Daten aus den API-Aufrufen dahinter. Bauen Sie Crawler mit wiederverwendbaren Sessions, Proxy-Rotation, automatischen Wiederholungsversuchen, Pause & Resume und integriertem Datenexport.
 
-Blitzschnelle Crawls mit Echtzeit-Statistiken und Streaming. Von Web Scrapern für Web Scraper und normale Benutzer entwickelt, ist für jeden etwas dabei.
+Nutzen Sie Scrapling in Python, im Terminal oder mit Ihrem KI-Agenten über den MCP-Server und den Agent Skill. Ob Sie nur ein paar Felder extrahieren oder eine ganze Website als sauberes Markdown sammeln möchten, Scrapling deckt den gesamten Scraping-Workflow ab.
+
+## Was Sie mit Scrapling machen können
+
+- **[Abrufen & interagieren](https://scrapling.readthedocs.io/en/latest/fetching/choosing.html)**: Schnelle HTTP-Anfragen, Stealth-Browser, JavaScript-Rendering, Umgang mit Cloudflare Turnstile/Interstitial, persistente Sessions und Aufzeichnung von API-Aufrufen im Hintergrund.
+- **[Parsen & extrahieren](https://scrapling.readthedocs.io/en/latest/parsing/selection.html)**: CSS, XPath, Text- und Regex-Suche, adaptives Element-Tracking, Suche nach ähnlichen Elementen und saubere Markdown-Ausgabe.
+- **[Crawlen & exportieren](https://scrapling.readthedocs.io/en/latest/spiders/getting-started.html)**: Parallele Spiders, Proxy-Rotation, Wiederholungsversuche, AutoThrottle, Pause & Resume, Streaming, fertige Vorlagen und JSON/JSONL/CSV/XML-Exporte.
+- **[Scrapen mit KI oder im Terminal](https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html)**: Ein MCP-Server für KI-Agenten zum Browsen und Extrahieren von Daten, ein Agent Skill, CLI-Befehle und eine interaktive Shell.
+
+Starten Sie mit einer einzelnen Seite:
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
-StealthyFetcher.adaptive = True
-p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # Website unbemerkt abrufen!
-products = p.css('.product', auto_save=True)                                        # Daten scrapen, die Website-Designänderungen überleben!
-products = p.css('.product', adaptive=True)                                         # Später, wenn sich die Website-Struktur ändert, `adaptive=True` übergeben, um sie zu finden!
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-Oder auf vollständige Crawls hochskalieren
+
+Oder skalieren Sie mit einem Spider:
+
 ```python
 from scrapling.spiders import Spider, Response
 
-class MySpider(Spider):
-  name = "demo"
-  start_urls = ["https://example.com/"]
+class QuotesSpider(Spider):
+    name = "quotes"
+    start_urls = ["https://quotes.toscrape.com/"]
 
-  async def parse(self, response: Response):
-      for item in response.css('.product'):
-          yield {"title": item.css('h2::text').get()}
+    async def parse(self, response: Response):
+        for quote in response.css('.quote'):
+            yield {
+                "text": quote.css('.text::text').get(),
+                "author": quote.css('.author::text').get(),
+            }
 
-MySpider().start()
+result = QuotesSpider().start()
+print(len(result.items))
+result.items.to_json("quotes.json")
 ```
+
+Das gibt `10` aus und speichert Zitate und Autoren in `quotes.json`.
 
 <p align="center">
     <a href="https://dataimpulse.com/?utm_source=scrapling&utm_medium=banner&utm_campaign=scrapling" target="_blank" style="display:flex; justify-content:center; padding:4px 0;">
@@ -97,15 +115,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png">
-      </a>
-    </td>
-    <td> <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank"><b>Proxidize</b></a> bietet mobile und Residential-Proxies für Scraping, Browser-Automatisierung, SEO-Monitoring, KI-Agenten und Datenerfassung. <i>Mit dem Code <b>scrapling20</b> erhalten Sie 20% Rabatt</i>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -113,18 +122,6 @@ MySpider().start()
     <td> Scrapling bewältigt Cloudflare Turnstile. Für Schutz auf Unternehmensebene bietet <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>Hyper Solutions</b>
       </a> API-Endpunkte, die gültige Antibot-Tokens für <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b> und <b>Incapsula</b> generieren. Einfache API-Aufrufe, keine Browser-Automatisierung nötig. </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
-      </a>
-    </td>
-    <td>Hey, wir haben <a href="https://birdproxies.com/t/scrapling">
-        <b>BirdProxies</b>
-      </a> gebaut, weil Proxies nicht kompliziert oder überteuert sein sollten. <br /> Schnelle Residential- und ISP-Proxies in über 195 Standorten, faire Preise und echter Support. <br />
-      <b>Probieren Sie unser FlappyBird-Spiel auf der Landingpage für kostenlose Daten!</b>
-    </td>
   </tr>
   <tr>
     <td width="200">
@@ -147,17 +144,6 @@ MySpider().start()
     </td>
     <td>
       <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank">TikHub.io</a> bietet über 900 stabile APIs auf mehr als 16 Plattformen, darunter TikTok, X, YouTube und Instagram, mit über 40 Mio. Datensätzen. <br /> Bietet außerdem <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">vergünstigte KI-Modelle</a> - Claude, GPT, GEMINI und mehr mit bis zu 71% Rabatt.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
-      </a>
-    </td>
-    <td>
-    Klappe den Laptop zu. Deine Scraper laufen weiter. <br />
-    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - Cloud-Server für ununterbrochene Automatisierung. Windows- und Linux-Maschinen mit voller Kontrolle. Ab €6,99/Monat.
     </td>
   </tr>
   <tr>
@@ -200,6 +186,26 @@ MySpider().start()
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Reduzieren Sie Sperren und CAPTCHAs um 90%. 28 Mio. Premium-Residential-IPs für umfangreiches Web Scraping. 195 Länder. Gezielte Auswahl nach Stadt/ISP/Postleitzahl. Sitzungen mit fester oder rotierender IP. Datenvolumen ohne Ablaufdatum ab $2/GB. Code <strong>SCRAPEANDTAKE</strong>: <em>25% Rabatt</em>.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: Zahlen Sie nicht länger pro GB. Unbegrenzter Residential-Traffic, über 100 Mio. IPs, mehr als 190 Länder. Zahlen Sie nach Bandbreite. Fordern Sie einen kostenlosen Test der Residential-Proxys mit 50 Mbps an.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
+      </a>
+    </td>
+    <td>
+    $1/GB bei <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank">DataImpulse</a>. Ethisch bezogene Proxys aus erster Hand. Über 90 Mio. IPs, mehr als 195 Länder. Residential-, Datacenter- und Mobilproxies. Nutzungsabhängige Zahlung = kein Abo. Datenvolumen verfällt nie.
+    </td>
+  </tr>
 </table>
 
 <i><sub>Möchten Sie Ihre Anzeige hier zeigen? Klicken Sie [hier](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)</sub></i>
@@ -230,21 +236,21 @@ MySpider().start()
 - 🕷️ **Scrapy-ähnliche Spider-API**: Definieren Sie Spiders mit `start_urls`, async `parse` Callbacks und `Request`/`Response`-Objekten.
 - ⚡ **Paralleles Crawling**: Konfigurierbare Parallelitätslimits, domainbezogenes Throttling und Download-Verzögerungen.
 - 🔄 **Multi-Session-Unterstützung**: Einheitliche Schnittstelle für HTTP-Anfragen und heimliche Headless-Browser in einem einzigen Spider -- leiten Sie Anfragen per ID an verschiedene Sessions weiter.
-- 💾 **Pause & Resume**: Checkpoint-basierte Crawl-Persistenz. Drücken Sie Strg+C für ein kontrolliertes Herunterfahren; starten Sie neu, um dort fortzufahren, wo Sie aufgehört haben.
+- 💾 **Pause & Resume**: Ausstehende Anfragen und besuchte URLs mit `crawldir` speichern. Mit Strg+C kontrolliert stoppen und mit demselben Verzeichnis neu starten.
 - 📡 **Streaming-Modus**: Gescrapte Elemente in Echtzeit streamen über `async for item in spider.stream()` mit Echtzeit-Statistiken -- ideal für UI, Pipelines und lang laufende Crawls.
 - 🛡️ **Erkennung blockierter Anfragen**: Automatische Erkennung und Wiederholung blockierter Anfragen mit anpassbarer Logik.
 - 🚦 **AutoThrottle**: Schluss mit dem Raten von Verzögerungen. Der Spider stimmt die Verzögerung jeder Domain selbst darauf ab, wie schnell die Website antwortet, verdoppelt sie (oder wartet, was `Retry-After` verlangt), sobald die Website Sie blockiert oder ausbremst, und wird wieder schneller, sobald das aufhört.
 - 🤖 **robots.txt-Konformität**: Optionales `robots_txt_obey`-Flag, das `Disallow`-, `Crawl-delay`- und `Request-rate`-Direktiven mit domainbasiertem Caching respektiert.
 - 🧪 **Entwicklungsmodus**: Antworten beim ersten Lauf auf der Festplatte zwischenspeichern und bei weiteren Läufen erneut abspielen - iterieren Sie an Ihrer `parse()`-Logik, ohne die Zielserver erneut abzufragen.
-- 🧩 **Fertige Spider-Vorlagen**: Sparen Sie sich den Boilerplate-Code mit `CrawlSpider` für regelbasiertes Link-Following, `SitemapSpider` für Sitemap-/robots.txt-gesteuerte Crawls und `ShopifySpider`, um über die JSON-API jedes Produkt aus einem beliebigen Shopify-Shop zu ziehen -- ein Item pro Variante.
+- 🧩 **Fertige Spider-Vorlagen**: Sparen Sie sich den Boilerplate-Code mit `CrawlSpider` für regelbasiertes Link-Following, `SitemapSpider` für Sitemap-/robots.txt-gesteuerte Crawls, `XMLFeedSpider`/`CSVFeedSpider` für XML/RSS- und CSV-Feeds und `ShopifySpider` zum Sammeln von Produkten aus öffentlichen Shopify-Shops, ein Item pro Variante.
 - 🔗 **Link-Extraktion**: Ein eigenständiges `LinkExtractor`-Primitiv mit Allow-/Deny-Mustern, Domain-Filtern, CSS-/XPath-Eingrenzung, Erweiterungsfilterung und Kanonisierung -- nutzbar innerhalb der Vorlagen oder für sich allein.
 - 📦 **Integrierter Export**: Ergebnisse über Hooks und Ihre eigene Pipeline oder die integrierten JSON/JSONL/CSV/XML-Exporte mit `result.items.to_json()`, `to_jsonl()`, `to_csv()` und `to_xml()` exportieren.
 
 ### Erweitertes Website-Abrufen mit Session-Unterstützung
 - **HTTP-Anfragen**: Schnelle und heimliche HTTP-Anfragen mit der `Fetcher`-Klasse. Kann Browser-TLS-Fingerprints und Header imitieren und HTTP/3 verwenden.
-- **Dynamisches Laden**: Dynamische Websites mit vollständiger Browser-Automatisierung über die `DynamicFetcher`-Klasse abrufen, die Playwrights Chromium und Google Chrome unterstützt.
-- **Anti-Bot-Umgehung**: Erweiterte Stealth-Fähigkeiten mit `StealthyFetcher` und Fingerprint-Spoofing. Kann alle Arten von Cloudflares Turnstile/Interstitial einfach mit Automatisierung umgehen.
-- **Session-Verwaltung**: Persistente Session-Unterstützung mit den Klassen `FetcherSession`, `StealthySession` und `DynamicSession` für Cookie- und Zustandsverwaltung über Anfragen hinweg.
+- **Dynamisches Laden**: Dynamische Websites mit vollständiger Browser-Automatisierung über die `StealthyFetcher`-Klasse abrufen, die Playwrights Chromium und Google Chrome unterstützt.
+- **Anti-Bot-Umgehung**: Fortschrittliche Stealth-Funktionen mit `StealthyFetcher` und Fingerprint-Spoofing. Umgeht mit Automatisierung mühelos alle Arten von Cloudflare-Turnstile-/Interstitial-Challenges.
+- **Session-Verwaltung**: Persistente Session-Unterstützung mit den Klassen `FetcherSession` und `StealthySession` für Cookie- und Zustandsverwaltung über Anfragen hinweg.
 - **Proxy-Rotation**: Integrierter `ProxyRotator` mit zyklischen oder benutzerdefinierten Rotationsstrategien über alle Session-Typen hinweg, plus Proxy-Überschreibungen pro Anfrage.
 - **Domain- & Werbeblockierung**: Anfragen an bestimmte Domains (und deren Subdomains) blockieren oder die integrierte Werbeblockierung (~3.500 bekannte Werbe-/Tracker-Domains) in browserbasierten Fetchern aktivieren.
 - **DNS-Leak-Prävention**: Optionale DNS-over-HTTPS-Unterstützung zur Weiterleitung von DNS-Anfragen über Cloudflares DoH, um DNS-Leaks bei der Verwendung von Proxys zu verhindern.
@@ -252,15 +258,15 @@ MySpider().start()
 - **Hintergrund-API-Erfassung**: Aktivieren Sie `record_requests=True` in einer Browsersitzung und durchsuchen Sie die gespeicherten Antworten mit `session.network.search(limit=None)`. Lesen Sie API-Daten und HTTP-Fehler über mehrere Seitenaufrufe hinweg, ohne Anfragen erneut zu senden. Der Verlauf ist begrenzt und speichert Text-Antwortkörper.
 - **Async-Unterstützung**: Vollständige async-Unterstützung über alle Fetcher und dedizierte async Session-Klassen hinweg.
 
-### Adaptives Scraping
+### Parsing und Datenextraktion
 - 🔄 **Intelligente Element-Verfolgung**: Elemente nach Website-Änderungen mit intelligenten Ähnlichkeitsalgorithmen neu lokalisieren.
 - 🎯 **Intelligente flexible Auswahl**: CSS-Selektoren, XPath-Selektoren, filterbasierte Suche, Textsuche, Regex-Suche und mehr.
 - 🔍 **Ähnliche Elemente finden**: Elemente, die gefundenen Elementen ähnlich sind, automatisch lokalisieren.
 
 ### KI-Funktionen
-- 🤖 **MCP-Server**: Lassen Sie KI-Chatbots und -Agenten (Claude/Cursor/etc.) über Scrapling scrapen, mit Einmal- oder sitzungsbasierten Tools für einfache HTTP-Anfragen (jede Methode), Browser-Abrufe und Stealth-Abrufe, die Cloudflare umgehen. Seiten werden mit CSS-Selektoren eingegrenzt und von Prompt-Injection-Inhalten bereinigt, bevor die KI sie sieht, sodass der Agent weniger liest, weniger kostet und nicht durch versteckten Text gekapert werden kann. Screenshots, Remote-Browser über CDP und ein standardmäßig abgesicherter HTTP-Transport sind enthalten. ([Demo-Video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **MCP-Server**: Lassen Sie KI-Chatbots und -Agenten (Claude/Cursor/usw.) über Scrapling scrapen, mit HTTP-Anfragen, Browser-Aktionen, Screenshots, gespeicherten Anmeldungen und API-Antworten im Hintergrund. Mit unserem Stealth-Browser und den passenden Tools können geeignete KI-Modelle jedes CAPTCHA umgehen, das ihnen bei der Arbeit begegnet (ganz zu schweigen von unserem Cloudflare-Löser). Verschiedene Methoden reduzieren den Inhalt für das Modell, blockieren Werbung und schützen es vor Prompt-Injection. Remote-Browser über CDP und HTTP-Transport mit Authentifizierungsoptionen sind enthalten. ([Demo-Video](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 - 🧠 **Agent Skill**: Ein installationsfertiger [Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html), der Coding-Agents die gesamte Bibliothek beibringt, damit der Code, den sie mit Scrapling schreiben, zur aktuellen API passt, statt geraten zu werden.
-- 📚 **RAG-fertiges Markdown**: Wandeln Sie jede Seite mit einer Zeile (`page.markdown()`) in sauberes, bereinigtes, LLM-fertiges Markdown um oder crawlen Sie eine ganze Website mit der Vorlage `SiteToMarkdownSpider` in einen Markdown-Korpus, ganz ohne LLM im Prozess. ([Dokumentation](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
+- 📚 **RAG-fertiges Markdown**: Wandeln Sie jede Seite mit einer Zeile (`page.markdown()`) in sauberes, bereinigtes, LLM-fertiges Markdown um oder crawlen Sie eine ganze Website mit der Vorlage `ContentSpider` in einen Markdown-Korpus, ganz ohne LLM im Prozess. ([Dokumentation](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
 
 ### Hochleistungs- und praxiserprobte Architektur
 - 🚀 **Blitzschnell**: Optimierte Leistung, die die meisten Python-Scraping-Bibliotheken übertrifft.
@@ -305,26 +311,26 @@ with StealthySession(headless=True, solve_cloudflare=True) as session:  # Browse
     data = page.css('#padded_content a').getall()
 
 # Oder einmaligen Anfragenstil verwenden: öffnet den Browser für diese Anfrage und schließt ihn nach Abschluss
-page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare')
+page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare', solve_cloudflare=True)
 data = page.css('#padded_content a').getall()
 ```
 Vollständige Browser-Automatisierung
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # Browser offen halten, bis Sie fertig sind
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # Browser offen halten, bis Sie fertig sind
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # XPath-Selektor, falls bevorzugt
 
 # Oder einmaligen Anfragenstil verwenden: öffnet den Browser für diese Anfrage und schließt ihn nach Abschluss
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
 ### Spiders
 Vollständige Crawler mit parallelen Anfragen, mehreren Session-Typen und Pause & Resume erstellen:
 ```python
-from scrapling.spiders import Spider, Request, Response
+from scrapling.spiders import Spider, Response
 
 class QuotesSpider(Spider):
     name = "quotes"
@@ -371,7 +377,7 @@ Lange Crawls mit Checkpoints pausieren und fortsetzen, indem Sie den Spider so s
 ```python
 QuotesSpider(crawldir="./crawl_data").start()
 ```
-Drücken Sie Strg+C, um kontrolliert zu pausieren -- der Fortschritt wird automatisch gespeichert. Wenn Sie den Spider später erneut starten, übergeben Sie dasselbe `crawldir`, und er setzt dort fort, wo er aufgehört hat.
+Mit gesetztem `crawldir` speichert Strg+C ausstehende Anfragen und bereits besuchte URLs. Starten Sie mit demselben `crawldir` neu, um fortzufahren. Speichern Sie extrahierte Daten separat.
 
 Oder überspringen Sie das Schreiben der Crawling-Logik komplett mit den fertigen Vorlagen, etwa um den gesamten Katalog eines Shopify-Shops abzurufen:
 ```python
@@ -380,8 +386,9 @@ from scrapling.spiders import ShopifySpider
 class MyStore(ShopifySpider):
     target_website = "example.com"
 
-result = MyStore().start()  # Jedes Produkt im Shop, ein Item pro Variante
+result = MyStore().start()  # Alle Produkte im Shop, ein Item pro Variante
 ```
+Die Vorlage liest Produkte aus öffentlichen Collection-Endpunkten, ein Item pro Variante.
 
 ### Erweitertes Parsing & Navigation
 ```python
@@ -399,18 +406,19 @@ quotes = page.find_all('div', class_='quote')
 quotes = page.find_all(['div'], class_='quote')
 quotes = page.find_all(class_='quote')  # und so weiter...
 # Element nach Textinhalt finden
-quotes = page.find_by_text('quote', tag='div')
+quotes = page.find_by_text('Albert Einstein', first_match=False)
 
 # Erweiterte Navigation
 quote_text = page.css('.quote')[0].css('.text::text').get()
-quote_text = page.css('.quote').css('.text::text').getall()  # Verkettete Selektoren
+quote_texts = page.css('.quote').css('.text::text').getall()  # Verkettete Selektoren
 first_quote = page.css('.quote')[0]
-author = first_quote.next_sibling.css('.author::text')
+author = first_quote.css('.author::text').get()
+next_quote = first_quote.next
 parent_container = first_quote.parent
 
 # Elementbeziehungen und Ähnlichkeit
 similar_elements = first_quote.find_similar()
-below_elements = first_quote.below_elements()
+below_elements = first_quote.below_elements
 ```
 Sie können den Parser direkt verwenden, wenn Sie keine Websites abrufen möchten, wie unten gezeigt:
 ```python
@@ -423,24 +431,20 @@ Und es funktioniert genau auf die gleiche Weise!
 ### Beispiele für async Session-Verwaltung
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
-async with FetcherSession(http3=True) as session:  # `FetcherSession` ist kontextbewusst und kann sowohl in sync- als auch in async-Mustern arbeiten
-    page1 = session.get('https://quotes.toscrape.com/')
-    page2 = session.get('https://quotes.toscrape.com/', impersonate='firefox135')
+async def main():
+    async with FetcherSession(http3=True) as http_session:  # `FetcherSession` passt sich dem Kontext an und funktioniert synchron wie asynchron
+        page1 = await http_session.get('https://quotes.toscrape.com/')
+        page2 = await http_session.get('https://quotes.toscrape.com/page/2/', impersonate='chrome')
+        print(len(page1.css('.quote')), len(page2.css('.quote')))
 
-# Async-Session-Verwendung
-async with AsyncStealthySession(max_pages=2) as session:
-    tasks = []
-    urls = ['https://example.com/page1', 'https://example.com/page2']
+    async with AsyncStealthySession(max_pages=2) as browser_session:
+        urls = ['https://quotes.toscrape.com/js/', 'https://quotes.toscrape.com/js/page/2/']
+        pages = await asyncio.gather(*(browser_session.fetch(url, wait_selector='.quote') for url in urls))
+        print([len(page.css('.quote')) for page in pages])
 
-    for url in urls:
-        task = session.fetch(url)
-        tasks.append(task)
-
-    print(session.get_pool_stats())  # Optional - Der Status des Browser-Tab-Pools (beschäftigt/frei/Fehler)
-    results = await asyncio.gather(*tasks)
-    print(session.get_pool_stats())
+asyncio.run(main())
 ```
 
 ## CLI & Interaktive Shell
@@ -451,14 +455,15 @@ Scrapling enthält eine leistungsstarke Befehlszeilenschnittstelle:
 
 Interaktive Web-Scraping-Shell starten
 ```bash
+pip install "scrapling[shell]"
 scrapling shell
 ```
-Seiten direkt ohne Programmierung in eine Datei extrahieren (extrahiert standardmäßig den Inhalt im `body`-Tag). Wenn die Ausgabedatei mit `.txt` endet, wird der Textinhalt des Ziels extrahiert. Wenn sie mit `.md` endet, ist es eine Markdown-Darstellung des HTML-Inhalts; wenn sie mit `.html` endet, ist es der HTML-Inhalt selbst.
+Seiten direkt ohne Programmierung in eine Datei extrahieren. Wählen Sie Inhalte mit `--css-selector` aus oder verwenden Sie `--ai-targeted`, um den `body`-Inhalt auszuwählen und zu bereinigen. Nutzen Sie `.txt` für Text, `.md` für Markdown oder `.html` für HTML.
 ```bash
-scrapling extract get 'https://example.com' content.md
-scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # Alle Elemente, die dem CSS-Selektor '#fromSkipToProducts' entsprechen
-scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
-scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
+scrapling extract get 'https://quotes.toscrape.com/' quotes.md
+scrapling extract get 'https://quotes.toscrape.com/' quotes.txt --css-selector '.quote' --impersonate 'chrome'
+scrapling extract fetch 'https://quotes.toscrape.com/js/' quotes.md --css-selector '.quote' --wait-selector '.quote' --no-headless
+scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
 > [!NOTE]
@@ -542,7 +547,7 @@ pip install scrapling
        ```bash
        pip install "scrapling[all]"
        ```
-   Denken Sie daran, dass Sie nach einem dieser Extras (falls noch nicht geschehen) die Browser-Abhängigkeiten mit `scrapling install` installieren müssen
+   Führen Sie `scrapling install` aus, wenn Sie Browser-Fetcher benötigen. HTTP-Anfragen brauchen keine Browser-Installation.
 
 ### Docker
 Sie können auch ein Docker-Image mit allen Extras und Browsern mit dem folgenden Befehl von DockerHub installieren:
@@ -572,7 +577,7 @@ Wenn Sie unsere Bibliothek für Forschungszwecke verwendet haben, zitieren Sie u
     title = {Scrapling},
     year = {2024},
     url = {https://github.com/D4Vinci/Scrapling},
-    note = {An adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl!}
+    note = {A Python Web Scraping framework for everything from a single request to a full-scale crawl!}
   }
 ```
 

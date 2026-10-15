@@ -1,3 +1,8 @@
+---
+title: "Write a Custom Storage Backend for Adaptive Parsing"
+description: "Implement save and retrieve for Scrapling adaptive parsing. Write a custom Redis storage backend to save and retrieve element properties."
+---
+
 # Writing your retrieval system
 
 Scrapling uses SQLite by default, but this tutorial shows how to write your own storage system to store element properties for the `adaptive` feature.

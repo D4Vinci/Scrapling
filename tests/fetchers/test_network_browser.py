@@ -15,12 +15,10 @@ from urllib.parse import urlsplit
 import pytest
 from patchright.async_api import Response as AsyncPatchrightResponse
 from patchright.sync_api import Response as PatchrightResponse
-from playwright.async_api import Response as AsyncPlaywrightResponse
-from playwright.sync_api import Response as PlaywrightResponse
 
 from scrapling.core._types import Any, Generator
 from scrapling.core.ai._network_formatting import _request_details
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, DynamicSession, StealthySession
+from scrapling.fetchers import AsyncStealthySession, StealthySession
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
 
@@ -242,7 +240,7 @@ def _options(**kwargs: Any) -> dict[str, Any]:
     }
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_network_disabled_by_default(session_type: Any) -> None:
     session = session_type()
     context = Mock()
@@ -255,7 +253,7 @@ def test_sync_network_disabled_by_default(session_type: Any) -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_network_disabled_by_default(session_type: Any) -> None:
     session = session_type()
     context = Mock()
@@ -338,7 +336,8 @@ def _check_later(network: Any, after_id: int) -> tuple[Any, Any, Any]:
     return post[0], status[0], network.search(url_pattern=r"/api/large$")[0]
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_network_browser_history(session_type: Any, network_url: str, release_pending: Event) -> None:
     with session_type(
         **_options(
@@ -407,8 +406,9 @@ def test_sync_network_browser_history(session_type: Any, network_url: str, relea
     assert post.headers["x-recorded"] == "response"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_network_browser_history(session_type: Any, network_url: str, release_pending: Event) -> None:
     async def initial_page(page: Any) -> None:
         await page.locator("body[data-initial=ready]").wait_for(state="attached")
@@ -493,7 +493,8 @@ def _check_eviction(network: Any) -> int:
     return last_id
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_network_browser_eviction_and_clear(session_type: Any, network_url: str) -> None:
     with session_type(**_options(max_recorded_requests=2)) as session:
         session.fetch(network_url + "/")
@@ -513,8 +514,9 @@ def test_sync_network_browser_eviction_and_clear(session_type: Any, network_url:
         assert records[0].meta["request_body"] == records[0].body == b"fresh"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_network_browser_eviction_and_clear(session_type: Any, network_url: str) -> None:
     async with session_type(**_options(max_recorded_requests=2)) as session:
         await session.fetch(network_url + "/")
@@ -537,7 +539,8 @@ async def test_async_network_browser_eviction_and_clear(session_type: Any, netwo
 PROXY_HTML = '<html><body><script>fetch("/api").then(response => response.json()).then(value => document.body.dataset.api = JSON.stringify(value));</script></body></html>'
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_network_browser_temporary_proxy_context(session_type: Any) -> None:
     def setup(page: Any) -> None:
         page.route(
@@ -564,8 +567,9 @@ def test_sync_network_browser_temporary_proxy_context(session_type: Any) -> None
     assert record.json() == {"temporary": True}
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_network_browser_temporary_proxy_context(session_type: Any) -> None:
     async def setup(page: Any) -> None:
         await page.route(
@@ -602,7 +606,8 @@ def _check_saved_override(network: Any, network_url: str) -> None:
     assert not network.search(url_pattern=r"/api/original$")
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_network_browser_keeps_route_overrides_after_close(
     session_type: Any, network_url: str, monkeypatch: Any
 ) -> None:
@@ -628,8 +633,9 @@ def test_sync_network_browser_keeps_route_overrides_after_close(
     assert f"<GET {network_url}/>" in logger.info.call_args.args[0]
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_network_browser_keeps_route_overrides_after_close(
     session_type: Any, network_url: str, monkeypatch: Any
 ) -> None:
@@ -655,7 +661,8 @@ async def test_async_network_browser_keeps_route_overrides_after_close(
     assert f"<GET {network_url}/>" in logger.info.call_args.args[0]
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 @pytest.mark.parametrize("target", ["page", "context", "session"])
 def test_sync_network_close_during_unfinished_response(
     session_type: Any, target: str, network_url: str, network_gates: dict[str, _Gate]
@@ -689,8 +696,9 @@ def test_sync_network_close_during_unfinished_response(
     assert saved.body == BLANK
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 @pytest.mark.parametrize("target", ["page", "context", "session"])
 async def test_async_network_close_during_unfinished_response(
     session_type: Any, target: str, network_url: str, network_gates: dict[str, _Gate]
@@ -737,7 +745,8 @@ def _check_burst(network: Any, cursor: int, path: str, expected_paths: list[str]
     return newer[0].meta["network_id"]
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_network_burst_completion_order_and_pagination(
     session_type: Any, network_url: str, network_gates: dict[str, _Gate]
 ) -> None:
@@ -775,8 +784,9 @@ def test_sync_network_burst_completion_order_and_pagination(
     assert all(record.json() == {"ok": True} for record in records)
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_network_burst_completion_order_and_pagination(
     session_type: Any, network_url: str, network_gates: dict[str, _Gate]
 ) -> None:
@@ -855,7 +865,8 @@ def _check_wire_bodies(
         assert records[path].body == b"" and "body_note" not in records[path].meta
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_network_wire_bodies_remain_readable_after_close(session_type: Any, network_url: str) -> None:
     with session_type(**_options()) as session:
         session.fetch(network_url + "/blank")
@@ -873,8 +884,9 @@ def test_sync_network_wire_bodies_remain_readable_after_close(session_type: Any,
     _check_wire_bodies(session.network, wire, native_bodies, native_texts)
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_network_wire_bodies_remain_readable_after_close(session_type: Any, network_url: str) -> None:
     async with session_type(**_options()) as session:
         await session.fetch(network_url + "/blank")
@@ -912,9 +924,8 @@ def _check_mime_bodies(network: Any, wire: dict[str, list[int]], reads: list[str
         assert records[path].json() == {"saved": True}
 
 
-@pytest.mark.parametrize(
-    ("session_type", "response_type"), [(DynamicSession, PlaywrightResponse), (StealthySession, PatchrightResponse)]
-)
+@pytest.mark.browser
+@pytest.mark.parametrize(("session_type", "response_type"), [(StealthySession, PatchrightResponse)])
 def test_sync_network_reads_only_text_bodies(
     session_type: Any, response_type: Any, network_url: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -938,10 +949,11 @@ def test_sync_network_reads_only_text_bodies(
     _check_mime_bodies(session.network, wire, reads)
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("session_type", "response_type"),
-    [(AsyncDynamicSession, AsyncPlaywrightResponse), (AsyncStealthySession, AsyncPatchrightResponse)],
+    [(AsyncStealthySession, AsyncPatchrightResponse)],
 )
 async def test_async_network_reads_only_text_bodies(
     session_type: Any, response_type: Any, network_url: str, monkeypatch: pytest.MonkeyPatch
@@ -993,7 +1005,8 @@ def _check_unlimited_search(network: Any, after_id: int) -> None:
     assert len(network.search(limit=None)) == 125 and len(network.search()) == 100
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_network_unlimited_search_respects_retention(session_type: Any, network_url: str) -> None:
     with session_type(**_options(max_recorded_requests=125)) as session:
         session.fetch(network_url + "/blank")
@@ -1008,8 +1021,9 @@ def test_sync_network_unlimited_search_respects_retention(session_type: Any, net
     _check_unlimited_search(session.network, after_id)
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_network_unlimited_search_respects_retention(session_type: Any, network_url: str) -> None:
     async with session_type(**_options(max_recorded_requests=125)) as session:
         await session.fetch(network_url + "/blank")

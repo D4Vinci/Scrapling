@@ -1,3 +1,8 @@
+---
+title: "Build Your First Python Web Crawler with Scrapling"
+description: "Build a spider that extracts items, follows pagination and exports results. Learn start URLs, callbacks, domain limits and robots.txt settings."
+---
+
 # Getting started
 
 ## Introduction
@@ -176,7 +181,7 @@ When enabled, the spider will:
 
 1. **Pre-fetch robots.txt** for all domains in `start_urls` before the crawl begins (concurrently).
 2. **Check every request** against the domain's robots.txt `Disallow` rules. Disallowed requests are silently dropped and counted in `stats.robots_disallowed_count`.
-3. **Respect `Crawl-delay` and `Request-rate` directives** by taking the maximum of the directive and your configured `download_delay`. This means robots.txt delays never reduce your configured delay, only increase it when needed.
+3. **Respect `Crawl-delay` and `Request-rate` directives** by taking the maximum of the directive and your configured `download_delay`. This means robots.txt delays never reduce your configured delay, only increase it when needed. When AutoThrottle is enabled, its maximum delay also caps this value. Set `autothrottle_max_delay` high enough to honor the required delay.
 
 Robots.txt files are fetched using the spider's default session and cached per domain for the entire crawl. Domains discovered mid-crawl (not in `start_urls`) have their robots.txt fetched on the first request to that domain.
 

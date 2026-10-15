@@ -1,3 +1,8 @@
+---
+title: "Scrape Shopify Product Data with Python"
+description: "Scrape a Shopify store's catalog with ShopifySpider. Set the store URL, collect product variants and inspect each item's fields."
+---
+
 # Platform Spider Templates
 
 Generic templates cover crawl *patterns* (follow links, walk sitemaps). Platform templates cover *platforms*: site builders that expose the same machine-readable structure across many independent websites, so the spider already knows where the data lives. You only point it at a domain.

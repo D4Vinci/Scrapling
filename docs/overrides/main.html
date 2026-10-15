@@ -6,7 +6,32 @@
   </a>
 {% endblock %}
 
+{% block htmltitle %}
+    {% if page.url == "index.html" and page.meta and page.meta.title %}
+        <title>{{ page.meta.title | e }}</title>
+    {% else %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
 {% block extrahead %}
+    {% set share_title = config.site_name %}
+    {% if page.meta and page.meta.title %}
+        {% set share_title = page.meta.title %}
+    {% elif page.title %}
+        {% set share_title = page.title %}
+    {% endif %}
+    {% set share_description = config.site_description %}
+    {% if page.meta and page.meta.description %}
+        {% set share_description = page.meta.description %}
+    {% endif %}
+    <meta property="og:title" content="{{ share_title | e }}" />
+    <meta property="og:description" content="{{ share_description | e }}" />
+    {% if page.canonical_url %}
+        <meta property="og:url" content="{{ page.canonical_url | e }}" />
+    {% endif %}
+    <meta name="twitter:title" content="{{ share_title | e }}" />
+    <meta name="twitter:description" content="{{ share_description | e }}" />
     <!-- Open Graph -->
     <meta property="og:image" content="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/main_cover.png" />
     <meta property="og:image:type" content="image/png" />

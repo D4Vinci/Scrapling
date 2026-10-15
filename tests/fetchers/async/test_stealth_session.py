@@ -1,4 +1,3 @@
-
 import pytest
 import asyncio
 
@@ -7,6 +6,7 @@ import pytest_httpbin
 from scrapling.fetchers import AsyncStealthySession
 
 
+@pytest.mark.browser
 @pytest_httpbin.use_class_based_httpbin
 @pytest.mark.asyncio
 class TestAsyncStealthySession:
@@ -24,11 +24,7 @@ class TestAsyncStealthySession:
         """Test concurrent requests with async session"""
         async with AsyncStealthySession(max_pages=3) as session:
             # Launch multiple concurrent requests
-            tasks = [
-                session.fetch(urls["basic"]),
-                session.fetch(urls["html"]),
-                session.fetch(urls["basic"])
-            ]
+            tasks = [session.fetch(urls["basic"]), session.fetch(urls["html"]), session.fetch(urls["basic"])]
 
             assert session.max_pages == 3
             assert session.page_pool.max_pages == 3
@@ -121,13 +117,16 @@ class TestAsyncStealthySession:
             assert results == ["blocked", "loaded"]
             assert session.page_pool.pages_count == 1
 
-    async def test_stealthy_session_with_options(self, urls):
+    @pytest.mark.parametrize(
+        "options",
+        [
+            {"max_pages": 1, "block_webrtc": True, "allow_webgl": True},
+            {"headless": False, "disable_resources": True, "extra_headers": {"X-Test": "value"}},
+        ],
+    )
+    async def test_stealthy_session_with_options(self, urls, options):
         """Test AsyncStealthySession with various options"""
-        async with AsyncStealthySession(
-                max_pages=1,
-                block_webrtc=True,
-                allow_webgl=True
-        ) as session:
+        async with AsyncStealthySession(**options) as session:
             response = await session.fetch(urls["html"])
             assert response.status == 200
 

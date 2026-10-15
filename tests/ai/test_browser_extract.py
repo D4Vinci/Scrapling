@@ -171,6 +171,7 @@ async def test_browser_extract_releases_the_page_after_failure() -> None:
     assert await server.browser_extract("browser") == SNAPSHOT
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("css_selector", [None, "main"])
 async def test_browser_extract_live_mcp_round_trip(css_selector: str | None) -> None:
@@ -527,6 +528,7 @@ async def test_browser_extract_search_errors_are_value_errors(kwargs: dict[str, 
     assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_extract_search_live_refs_and_state() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))

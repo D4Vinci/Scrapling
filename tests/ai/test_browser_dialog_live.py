@@ -8,6 +8,7 @@ from scrapling.core._types import Any
 from tests.ai.test_browser_wait import _browser
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "expression, reply, expected",
@@ -50,6 +51,7 @@ async def test_dialog_live_native_results(expression: str, reply: dict[str, Any]
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("trigger", ["selector", "coordinates", "keyboard"])
 async def test_dialog_live_queued_replies_and_unexpected_dialog(trigger: str) -> None:
@@ -83,6 +85,7 @@ async def test_dialog_live_queued_replies_and_unexpected_dialog(trigger: str) ->
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("slowly", [False, True])
 async def test_dialog_live_new_reply_after_previous_trigger(slowly: bool) -> None:
@@ -112,6 +115,7 @@ async def test_dialog_live_new_reply_after_previous_trigger(slowly: bool) -> Non
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_dialog_live_keyboard_trigger() -> None:
     async with _browser() as (client, session, page):
@@ -136,6 +140,7 @@ async def test_dialog_live_keyboard_trigger() -> None:
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_dialog_live_delayed_trigger_during_wait() -> None:
     async with _browser() as (client, session, page):
@@ -162,6 +167,7 @@ async def test_dialog_live_delayed_trigger_during_wait() -> None:
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("accept", [False, True])
 async def test_dialog_live_beforeunload_navigation(accept: bool) -> None:
@@ -199,6 +205,7 @@ async def test_dialog_live_beforeunload_navigation(accept: bool) -> None:
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("fail", [False, True])
 async def test_dialog_live_unused_replies_do_not_reach_later_calls(fail: bool) -> None:
@@ -223,6 +230,7 @@ async def test_dialog_live_unused_replies_do_not_reach_later_calls(fail: bool) -
         assert loads(await page.get_attribute("body", "data-result")) is False
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_dialog_live_cancel_removes_unused_reply() -> None:
     async with _browser() as (client, session, page):

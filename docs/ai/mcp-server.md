@@ -1,3 +1,8 @@
+---
+title: "Scrapling MCP Server: Setup and Scraping Workflows"
+description: "Connect an AI client to Scrapling for HTTP and browser scraping. Use sessions, saved login state, actions, focused extraction and API history."
+---
+
 # Scrapling MCP Server Guide
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
@@ -6,7 +11,7 @@ The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful W
 
 ## Features
 
-The Scrapling MCP Server provides fourteen tools for web scraping and browser interaction. One-shot tools fetch a single URL and close their own browser or client. Session tools keep cookies and settings across calls, so the AI can continue browser actions on the same tab and inspect network history.
+The Scrapling MCP Server provides sixteen tools for web scraping and browser interaction. One-shot tools fetch a single URL and close their own browser or client. Session tools keep cookies and settings across calls, so the AI can continue browser actions on the same tab and inspect network history.
 
 ### One-shot tools
 
@@ -19,10 +24,17 @@ The Scrapling MCP Server provides fourteen tools for web scraping and browser in
 ### Session tools
 
 #### 🔌 Session Management
-- **`browser_open`**: Create a persistent stealthy browser session that stays open across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns the session's effective `settings` for the AI agent (empty for CDP sessions).
-- **`open_request_session`**: Create a persistent HTTP requests session (no browser) used with `session_make_request`, keeping cookies, connections, and the browser fingerprint (`impersonate`) between requests. It returns the same `settings` receipt and shows in `list_sessions` as a `static` session.
+- **`browser_open`**: Create a persistent stealthy browser session that stays open across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns only `session_id` and `session_type`. Use `list_sessions` to see its effective `settings` (empty for CDP sessions).
+- **`open_request_session`**: Create a persistent HTTP requests session (no browser) used with `session_make_request`, keeping cookies, connections, and the browser fingerprint (`impersonate`) between requests. It returns only `session_id` and `session_type`, with type `static`. Use `list_sessions` to see its effective `settings`.
 - **`close_session`**: Close a persistent session (browser or requests) and free its resources.
 - **`list_sessions`**: List all active sessions with their details and `settings`.
+
+#### Browser State
+
+- **`browser_save_state`**: Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file, so login state can be reused after the browser session ends. Saving replaces an existing file.
+- **`browser_load_state`**: Restore a saved file into an open browser session, including before its first page load. This replaces the current stored state without closing or navigating existing tabs. Fetch or reload the page to use the restored login.
+
+State files are stored on the machine running the MCP server. They do not include `sessionStorage`, open tabs or browser settings.
 
 #### 🎯 Fetching Through a Session
 - **`browser_fetch`**: Render JavaScript and scrape a single URL through an open stealthy browser session, with fingerprint spoofing and Cloudflare Turnstile/Interstitial bypass. It can also capture a structured page snapshot with element references, positions, and sizes, helping the AI identify controls and plan mouse actions.
@@ -57,11 +69,11 @@ The Scrapling MCP Server provides fourteen tools for web scraping and browser in
 
 Response bodies are read and saved only for supported text `Content-Type` values, such as HTML, JSON, XML, or JavaScript. Binary, missing, or unrecognized content types keep request metadata and headers without reading or saving their response bodies. The browser still loads resources normally.
 
-Only completed requests are saved, including HTTP 4xx and 5xx responses. Failed and unfinished requests are omitted. Entries appear after capture finishes; reading history or closing the session does not wait. Captures still running at navigation or closure may be omitted. Saved bytes come from Playwright and can differ from the server's bytes. Recorded text follows Playwright's UTF-8 decoding when valid, with the declared charset as a fallback.
+Only completed requests are saved, including HTTP 4xx and 5xx responses. Failed and unfinished requests are omitted. Entries appear after capture finishes; reading history or closing the session does not wait. Captures still running at navigation or closure may be omitted. Saved bytes come from the Browser and can differ from the server's bytes. Recorded text follows Playwright's UTF-8 decoding when valid, with the declared charset as a fallback.
 
 ### Shadow DOM
 
-Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](../fetching/dynamic.md#shadow-dom) for selector examples and limits.
+Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](../fetching/stealthy.md#shadow-dom) for selector examples and limits.
 
 ### Key Capabilities
 - **Smart Content Extraction**: Convert web pages/elements to Markdown, HTML, or extract a clean version of the text content
@@ -71,7 +83,7 @@ Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to
 - **Browser Impersonation**: Mimic real browsers with TLS fingerprinting, real browser headers matching that version, and more
 - **Session Persistence**: Reuse browser sessions across multiple requests for better performance
 - **Ad Blocking**: All browser-based tools automatically block requests to ~3,500 known ad and tracker domains, saving tokens and speeding up page loads
-- **Prompt Injection Protection**: Automatic sanitization of hidden content (CSS-hidden elements, aria-hidden, zero-width characters, HTML comments, template tags) that could be used for prompt injection attacks
+- **Prompt Injection Protection**: Automatic sanitization of hidden content (inline hidden elements, aria-hidden, hidden slots, zero-width characters, HTML comments, template tags) that could be used for prompt injection attacks
 
 #### But why use Scrapling MCP Server instead of other available tools?
 
@@ -135,7 +147,7 @@ As per the [official article](https://modelcontextprotocol.io/quickstart/user), 
 1. **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 2. **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-To ensure it's working, use the full path to the `scrapling-mcp` executable. Open the terminal and execute the following command:
+To ensure it's working, use the full path to the `scrapling-mcp` executable:
 
 1. **MacOS**: `which scrapling-mcp`
 2. **Windows**: `where scrapling-mcp`
@@ -168,12 +180,12 @@ If you are using the Docker image, then it would be something like
 The same logic applies to [Cursor](https://cursor.com/docs/context/mcp), [WindSurf](https://windsurf.com/university/tutorials/configuring-first-mcp-server), and others.
 
 ### Claude Code
-Here it's much simpler to do. If you have [Claude Code](https://www.anthropic.com/claude-code) installed, open the terminal and execute the following command:
+Here it's much simpler to do. With [Claude Code](https://www.anthropic.com/claude-code):
 
 ```bash
 claude mcp add ScraplingServer "/Users/<MyUsername>/.venv/bin/scrapling-mcp"
 ```
-Same as above, to get Scrapling's executable path, open the terminal and execute the following command:
+To get Scrapling's executable path:
 
 1. **MacOS**: `which scrapling-mcp`
 2. **Windows**: `where scrapling-mcp`
@@ -217,7 +229,7 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, and `browser_network_request` as usual.
+The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, and `browser_load_state` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline
@@ -438,15 +450,15 @@ Here is some technical advice for you.
 - Increase timeout for slow-loading sites
 
 ### 4. Data Quality
-- Use `main_content_only=true` to avoid navigation/ads
+- Use `main_content_only=true` to select and clean the page's body
 - Choose an appropriate `extraction_type` for your use case
 
 ### 5. Prompt Injection Protection
 The MCP server automatically sanitizes scraped content when `main_content_only` is enabled (the default). This strips hidden content that malicious websites could use to inject instructions into the AI's context:
 
-- **CSS-hidden elements**: `display:none`, `visibility:hidden`, `opacity:0`, `font-size:0`, `height:0`, `width:0`
+- **Inline hidden styles**: `display:none`, `visibility:hidden`, and zero values for opacity, font size, height, width, max-height, and max-width
 - **Accessibility-hidden elements**: `aria-hidden="true"`
-- **Template tags**: `<template>` elements
+- **Template tags and hidden slots**: `<template>` and `<slot hidden>` elements
 - **HTML comments**: `<!-- ... -->`
 - **Zero-width characters**: Invisible unicode characters like zero-width spaces
 

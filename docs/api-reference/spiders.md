@@ -1,6 +1,6 @@
 ---
-search:
-  exclude: true
+title: "Spiders, Requests and Crawl Results API Reference"
+description: "Look up spider lifecycle hooks, request options, session management, crawl statistics and item export methods."
 ---
 
 # Spider Classes

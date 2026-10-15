@@ -2,7 +2,7 @@ from os import getenv
 from pathlib import Path
 
 import pytest
-from playwright.async_api import async_playwright
+from patchright.async_api import async_playwright
 
 from scrapling.engines.toolbelt.convertor import ResponseFactory
 from scrapling.engines.toolbelt.custom import Response
@@ -42,6 +42,7 @@ async def extract(html: str, setup: str) -> Response:
             await browser.close()
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_shadow_slots_follow_composed_order(tmp_path: Path) -> None:
     response = await extract(
@@ -81,6 +82,7 @@ async def test_shadow_slots_follow_composed_order(tmp_path: Path) -> None:
     assert not restored.css("#unused")
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("assigned", [False, True])
 async def test_shadow_forwarded_slots_and_nested_hosts(assigned: bool) -> None:

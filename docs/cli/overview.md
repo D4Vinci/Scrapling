@@ -1,3 +1,8 @@
+---
+title: "Scrapling CLI: Scrape from the Terminal"
+description: "Install Scrapling terminal tools and choose between extract commands, the interactive shell and the MCP server. Follow the guide for your task."
+---
+
 # Command Line Interface
 
 Since v0.3, Scrapling includes a powerful command-line interface that provides three main capabilities:
@@ -23,8 +28,8 @@ This section requires you to install the extra `shell` dependency group, like th
 ```bash
 pip install "scrapling[shell]"
 ```
-and the installation of the fetchers' dependencies with the following command
+For browser fetching, also install the browser dependencies:
 ```bash
 scrapling install
 ```
-This downloads all browsers, along with their system dependencies and fingerprint manipulation dependencies.
+This downloads Chromium and its system dependencies, and updates the TLD list. HTTP requests do not need this step.

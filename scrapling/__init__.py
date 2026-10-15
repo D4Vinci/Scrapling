@@ -7,7 +7,7 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from scrapling.parser import Selector, Selectors
     from scrapling.core.custom_types import AttributesHandler, TextHandler
-    from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
+    from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
 
 
 # Lazy import mapping
@@ -19,9 +19,8 @@ _LAZY_IMPORTS = {
     "TextHandler": ("scrapling.core.custom_types", "TextHandler"),
     "AsyncFetcher": ("scrapling.fetchers", "AsyncFetcher"),
     "StealthyFetcher": ("scrapling.fetchers", "StealthyFetcher"),
-    "DynamicFetcher": ("scrapling.fetchers", "DynamicFetcher"),
 }
-__all__ = ["Selector", "Fetcher", "AsyncFetcher", "StealthyFetcher", "DynamicFetcher"]
+__all__ = ["Selector", "Fetcher", "AsyncFetcher", "StealthyFetcher"]
 
 
 def __getattr__(name: str) -> Any:

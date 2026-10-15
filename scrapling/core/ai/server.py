@@ -127,23 +127,22 @@ class NetworkRequestsModel(BaseModel):
     dropped_count: int
 
 
-class SessionInfo(BaseModel):
-    """Information about an open browser session."""
+class SessionCreatedModel(BaseModel):
+    """Response returned when a new session is created."""
 
     session_id: str = Field(description="The unique identifier of the session.")
     session_type: SessionType = Field(description="The type of the session: 'stealthy' or 'static'.")
+
+
+class SessionInfo(SessionCreatedModel):
+    """Information about an open browser session."""
+
     created_at: str = Field(description="ISO timestamp of when the session was created.")
     is_alive: bool = Field(description="Whether the session is still alive and usable.")
     settings: Dict[str, Any] = Field(
         default_factory=dict,
         description="The effective settings this session was created with.",
     )
-
-
-class SessionCreatedModel(SessionInfo):
-    """Response returned when a new session is created."""
-
-    message: str = Field(description="A confirmation message.")
 
 
 class SessionClosedModel(BaseModel):
@@ -210,7 +209,7 @@ def _mcp_tool(tool: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[An
     async def wrapped(*args: Any, **kwargs: Any) -> Any:
         try:
             return await tool(*args, **kwargs)
-        except (ValueError, RuntimeError, TypeError, PatchrightError, CurlError) as error:
+        except (ValueError, RuntimeError, TypeError, OSError, PatchrightError, CurlError) as error:
             if isinstance(error, TypeError) and not isinstance(error.__cause__, MsgspecValidationError):
                 raise
             raise ToolError(str(error)) from error
@@ -261,16 +260,8 @@ class ScraplingMCPServer:
 
     def _register_session(self, session_id: str, session: Any, session_type: SessionType) -> SessionCreatedModel:
         """Store a started session and build its creation receipt."""
-        entry = _SessionEntry(session=session, session_type=session_type)
-        self._sessions[session_id] = entry
-        return SessionCreatedModel(
-            session_id=session_id,
-            session_type=session_type,
-            created_at=entry.created_at,
-            is_alive=True,
-            settings=_session_settings(session),
-            message=f"Session '{session_id}' ({session_type}) created successfully.",
-        )
+        self._sessions[session_id] = _SessionEntry(session=session, session_type=session_type)
+        return SessionCreatedModel(session_id=session_id, session_type=session_type)
 
     async def browser_open(
         self,
@@ -326,6 +317,26 @@ class ScraplingMCPServer:
         )
         await session.start()
         return self._register_session(session_id, session, "stealthy")
+
+    async def browser_save_state(self, session_id: str, path: NonEmptyString) -> str:
+        """Save browser cookies, local storage and IndexedDB as Playwright-compatible JSON. Excludes sessionStorage.
+
+        :param session_id: ID from `browser_open`; no page fetch required.
+        :param path: File on the MCP server host; relative to its working directory. Overwrites the file; parent must exist.
+        """
+        await self._get_session(session_id, ["stealthy"]).session.save_state(path)
+        return "State saved."
+
+    async def browser_load_state(self, session_id: str, path: NonEmptyString) -> str:
+        """Replace browser cookies, local storage and IndexedDB from a Playwright-compatible JSON file.
+
+        Leaves sessionStorage and open tabs unchanged. Fetch or reload pages to use the restored login.
+
+        :param session_id: ID from `browser_open`; no page fetch required.
+        :param path: File on the MCP server host; relative to its working directory.
+        """
+        await self._get_session(session_id, ["stealthy"]).session.load_state(path)
+        return "State loaded."
 
     async def open_request_session(
         self,
@@ -947,6 +958,18 @@ class ScraplingMCPServer:
             title="Open browser",
             structured_output=True,
             annotations=_SESSION_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            _mcp_tool(self.browser_save_state),
+            title="Save browser state",
+            structured_output=False,
+            annotations=_INPUT_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            _mcp_tool(self.browser_load_state),
+            title="Load browser state",
+            structured_output=False,
+            annotations=_INPUT_TOOL_ANNOTATIONS,
         )
         server.add_tool(
             _mcp_tool(self.open_request_session),

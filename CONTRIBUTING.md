@@ -111,7 +111,7 @@ pip3 install git+https://github.com/D4Vinci/Scrapling.git@dev
 ## Tests
 Scrapling includes a comprehensive test suite you can run with pytest. First, install all libraries and `pytest-plugins` listed in `tests/requirements.txt`. Then, running the tests will result in an output like this:
    ```bash
-   $ pytest tests -n auto
+   $ pytest tests -m "not asyncio and not browser" -n auto
    =============================== test session starts ===============================
    platform darwin -- Python 3.13.8, pytest-8.4.2, pluggy-1.6.0 -- /Users/<redacted>/.venv/bin/python3.13
    cachedir: .pytest_cache
@@ -128,13 +128,14 @@ Scrapling includes a comprehensive test suite you can run with pytest. First, in
    ```
 Here, `-n auto` runs tests in parallel across multiple processes to increase speed.
 
-**Note:** You may need to run browser tests sequentially (`DynamicFetcher`/`StealthyFetcher`) to avoid conflicts. To run non-browser tests in parallel and browser tests separately:
+**Note:** Run browser and async tests sequentially to avoid conflicts. To run the other tests in parallel and these groups separately:
 ```bash
 # Non-browser tests (parallel)
-pytest tests/ -k "not (DynamicFetcher or StealthyFetcher)" -n auto
+pytest tests/ -m "not asyncio and not browser" -n auto
 
 # Browser tests (sequential)
-pytest tests/ -k "DynamicFetcher or StealthyFetcher"
+pytest tests/ -m "browser"
+pytest tests/ -m "asyncio and not browser"
 ```
 
 Bonus: You can also see the test coverage with the `pytest` plugin below

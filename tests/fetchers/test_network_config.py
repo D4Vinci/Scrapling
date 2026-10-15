@@ -2,7 +2,7 @@ import pytest
 
 from scrapling.core._types import Any
 from scrapling.engines._browsers._validators import PlaywrightConfig, StealthConfig, validate
-from scrapling.fetchers import DynamicSession, StealthySession, AsyncDynamicSession, AsyncStealthySession
+from scrapling.fetchers import StealthySession, AsyncStealthySession
 
 
 @pytest.mark.parametrize("model", [PlaywrightConfig, StealthConfig])
@@ -21,7 +21,7 @@ def test_network_config_invalid(model: type[PlaywrightConfig], values: dict[str,
         validate(values, model)
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession, AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [StealthySession, AsyncStealthySession])
 @pytest.mark.parametrize("enabled", [False, True])
 def test_sessions_configure_one_network_history(session_type: Any, enabled: bool) -> None:
     session = session_type(record_requests=enabled, max_recorded_requests=7)

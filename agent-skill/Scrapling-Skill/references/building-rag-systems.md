@@ -1,4 +1,4 @@
-# Building RAG Systems
+# Building RAG Systems with Scrapling
 
 RAG pipelines are only as good as the text you feed them. Raw HTML wastes tokens on markup, navigation, scripts, and tracking noise, and it can even carry hidden prompt-injection content straight into your LLM. Scrapling turns pages and whole websites into clean, sanitized Markdown with no LLM in the loop, so your ingestion runs fast and costs nothing per page.
 
@@ -14,7 +14,7 @@ The `rag` extra installs the fetchers with Markdown conversion support (the `ai`
 
 ## One page to Markdown
 
-Every [Response](fetching/choosing.md) has a `markdown()` method:
+Every [Response](fetching/choosing.md#response-object) has a `markdown()` method:
 
 ```python
 from scrapling.fetchers import Fetcher
@@ -39,16 +39,16 @@ Two arguments control the output:
 markdown = Fetcher.get("https://example.com/docs/page").markdown(css_selector="article")
 ```
 
-Whatever you pass, scripts, styles, and hidden content are always removed before conversion. This is the same cleaning the [MCP server](mcp-server.md) uses to protect AI agents from prompt injection: CSS-hidden elements, `aria-hidden` elements, `<template>` tags, HTML comments, and zero-width characters never reach your model.
+Whatever you pass, scripts, styles, and hidden content are always removed before conversion. This is the same cleaning the [MCP server](mcp-server.md) uses to protect AI agents from prompt injection: inline hidden elements, `aria-hidden="true"` elements, hidden slots, `<template>` tags, HTML comments, and zero-width characters are removed before conversion. The MCP server uses this cleaning with `main_content_only=True`.
 
 ## A whole website to a Markdown corpus
 
-The `SiteToMarkdownSpider` template crawls a website and converts every page, powered by the [spiders framework](spiders/architecture.md), so you get concurrency, autothrottle, robots.txt compliance, and pause/resume for free:
+The `ContentSpider` template crawls a website and converts every page, powered by the [spiders framework](spiders/architecture.md), so you get concurrency, autothrottle, robots.txt compliance, and pause/resume for free:
 
 ```python
-from scrapling.spiders import SiteToMarkdownSpider
+from scrapling.spiders import ContentSpider
 
-class DocsSpider(SiteToMarkdownSpider):
+class DocsSpider(ContentSpider):
     name = "docs"
     start_urls = ["https://example.com/docs/"]
     allowed_domains = {"example.com"}
@@ -67,12 +67,12 @@ The template requires `allowed_domains` so the crawl stays bound to the target w
 - `output_dir`: When set, writes one Markdown file per page.
 - `max_pages`: Maximum number of pages to convert. Requests already queued when the cap hits may still be fetched, but they aren't converted. `0` (the default) disables it.
 
-Every page link inside `allowed_domains` is followed by default. Since the template builds on [CrawlSpider](spiders/generic-templates.md), override `rules()` with your own [LinkExtractor](spiders/generic-templates.md) to control the crawl: `allow` narrows it to the URL patterns you want, and `deny` drops the patterns you don't (login pages, tag listings, print views, etc.):
+Every page link inside `allowed_domains` is followed by default. Since the template builds on [CrawlSpider](spiders/generic-templates.md#crawlspider), override `rules()` with your own [LinkExtractor](spiders/generic-templates.md#linkextractor-reference) to control the crawl: `allow` narrows it to the URL patterns you want, and `deny` drops the patterns you don't (login pages, tag listings, print views, etc.):
 
 ```python
-from scrapling.spiders import CrawlRule, LinkExtractor, SiteToMarkdownSpider
+from scrapling.spiders import CrawlRule, LinkExtractor, ContentSpider
 
-class DocsSpider(SiteToMarkdownSpider):
+class DocsSpider(ContentSpider):
     name = "docs"
     start_urls = ["https://example.com/"]
     allowed_domains = {"example.com"}
@@ -90,7 +90,7 @@ The JSONL output plugs into any embedding pipeline. A minimal example:
 ```python
 import json
 
-with open("docs.jsonl") as f:
+with open("docs.jsonl", encoding="utf-8") as f:
     for line in f:
         page = json.loads(line)
         for chunk in split_into_chunks(page["markdown"]):
@@ -101,4 +101,4 @@ Use `css_selector` on the spider to cut boilerplate before chunking instead of c
 
 ## Interactive alternatives
 
-For conversational scraping instead of pipelines, the [MCP server](mcp-server.md) gives your AI chatbot the same Markdown extraction as tools, and this agent skill teaches coding agents to write this code themselves.
+For conversational scraping instead of pipelines, the [MCP server](mcp-server.md) gives your AI chatbot the same Markdown extraction as tools.

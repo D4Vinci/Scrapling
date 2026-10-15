@@ -510,6 +510,7 @@ async def _browser() -> AsyncGenerator[tuple[Client, Any, Any], None]:
             assert not closed.is_error
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_actions_fields_live_mixed_fields_and_clearing() -> None:
     async with _browser() as (client, session, page):
@@ -580,6 +581,7 @@ async def test_browser_actions_fields_live_mixed_fields_and_clearing() -> None:
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_actions_fields_live_slow_typing_and_field_delays() -> None:
     async with _browser() as (client, session, page):
@@ -634,6 +636,7 @@ async def test_browser_actions_fields_live_slow_typing_and_field_delays() -> Non
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("slowly", [False, True])
 async def test_browser_actions_fields_live_caret_selection_and_submit(slowly: bool) -> None:
@@ -681,6 +684,7 @@ async def test_browser_actions_fields_live_caret_selection_and_submit(slowly: bo
         ] == ["X", "Y", "z", "!"]
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_actions_fields_live_failed_field_preserves_prior_changes() -> None:
     async with _browser() as (client, session, page):

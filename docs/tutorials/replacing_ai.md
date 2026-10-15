@@ -1,8 +1,13 @@
+---
+title: "A Free Alternative to AI for Robust Web Scraping"
+description: "Scrapling got you covered: tackle changing pages, unstable selectors, anti-bot protection and pagination without an LLM call for every page."
+---
+
 # Scrapling: A Free Alternative to AI for Robust Web Scraping
 
 Web scraping has long been a vital tool for data extraction, indexing, and preparing datasets, among other purposes. But experienced users often encounter persistent issues that can hinder effectiveness. Recently, there's been a noticeable shift toward AI-based web scraping, driven by its potential to address these challenges.
 
-In this article, we will discuss these common issues, why companies are shifting toward that approach, the problems with that approach, and how scrapling solves them for you without the cost of using AI.
+In this article, we will discuss these common issues, why companies are shifting toward that approach, the problems with that approach, and how Scrapling solves them for you without the cost of using AI.
 
 ## Common issues and challenging goals
 
@@ -39,32 +44,27 @@ Unless money is irrelevant to you, you will try to find less expensive approache
 Scrapling can handle almost all issues you will face during Web Scraping, and the following updates will cover the rest carefully.
 
 ### Solving issue T1: Rapidly changing website structures
-That's why the [adaptive](https://scrapling.readthedocs.io/en/latest/parsing/adaptive.html) feature was made. You knew I would talk about it, and here we are :)
+That's why the [adaptive](../parsing/adaptive.md) feature was made. You knew I would talk about it, and here we are :)
 
 While Web Scraping, if you have the `adaptive` feature enabled, you can save any element's unique properties so you can find it again later when the website's structure changes. The most frustrating thing about changes is that anything about an element can change, so there's nothing to rely on. 
 
 That's how the adaptive feature works: it stores everything unique about an element. When the website structure changes, it returns the element with the highest similarity score of the previous element.
 
-I have already explained this in more detail, with many examples. Read more from [here](https://scrapling.readthedocs.io/en/latest/parsing/adaptive.html#how-the-adaptive-feature-works).
+I have already explained this in more detail, with many examples. Read more from [here](../parsing/adaptive.md#how-the-adaptive-scraping-feature-works).
 
 ### Solving issue T2: Unstable selectors
 If you have been doing Web scraping for a long enough time, you have likely experienced this once. I'm referring to a website that employs poor design patterns, built on raw HTML without any IDs/classes, or uses random class names with nothing else to rely on, etc...
 
 In these cases, standard selection methods with CSS/XPath selectors won't be optimal, and that's why Scrapling provides three more methods for Selection:
 
-1. [Selection by element content](https://scrapling.readthedocs.io/en/latest/parsing/selection.html#text-content-selection): Through text content (`find_by_text`) or regex that matches text content (`find_by_regex`)
-2. [Selecting elements similar to another element](https://scrapling.readthedocs.io/en/latest/parsing/selection.html#finding-similar-elements): You find an element, and we will do the rest!
-3. [Selecting elements by filters](https://scrapling.readthedocs.io/en/latest/parsing/selection.html#filters-based-searching): You specify conditions/filters that this element must fulfill, we find it!
+1. [Selection by element content](../parsing/selection.md#text-content-selection): Through text content (`find_by_text`) or regex that matches text content (`find_by_regex`)
+2. [Selecting elements similar to another element](../parsing/selection.md#finding-similar-elements): You find an element, and we will do the rest!
+3. [Selecting elements by filters](../parsing/selection.md#filters-based-searching): You specify conditions/filters that this element must fulfill, we find it!
 
 There is no need to explain any of these; click on the links, and it will be clear how Scrapling solves this.
 
 ### Solving issue T3: Increasingly complex anti-bot measures
-It's well known that creating an undetectable spider requires more than residential/mobile proxies and human-like behavior. It also needs a hard-to-detect browser, which Scrapling provides two main options to solve:
-
-1. [DynamicFetcher](https://scrapling.readthedocs.io/en/latest/fetching/dynamic.html) - This fetcher provides flexible browser automation with multiple configuration options and little under-the-hood stealth improvements.
-2. [StealthyFetcher](https://scrapling.readthedocs.io/en/latest/fetching/stealthy.html) - Because we live in a harsh world and you need to take [full measure instead of half-measures](https://www.youtube.com/watch?v=7BE4QcwX4dU), `StealthyFetcher` was born. This fetcher uses our stealthy browser -- a version of [DynamicFetcher](https://scrapling.readthedocs.io/en/latest/fetching/dynamic.html) that nearly bypasses all annoying anti-protections, provides tools to handle the rest, and automatically bypasses all types of Cloudflare's Turnstile/Interstitial!
-
-We keep improving these two with each update, so stay tuned :)
+Proxies and human-like actions alone may not be enough for protected websites. [StealthyFetcher](../fetching/stealthy.md) combines browser automation with fingerprint patches and options to handle anti-bot protection. Enable `solve_cloudflare=True` for Cloudflare Turnstile and Interstitial challenges.
 
 ### Solving issues B1 & B2: Extreme Website Diversity / Identifying Relevant Data
 
@@ -86,7 +86,7 @@ Then he said What about cases like this:
 So, I updated the code like this
 ```python
 price_element_container = page.find_by_regex(r'[\d,]+', first_match=True).parent # Adjusted the regex for this example
-full_price_data = price_element_container.get_all_text(strip=True)  # Returns '$45,000' in this case
+full_price_data = price_element_container.get_all_text(separator="", strip=True)  # Returns '$45,000' in this case
 ```
 This was enough for his use case. You can use the first regex, and if it doesn't find anything, use the following regex, and so on. Try to cover the most common patterns first, then the less common ones, and so on.
 It will be a bit boring, but it's definitely less expensive than AI.
@@ -94,7 +94,7 @@ It will be a bit boring, but it's definitely less expensive than AI.
 This example illustrates the point I aim to convey here. Not every challenge will need AI to be solved, but sometimes you need to be creative, and that might save you a lot of money.
 
 ### Solving issue B3: Pagination variations
-This issue, Scrapling currently doesn't have a direct method to automatically extract pagination's URLs for you, but it will be added with the upcoming updates :)
+Scrapling currently doesn't have a direct method to automatically identify pagination links for you. Its spiders follow pagination links with `response.follow()`.
 
 But you can handle most websites if you search for the most common patterns with `page.find_by_text('Next')['href']` or `page.find_by_text('load more')['href']` or selectors like `'a[href*="?page="]'` or `'a[href*="/page/"]'` - you get the idea.
 
@@ -103,13 +103,13 @@ For a quick comparison.
 
 | Aspect         | Scrapling                                                                  | AI-Based Tools (e.g., Browse AI, Oxylabs)                                  |
 |----------------|----------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| Cost Structure | Likely free or low-cost, no per-use fees                                   | Starts at $19/month (Browse AI) to $49/month (Oxylabs), scales with usage  |
+| Cost Structure | Free, with no per-use library fees                                   | Paid plans, with pricing based on the provider and usage  |
 | Setup Effort   | Requires little technical expertise, manual setup                          | Often no-code, easier for non-technical users                              |
 | Usage options  | Through code, terminal, or MCP server.                                     | Often through GUI or API, depending on the option the company is providing |
 | Scalability    | Depends on user implementation                                             | Built-in support for large-scale, managed services                         |
 | Adaptability   | High with features like `adaptive` and the non-selectors selection methods | High, automatic with AI, but costly for frequent changes                   |
 
-This table is based on pricing from [Browse AI Pricing](https://www.browse.ai/pricing) and [Oxylabs Web Scraper API Pricing](https://oxylabs.io/products/scraper-api/web/pricing)
+See current pricing at [Browse AI Pricing](https://www.browse.ai/pricing) and [Oxylabs Web Scraper API Pricing](https://oxylabs.io/products/scraper-api/web/pricing)
 
 ## Conclusion
 While AI offers powerful capabilities, its cost can be prohibitive for many Web scraping tasks. Scrapling provides a robust, flexible, and cost-effective toolkit for tackling the real-world challenges of both targeted and broad scraping, often eliminating the need for expensive AI solutions. You can build resilient scrapers more efficiently by leveraging features like `adaptive`, diverse selection methods, and advanced fetchers.

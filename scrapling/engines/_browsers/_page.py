@@ -1,8 +1,8 @@
 from threading import RLock
 from dataclasses import dataclass
 
-from playwright.sync_api._generated import Page as SyncPage
-from playwright.async_api._generated import Page as AsyncPage
+from patchright.sync_api import Page as SyncPage
+from patchright.async_api import Page as AsyncPage
 
 from scrapling.core._types import Optional, List, Literal, overload, TypeVar, Generic, cast
 
