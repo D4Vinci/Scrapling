@@ -265,38 +265,47 @@ class ScraplingMCPServer:
 
     async def browser_open(
         self,
-        session_id: Optional[str] = None,
-        headless: bool = True,
-        real_chrome: bool = False,
-        timezone_id: str | None = None,
-        locale: str | None = None,
-        useragent: Optional[str] = None,
-        proxy: Optional[str | Dict[str, str]] = None,
-        cdp_url: Optional[str] = None,
-        executable_path: Optional[str] = None,
-        cookies: Sequence[SetCookieParam] | None = None,
-        hide_canvas: bool = False,
-        block_webrtc: bool = False,
-        allow_webgl: bool = True,
-        additional_args: Optional[Dict] = None,
+        session_id: Annotated[
+            Optional[str], Field(description="Custom ID; a random 12-character hex ID if omitted.")
+        ] = None,
+        headless: Annotated[bool, Field(description="Hide the browser window.")] = True,
+        real_chrome: Annotated[bool, Field(description="Use locally installed Chrome.")] = False,
+        timezone_id: Annotated[
+            str | None, Field(description="Browser timezone; uses the system timezone if omitted.")
+        ] = None,
+        locale: Annotated[
+            str | None,
+            Field(description="Browser language, Accept-Language, and formatting locale; system default if omitted."),
+        ] = None,
+        useragent: Annotated[
+            Optional[str],
+            Field(description="User-Agent override; otherwise generated in headless mode, native in headful mode."),
+        ] = None,
+        proxy: Annotated[
+            Optional[str | Dict[str, str]],
+            Field(description="Proxy URL, or dictionary with server and optional username/password."),
+        ] = None,
+        cdp_url: Annotated[
+            Optional[str],
+            Field(
+                description="Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply."
+            ),
+        ] = None,
+        executable_path: Annotated[
+            Optional[str],
+            Field(description="Absolute Chromium-compatible executable path; overrides the server default."),
+        ] = None,
+        cookies: Annotated[
+            Sequence[SetCookieParam] | None, Field(description="Initial cookies as Playwright cookie dictionaries.")
+        ] = None,
+        hide_canvas: Annotated[bool, Field(description="Add noise to canvas operations.")] = False,
+        block_webrtc: Annotated[bool, Field(description="Disable non-proxied WebRTC UDP to reduce IP leaks.")] = False,
+        allow_webgl: Annotated[bool, Field(description="Enable WebGL; disabling it can trigger bot detection.")] = True,
+        additional_args: Annotated[
+            Optional[Dict], Field(description="Browser context options that override Scrapling settings.")
+        ] = None,
     ) -> SessionCreatedModel:
-        """Open a reusable stealthy browser session. Pass per-request options to `browser_fetch`.
-
-        :param session_id: Custom ID; a random 12-character hex ID if omitted.
-        :param headless: Hide the browser window.
-        :param real_chrome: Use locally installed Chrome.
-        :param timezone_id: Browser timezone; uses the system timezone if omitted.
-        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
-        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
-        :param proxy: Proxy URL, or dictionary with server and optional username/password.
-        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
-        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
-        :param cookies: Initial cookies as Playwright cookie dictionaries.
-        :param hide_canvas: Add noise to canvas operations.
-        :param block_webrtc: Disable non-proxied WebRTC UDP to reduce IP leaks.
-        :param allow_webgl: Enable WebGL; disabling it can trigger bot detection.
-        :param additional_args: Browser context options that override Scrapling settings.
-        """
+        """Open a reusable stealthy browser session. Pass per-request options to `browser_fetch`."""
         session_id = self._new_session_id(session_id)
         session = AsyncStealthySession(
             proxy=proxy,
@@ -318,39 +327,49 @@ class ScraplingMCPServer:
         await session.start()
         return self._register_session(session_id, session, "stealthy")
 
-    async def browser_save_state(self, session_id: str, path: NonEmptyString) -> str:
-        """Save browser cookies, local storage and IndexedDB as Playwright-compatible JSON. Excludes sessionStorage.
-
-        :param session_id: ID from `browser_open`; no page fetch required.
-        :param path: File on the MCP server host; relative to its working directory. Overwrites the file; parent must exist.
-        """
+    async def browser_save_state(
+        self,
+        session_id: Annotated[str, Field(description="ID from `browser_open`; no page fetch required.")],
+        path: Annotated[
+            NonEmptyString,
+            Field(
+                description="File on the MCP server host; relative to its working directory. Overwrites the file; parent must exist."
+            ),
+        ],
+    ) -> str:
+        """Save browser cookies, local storage and IndexedDB as Playwright-compatible JSON. Excludes sessionStorage."""
         await self._get_session(session_id, ["stealthy"]).session.save_state(path)
         return "State saved."
 
-    async def browser_load_state(self, session_id: str, path: NonEmptyString) -> str:
+    async def browser_load_state(
+        self,
+        session_id: Annotated[str, Field(description="ID from `browser_open`; no page fetch required.")],
+        path: Annotated[
+            NonEmptyString, Field(description="File on the MCP server host; relative to its working directory.")
+        ],
+    ) -> str:
         """Replace browser cookies, local storage and IndexedDB from a Playwright-compatible JSON file.
 
-        Leaves sessionStorage and open tabs unchanged. Fetch or reload pages to use the restored login.
-
-        :param session_id: ID from `browser_open`; no page fetch required.
-        :param path: File on the MCP server host; relative to its working directory.
-        """
+        Leaves sessionStorage and open tabs unchanged. Fetch or reload pages to use the restored login."""
         await self._get_session(session_id, ["stealthy"]).session.load_state(path)
         return "State loaded."
 
     async def open_request_session(
         self,
-        session_id: Optional[str] = None,
-        impersonate: _MCPImpersonateType = "chrome",
-        proxy: Optional[str] = None,
+        session_id: Annotated[
+            Optional[str], Field(description="Custom ID; a random 12-character hex ID if omitted.")
+        ] = None,
+        impersonate: Annotated[
+            _MCPImpersonateType,
+            Field(
+                description='Browser/version to impersonate; "chrome" uses the latest supported Chrome profile. Lists pick randomly per attempt; None disables impersonation.'
+            ),
+        ] = "chrome",
+        proxy: Annotated[
+            Optional[str], Field(description="Proxy URL for all session requests, optionally including credentials.")
+        ] = None,
     ) -> SessionCreatedModel:
-        """Open a reusable HTTP session for `session_make_request`, keeping cookies, connections, and request settings.
-
-        :param session_id: Custom ID; a random 12-character hex ID if omitted.
-        :param impersonate: Browser/version to impersonate; "chrome" uses the latest supported Chrome profile.
-            Lists pick randomly per attempt; None disables impersonation.
-        :param proxy: Proxy URL for all session requests, optionally including credentials.
-        """
+        """Open a reusable HTTP session for `session_make_request`, keeping cookies, connections, and request settings."""
         session_id = self._new_session_id(session_id)
         session = FetcherSession(impersonate=impersonate, proxy=proxy)
         await session.__aenter__()
@@ -358,12 +377,9 @@ class ScraplingMCPServer:
 
     async def close_session(
         self,
-        session_id: str,
+        session_id: Annotated[str, Field(description="Session ID to close.")],
     ) -> SessionClosedModel:
-        """Close a session and free its resources.
-
-        :param session_id: Session ID to close.
-        """
+        """Close a session and free its resources."""
         entry = self._sessions.pop(session_id, None)
         if entry is None:
             raise ValueError(f"Session '{session_id}' not found. Use list_sessions to see active sessions.")
@@ -392,20 +408,15 @@ class ScraplingMCPServer:
 
     async def browser_network_requests(
         self,
-        session_id: str,
-        url_pattern: Optional[str] = None,
-        include_static: bool = False,
-        after_id: Annotated[int, Field(ge=0)] = 0,
-        limit: Annotated[int, Field(ge=1, le=200)] = 50,
+        session_id: Annotated[str, Field(description="Browser session ID.")],
+        url_pattern: Annotated[Optional[str], Field(description="Filter URLs by regular expression.")] = None,
+        include_static: Annotated[bool, Field(description="Include successful non-API requests too.")] = False,
+        after_id: Annotated[
+            int, Field(ge=0, description="Return requests with a higher ID; use next_cursor for more.")
+        ] = 0,
+        limit: Annotated[int, Field(ge=1, le=200, description="Maximum requests to return.")] = 50,
     ) -> NetworkRequestsModel:
-        """List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens.
-
-        :param session_id: Browser session ID.
-        :param url_pattern: Filter URLs by regular expression.
-        :param include_static: Include successful non-API requests too.
-        :param after_id: Return requests with a higher ID; use next_cursor for more.
-        :param limit: Maximum requests to return.
-        """
+        """List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens."""
         network = self._get_session(session_id, ["stealthy"]).session.network
         records = network.search(
             url_pattern=url_pattern, include_static=include_static, after_id=after_id, limit=limit + 1
@@ -420,16 +431,13 @@ class ScraplingMCPServer:
 
     async def browser_network_request(
         self,
-        session_id: str,
-        request_id: Annotated[int, Field(ge=1)],
-        part: NetworkPart = "summary",
+        session_id: Annotated[str, Field(description="Browser session ID.")],
+        request_id: Annotated[int, Field(ge=1, description="ID from `browser_network_requests`.")],
+        part: Annotated[
+            NetworkPart, Field(description="Request summary, headers, or text body; incomplete headers are marked.")
+        ] = "summary",
     ) -> NetworkRequestModel:
-        """Read a complete saved request part without resending it, with structured data and availability notes.
-
-        :param session_id: Browser session ID.
-        :param request_id: ID from `browser_network_requests`.
-        :param part: Request summary, headers, or text body; incomplete headers are marked.
-        """
+        """Read a complete saved request part without resending it, with structured data and availability notes."""
         network = self._get_session(session_id, ["stealthy"]).session.network
         record = network.get(request_id)
         if record is None:
@@ -440,25 +448,31 @@ class ScraplingMCPServer:
 
     async def browser_extract(
         self,
-        session_id: str,
-        extraction_type: SessionExtractionType = "snapshot",
-        target: Optional[NonEmptyString] = None,
-        depth: Optional[int] = None,
-        boxes: bool = True,
-        search: Optional[NonEmptyString] = None,
-        main_content_only: bool = True,
+        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        extraction_type: Annotated[
+            SessionExtractionType, Field(description="Output format; defaults to an AI ARIA snapshot.")
+        ] = "snapshot",
+        target: Annotated[
+            Optional[NonEmptyString],
+            Field(description="Playwright selector or aria-ref=<ref> matching one element; omitted reads the page."),
+        ] = None,
+        depth: Annotated[
+            Optional[int],
+            Field(description="Snapshot depth before search; unlimited if omitted. Ignored for other formats."),
+        ] = None,
+        boxes: Annotated[
+            bool, Field(description="Include viewport bounding boxes in snapshots; ignored for other formats.")
+        ] = True,
+        search: Annotated[
+            Optional[NonEmptyString],
+            Field(description="Snapshot-only Python regex; case-sensitive unless (?i). No matches returns empty text."),
+        ] = None,
+        main_content_only: Annotated[
+            bool, Field(description="Clean body/target content for AI; ignored for snapshots.")
+        ] = True,
     ) -> str:
         """Read the current page or one element as snapshot, HTML, Markdown, or text without navigating.
-        Return plain text; snapshot search keeps refs, ancestor paths and three lines of nearby context.
-
-        :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param extraction_type: Output format; defaults to an AI ARIA snapshot.
-        :param target: Playwright selector or aria-ref=<ref> matching one element; omitted reads the page.
-        :param depth: Snapshot depth before search; unlimited if omitted. Ignored for other formats.
-        :param boxes: Include viewport bounding boxes in snapshots; ignored for other formats.
-        :param search: Snapshot-only Python regex; case-sensitive unless (?i). No matches returns empty text.
-        :param main_content_only: Clean body/target content for AI; ignored for snapshots.
-        """
+        Return plain text; snapshot search keeps refs, ancestor paths and three lines of nearby context."""
         pattern = None
         if search is not None:
             if extraction_type != "snapshot":
@@ -520,19 +534,24 @@ class ScraplingMCPServer:
 
     async def browser_actions(
         self,
-        session_id: str,
-        actions: Annotated[List[BrowserAction], Field(min_length=1)],
-        slowly: bool = False,
+        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        actions: Annotated[
+            List[BrowserAction],
+            Field(
+                min_length=1, description="Ordered actions; fields need target; mouse needs target or viewport (x, y)."
+            ),
+        ],
+        slowly: Annotated[
+            bool,
+            Field(
+                description="Fresh random delays: 50-150 ms per character, 100-300 ms between all actions, including waits."
+            ),
+        ] = False,
     ) -> str:
         """Run mouse, field, key, dialog, and wait actions in order; return plain text without a snapshot.
         Stop on the first error, identifying its action; partial effects remain. No retries.
         Element mouse targets auto-wait and scroll into view; coordinates and wheel do not wait for navigation or scrolling.
-        Cancelled/timed-out clicks attempt button release. Load waits observe the current document, not future navigation.
-
-        :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param actions: Ordered actions; fields need target; mouse needs target or viewport (x, y).
-        :param slowly: Fresh random delays: 50-150 ms per character, 100-300 ms between all actions, including waits.
-        """
+        Cancelled/timed-out clicks attempt button release. Load waits observe the current document, not future navigation."""
         _validate_actions(actions)
         with self._browser_page(session_id) as (_, page):
             await _run_actions(page, actions, slowly)
@@ -540,20 +559,22 @@ class ScraplingMCPServer:
 
     async def browser_evaluate(
         self,
-        session_id: str,
-        expression: NonEmptyString,
-        arg: Optional[Dict[str, Any]] = None,
-        isolated_context: bool = True,
+        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        expression: Annotated[NonEmptyString, Field(description="JavaScript expression or function to invoke.")],
+        arg: Annotated[
+            Optional[Dict[str, Any]],
+            Field(description="JSON object passed to the function; use properties for scalar or array values."),
+        ] = None,
+        isolated_context: Annotated[
+            bool,
+            Field(
+                description="False accesses the page's own JS variables; True uses a separate context with the same DOM."
+            ),
+        ] = True,
     ) -> str:
         """Run JavaScript on the current page, await promises, and return JSON text without a snapshot.
         Return JSON-compatible values; null/undefined become null. Script effects are not undone on failure.
-        Cancellation stops waiting, but may not stop the script.
-
-        :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param expression: JavaScript expression or function to invoke.
-        :param arg: JSON object passed to the function; use properties for scalar or array values.
-        :param isolated_context: False accesses the page's own JS variables; True uses a separate context with the same DOM.
-        """
+        Cancellation stops waiting, but may not stop the script."""
         with self._browser_page(session_id) as (_, page):
             return dumps(
                 await page.evaluate(expression, arg=arg, isolated_context=isolated_context),
@@ -564,25 +585,28 @@ class ScraplingMCPServer:
 
     async def browser_screenshot(
         self,
-        session_id: str,
-        image_type: ScreenshotType = "png",
-        full_page: bool = False,
-        quality: Optional[Annotated[int, Field(ge=0, le=100)]] = None,
-        timeout: NonNegativeFiniteFloat = 30000,
-        selector: Optional[NonEmptyString] = None,
-        ref: Optional[NonEmptyString] = None,
+        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        image_type: Annotated[ScreenshotType, Field(description="Image format.")] = "png",
+        full_page: Annotated[
+            bool, Field(description="Capture the full scrollable page; incompatible with selector/ref.")
+        ] = False,
+        quality: Annotated[
+            Optional[Annotated[int, Field(ge=0, le=100)]], Field(description="JPEG quality, 0-100; invalid for PNG.")
+        ] = None,
+        timeout: Annotated[
+            NonNegativeFiniteFloat, Field(description="Capture limit in milliseconds; 0 disables it.")
+        ] = 30000,
+        selector: Annotated[
+            Optional[NonEmptyString],
+            Field(description="Playwright selector matching one element; omit when using ref."),
+        ] = None,
+        ref: Annotated[
+            Optional[NonEmptyString],
+            Field(description="Current snapshot element reference; omit both targets for page capture."),
+        ] = None,
     ) -> List[ImageContent | TextContent]:
         """Capture the current page or one element without navigating; return the image and current URL.
-        Element capture waits and scrolls into view. Use browser_actions for other waits before capture.
-
-        :param session_id: ID from `browser_open`; call `browser_fetch` first.
-        :param image_type: Image format.
-        :param full_page: Capture the full scrollable page; incompatible with selector/ref.
-        :param quality: JPEG quality, 0-100; invalid for PNG.
-        :param timeout: Capture limit in milliseconds; 0 disables it.
-        :param selector: Playwright selector matching one element; omit when using ref.
-        :param ref: Current snapshot element reference; omit both targets for page capture.
-        """
+        Element capture waits and scrolls into view. Use browser_actions for other waits before capture."""
         if quality is not None and image_type != "jpeg":
             raise ValueError("'quality' is only valid when 'image_type' is 'jpeg'.")
         if selector is not None and ref is not None:
@@ -613,55 +637,55 @@ class ScraplingMCPServer:
 
     @staticmethod
     async def make_request(
-        url: str,
-        method: SUPPORTED_HTTP_METHODS = "GET",
-        impersonate: _MCPImpersonateType = "chrome",
-        extraction_type: extraction_types = "markdown",
-        css_selector: Optional[str] = None,
-        main_content_only: bool = True,
-        params: Optional[Dict] = None,
-        data: Optional[Dict[str, str] | str] = None,
-        json: Optional[Dict | List] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
-        cookies: Optional[Dict[str, str]] = None,
-        timeout: Optional[int | float] = 30,
-        follow_redirects: FollowRedirects = "safe",
-        max_redirects: int = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        proxy: Optional[str] = None,
-        proxy_auth: Optional[Dict[str, str]] = None,
-        auth: Optional[Dict[str, str]] = None,
-        verify: Optional[bool] = True,
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
+        url: Annotated[str, Field(description="URL to fetch.")],
+        method: Annotated[SUPPORTED_HTTP_METHODS, Field(description="HTTP method.")] = "GET",
+        impersonate: Annotated[
+            _MCPImpersonateType,
+            Field(
+                description='Browser/version to impersonate; "chrome" uses the latest supported Chrome profile. Lists pick randomly per attempt; None disables impersonation.'
+            ),
+        ] = "chrome",
+        extraction_type: Annotated[extraction_types, Field(description="Content output format.")] = "markdown",
+        css_selector: Annotated[
+            Optional[str], Field(description="Select matching elements after `main_content_only` filtering.")
+        ] = None,
+        main_content_only: Annotated[
+            bool, Field(description="Sanitize <body> content before selection; False uses the full document.")
+        ] = True,
+        params: Annotated[Optional[Dict], Field(description="Query parameters.")] = None,
+        data: Annotated[Optional[Dict[str, str] | str], Field(description="Form or raw body; ignored for GET.")] = None,
+        json: Annotated[Optional[Dict | List], Field(description="JSON body; ignored for GET.")] = None,
+        headers: Annotated[Optional[Mapping[str, Optional[str]]], Field(description="Request headers.")] = None,
+        cookies: Annotated[Optional[Dict[str, str]], Field(description="Request cookies.")] = None,
+        timeout: Annotated[Optional[int | float], Field(description="Timeout in seconds.")] = 30,
+        follow_redirects: Annotated[
+            FollowRedirects,
+            Field(
+                description='"safe" blocks redirects to private/internal IPs; True allows all; False disables redirects.'
+            ),
+        ] = "safe",
+        max_redirects: Annotated[int, Field(description="Redirect limit; -1 means unlimited.")] = 30,
+        retries: Annotated[
+            Optional[int], Field(description="Maximum attempts, including the first; None or values below 1 send once.")
+        ] = 3,
+        retry_delay: Annotated[Optional[int], Field(description="Seconds between retries.")] = 1,
+        proxy: Annotated[Optional[str], Field(description="Proxy URL, optionally including credentials.")] = None,
+        proxy_auth: Annotated[
+            Optional[Dict[str, str]], Field(description='Proxy basic auth: {"username": ..., "password": ...}.')
+        ] = None,
+        auth: Annotated[
+            Optional[Dict[str, str]], Field(description='Basic auth: {"username": ..., "password": ...}.')
+        ] = None,
+        verify: Annotated[Optional[bool], Field(description="Verify TLS certificates.")] = True,
+        http3: Annotated[
+            Optional[bool], Field(description="Use HTTP/3; may conflict with browser impersonation.")
+        ] = False,
+        stealthy_headers: Annotated[
+            Optional[bool],
+            Field(description="Fill missing browser headers and use a Google referer if none was supplied."),
+        ] = True,
     ) -> ResponseModel:
-        """Make an HTTP request without JavaScript. Suitable for low-to-mid protection.
-
-        :param url: URL to fetch.
-        :param method: HTTP method.
-        :param impersonate: Browser/version to impersonate; "chrome" uses the latest supported Chrome profile.
-            Lists pick randomly per attempt; None disables impersonation.
-        :param extraction_type: Content output format.
-        :param css_selector: Select matching elements after `main_content_only` filtering.
-        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
-        :param params: Query parameters.
-        :param data: Form or raw body; ignored for GET.
-        :param json: JSON body; ignored for GET.
-        :param headers: Request headers.
-        :param cookies: Request cookies.
-        :param timeout: Timeout in seconds.
-        :param follow_redirects: "safe" blocks redirects to private/internal IPs; True allows all; False disables redirects.
-        :param max_redirects: Redirect limit; -1 means unlimited.
-        :param retries: Maximum attempts, including the first; None or values below 1 send once.
-        :param retry_delay: Seconds between retries.
-        :param proxy: Proxy URL, optionally including credentials.
-        :param proxy_auth: Proxy basic auth: {"username": ..., "password": ...}.
-        :param auth: Basic auth: {"username": ..., "password": ...}.
-        :param verify: Verify TLS certificates.
-        :param http3: Use HTTP/3; may conflict with browser impersonation.
-        :param stealthy_headers: Fill missing browser headers and use a Google referer if none was supplied.
-        """
+        """Make an HTTP request without JavaScript. Suitable for low-to-mid protection."""
         normalized_proxy_auth = _normalize_credentials(proxy_auth)
         normalized_auth = _normalize_credentials(auth)
 
@@ -691,64 +715,81 @@ class ScraplingMCPServer:
 
     async def browser_fetch_once(
         self,
-        url: str,
-        extraction_type: extraction_types = "markdown",
-        css_selector: Optional[str] = None,
-        main_content_only: bool = True,
-        headless: bool = True,
-        google_search: bool = True,
-        real_chrome: bool = False,
-        wait: int | float = 0,
-        proxy: Optional[str | Dict[str, str]] = None,
-        timezone_id: str | None = None,
-        locale: str | None = None,
-        extra_headers: Optional[Dict[str, str]] = None,
-        useragent: Optional[str] = None,
-        hide_canvas: bool = False,
-        cdp_url: Optional[str] = None,
-        executable_path: Optional[str] = None,
-        timeout: int | float = 30000,
-        disable_resources: bool = False,
-        wait_selector: Optional[str] = None,
-        cookies: Sequence[SetCookieParam] | None = None,
-        network_idle: bool = False,
-        wait_selector_state: SelectorWaitStates = "attached",
-        block_webrtc: bool = False,
-        allow_webgl: bool = True,
-        solve_cloudflare: bool = False,
-        additional_args: Optional[Dict] = None,
-        pierce_shadow: bool = False,
+        url: Annotated[str, Field(description="URL to fetch.")],
+        extraction_type: Annotated[extraction_types, Field(description="Content output format.")] = "markdown",
+        css_selector: Annotated[
+            Optional[str], Field(description="Select matching elements after `main_content_only` filtering.")
+        ] = None,
+        main_content_only: Annotated[
+            bool, Field(description="Sanitize <body> content before selection; False uses the full document.")
+        ] = True,
+        headless: Annotated[bool, Field(description="Hide the browser window.")] = True,
+        google_search: Annotated[
+            bool, Field(description="Set a Google referer, overriding any supplied referer.")
+        ] = True,
+        real_chrome: Annotated[bool, Field(description="Use locally installed Chrome.")] = False,
+        wait: Annotated[
+            int | float, Field(description="Extra milliseconds after the page is ready, before returning.")
+        ] = 0,
+        proxy: Annotated[
+            Optional[str | Dict[str, str]],
+            Field(description="Proxy URL, or dictionary with server and optional username/password."),
+        ] = None,
+        timezone_id: Annotated[
+            str | None, Field(description="Browser timezone; uses the system timezone if omitted.")
+        ] = None,
+        locale: Annotated[
+            str | None,
+            Field(description="Browser language, Accept-Language, and formatting locale; system default if omitted."),
+        ] = None,
+        extra_headers: Annotated[Optional[Dict[str, str]], Field(description="Additional request headers.")] = None,
+        useragent: Annotated[
+            Optional[str],
+            Field(description="User-Agent override; otherwise generated in headless mode, native in headful mode."),
+        ] = None,
+        hide_canvas: Annotated[bool, Field(description="Add noise to canvas operations.")] = False,
+        cdp_url: Annotated[
+            Optional[str],
+            Field(
+                description="Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply."
+            ),
+        ] = None,
+        executable_path: Annotated[
+            Optional[str],
+            Field(description="Absolute Chromium-compatible executable path; overrides the server default."),
+        ] = None,
+        timeout: Annotated[
+            int | float, Field(description="Navigation and page-operation timeout in milliseconds.")
+        ] = 30000,
+        disable_resources: Annotated[
+            bool,
+            Field(
+                description="Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests."
+            ),
+        ] = False,
+        wait_selector: Annotated[
+            Optional[str], Field(description="Wait for the first CSS match; continue if the wait fails.")
+        ] = None,
+        cookies: Annotated[
+            Sequence[SetCookieParam] | None, Field(description="Initial cookies as Playwright cookie dictionaries.")
+        ] = None,
+        network_idle: Annotated[
+            bool, Field(description="Try to wait for 500 ms without network activity; continue if the wait fails.")
+        ] = False,
+        wait_selector_state: Annotated[
+            SelectorWaitStates, Field(description="Target state of `wait_selector`.")
+        ] = "attached",
+        block_webrtc: Annotated[bool, Field(description="Disable non-proxied WebRTC UDP to reduce IP leaks.")] = False,
+        allow_webgl: Annotated[bool, Field(description="Enable WebGL; disabling it can trigger bot detection.")] = True,
+        solve_cloudflare: Annotated[
+            bool, Field(description="Attempt to solve Cloudflare Turnstile/interstitial challenges before returning.")
+        ] = False,
+        additional_args: Annotated[
+            Optional[Dict], Field(description="Browser context options that override Scrapling settings.")
+        ] = None,
+        pierce_shadow: Annotated[bool, Field(description="Include open Shadow DOM content.")] = False,
     ) -> ResponseModel:
-        """Fetch a page with a stealth browser and JavaScript rendering.
-
-        :param url: URL to fetch.
-        :param extraction_type: Content output format.
-        :param css_selector: Select matching elements after `main_content_only` filtering.
-        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
-        :param headless: Hide the browser window.
-        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
-        :param useragent: User-Agent override; otherwise generated in headless mode, native in headful mode.
-        :param cookies: Initial cookies as Playwright cookie dictionaries.
-        :param solve_cloudflare: Attempt to solve Cloudflare Turnstile/interstitial challenges before returning.
-        :param allow_webgl: Enable WebGL; disabling it can trigger bot detection.
-        :param pierce_shadow: Include open Shadow DOM content.
-        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
-        :param wait: Extra milliseconds after the page is ready, before returning.
-        :param timeout: Navigation and page-operation timeout in milliseconds.
-        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
-        :param timezone_id: Browser timezone; uses the system timezone if omitted.
-        :param locale: Browser language, Accept-Language, and formatting locale; system default if omitted.
-        :param wait_selector_state: Target state of `wait_selector`.
-        :param real_chrome: Use locally installed Chrome.
-        :param hide_canvas: Add noise to canvas operations.
-        :param block_webrtc: Disable non-proxied WebRTC UDP to reduce IP leaks.
-        :param cdp_url: Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.
-        :param executable_path: Absolute Chromium-compatible executable path; overrides the server default.
-        :param google_search: Set a Google referer, overriding any supplied referer.
-        :param extra_headers: Additional request headers.
-        :param proxy: Proxy URL, or dictionary with server and optional username/password.
-        :param additional_args: Browser context options that override Scrapling settings.
-        """
+        """Fetch a page with a stealth browser and JavaScript rendering."""
         async with AsyncStealthySession(
             wait=wait,
             proxy=proxy,
@@ -782,44 +823,56 @@ class ScraplingMCPServer:
 
     async def browser_fetch(
         self,
-        url: str,
-        session_id: str,
-        extraction_type: SessionExtractionType = "markdown",
-        css_selector: Optional[str] = None,
-        main_content_only: bool = True,
-        wait: int | float = 0,
-        timeout: int | float = 30000,
-        google_search: bool = True,
-        network_idle: bool = False,
-        load_dom: bool = True,
-        disable_resources: bool = False,
-        wait_selector: Optional[str] = None,
-        wait_selector_state: SelectorWaitStates = "attached",
-        extra_headers: Optional[Dict[str, str]] = None,
-        blocked_domains: Optional[Set[str]] = None,
-        solve_cloudflare: bool = False,
-        pierce_shadow: bool = False,
+        url: Annotated[str, Field(description="URL to fetch.")],
+        session_id: Annotated[str, Field(description="ID from `browser_open`.")],
+        extraction_type: Annotated[
+            SessionExtractionType, Field(description="Content output format; snapshots include element bounding boxes.")
+        ] = "markdown",
+        css_selector: Annotated[
+            Optional[str],
+            Field(description="Select after `main_content_only` filtering; snapshots require exactly one match."),
+        ] = None,
+        main_content_only: Annotated[
+            bool,
+            Field(description="Sanitize <body> before selection; False uses the full document. Ignored for snapshots."),
+        ] = True,
+        wait: Annotated[
+            int | float, Field(description="Extra milliseconds after the page is ready, before returning.")
+        ] = 0,
+        timeout: Annotated[
+            int | float, Field(description="Navigation and page-operation timeout in milliseconds.")
+        ] = 30000,
+        google_search: Annotated[
+            bool, Field(description="Set a Google referer, overriding any supplied referer.")
+        ] = True,
+        network_idle: Annotated[
+            bool, Field(description="Try to wait for 500 ms without network activity; continue if the wait fails.")
+        ] = False,
+        load_dom: Annotated[bool, Field(description="Wait for DOMContentLoaded.")] = True,
+        disable_resources: Annotated[
+            bool,
+            Field(
+                description="Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests."
+            ),
+        ] = False,
+        wait_selector: Annotated[
+            Optional[str], Field(description="Wait for the first CSS match; continue if the wait fails.")
+        ] = None,
+        wait_selector_state: Annotated[
+            SelectorWaitStates, Field(description="Target state of `wait_selector`.")
+        ] = "attached",
+        extra_headers: Annotated[Optional[Dict[str, str]], Field(description="Additional request headers.")] = None,
+        blocked_domains: Annotated[
+            Optional[Set[str]], Field(description="Block requests to these domains and their subdomains.")
+        ] = None,
+        solve_cloudflare: Annotated[
+            bool, Field(description="Attempt to solve Cloudflare Turnstile/interstitial challenges.")
+        ] = False,
+        pierce_shadow: Annotated[
+            bool, Field(description="Include open Shadow DOM content; ignored for snapshots.")
+        ] = False,
     ) -> ResponseModel:
-        """Fetch a URL in an open stealthy browser session. Options apply only to this request.
-
-        :param url: URL to fetch.
-        :param session_id: ID from `browser_open`.
-        :param extraction_type: Content output format; snapshots include element bounding boxes.
-        :param css_selector: Select after `main_content_only` filtering; snapshots require exactly one match.
-        :param main_content_only: Sanitize <body> before selection; False uses the full document. Ignored for snapshots.
-        :param wait: Extra milliseconds after the page is ready, before returning.
-        :param timeout: Navigation and page-operation timeout in milliseconds.
-        :param google_search: Set a Google referer, overriding any supplied referer.
-        :param pierce_shadow: Include open Shadow DOM content; ignored for snapshots.
-        :param network_idle: Try to wait for 500 ms without network activity; continue if the wait fails.
-        :param load_dom: Wait for DOMContentLoaded.
-        :param disable_resources: Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.
-        :param wait_selector: Wait for the first CSS match; continue if the wait fails.
-        :param wait_selector_state: Target state of `wait_selector`.
-        :param extra_headers: Additional request headers.
-        :param blocked_domains: Block requests to these domains and their subdomains.
-        :param solve_cloudflare: Attempt to solve Cloudflare Turnstile/interstitial challenges.
-        """
+        """Fetch a URL in an open stealthy browser session. Options apply only to this request."""
         entry = self._get_session(session_id, expected_type=["stealthy"])
         fetch_params = dict(
             wait=wait,
@@ -846,50 +899,46 @@ class ScraplingMCPServer:
 
     async def session_make_request(
         self,
-        url: str,
-        session_id: str,
-        method: SUPPORTED_HTTP_METHODS = "GET",
-        extraction_type: extraction_types = "markdown",
-        css_selector: Optional[str] = None,
-        main_content_only: bool = True,
-        params: Optional[Dict] = None,
-        data: Optional[Dict[str, str] | str] = None,
-        json: Optional[Dict | List] = None,
-        headers: Optional[Mapping[str, Optional[str]]] = None,
-        cookies: Optional[Dict[str, str]] = None,
-        timeout: Optional[int | float] = 30,
-        follow_redirects: FollowRedirects = "safe",
-        max_redirects: int = 30,
-        retries: Optional[int] = 3,
-        retry_delay: Optional[int] = 1,
-        auth: Optional[Dict[str, str]] = None,
-        verify: Optional[bool] = True,
-        http3: Optional[bool] = False,
-        stealthy_headers: Optional[bool] = True,
+        url: Annotated[str, Field(description="URL to fetch.")],
+        session_id: Annotated[str, Field(description="HTTP session ID from `open_request_session`.")],
+        method: Annotated[SUPPORTED_HTTP_METHODS, Field(description="HTTP method.")] = "GET",
+        extraction_type: Annotated[extraction_types, Field(description="Content output format.")] = "markdown",
+        css_selector: Annotated[
+            Optional[str], Field(description="Select matching elements after `main_content_only` filtering.")
+        ] = None,
+        main_content_only: Annotated[
+            bool, Field(description="Sanitize <body> content before selection; False uses the full document.")
+        ] = True,
+        params: Annotated[Optional[Dict], Field(description="Query parameters.")] = None,
+        data: Annotated[Optional[Dict[str, str] | str], Field(description="Form or raw body; ignored for GET.")] = None,
+        json: Annotated[Optional[Dict | List], Field(description="JSON body; ignored for GET.")] = None,
+        headers: Annotated[Optional[Mapping[str, Optional[str]]], Field(description="Request headers.")] = None,
+        cookies: Annotated[Optional[Dict[str, str]], Field(description="Request cookies.")] = None,
+        timeout: Annotated[Optional[int | float], Field(description="Timeout in seconds.")] = 30,
+        follow_redirects: Annotated[
+            FollowRedirects,
+            Field(
+                description='"safe" blocks redirects to private/internal IPs; True allows all; False disables redirects.'
+            ),
+        ] = "safe",
+        max_redirects: Annotated[int, Field(description="Redirect limit; -1 means unlimited.")] = 30,
+        retries: Annotated[
+            Optional[int], Field(description="Maximum attempts, including the first; None or values below 1 send once.")
+        ] = 3,
+        retry_delay: Annotated[Optional[int], Field(description="Seconds between retries.")] = 1,
+        auth: Annotated[
+            Optional[Dict[str, str]], Field(description='Basic auth: {"username": ..., "password": ...}.')
+        ] = None,
+        verify: Annotated[Optional[bool], Field(description="Verify TLS certificates.")] = True,
+        http3: Annotated[
+            Optional[bool], Field(description="Use HTTP/3; may conflict with browser impersonation.")
+        ] = False,
+        stealthy_headers: Annotated[
+            Optional[bool],
+            Field(description="Fill missing browser headers and use a Google referer if none was supplied."),
+        ] = True,
     ) -> ResponseModel:
-        """Make an HTTP request using the session's cookies, connections, impersonation, and proxy. Options apply to this request.
-
-        :param url: URL to fetch.
-        :param session_id: HTTP session ID from `open_request_session`.
-        :param method: HTTP method.
-        :param extraction_type: Content output format.
-        :param css_selector: Select matching elements after `main_content_only` filtering.
-        :param main_content_only: Sanitize <body> content before selection; False uses the full document.
-        :param params: Query parameters.
-        :param data: Form or raw body; ignored for GET.
-        :param json: JSON body; ignored for GET.
-        :param headers: Request headers.
-        :param cookies: Request cookies.
-        :param timeout: Timeout in seconds.
-        :param follow_redirects: "safe" blocks redirects to private/internal IPs; True allows all; False disables redirects.
-        :param max_redirects: Redirect limit; -1 means unlimited.
-        :param retries: Maximum attempts, including the first; None or values below 1 send once.
-        :param retry_delay: Seconds between retries.
-        :param auth: Basic auth: {"username": ..., "password": ...}.
-        :param verify: Verify TLS certificates.
-        :param http3: Use HTTP/3; may conflict with browser impersonation.
-        :param stealthy_headers: Fill missing browser headers and use a Google referer if none was supplied.
-        """
+        """Make an HTTP request using the session's cookies, connections, impersonation, and proxy. Options apply to this request."""
         entry = self._get_session(session_id, expected_type=["static"])
 
         request_kwargs: Dict[str, Any] = dict(
