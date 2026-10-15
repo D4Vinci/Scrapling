@@ -4,6 +4,9 @@ description: "Scrapling - Effortless Web Scraping for the Modern Web!"
 ---
 
 <style>
+.md-typeset h1 {
+  display: none;
+}
 [data-md-color-scheme="default"] .only-dark { display: none; }
 [data-md-color-scheme="slate"] .only-light { display: none; }
 </style>
