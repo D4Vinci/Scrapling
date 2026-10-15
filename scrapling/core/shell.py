@@ -235,6 +235,10 @@ class CurlParser:
 
         headers, cookies = _ParseHeaders(parsed_args.header)
 
+        # `-A` only applies when `-H` didn't already set a user agent
+        if parsed_args.user_agent and not any(key.lower() == "user-agent" for key in headers):
+            headers["User-Agent"] = parsed_args.user_agent
+
         if parsed_args.cookie:
             # We are focusing on the string format from DevTools.
             try:
@@ -349,6 +353,9 @@ class CurlParser:
                 return None
 
             request_args = request._asdict()
+            if isinstance(request_args["proxy"], dict):
+                # The fetchers take a single proxy URL, not a per-scheme dict
+                request_args["proxy"] = request_args["proxy"].get("https") or request_args["proxy"].get("http")
             method = request_args.pop("method").strip().lower()
             if method in self._supported_methods:
                 request_args["json"] = request_args.pop("json_data")
