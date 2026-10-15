@@ -13,6 +13,7 @@
 
 <p align="center">
     <a href="https://trendshift.io/repositories/14244" target="_blank"><img src="https://trendshift.io/api/badge/repositories/14244" alt="D4Vinci%2FScrapling | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+    <a href="https://www.star-history.com/d4vinci/scrapling"><img src="https://api.star-history.com/badge?repo=D4Vinci/Scrapling&type=rank" alt="Star History Rank" style="height: 55px;" height="55"/></a>
     <br/>
     <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_AR.md"><img alt="README بالعربية" title="README بالعربية" src="https://img.shields.io/badge/Arabic-DFE0E5"></a>
     <a href="https://github.com/D4Vinci/Scrapling/blob/main/docs/README_ES.md"><img alt="README en Español" src="https://img.shields.io/badge/Español-DFE0E5"></a>
