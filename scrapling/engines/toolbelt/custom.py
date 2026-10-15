@@ -178,7 +178,6 @@ class BaseFetcher:
     huge_tree: bool = True
     adaptive: Optional[bool] = False
     storage: Any = SQLiteStorageSystem
-    keep_cdata: Optional[bool] = False
     storage_args: Optional[Dict] = None
     keep_comments: Optional[bool] = False
     adaptive_domain: str = ""
@@ -186,7 +185,6 @@ class BaseFetcher:
         "huge_tree",
         "adaptive",
         "storage",
-        "keep_cdata",
         "storage_args",
         "keep_comments",
         "adaptive_domain",
@@ -209,7 +207,6 @@ class BaseFetcher:
         return dict(
             huge_tree=cls.huge_tree,
             keep_comments=cls.keep_comments,
-            keep_cdata=cls.keep_cdata,
             adaptive=cls.adaptive,
             storage=cls.storage,
             storage_args=cls.storage_args,
@@ -220,7 +217,7 @@ class BaseFetcher:
     def configure(cls, **kwargs):
         """Set multiple arguments for the parser at once globally
 
-        :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, keep_cdata, adaptive, storage, storage_args, adaptive_domain
+        :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, adaptive, storage, storage_args, adaptive_domain
         """
         for key, value in kwargs.items():
             key = key.strip().lower()
@@ -243,7 +240,6 @@ class BaseFetcher:
         parser_arguments = dict(
             huge_tree=cls.huge_tree,
             keep_comments=cls.keep_comments,
-            keep_cdata=cls.keep_cdata,
             adaptive=cls.adaptive,
             storage=cls.storage,
             storage_args=cls.storage_args,

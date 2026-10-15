@@ -29,7 +29,6 @@ Then you have the arguments for parsing adjustments or adjusting/manipulating th
 
 - **encoding**: This is the encoding that will be used while parsing the HTML. The default is `UTF-8`.
 - **keep_comments**: This tells the library whether to keep HTML comments while parsing the page. It's disabled by default because it can cause issues with your scraping in various ways.
-- **keep_cdata**: Same logic as the HTML comments. [cdata](https://stackoverflow.com/questions/7092236/what-is-cdata-in-html) is removed by default for cleaner HTML.
 
 The `huge_tree` and `root` arguments are advanced parsing options.
 

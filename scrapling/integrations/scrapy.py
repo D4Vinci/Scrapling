@@ -28,7 +28,7 @@ def convert_response(response: ScrapyResponse, **selector_config: Any) -> Respon
 
     :param response: The Scrapy response to convert.
     :param selector_config: Configuration options passed to the `Response` constructor, like
-        `huge_tree`, `keep_comments`, `keep_cdata`, `adaptive`, `storage`, `storage_args`, and `adaptive_domain`.
+        `huge_tree`, `keep_comments`, `adaptive`, `storage`, `storage_args`, and `adaptive_domain`.
     :return: A Scrapling `Response` object ready for parsing.
     """
     request = response.request
@@ -75,7 +75,7 @@ def scrapling_response(func: Optional[Callable] = None, **selector_config: Any) 
 
     :param func: The decorated callback. Left empty in the parameterized form.
     :param selector_config: Configuration options passed to the `Response` constructor, like
-        `huge_tree`, `keep_comments`, `keep_cdata`, `adaptive`, `storage`, `storage_args`, and `adaptive_domain`.
+        `huge_tree`, `keep_comments`, `adaptive`, `storage`, `storage_args`, and `adaptive_domain`.
     :return: The wrapped callback. The wrapper keeps the callback's kind, name, and docstring,
         so Scrapy's callback introspection keeps working.
     """

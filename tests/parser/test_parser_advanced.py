@@ -67,7 +67,6 @@ class TestAdvancedSelectors:
                     <p>First paragraph</p>
                     <!-- Comment -->
                     <p>Second paragraph</p>
-                    <![CDATA[Some CDATA content]]>
                     <div class="nested">
                         <span id="special">Special content</span>
                         <span>Regular content</span>
@@ -81,24 +80,13 @@ class TestAdvancedSelectors:
         </html>
         """
 
-    def test_comment_and_cdata_handling(self, complex_html):
-        """Test handling of comments and CDATA"""
-        # With comments/CDATA kept
-        page = Selector(
-            complex_html,
-            keep_comments=True,
-            keep_cdata=True
-        )
-        content = page.body
+    def test_comment_handling(self, complex_html):
+        """Test handling of comments"""
+        page = Selector(complex_html, keep_comments=True)
+        content = page.html_content
         assert "Comment" in content
-        assert "CDATA" in content
 
-        # Without comments/CDATA
-        page = Selector(
-            complex_html,
-            keep_comments=False,
-            keep_cdata=False
-        )
+        page = Selector(complex_html, keep_comments=False)
         content = page.html_content
         assert "Comment" not in content
 
