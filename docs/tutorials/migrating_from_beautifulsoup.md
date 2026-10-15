@@ -1,3 +1,8 @@
+---
+title: "Move from BeautifulSoup to Scrapling"
+description: "Map common BeautifulSoup selection, text, attribute and navigation tasks to Scrapling. Review API differences with practical examples."
+---
+
 # Migrating from BeautifulSoup to Scrapling
 
 If you're already familiar with BeautifulSoup, you're in for a treat. Scrapling is much faster, provides the same parsing capabilities as BS, adds additional parsing capabilities not found in BS, and introduces powerful new features for fetching and handling modern web pages. This guide will help you quickly adapt your existing BeautifulSoup code to leverage Scrapling's capabilities.
@@ -14,7 +19,7 @@ You will notice that some shortcuts in BeautifulSoup are missing in Scrapling, w
 | Finding a single element                                        | `element = soup.find('div', class_='example')`                                                                | `element = page.find('div', class_='example')`                                    |
 | Finding multiple elements                                       | `elements = soup.find_all('div', class_='example')`                                                           | `elements = page.find_all('div', class_='example')`                               |
 | Finding a single element (Example 2)                            | `element = soup.find('div', attrs={"class": "example"})`                                                      | `element = page.find('div', {"class": "example"})`                                |
-| Finding a single element (Example 3)                            | `element = soup.find(re.compile("^b"))`                                                                       | `element = page.find(re.compile("^b"))`<br/>`element = page.find_by_regex(r"^b")` |
+| Finding a single element (Example 3)                            | `element = soup.find(re.compile("^b"))`                                                                       | `element = page.find(lambda e: re.search(r"^b", e.tag) is not None)` |
 | Finding a single element (Example 4)                            | `element = soup.find(lambda e: len(list(e.children)) > 0)`                                                    | `element = page.find(lambda e: len(e.children) > 0)`                              |
 | Finding a single element (Example 5)                            | `element = soup.find(["a", "b"])`                                                                             | `element = page.find(["a", "b"])`                                                 |
 | Find element by its text content                                | `element = soup.find(text="some text")`                                                                       | `element = page.find_by_text("some text", partial=False)`                         |
@@ -41,8 +46,9 @@ You will notice that some shortcuts in BeautifulSoup are missing in Scrapling, w
 | Get previous sibling of an element                              | `prev_element = element.previous_sibling`                                                                     | `prev_element = element.previous`                                                 |
 | Navigating to children                                          | `children = list(element.children)`                                                                           | `children = element.children`                                                     |
 | Get all descendants of an element                               | `children = list(element.descendants)`                                                                        | `children = element.below_elements`                                               |
-| Filtering a group of elements that satisfies a condition        | `group = soup.find('p', 'story').css.filter('a')`                                                             | `group = page.find_all('p', 'story').filter(lambda p: p.tag == 'a')`              |
+| Select anchors inside story paragraphs        | `group = soup.select('p.story a')`                                                             | `group = page.css('p.story a')`              |
 
+A compiled regex passed directly to Scrapling's `find()` or `find_all()` matches element text, not tag names. Use the lambda shown above for tag names, or `page.find_by_regex(r"^b")` for direct text.
 
 ¹ **Note:** BS4's `find_previous`/`find_all_previous` searches all preceding elements in document order, while Scrapling's `path` only returns ancestors (the parent chain). These are not exact equivalents, but ancestor search covers the most common use case.
 
@@ -75,7 +81,7 @@ from scrapling import Fetcher
 url = 'https://example.com'
 page = Fetcher.get(url)
 
-links = page.css('a::attr(href)')
+links = page.css('a::attr(href)').getall()
 for link in links:
     print(link)
 ```

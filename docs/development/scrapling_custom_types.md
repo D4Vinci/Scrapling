@@ -1,3 +1,8 @@
+---
+title: "Use Scrapling Text and Attribute Types in Your Code"
+description: "Use TextHandler, TextHandlers and AttributesHandler outside the parser. Learn their standard Python base types, JSON helpers and read-only attributes."
+---
+
 # Using Scrapling's custom types
 
 > You can take advantage of the custom-made types for Scrapling and use them outside the library if you want. It's better than copying their code, after all :)
@@ -7,13 +12,13 @@
 from scrapling.core.custom_types import TextHandler, AttributesHandler
 
 somestring = TextHandler('{}')
-somestring.json()  # '{}'
+parsed = somestring.json()
 somedict_1 = AttributesHandler({'a': 1})
 somedict_2 = AttributesHandler(a=1)
 ```
 
 Note that `TextHandler` is a subclass of Python's `str`, so all standard operations/methods that work with Python strings will work.
-If you want to check the type in your code, it's better to use Python's built-in `issubclass` function.
+`parsed` is the dictionary `{}`, not the string `'{}'`. To check an instance, use `isinstance(somestring, TextHandler)`. To check a class, use `issubclass(TextHandler, str)`.
 
 The class `AttributesHandler` is a subclass of `collections.abc.Mapping`, so it's immutable (read-only), and all operations are inherited from it. The data passed can be accessed later through the `_data` property, but be careful; it's of type `types.MappingProxyType`, so it's immutable (read-only) as well (faster than `collections.abc.Mapping` by fractions of seconds).
 

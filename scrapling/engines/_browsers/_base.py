@@ -1,20 +1,20 @@
 from time import time
+from pathlib import Path
 from asyncio import sleep as asyncio_sleep, Lock
 from contextlib import contextmanager, asynccontextmanager, suppress
 
-from playwright.sync_api._generated import Page
-from playwright.sync_api import (
+from patchright.sync_api import Page
+from patchright.sync_api import (
     Frame,
     BrowserContext,
     Response as SyncPlaywrightResponse,
 )
-from playwright.async_api._generated import Page as AsyncPage
-from playwright.async_api import (
+from patchright.async_api import Page as AsyncPage
+from patchright.async_api import (
     Frame as AsyncFrame,
     Response as AsyncPlaywrightResponse,
     BrowserContext as AsyncBrowserContext,
 )
-from playwright._impl._errors import Error as PlaywrightError
 
 from scrapling.parser import Selector
 from scrapling.engines._browsers._page import PageInfo, PagePool
@@ -63,6 +63,24 @@ class SyncSession:
 
     def start(self) -> None:
         pass
+
+    def save_state(self, path: str | Path) -> None:
+        """Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Does not save sessionStorage.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        self.context.storage_state(path=Path(path), indexed_db=True)
+
+    def load_state(self, path: str | Path) -> None:
+        """Replace cookies, local storage and IndexedDB from a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Fetch or reload pages to use the restored login.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        self.context.set_storage_state(path)
 
     def close_pages(self) -> None:
         """Close every open tab in the session's pool. The next request opens a fresh tab."""
@@ -159,7 +177,7 @@ class SyncSession:
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
             page.wait_for_load_state("networkidle", timeout=timeout)
-        except (PlaywrightError, Exception):
+        except Exception:
             pass
 
     def _wait_for_page_stability(self, page: Page | Frame, load_dom: bool, network_idle: bool):
@@ -251,6 +269,24 @@ class AsyncSession:
 
     async def start(self) -> None:
         pass
+
+    async def save_state(self, path: str | Path) -> None:
+        """Save cookies, local storage and IndexedDB to a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Does not save sessionStorage.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        await self.context.storage_state(path=Path(path), indexed_db=True)
+
+    async def load_state(self, path: str | Path) -> None:
+        """Replace cookies, local storage and IndexedDB from a Playwright-compatible JSON file.
+
+        Requires a started session without proxy rotation. Fetch or reload pages to use the restored login.
+        """
+        if not self._is_alive or self.context is None:
+            raise RuntimeError("Session state requires a started browser session without proxy rotation")
+        await self.context.set_storage_state(path)
 
     async def close_pages(self) -> None:
         """Close every open tab in the session's pool. The next request opens a fresh tab."""
@@ -367,7 +403,7 @@ class AsyncSession:
         """Wait for the page to become idle (no network activity) even if there are never-ending requests."""
         try:
             await page.wait_for_load_state("networkidle", timeout=timeout)
-        except (PlaywrightError, Exception):
+        except Exception:
             pass
 
     async def _wait_for_page_stability(self, page: AsyncPage | AsyncFrame, load_dom: bool, network_idle: bool):
@@ -545,12 +581,6 @@ class BaseSessionMixin:
             context_options["proxy"] = construct_proxy_dict(proxy)
 
         return context_options
-
-
-class DynamicSessionMixin(BaseSessionMixin):
-    def __validate__(self, **params):
-        self._config = self.__validate_routine__(params, model=PlaywrightConfig)
-        self.__generate_options__()
 
 
 class StealthySessionMixin(BaseSessionMixin):

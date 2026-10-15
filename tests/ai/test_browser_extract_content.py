@@ -244,6 +244,7 @@ async def test_browser_extract_content_cancellation_releases_page(target: str | 
     page.close.assert_not_called()
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_extract_content_live_formats_preserve_current_page() -> None:
     async with _browser() as (client, session, page):
@@ -300,6 +301,7 @@ async def test_browser_extract_content_live_formats_preserve_current_page() -> N
         assert before["scroll"] == 500 and not navigations and not requests
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_extract_content_live_selectors_refs_and_snapshot_scope() -> None:
     async with _browser() as (client, session, page):
@@ -327,6 +329,7 @@ async def test_browser_extract_content_live_selectors_refs_and_snapshot_scope() 
         assert session.page_pool.pages[0].state == "ready"
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_extract_content_live_target_errors_allow_next_call() -> None:
     async with _browser() as (client, session, page):

@@ -1,11 +1,12 @@
 from os import getenv
 
 import pytest
-from playwright.async_api import async_playwright
+from patchright.async_api import async_playwright
 
 from scrapling.engines.toolbelt.convertor import SHADOW_SNAPSHOT_JS, ResponseFactory
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_shadow_snapshot_preserves_source_content() -> None:
     async with async_playwright() as driver:
@@ -25,7 +26,8 @@ async def test_shadow_snapshot_preserves_source_content() -> None:
             baseline = await page.content()
             plain = await ResponseFactory.from_async_playwright_response(page, first, None, {}, pierce_shadow=True)
             assert plain.body.decode() == baseline
-            await page.evaluate("""() => {
+            await page.evaluate(
+                """() => {
                 const root = document.querySelector('#host').attachShadow({mode: 'open'});
                 root.innerHTML = '<div id="inside">SHADOW<slot name="label">WRONG-FALLBACK</slot><slot name="missing">USED-FALLBACK</slot><div id="nested"></div><svg viewBox="0 0 10 10"><path d="M0 0"/></svg></div>';
                 let host = root.querySelector('#nested');
@@ -73,17 +75,19 @@ async def test_shadow_snapshot_preserves_source_content() -> None:
                     root.append(scopedHost);
                     scopedHost.attachShadow({mode: 'open', customElementRegistry: registry}).innerHTML = '<shadow-scoped-counter>SCOPED-VALUE</shadow-scoped-counter>';
                 }
-            }""")
+            }""",
+                isolated_context=False,
+            )
             before = await page.content()
             shadow_before = await page.locator("#host").evaluate("node => node.shadowRoot.innerHTML")
-            count = await page.evaluate("globalThis.shadowConstructed")
+            count = await page.evaluate("globalThis.shadowConstructed", isolated_context=False)
             noscript = await page.locator("#noscript").evaluate("node => node.outerHTML")
             response = await ResponseFactory.from_async_playwright_response(
                 page, first, None, {"keep_comments": True}, pierce_shadow=True
             )
             assert await page.content() == before
             assert await page.locator("#host").evaluate("node => node.shadowRoot.innerHTML") == shadow_before
-            assert await page.evaluate("globalThis.shadowConstructed") == count
+            assert await page.evaluate("globalThis.shadowConstructed", isolated_context=False) == count
             assert response.css("#host > shadow-root > #inside").get()
             assert all(response.css(f"#level-{i}::text").get() == f"LEVEL-{i}" for i in range(4))
             assert response.css("#data::text").get() == '{"name":"A&B<C>","title":"Bürger"}'
@@ -106,7 +110,7 @@ async def test_shadow_snapshot_preserves_source_content() -> None:
             assert "LEVEL-3" in markdown
             assert "INACTIVE" not in markdown
             assert "FAKE-SHADOW" not in markdown
-            if await page.evaluate("typeof CustomElementRegistry === 'function'"):
+            if await page.evaluate("typeof CustomElementRegistry === 'function'", isolated_context=False):
                 assert response.css("shadow-scoped-counter::text").get() == "SCOPED-VALUE"
             await page.set_content(
                 '<!DOCTYPE html><html><body><template id="only"><div></div></template></body></html>'

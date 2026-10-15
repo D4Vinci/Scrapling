@@ -4,10 +4,9 @@ from functools import lru_cache
 
 from lxml.etree import LxmlError
 from curl_cffi.requests import Response as CurlResponse
-from playwright._impl._errors import Error as PlaywrightError
-from patchright._impl._errors import Error as PatchrightError
-from playwright.sync_api import Page as SyncPage, Response as SyncResponse
-from playwright.async_api import Page as AsyncPage, Response as AsyncResponse
+from patchright.sync_api import Error as PatchrightError
+from patchright.sync_api import Page as SyncPage, Response as SyncResponse
+from patchright.async_api import Page as AsyncPage, Response as AsyncResponse
 
 from scrapling.core.utils import log
 from .custom import Response, StatusText
@@ -175,7 +174,7 @@ class ResponseFactory:
         are also derived from the provided response headers or reasonable defaults.
         Additionally, the page content and cookies are extracted for further use.
 
-        :param page: A synchronous Playwright `Page` instance that represents the current browser page. Required to retrieve the page's URL, cookies, and content.
+        :param page: A synchronous Patchright `Page` instance that represents the current browser page. Required to retrieve the page's URL, cookies, and content.
         :param final_response: The last response received for the given request from the Playwright instance. Typically used as the main response object to derive status, headers, and other metadata.
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into
@@ -310,7 +309,7 @@ class ResponseFactory:
         for _ in range(max_retries):
             try:
                 return page.content() or ""
-            except (PlaywrightError, PatchrightError):
+            except PatchrightError:
                 page.wait_for_timeout(500)
         raise RuntimeError(f"Failed to retrieve the page content after retrying for {max_retries * 500}ms.")
 
@@ -325,7 +324,7 @@ class ResponseFactory:
         for _ in range(max_retries):
             try:
                 return (await page.content()) or ""
-            except (PlaywrightError, PatchrightError):
+            except PatchrightError:
                 await page.wait_for_timeout(500)
         raise RuntimeError(f"Failed to retrieve the page content after retrying for {max_retries * 500}ms.")
 
@@ -350,7 +349,7 @@ class ResponseFactory:
         are also derived from the provided response headers or reasonable defaults.
         Additionally, the page content and cookies are extracted for further use.
 
-        :param page: An asynchronous Playwright `Page` instance that represents the current browser page. Required to retrieve the page's URL, cookies, and content.
+        :param page: An asynchronous Patchright `Page` instance that represents the current browser page. Required to retrieve the page's URL, cookies, and content.
         :param final_response: The last response received for the given request from the Playwright instance. Typically used as the main response object to derive status, headers, and other metadata.
         :param first_response: An earlier or initial Playwright `Response` object that may serve as a fallback response in the absence of the final one.
         :param parser_arguments: A dictionary containing additional arguments needed for parsing or further customization of the returned `Response`. These arguments are dynamically unpacked into

@@ -208,6 +208,7 @@ async def _browser() -> AsyncGenerator[tuple[Client, Any, Any], None]:
             assert not closed.is_error
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_actions_keys_live_focus_editing_and_shortcuts() -> None:
     async with _browser() as (client, session, page):

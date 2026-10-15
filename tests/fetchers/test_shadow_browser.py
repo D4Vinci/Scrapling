@@ -4,7 +4,7 @@ import pytest
 
 from scrapling.core._types import Any
 from scrapling.engines.toolbelt.custom import Response
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, DynamicSession, StealthySession
+from scrapling.fetchers import AsyncStealthySession, StealthySession
 
 
 HTML = """<!DOCTYPE html><html><head><title>Shadow test</title></head><body>
@@ -48,7 +48,8 @@ async def setup_async_page(page: Any) -> None:
     await page.route("**/*", lambda route: route.fulfill(status=200, content_type="text/html", body=HTML))
 
 
-@pytest.mark.parametrize("session_type", [DynamicSession, StealthySession])
+@pytest.mark.browser
+@pytest.mark.parametrize("session_type", [StealthySession])
 def test_sync_shadow_browser(session_type: Any) -> None:
     with session_type(
         executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"),
@@ -60,8 +61,9 @@ def test_sync_shadow_browser(session_type: Any) -> None:
         assert not session.fetch("https://shadow.test/", pierce_shadow=False).css("#shadow")
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
-@pytest.mark.parametrize("session_type", [AsyncDynamicSession, AsyncStealthySession])
+@pytest.mark.parametrize("session_type", [AsyncStealthySession])
 async def test_async_shadow_browser(session_type: Any) -> None:
     async with session_type(
         executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"),

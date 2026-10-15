@@ -249,6 +249,7 @@ async def test_browser_evaluate_reserves_page_until_cancelled(cancel_mode: str) 
     page.close.assert_not_called()
 
 
+@pytest.mark.browser
 @pytest.mark.asyncio
 async def test_browser_evaluate_live_expressions_promises_context_and_page_state() -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))

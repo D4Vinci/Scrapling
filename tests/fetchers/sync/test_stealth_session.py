@@ -3,7 +3,6 @@ import pytest
 import pytest_httpbin
 
 from scrapling.engines.constants import DEFAULT_ARGS, STEALTH_ARGS
-from scrapling.engines._browsers._controllers import DynamicSession
 from scrapling.engines._browsers._stealth import StealthySession, __CF_PATTERN__
 
 
@@ -19,7 +18,7 @@ class TestStealthConstants:
         test_urls = [
             "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/123456",
             "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/orchestrate/jsch/v1",
-            "http://challenges.cloudflare.com/cdn-cgi/challenge-platform/scripts/abc"
+            "http://challenges.cloudflare.com/cdn-cgi/challenge-platform/scripts/abc",
         ]
 
         for url in test_urls:
@@ -29,7 +28,7 @@ class TestStealthConstants:
         non_matching_urls = [
             "https://example.com/challenge",
             "https://cloudflare.com/something",
-            "https://challenges.cloudflare.com/other-path"
+            "https://challenges.cloudflare.com/other-path",
         ]
 
         for url in non_matching_urls:
@@ -69,20 +68,12 @@ class TestLaunchFlags:
         ):
             assert flag in with_extra, f"{flag} lost to extra_flags"
 
-    def test_dynamic_session_keeps_its_defaults(self):
-        """DynamicSession passes no bundle, so it never lost a flag - a control that
-        held before this fix and pins the path the fix also touches."""
-        session = DynamicSession(headless=True, extra_flags=[self.USER_FLAG])
-        args = list(session._browser_options["args"])
 
-        assert self.USER_FLAG in args
-        assert set(DEFAULT_ARGS) <= set(args), "a default flag was dropped"
-
-
+@pytest.mark.browser
 @pytest_httpbin.use_class_based_httpbin
 class TestStealthySession:
-
     """All the code is tested in the async version tests, so no need to repeat it here. The async class inherits from this one."""
+
     @pytest.fixture(autouse=True)
     def setup_urls(self, httpbin):
         """Fixture to set up URLs for testing"""
@@ -105,7 +96,6 @@ class TestStealthySession:
             timeout=60000,
             cookies=[{"name": "test", "value": "123", "domain": "example.com", "path": "/"}],
         ) as session:
-
             assert session.max_pages == 1
             assert session._config.headless is True
             assert session._config.disable_resources is True
@@ -115,7 +105,7 @@ class TestStealthySession:
             assert session.context is not None
 
             # Test Cloudflare detection
-            for cloudflare_type in ('managed', 'interactive', 'non-interactive'):
+            for cloudflare_type in ("managed", "interactive", "non-interactive"):
                 page_content = f"""
                 <html>
                     <script>

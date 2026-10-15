@@ -121,7 +121,7 @@ def install(force):  # pragma: no cover
     if force or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists():
         __Execute(
             [python_executable, "-m", "playwright", "install", "chromium"],
-            "Playwright browsers",
+            "Installing browsers",
         )
         __Execute(
             [
@@ -131,7 +131,7 @@ def install(force):  # pragma: no cover
                 "install-deps",
                 "chromium",
             ],
-            "Playwright dependencies",
+            "Installing browsers dependencies",
         )
         from tld.utils import update_tld_names
 
@@ -291,7 +291,7 @@ def _common_http_options(f):
 
 
 def _common_browser_options(f):
-    """Apply shared Click options for browser-based commands (fetch/stealthy_fetch)."""
+    """Apply Click options for browser fetching."""
     decorators = [
         option(
             "--ai-targeted",
@@ -586,53 +586,6 @@ def __build_browser_kwargs(
     return kwargs
 
 
-@extract.command(help=f"Use DynamicFetcher to fetch content with browser automation.\n\n{__OUTPUT_FILE_HELP__}")
-@argument("url", required=True)
-@argument("output_file", required=True)
-@_common_browser_options
-def fetch(
-    url,
-    output_file,
-    headless,
-    disable_resources,
-    network_idle,
-    pierce_shadow,
-    timeout,
-    wait,
-    css_selector,
-    wait_selector,
-    locale,
-    real_chrome,
-    proxy,
-    extra_headers,
-    ai_targeted,
-    executable_path,
-    dns_over_https,
-    block_ads,
-):
-    """Opens up a browser and fetch content using DynamicFetcher."""
-    parsed_headers, _ = _ParseHeaders(extra_headers, False)
-    kwargs = __build_browser_kwargs(
-        headless,
-        disable_resources,
-        network_idle,
-        pierce_shadow,
-        timeout,
-        wait,
-        wait_selector,
-        locale,
-        real_chrome,
-        proxy,
-        parsed_headers,
-        dns_over_https,
-        block_ads,
-        executable_path,
-    )
-    from scrapling.fetchers import DynamicFetcher
-
-    __Request_and_Save(DynamicFetcher.fetch, url, output_file, css_selector, ai_targeted=ai_targeted, **kwargs)
-
-
 @extract.command(help=f"Use StealthyFetcher to fetch content with advanced stealth features.\n\n{__OUTPUT_FILE_HELP__}")
 @argument("url", required=True)
 @argument("output_file", required=True)
@@ -653,7 +606,7 @@ def fetch(
     help="Add noise to canvas operations (default: False)",
 )
 @_common_browser_options
-def stealthy_fetch(
+def fetch(
     url,
     output_file,
     headless,

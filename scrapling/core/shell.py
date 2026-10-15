@@ -432,9 +432,6 @@ class CustomShell:
             Fetcher as __Fetcher,
             AsyncFetcher as __AsyncFetcher,
             FetcherSession as __FetcherSession,
-            DynamicFetcher as __DynamicFetcher,
-            DynamicSession as __DynamicSession,
-            AsyncDynamicSession as __AsyncDynamicSession,
             StealthyFetcher as __StealthyFetcher,
             StealthySession as __StealthySession,
             AsyncStealthySession as __AsyncStealthySession,
@@ -444,9 +441,6 @@ class CustomShell:
         self.__Fetcher = __Fetcher
         self.__AsyncFetcher = __AsyncFetcher
         self.__FetcherSession = __FetcherSession
-        self.__DynamicFetcher = __DynamicFetcher
-        self.__DynamicSession = __DynamicSession
-        self.__AsyncDynamicSession = __AsyncDynamicSession
         self.__StealthyFetcher = __StealthyFetcher
         self.__StealthySession = __StealthySession
         self.__AsyncStealthySession = __AsyncStealthySession
@@ -486,7 +480,6 @@ class CustomShell:
         return f"""
 -> Available Scrapling objects:
    - Fetcher/AsyncFetcher/FetcherSession
-   - DynamicFetcher/DynamicSession/AsyncDynamicSession
    - StealthyFetcher/StealthySession/AsyncStealthySession
    - Selector
 
@@ -495,8 +488,7 @@ class CustomShell:
    - {"post":<30} Shortcut for `Fetcher.post`
    - {"put":<30} Shortcut for `Fetcher.put`
    - {"delete":<30} Shortcut for `Fetcher.delete`
-   - {"fetch":<30} Shortcut for `DynamicFetcher.fetch`
-   - {"stealthy_fetch":<30} Shortcut for `StealthyFetcher.fetch`
+   - {"fetch":<30} Shortcut for `StealthyFetcher.fetch`
 
 -> Useful commands
    - {"page / response":<30} The response object of the last page you fetched
@@ -551,8 +543,7 @@ Type 'exit' or press Ctrl+D to exit.
         post = self.create_wrapper(self.__Fetcher.post)
         put = self.create_wrapper(self.__Fetcher.put)
         delete = self.create_wrapper(self.__Fetcher.delete)
-        dynamic_fetch = self.create_wrapper(self.__DynamicFetcher.fetch)
-        stealthy_fetch = self.create_wrapper(self.__StealthyFetcher.fetch, signature_name="stealthy_fetch")
+        fetch = self.create_wrapper(self.__StealthyFetcher.fetch)
         curl2fetcher = self.create_wrapper(self._curl_parser.convert2fetcher, get_signature=False)
 
         # Create the namespace dictionary
@@ -564,13 +555,9 @@ Type 'exit' or press Ctrl+D to exit.
             "Fetcher": self.__Fetcher,
             "AsyncFetcher": self.__AsyncFetcher,
             "FetcherSession": self.__FetcherSession,
-            "DynamicSession": self.__DynamicSession,
-            "AsyncDynamicSession": self.__AsyncDynamicSession,
             "StealthySession": self.__StealthySession,
             "AsyncStealthySession": self.__AsyncStealthySession,
-            "fetch": dynamic_fetch,
-            "DynamicFetcher": self.__DynamicFetcher,
-            "stealthy_fetch": stealthy_fetch,
+            "fetch": fetch,
             "StealthyFetcher": self.__StealthyFetcher,
             "Selector": Selector,
             "page": self.page,

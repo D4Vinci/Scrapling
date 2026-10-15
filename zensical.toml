@@ -27,8 +27,7 @@ nav = [
         {Fetching = [
             {"Fetchers basics" = "fetching/choosing.md"},
             {"HTTP requests" = "fetching/static.md"},
-            {"Dynamic websites" = "fetching/dynamic.md"},
-            {"Dynamic websites with hard protections" = "fetching/stealthy.md"}
+            {"Browser fetching" = "fetching/stealthy.md"}
         ]},
         {Spiders = [
             {"Architecture" = "spiders/architecture.md"},

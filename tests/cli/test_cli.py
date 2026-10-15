@@ -5,7 +5,7 @@ import pytest_httpbin
 
 from scrapling.parser import Selector
 from scrapling import __version__
-from scrapling.cli import main, shell, mcp, get, post, put, delete, fetch, stealthy_fetch
+from scrapling.cli import main, shell, mcp, get, post, put, delete, fetch
 
 
 @pytest_httpbin.use_class_based_httpbin
@@ -215,33 +215,19 @@ class TestCLI:
         """Test extract fetch command"""
         output_file = tmp_path / "output.txt"
 
-        with patch("scrapling.fetchers.DynamicFetcher.fetch") as mock_fetch:
+        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
             mock_response = configure_selector_mock()
             mock_fetch.return_value = mock_response
 
             result = runner.invoke(fetch, [html_url, str(output_file), "--headless", "--timeout", "60000"])
             assert result.exit_code == 0
 
-    def test_extract_stealthy_fetch_command(self, runner, tmp_path, html_url):
-        """Test extract fetch command"""
-        output_file = tmp_path / "output.md"
-
-        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
-            mock_response = configure_selector_mock()
-            mock_fetch.return_value = mock_response
-
-            result = runner.invoke(
-                stealthy_fetch,
-                [html_url, str(output_file), "--headless", "--css-selector", "body", "--timeout", "60000"],
-            )
-            assert result.exit_code == 0
-
     def test_extract_fetch_with_executable_path(self, runner, tmp_path, html_url, monkeypatch):
-        """Test that --executable-path is passed through to DynamicFetcher and wins over the environment variable"""
+        """Test that --executable-path is passed through to StealthyFetcher and wins over the environment variable"""
         output_file = tmp_path / "output.html"
         monkeypatch.setenv("SCRAPLING_EXECUTABLE_PATH", "/opt/env-chromium")
 
-        with patch("scrapling.fetchers.DynamicFetcher.fetch") as mock_fetch:
+        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
             mock_fetch.return_value = configure_selector_mock()
 
             result = runner.invoke(fetch, [html_url, str(output_file), "--executable-path", "/opt/custom-chromium"])
@@ -253,7 +239,7 @@ class TestCLI:
         output_file = tmp_path / "output.html"
         monkeypatch.setenv("SCRAPLING_EXECUTABLE_PATH", "/opt/env-chromium")
 
-        with patch("scrapling.fetchers.DynamicFetcher.fetch") as mock_fetch:
+        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
             mock_fetch.return_value = configure_selector_mock()
 
             result = runner.invoke(fetch, [html_url, str(output_file)])
@@ -265,34 +251,12 @@ class TestCLI:
         output_file = tmp_path / "output.html"
         monkeypatch.delenv("SCRAPLING_EXECUTABLE_PATH", raising=False)
 
-        with patch("scrapling.fetchers.DynamicFetcher.fetch") as mock_fetch:
+        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
             mock_fetch.return_value = configure_selector_mock()
 
             result = runner.invoke(fetch, [html_url, str(output_file)])
             assert result.exit_code == 0
             assert "executable_path" not in mock_fetch.call_args.kwargs
-
-    def test_extract_stealthy_fetch_with_executable_path(self, runner, tmp_path, html_url, monkeypatch):
-        """Test that --executable-path and the environment fallback work for stealthy_fetch too"""
-        output_file = tmp_path / "output.html"
-        monkeypatch.delenv("SCRAPLING_EXECUTABLE_PATH", raising=False)
-
-        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
-            mock_fetch.return_value = configure_selector_mock()
-
-            result = runner.invoke(
-                stealthy_fetch, [html_url, str(output_file), "--executable-path", "/opt/custom-chromium"]
-            )
-            assert result.exit_code == 0
-            assert mock_fetch.call_args.kwargs["executable_path"] == "/opt/custom-chromium"
-
-        monkeypatch.setenv("SCRAPLING_EXECUTABLE_PATH", "/opt/env-chromium")
-        with patch("scrapling.fetchers.StealthyFetcher.fetch") as mock_fetch:
-            mock_fetch.return_value = configure_selector_mock()
-
-            result = runner.invoke(stealthy_fetch, [html_url, str(output_file)])
-            assert result.exit_code == 0
-            assert mock_fetch.call_args.kwargs["executable_path"] == "/opt/env-chromium"
 
     def test_invalid_arguments(self, runner, html_url):
         """Test invalid arguments handling"""

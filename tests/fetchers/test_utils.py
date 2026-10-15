@@ -260,7 +260,7 @@ class TestFingerprintFunctions:
 
     def test_driven_browser_version(self):
         """Test that the driven Chromium version is read from the installed automation package"""
-        assert isinstance(driven_browser_version("playwright"), int)
+        assert isinstance(driven_browser_version(), int)
         assert driven_browser_version("not_a_real_package") is None
 
     @pytest.mark.parametrize("browser_mode", [True, "chrome"])

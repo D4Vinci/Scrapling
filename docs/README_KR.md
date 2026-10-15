@@ -49,33 +49,51 @@
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html"><strong>MCP 서버</strong></a>
 </p>
 
-Scrapling은 단일 요청부터 대규모 크롤링까지 모든 것을 처리하는 적응형 Web Scraping 프레임워크입니다.
+Scrapling은 빠른 HTTP 요청, 스텔스 브라우저, 강력한 파싱, 동시 크롤링을 하나의 라이브러리에 담은 Python 웹 스크래핑 프레임워크입니다.
 
-파서는 웹사이트 변경 사항을 학습하고, 페이지가 업데이트되면 요소를 자동으로 재배치합니다. Fetcher는 Cloudflare Turnstile 같은 안티봇 시스템을 별도 설정 없이 우회합니다. Spider 프레임워크를 사용하면 일시정지/재개, 자동 프록시 로테이션, 그리고 각 웹사이트의 응답 속도에 맞춰 조절되고 차단이 시작되면 속도를 늦추는 크롤링 속도를 갖춘 동시 멀티 세션 크롤링으로 확장할 수 있습니다 - 모두 Python 몇 줄이면 됩니다. 하나의 라이브러리, 타협 없는 성능.
+정적 페이지를 스크래핑하고, JavaScript를 렌더링하고, 웹사이트를 조작하고, 페이지 뒤에서 호출되는 API의 데이터를 추출하세요. 재사용 가능한 세션, 프록시 로테이션, 자동 재시도, 일시정지/재개, 내장 데이터 내보내기 기능을 갖춘 크롤러를 만들 수 있습니다.
 
-실시간 통계와 스트리밍을 통한 초고속 크롤링. Web Scraper가 만들고, Web Scraper와 일반 사용자 모두를 위해 설계했습니다.
+Python이나 터미널에서, 또는 MCP 서버와 Agent Skill을 통해 AI 에이전트에서 사용할 수 있습니다. 몇 개의 필드 추출부터 웹사이트 전체를 깔끔한 Markdown으로 수집하는 작업까지, Scrapling이 스크래핑의 전 과정을 지원합니다.
+
+## Scrapling으로 할 수 있는 일
+
+- **[가져오기와 조작](https://scrapling.readthedocs.io/en/latest/fetching/choosing.html)**: 빠른 HTTP 요청, 스텔스 브라우저, JavaScript 렌더링, Cloudflare Turnstile/Interstitial 처리, 세션 유지, 백그라운드 API 통신 캡처.
+- **[파싱과 추출](https://scrapling.readthedocs.io/en/latest/parsing/selection.html)**: CSS, XPath, 텍스트와 정규식 검색, 적응형 요소 추적, 유사 요소 매칭, 깔끔한 Markdown 출력.
+- **[크롤링과 내보내기](https://scrapling.readthedocs.io/en/latest/spiders/getting-started.html)**: 동시 크롤링, 프록시 로테이션, 재시도, AutoThrottle, 일시정지/재개, 스트리밍, 바로 쓸 수 있는 Spider 템플릿, JSON/JSONL/CSV/XML 내보내기.
+- **[AI나 터미널에서 스크래핑](https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html)**: AI 에이전트가 웹을 탐색하고 데이터를 추출할 수 있는 MCP 서버, Agent Skill, CLI 명령어, 인터랙티브 Shell.
+
+먼저 한 페이지부터 시작하세요:
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, DynamicFetcher
-StealthyFetcher.adaptive = True
-p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # 탐지를 피해 웹사이트를 가져옵니다!
-products = p.css('.product', auto_save=True)                                        # 웹사이트 디자인 변경에도 살아남는 데이터를 스크레이핑!
-products = p.css('.product', adaptive=True)                                         # 나중에 웹사이트 구조가 바뀌면, `adaptive=True`를 전달해서 찾으세요!
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-또는 본격적인 크롤링으로 확장
+
+또는 Spider로 크롤링을 확장하세요:
+
 ```python
 from scrapling.spiders import Spider, Response
 
-class MySpider(Spider):
-  name = "demo"
-  start_urls = ["https://example.com/"]
+class QuotesSpider(Spider):
+    name = "quotes"
+    start_urls = ["https://quotes.toscrape.com/"]
 
-  async def parse(self, response: Response):
-      for item in response.css('.product'):
-          yield {"title": item.css('h2::text').get()}
+    async def parse(self, response: Response):
+        for quote in response.css('.quote'):
+            yield {
+                "text": quote.css('.text::text').get(),
+                "author": quote.css('.author::text').get(),
+            }
 
-MySpider().start()
+result = QuotesSpider().start()
+print(len(result.items))
+result.items.to_json("quotes.json")
 ```
+
+`10`이 출력되고 명언과 저자가 `quotes.json`에 저장됩니다.
 
 <p align="center">
     <a href="https://dataimpulse.com/?utm_source=scrapling&utm_medium=banner&utm_campaign=scrapling" target="_blank" style="display:flex; justify-content:center; padding:4px 0;">
@@ -97,15 +115,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank" title="Clean Proxies with No Nonsense.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxidize.png">
-      </a>
-    </td>
-    <td> <a href="https://proxidize.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=d4vinci" target="_blank"><b>Proxidize</b></a>는 스크래핑, 브라우저 자동화, SEO 모니터링, AI 에이전트, 데이터 수집을 위한 모바일 및 주거용 프록시를 제공합니다. <i>코드 <b>scrapling20</b>으로 20% 할인</i>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -113,18 +122,6 @@ MySpider().start()
     <td> Scrapling은 Cloudflare Turnstile을 처리합니다. 엔터프라이즈급 보호가 필요하다면, <a href="https://hypersolutions.co?utm_source=github&utm_medium=readme&utm_campaign=scrapling">
         <b>Hyper Solutions</b>
       </a>가 <b>Akamai</b>, <b>DataDome</b>, <b>Kasada</b>, <b>Incapsula</b>용 유효한 안티봇 토큰을 생성하는 API 엔드포인트를 제공합니다. 간단한 API 호출만으로, 브라우저 자동화가 필요 없습니다. </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://birdproxies.com/t/scrapling" target="_blank" title="At Bird Proxies, we eliminate your pains such as banned IPs, geo restriction, and high costs so you can focus on your work.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/BirdProxies.jpg">
-      </a>
-    </td>
-    <td>프록시는 복잡하거나 비쌀 이유가 없다는 생각으로 <a href="https://birdproxies.com/t/scrapling">
-        <b>BirdProxies</b>
-      </a>를 만들었습니다. <br /> 195개 이상 지역의 빠른 레지덴셜 및 ISP 프록시, 합리적인 가격, 실질적인 지원. <br />
-      <b>랜딩 페이지에서 FlappyBird 게임을 플레이하고 무료 데이터를 받으세요!</b>
-    </td>
   </tr>
   <tr>
     <td width="200">
@@ -147,17 +144,6 @@ MySpider().start()
     </td>
     <td>
       <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank">TikHub.io</a>는 TikTok, X, YouTube, Instagram 등 16개 이상 플랫폼에서 900개 이상의 안정적인 API를 제공하며, 4,000만 이상의 데이터셋을 보유하고 있습니다. <br /> <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">할인된 AI 모델</a>도 제공 - Claude, GPT, GEMINI 등 최대 71% 할인.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
-      </a>
-    </td>
-    <td>
-    노트북을 닫으세요. 스크래퍼는 계속 작동합니다. <br />
-    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - 논스톱 자동화를 위한 클라우드 서버. Windows 및 Linux 머신을 완벽하게 제어. 월 €6.99부터.
     </td>
   </tr>
   <tr>
@@ -200,6 +186,26 @@ MySpider().start()
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 차단과 CAPTCHA를 90% 줄입니다. 대규모 웹 스크래핑을 위한 2,800만 개의 프리미엄 주거용 IP. 195개 국가 지원. 도시, ISP, 우편번호(ZIP) 타겟팅. 고정 및 순환 세션. 유효 기간이 없는 트래픽을 $2/GB부터 제공합니다. 코드 <strong>SCRAPEANDTAKE</strong>를 사용하면 <em>25% 할인</em>.
     </td>
   </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: GB당 요금은 이제 그만. 무제한 주거용 프록시 트래픽, 1억 개 이상의 IP, 190개 이상의 국가. 대역폭에 따라 요금을 지불하세요. 50 Mbps 주거용 프록시 무료 체험을 신청하세요.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank">DataImpulse</a>에서 $1/GB로 이용하세요. 윤리적으로 확보한 자체 프록시. 9,000만 개 이상의 IP, 195개 이상의 국가. 주거용, 데이터센터, 모바일 프록시. 사용량 기반 요금 = 구독 불필요. 트래픽에 유효 기간이 없습니다.
+    </td>
+  </tr>
 </table>
 
 <i><sub>여기에 광고를 게재하고 싶으신가요? [여기](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)를 클릭하세요</sub></i>
@@ -230,21 +236,21 @@ MySpider().start()
 - 🕷️ **Scrapy 스타일 Spider API**: `start_urls`, 비동기 `parse` 콜백, `Request`/`Response` 객체로 Spider를 정의합니다.
 - ⚡ **동시 크롤링**: 설정 가능한 동시 요청 수 제한, 도메인별 스로틀링, 다운로드 딜레이를 지원합니다.
 - 🔄 **멀티 세션 지원**: HTTP 요청과 스텔스 헤드리스 브라우저를 하나의 인터페이스로 통합 - ID로 요청을 다른 세션에 라우팅합니다.
-- 💾 **일시정지 & 재개**: 체크포인트 기반의 크롤링 영속화. Ctrl+C로 정상 종료하고, 재시작하면 중단된 지점부터 이어갑니다.
+- 💾 **일시정지와 재개**: `crawldir`로 대기 중인 요청과 방문한 URL을 저장합니다. Ctrl+C로 정상 종료한 뒤 같은 디렉터리로 다시 시작하세요.
 - 📡 **스트리밍 모드**: `async for item in spider.stream()`으로 스크레이핑된 아이템을 실시간 통계와 함께 스트리밍으로 수신 - UI, 파이프라인, 장시간 크롤링에 적합합니다.
 - 🛡️ **차단된 요청 감지**: 커스텀 로직을 통한 차단된 요청의 자동 감지 및 재시도를 지원합니다.
 - 🚦 **AutoThrottle**: 지연 시간을 추측할 필요가 없습니다. Spider가 사이트의 응답 속도에 맞춰 도메인별 지연 시간을 스스로 조정하고, 차단이나 속도 제한이 시작되면 지연을 두 배로 늘리거나 `Retry-After`가 요구하는 만큼 기다렸다가, 상황이 풀리면 다시 속도를 올립니다.
 - 🤖 **robots.txt 준수**: 선택적 `robots_txt_obey` 플래그로 `Disallow`, `Crawl-delay`, `Request-rate` 지시문을 도메인별 캐싱과 함께 준수합니다.
 - 🧪 **개발 모드**: 첫 실행 시 응답을 디스크에 캐싱하고 이후 실행에서는 캐시된 응답을 재생합니다 - 대상 서버에 다시 요청하지 않고 `parse()` 로직을 반복 개발할 수 있습니다.
-- 🧩 **바로 쓰는 Spider 템플릿**: 반복적인 코드는 건너뛰세요. 규칙 기반 링크 추적에는 `CrawlSpider`, sitemap/robots.txt 기반 크롤링에는 `SitemapSpider`, XML/RSS 및 CSV 피드 순회에는 `XMLFeedSpider`/`CSVFeedSpider`, 그리고 `ShopifySpider`로 어떤 Shopify 스토어든 JSON API를 통해 모든 상품을 가져올 수 있습니다(변형별로 항목 하나).
+- 🧩 **바로 쓰는 Spider 템플릿**: 반복적인 코드는 건너뛰세요. 규칙 기반 링크 추적에는 `CrawlSpider`, sitemap/robots.txt 기반 크롤링에는 `SitemapSpider`, XML/RSS 및 CSV 피드 순회에는 `XMLFeedSpider`/`CSVFeedSpider`, 그리고 `ShopifySpider`로 공개된 Shopify 스토어의 상품을 변형당 한 항목씩 수집할 수 있습니다.
 - 🔗 **링크 추출**: allow/deny 패턴, 도메인 필터, CSS/XPath 범위 지정, 확장자 필터링, 정규화를 지원하는 독립형 `LinkExtractor`. 템플릿 안에서도, 단독으로도 사용할 수 있습니다.
 - 📦 **내장 내보내기**: 훅이나 자체 파이프라인, 또는 내장 JSON/JSONL/CSV/XML로 결과를 내보냅니다. `result.items.to_json()`, `to_jsonl()`, `to_csv()`, `to_xml()`을 사용합니다.
 
 ### 세션을 지원하는 고급 웹사이트 가져오기
 - **HTTP 요청**: `Fetcher` 클래스로 빠르고 은밀한 HTTP 요청. 브라우저의 TLS fingerprint, 헤더를 모방하고, HTTP/3를 사용할 수 있습니다.
-- **동적 로딩**: Playwright의 Chromium과 Google Chrome을 지원하는 `DynamicFetcher` 클래스로 완전한 브라우저 자동화를 통해 동적 웹사이트를 가져옵니다.
-- **안티봇 우회**: `StealthyFetcher`와 fingerprint 위장을 통한 고급 스텔스 기능. 자동화로 모든 유형의 Cloudflare Turnstile/Interstitial을 손쉽게 우회합니다.
-- **세션 관리**: `FetcherSession`, `StealthySession`, `DynamicSession` 클래스로 요청 간 쿠키와 상태를 관리하는 영속적 세션을 지원합니다.
+- **동적 로딩**: Playwright의 Chromium과 Google Chrome을 지원하는 `StealthyFetcher` 클래스로 완전한 브라우저 자동화를 통해 동적 웹사이트를 가져옵니다.
+- **안티봇 우회**: `StealthyFetcher`의 고급 스텔스 기능과 브라우저 지문 위장. 모든 유형의 Cloudflare Turnstile/Interstitial을 자동으로 쉽게 우회할 수 있습니다.
+- **세션 관리**: `FetcherSession`, `StealthySession` 클래스로 요청 간 쿠키와 상태를 관리하는 영속적 세션을 지원합니다.
 - **프록시 로테이션**: 모든 세션 타입에 대응하는 순환 또는 커스텀 전략의 내장 `ProxyRotator`와 요청별 프록시 오버라이드를 제공합니다.
 - **도메인 및 광고 차단**: 브라우저 기반 Fetcher에서 특정 도메인(및 하위 도메인)으로의 요청을 차단하거나 내장 광고 차단(약 3,500개의 알려진 광고/트래커 도메인)을 활성화합니다.
 - **DNS 유출 방지**: 프록시 사용 시 DNS 유출을 방지하기 위해 Cloudflare DoH를 통해 DNS 쿼리를 라우팅하는 선택적 DNS-over-HTTPS 지원.
@@ -252,15 +258,15 @@ MySpider().start()
 - **백그라운드 API 캡처**: 브라우저 세션에서 `record_requests=True`를 켜고 `session.network.search(limit=None)`으로 저장된 응답을 검색하세요. 요청을 다시 보내지 않고 여러 페이지를 로드하며 발생한 API 데이터와 HTTP 오류를 확인할 수 있습니다. 기록에는 저장 한도가 있으며 텍스트 응답 본문을 저장합니다.
 - **비동기 지원**: 모든 Fetcher와 전용 비동기 세션 클래스에서 완전한 비동기를 지원합니다.
 
-### 적응형 스크레이핑
+### 파싱과 데이터 추출
 - 🔄 **스마트 요소 추적**: 지능적인 유사도 알고리즘으로 웹사이트 변경 후에도 요소를 재배치합니다.
 - 🎯 **유연한 스마트 선택**: CSS selector, XPath selector, 필터 기반 검색, 텍스트 검색, 정규식 검색 등을 지원합니다.
 - 🔍 **유사 요소 찾기**: 발견된 요소와 유사한 요소를 자동으로 찾아냅니다.
 
 ### AI 기능
-- 🤖 **MCP 서버**: AI 챗봇과 에이전트(Claude/Cursor 등)가 Scrapling을 통해 스크래핑하도록 해줍니다. 일회성 도구와 세션 기반 도구가 일반 HTTP 요청(모든 메서드), 브라우저 가져오기, Cloudflare를 우회하는 스텔스 가져오기를 모두 지원합니다. 페이지는 AI에 전달되기 전에 CSS 선택자로 범위가 좁혀지고 프롬프트 인젝션 콘텐츠가 제거되므로, 에이전트는 더 적게 읽고 더 적게 비용을 쓰며 숨겨진 텍스트에 탈취당하지 않습니다. 스크린샷, CDP를 통한 원격 브라우저, 기본적으로 안전한 HTTP 전송도 포함됩니다. ([데모 영상](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **MCP 서버**: AI 챗봇과 에이전트(Claude/Cursor 등)가 Scrapling을 통해 스크래핑할 수 있습니다. HTTP 요청, 브라우저 작업, 스크린샷, 저장된 로그인 상태, 백그라운드 API 응답을 사용할 수 있습니다. 자체 스텔스 브라우저와 적절한 도구로, 충분한 능력을 갖춘 AI 모델이 작업 중 마주치는 어떤 CAPTCHA든 우회할 수 있게 합니다(자체 Cloudflare 솔버는 물론이고요). 여러 방법으로 모델에 보내는 내용을 줄이고, 광고를 차단하고, 프롬프트 인젝션으로부터 모델을 보호합니다. CDP 원격 브라우저와 인증 옵션이 있는 HTTP 전송도 지원합니다. ([데모 영상](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 - 🧠 **Agent Skill**: 설치만 하면 되는 [Agent Skill](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html)이 코딩 에이전트에게 라이브러리 전체를 가르쳐, 에이전트가 Scrapling으로 작성하는 코드가 추측이 아니라 현재 API에 맞도록 해줍니다.
-- 📚 **RAG용 Markdown**: 한 줄(`page.markdown()`)로 어떤 페이지든 깨끗하고 정제된 LLM용 Markdown으로 변환하거나, `SiteToMarkdownSpider` 템플릿으로 웹사이트 전체를 Markdown 코퍼스로 크롤링할 수 있습니다. 과정에 LLM을 전혀 사용하지 않습니다. ([문서](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
+- 📚 **RAG용 Markdown**: 한 줄(`page.markdown()`)로 어떤 페이지든 깨끗하고 정제된 LLM용 Markdown으로 변환하거나, `ContentSpider` 템플릿으로 웹사이트 전체를 Markdown 코퍼스로 크롤링할 수 있습니다. 과정에 LLM을 전혀 사용하지 않습니다. ([문서](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
 
 ### 고성능 & 실전 검증된 아키텍처
 - 🚀 **초고속**: 대부분의 Python 스크레이핑 라이브러리를 능가하는 최적화된 성능.
@@ -305,26 +311,26 @@ with StealthySession(headless=True, solve_cloudflare=True) as session:  # 작업
     data = page.css('#padded_content a').getall()
 
 # 또는 일회성 요청 스타일 - 이 요청을 위해 브라우저를 열고, 완료 후 닫습니다
-page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare')
+page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare', solve_cloudflare=True)
 data = page.css('#padded_content a').getall()
 ```
 완전한 브라우저 자동화
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # 작업이 끝날 때까지 브라우저를 열어둡니다
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # 작업이 끝날 때까지 브라우저를 열어둡니다
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # 원하시면 XPath selector도 사용 가능
 
 # 또는 일회성 요청 스타일 - 이 요청을 위해 브라우저를 열고, 완료 후 닫습니다
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
 ### Spider
 동시 요청, 여러 세션 타입, 일시정지 & 재개를 갖춘 본격적인 크롤러 구축:
 ```python
-from scrapling.spiders import Spider, Request, Response
+from scrapling.spiders import Spider, Response
 
 class QuotesSpider(Spider):
     name = "quotes"
@@ -371,17 +377,18 @@ class MultiSessionSpider(Spider):
 ```python
 QuotesSpider(crawldir="./crawl_data").start()
 ```
-Ctrl+C를 누르면 정상적으로 일시정지되고, 진행 상황이 자동 저장됩니다. 이후 Spider를 다시 시작할 때 동일한 `crawldir`을 전달하면 중단된 지점부터 재개합니다.
+`crawldir`를 설정한 뒤 Ctrl+C를 누르면 대기 중인 요청과 방문한 URL이 저장됩니다. 같은 `crawldir`로 다시 시작하면 이어서 실행됩니다. 추출한 데이터는 따로 저장하세요.
 
-또는 바로 쓰는 템플릿으로 크롤링 로직 작성 자체를 건너뛸 수 있습니다. 예를 들어 Shopify 스토어의 전체 카탈로그를 가져오려면:
+또는 바로 쓰는 템플릿으로 크롤링 로직 작성 자체를 건너뛸 수 있습니다. 예를 들어 Shopify 스토어의 상품 카탈로그 전체를 가져오려면:
 ```python
 from scrapling.spiders import ShopifySpider
 
 class MyStore(ShopifySpider):
     target_website = "example.com"
 
-result = MyStore().start()  # 스토어의 모든 상품, 변형별로 항목 하나
+result = MyStore().start()  # 스토어의 모든 상품을 변형당 한 항목씩 수집
 ```
+템플릿은 공개 컬렉션 API에 노출된 상품을 변형당 한 항목씩 읽습니다.
 
 ### 고급 파싱 & 내비게이션
 ```python
@@ -399,18 +406,19 @@ quotes = page.find_all('div', class_='quote')
 quotes = page.find_all(['div'], class_='quote')
 quotes = page.find_all(class_='quote')  # 등등...
 # 텍스트 내용으로 요소 찾기
-quotes = page.find_by_text('quote', tag='div')
+quotes = page.find_by_text('Albert Einstein', first_match=False)
 
 # 고급 내비게이션
 quote_text = page.css('.quote')[0].css('.text::text').get()
-quote_text = page.css('.quote').css('.text::text').getall()  # 체이닝 셀렉터
+quote_texts = page.css('.quote').css('.text::text').getall()  # 체이닝 셀렉터
 first_quote = page.css('.quote')[0]
-author = first_quote.next_sibling.css('.author::text')
+author = first_quote.css('.author::text').get()
+next_quote = first_quote.next
 parent_container = first_quote.parent
 
 # 요소 관계와 유사도
 similar_elements = first_quote.find_similar()
-below_elements = first_quote.below_elements()
+below_elements = first_quote.below_elements
 ```
 웹사이트를 가져오지 않고 파서를 바로 사용할 수도 있습니다:
 ```python
@@ -423,24 +431,20 @@ page = Selector("<html>...</html>")
 ### 비동기 세션 관리 예시
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
-async with FetcherSession(http3=True) as session:  # `FetcherSession`은 컨텍스트 인식이 가능하며 동기/비동기 패턴 모두에서 작동
-    page1 = session.get('https://quotes.toscrape.com/')
-    page2 = session.get('https://quotes.toscrape.com/', impersonate='firefox135')
+async def main():
+    async with FetcherSession(http3=True) as http_session:  # `FetcherSession`은 컨텍스트에 따라 동기/비동기 방식 모두로 동작합니다
+        page1 = await http_session.get('https://quotes.toscrape.com/')
+        page2 = await http_session.get('https://quotes.toscrape.com/page/2/', impersonate='chrome')
+        print(len(page1.css('.quote')), len(page2.css('.quote')))
 
-# 비동기 세션 사용
-async with AsyncStealthySession(max_pages=2) as session:
-    tasks = []
-    urls = ['https://example.com/page1', 'https://example.com/page2']
+    async with AsyncStealthySession(max_pages=2) as browser_session:
+        urls = ['https://quotes.toscrape.com/js/', 'https://quotes.toscrape.com/js/page/2/']
+        pages = await asyncio.gather(*(browser_session.fetch(url, wait_selector='.quote') for url in urls))
+        print([len(page.css('.quote')) for page in pages])
 
-    for url in urls:
-        task = session.fetch(url)
-        tasks.append(task)
-
-    print(session.get_pool_stats())  # 선택 사항 - 브라우저 탭 풀 상태 (사용 중/유휴/에러)
-    results = await asyncio.gather(*tasks)
-    print(session.get_pool_stats())
+asyncio.run(main())
 ```
 
 ## CLI & 인터랙티브 Shell
@@ -451,14 +455,15 @@ Scrapling에는 강력한 커맨드라인 인터페이스가 포함되어 있습
 
 인터랙티브 Web Scraping Shell 실행
 ```bash
+pip install "scrapling[shell]"
 scrapling shell
 ```
-프로그래밍 없이 페이지를 파일로 바로 추출합니다 (기본적으로 `body` 태그 내부의 콘텐츠를 추출). 출력 파일이 `.txt`로 끝나면 대상의 텍스트 콘텐츠가 추출됩니다. `.md`로 끝나면 HTML 콘텐츠의 Markdown 표현이 됩니다. `.html`로 끝나면 HTML 콘텐츠 자체가 됩니다.
+프로그래밍 없이 페이지를 파일로 바로 추출합니다. `--css-selector`로 내용을 고르거나 `--ai-targeted`로 `body` 내용을 선택하고 정리하세요. 텍스트는 `.txt`, Markdown은 `.md`, HTML은 `.html`을 사용하세요.
 ```bash
-scrapling extract get 'https://example.com' content.md
-scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # CSS selector '#fromSkipToProducts'에 매칭되는 모든 요소
-scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
-scrapling extract stealthy-fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
+scrapling extract get 'https://quotes.toscrape.com/' quotes.md
+scrapling extract get 'https://quotes.toscrape.com/' quotes.txt --css-selector '.quote' --impersonate 'chrome'
+scrapling extract fetch 'https://quotes.toscrape.com/js/' quotes.md --css-selector '.quote' --wait-selector '.quote' --no-headless
+scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
 > [!NOTE]
@@ -478,7 +483,7 @@ Scrapling은 강력할 뿐만 아니라 초고속입니다. 아래 벤치마크�
 | 4 |      PyQuery      |   23.98   |     ~12x     |
 | 5 |    Selectolax     |  197.02   |     ~99x     |
 | 6 |  MechanicalSoup   |  1545.15  |   ~776.5x    |
-| 7 |   BS4 with Lxml   |  1562.1  |   ~785.0x    |
+| 7 |   BS4 with Lxml   |  1562.1   |   ~785.0x    |
 | 8 | BS4 with html5lib |  3412.73  |   ~1714.9x   |
 
 
@@ -488,8 +493,8 @@ Scrapling의 적응형 요소 찾기 기능은 대안들을 크게 앞섭니다:
 
 | Library     | Time (ms) | vs Scrapling |
 |-------------|:---------:|:------------:|
-| Scrapling   |   2.3    |     1.0x     |
-| AutoScraper |   12.58   |    5.47x    |
+| Scrapling   |    2.3    |     1.0x     |
+| AutoScraper |   12.58   |    5.47x     |
 
 
 > 모든 벤치마크는 100회 이상 실행의 평균입니다. 측정 방법은 [benchmarks.py](https://github.com/D4Vinci/Scrapling/blob/main/benchmarks.py)를 참조하세요.
@@ -542,7 +547,7 @@ pip install scrapling
        ```bash
        pip install "scrapling[all]"
        ```
-   위 추가 기능을 설치한 후에도 (아직 하지 않았다면) `scrapling install`로 브라우저 의존성을 설치해야 합니다.
+   브라우저 fetcher가 필요하면 `scrapling install`을 실행하세요. HTTP 요청은 브라우저 설치가 필요하지 않습니다.
 
 ### Docker
 DockerHub에서 모든 추가 기능과 브라우저가 포함된 Docker 이미지를 설치할 수도 있습니다:
@@ -572,7 +577,7 @@ docker pull ghcr.io/d4vinci/scrapling:latest
     title = {Scrapling},
     year = {2024},
     url = {https://github.com/D4Vinci/Scrapling},
-    note = {An adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl!}
+    note = {A Python Web Scraping framework for everything from a single request to a full-scale crawl!}
   }
 ```
 

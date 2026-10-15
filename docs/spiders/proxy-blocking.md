@@ -1,3 +1,8 @@
+---
+title: "Rotate Proxies and Retry Blocked Crawl Requests"
+description: "Use proxies and rotation strategies in Scrapling spiders. Detect blocked responses, retry requests and switch from HTTP to browser sessions."
+---
+
 # Proxy management and handling Blocks
 
 ## Introduction
@@ -43,7 +48,7 @@ Each request automatically gets the next proxy in the rotation. The proxy used i
 When you use it with browser sessions, you will need some adjustments, like below:
 
 ```python
-from scrapling.fetchers import AsyncDynamicSession, AsyncStealthySession, ProxyRotator
+from scrapling.fetchers import AsyncStealthySession, ProxyRotator
 
 # String proxies work for all session types
 rotator = ProxyRotator([
