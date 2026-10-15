@@ -1,0 +1,114 @@
+name: Tests (Windows)
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths-ignore:
+      - '*.md'
+      - '**/*.md'
+      - 'docs/**'
+      - 'images/**'
+      - 'agent-skill/**'
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths-ignore:
+      - '*.md'
+      - '**/*.md'
+      - 'docs/**'
+      - 'images/**'
+      - 'agent-skill/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests-windows:
+    timeout-minutes: 60
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.13"
+            toxenv: py313
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: |
+            pyproject.toml
+            tox.ini
+
+      - name: Install browser drivers
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install playwright==1.62.0 patchright==1.62.1
+
+      - name: Get Playwright version
+        id: playwright-version
+        shell: pwsh
+        run: |
+          $version = python -c "import importlib.metadata; print(importlib.metadata.version('playwright'))"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "Playwright version: $version"
+
+      - name: Retrieve Playwright browsers from cache if any
+        id: playwright-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~\AppData\Local\ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-v1
+          restore-keys: |
+            ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-
+            ${{ runner.os }}-playwright-
+
+      - name: Install Chromium for both engines
+        shell: pwsh
+        run: |
+          Write-Output "Cache hit: ${{ steps.playwright-cache.outputs.cache-hit }}"
+          if ("${{ steps.playwright-cache.outputs.cache-hit }}" -ne "true") {
+            python -m playwright install chromium
+          } else {
+            Write-Output "Skipping install - using cached Playwright browsers"
+          }
+          python -m patchright install chromium
+
+      - name: Retrieve tox environments from cache if any
+        id: tox-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: .tox
+          key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}
+          restore-keys: |
+            tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-
+            tox-v1-${{ runner.os }}-
+
+      - name: Install tox
+        run: python -m pip install -U tox
+
+      - name: Run tests
+        run: python -m tox -e ${{ matrix.toxenv }}
+
+      - name: Save Playwright browsers to cache
+        if: github.ref == 'refs/heads/main' && steps.playwright-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ~\AppData\Local\ms-playwright
+          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+
+      - name: Save tox environments to cache
+        if: github.ref == 'refs/heads/main' && steps.tox-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: .tox
+          key: ${{ steps.tox-cache.outputs.cache-primary-key }}
