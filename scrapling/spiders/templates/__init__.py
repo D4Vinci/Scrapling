@@ -2,7 +2,7 @@ from .crawler import CrawlSpider, CrawlRule
 from .sitemap import SitemapSpider
 from .shopify import ShopifySpider
 from .feed import XMLFeedSpider, CSVFeedSpider
-from .site_to_markdown import SiteToMarkdownSpider
+from .site_to_markdown import ContentSpider, SiteToMarkdownSpider
 
 __all__ = [
     "CrawlSpider",
@@ -11,5 +11,6 @@ __all__ = [
     "ShopifySpider",
     "XMLFeedSpider",
     "CSVFeedSpider",
+    "ContentSpider",
     "SiteToMarkdownSpider",
 ]

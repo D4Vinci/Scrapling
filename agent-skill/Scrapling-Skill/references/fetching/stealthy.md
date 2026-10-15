@@ -2,7 +2,7 @@
 
 The `StealthyFetcher` class loads JavaScript pages and automates Chromium or Google Chrome with anti-bot features. It uses [Playwright's API](https://playwright.dev/python/docs/intro) with stealth patches.
 
-As we will explain later, to automate the page, you need some knowledge of [Playwright's Page API](https://playwright.dev/python/docs/api/class-page).
+To automate the page, use [Playwright's Page API](https://playwright.dev/python/docs/api/class-page).
 
 ## Basic Usage
 You have one primary way to import this Fetcher, which is the same for all fetchers.
@@ -11,8 +11,6 @@ You have one primary way to import this Fetcher, which is the same for all fetch
 from scrapling.fetchers import StealthyFetcher
 ```
 Check out how to configure the parsing options [here](choosing.md#parser-configuration-in-all-fetchers)
-
-Now, we will review most of the arguments one by one, using examples. If you want to jump to a table of all arguments for quick reference, [click here](#full-list-of-arguments)
 
 **Abstract:**
 
@@ -53,7 +51,7 @@ The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed br
 
 StealthyFetcher supports these anti-bot features:
 
-1. It easily bypasses all types of Cloudflare's Turnstile/Interstitial automatically.
+1. It easily bypasses all types of Cloudflare's Turnstile/Interstitial automatically with `solve_cloudflare=True`.
 2. It bypasses CDP runtime leaks and WebRTC leaks.
 3. It isolates JS execution, removes many Playwright fingerprints, and stops detection through some of the known behaviors that bots do.
 4. It generates canvas noise to prevent fingerprinting through canvas.
@@ -61,7 +59,7 @@ StealthyFetcher supports these anti-bot features:
 6. and other anti-protection options...
 
 ## Full list of arguments
-Scrapling provides many options with this fetcher and its session classes. Before jumping to the [examples](#examples), here's the full list of arguments
+Scrapling provides many options with this fetcher and its session classes.
 
 
 |       Argument        | Description                                                                                                                                                                                                                         | Optional |
@@ -90,7 +88,7 @@ Scrapling provides many options with this fetcher and its session classes. Befor
 |        cdp_url        | Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.                                                                                                                          |    ✔️    |
 |     user_data_dir     | Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory. **Only Works with sessions**                                                       |    ✔️    |
 |      extra_flags      | A list of additional browser flags to pass to the browser on launch.                                                                                                                                                                |    ✔️    |
-|   solve_cloudflare    | When enabled, fetcher solves all types of Cloudflare's Turnstile/Interstitial challenges before returning the response to you.                                                                                                      |    ✔️    |
+|   solve_cloudflare    | When enabled, fetcher solves all types of Cloudflare's Turnstile/Interstitial challenges before returning the response to you. Defaults to `False`.                                                                                                      |    ✔️    |
 |     block_webrtc      | Forces WebRTC to respect proxy settings to prevent local IP address leak.                                                                                                                                                           |    ✔️    |
 |      hide_canvas      | Add random noise to canvas operations to prevent fingerprinting.                                                                                                                                                                    |    ✔️    |
 |      allow_webgl      | Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended, as many WAFs now check if WebGL is enabled.                                                                     |    ✔️    |
@@ -340,7 +338,7 @@ page = StealthyFetcher.fetch(
     real_chrome=True,
     hide_canvas=True,
     google_search=True,
-    proxy='http://username:password@host:port',
+    proxy='http://username:password@host:port',  # It can also be a dictionary with only the keys 'server', 'username', and 'password'.
 )
 ```
 

@@ -189,6 +189,46 @@ class TestCLI:
             result = runner.invoke(post, [html_url, str(output_file), "-d", "key=value", "-j", '{"data": "test"}'])
             assert result.exit_code == 0
 
+    @pytest.mark.parametrize(
+        "raw, expected",
+        [("{}", {}), ("[]", []), ("0", 0), ("false", False)],
+    )
+    def test_extract_keeps_falsy_json_body(self, runner, tmp_path, html_url, raw, expected):
+        """Test that a falsy JSON body given with `--json` still reaches the request"""
+        output_file = tmp_path / "output.html"
+
+        with patch("scrapling.fetchers.Fetcher.post") as mock_post:
+            mock_post.return_value = configure_selector_mock()
+
+            result = runner.invoke(post, [html_url, str(output_file), "-j", raw])
+            assert result.exit_code == 0
+
+            body = mock_post.call_args.kwargs["json"]
+            assert body == expected
+            assert type(body) is type(expected)
+
+    def test_extract_keeps_non_empty_json_body(self, runner, tmp_path, html_url):
+        """Test that a non-empty JSON body is passed on unchanged"""
+        output_file = tmp_path / "output.html"
+
+        with patch("scrapling.fetchers.Fetcher.post") as mock_post:
+            mock_post.return_value = configure_selector_mock()
+
+            result = runner.invoke(post, [html_url, str(output_file), "-j", '{"k": 1}'])
+            assert result.exit_code == 0
+            assert mock_post.call_args.kwargs["json"] == {"k": 1}
+
+    def test_extract_without_json_body_sends_no_json(self, runner, tmp_path, html_url):
+        """Test that no `--json` option leaves the `json` key out of the request"""
+        output_file = tmp_path / "output.html"
+
+        with patch("scrapling.fetchers.Fetcher.post") as mock_post:
+            mock_post.return_value = configure_selector_mock()
+
+            result = runner.invoke(post, [html_url, str(output_file)])
+            assert result.exit_code == 0
+            assert "json" not in mock_post.call_args.kwargs
+
     def test_extract_put_command(self, runner, tmp_path, html_url):
         """Test extract `put` command"""
         output_file = tmp_path / "output.html"

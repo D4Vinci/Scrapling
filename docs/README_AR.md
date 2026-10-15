@@ -49,33 +49,51 @@
     <a href="https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html"><strong>وضع MCP</strong></a>
 </p>
 
-Scrapling هو إطار عمل تكيفي لـ Web Scraping يتعامل مع كل شيء من طلب واحد إلى زحف كامل النطاق.
+Scrapling هو إطار عمل لـ Web Scraping بلغة Python يجمع طلبات HTTP السريعة، والمتصفحات الخفية، وأدوات التحليل القوية، والزحف المتزامن في مكتبة واحدة.
 
-محلله يتعلم من تغييرات المواقع ويعيد تحديد موقع عناصرك تلقائياً عند تحديث الصفحات. جوالبه تتجاوز أنظمة مكافحة الروبوتات مثل Cloudflare Turnstile مباشرةً. وإطار عمل Spider الخاص به يتيح لك التوسع إلى عمليات زحف متزامنة ومتعددة الجلسات مع إيقاف/استئناف، وتدوير تلقائي لـ Proxy، وسرعة زحف تتكيف مع سرعة استجابة كل موقع وتتراجع عندما يبدأ بحظرك - كل ذلك في بضعة أسطر من Python. مكتبة واحدة، بدون تنازلات.
+اجلب الصفحات الثابتة، وشغّل JavaScript، وتفاعل مع المواقع، واستخرج البيانات من طلبات API التي تعمل خلفها. ابنِ زواحف بجلسات قابلة لإعادة الاستخدام، وتدوير للبروكسي، وإعادة محاولات تلقائية، وإيقاف مؤقت واستئناف، وأدوات مدمجة لتصدير البيانات.
 
-زحف سريع للغاية مع إحصائيات فورية و Streaming. مبني بواسطة مستخرجي الويب لمستخرجي الويب والمستخدمين العاديين، هناك شيء للجميع.
+استخدمه من Python، أو الطرفية، أو وكيل الذكاء الاصطناعي عبر خادم MCP وAgent Skill. من استخراج بضعة حقول إلى جمع موقع كامل بصيغة Markdown نظيفة، يغطي Scrapling كل خطوات استخراج بيانات الويب.
+
+## ماذا يمكنك أن تفعل باستخدام Scrapling
+
+- **[الجلب والتفاعل](https://scrapling.readthedocs.io/en/latest/fetching/choosing.html)**: طلبات HTTP سريعة، ومتصفحات خفية، وتشغيل JavaScript، والتعامل مع Cloudflare Turnstile/Interstitial، وجلسات مستمرة، وتسجيل طلبات API في الخلفية.
+- **[التحليل والاستخراج](https://scrapling.readthedocs.io/en/latest/parsing/selection.html)**: CSS وXPath، والبحث بالنص والتعبيرات النمطية، وتتبع العناصر التكيفي، ومطابقة العناصر المتشابهة، وإخراج Markdown نظيف.
+- **[الزحف والتصدير](https://scrapling.readthedocs.io/en/latest/spiders/getting-started.html)**: عناكب متزامنة، وتدوير للبروكسي، وإعادة محاولات، وAutoThrottle، وإيقاف مؤقت واستئناف، وStreaming، وقوالب جاهزة، وتصدير بصيغ JSON/JSONL/CSV/XML.
+- **[استخراج البيانات بالذكاء الاصطناعي أو من الطرفية](https://scrapling.readthedocs.io/en/latest/ai/mcp-server.html)**: خادم MCP لوكلاء الذكاء الاصطناعي لتصفح المواقع واستخراج البيانات، وAgent Skill، وأوامر CLI، وShell تفاعلي.
+
+ابدأ بصفحة واحدة:
 
 ```python
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher
-StealthyFetcher.adaptive = True
-p = StealthyFetcher.fetch('https://example.com', headless=True, network_idle=True)  # احصل على الموقع بشكل خفي!
-products = p.css('.product', auto_save=True)                                        # استخرج بيانات تنجو من تغييرات تصميم الموقع!
-products = p.css('.product', adaptive=True)                                         # لاحقاً، إذا تغيرت بنية الموقع، مرر `adaptive=True` للعثور عليها!
+from scrapling.fetchers import Fetcher
+
+page = Fetcher.get('https://quotes.toscrape.com/')
+quotes = page.css('.quote .text::text').getall()
+print(quotes)
 ```
-أو توسع إلى عمليات زحف كاملة
+
+أو توسع باستخدام Spider:
+
 ```python
 from scrapling.spiders import Spider, Response
 
-class MySpider(Spider):
-  name = "demo"
-  start_urls = ["https://example.com/"]
+class QuotesSpider(Spider):
+    name = "quotes"
+    start_urls = ["https://quotes.toscrape.com/"]
 
-  async def parse(self, response: Response):
-      for item in response.css('.product'):
-          yield {"title": item.css('h2::text').get()}
+    async def parse(self, response: Response):
+        for quote in response.css('.quote'):
+            yield {
+                "text": quote.css('.text::text').get(),
+                "author": quote.css('.author::text').get(),
+            }
 
-MySpider().start()
+result = QuotesSpider().start()
+print(len(result.items))
+result.items.to_json("quotes.json")
 ```
+
+يطبع `10` ويحفظ الاقتباسات وأسماء المؤلفين في `quotes.json`.
 
 <p align="center">
     <a href="https://dataimpulse.com/?utm_source=scrapling&utm_medium=banner&utm_campaign=scrapling" target="_blank" style="display:flex; justify-content:center; padding:4px 0;">
@@ -130,17 +148,6 @@ MySpider().start()
   </tr>
   <tr>
     <td width="200">
-      <a href="https://petrosky.io/d4vinci" target="_blank" title="PetroSky delivers cutting-edge VPS hosting.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/petrosky.png">
-      </a>
-    </td>
-    <td>
-    أغلق حاسوبك. أدوات الكشط تواصل العمل. <br />
-    <a href="https://petrosky.io/d4vinci" target="_blank">PetroSky VPS</a> - خوادم سحابية مصممة للأتمتة المتواصلة. أجهزة Windows وLinux مع تحكم كامل. بدءًا من 6.99 يورو/شهريًا.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://substack.thewebscraping.club/p/scrapling-hands-on-guide?utm_source=github&utm_medium=repo&utm_campaign=scrapling" target="_blank" title="The #1 newsletter dedicated to Web Scraping">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TWSC.png">
       </a>
@@ -177,6 +184,16 @@ MySpider().start()
     </td>
     <td>
     <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: قلّل الحظر واختبارات CAPTCHA بنسبة 90%. 28 مليون عنوان IP سكني عالي الجودة لاستخراج بيانات الويب بكثافة. 195 دولة. استهداف حسب المدينة/ISP/الرمز البريدي (ZIP). جلسات ثابتة أو دوّارة. حركة بيانات لا تنتهي صلاحيتها تبدأ من $2/GB. الكود <strong>SCRAPEANDTAKE</strong>: <em>خصم 25%</em>.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
+      </a>
+    </td>
+    <td>
+    <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: توقّف عن الدفع لكل GB. حركة بيانات سكنية غير محدودة، وأكثر من 100 مليون عنوان IP في أكثر من 190 دولة. ادفع حسب عرض النطاق الترددي. اطلب تجربة مجانية للبروكسيات السكنية بسرعة 50 Mbps.
     </td>
   </tr>
   <tr>
@@ -219,20 +236,20 @@ MySpider().start()
 - 🕷️ **واجهة Spider شبيهة بـ Scrapy**: عرّف Spiders مع `start_urls`، و async `parse` callbacks، وكائنات `Request`/`Response`.
 - ⚡ **زحف متزامن**: حدود تزامن قابلة للتكوين، وتحكم بالسرعة حسب النطاق، وتأخيرات التنزيل.
 - 🔄 **دعم الجلسات المتعددة**: واجهة موحدة لطلبات HTTP، ومتصفحات خفية بدون واجهة في Spider واحد - وجّه الطلبات إلى جلسات مختلفة بالمعرّف.
-- 💾 **إيقاف واستئناف**: استمرارية الزحف القائمة على Checkpoint. اضغط Ctrl+C للإيقاف بسلاسة؛ أعد التشغيل للاستئناف من حيث توقفت.
+- 💾 **إيقاف واستئناف**: احفظ الطلبات المعلقة والروابط التي سبق زيارتها باستخدام `crawldir`. اضغط Ctrl+C للإيقاف بسلاسة، ثم أعد التشغيل بنفس المجلد.
 - 📡 **وضع Streaming**: بث العناصر المستخرجة فور وصولها عبر `async for item in spider.stream()` مع إحصائيات فورية - مثالي لواجهات المستخدم وخطوط الأنابيب وعمليات الزحف الطويلة.
 - 🛡️ **كشف الطلبات المحظورة**: كشف تلقائي وإعادة محاولة للطلبات المحظورة مع منطق قابل للتخصيص.
 - 🚦 **AutoThrottle**: لا داعي لتخمين التأخير. يضبط Spider تأخير كل نطاق تلقائياً حسب سرعة استجابة الموقع، ثم يضاعفه (أو ينتظر ما يطلبه `Retry-After`) عندما يبدأ الموقع في حظرك أو تحديد معدل طلباتك، ويعود للتسريع عندما يتوقف عن ذلك.
 - 🤖 **الامتثال لـ robots.txt**: خيار `robots_txt_obey` الاختياري الذي يحترم توجيهات `Disallow` و `Crawl-delay` و `Request-rate` مع التخزين المؤقت لكل نطاق.
 - 🧪 **وضع التطوير**: تخزين الاستجابات على القرص في التشغيل الأول وإعادة تشغيلها في التشغيلات اللاحقة - كرّر العمل على منطق `parse()` دون الحاجة لإرسال طلبات جديدة إلى الخوادم المستهدفة.
-- 🧩 **قوالب Spider جاهزة**: تخطَّ الكود المتكرر مع `CrawlSpider` لتتبع الروابط بقواعد، و`SitemapSpider` للزحف المعتمد على sitemap/robots.txt، و`XMLFeedSpider`/`CSVFeedSpider` للمرور على خلاصات XML/RSS و CSV، و`ShopifySpider` لسحب كل منتج من أي متجر Shopify عبر واجهة JSON الخاصة به، مع عنصر لكل variant.
+- 🧩 **قوالب Spider جاهزة**: تخطَّ الكود المتكرر مع `CrawlSpider` لتتبع الروابط بقواعد، و`SitemapSpider` للزحف المعتمد على sitemap/robots.txt، و`XMLFeedSpider`/`CSVFeedSpider` للمرور على خلاصات XML/RSS و CSV، و`ShopifySpider` لجمع المنتجات من متاجر Shopify العامة، مع عنصر لكل variant.
 - 🔗 **استخراج الروابط**: أداة `LinkExtractor` مستقلة مع أنماط allow/deny، وفلاتر النطاقات، وتحديد النطاق عبر CSS/XPath، وتصفية الامتدادات، وتوحيد الروابط - استخدمها داخل القوالب أو بمفردها.
 - 📦 **تصدير مدمج**: صدّر النتائج عبر الخطافات وخط الأنابيب الخاص بك أو المصدّرات المدمجة JSON/JSONL/CSV/XML عبر `result.items.to_json()` و`to_jsonl()` و`to_csv()` و`to_xml()`.
 
 ### جلب متقدم للمواقع مع دعم الجلسات
 - **طلبات HTTP**: طلبات HTTP سريعة وخفية مع فئة `Fetcher`. يمكنها تقليد بصمة TLS للمتصفح والرؤوس واستخدام HTTP/3.
 - **التحميل الديناميكي**: جلب المواقع الديناميكية مع أتمتة كاملة للمتصفح من خلال فئة `StealthyFetcher` التي تدعم Chromium من Playwright و Google Chrome.
-- **تجاوز مكافحة الروبوتات**: قدرات تخفي متقدمة مع `StealthyFetcher` وانتحال fingerprint. يمكنه تجاوز جميع أنواع Turnstile/Interstitial من Cloudflare بسهولة بالأتمتة.
+- **تجاوز مكافحة الروبوتات**: قدرات تخفٍ متقدمة مع `StealthyFetcher` وتمويه بصمة المتصفح. يمكنه تجاوز جميع أنواع Cloudflare Turnstile/Interstitial بسهولة وبشكل آلي.
 - **إدارة الجلسات**: دعم الجلسات المستمرة مع فئات `FetcherSession` و`StealthySession` لإدارة ملفات تعريف الارتباط والحالة عبر الطلبات.
 - **تدوير Proxy**: `ProxyRotator` مدمج مع استراتيجيات التدوير الدوري أو المخصصة عبر جميع أنواع الجلسات، بالإضافة إلى تجاوزات Proxy لكل طلب.
 - **حظر النطاقات والإعلانات**: حظر الطلبات إلى نطاقات محددة (ونطاقاتها الفرعية) أو تفعيل حظر الإعلانات المدمج (~3,500 نطاق إعلانات/تتبع معروف) في الجوالب المعتمدة على المتصفح.
@@ -241,15 +258,15 @@ MySpider().start()
 - **التقاط طلبات API في الخلفية**: فعّل `record_requests=True` في جلسة المتصفح، ثم ابحث في الاستجابات المحفوظة باستخدام `session.network.search(limit=None)`. اقرأ بيانات API وأخطاء HTTP من الصفحات التي زرتها دون إرسال الطلبات مرة أخرى. السجل محدود الحجم ويحفظ أجسام الاستجابات النصية.
 - **دعم Async**: دعم async كامل عبر جميع الجوالب وفئات الجلسات async المخصصة.
 
-### الاستخراج التكيفي
+### التحليل واستخراج البيانات
 - 🔄 **تتبع العناصر الذكي**: إعادة تحديد موقع العناصر بعد تغييرات الموقع باستخدام خوارزميات التشابه الذكية.
 - 🎯 **الاختيار المرن الذكي**: محددات CSS، محددات XPath، البحث القائم على الفلاتر، البحث النصي، البحث بالتعبيرات العادية والمزيد.
 - 🔍 **البحث عن عناصر مشابهة**: تحديد العناصر المشابهة للعناصر الموجودة تلقائياً.
 
 ### ميزات الذكاء الاصطناعي
-- 🤖 **خادم MCP**: دع روبوتات الدردشة ووكلاء الذكاء الاصطناعي (Claude/Cursor/إلخ) يستخرجون البيانات عبر Scrapling بأدوات تعمل لمرة واحدة أو عبر جلسات، وتغطي طلبات HTTP العادية (بأي طريقة) وجلب الصفحات بالمتصفح الخفي الذي يتجاوز Cloudflare. يتم تضييق الصفحات بمحددات CSS وتنظيفها من محتوى حقن الأوامر قبل أن يراها الذكاء الاصطناعي، فيقرأ الوكيل أقل، ويكلف أقل، ولا يمكن اختطافه بنص مخفي. كما تتوفر لقطات الشاشة، والمتصفحات البعيدة عبر CDP، ونقل HTTP آمن افتراضياً. ([فيديو توضيحي](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
+- 🤖 **خادم MCP**: دع روبوتات المحادثة ووكلاء الذكاء الاصطناعي (Claude/Cursor وغيرها) يستخرجون البيانات عبر Scrapling باستخدام طلبات HTTP، والتفاعل مع المتصفح، ولقطات الشاشة، وحالة تسجيل الدخول المحفوظة، واستجابات API في الخلفية. يستخدم متصفحنا الخفي مع الأدوات المناسبة لتمكين نماذج الذكاء الاصطناعي المناسبة من تجاوز أي اختبار CAPTCHA تواجهه أثناء العمل (ناهيك عن أداة حل تحديات Cloudflare الخاصة بنا). يستخدم طرقاً متعددة لتقليل المحتوى المرسل للنموذج، وحظر الإعلانات، وحمايته من حقن التعليمات (Prompt-Injection). يشمل متصفحات بعيدة عبر CDP ونقل HTTP مع خيارات مصادقة. ([فيديو توضيحي](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
 - 🧠 **Agent Skill**: [مهارة جاهزة للتثبيت](https://scrapling.readthedocs.io/en/latest/ai/agent-skill.html) تُعلّم وكلاء البرمجة المكتبة بالكامل، حتى يكون الكود الذي يكتبونه بـ Scrapling مطابقاً للواجهة الحالية بدلاً من التخمين.
-- 📚 **Markdown جاهز لأنظمة RAG**: حوّل أي صفحة إلى Markdown نظيف ومعقّم وجاهز لنماذج اللغة بسطر واحد (`page.markdown()`)، أو ازحف موقعاً كاملاً إلى مجموعة ملفات Markdown باستخدام القالب `SiteToMarkdownSpider`، كل ذلك بدون استخدام أي نموذج لغوي في العملية. ([الوثائق](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
+- 📚 **Markdown جاهز لأنظمة RAG**: حوّل أي صفحة إلى Markdown نظيف ومعقّم وجاهز لنماذج اللغة بسطر واحد (`page.markdown()`)، أو ازحف موقعاً كاملاً إلى مجموعة ملفات Markdown باستخدام القالب `ContentSpider`، كل ذلك بدون استخدام أي نموذج لغوي في العملية. ([الوثائق](https://scrapling.readthedocs.io/en/latest/ai/building-rag-systems.html))
 
 ### بنية عالية الأداء ومختبرة ميدانياً
 - 🚀 **سريع كالبرق**: أداء محسّن يتفوق على معظم مكتبات Web Scraping في Python.
@@ -294,7 +311,7 @@ with StealthySession(headless=True, solve_cloudflare=True) as session:  # أبق
     data = page.css('#padded_content a').getall()
 
 # أو استخدم نمط الطلب لمرة واحدة، يفتح المتصفح لهذا الطلب، ثم يغلقه بعد الانتهاء
-page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare')
+page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare', solve_cloudflare=True)
 data = page.css('#padded_content a').getall()
 ```
 أتمتة المتصفح الكاملة
@@ -313,7 +330,7 @@ data = page.css('.quote .text::text').getall()
 ### Spiders
 ابنِ زواحف كاملة مع طلبات متزامنة وأنواع جلسات متعددة وإيقاف/استئناف:
 ```python
-from scrapling.spiders import Spider, Request, Response
+from scrapling.spiders import Spider, Response
 
 class QuotesSpider(Spider):
     name = "quotes"
@@ -360,17 +377,18 @@ class MultiSessionSpider(Spider):
 ```python
 QuotesSpider(crawldir="./crawl_data").start()
 ```
-اضغط Ctrl+C للإيقاف بسلاسة - يتم حفظ التقدم تلقائياً. لاحقاً، عند تشغيل Spider مرة أخرى، مرر نفس `crawldir`، وسيستأنف من حيث توقف.
+عند ضبط `crawldir`، اضغط Ctrl+C لحفظ الطلبات المعلقة والروابط التي سبق زيارتها. أعد التشغيل بنفس `crawldir` للاستئناف. احفظ البيانات المستخرجة بشكل منفصل.
 
-أو تخطَّ كتابة منطق الزحف تماماً باستخدام القوالب الجاهزة، مثل سحب كتالوج متجر Shopify بالكامل:
+أو تخطَّ كتابة منطق الزحف بالكامل باستخدام القوالب الجاهزة، مثل جلب كتالوج متجر Shopify بالكامل:
 ```python
 from scrapling.spiders import ShopifySpider
 
 class MyStore(ShopifySpider):
     target_website = "example.com"
 
-result = MyStore().start()  # كل منتج في المتجر، عنصر لكل variant
+result = MyStore().start()  # كل منتج في المتجر، مع عنصر لكل variant
 ```
+يقرأ القالب المنتجات المتاحة عبر واجهات المجموعات العامة، مع عنصر لكل variant.
 
 ### التحليل المتقدم والتنقل
 ```python
@@ -388,18 +406,19 @@ quotes = page.find_all('div', class_='quote')
 quotes = page.find_all(['div'], class_='quote')
 quotes = page.find_all(class_='quote')  # وهكذا...
 # البحث عن عنصر بمحتوى النص
-quotes = page.find_by_text('quote', tag='div')
+quotes = page.find_by_text('Albert Einstein', first_match=False)
 
 # التنقل المتقدم
 quote_text = page.css('.quote')[0].css('.text::text').get()
-quote_text = page.css('.quote').css('.text::text').getall()  # محددات متسلسلة
+quote_texts = page.css('.quote').css('.text::text').getall()  # محددات متسلسلة
 first_quote = page.css('.quote')[0]
-author = first_quote.next_sibling.css('.author::text')
+author = first_quote.css('.author::text').get()
+next_quote = first_quote.next
 parent_container = first_quote.parent
 
 # علاقات العناصر والتشابه
 similar_elements = first_quote.find_similar()
-below_elements = first_quote.below_elements()
+below_elements = first_quote.below_elements
 ```
 يمكنك استخدام المحلل مباشرة إذا كنت لا تريد جلب المواقع كما يلي:
 ```python
@@ -414,22 +433,18 @@ page = Selector("<html>...</html>")
 import asyncio
 from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
-async with FetcherSession(http3=True) as session:  # `FetcherSession` واعٍ بالسياق ويعمل في كلا النمطين المتزامن/async
-    page1 = session.get('https://quotes.toscrape.com/')
-    page2 = session.get('https://quotes.toscrape.com/', impersonate='firefox135')
+async def main():
+    async with FetcherSession(http3=True) as http_session:  # تتكيف `FetcherSession` مع السياق وتعمل بالنمطين المتزامن وغير المتزامن
+        page1 = await http_session.get('https://quotes.toscrape.com/')
+        page2 = await http_session.get('https://quotes.toscrape.com/page/2/', impersonate='chrome')
+        print(len(page1.css('.quote')), len(page2.css('.quote')))
 
-# استخدام جلسة async
-async with AsyncStealthySession(max_pages=2) as session:
-    tasks = []
-    urls = ['https://example.com/page1', 'https://example.com/page2']
+    async with AsyncStealthySession(max_pages=2) as browser_session:
+        urls = ['https://quotes.toscrape.com/js/', 'https://quotes.toscrape.com/js/page/2/']
+        pages = await asyncio.gather(*(browser_session.fetch(url, wait_selector='.quote') for url in urls))
+        print([len(page.css('.quote')) for page in pages])
 
-    for url in urls:
-        task = session.fetch(url)
-        tasks.append(task)
-
-    print(session.get_pool_stats())  # اختياري - حالة مجموعة علامات تبويب المتصفح (مشغول/حر/خطأ)
-    results = await asyncio.gather(*tasks)
-    print(session.get_pool_stats())
+asyncio.run(main())
 ```
 
 ## واجهة سطر الأوامر والـ Shell التفاعلي
@@ -440,13 +455,14 @@ async with AsyncStealthySession(max_pages=2) as session:
 
 تشغيل Shell الـ Web Scraping التفاعلي
 ```bash
+pip install "scrapling[shell]"
 scrapling shell
 ```
-استخرج الصفحات إلى ملف مباشرة دون برمجة (يستخرج المحتوى داخل وسم `body` افتراضياً). إذا انتهى ملف الإخراج بـ `.txt`، فسيتم استخراج محتوى النص للهدف. إذا انتهى بـ `.md`، فسيكون تمثيل Markdown لمحتوى HTML؛ إذا انتهى بـ `.html`، فسيكون محتوى HTML نفسه.
+استخرج الصفحات إلى ملف مباشرة دون برمجة. استخدم `--css-selector` لاختيار المحتوى، أو `--ai-targeted` لاختيار محتوى `body` وتنقيته. استخدم `.txt` للنص، أو `.md` لصيغة Markdown، أو `.html` لصيغة HTML.
 ```bash
-scrapling extract get 'https://example.com' content.md
-scrapling extract get 'https://example.com' content.txt --css-selector '#fromSkipToProducts' --impersonate 'chrome'  # جميع العناصر المطابقة لمحدد CSS '#fromSkipToProducts'
-scrapling extract fetch 'https://example.com' content.md --css-selector '#fromSkipToProducts' --no-headless
+scrapling extract get 'https://quotes.toscrape.com/' quotes.md
+scrapling extract get 'https://quotes.toscrape.com/' quotes.txt --css-selector '.quote' --impersonate 'chrome'
+scrapling extract fetch 'https://quotes.toscrape.com/js/' quotes.md --css-selector '.quote' --wait-selector '.quote' --no-headless
 scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --css-selector '#padded_content a' --solve-cloudflare
 ```
 
@@ -531,7 +547,7 @@ pip install scrapling
        ```bash
        pip install "scrapling[all]"
        ```
-   تذكر أنك تحتاج إلى تثبيت تبعيات المتصفح مع `scrapling install` بعد أي من هذه الإضافات (إذا لم تكن قد فعلت ذلك بالفعل)
+   شغّل `scrapling install` عند استخدام جلب المتصفح. طلبات HTTP لا تحتاج إلى تثبيت متصفح.
 
 ### Docker
 يمكنك أيضاً تثبيت صورة Docker مع جميع الإضافات والمتصفحات باستخدام الأمر التالي من DockerHub:
@@ -561,7 +577,7 @@ docker pull ghcr.io/d4vinci/scrapling:latest
     title = {Scrapling},
     year = {2024},
     url = {https://github.com/D4Vinci/Scrapling},
-    note = {An adaptive Web Scraping framework that handles everything from a single request to a full-scale crawl!}
+    note = {A Python Web Scraping framework for everything from a single request to a full-scale crawl!}
   }
 ```
 

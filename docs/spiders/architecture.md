@@ -1,3 +1,8 @@
+---
+title: "How Scrapling Web Crawlers Work"
+description: "See how spiders, requests, sessions, scheduling and the crawl engine fit together. Compare the workflow with Scrapy and choose a starting point."
+---
+
 # Spiders architecture
 
 !!! success "Prerequisites"

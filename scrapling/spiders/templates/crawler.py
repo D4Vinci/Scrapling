@@ -12,6 +12,7 @@ from scrapling.core._types import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Union,
 )
@@ -56,6 +57,8 @@ class CrawlSpider(Spider):
 
     You can start from it and override it as needed for more custom functionality, or just implement your own spider.
     """
+
+    crawl_strategy: Literal["bfs", "dfs"] = "bfs"
 
     def rules(self) -> List[CrawlRule]:
         """Override to define link-following rules."""

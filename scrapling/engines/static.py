@@ -172,7 +172,13 @@ class _ConfigurationLogic(ABC):
         3. Sets a Google referer header.
         """
         # Merge session headers with request headers, request takes precedence (if it was set)
-        final_headers = {**self._default_headers, **(headers if headers else {})}
+        # Header names are case-insensitive, so a session header spelled differently must not be sent next to it
+        headers = headers if headers else {}
+        request_keys = {k.lower() for k in headers}
+        session_headers = {
+            k: v for k, v in self._default_headers.items() if k in headers or k.lower() not in request_keys
+        }
+        final_headers = {**session_headers, **headers}
         headers_keys = {k.lower() for k in final_headers}
         if stealth:
             if "referer" not in headers_keys:

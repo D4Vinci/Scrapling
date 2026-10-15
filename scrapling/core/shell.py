@@ -235,6 +235,10 @@ class CurlParser:
 
         headers, cookies = _ParseHeaders(parsed_args.header)
 
+        # `-A` only applies when `-H` didn't already set a user agent
+        if parsed_args.user_agent and not any(key.lower() == "user-agent" for key in headers):
+            headers["User-Agent"] = parsed_args.user_agent
+
         if parsed_args.cookie:
             # We are focusing on the string format from DevTools.
             try:
@@ -349,6 +353,9 @@ class CurlParser:
                 return None
 
             request_args = request._asdict()
+            if isinstance(request_args["proxy"], dict):
+                # The fetchers take a single proxy URL, not a per-scheme dict
+                request_args["proxy"] = request_args["proxy"].get("https") or request_args["proxy"].get("http")
             method = request_args.pop("method").strip().lower()
             if method in self._supported_methods:
                 request_args["json"] = request_args.pop("json_data")
@@ -701,12 +708,15 @@ class Convertor:
         elif not filename.endswith((".md", ".html", ".txt")):
             raise ValueError("Unknown file type: filename must end with '.md', '.html', or '.txt'")
         else:
-            with open(filename, "w", encoding=page.encoding) as f:
-                extension = filename.split(".")[-1]
-                content = cls._extract_content(
-                    page,
-                    cls._extension_map[extension],
-                    css_selector=css_selector,
-                    main_content_only=main_content_only,
-                )
-                f.write(("\n\n" if extension == "md" else "").join(filter(None, content)))
+            extension = filename.split(".")[-1]
+            content = cls._extract_content(
+                page,
+                cls._extension_map[extension],
+                css_selector=css_selector,
+                main_content_only=main_content_only,
+            )
+            # Build the whole text before opening the file so a failure can't leave an empty file behind
+            text = ("\n\n" if extension == "md" else "").join(filter(None, content))
+            # Markdown and text are produced by the converter, so they don't depend on the page charset
+            with open(filename, "w", encoding=page.encoding if extension == "html" else "utf-8") as f:
+                f.write(text)
