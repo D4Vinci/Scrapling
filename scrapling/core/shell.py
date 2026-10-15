@@ -701,12 +701,15 @@ class Convertor:
         elif not filename.endswith((".md", ".html", ".txt")):
             raise ValueError("Unknown file type: filename must end with '.md', '.html', or '.txt'")
         else:
-            with open(filename, "w", encoding=page.encoding) as f:
-                extension = filename.split(".")[-1]
-                content = cls._extract_content(
-                    page,
-                    cls._extension_map[extension],
-                    css_selector=css_selector,
-                    main_content_only=main_content_only,
-                )
-                f.write(("\n\n" if extension == "md" else "").join(filter(None, content)))
+            extension = filename.split(".")[-1]
+            content = cls._extract_content(
+                page,
+                cls._extension_map[extension],
+                css_selector=css_selector,
+                main_content_only=main_content_only,
+            )
+            # Build the whole text before opening the file so a failure can't leave an empty file behind
+            text = ("\n\n" if extension == "md" else "").join(filter(None, content))
+            # Markdown and text are produced by the converter, so they don't depend on the page charset
+            with open(filename, "w", encoding=page.encoding if extension == "html" else "utf-8") as f:
+                f.write(text)

@@ -153,6 +153,52 @@ class TestConvertor:
         Convertor.write_content_to_file(page, str(txt_file))
         assert txt_file.exists()
 
+    @pytest.mark.parametrize("encoding", ["iso-8859-1", "windows-1252"])
+    @pytest.mark.parametrize("extension", ["md", "txt"])
+    def test_write_text_outputs_as_utf8(self, encoding, extension, tmp_path):
+        """Test that md/txt output does not depend on the page charset"""
+        page = Selector("<html><body><p>Caf&eacute; &mdash; &#x4E2D;</p></body></html>", encoding=encoding)
+
+        out_file = tmp_path / f"output.{extension}"
+        Convertor.write_content_to_file(page, str(out_file))
+
+        assert out_file.read_bytes().decode("utf-8").strip() == "Café — 中"
+
+    def test_write_html_keeps_page_encoding(self, tmp_path):
+        """Test that html output is still written with the page encoding"""
+        page = Selector("<html><body><p>Caf&eacute;</p></body></html>", encoding="iso-8859-1")
+
+        out_file = tmp_path / "output.html"
+        Convertor.write_content_to_file(page, str(out_file))
+
+        assert "Caf\xe9".encode("iso-8859-1") in out_file.read_bytes()
+
+    def test_write_utf8_page_is_unchanged(self, tmp_path):
+        """Test that md/txt output of a UTF-8 page is written as UTF-8"""
+        page = Selector("<html><body><p>Café — 中</p></body></html>")
+
+        for extension in ("md", "txt"):
+            out_file = tmp_path / f"output.{extension}"
+            Convertor.write_content_to_file(page, str(out_file))
+            assert out_file.read_bytes().decode("utf-8").strip() == "Café — 中"
+
+    def test_failed_conversion_keeps_existing_file(self, sample_html, tmp_path):
+        """Test that a failing conversion does not truncate the output file"""
+        page = Selector(sample_html)
+        out_file = tmp_path / "output.md"
+        out_file.write_text("previous content", encoding="utf-8")
+
+        with patch.object(Convertor, "_extract_content", side_effect=RuntimeError("boom")):
+            with pytest.raises(RuntimeError):
+                Convertor.write_content_to_file(page, str(out_file))
+        assert out_file.read_text(encoding="utf-8") == "previous content"
+
+        missing_file = tmp_path / "missing.txt"
+        with patch.object(Convertor, "_extract_content", side_effect=RuntimeError("boom")):
+            with pytest.raises(RuntimeError):
+                Convertor.write_content_to_file(page, str(missing_file))
+        assert not missing_file.exists()
+
     def test_invalid_operations(self, sample_html):
         """Test error handling in convertor"""
         page = Selector(sample_html)
