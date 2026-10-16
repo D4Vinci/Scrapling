@@ -1,0 +1,17 @@
+{% macro t(key) %}{{ {
+  "ATTRIBUTE": "属性", "Attributes": "属性", "Attributes:": "属性：",
+  "BOUND:": "上界：", "Bound or Constraints": "上界或约束",
+  "Classes": "类", "Classes:": "类：", "CLASS": "类",
+  "Class Type Parameters:": "类的类型参数：", "CLASS TYPE PARAMETER": "类的类型参数",
+  "CONSTRAINTS:": "约束：", "DEFAULT:": "默认值：", "Default": "默认值", "default:": "默认值：",
+  "DESCRIPTION": "说明", "Description": "说明", "Examples:": "示例：",
+  "Functions": "函数", "Functions:": "函数：", "FUNCTION": "函数",
+  "Init Type Parameters:": "初始化类型参数：", "INIT TYPE PARAMETER": "初始化类型参数",
+  "Methods:": "方法：", "METHOD": "方法", "Modules": "模块", "Modules:": "模块：", "MODULE": "模块",
+  "Name": "名称", "Other Parameters:": "其他参数：", "PARAMETER": "参数", "Parameters:": "参数：",
+  "RAISES": "抛出异常", "Raises:": "抛出异常：", "RECEIVES": "接收", "Receives:": "接收：",
+  "required": "必填", "RETURNS": "返回", "Returns:": "返回：", "Source code in": "源代码位于",
+  "TYPE:": "类型：", "Type": "类型", "Type Aliases": "类型别名", "Type Aliases:": "类型别名：",
+  "TYPE ALIAS": "类型别名", "Type Parameters:": "类型参数：", "TYPE PARAMETER": "类型参数",
+  "WARNS": "警告", "Warns:": "警告：", "YIELDS": "产出", "Yields:": "产出："
+}.get(key, "") }}{% endmacro %}
