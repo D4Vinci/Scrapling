@@ -1,0 +1,17 @@
+{% macro t(key) %}{{ {
+  "ATTRIBUTE": "속성", "Attributes": "속성", "Attributes:": "속성:",
+  "BOUND:": "상한:", "Bound or Constraints": "상한 또는 제약 조건",
+  "Classes": "클래스", "Classes:": "클래스:", "CLASS": "클래스",
+  "Class Type Parameters:": "클래스 타입 매개변수:", "CLASS TYPE PARAMETER": "클래스 타입 매개변수",
+  "CONSTRAINTS:": "제약 조건:", "DEFAULT:": "기본값:", "Default": "기본값", "default:": "기본값:",
+  "DESCRIPTION": "설명", "Description": "설명", "Examples:": "예제:",
+  "Functions": "함수", "Functions:": "함수:", "FUNCTION": "함수",
+  "Init Type Parameters:": "초기화 타입 매개변수:", "INIT TYPE PARAMETER": "초기화 타입 매개변수",
+  "Methods:": "메서드:", "METHOD": "메서드", "Modules": "모듈", "Modules:": "모듈:", "MODULE": "모듈",
+  "Name": "이름", "Other Parameters:": "기타 매개변수:", "PARAMETER": "매개변수", "Parameters:": "매개변수:",
+  "RAISES": "발생하는 예외", "Raises:": "발생하는 예외:", "RECEIVES": "받는 값", "Receives:": "받는 값:",
+  "required": "필수", "RETURNS": "반환값", "Returns:": "반환값:", "Source code in": "소스 코드 위치",
+  "TYPE:": "자료형:", "Type": "자료형", "Type Aliases": "타입 별칭", "Type Aliases:": "타입 별칭:",
+  "TYPE ALIAS": "타입 별칭", "Type Parameters:": "타입 매개변수:", "TYPE PARAMETER": "타입 매개변수",
+  "WARNS": "경고", "Warns:": "경고:", "YIELDS": "생성하는 값", "Yields:": "생성하는 값:"
+}.get(key, "") }}{% endmacro %}
