@@ -1,0 +1,17 @@
+{% macro t(key) %}{{ {
+  "ATTRIBUTE": "ATRIBUTO", "Attributes": "Atributos", "Attributes:": "Atributos:",
+  "BOUND:": "LÍMITE:", "Bound or Constraints": "Límite o restricciones",
+  "Classes": "Clases", "Classes:": "Clases:", "CLASS": "CLASE",
+  "Class Type Parameters:": "Parámetros de tipo de la clase:", "CLASS TYPE PARAMETER": "PARÁMETRO DE TIPO DE LA CLASE",
+  "CONSTRAINTS:": "RESTRICCIONES:", "DEFAULT:": "PREDETERMINADO:", "Default": "Predeterminado", "default:": "predeterminado:",
+  "DESCRIPTION": "DESCRIPCIÓN", "Description": "Descripción", "Examples:": "Ejemplos:",
+  "Functions": "Funciones", "Functions:": "Funciones:", "FUNCTION": "FUNCIÓN",
+  "Init Type Parameters:": "Parámetros de tipo de inicialización:", "INIT TYPE PARAMETER": "PARÁMETRO DE TIPO DE INICIALIZACIÓN",
+  "Methods:": "Métodos:", "METHOD": "MÉTODO", "Modules": "Módulos", "Modules:": "Módulos:", "MODULE": "MÓDULO",
+  "Name": "Nombre", "Other Parameters:": "Otros parámetros:", "PARAMETER": "PARÁMETRO", "Parameters:": "Parámetros:",
+  "RAISES": "EXCEPCIONES", "Raises:": "Excepciones:", "RECEIVES": "RECIBE", "Receives:": "Recibe:",
+  "required": "obligatorio", "RETURNS": "DEVUELVE", "Returns:": "Devuelve:", "Source code in": "Código fuente en",
+  "TYPE:": "TIPO:", "Type": "Tipo", "Type Aliases": "Alias de tipos", "Type Aliases:": "Alias de tipos:",
+  "TYPE ALIAS": "ALIAS DE TIPO", "Type Parameters:": "Parámetros de tipo:", "TYPE PARAMETER": "PARÁMETRO DE TIPO",
+  "WARNS": "ADVERTENCIAS", "Warns:": "Advertencias:", "YIELDS": "GENERA", "Yields:": "Genera:"
+}.get(key, "") }}{% endmacro %}
