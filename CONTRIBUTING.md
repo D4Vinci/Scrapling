@@ -148,6 +148,8 @@ Documentation is built using [Zensical](https://zensical.org/). You can build it
 ```bash
 pip install zensical
 pip install -r docs/requirements.txt
-zensical build --clean  # Build the static site
-zensical serve          # Local preview
+for config in zensical.yml zensical.*.yml; do
+    zensical build --clean --config-file "$config" || exit 1
+done
+zensical serve --config-file zensical.yml
 ```

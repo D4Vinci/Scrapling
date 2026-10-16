@@ -15,7 +15,7 @@ build:
       - pip install ".[all]"
     build:
       html:
-        - zensical build
+        - for config in zensical.yml zensical.*.yml; do zensical build --config-file "$config" || exit 1; done
     post_build:
       - mkdir -p $READTHEDOCS_OUTPUT/html/
       - cp --recursive site/* $READTHEDOCS_OUTPUT/html/

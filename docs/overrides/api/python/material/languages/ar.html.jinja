@@ -1,0 +1,17 @@
+{% macro t(key) %}{{ {
+  "ATTRIBUTE": "الخاصية", "Attributes": "الخصائص", "Attributes:": "الخصائص:",
+  "BOUND:": "الحد:", "Bound or Constraints": "الحد أو القيود",
+  "Classes": "الفئات", "Classes:": "الفئات:", "CLASS": "الفئة",
+  "Class Type Parameters:": "معاملات أنواع الفئة:", "CLASS TYPE PARAMETER": "معامل نوع الفئة",
+  "CONSTRAINTS:": "القيود:", "DEFAULT:": "القيمة الافتراضية:", "Default": "القيمة الافتراضية", "default:": "القيمة الافتراضية:",
+  "DESCRIPTION": "الوصف", "Description": "الوصف", "Examples:": "أمثلة:",
+  "Functions": "الدوال", "Functions:": "الدوال:", "FUNCTION": "الدالة",
+  "Init Type Parameters:": "معاملات أنواع التهيئة:", "INIT TYPE PARAMETER": "معامل نوع التهيئة",
+  "Methods:": "الطرق:", "METHOD": "الطريقة", "Modules": "الوحدات", "Modules:": "الوحدات:", "MODULE": "الوحدة",
+  "Name": "الاسم", "Other Parameters:": "معاملات أخرى:", "PARAMETER": "المعامل", "Parameters:": "المعاملات:",
+  "RAISES": "الأخطاء", "Raises:": "الأخطاء:", "RECEIVES": "القيم المستقبلة", "Receives:": "القيم المستقبلة:",
+  "required": "مطلوب", "RETURNS": "القيم المعادة", "Returns:": "القيم المعادة:", "Source code in": "الكود في",
+  "TYPE:": "النوع:", "Type": "النوع", "Type Aliases": "أسماء الأنواع البديلة", "Type Aliases:": "أسماء الأنواع البديلة:",
+  "TYPE ALIAS": "اسم نوع بديل", "Type Parameters:": "معاملات الأنواع:", "TYPE PARAMETER": "معامل النوع",
+  "WARNS": "التحذيرات", "Warns:": "التحذيرات:", "YIELDS": "القيم الناتجة", "Yields:": "القيم الناتجة:"
+}.get(key, "") }}{% endmacro %}
