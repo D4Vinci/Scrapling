@@ -135,6 +135,9 @@ extra:
   - name: 简体中文
     link: https://scrapling.readthedocs.io/en/latest/zh/
     lang: zh
+  - name: 日本語
+    link: https://scrapling.readthedocs.io/en/latest/ja/
+    lang: ja
 watch:
 - zensical-base.yml
 - docs/assets

@@ -1,0 +1,17 @@
+{% macro t(key) %}{{ {
+  "ATTRIBUTE": "属性", "Attributes": "属性", "Attributes:": "属性：",
+  "BOUND:": "上限：", "Bound or Constraints": "上限または制約",
+  "Classes": "クラス", "Classes:": "クラス：", "CLASS": "クラス",
+  "Class Type Parameters:": "クラスの型パラメーター：", "CLASS TYPE PARAMETER": "クラスの型パラメーター",
+  "CONSTRAINTS:": "制約：", "DEFAULT:": "既定値：", "Default": "既定値", "default:": "既定値：",
+  "DESCRIPTION": "説明", "Description": "説明", "Examples:": "使用例：",
+  "Functions": "関数", "Functions:": "関数：", "FUNCTION": "関数",
+  "Init Type Parameters:": "初期化の型パラメーター：", "INIT TYPE PARAMETER": "初期化の型パラメーター",
+  "Methods:": "メソッド：", "METHOD": "メソッド", "Modules": "モジュール", "Modules:": "モジュール：", "MODULE": "モジュール",
+  "Name": "名前", "Other Parameters:": "その他の引数：", "PARAMETER": "引数", "Parameters:": "引数：",
+  "RAISES": "発生する例外", "Raises:": "発生する例外：", "RECEIVES": "受け取る値", "Receives:": "受け取る値：",
+  "required": "必須", "RETURNS": "戻り値", "Returns:": "戻り値：", "Source code in": "ソースコードの場所",
+  "TYPE:": "型：", "Type": "型", "Type Aliases": "型エイリアス", "Type Aliases:": "型エイリアス：",
+  "TYPE ALIAS": "型エイリアス", "Type Parameters:": "型パラメーター：", "TYPE PARAMETER": "型パラメーター",
+  "WARNS": "警告", "Warns:": "警告：", "YIELDS": "生成する値", "Yields:": "生成する値："
+}.get(key, "") }}{% endmacro %}
