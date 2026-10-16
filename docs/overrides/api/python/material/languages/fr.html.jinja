@@ -1,0 +1,17 @@
+{% macro t(key) %}{{ {
+  "ATTRIBUTE": "ATTRIBUT", "Attributes": "Attributs", "Attributes:": "Attributs :",
+  "BOUND:": "BORNE :", "Bound or Constraints": "Borne ou contraintes",
+  "Classes": "Classes", "Classes:": "Classes :", "CLASS": "CLASSE",
+  "Class Type Parameters:": "Paramètres de type de la classe :", "CLASS TYPE PARAMETER": "PARAMÈTRE DE TYPE DE LA CLASSE",
+  "CONSTRAINTS:": "CONTRAINTES :", "DEFAULT:": "PAR DÉFAUT :", "Default": "Par défaut", "default:": "par défaut :",
+  "DESCRIPTION": "DESCRIPTION", "Description": "Description", "Examples:": "Exemples :",
+  "Functions": "Fonctions", "Functions:": "Fonctions :", "FUNCTION": "FONCTION",
+  "Init Type Parameters:": "Paramètres de type de l’initialisation :", "INIT TYPE PARAMETER": "PARAMÈTRE DE TYPE DE L’INITIALISATION",
+  "Methods:": "Méthodes :", "METHOD": "MÉTHODE", "Modules": "Modules", "Modules:": "Modules :", "MODULE": "MODULE",
+  "Name": "Nom", "Other Parameters:": "Autres paramètres :", "PARAMETER": "PARAMÈTRE", "Parameters:": "Paramètres :",
+  "RAISES": "EXCEPTIONS", "Raises:": "Exceptions :", "RECEIVES": "REÇOIT", "Receives:": "Reçoit :",
+  "required": "obligatoire", "RETURNS": "RENVOIE", "Returns:": "Renvoie :", "Source code in": "Code source dans",
+  "TYPE:": "TYPE :", "Type": "Type", "Type Aliases": "Alias de types", "Type Aliases:": "Alias de types :",
+  "TYPE ALIAS": "ALIAS DE TYPE", "Type Parameters:": "Paramètres de type :", "TYPE PARAMETER": "PARAMÈTRE DE TYPE",
+  "WARNS": "AVERTISSEMENTS", "Warns:": "Avertissements :", "YIELDS": "PRODUIT", "Yields:": "Produit :"
+}.get(key, "") }}{% endmacro %}
