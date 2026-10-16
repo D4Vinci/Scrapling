@@ -1,7 +1,7 @@
 <!-- mcp-name: io.github.D4Vinci/Scrapling -->
 
 <h1 align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/ko/">
+    <a href="https://scrapling.readthedocs.io/ko/latest/">
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/cover_dark.svg?sanitize=true">
           <img alt="Scrapling 표지" src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/cover_light.svg?sanitize=true">
@@ -19,8 +19,8 @@
     <a href="https://hub.docker.com/r/pyd4vinci/scrapling" target="_blank">
         <img alt="Docker 다운로드 수" src="https://img.shields.io/docker/pulls/pyd4vinci/scrapling?labelColor=%20%23FDB062&logo=Docker&labelColor=%20%23528bff"></a>
     <a href="https://clickpy.clickhouse.com/dashboard/scrapling" rel="nofollow"><img src="https://img.shields.io/pypi/dm/scrapling" alt="PyPI 패키지 다운로드 수"></a>
-    <a href="https://scrapling.readthedocs.io/en/latest/ko/ai/agent-skill.html" alt="AI 에이전트용 Skill">
-        <img alt="Agent Skill 배지" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Fen%2Flatest%2Fko%2Fai%2Fagent-skill.html"></a>
+    <a href="https://scrapling.readthedocs.io/ko/latest/ai/agent-skill.html" alt="AI 에이전트용 Skill">
+        <img alt="Agent Skill 배지" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Fko%2Flatest%2Fai%2Fagent-skill.html"></a>
     <a href="https://clawhub.ai/D4Vinci/scrapling-official" alt="OpenClaw용 Skill">
         <img alt="OpenClaw용 Skill" src="https://img.shields.io/badge/Clawhub-darkred?style=flat&label=OpenClaw&link=https%3A%2F%2Fclawhub.ai%2FD4Vinci%2Fscrapling-official"></a>
     <br/>
@@ -36,17 +36,17 @@
 </p>
 
 <p align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/ko/parsing/selection.html"><strong>요소 찾기</strong></a>
+    <a href="https://scrapling.readthedocs.io/ko/latest/parsing/selection.html"><strong>요소 찾기</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ko/fetching/choosing.html"><strong>Fetcher 선택 가이드</strong></a>
+    <a href="https://scrapling.readthedocs.io/ko/latest/fetching/choosing.html"><strong>Fetcher 선택 가이드</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ko/spiders/architecture.html"><strong>Spider</strong></a>
+    <a href="https://scrapling.readthedocs.io/ko/latest/spiders/architecture.html"><strong>Spider</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ko/spiders/proxy-blocking.html"><strong>프록시 교체</strong></a>
+    <a href="https://scrapling.readthedocs.io/ko/latest/spiders/proxy-blocking.html"><strong>프록시 교체</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ko/cli/overview.html"><strong>CLI</strong></a>
+    <a href="https://scrapling.readthedocs.io/ko/latest/cli/overview.html"><strong>CLI</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ko/ai/mcp-server.html"><strong>MCP 서버</strong></a>
+    <a href="https://scrapling.readthedocs.io/ko/latest/ai/mcp-server.html"><strong>MCP 서버</strong></a>
 </p>
 
 Scrapling은 빠른 HTTP 요청, 스텔스 브라우저, 강력한 파싱, 동시 크롤링을 하나로 묶은 Python 웹 스크래핑 프레임워크입니다.
@@ -57,10 +57,10 @@ Python이나 터미널에서 사용할 수 있으며, MCP 서버와 Agent Skill�
 
 ## Scrapling으로 할 수 있는 일
 
-- **[페이지 가져오기와 조작](https://scrapling.readthedocs.io/en/latest/ko/fetching/choosing.html)**: 빠른 HTTP 요청, 스텔스 브라우저, JavaScript 실행, Cloudflare Turnstile과 Interstitial 처리, 지속 세션, 백그라운드 API 응답 기록.
-- **[파싱과 데이터 추출](https://scrapling.readthedocs.io/en/latest/ko/parsing/selection.html)**: CSS, XPath, 텍스트와 정규식 검색, 페이지가 바뀐 뒤에도 요소 추적, 비슷한 요소 찾기, 깔끔한 Markdown 출력.
-- **[크롤링과 내보내기](https://scrapling.readthedocs.io/en/latest/ko/spiders/getting-started.html)**: 동시 크롤링, 프록시 교체, 재시도, AutoThrottle, 일시 정지와 재개, 스트리밍, 바로 쓸 수 있는 템플릿, JSON·JSONL·CSV·XML 내보내기.
-- **[AI나 터미널에서 스크래핑](https://scrapling.readthedocs.io/en/latest/ko/ai/mcp-server.html)**: AI 에이전트가 사이트를 탐색하고 데이터를 추출하는 MCP 서버, Agent Skill, CLI 명령어, 대화형 셸.
+- **[페이지 가져오기와 조작](https://scrapling.readthedocs.io/ko/latest/fetching/choosing.html)**: 빠른 HTTP 요청, 스텔스 브라우저, JavaScript 실행, Cloudflare Turnstile과 Interstitial 처리, 지속 세션, 백그라운드 API 응답 기록.
+- **[파싱과 데이터 추출](https://scrapling.readthedocs.io/ko/latest/parsing/selection.html)**: CSS, XPath, 텍스트와 정규식 검색, 페이지가 바뀐 뒤에도 요소 추적, 비슷한 요소 찾기, 깔끔한 Markdown 출력.
+- **[크롤링과 내보내기](https://scrapling.readthedocs.io/ko/latest/spiders/getting-started.html)**: 동시 크롤링, 프록시 교체, 재시도, AutoThrottle, 일시 정지와 재개, 스트리밍, 바로 쓸 수 있는 템플릿, JSON·JSONL·CSV·XML 내보내기.
+- **[AI나 터미널에서 스크래핑](https://scrapling.readthedocs.io/ko/latest/ai/mcp-server.html)**: AI 에이전트가 사이트를 탐색하고 데이터를 추출하는 MCP 서버, Agent Skill, CLI 명령어, 대화형 셸.
 
 한 페이지부터 시작하세요:
 
@@ -269,8 +269,8 @@ result.items.to_json("quotes.json")
 ### AI 기능
 
 - 🤖 **MCP 서버**: Claude나 Cursor 같은 AI 챗봇과 에이전트가 Scrapling으로 데이터를 수집합니다. HTTP 요청, 브라우저 조작, 스크린샷, 저장된 로그인 상태, 백그라운드 API 응답을 사용할 수 있습니다. 스텔스 브라우저와 도구를 통해 충분한 능력을 가진 AI 모델이 작업 중 마주치는 모든 CAPTCHA를 처리하도록 돕습니다. Cloudflare 처리 기능도 내장되어 있습니다. 모델에 보내는 내용을 줄이고 광고를 차단하며 프롬프트 인젝션으로부터 모델을 보호합니다. CDP 원격 브라우저와 인증을 지원하는 HTTP 연결도 제공합니다. ([데모 영상](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
-- 🧠 **Agent Skill**: 설치해서 쓰는 [Agent Skill](https://scrapling.readthedocs.io/en/latest/ko/ai/agent-skill.html)이 코딩 에이전트에 라이브러리 전체 사용법을 알려 줍니다. 에이전트가 추측 대신 현재 API에 맞는 코드를 작성하도록 돕습니다.
-- 📚 **RAG용 Markdown**: 한 줄(`page.markdown()`)로 페이지를 정리하고 위험한 내용을 제거해 LLM용 Markdown으로 만듭니다. `ContentSpider` 템플릿으로 사이트 전체를 Markdown 파일로 저장할 수도 있습니다. 이 과정에는 LLM이 필요하지 않습니다. ([문서](https://scrapling.readthedocs.io/en/latest/ko/ai/building-rag-systems.html))
+- 🧠 **Agent Skill**: 설치해서 쓰는 [Agent Skill](https://scrapling.readthedocs.io/ko/latest/ai/agent-skill.html)이 코딩 에이전트에 라이브러리 전체 사용법을 알려 줍니다. 에이전트가 추측 대신 현재 API에 맞는 코드를 작성하도록 돕습니다.
+- 📚 **RAG용 Markdown**: 한 줄(`page.markdown()`)로 페이지를 정리하고 위험한 내용을 제거해 LLM용 Markdown으로 만듭니다. `ContentSpider` 템플릿으로 사이트 전체를 Markdown 파일로 저장할 수도 있습니다. 이 과정에는 LLM이 필요하지 않습니다. ([문서](https://scrapling.readthedocs.io/ko/latest/ai/building-rag-systems.html))
 
 ### 빠르고 실무에서 검증된 구조
 
@@ -473,7 +473,7 @@ scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --cs
 ```
 
 > [!NOTE]
-> MCP 서버와 대화형 셸 등 다른 기능은 [문서](https://scrapling.readthedocs.io/en/latest/ko/)에서 확인하세요.
+> MCP 서버와 대화형 셸 등 다른 기능은 [문서](https://scrapling.readthedocs.io/ko/latest/)에서 확인하세요.
 
 ## 성능 테스트
 
@@ -541,7 +541,7 @@ pip install scrapling
        ```bash
        pip install "scrapling[ai]"
        ```
-   - [RAG 시스템 만들기](https://scrapling.readthedocs.io/en/latest/ko/ai/building-rag-systems.html)에 필요한 패키지 설치:
+   - [RAG 시스템 만들기](https://scrapling.readthedocs.io/ko/latest/ai/building-rag-systems.html)에 필요한 패키지 설치:
        ```bash
        pip install "scrapling[rag]"
        ```

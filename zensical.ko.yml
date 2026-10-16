@@ -1,8 +1,8 @@
 INHERIT: zensical-base.yml
 site_description: Scrapling - 현대적인 웹을 간편하게 스크래핑하세요!
-site_url: https://scrapling.readthedocs.io/en/latest/ko/
+site_url: https://scrapling.readthedocs.io/ko/latest/
 docs_dir: docs/locales/ko
-site_dir: site/ko
+site_dir: site
 edit_uri: edit/main/docs/locales/ko/
 copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">쿠키 설정 변경</a>
 nav:

@@ -230,7 +230,7 @@ with FetcherSession() as session:
 
 Если встроенной справки терминала недостаточно, используйте:
 
-- [Документацию Scrapling](https://scrapling.readthedocs.io/en/latest/ru/)
+- [Документацию Scrapling](https://scrapling.readthedocs.io/ru/latest/)
 - [Сообщество в Discord](https://discord.gg/EMgGbDceNQ)
 - [GitHub Issues](https://github.com/D4Vinci/Scrapling/issues)
 

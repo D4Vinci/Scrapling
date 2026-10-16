@@ -229,7 +229,7 @@ with FetcherSession() as session:
 
 如果终端中的帮助还不够，可以查看：
 
-- [Scrapling 文档](https://scrapling.readthedocs.io/en/latest/zh/)
+- [Scrapling 文档](https://scrapling.readthedocs.io/zh-cn/latest/)
 - [Discord 社区](https://discord.gg/EMgGbDceNQ)
 - [GitHub Issues](https://github.com/D4Vinci/Scrapling/issues)
 

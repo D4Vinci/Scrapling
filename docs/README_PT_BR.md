@@ -1,7 +1,7 @@
 <!-- mcp-name: io.github.D4Vinci/Scrapling -->
 
 <h1 align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/pt-BR/">
+    <a href="https://scrapling.readthedocs.io/pt-br/latest/">
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/cover_dark.svg?sanitize=true">
           <img alt="Capa do Scrapling" src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/cover_light.svg?sanitize=true">
@@ -21,8 +21,8 @@
     <a href="https://hub.docker.com/r/pyd4vinci/scrapling" target="_blank">
         <img alt="Downloads no Docker" src="https://img.shields.io/docker/pulls/pyd4vinci/scrapling?labelColor=%20%23FDB062&logo=Docker&labelColor=%20%23528bff"></a>
     <a href="https://clickpy.clickhouse.com/dashboard/scrapling" rel="nofollow"><img src="https://img.shields.io/pypi/dm/scrapling" alt="Downloads do pacote no PyPI"></a>
-    <a href="https://scrapling.readthedocs.io/en/latest/pt-BR/ai/agent-skill.html" alt="Skill para agentes de IA">
-        <img alt="Badge da Agent Skill" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Fen%2Flatest%2Fpt-BR%2Fai%2Fagent-skill.html"></a>
+    <a href="https://scrapling.readthedocs.io/pt-br/latest/ai/agent-skill.html" alt="Skill para agentes de IA">
+        <img alt="Badge da Agent Skill" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Fpt-br%2Flatest%2Fai%2Fagent-skill.html"></a>
     <a href="https://clawhub.ai/D4Vinci/scrapling-official" alt="Skill para OpenClaw">
         <img alt="Skill para OpenClaw" src="https://img.shields.io/badge/Clawhub-darkred?style=flat&label=OpenClaw&link=https%3A%2F%2Fclawhub.ai%2FD4Vinci%2Fscrapling-official"></a>
     <br/>
@@ -38,17 +38,17 @@
 </p>
 
 <p align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/pt-BR/parsing/selection.html"><strong>Métodos de seleção</strong></a>
+    <a href="https://scrapling.readthedocs.io/pt-br/latest/parsing/selection.html"><strong>Métodos de seleção</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/pt-BR/fetching/choosing.html"><strong>Fetchers</strong></a>
+    <a href="https://scrapling.readthedocs.io/pt-br/latest/fetching/choosing.html"><strong>Fetchers</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/pt-BR/spiders/architecture.html"><strong>Spiders</strong></a>
+    <a href="https://scrapling.readthedocs.io/pt-br/latest/spiders/architecture.html"><strong>Spiders</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/pt-BR/spiders/proxy-blocking.html"><strong>Rotação de proxies</strong></a>
+    <a href="https://scrapling.readthedocs.io/pt-br/latest/spiders/proxy-blocking.html"><strong>Rotação de proxies</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/pt-BR/cli/overview.html"><strong>CLI</strong></a>
+    <a href="https://scrapling.readthedocs.io/pt-br/latest/cli/overview.html"><strong>CLI</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/pt-BR/ai/mcp-server.html"><strong>MCP</strong></a>
+    <a href="https://scrapling.readthedocs.io/pt-br/latest/ai/mcp-server.html"><strong>MCP</strong></a>
 </p>
 
 Scrapling é um framework de web scraping para Python. Ele reúne solicitações HTTP rápidas, navegadores furtivos, análise de páginas e rastreamento simultâneo em uma só biblioteca.
@@ -59,10 +59,10 @@ Use o Scrapling pelo Python, pelo terminal ou com seu agente de IA por meio do s
 
 ## O que você pode fazer com o Scrapling
 
-- **[Obter páginas e interagir](https://scrapling.readthedocs.io/en/latest/pt-BR/fetching/choosing.html)**: Solicitações HTTP rápidas, navegadores furtivos, execução de JavaScript, tratamento de Cloudflare Turnstile e Interstitial, sessões persistentes e captura de respostas de APIs em segundo plano.
-- **[Analisar e extrair](https://scrapling.readthedocs.io/en/latest/pt-BR/parsing/selection.html)**: Busca com CSS, XPath, texto e expressões regulares, localização de elementos após mudanças na página, busca de elementos semelhantes e saída em Markdown limpo.
-- **[Rastrear e exportar](https://scrapling.readthedocs.io/en/latest/pt-BR/spiders/getting-started.html)**: Spiders simultâneos, rotação de proxies, novas tentativas, AutoThrottle, pausa e retomada, resultados em streaming, modelos prontos e exportação em JSON, JSONL, CSV e XML.
-- **[Extrair dados com IA ou pelo terminal](https://scrapling.readthedocs.io/en/latest/pt-BR/ai/mcp-server.html)**: Um servidor MCP para agentes de IA navegarem e extraírem dados, uma Agent Skill, comandos CLI e um shell interativo.
+- **[Obter páginas e interagir](https://scrapling.readthedocs.io/pt-br/latest/fetching/choosing.html)**: Solicitações HTTP rápidas, navegadores furtivos, execução de JavaScript, tratamento de Cloudflare Turnstile e Interstitial, sessões persistentes e captura de respostas de APIs em segundo plano.
+- **[Analisar e extrair](https://scrapling.readthedocs.io/pt-br/latest/parsing/selection.html)**: Busca com CSS, XPath, texto e expressões regulares, localização de elementos após mudanças na página, busca de elementos semelhantes e saída em Markdown limpo.
+- **[Rastrear e exportar](https://scrapling.readthedocs.io/pt-br/latest/spiders/getting-started.html)**: Spiders simultâneos, rotação de proxies, novas tentativas, AutoThrottle, pausa e retomada, resultados em streaming, modelos prontos e exportação em JSON, JSONL, CSV e XML.
+- **[Extrair dados com IA ou pelo terminal](https://scrapling.readthedocs.io/pt-br/latest/ai/mcp-server.html)**: Um servidor MCP para agentes de IA navegarem e extraírem dados, uma Agent Skill, comandos CLI e um shell interativo.
 
 Comece com uma só página:
 
@@ -271,8 +271,8 @@ Este exemplo imprime `10` e salva as citações e seus autores em `quotes.json`.
 ### Recursos de IA
 
 - 🤖 **Servidor MCP**: Permite que assistentes e agentes de IA, como Claude e Cursor, extraiam dados com Scrapling por meio de solicitações HTTP, ações do navegador, capturas de tela, estado de login salvo e respostas de APIs em segundo plano. Usa nosso navegador furtivo e ferramentas que ajudam os modelos adequados a resolver CAPTCHA, além do solucionador de Cloudflare. Reduz o conteúdo enviado ao modelo, bloqueia anúncios e protege contra injeção de instruções (prompt injection). Também permite usar navegadores remotos por CDP e conexões HTTP com opções de autenticação. ([Vídeo de demonstração](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
-- 🧠 **Agent Skill**: Uma [Agent Skill](https://scrapling.readthedocs.io/en/latest/pt-BR/ai/agent-skill.html) pronta para instalar que ensina a biblioteca aos agentes de programação, para que escrevam código compatível com a API atual.
-- 📚 **Markdown pronto para RAG**: Converta uma página em Markdown limpo e preparado para modelos de linguagem com uma linha (`page.markdown()`), ou salve um site inteiro como arquivos Markdown com o modelo `ContentSpider`. O processo não precisa de um modelo de linguagem. ([Documentação](https://scrapling.readthedocs.io/en/latest/pt-BR/ai/building-rag-systems.html))
+- 🧠 **Agent Skill**: Uma [Agent Skill](https://scrapling.readthedocs.io/pt-br/latest/ai/agent-skill.html) pronta para instalar que ensina a biblioteca aos agentes de programação, para que escrevam código compatível com a API atual.
+- 📚 **Markdown pronto para RAG**: Converta uma página em Markdown limpo e preparado para modelos de linguagem com uma linha (`page.markdown()`), ou salve um site inteiro como arquivos Markdown com o modelo `ContentSpider`. O processo não precisa de um modelo de linguagem. ([Documentação](https://scrapling.readthedocs.io/pt-br/latest/ai/building-rag-systems.html))
 
 ### Alto desempenho e uso comprovado
 
@@ -475,7 +475,7 @@ scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --cs
 ```
 
 > [!NOTE]
-> Veja mais recursos, incluindo o servidor MCP e o shell interativo, na [documentação completa](https://scrapling.readthedocs.io/en/latest/pt-BR/).
+> Veja mais recursos, incluindo o servidor MCP e o shell interativo, na [documentação completa](https://scrapling.readthedocs.io/pt-br/latest/).
 
 ## Testes de desempenho
 
@@ -543,7 +543,7 @@ pip install scrapling
        ```bash
        pip install "scrapling[ai]"
        ```
-   - Instalar as dependências para [criar sistemas RAG](https://scrapling.readthedocs.io/en/latest/pt-BR/ai/building-rag-systems.html):
+   - Instalar as dependências para [criar sistemas RAG](https://scrapling.readthedocs.io/pt-br/latest/ai/building-rag-systems.html):
        ```bash
        pip install "scrapling[rag]"
        ```

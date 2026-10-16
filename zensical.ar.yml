@@ -1,7 +1,7 @@
 INHERIT: zensical-base.yml
-site_url: https://scrapling.readthedocs.io/en/latest/ar/
+site_url: https://scrapling.readthedocs.io/ar/latest/
 docs_dir: docs/locales/ar
-site_dir: site/ar
+site_dir: site
 edit_uri: edit/main/docs/locales/ar/
 copyright: حقوق النشر &copy; 2025 Karim Shoair - <a href="#__consent">إعدادات ملفات تعريف الارتباط</a>
 nav:

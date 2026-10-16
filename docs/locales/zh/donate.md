@@ -25,13 +25,13 @@ description: "通过 GitHub Sponsors 或 Buy Me a Coffee 支持 Scrapling，也�
 
 1. 你的标志展示在 [Scrapling 项目页顶部](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#sponsors)。
 2. 同一个标志也会展示在 [PyPI 项目页顶部](https://pypi.org/project/scrapling/)和 [Docker 镜像页](https://hub.docker.com/r/pyd4vinci/scrapling)，与项目页一致。
-3. 你的标志展示在 [Scrapling 网站](https://scrapling.readthedocs.io/en/latest/zh/)的主要赞助商区域。
+3. 你的标志展示在 [Scrapling 网站](https://scrapling.readthedocs.io/zh-cn/latest/)的主要赞助商区域。
 
 ### 3. [Platinum 方案](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646)（每月 300 美元） {#3-the-platinum-tier-300month}
 权益：
 
 1. 你的标志展示在 [Scrapling 项目页最上方](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#platinum-sponsors)的醒目位置，并附上最多 25 个单词的介绍。
 2. 同一个标志也会展示在 [PyPI 页面](https://pypi.org/project/scrapling/)和 [Docker 页面](https://hub.docker.com/r/pyd4vinci/scrapling)，与项目页一致。
-3. 你的标志在 [Scrapling 网站](https://scrapling.readthedocs.io/en/latest/zh/)的主要赞助商区域获得醒目展示。
+3. 你的标志在 [Scrapling 网站](https://scrapling.readthedocs.io/zh-cn/latest/)的主要赞助商区域获得醒目展示。
 4. 获得 Discord 社区的合作伙伴身份，并在 Twitter 和 Discord 上发布合作公告。
 5. 在每次版本发布说明的末尾获得鸣谢。

@@ -230,7 +230,7 @@ with FetcherSession() as session:
 
 ターミナル内の説明だけでは足りない場合は、次をご利用ください。
 
-- [Scrapling ドキュメント](https://scrapling.readthedocs.io/en/latest/ja/)
+- [Scrapling ドキュメント](https://scrapling.readthedocs.io/ja/latest/)
 - [Discord コミュニティ](https://discord.gg/EMgGbDceNQ)
 - [GitHub Issues](https://github.com/D4Vinci/Scrapling/issues)
 

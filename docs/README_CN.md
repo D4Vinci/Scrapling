@@ -1,7 +1,7 @@
 <!-- mcp-name: io.github.D4Vinci/Scrapling -->
 
 <h1 align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/zh/">
+    <a href="https://scrapling.readthedocs.io/zh-cn/latest/">
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/cover_dark.svg?sanitize=true">
           <img alt="Scrapling 封面" src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/cover_light.svg?sanitize=true">
@@ -19,8 +19,8 @@
     <a href="https://hub.docker.com/r/pyd4vinci/scrapling" target="_blank">
         <img alt="Docker 下载次数" src="https://img.shields.io/docker/pulls/pyd4vinci/scrapling?labelColor=%20%23FDB062&logo=Docker&labelColor=%20%23528bff"></a>
     <a href="https://clickpy.clickhouse.com/dashboard/scrapling" rel="nofollow"><img src="https://img.shields.io/pypi/dm/scrapling" alt="PyPI 包下载次数"></a>
-    <a href="https://scrapling.readthedocs.io/en/latest/zh/ai/agent-skill.html" alt="AI 智能体技能">
-        <img alt="Agent Skill 徽章" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Fen%2Flatest%2Fzh%2Fai%2Fagent-skill.html"></a>
+    <a href="https://scrapling.readthedocs.io/zh-cn/latest/ai/agent-skill.html" alt="AI 智能体技能">
+        <img alt="Agent Skill 徽章" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Fzh-cn%2Flatest%2Fai%2Fagent-skill.html"></a>
     <a href="https://clawhub.ai/D4Vinci/scrapling-official" alt="OpenClaw 技能">
         <img alt="OpenClaw 技能" src="https://img.shields.io/badge/Clawhub-darkred?style=flat&label=OpenClaw&link=https%3A%2F%2Fclawhub.ai%2FD4Vinci%2Fscrapling-official"></a>
     <br/>
@@ -36,17 +36,17 @@
 </p>
 
 <p align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/zh/parsing/selection.html"><strong>选择方法</strong></a>
+    <a href="https://scrapling.readthedocs.io/zh-cn/latest/parsing/selection.html"><strong>选择方法</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/zh/fetching/choosing.html"><strong>选择 Fetcher</strong></a>
+    <a href="https://scrapling.readthedocs.io/zh-cn/latest/fetching/choosing.html"><strong>选择 Fetcher</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/zh/spiders/architecture.html"><strong>爬虫</strong></a>
+    <a href="https://scrapling.readthedocs.io/zh-cn/latest/spiders/architecture.html"><strong>爬虫</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/zh/spiders/proxy-blocking.html"><strong>代理轮换</strong></a>
+    <a href="https://scrapling.readthedocs.io/zh-cn/latest/spiders/proxy-blocking.html"><strong>代理轮换</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/zh/cli/overview.html"><strong>CLI</strong></a>
+    <a href="https://scrapling.readthedocs.io/zh-cn/latest/cli/overview.html"><strong>CLI</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/zh/ai/mcp-server.html"><strong>MCP 模式</strong></a>
+    <a href="https://scrapling.readthedocs.io/zh-cn/latest/ai/mcp-server.html"><strong>MCP 模式</strong></a>
 </p>
 
 Scrapling 是一个 Python 网页抓取框架。它将快速 HTTP 请求、隐身浏览器、页面解析和并发爬取整合在一个库中。
@@ -57,10 +57,10 @@ Scrapling 是一个 Python 网页抓取框架。它将快速 HTTP 请求、隐�
 
 ## 用 Scrapling 能做什么
 
-- **[获取和操作页面](https://scrapling.readthedocs.io/en/latest/zh/fetching/choosing.html)**：快速 HTTP 请求、隐身浏览器、JavaScript 渲染、处理 Cloudflare Turnstile 和 Interstitial、持久会话，以及记录后台 API 响应。
-- **[解析页面和提取数据](https://scrapling.readthedocs.io/en/latest/zh/parsing/selection.html)**：使用 CSS、XPath、文本和正则表达式搜索，跟踪页面变化后的元素，查找相似元素，并输出整洁的 Markdown。
-- **[爬取和导出](https://scrapling.readthedocs.io/en/latest/zh/spiders/getting-started.html)**：并发爬虫、代理轮换、重试、AutoThrottle、暂停和恢复、流式输出、现成的模板，以及 JSON、JSONL、CSV 和 XML 导出。
-- **[使用 AI 或终端抓取](https://scrapling.readthedocs.io/en/latest/zh/ai/mcp-server.html)**：供 AI 智能体浏览网页和提取数据的 MCP 服务器、Agent Skill、CLI 命令和交互式 Shell。
+- **[获取和操作页面](https://scrapling.readthedocs.io/zh-cn/latest/fetching/choosing.html)**：快速 HTTP 请求、隐身浏览器、JavaScript 渲染、处理 Cloudflare Turnstile 和 Interstitial、持久会话，以及记录后台 API 响应。
+- **[解析页面和提取数据](https://scrapling.readthedocs.io/zh-cn/latest/parsing/selection.html)**：使用 CSS、XPath、文本和正则表达式搜索，跟踪页面变化后的元素，查找相似元素，并输出整洁的 Markdown。
+- **[爬取和导出](https://scrapling.readthedocs.io/zh-cn/latest/spiders/getting-started.html)**：并发爬虫、代理轮换、重试、AutoThrottle、暂停和恢复、流式输出、现成的模板，以及 JSON、JSONL、CSV 和 XML 导出。
+- **[使用 AI 或终端抓取](https://scrapling.readthedocs.io/zh-cn/latest/ai/mcp-server.html)**：供 AI 智能体浏览网页和提取数据的 MCP 服务器、Agent Skill、CLI 命令和交互式 Shell。
 
 从单个页面开始：
 
@@ -269,8 +269,8 @@ result.items.to_json("quotes.json")
 ### AI 功能
 
 - 🤖 **MCP 服务器**：让 Claude、Cursor 等 AI 助手和智能体通过 Scrapling 提取数据。支持 HTTP 请求、浏览器操作、截图、保存的登录状态和后台 API 响应。它使用我们的隐身浏览器，并提供工具，让具备相应能力的模型处理 CAPTCHA，补充内置的 Cloudflare 验证处理功能。它还减少发送给模型的内容、拦截广告，并防护提示词注入。支持通过 CDP 连接远程浏览器，也支持带身份验证选项的 HTTP 连接。（[演示视频](https://www.youtube.com/watch?v=qyFk3ZNwOxE)）
-- 🧠 **Agent Skill**：可安装的 [Agent Skill](https://scrapling.readthedocs.io/en/latest/zh/ai/agent-skill.html)，帮助编程智能体了解这个库，并编写符合当前 API 的代码。
-- 📚 **用于 RAG 的 Markdown**：用一行代码（`page.markdown()`）将页面转成适合语言模型的整洁 Markdown，或用 `ContentSpider` 模板将整个网站保存为 Markdown 文件。无需语言模型。（[文档](https://scrapling.readthedocs.io/en/latest/zh/ai/building-rag-systems.html)）
+- 🧠 **Agent Skill**：可安装的 [Agent Skill](https://scrapling.readthedocs.io/zh-cn/latest/ai/agent-skill.html)，帮助编程智能体了解这个库，并编写符合当前 API 的代码。
+- 📚 **用于 RAG 的 Markdown**：用一行代码（`page.markdown()`）将页面转成适合语言模型的整洁 Markdown，或用 `ContentSpider` 模板将整个网站保存为 Markdown 文件。无需语言模型。（[文档](https://scrapling.readthedocs.io/zh-cn/latest/ai/building-rag-systems.html)）
 
 ### 快速且经过实际使用
 
@@ -473,7 +473,7 @@ scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --cs
 ```
 
 > [!NOTE]
-> 更多功能，包括 MCP 服务器和交互式 Shell，请查看[完整文档](https://scrapling.readthedocs.io/en/latest/zh/)。
+> 更多功能，包括 MCP 服务器和交互式 Shell，请查看[完整文档](https://scrapling.readthedocs.io/zh-cn/latest/)。
 
 ## 性能测试
 
@@ -541,7 +541,7 @@ pip install scrapling
        ```bash
        pip install "scrapling[ai]"
        ```
-   - 安装[构建 RAG 系统](https://scrapling.readthedocs.io/en/latest/zh/ai/building-rag-systems.html)所需的依赖：
+   - 安装[构建 RAG 系统](https://scrapling.readthedocs.io/zh-cn/latest/ai/building-rag-systems.html)所需的依赖：
        ```bash
        pip install "scrapling[rag]"
        ```

@@ -25,13 +25,13 @@ description: "GitHub Sponsors나 Buy Me a Coffee로 Scrapling을 지원하세요
 
 1. [Scrapling 프로젝트 페이지 상단](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#sponsors)에 로고를 표시합니다.
 2. [PyPI 페이지 상단](https://pypi.org/project/scrapling/)과 [Docker 이미지 페이지 상단](https://hub.docker.com/r/pyd4vinci/scrapling)에도 프로젝트 페이지와 같은 방식으로 로고를 표시합니다.
-3. [Scrapling 사이트](https://scrapling.readthedocs.io/en/latest/ko/)의 주요 후원사 목록에 로고를 표시합니다.
+3. [Scrapling 사이트](https://scrapling.readthedocs.io/ko/latest/)의 주요 후원사 목록에 로고를 표시합니다.
 
 ### 3. [Platinum 요금제](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646) (월 $300) {#3-the-platinum-tier-300month}
 혜택:
 
 1. [Scrapling 프로젝트 페이지 맨 위](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#platinum-sponsors)의 눈에 띄는 자리에 로고와 25단어 이하의 소개를 표시합니다.
 2. [PyPI 페이지](https://pypi.org/project/scrapling/)와 [Docker 페이지](https://hub.docker.com/r/pyd4vinci/scrapling)에도 같은 방식으로 로고를 표시합니다.
-3. [Scrapling 사이트](https://scrapling.readthedocs.io/en/latest/ko/)의 주요 후원사 목록에서 로고를 눈에 띄는 자리에 표시합니다.
+3. [Scrapling 사이트](https://scrapling.readthedocs.io/ko/latest/)의 주요 후원사 목록에서 로고를 눈에 띄는 자리에 표시합니다.
 4. Discord 파트너 역할을 부여하고 Twitter와 Discord에서 소개합니다.
 5. 각 릴리스 노트 끝에 후원사로 소개합니다.

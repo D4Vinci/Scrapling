@@ -1,7 +1,7 @@
 <!-- mcp-name: io.github.D4Vinci/Scrapling -->
 
 <h1 align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/ar/">
+    <a href="https://scrapling.readthedocs.io/ar/latest/">
         <picture>
           <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/cover_dark.svg?sanitize=true">
           <img alt="Scrapling Poster" src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/docs/assets/cover_light.svg?sanitize=true">
@@ -19,8 +19,8 @@
     <a href="https://hub.docker.com/r/pyd4vinci/scrapling" target="_blank">
         <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/pyd4vinci/scrapling?labelColor=%20%23FDB062&logo=Docker&labelColor=%20%23528bff"></a>
     <a href="https://clickpy.clickhouse.com/dashboard/scrapling" rel="nofollow"><img src="https://img.shields.io/pypi/dm/scrapling" alt="PyPI package downloads"></a>
-    <a href="https://scrapling.readthedocs.io/en/latest/ar/ai/agent-skill.html" alt="AI Agent Skill">
-        <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Fen%2Flatest%2Far%2Fai%2Fagent-skill.html"></a>
+    <a href="https://scrapling.readthedocs.io/ar/latest/ai/agent-skill.html" alt="AI Agent Skill">
+        <img alt="Static Badge" src="https://img.shields.io/badge/Skill-black?style=flat&label=Agent&link=https%3A%2F%2Fscrapling.readthedocs.io%2Far%2Flatest%2Fai%2Fagent-skill.html"></a>
     <a href="https://clawhub.ai/D4Vinci/scrapling-official" alt="OpenClaw Skill">
         <img alt="OpenClaw Skill" src="https://img.shields.io/badge/Clawhub-darkred?style=flat&label=OpenClaw&link=https%3A%2F%2Fclawhub.ai%2FD4Vinci%2Fscrapling-official"></a>
     <br/>
@@ -36,17 +36,17 @@
 </p>
 
 <p align="center">
-    <a href="https://scrapling.readthedocs.io/en/latest/ar/parsing/selection.html"><strong>اختيار العناصر</strong></a>
+    <a href="https://scrapling.readthedocs.io/ar/latest/parsing/selection.html"><strong>اختيار العناصر</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ar/fetching/choosing.html"><strong>اختيار Fetcher</strong></a>
+    <a href="https://scrapling.readthedocs.io/ar/latest/fetching/choosing.html"><strong>اختيار Fetcher</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ar/spiders/architecture.html"><strong>Spiders</strong></a>
+    <a href="https://scrapling.readthedocs.io/ar/latest/spiders/architecture.html"><strong>Spiders</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ar/spiders/proxy-blocking.html"><strong>تبديل البروكسي</strong></a>
+    <a href="https://scrapling.readthedocs.io/ar/latest/spiders/proxy-blocking.html"><strong>تبديل البروكسي</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ar/cli/overview.html"><strong>واجهة سطر الأوامر</strong></a>
+    <a href="https://scrapling.readthedocs.io/ar/latest/cli/overview.html"><strong>واجهة سطر الأوامر</strong></a>
     &middot;
-    <a href="https://scrapling.readthedocs.io/en/latest/ar/ai/mcp-server.html"><strong>خادم MCP</strong></a>
+    <a href="https://scrapling.readthedocs.io/ar/latest/ai/mcp-server.html"><strong>خادم MCP</strong></a>
 </p>
 
 Scrapling إطار عمل بلغة Python لجمع بيانات الويب. يجمع طلبات HTTP السريعة، والمتصفحات الخفية، وتحليل الصفحات، والزحف المتزامن في مكتبة واحدة.
@@ -57,10 +57,10 @@ Scrapling إطار عمل بلغة Python لجمع بيانات الويب. يج
 
 ## ما الذي يمكنك فعله باستخدام Scrapling؟
 
-- **[الجلب والتفاعل](https://scrapling.readthedocs.io/en/latest/ar/fetching/choosing.html)**: طلبات HTTP سريعة، ومتصفحات خفية، وتشغيل JavaScript، والتعامل مع Cloudflare Turnstile وInterstitial، وجلسات مستمرة، وحفظ ردود طلبات API في الخلفية.
-- **[التحليل والاستخراج](https://scrapling.readthedocs.io/en/latest/ar/parsing/selection.html)**: البحث باستخدام CSS وXPath والنص والتعبيرات المنتظمة، وتتبع العناصر عند تغير الصفحة، والعثور على العناصر المتشابهة، وإخراج Markdown نظيف.
-- **[الزحف والتصدير](https://scrapling.readthedocs.io/en/latest/ar/spiders/getting-started.html)**: برامج Spider متزامنة، وتبديل البروكسي، وإعادة المحاولة، وAutoThrottle، والإيقاف والاستئناف، وبث النتائج، وقوالب جاهزة، وتصدير JSON وJSONL وCSV وXML.
-- **[جمع البيانات بالذكاء الاصطناعي أو من الطرفية](https://scrapling.readthedocs.io/en/latest/ar/ai/mcp-server.html)**: خادم MCP لوكلاء الذكاء الاصطناعي لتصفح المواقع واستخراج البيانات، وAgent Skill، وأوامر CLI، وواجهة تفاعلية.
+- **[الجلب والتفاعل](https://scrapling.readthedocs.io/ar/latest/fetching/choosing.html)**: طلبات HTTP سريعة، ومتصفحات خفية، وتشغيل JavaScript، والتعامل مع Cloudflare Turnstile وInterstitial، وجلسات مستمرة، وحفظ ردود طلبات API في الخلفية.
+- **[التحليل والاستخراج](https://scrapling.readthedocs.io/ar/latest/parsing/selection.html)**: البحث باستخدام CSS وXPath والنص والتعبيرات المنتظمة، وتتبع العناصر عند تغير الصفحة، والعثور على العناصر المتشابهة، وإخراج Markdown نظيف.
+- **[الزحف والتصدير](https://scrapling.readthedocs.io/ar/latest/spiders/getting-started.html)**: برامج Spider متزامنة، وتبديل البروكسي، وإعادة المحاولة، وAutoThrottle، والإيقاف والاستئناف، وبث النتائج، وقوالب جاهزة، وتصدير JSON وJSONL وCSV وXML.
+- **[جمع البيانات بالذكاء الاصطناعي أو من الطرفية](https://scrapling.readthedocs.io/ar/latest/ai/mcp-server.html)**: خادم MCP لوكلاء الذكاء الاصطناعي لتصفح المواقع واستخراج البيانات، وAgent Skill، وأوامر CLI، وواجهة تفاعلية.
 
 ابدأ بصفحة واحدة:
 
@@ -265,8 +265,8 @@ result.items.to_json("quotes.json")
 
 ### ميزات الذكاء الاصطناعي
 - 🤖 **خادم MCP**: يتيح لوكلاء ومساعدي الذكاء الاصطناعي، مثل Claude وCursor، جمع البيانات عبر Scrapling باستخدام طلبات HTTP، والتفاعل مع المتصفح، ولقطات الشاشة، وحالة تسجيل دخول محفوظة، وردود API في الخلفية. يستخدم متصفحنا الخفي مع أدوات تساعد النماذج المناسبة على تجاوز CAPTCHA أثناء العمل، إلى جانب أداة حل Cloudflare. ويقلل المحتوى المرسل إلى النموذج، ويحظر الإعلانات، ويحميه من حقن التعليمات Prompt Injection. يدعم أيضًا المتصفحات البعيدة عبر CDP والاتصال عبر HTTP مع خيارات المصادقة. ([فيديو توضيحي](https://www.youtube.com/watch?v=qyFk3ZNwOxE))
-- 🧠 **Agent Skill**: [مهارة جاهزة للتثبيت](https://scrapling.readthedocs.io/en/latest/ar/ai/agent-skill.html) تعرّف وكلاء البرمجة على المكتبة كاملة، ليكتبوا كودًا يطابق واجهتها الحالية بدلًا من التخمين.
-- 📚 **Markdown جاهز لأنظمة RAG**: حوّل أي صفحة إلى Markdown نظيف ومنقّى وجاهز لنماذج اللغة بسطر واحد (`page.markdown()`)، أو اجمع موقعًا كاملًا في مجموعة ملفات Markdown باستخدام قالب `ContentSpider`، دون الحاجة إلى نموذج لغة أثناء العملية. ([التوثيق](https://scrapling.readthedocs.io/en/latest/ar/ai/building-rag-systems.html))
+- 🧠 **Agent Skill**: [مهارة جاهزة للتثبيت](https://scrapling.readthedocs.io/ar/latest/ai/agent-skill.html) تعرّف وكلاء البرمجة على المكتبة كاملة، ليكتبوا كودًا يطابق واجهتها الحالية بدلًا من التخمين.
+- 📚 **Markdown جاهز لأنظمة RAG**: حوّل أي صفحة إلى Markdown نظيف ومنقّى وجاهز لنماذج اللغة بسطر واحد (`page.markdown()`)، أو اجمع موقعًا كاملًا في مجموعة ملفات Markdown باستخدام قالب `ContentSpider`، دون الحاجة إلى نموذج لغة أثناء العملية. ([التوثيق](https://scrapling.readthedocs.io/ar/latest/ai/building-rag-systems.html))
 
 ### أداء عالٍ وتصميم مجرّب
 - 🚀 **سرعة عالية**: أداء محسّن يتفوق على معظم مكتبات جمع بيانات الويب في Python.
@@ -467,7 +467,7 @@ scrapling extract fetch 'https://nopecha.com/demo/cloudflare' captchas.html --cs
 ```
 
 > [!NOTE]
-> هذه أمثلة مختصرة. للمزيد من الميزات والتفاصيل، بما فيها خادم MCP وShell التفاعلي، اقرأ التوثيق الكامل [هنا](https://scrapling.readthedocs.io/en/latest/ar/)
+> هذه أمثلة مختصرة. للمزيد من الميزات والتفاصيل، بما فيها خادم MCP وShell التفاعلي، اقرأ التوثيق الكامل [هنا](https://scrapling.readthedocs.io/ar/latest/)
 
 ## اختبارات الأداء
 
@@ -535,7 +535,7 @@ pip install scrapling
        ```bash
        pip install "scrapling[ai]"
        ```
-   - تثبيت متطلبات [بناء أنظمة RAG](https://scrapling.readthedocs.io/en/latest/ar/ai/building-rag-systems.html):
+   - تثبيت متطلبات [بناء أنظمة RAG](https://scrapling.readthedocs.io/ar/latest/ai/building-rag-systems.html):
        ```bash
        pip install "scrapling[rag]"
        ```

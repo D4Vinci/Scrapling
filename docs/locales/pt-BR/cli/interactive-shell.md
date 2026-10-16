@@ -229,7 +229,7 @@ with FetcherSession() as session:
 
 Se você precisar de mais ajuda do que a disponível no terminal, consulte:
 
-- [Documentação do Scrapling](https://scrapling.readthedocs.io/en/latest/pt-BR/)
+- [Documentação do Scrapling](https://scrapling.readthedocs.io/pt-br/latest/)
 - [Comunidade no Discord](https://discord.gg/EMgGbDceNQ)
 - [Issues no GitHub](https://github.com/D4Vinci/Scrapling/issues)
 

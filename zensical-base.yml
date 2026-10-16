@@ -118,31 +118,31 @@ extra:
     link: https://scrapling.readthedocs.io/en/latest/
     lang: en
   - name: العربية
-    link: https://scrapling.readthedocs.io/en/latest/ar/
+    link: https://scrapling.readthedocs.io/ar/latest/
     lang: ar
   - name: Español
-    link: https://scrapling.readthedocs.io/en/latest/es/
+    link: https://scrapling.readthedocs.io/es/latest/
     lang: es
   - name: Português (Brasil)
-    link: https://scrapling.readthedocs.io/en/latest/pt-BR/
+    link: https://scrapling.readthedocs.io/pt-br/latest/
     lang: pt-BR
   - name: Français
-    link: https://scrapling.readthedocs.io/en/latest/fr/
+    link: https://scrapling.readthedocs.io/fr/latest/
     lang: fr
   - name: Deutsch
-    link: https://scrapling.readthedocs.io/en/latest/de/
+    link: https://scrapling.readthedocs.io/de/latest/
     lang: de
   - name: 简体中文
-    link: https://scrapling.readthedocs.io/en/latest/zh/
+    link: https://scrapling.readthedocs.io/zh-cn/latest/
     lang: zh
   - name: 日本語
-    link: https://scrapling.readthedocs.io/en/latest/ja/
+    link: https://scrapling.readthedocs.io/ja/latest/
     lang: ja
   - name: Русский
-    link: https://scrapling.readthedocs.io/en/latest/ru/
+    link: https://scrapling.readthedocs.io/ru/latest/
     lang: ru
   - name: 한국어
-    link: https://scrapling.readthedocs.io/en/latest/ko/
+    link: https://scrapling.readthedocs.io/ko/latest/
     lang: ko
 watch:
 - zensical-base.yml

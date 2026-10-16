@@ -25,13 +25,13 @@ description: "Поддержите Scrapling через GitHub Sponsors или B
 
 1. Ваш логотип [в верхней части страницы проекта Scrapling](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#sponsors).
 2. Такой же логотип [в верхней части страницы PyPI](https://pypi.org/project/scrapling/) и [страницы образа Docker](https://hub.docker.com/r/pyd4vinci/scrapling), с тем же размещением, что и на странице проекта.
-3. Ваш логотип в разделе главных спонсоров на [сайте Scrapling](https://scrapling.readthedocs.io/en/latest/ru/).
+3. Ваш логотип в разделе главных спонсоров на [сайте Scrapling](https://scrapling.readthedocs.io/ru/latest/).
 
 ### 3. [План Platinum](https://github.com/sponsors/D4Vinci/sponsorships?tier_id=586646) (300 долларов в месяц) {#3-the-platinum-tier-300month}
 Что входит:
 
 1. Особое место для логотипа [в самом верху страницы проекта Scrapling](https://github.com/D4Vinci/Scrapling?tab=readme-ov-file#platinum-sponsors) с описанием до 25 слов.
 2. Такое же размещение логотипа на [странице PyPI](https://pypi.org/project/scrapling/) и [странице Docker](https://hub.docker.com/r/pyd4vinci/scrapling).
-3. Особое место для логотипа среди главных спонсоров на [сайте Scrapling](https://scrapling.readthedocs.io/en/latest/ru/).
+3. Особое место для логотипа среди главных спонсоров на [сайте Scrapling](https://scrapling.readthedocs.io/ru/latest/).
 4. Роль партнёра в Discord и объявление в Twitter и Discord.
 5. Упоминание в конце описания каждого выпуска.

@@ -1,8 +1,8 @@
 INHERIT: zensical-base.yml
 site_description: Scrapling - Daten aus dem modernen Web einfach extrahieren.
-site_url: https://scrapling.readthedocs.io/en/latest/de/
+site_url: https://scrapling.readthedocs.io/de/latest/
 docs_dir: docs/locales/de
-site_dir: site/de
+site_dir: site
 edit_uri: edit/main/docs/locales/de/
 copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">Cookie-Einstellungen ändern</a>
 nav:
