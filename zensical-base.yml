@@ -129,6 +129,9 @@ extra:
   - name: Français
     link: https://scrapling.readthedocs.io/en/latest/fr/
     lang: fr
+  - name: Deutsch
+    link: https://scrapling.readthedocs.io/en/latest/de/
+    lang: de
 watch:
 - zensical-base.yml
 - docs/assets
