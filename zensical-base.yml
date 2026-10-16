@@ -138,6 +138,9 @@ extra:
   - name: 日本語
     link: https://scrapling.readthedocs.io/en/latest/ja/
     lang: ja
+  - name: Русский
+    link: https://scrapling.readthedocs.io/en/latest/ru/
+    lang: ru
 watch:
 - zensical-base.yml
 - docs/assets
