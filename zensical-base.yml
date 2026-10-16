@@ -123,6 +123,9 @@ extra:
   - name: Español
     link: https://scrapling.readthedocs.io/en/latest/es/
     lang: es
+  - name: Português (Brasil)
+    link: https://scrapling.readthedocs.io/en/latest/pt-BR/
+    lang: pt-BR
 watch:
 - zensical-base.yml
 - docs/assets
