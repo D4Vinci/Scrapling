@@ -1,3 +1,4 @@
+import asyncio
 from email.message import Message
 from email.utils import collapse_rfc2231_value
 from functools import lru_cache
@@ -6,11 +7,16 @@ from lxml.etree import LxmlError
 from curl_cffi.requests import Response as CurlResponse
 from patchright.sync_api import Error as PatchrightError
 from patchright.sync_api import Page as SyncPage, Response as SyncResponse
-from patchright.async_api import Page as AsyncPage, Response as AsyncResponse
+from patchright.async_api import Page as AsyncPage, Request as AsyncRequest, Response as AsyncResponse
 
 from scrapling.core.utils import log
 from .custom import Response, StatusText
 from scrapling.core._types import Dict, Optional
+
+# Playwright/Patchright `all_headers()` can wait forever on a response whose
+# request never completes (issue #491) — every async header wait is bounded
+# so the existing exception fallbacks kick in instead of blocking the caller.
+HEADERS_TIMEOUT_S = 30
 
 SHADOW_SNAPSHOT_JS = r"""
 () => {
@@ -282,8 +288,8 @@ class ResponseFactory:
                                 if current_response
                                 else "utf-8",
                                 "cookies": tuple(),
-                                "headers": await current_response.all_headers() if current_response else {},
-                                "request_headers": await current_request.all_headers(),
+                                "headers": await cls._bounded_all_headers(current_response) if current_response else {},
+                                "request_headers": await cls._bounded_all_headers(current_request),
                                 **parser_arguments,
                             }
                         ),
@@ -327,6 +333,26 @@ class ResponseFactory:
             except PatchrightError:
                 await page.wait_for_timeout(500)
         raise RuntimeError(f"Failed to retrieve the page content after retrying for {max_retries * 500}ms.")
+
+    @staticmethod
+    async def _bounded_all_headers(fetchable: AsyncResponse | AsyncRequest, timeout: Optional[float] = None) -> Dict:
+        """Await `all_headers()` with a hard time bound.
+
+        Playwright/Patchright can hang forever waiting for headers of a
+        response/request that never completes (issue #491). `asyncio.wait_for`
+        converts that hang into `asyncio.TimeoutError`, which flows into the
+        caller's existing exception fallbacks (sync `.headers` snapshot) or
+        fail-loud path instead of blocking indefinitely.
+
+        :param fetchable: A Playwright `Response` or `Request` object exposing `all_headers()`.
+        :param timeout: Maximum seconds to wait before raising `asyncio.TimeoutError`;
+            defaults to the module-level `HEADERS_TIMEOUT_S` (read at call time,
+            so tests/ops can retune it without patching the function).
+        :return: The awaited headers mapping.
+        """
+        return await asyncio.wait_for(
+            fetchable.all_headers(), HEADERS_TIMEOUT_S if timeout is None else timeout
+        )
 
     @classmethod
     async def from_async_playwright_response(
@@ -383,7 +409,7 @@ class ResponseFactory:
                 if max_body_bytes is not None and not cls._text_content(final_response.headers):
                     raise ValueError("Non-text body; not saved.")
                 cls._check_body_size(final_response.headers.get("content-length", "0"), max_body_bytes)
-                if page and "html" in (await final_response.all_headers()).get("content-type", ""):
+                if page and "html" in (await cls._bounded_all_headers(final_response)).get("content-type", ""):
                     if pierce_shadow:
                         try:
                             snapshot = await page.evaluate(SHADOW_SNAPSHOT_JS)
@@ -401,14 +427,14 @@ class ResponseFactory:
             body_meta["body_note"] = str(e) or "could not be saved."
 
         try:
-            headers = await first_response.all_headers()
+            headers = await cls._bounded_all_headers(first_response)
         except Exception:
             if max_body_bytes is None:
                 raise
             headers = first_response.headers
             body_meta["headers_partial"] = True
         try:
-            request_headers = await first_response.request.all_headers()
+            request_headers = await cls._bounded_all_headers(first_response.request)
         except Exception:
             if max_body_bytes is None:
                 raise
