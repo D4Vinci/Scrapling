@@ -129,7 +129,9 @@ class StealthySession(SyncSession, StealthySessionMixin):
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":
-                while self._detect_cloudflare(ResponseFactory._get_page_content(page)) == "non-interactive":
+                for _ in range(10):
+                    if self._detect_cloudflare(ResponseFactory._get_page_content(page)) != "non-interactive":
+                        break
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     page.wait_for_timeout(1000)
                     page.wait_for_load_state()
@@ -156,9 +158,12 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     self._wait_for_page_stability(iframe, True, False)
 
                     if challenge_type != "embedded":
-                        while not iframe.frame_element().is_visible():
-                            # Double-checking that the iframe is loaded
+                        for _ in range(20):
+                            if iframe.frame_element().is_visible():
+                                break
                             page.wait_for_timeout(500)
+                        else:
+                            return self._cloudflare_solver(page, _attempts + 1)
 
                     outer_box = iframe.frame_element().bounding_box()
 
@@ -167,7 +172,9 @@ class StealthySession(SyncSession, StealthySessionMixin):
                         log.info("Cloudflare captcha is solved")
                         return None
 
-                    outer_box = page.locator(box_selector).last.bounding_box()
+                    if elements := page.locator(box_selector).last.element_handles():
+                        outer_box = elements[0].bounding_box()
+                        elements[0].dispose()
                     if not outer_box:
                         page.wait_for_timeout(1000)
                         return self._cloudflare_solver(page, _attempts + 1)
@@ -416,7 +423,12 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
             if challenge_type == "non-interactive":
-                while self._detect_cloudflare(await ResponseFactory._get_async_page_content(page)) == "non-interactive":
+                for _ in range(10):
+                    if (
+                        self._detect_cloudflare(await ResponseFactory._get_async_page_content(page))
+                        != "non-interactive"
+                    ):
+                        break
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     await page.wait_for_timeout(1000)
                     await page.wait_for_load_state()
@@ -443,9 +455,12 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     await self._wait_for_page_stability(iframe, True, False)
 
                     if challenge_type != "embedded":
-                        while not await (await iframe.frame_element()).is_visible():
-                            # Double-checking that the iframe is loaded
+                        for _ in range(20):
+                            if await (await iframe.frame_element()).is_visible():
+                                break
                             await page.wait_for_timeout(500)
+                        else:
+                            return await self._cloudflare_solver(page, _attempts + 1)
 
                     outer_box = await (await iframe.frame_element()).bounding_box()
 
@@ -454,7 +469,9 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         log.info("Cloudflare captcha is solved")
                         return None
 
-                    outer_box = await page.locator(box_selector).last.bounding_box()
+                    if elements := await page.locator(box_selector).last.element_handles():
+                        outer_box = await elements[0].bounding_box()
+                        await elements[0].dispose()
                     if not outer_box:
                         await page.wait_for_timeout(1000)
                         return await self._cloudflare_solver(page, _attempts + 1)

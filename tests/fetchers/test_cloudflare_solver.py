@@ -29,7 +29,9 @@ class TestChallengeCleared:
 def _make_sync_page():
     page = MagicMock()
     page.frame.return_value = None
-    page.locator.return_value.last.bounding_box.return_value = {"x": 100, "y": 200}
+    element = MagicMock()
+    element.bounding_box.return_value = {"x": 100, "y": 200}
+    page.locator.return_value.last.element_handles.return_value = [element]
     return page
 
 
@@ -83,11 +85,15 @@ class TestAsyncSolver:
         page.frame.return_value = None
         page.wait_for_timeout = AsyncMock()
         page.wait_for_load_state = AsyncMock()
-        page.locator.return_value.last.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element = MagicMock()
+        element.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element.dispose = AsyncMock()
+        page.locator.return_value.last.element_handles = AsyncMock(return_value=[element])
         page.mouse.click = AsyncMock(side_effect=lambda *args, **kwargs: state.update(content=CLEAN_PAGE))
 
         assert await session._cloudflare_solver(page) is None
         assert page.mouse.click.await_count == 1
+        assert page.mouse.click.await_args is not None
         x, y = page.mouse.click.await_args.args
         assert 126 <= x <= 128
         assert 225 <= y <= 227
@@ -100,7 +106,10 @@ class TestAsyncSolver:
         page.frame.return_value = None
         page.wait_for_timeout = AsyncMock()
         page.wait_for_load_state = AsyncMock()
-        page.locator.return_value.last.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element = MagicMock()
+        element.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element.dispose = AsyncMock()
+        page.locator.return_value.last.element_handles = AsyncMock(return_value=[element])
         page.mouse.click = AsyncMock()
 
         assert await session._cloudflare_solver(page) is None
