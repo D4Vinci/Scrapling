@@ -8,6 +8,7 @@ nav:
 - مقدمة: index.md
 - نظرة عامة: overview.md
 - اختبارات الأداء: benchmarks.md
+- الانتقال إلى v0.5: migrating-to-v0.5.md
 - دليل الاستخدام:
   - تحليل الصفحات:
     - اختيار العناصر: parsing/selection.md

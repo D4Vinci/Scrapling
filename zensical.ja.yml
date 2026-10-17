@@ -9,6 +9,7 @@ nav:
 - 紹介: index.md
 - はじめに: overview.md
 - 性能テスト: benchmarks.md
+- v0.5 への移行: migrating-to-v0.5.md
 - 使い方:
   - ページの解析:
     - 要素の選択: parsing/selection.md

@@ -9,6 +9,7 @@ nav:
 - 简介: index.md
 - 入门: overview.md
 - 性能测试: benchmarks.md
+- 迁移到 v0.5: migrating-to-v0.5.md
 - 使用指南:
   - 解析页面:
     - 选择元素: parsing/selection.md

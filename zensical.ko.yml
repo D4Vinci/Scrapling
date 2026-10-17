@@ -9,6 +9,7 @@ nav:
 - 소개: index.md
 - 시작하기: overview.md
 - 성능 테스트: benchmarks.md
+- v0.5로 마이그레이션: migrating-to-v0.5.md
 - 사용 가이드:
   - 페이지 파싱:
     - 요소 찾기: parsing/selection.md

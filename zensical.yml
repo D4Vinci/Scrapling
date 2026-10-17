@@ -7,6 +7,7 @@ nav:
 - Introduction: index.md
 - Overview: overview.md
 - Performance Benchmarks: benchmarks.md
+- Migrating to v0.5: migrating-to-v0.5.md
 - User Guide:
   - Parsing:
     - Querying elements: parsing/selection.md

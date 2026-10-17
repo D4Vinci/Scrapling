@@ -9,6 +9,7 @@ nav:
 - Введение: index.md
 - Начало работы: overview.md
 - Тесты производительности: benchmarks.md
+- Переход на v0.5: migrating-to-v0.5.md
 - Руководства:
   - Разбор страниц:
     - Поиск элементов: parsing/selection.md

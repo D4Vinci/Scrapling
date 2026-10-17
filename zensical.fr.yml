@@ -9,6 +9,7 @@ nav:
 - Introduction: index.md
 - Vue d’ensemble: overview.md
 - Tests de performance: benchmarks.md
+- Migrer vers la v0.5: migrating-to-v0.5.md
 - Guide d’utilisation:
   - Analyse de pages:
     - Sélection d’éléments: parsing/selection.md
