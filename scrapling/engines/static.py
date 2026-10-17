@@ -1,6 +1,7 @@
 from abc import ABC
 from random import choice
 from time import sleep as time_sleep
+from urllib.parse import urlencode
 from asyncio import sleep as asyncio_sleep
 
 from curl_cffi.curl import CurlError
@@ -155,6 +156,16 @@ class _ConfigurationLogic(ABC):
         for k, v in method_kwargs.items():
             if k not in skip_keys and v is not None:
                 final_args[k] = v
+
+        # curl_cffi doesn't expand list values in a dict `data` and sends `None` as the text "None"
+        if isinstance(final_args.get("params"), dict):
+            final_args["params"] = {k: v for k, v in final_args["params"].items() if v is not None}
+        # With `multipart`, curl_cffi adds the items of a dict `data` as form parts, so it has to stay a dict
+        if isinstance(final_args.get("data"), dict) and not final_args.get("multipart"):
+            form = {k: v for k, v in final_args["data"].items() if v is not None}
+            final_args["data"] = urlencode(form, doseq=True)
+            if not any(k.lower() == "content-type" for k in final_args["headers"]):
+                final_args["headers"]["Content-Type"] = "application/x-www-form-urlencoded"
 
         if http3_enabled:  # pragma: no cover
             final_args["http_version"] = CurlHttpVersion.V3ONLY
