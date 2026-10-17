@@ -15,6 +15,7 @@ This guide covers the changes you need to check when moving from **v0.4.15 to v0
 | `capture_xhr` or `response.captured_xhr` | Use a browser session with `record_requests=True` and `session.network`. |
 | `keep_cdata` | Remove it from parser and fetcher settings. |
 | `scrapling extract stealthy-fetch` or the shell's `stealthy_fetch()` | Use `fetch` instead. |
+| Browser fetches with untrusted HTTPS certificates | Trust the issuing CA, or deliberately opt out with `additional_args={"ignore_https_errors": True}` or CLI `--no-verify`. |
 | MCP tools | Update tool names, screenshot calls, and session creation response handling. |
 | `response.follow()` after a POST or a request with query parameters | Pass the method, query, and body again when you need them. |
 | Saved crawl checkpoints or response caches | Start a fresh crawl when your requests use the changed fingerprint inputs. |
@@ -61,6 +62,13 @@ Patchright evaluates JavaScript in an isolated context by default. If a callback
 This changes the browser's behavior as well as its import name. Review your browser flags and fingerprint settings. Cloudflare solving still requires `solve_cloudflare=True`; it is not enabled by default. Also, `extra_flags` now adds to the built-in stealth flags instead of replacing them.
 
 See [Browser fetching](fetching/stealthy.md) for the current options.
+
+### HTTPS certificate verification {#https-certificate-verification}
+
+- Stealth browser contexts now verify HTTPS certificates by default. Previously, they accepted untrusted certificates without an explicit opt-out.
+- Self-signed endpoints and TLS-intercepting proxies need a CA trusted by Chromium, or an explicit opt-out when creating the fetch or session.
+- Python and MCP browser settings retain `additional_args={"ignore_https_errors": True}`. The browser CLI command accepts `--no-verify`; `--verify` explicitly retains the secure default.
+- See [HTTPS certificate verification](fetching/stealthy.md#https-certificate-verification) for an example. Other browser defaults are unchanged by this correction.
 
 ### Replace XHR capture with session network history {#replace-xhr-capture-with-session-network-history}
 

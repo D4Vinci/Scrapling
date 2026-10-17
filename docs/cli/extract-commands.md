@@ -272,6 +272,9 @@ Use `--pierce-shadow` to include open Shadow DOM content. It is off by default; 
 scrapling extract fetch "https://example.com" content.md --pierce-shadow
 ```
 
+- HTTPS certificates are verified by default. `--verify` explicitly retains this behavior.
+- Use `--no-verify` only to deliberately accept an untrusted certificate. See [HTTPS certificate verification](../fetching/stealthy.md#https-certificate-verification) for the Python and session equivalents.
+
 Run `scrapling extract fetch --help` to see all options:
 
 ```text
@@ -281,6 +284,7 @@ Usage: scrapling extract fetch [OPTIONS] URL OUTPUT_FILE
 
 Options:
   --headless / --no-headless                  Run browser in headless mode (default: True)
+  --verify / --no-verify                      Whether to verify SSL certificates (default: True)
   --disable-resources / --enable-resources    Drop unnecessary resources for speed boost (default: False)
   --block-webrtc / --allow-webrtc             Block WebRTC entirely (default: False)
   --solve-cloudflare / --no-solve-cloudflare  Solve Cloudflare challenges (default: False)

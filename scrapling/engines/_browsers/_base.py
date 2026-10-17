@@ -592,7 +592,7 @@ class StealthySessionMixin(BaseSessionMixin):
                 "has_touch": False,
                 # I'm thinking about disabling it to rest from all Service Workers' headache, but let's keep it as it is for now
                 "service_workers": "allow",
-                "ignore_https_errors": True,
+                "ignore_https_errors": False,
                 "screen": {"width": 1920, "height": 1080},
                 "viewport": {"width": 1920, "height": 1080},
                 "permissions": ["geolocation", "notifications"],
