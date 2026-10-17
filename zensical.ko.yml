@@ -53,7 +53,7 @@ nav:
   - Scrapling 자료형 사용하기: development/scrapling_custom_types.md
 - 후원과 광고: donate.md
 - 개발에 참여하기: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
-- 변경 기록: https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md
+- 변경 기록: changelog.md
 theme:
   language: ko
   palette:

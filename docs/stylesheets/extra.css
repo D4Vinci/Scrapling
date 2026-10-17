@@ -13,6 +13,11 @@
 :root {
   --md-code-font: 'Maple Mono';
 }
+
+[dir="rtl"] .md-typeset code {
+  unicode-bidi: isolate;
+}
+
 [align="center"] code {
   font-family: 'Maple Mono';
   font-style: italic;

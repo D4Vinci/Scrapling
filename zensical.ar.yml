@@ -52,7 +52,7 @@ nav:
   - استخدام الأنواع المخصصة في Scrapling: development/scrapling_custom_types.md
 - الدعم والإعلانات: donate.md
 - المساهمة: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
-- سجل التغييرات: https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md
+- سجل التغييرات: changelog.md
 theme:
   language: ar
   palette:

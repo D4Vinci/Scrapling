@@ -101,7 +101,7 @@ all = [
 
 [project.urls]
 Homepage = "https://github.com/D4Vinci/Scrapling"
-Changelog = "https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md"
+Changelog = "https://scrapling.readthedocs.io/en/latest/changelog.html"
 Documentation = "https://scrapling.readthedocs.io/en/latest/"
 Repository = "https://github.com/D4Vinci/Scrapling"
 "Bug Tracker" = "https://github.com/D4Vinci/Scrapling/issues"

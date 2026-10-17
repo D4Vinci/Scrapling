@@ -53,7 +53,7 @@ nav:
   - Die Datentypen von Scrapling nutzen: development/scrapling_custom_types.md
 - Unterstützung und Werbung: donate.md
 - Mitwirken: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
-- Änderungsverlauf: https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md
+- Änderungsverlauf: changelog.md
 theme:
   language: de
   palette:

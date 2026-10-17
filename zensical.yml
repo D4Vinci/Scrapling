@@ -51,7 +51,7 @@ nav:
   - Using Scrapling's custom types: development/scrapling_custom_types.md
 - Support and Advertisement: donate.md
 - Contributing: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
-- Changelog: https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md
+- Changelog: changelog.md
 theme:
   language: en
   palette:

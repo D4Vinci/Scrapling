@@ -53,7 +53,7 @@ nav:
   - Scrapling の型を使う: development/scrapling_custom_types.md
 - 支援と広告: donate.md
 - 開発への参加: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
-- 変更履歴: https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md
+- 変更履歴: changelog.md
 theme:
   language: ja
   palette:

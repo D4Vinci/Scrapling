@@ -53,7 +53,7 @@ nav:
   - Типы Scrapling: development/scrapling_custom_types.md
 - Поддержка и реклама: donate.md
 - Участие в разработке: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
-- История изменений: https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md
+- История изменений: changelog.md
 theme:
   language: ru
   palette:

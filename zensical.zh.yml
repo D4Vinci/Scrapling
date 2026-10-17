@@ -53,7 +53,7 @@ nav:
   - 使用 Scrapling 的类型: development/scrapling_custom_types.md
 - 赞助和广告: donate.md
 - 贡献: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
-- 更新日志: https://github.com/D4Vinci/Scrapling/blob/main/CHANGELOG.md
+- 更新日志: changelog.md
 theme:
   language: zh
   palette:
