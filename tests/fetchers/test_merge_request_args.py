@@ -99,9 +99,7 @@ class TestMergeRequestArgsSkipsBrowserParams:
 
 
 class TestMergeRequestArgsEncodesDataAndParams:
-    """Verify that dict `data` and `params` reach curl_cffi in the form the
-    `requests` convention expects: lists become repeated keys and None values
-    are dropped."""
+    """Verify repeated form values and preserve existing query values."""
 
     def _build_args(self, **extra_kwargs):
         client = FetcherClient()
@@ -119,9 +117,9 @@ class TestMergeRequestArgsEncodesDataAndParams:
         args = self._build_args(data={"t": ("a", "b"), "s": {"x"}})
         assert args["data"] == "t=a&t=b&s=x"
 
-    def test_data_none_value_is_dropped(self):
+    def test_data_none_value_is_preserved(self):
         args = self._build_args(data={"opt": None, "q": "x"})
-        assert args["data"] == "q=x"
+        assert args["data"] == "opt=None&q=x"
 
     def test_data_scalars_are_unchanged(self):
         args = self._build_args(data={"a": "1", "b": 2, "c": "x y"})
@@ -136,9 +134,9 @@ class TestMergeRequestArgsEncodesDataAndParams:
         assert args["headers"]["content-type"] == "text/plain"
         assert "Content-Type" not in args["headers"]
 
-    def test_params_none_value_is_dropped(self):
+    def test_params_none_value_is_preserved(self):
         args = self._build_args(params={"page": None, "q": "x"})
-        assert args["params"] == {"q": "x"}
+        assert args["params"] == {"page": None, "q": "x"}
 
     def test_params_list_is_unchanged(self):
         args = self._build_args(params={"tag": ["a", "b"]})

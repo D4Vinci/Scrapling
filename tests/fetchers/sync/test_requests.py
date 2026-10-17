@@ -163,10 +163,9 @@ class TestFetcher:
         body = fetcher.post(self.post_url, data={"tags": ["a", "b"], "ids": [1, 2]}).json()
         assert body["form"] == {"tags": ["a", "b"], "ids": ["1", "2"]}
 
-    def test_post_dict_data_none_values_are_dropped(self, fetcher):
-        """A ``None`` value in a dict ``data`` leaves the key out of the body."""
+    def test_post_dict_data_none_values_are_preserved(self, fetcher):
         body = fetcher.post(self.post_url, data={"opt": None, "q": "x"}).json()
-        assert body["form"] == {"q": "x"}
+        assert body["form"] == {"opt": "None", "q": "x"}
 
     def test_post_dict_data_scalars_and_form_content_type(self, fetcher):
         body = fetcher.post(self.post_url, data={"a": "x y", "b": 2}).json()
@@ -177,10 +176,9 @@ class TestFetcher:
         body = fetcher.post(self.post_url, data="a=1&a=2").json()
         assert body["data"] == "a=1&a=2"
 
-    def test_get_params_none_values_are_dropped(self, fetcher):
-        """A ``None`` value in ``params`` leaves the key out of the query string."""
+    def test_get_params_none_values_are_preserved(self, fetcher):
         body = fetcher.get(self.basic_url, params={"page": None, "q": "x"}).json()
-        assert body["args"] == {"q": "x"}
+        assert body["args"] == {"page": "None", "q": "x"}
 
     def test_get_params_list_values_are_repeated_keys(self, fetcher):
         body = fetcher.get(self.basic_url, params={"tag": ["a", "b"]}).json()
@@ -189,4 +187,23 @@ class TestFetcher:
     def test_session_post_dict_data_matches_fetcher(self):
         with FetcherSession() as session:
             body = session.post(self.post_url, data={"ids": [1, 2], "opt": None}).json()
-        assert body["form"] == {"ids": ["1", "2"]}
+        assert body["form"] == {"ids": ["1", "2"], "opt": "None"}
+
+    @pytest.mark.parametrize("method", ["post", "put"])
+    @pytest.mark.parametrize("data", [{}, {"tags": ["a", "b"]}])
+    @pytest.mark.parametrize("payload", [{"key": "value"}, {}, [], False, 0, ""])
+    def test_json_with_data_keeps_json_body_and_content_type(self, fetcher, method, data, payload):
+        body = getattr(fetcher, method)(getattr(self, f"{method}_url"), data=data, json=payload).json()
+        assert body["headers"]["Content-Type"] == "application/json"
+        assert body["json"] == payload
+        assert body["form"] == {}
+
+    @pytest.mark.parametrize("method", ["post", "put"])
+    @pytest.mark.parametrize("data", [{}, {"tags": ["a", "b"]}])
+    @pytest.mark.parametrize("content", [b"raw", b""])
+    def test_content_with_data_keeps_raw_body(self, fetcher, method, data, content):
+        body = getattr(fetcher, method)(getattr(self, f"{method}_url"), data=data, content=content).json()
+        assert body["data"] == content.decode()
+        assert body["form"] == {}
+        if content:
+            assert body["headers"]["Content-Type"] == "application/octet-stream"
