@@ -54,7 +54,7 @@ Les fichiers d’état se trouvent sur l’ordinateur qui exécute le serveur MC
 
 #### Actions du navigateur {#browser-actions}
 
-- **`browser_actions`** : Enchaîne les actions de la souris, le remplissage des champs, les raccourcis clavier, les réponses aux boîtes de dialogue et les attentes dans un seul appel. Accepte ou ferme les alertes et confirmations du navigateur, ou saisit du texte dans les boîtes de saisie. Par exemple, remplit un champ de recherche, envoie la requête, attend les résultats et en ouvre un. L’IA peut regrouper les étapes connues et demander des vues séparées lorsqu’elle doit vérifier une modification de la page.
+- **`browser_actions`** : Enchaîne les actions de la souris, le remplissage des champs, les raccourcis clavier, les réponses aux boîtes de dialogue et les attentes dans un seul appel. Accepte ou ferme les alertes et confirmations du navigateur, ou saisit du texte dans les boîtes de saisie. Par exemple, remplit un champ de recherche, envoie la requête, attend les résultats et en ouvre un. L’IA peut regrouper les étapes connues et demander des vues séparées lorsqu’elle doit vérifier une modification de la page. Cela évite un aller-retour avec l’agent entre deux étapes. C’est utile pour les menus qui disparaissent rapidement et les autres contrôles qui demandent d’enchaîner vite les actions.
 
     Affiche les menus et infobulles au survol, clique sur les boutons et liens, ou place la souris sur un panneau imbriqué pour le faire défiler verticalement ou horizontalement. Les déplacements et clics acceptent des sélecteurs, des références de la vue structurée ou des coordonnées. Pour les éléments ciblés, l’outil attend automatiquement leur présence et fait défiler la page pour les rendre visibles. Il accepte les déplacements par coordonnées en plusieurs étapes, les clics gauche, droit et central, ainsi que les doubles clics.
 
@@ -79,6 +79,8 @@ Seules les requêtes terminées sont enregistrées, y compris les réponses HTTP
 
 Définissez `pierce_shadow=true` dans `browser_fetch_once` ou dans chaque appel à `browser_fetch` pour inclure le contenu des Shadow DOM ouverts. La valeur par défaut est `false`. Consultez [Shadow DOM](../fetching/stealthy.md#shadow-dom) pour voir des exemples de sélecteurs et leurs limites.
 
+Les sélecteurs du navigateur peuvent aussi cibler des éléments dans un Shadow DOM fermé et interagir avec eux.
+
 ### Fonctions principales {#key-capabilities}
 
 - **Extraction de contenu** : Convertissez des pages ou des éléments en Markdown ou HTML, ou extrayez une version propre du texte.
@@ -89,14 +91,6 @@ Définissez `pierce_shadow=true` dans `browser_fetch_once` ou dans chaque appel 
 - **Sessions persistantes** : Réutilisez les sessions du navigateur entre les requêtes pour améliorer les performances.
 - **Blocage des publicités** : Tous les outils de navigateur bloquent automatiquement les requêtes vers environ 3 500 domaines connus de publicité et de suivi. Cela économise des tokens et accélère le chargement.
 - **Protection contre l’injection d’instructions** : Supprime automatiquement le contenu caché qui pourrait servir à attaquer le modèle : éléments cachés par des styles en ligne, aria-hidden, slots cachés, caractères de largeur nulle, commentaires HTML et balises template.
-
-#### Pourquoi utiliser le serveur MCP de Scrapling plutôt que d’autres outils ? {#but-why-use-scrapling-mcp-server-instead-of-other-available-tools}
-
-En plus de masquer l’automatisation et de contourner Turnstile et Interstitial de Cloudflare, le serveur de Scrapling est le seul qui permet de choisir les éléments à envoyer à l’IA. Cela économise beaucoup de temps et de tokens !
-
-Les autres serveurs extraient le contenu et le transmettent en entier à l’IA pour qu’elle trouve les champs souhaités. Le modèle consomme alors beaucoup de tokens pour du contenu inutile. Scrapling permet de limiter le contenu avec un sélecteur CSS avant de l’envoyer à l’IA, ce qui rend tout le processus plus rapide et plus efficace.
-
-Si vous ne savez pas écrire ou utiliser des sélecteurs CSS, ne vous inquiétez pas. Demandez à l’IA d’en écrire pour les champs recherchés, puis laissez-la essayer différentes combinaisons jusqu’à trouver la bonne. Nous le montrerons dans les exemples.
 
 ## Installation {#installation}
 

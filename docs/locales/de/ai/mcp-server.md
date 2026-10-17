@@ -54,7 +54,7 @@ Die Zustandsdateien liegen auf dem Rechner, auf dem der MCP-Server läuft. Sie e
 
 #### Browser-Aktionen {#browser-actions}
 
-- **`browser_actions`**: Verbindet Mausaktionen, das Ausfüllen von Feldern, Tastenkürzel, Antworten auf Dialoge und Wartebedingungen in einem Aufruf. Es kann Browser-Meldungen und Bestätigungen annehmen oder schließen und Text in Eingabedialoge schreiben. Zum Beispiel: ein Suchfeld ausfüllen, die Suche senden, Ergebnisse abwarten und ein Ergebnis öffnen. Die KI kann bekannte Schritte zusammenfassen und separate Seitenansichten anfordern, wenn sie eine Änderung prüfen muss.
+- **`browser_actions`**: Verbindet Mausaktionen, das Ausfüllen von Feldern, Tastenkürzel, Antworten auf Dialoge und Wartebedingungen in einem Aufruf. Es kann Browser-Meldungen und Bestätigungen annehmen oder schließen und Text in Eingabedialoge schreiben. Zum Beispiel: ein Suchfeld ausfüllen, die Suche senden, Ergebnisse abwarten und ein Ergebnis öffnen. Die KI kann bekannte Schritte zusammenfassen und separate Seitenansichten anfordern, wenn sie eine Änderung prüfen muss. Dadurch muss der Agent nicht für jeden Schritt einen eigenen Aufruf senden. Das hilft bei kurz eingeblendeten Menüs und anderen Bedienelementen, die eine schnelle Folgeaktion erfordern.
 
     Zeigen Sie Menüs und Tooltips durch Überfahren mit der Maus an, klicken Sie auf Schaltflächen und Links oder bewegen Sie die Maus über einen verschachtelten Bereich, um dort senkrecht oder waagerecht zu scrollen. Bewegungen und Klicks unterstützen Selektoren, Referenzen aus der Seitenansicht und Koordinaten. Bei Zielelementen wartet das Werkzeug automatisch auf das Element und scrollt es ins Blickfeld. Es unterstützt Bewegungen über mehrere Koordinatenschritte, Links-, Rechts- und Mittelklicks sowie Doppelklicks.
 
@@ -79,6 +79,8 @@ Nur abgeschlossene Anfragen werden gespeichert, einschließlich HTTP-Antworten m
 
 Setzen Sie `pierce_shadow=true` bei `browser_fetch_once` oder jedem `browser_fetch`-Aufruf, um Inhalte offener Shadow DOMs einzubeziehen. Der Standardwert ist `false`. Im Abschnitt [Shadow DOM](../fetching/stealthy.md#shadow-dom) finden Sie Selektorbeispiele und Einschränkungen.
 
+Browser-Selektoren können auch Elemente in geschlossenen Shadow DOMs ansprechen und mit ihnen interagieren.
+
 ### Wichtigste Möglichkeiten {#key-capabilities}
 
 - **Inhalte extrahieren**: Wandeln Sie Webseiten oder Elemente in Markdown oder HTML um, oder extrahieren Sie bereinigten Text.
@@ -89,14 +91,6 @@ Setzen Sie `pierce_shadow=true` bei `browser_fetch_once` oder jedem `browser_fet
 - **Dauerhafte Sitzungen**: Verwenden Sie Browser-Sitzungen für mehrere Anfragen erneut, um die Leistung zu verbessern.
 - **Werbeblocker**: Alle Browser-Werkzeuge blockieren automatisch Anfragen an etwa 3.500 bekannte Werbe- und Tracking-Domains. Das spart Tokens und beschleunigt das Laden.
 - **Schutz vor Prompt Injection**: Entfernt automatisch versteckte Inhalte, die für Angriffe auf das Modell verwendet werden könnten: durch Inline-Styles versteckte Elemente, aria-hidden, versteckte Slots, Zeichen mit der Breite null, HTML-Kommentare und template-Tags.
-
-#### Warum den MCP-Server von Scrapling statt anderer Werkzeuge verwenden? {#but-why-use-scrapling-mcp-server-instead-of-other-available-tools}
-
-Der Server von Scrapling kann Automatisierung verbergen und Cloudflare Turnstile sowie Interstitial umgehen. Außerdem ist er der einzige Server, mit dem Sie bestimmte Elemente für die KI auswählen können. Das spart viel Zeit und Tokens!
-
-Andere Server extrahieren den Inhalt und übergeben ihn vollständig an die KI, damit sie die gewünschten Felder findet. Dabei verbraucht das Modell viele Tokens für unnötige Inhalte. Mit Scrapling können Sie den Inhalt vor der Übergabe mit einem CSS-Selektor eingrenzen. Das macht den Ablauf schneller und effizienter.
-
-Wenn Sie noch keine CSS-Selektoren schreiben können, ist das kein Problem. Bitten Sie die KI im Prompt, passende Selektoren für die gesuchten Felder zu erstellen. Sie kann verschiedene Kombinationen ausprobieren, bis sie die richtige findet. Wir zeigen das im Abschnitt mit den Beispielen.
 
 ## Installation {#installation}
 

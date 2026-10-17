@@ -54,7 +54,7 @@ Os arquivos de estado ficam no computador que executa o servidor MCP. Eles não 
 
 #### Ações do navegador {#browser-actions}
 
-- **`browser_actions`**: Encadeia ações do mouse, preenchimento de campos, atalhos de teclado, respostas a caixas de diálogo e esperas em uma chamada. Aceita ou dispensa alertas e confirmações do navegador, ou insere texto em caixas de entrada. Por exemplo, preenche um campo de busca, envia a consulta, espera os resultados e abre um deles. A IA pode agrupar etapas que já conhece e obter snapshots separados quando precisar conferir uma mudança na página.
+- **`browser_actions`**: Encadeia ações do mouse, preenchimento de campos, atalhos de teclado, respostas a caixas de diálogo e esperas em uma chamada. Aceita ou dispensa alertas e confirmações do navegador, ou insere texto em caixas de entrada. Por exemplo, preenche um campo de busca, envia a consulta, espera os resultados e abre um deles. A IA pode agrupar etapas que já conhece e obter snapshots separados quando precisar conferir uma mudança na página. Assim, não é preciso voltar ao agente entre uma etapa e a próxima. Isso ajuda com menus que desaparecem rápido e outros controles que exigem uma ação rápida em seguida.
 
     Mostra menus e dicas ao passar o mouse, clica em botões e links, ou move o mouse sobre um painel aninhado para rolá-lo na vertical ou horizontal. Movimentos e cliques aceitam seletores, referências de snapshots ou coordenadas. Quando o alvo é um elemento, esperam e rolam a página até ele ficar visível de forma automática. Aceitam movimentos por coordenadas em várias etapas, cliques com os botões esquerdo, direito e do meio, além de clique duplo.
 
@@ -79,6 +79,8 @@ Somente solicitações concluídas são salvas, incluindo respostas HTTP 4xx e 5
 
 Defina `pierce_shadow=true` em `browser_fetch_once` ou em cada chamada a `browser_fetch` para incluir conteúdo de Shadow DOM aberto. O padrão é `false`. Consulte [Shadow DOM](../fetching/stealthy.md#shadow-dom) para ver exemplos de seletores e seus limites.
 
+Os seletores do navegador também podem localizar elementos dentro de Shadow DOM fechado e interagir com eles.
+
 ### Funções principais {#key-capabilities}
 
 - **Extração de conteúdo**: Converta páginas ou elementos em Markdown ou HTML, ou extraia uma versão limpa do texto.
@@ -89,14 +91,6 @@ Defina `pierce_shadow=true` em `browser_fetch_once` ou em cada chamada a `browse
 - **Sessões persistentes**: Reutilize sessões do navegador entre solicitações para melhorar o desempenho.
 - **Bloqueio de anúncios**: Todas as ferramentas de navegador bloqueiam automaticamente solicitações a cerca de 3.500 domínios conhecidos de anúncios e rastreamento. Isso economiza tokens e acelera o carregamento.
 - **Proteção contra injeção de instruções**: Remove automaticamente conteúdo oculto que poderia ser usado para atacar o modelo: elementos ocultos por estilos inline, aria-hidden, slots ocultos, caracteres de largura zero, comentários HTML e tags template.
-
-#### Por que usar o servidor MCP do Scrapling em vez de outras ferramentas? {#but-why-use-scrapling-mcp-server-instead-of-other-available-tools}
-
-Além de ocultar a automação e contornar Turnstile e Interstitial do Cloudflare, o servidor do Scrapling é o único que permite escolher quais elementos serão enviados à IA. Isso economiza muito tempo e muitos tokens!
-
-Outros servidores extraem o conteúdo e passam tudo para a IA encontrar os campos que você quer. Isso faz o modelo gastar muitos tokens com conteúdo que não precisa. O Scrapling permite usar um seletor CSS para limitar o conteúdo antes de enviá-lo à IA, deixando todo o processo mais rápido e eficiente.
-
-Se você não sabe escrever ou usar seletores CSS, não se preocupe. Peça à IA para criar seletores para os campos desejados e deixe que ela teste combinações até encontrar a certa. Vamos mostrar isso na seção de exemplos.
 
 ## Instalação {#installation}
 

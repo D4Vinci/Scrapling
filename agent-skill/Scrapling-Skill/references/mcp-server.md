@@ -43,7 +43,7 @@ State files are stored on the machine running the MCP server. They do not includ
 
 #### Browser Actions
 
-- **`browser_actions`**: Chain mouse actions, field filling, keyboard shortcuts, dialog replies, and waits in one call. Accept or dismiss browser alerts and confirmations, or enter text in prompts. For example, fill a search box, submit it, wait for results, and open a result. The AI can combine known steps while keeping snapshots separate when it needs to inspect a page change.
+- **`browser_actions`**: Chain mouse actions, field filling, keyboard shortcuts, dialog replies, and waits in one call. Accept or dismiss browser alerts and confirmations, or enter text in prompts. For example, fill a search box, submit it, wait for results, and open a result. The AI can combine known steps while keeping snapshots separate when it needs to inspect a page change. This avoids a separate agent round trip between each step and helps with short-lived menus and other controls that need prompt follow-up.
 
     Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks support selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
 
@@ -68,6 +68,8 @@ Only completed requests are saved, including HTTP 4xx and 5xx responses. Failed 
 
 Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to include open Shadow DOM content. It defaults to `false`. See [Shadow DOM](fetching/stealthy.md#shadow-dom) for selector examples and limits.
 
+Browser selectors can also target and interact with elements inside closed Shadow DOM.
+
 ### Key Capabilities
 - **Smart Content Extraction**: Convert web pages/elements to Markdown, HTML, or extract a clean version of the text content
 - **CSS Selector Support**: Use the Scrapling engine to target specific elements with precision before handing the content to the AI
@@ -77,12 +79,6 @@ Set `pierce_shadow=true` on `browser_fetch_once` or each `browser_fetch` call to
 - **Session Persistence**: Reuse browser sessions across multiple requests for better performance
 - **Ad Blocking**: All browser-based tools automatically block requests to ~3,500 known ad and tracker domains, saving tokens and speeding up page loads
 - **Prompt Injection Protection**: Automatic sanitization of hidden content (inline hidden elements, aria-hidden, hidden slots, zero-width characters, HTML comments, template tags) that could be used for prompt injection attacks
-
-#### But why use Scrapling MCP Server instead of other available tools?
-
-Aside from its stealth capabilities and ability to bypass Cloudflare Turnstile/Interstitial, Scrapling's server is the only one that lets you select specific elements to pass to the AI, saving a lot of time and tokens!
-
-The way other servers work is that they extract the content, then pass it all to the AI to extract the fields you want. This causes the AI to consume far more tokens than needed (from irrelevant content). Scrapling solves this problem by allowing you to pass a CSS selector to narrow down the content you want before passing it to the AI, which makes the whole process much faster and more efficient.
 
 ## Installation
 
