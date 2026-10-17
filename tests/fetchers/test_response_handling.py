@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -545,3 +546,91 @@ class TestErrorScenarios:
         # Null bytes
         page = Selector("Hello\x00World")
         assert "Hello" in page.get_all_text()
+
+
+class TestAsyncHeadersHang:
+    """Regression tests for issue #491: `all_headers()` can hang forever on a
+    response whose request never completes; every async header wait must be
+    bounded so the fetch fails fast or falls back instead of blocking."""
+
+    @staticmethod
+    def make_hanging_async_response():
+        response = make_async_playwright_response()
+        hang = asyncio.Event()
+
+        async def hang_forever():
+            await hang.wait()
+
+        response.all_headers = AsyncMock(side_effect=hang_forever)
+        response.request.all_headers = AsyncMock(side_effect=hang_forever)
+        return response
+
+    @pytest.mark.asyncio
+    async def test_bounded_wait_raises_timeout_error(self, monkeypatch):
+        """Without a fallback budget, the hang must surface as a catchable
+        asyncio.TimeoutError instead of blocking forever (fail-loud path)."""
+        import asyncio
+
+        from scrapling.engines.toolbelt import convertor
+
+        monkeypatch.setattr(convertor, "HEADERS_TIMEOUT_S", 0.05)
+        response = self.make_hanging_async_response()
+        with pytest.raises(asyncio.TimeoutError):
+            await convertor.ResponseFactory._bounded_all_headers(response)
+
+    @pytest.mark.asyncio
+    async def test_graceful_path_falls_back_to_sync_headers(self, monkeypatch):
+        """With `max_body_bytes` set, a header timeout must degrade to the
+        sync `.headers` snapshot and mark the response partial — never hang."""
+        from scrapling.engines.toolbelt import convertor
+
+        monkeypatch.setattr(convertor, "HEADERS_TIMEOUT_S", 0.05)
+        response = self.make_hanging_async_response()
+        page = make_async_page()
+        result = await ResponseFactory.from_async_playwright_response(
+            page=page,
+            first_response=response,
+            final_response=None,
+            parser_arguments={},
+            max_body_bytes=1024,
+        )
+        assert result.status == 200
+        assert result.headers == {"content-type": LATIN9_CONTENT_TYPE}
+        assert result.request_headers == {}
+        assert result.meta.get("headers_partial") is True
+        assert result.meta.get("request_headers_partial") is True
+
+    @staticmethod
+    def make_hanging_redirect_chain():
+        """A redirect chain whose redirected response headers hang: without
+        the bounded wait, `_async_process_response_history` blocks forever
+        inside `await all_headers()` (issue #491)."""
+        hang = asyncio.Event()
+
+        async def hang_forever():
+            await hang.wait()
+
+        redirected_response = Mock()
+        redirected_response.status = 301
+        redirected_response.status_text = "Moved Permanently"
+        redirected_response.headers = {"content-type": "text/html"}
+        redirected_response.all_headers = AsyncMock(side_effect=hang_forever)
+
+        redirected_request = Mock()
+        redirected_request.url = "https://example.com/redirect-source"
+        redirected_request.response = AsyncMock(return_value=redirected_response)
+        redirected_request.all_headers = AsyncMock(side_effect=hang_forever)
+        redirected_request.redirected_from = None
+        return redirected_request
+
+    @pytest.mark.asyncio
+    async def test_redirect_history_hang_breaks_loop(self, monkeypatch):
+        """A redirect chain whose response headers hang must be skipped via
+        the history error handler instead of stalling the whole fetch."""
+        from scrapling.engines.toolbelt import convertor
+
+        monkeypatch.setattr(convertor, "HEADERS_TIMEOUT_S", 0.05)
+        response = make_async_playwright_response()
+        response.request.redirected_from = self.make_hanging_redirect_chain()
+        history = await ResponseFactory._async_process_response_history(response, {})
+        assert history == []
