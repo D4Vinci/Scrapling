@@ -1,8 +1,10 @@
-# Scrapy
+# Integrating Scrapling into Scrapy
 
 If you have an existing Scrapy project, you don't need to rewrite it to enjoy Scrapling's parsing API. The Scrapy integration converts Scrapy responses to Scrapling [Response](../fetching/choosing.md#response-object) objects right inside your spider callbacks, so Scrapy keeps handling the crawling while Scrapling handles the parsing.
 
-**Installation:** This integration works with the default Scrapling installation (`pip install scrapling`), no extras needed. It only requires Scrapy to be installed, which you already have in a Scrapy project.
+**Installation:**
+
+This integration works with the default Scrapling installation (`pip install scrapling`), no extras needed. It only requires Scrapy to be installed, which you already have in a Scrapy project.
 
 ## Usage
 
@@ -47,7 +49,7 @@ If you have a Scrapy response at hand outside a callback (middlewares, pipelines
 ```python
 from scrapling.integrations.scrapy import convert_response
 
-scrapling_response = convert_response(scrapy_response, keep_comments=False, keep_cdata=False)
+scrapling_response = convert_response(scrapy_response, keep_comments=False)
 ```
 
 ## Notes

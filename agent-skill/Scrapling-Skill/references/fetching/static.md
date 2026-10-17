@@ -3,7 +3,7 @@
 The `Fetcher` class provides rapid and lightweight HTTP requests using the high-performance `curl_cffi` library with a lot of stealth capabilities.
 
 ## Basic Usage
-Import the Fetcher (same import pattern for all fetchers):
+You have one primary way to import this Fetcher, which is the same for all fetchers.
 
 ```python
 from scrapling.fetchers import Fetcher
@@ -17,7 +17,7 @@ All methods for making requests here share some arguments, so let's discuss them
 - **stealthy_headers**: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
 - **follow_redirects**: Controls redirect behavior. **Defaults to `"safe"`**, which follows redirects but rejects those targeting internal/private IPs (SSRF protection). Pass `True` to follow all redirects without restriction, or `False` to disable redirects entirely.
 - **timeout**: The number of seconds to wait for each request to be finished. **Defaults to 30 seconds**.
-- **retries**: The number of retries that the fetcher will do for failed requests. **Defaults to three retries**.
+- **retries**: The maximum number of attempts for failed requests, including the first attempt. **Defaults to 3**.
 - **retry_delay**: Number of seconds to wait between retry attempts. **Defaults to 1 second**.
 - **impersonate**: Impersonate specific browsers' TLS fingerprints. Accepts browser strings or a list of them like `"chrome110"`, `"firefox102"`, `"safari15_5"` to use specific versions or `"chrome"`, `"firefox"`, `"safari"`, `"edge"` to automatically use the latest version available. This makes your requests appear to come from real browsers at the TLS level. If you pass it a list of strings, it will choose a random one with each request. **Defaults to the latest available Chrome version.**
 - **http3**: Use HTTP/3 protocol for requests. **Defaults to False**. It might be problematic if used with `impersonate`.
@@ -33,11 +33,18 @@ All methods for making requests here share some arguments, so let's discuss them
 - **selector_config**: A dictionary of custom parsing arguments to be used when creating the final `Selector`/`Response` class.
 
 **Notes:**
+
 1. The currently available browsers to impersonate are (`"edge"`, `"chrome"`, `"chrome_android"`, `"safari"`, `"safari_beta"`, `"safari_ios"`, `"safari_ios_beta"`, `"firefox"`, `"tor"`)
 2. The available browsers to impersonate, along with their corresponding versions, are automatically displayed in the argument autocompletion and updated with each `curl_cffi` update.
 3. If any of the arguments `impersonate` or `stealthy_headers` are enabled, the fetchers will automatically generate real browser headers that match the browser version used.
 
 Other than this, for further customization, you can pass any arguments that `curl_cffi` supports for any method if that method doesn't already support them.
+
+### Text encoding
+
+If text looks garbled on a non-UTF-8 page, pass `default_encoding="shift_jis"` (or the page's encoding) with your request. This sets the fallback encoding when the `Content-Type` header has no charset. It does not override a charset supplied by the server.
+
+If the server supplies an incorrect charset, you can force the correct encoding with `selector_config={"encoding": "shift_jis"}`.
 
 ### HTTP Methods
 There are additional arguments for each method, depending on the method, such as `params` for GET requests and `data`/`json` for POST/PUT/DELETE requests.
@@ -64,7 +71,7 @@ page = Fetcher.get('https://example.com', impersonate='chrome')
 # HTTP/3 support
 page = Fetcher.get('https://example.com', http3=True)
 ```
-And for asynchronous requests, it's a small adjustment 
+And for asynchronous requests, it's a small adjustment
 ```python
 from scrapling.fetchers import AsyncFetcher
 # Basic GET
@@ -73,7 +80,6 @@ page = await AsyncFetcher.get('https://scrapling.requestcatcher.com/get', stealt
 page = await AsyncFetcher.get('https://scrapling.requestcatcher.com/get', proxy='http://username:password@localhost:8030')
 # With parameters
 page = await AsyncFetcher.get('https://example.com/search', params={'q': 'query'})
-
 # With headers
 page = await AsyncFetcher.get('https://example.com', headers={'User-Agent': 'Custom/1.0'})
 # Basic HTTP authentication
@@ -83,11 +89,11 @@ page = await AsyncFetcher.get('https://example.com', impersonate='chrome110')
 # HTTP/3 support
 page = await AsyncFetcher.get('https://example.com', http3=True)
 ```
-The `page` object in all cases is a [Response](choosing.md#response-object) object, which is a [Selector](parsing/main_classes.md#selector), so you can use it directly
+Needless to say, the `page` object in all cases is [Response](choosing.md#response-object) object, which is a [Selector](../parsing/main_classes.md#selector) as we said, so you can use it directly
 ```python
->>> page.css('.something.something')
+page.css('.something.something')
 
->>> page = Fetcher.get('https://api.github.com/events')
+page = Fetcher.get('https://api.github.com/events')
 >>> page.json()
 [{'id': '<redacted>',
   'type': 'PushEvent',
@@ -280,10 +286,10 @@ from scrapling.fetchers import Fetcher
 
 def scrape_products():
     page = Fetcher.get('https://example.com/products')
-    
+
     # Find all product elements
     products = page.css('.product')
-    
+
     results = []
     for product in products:
         results.append({
@@ -292,7 +298,7 @@ def scrape_products():
             'description': product.css('.description::text').get(),
             'in_stock': product.has_class('in-stock')
         })
-    
+
     return results
 ```
 
@@ -315,26 +321,26 @@ def scrape_all_pages():
     base_url = 'https://example.com/products?page={}'
     page_num = 1
     all_products = []
-    
+
     while True:
         # Get current page
         page = Fetcher.get(base_url.format(page_num))
-        
+
         # Find products
         products = page.css('.product')
         if not products:
             break
-            
+
         # Process products
         for product in products:
             all_products.append({
                 'name': product.css('.name::text').get(),
                 'price': product.css('.price::text').get()
             })
-            
+
         # Next page
         page_num += 1
-        
+
     return all_products
 ```
 
@@ -366,21 +372,21 @@ from scrapling.fetchers import Fetcher
 
 def extract_table():
     page = Fetcher.get('https://example.com/data')
-    
+
     # Find table
     table = page.css('table')[0]
-    
+
     # Extract headers
     headers = [
         th.text for th in table.css('thead th')
     ]
-    
+
     # Extract rows
     rows = []
     for row in table.css('tbody tr'):
         cells = [td.text for td in row.css('td')]
         rows.append(dict(zip(headers, cells)))
-        
+
     return rows
 ```
 
@@ -391,10 +397,10 @@ from scrapling.fetchers import Fetcher
 
 def extract_menu():
     page = Fetcher.get('https://example.com')
-    
+
     # Find navigation
     nav = page.css('nav')[0]
-    
+
     menu = {}
     for item in nav.css('li'):
         links = item.css('a')
@@ -404,7 +410,7 @@ def extract_menu():
                 'url': link['href'],
                 'has_submenu': bool(item.css('.submenu'))
             }
-            
+
     return menu
 ```
 

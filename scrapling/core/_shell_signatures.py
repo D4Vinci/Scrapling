@@ -12,6 +12,8 @@ from scrapling.core._types import (
     FollowRedirects,
 )
 
+from scrapling.engines.toolbelt.proxy_rotation import ProxyRotator
+
 # Parameter definitions for shell function signatures (defined once at module level)
 # Mirrors TypedDict definitions from _types.py but runtime-accessible for IPython introspection
 _REQUESTS_PARAMS = {
@@ -36,19 +38,22 @@ _REQUESTS_PARAMS = {
 }
 
 _FETCH_PARAMS = {
+    "max_pages": int,
     "headless": bool,
     "disable_resources": bool,
     "network_idle": bool,
     "load_dom": bool,
+    "pierce_shadow": bool,
     "wait_selector": Optional[str],
     "wait_selector_state": SelectorWaitStates,
-    "cookies": Sequence[SetCookieParam],
+    "cookies": Sequence[SetCookieParam] | None,
     "google_search": bool,
     "wait": int | float,
     "timezone_id": str | None,
     "page_action": Optional[Callable],
     "page_setup": Optional[Callable],
     "proxy": Optional[str | Dict[str, str] | Tuple],
+    "proxy_rotator": Optional[ProxyRotator],
     "extra_headers": Optional[Dict[str, str]],
     "timeout": int | float,
     "init_script": Optional[str],
@@ -64,41 +69,8 @@ _FETCH_PARAMS = {
     "block_ads": bool,
     "retries": int,
     "retry_delay": int | float,
-    "capture_xhr": str | None,
-    "executable_path": Optional[str],
-    "dns_over_https": bool,
-}
-
-_STEALTHY_FETCH_PARAMS = {
-    "headless": bool,
-    "disable_resources": bool,
-    "network_idle": bool,
-    "load_dom": bool,
-    "wait_selector": Optional[str],
-    "wait_selector_state": SelectorWaitStates,
-    "cookies": Sequence[SetCookieParam],
-    "google_search": bool,
-    "wait": int | float,
-    "timezone_id": str | None,
-    "page_action": Optional[Callable],
-    "page_setup": Optional[Callable],
-    "proxy": Optional[str | Dict[str, str] | Tuple],
-    "extra_headers": Optional[Dict[str, str]],
-    "timeout": int | float,
-    "init_script": Optional[str],
-    "user_data_dir": str,
-    "selector_config": Optional[Dict],
-    "additional_args": Optional[Dict],
-    "locale": Optional[str],
-    "real_chrome": bool,
-    "cdp_url": Optional[str],
-    "useragent": Optional[str],
-    "extra_flags": Optional[List[str]],
-    "blocked_domains": Optional[Set[str]],
-    "block_ads": bool,
-    "retries": int,
-    "retry_delay": int | float,
-    "capture_xhr": str | None,
+    "record_requests": bool,
+    "max_recorded_requests": int,
     "executable_path": Optional[str],
     "dns_over_https": bool,
     "allow_webgl": bool,
@@ -114,5 +86,4 @@ Signatures_map = {
     "put": {**_REQUESTS_PARAMS, "data": Optional[Dict | str], "json": Optional[Dict | List]},
     "delete": _REQUESTS_PARAMS,
     "fetch": _FETCH_PARAMS,
-    "stealthy_fetch": _STEALTHY_FETCH_PARAMS,
 }

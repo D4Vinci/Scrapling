@@ -1,0 +1,100 @@
+INHERIT: zensical-base.yml
+site_description: Scrapling - 現代のウェブを手軽にスクレイピング。
+site_url: https://scrapling.readthedocs.io/ja/latest/
+docs_dir: docs/locales/ja
+site_dir: site
+edit_uri: edit/main/docs/locales/ja/
+copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">Cookie の設定を変更</a>
+nav:
+- 紹介: index.md
+- はじめに: overview.md
+- 性能テスト: benchmarks.md
+- v0.5 への移行: migrating-to-v0.5.md
+- 使い方:
+  - ページの解析:
+    - 要素の選択: parsing/selection.md
+    - 主なクラス: parsing/main_classes.md
+    - 適応型スクレイピング: parsing/adaptive.md
+  - ページの取得:
+    - Fetcher の選び方: fetching/choosing.md
+    - HTTP リクエスト: fetching/static.md
+    - ブラウザでの取得: fetching/stealthy.md
+  - Spider:
+    - 仕組み: spiders/architecture.md
+    - はじめての Spider: spiders/getting-started.md
+    - リクエストとレスポンス: spiders/requests-responses.md
+    - セッション: spiders/sessions.md
+    - プロキシとブロック対策: spiders/proxy-blocking.md
+    - 汎用テンプレート: spiders/generic-templates.md
+    - プラットフォーム別テンプレート: spiders/platform-templates.md
+    - 応用機能: spiders/advanced.md
+  - コマンドライン:
+    - 概要: cli/overview.md
+    - 対話型シェル: cli/interactive-shell.md
+    - 抽出コマンド: cli/extract-commands.md
+  - AI との連携:
+    - MCP サーバー: ai/mcp-server.md
+    - Agent Skill: ai/agent-skill.md
+    - RAG システムの構築: ai/building-rag-systems.md
+  - 連携と移行:
+    - Scrapy との連携: integrations/scrapy.md
+    - BeautifulSoup からの移行: tutorials/migrating_from_beautifulsoup.md
+- チュートリアル:
+  - AI データ抽出サービスの無料の代替手段: tutorials/replacing_ai.md
+- 開発:
+  - API リファレンス:
+    - Selector: api-reference/selector.md
+    - Fetcher: api-reference/fetchers.md
+    - MCP サーバー: api-reference/mcp-server.md
+    - 独自の型: api-reference/custom-types.md
+    - Response: api-reference/response.md
+    - Spider: api-reference/spiders.md
+    - プロキシの切り替え: api-reference/proxy-rotation.md
+  - 独自の保存システムを作る: development/adaptive_storage_system.md
+  - Scrapling の型を使う: development/scrapling_custom_types.md
+- 支援と広告: donate.md
+- 開発への参加: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
+- 変更履歴: changelog.md
+theme:
+  language: ja
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    accent: green
+    primary: deep purple
+    toggle:
+      icon: lucide/sun
+      name: ダークモードに切り替え
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    accent: light green
+    primary: deep purple
+    toggle:
+      icon: lucide/moon
+      name: ライトモードに切り替え
+markdown_extensions:
+  toc:
+    permalink_title: この見出しへのリンク
+plugins:
+  mkdocstrings:
+    locale: ja
+extra:
+  analytics:
+    feedback:
+      title: このページは役に立ちましたか？
+      ratings:
+      - icon: material/heart
+        name: 役に立ちました
+        data: 1
+        note: ご意見ありがとうございます！
+      - icon: material/heart-broken
+        name: 改善が必要です
+        data: 0
+        note: 'ご意見ありがとうございます。<a href="https://github.com/D4Vinci/Scrapling/issues/new?template=04-docs_issue.yml" target="_blank" rel="noopener">ドキュメントの問題を報告</a>して、改善にご協力ください。'
+  consent:
+    title: Cookie の使用について
+    description: 設定の保存と、ドキュメントが役に立っているかの確認に Cookie を使います。同意していただくと、ドキュメントの改善に役立ちます。
+    actions:
+    - accept
+    - reject
+    - manage

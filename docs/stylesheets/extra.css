@@ -13,6 +13,11 @@
 :root {
   --md-code-font: 'Maple Mono';
 }
+
+[dir="rtl"] .md-typeset code {
+  unicode-bidi: isolate;
+}
+
 [align="center"] code {
   font-family: 'Maple Mono';
   font-style: italic;
@@ -26,4 +31,20 @@
 
 [data-md-color-scheme="slate"] .md-banner {
   background-color: #141428;
+}
+
+@media screen and (max-width: 59.984375em) {
+  [dir="rtl"] .md-select__inner {
+    left: 0;
+    transform: translateY(.3rem);
+  }
+
+  [dir="rtl"] .md-select:is(:hover, :focus-within) .md-select__inner {
+    transform: translateY(0);
+  }
+
+  [dir="rtl"] .md-select__inner::after {
+    left: 1rem;
+    right: auto;
+  }
 }

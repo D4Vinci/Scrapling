@@ -1,0 +1,17 @@
+{% macro t(key) %}{{ {
+  "ATTRIBUTE": "АТРИБУТ", "Attributes": "Атрибуты", "Attributes:": "Атрибуты:",
+  "BOUND:": "ВЕРХНЯЯ ГРАНИЦА:", "Bound or Constraints": "Верхняя граница или ограничения",
+  "Classes": "Классы", "Classes:": "Классы:", "CLASS": "КЛАСС",
+  "Class Type Parameters:": "Параметры типа класса:", "CLASS TYPE PARAMETER": "ПАРАМЕТР ТИПА КЛАССА",
+  "CONSTRAINTS:": "ОГРАНИЧЕНИЯ:", "DEFAULT:": "ПО УМОЛЧАНИЮ:", "Default": "По умолчанию", "default:": "по умолчанию:",
+  "DESCRIPTION": "ОПИСАНИЕ", "Description": "Описание", "Examples:": "Примеры:",
+  "Functions": "Функции", "Functions:": "Функции:", "FUNCTION": "ФУНКЦИЯ",
+  "Init Type Parameters:": "Параметры типа конструктора:", "INIT TYPE PARAMETER": "ПАРАМЕТР ТИПА КОНСТРУКТОРА",
+  "Methods:": "Методы:", "METHOD": "МЕТОД", "Modules": "Модули", "Modules:": "Модули:", "MODULE": "МОДУЛЬ",
+  "Name": "Имя", "Other Parameters:": "Другие параметры:", "PARAMETER": "ПАРАМЕТР", "Parameters:": "Параметры:",
+  "RAISES": "ИСКЛЮЧЕНИЯ", "Raises:": "Исключения:", "RECEIVES": "ПОЛУЧАЕТ", "Receives:": "Получает:",
+  "required": "обязательный", "RETURNS": "ВОЗВРАЩАЕТ", "Returns:": "Возвращает:", "Source code in": "Исходный код в",
+  "TYPE:": "ТИП:", "Type": "Тип", "Type Aliases": "Псевдонимы типов", "Type Aliases:": "Псевдонимы типов:",
+  "TYPE ALIAS": "ПСЕВДОНИМ ТИПА", "Type Parameters:": "Параметры типа:", "TYPE PARAMETER": "ПАРАМЕТР ТИПА",
+  "WARNS": "ПРЕДУПРЕЖДЕНИЯ", "Warns:": "Предупреждения:", "YIELDS": "ВЫДАЁТ", "Yields:": "Выдаёт:"
+}.get(key, "") }}{% endmacro %}

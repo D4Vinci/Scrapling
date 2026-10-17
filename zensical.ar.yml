@@ -1,0 +1,99 @@
+INHERIT: zensical-base.yml
+site_url: https://scrapling.readthedocs.io/ar/latest/
+docs_dir: docs/locales/ar
+site_dir: site
+edit_uri: edit/main/docs/locales/ar/
+copyright: حقوق النشر &copy; 2025 Karim Shoair - <a href="#__consent">إعدادات ملفات تعريف الارتباط</a>
+nav:
+- مقدمة: index.md
+- نظرة عامة: overview.md
+- اختبارات الأداء: benchmarks.md
+- الانتقال إلى v0.5: migrating-to-v0.5.md
+- دليل الاستخدام:
+  - تحليل الصفحات:
+    - اختيار العناصر: parsing/selection.md
+    - الفئات الأساسية: parsing/main_classes.md
+    - الاستخراج المتكيف: parsing/adaptive.md
+  - جلب الصفحات:
+    - أساسيات Fetchers: fetching/choosing.md
+    - طلبات HTTP: fetching/static.md
+    - الجلب بالمتصفح: fetching/stealthy.md
+  - Spiders:
+    - طريقة العمل: spiders/architecture.md
+    - البدء: spiders/getting-started.md
+    - الطلبات والاستجابات: spiders/requests-responses.md
+    - الجلسات: spiders/sessions.md
+    - إدارة Proxy والحظر: spiders/proxy-blocking.md
+    - قوالب عامة: spiders/generic-templates.md
+    - قوالب المنصات: spiders/platform-templates.md
+    - ميزات متقدمة: spiders/advanced.md
+  - سطر الأوامر:
+    - نظرة عامة: cli/overview.md
+    - البيئة التفاعلية: cli/interactive-shell.md
+    - أوامر الاستخراج: cli/extract-commands.md
+  - الاستخدام مع AI:
+    - خادم MCP: ai/mcp-server.md
+    - مهارة Agent Skill: ai/agent-skill.md
+    - بناء أنظمة RAG: ai/building-rag-systems.md
+  - التكامل والانتقال:
+    - التكامل مع Scrapy: integrations/scrapy.md
+    - الانتقال من BeautifulSoup: tutorials/migrating_from_beautifulsoup.md
+- دروس تطبيقية:
+  - بديل مجاني لـ AI لاستخراج بيانات الويب: tutorials/replacing_ai.md
+- التطوير:
+  - مرجع API:
+    - Selector: api-reference/selector.md
+    - Fetchers: api-reference/fetchers.md
+    - خادم MCP: api-reference/mcp-server.md
+    - الأنواع المخصصة: api-reference/custom-types.md
+    - Response: api-reference/response.md
+    - Spiders: api-reference/spiders.md
+    - تبديل Proxy: api-reference/proxy-rotation.md
+  - كتابة نظام استرجاع خاص بك: development/adaptive_storage_system.md
+  - استخدام الأنواع المخصصة في Scrapling: development/scrapling_custom_types.md
+- الدعم والإعلانات: donate.md
+- المساهمة: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
+- سجل التغييرات: changelog.md
+theme:
+  language: ar
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    accent: green
+    primary: deep purple
+    toggle:
+      icon: lucide/sun
+      name: التبديل إلى الوضع الداكن
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    accent: light green
+    primary: deep purple
+    toggle:
+      icon: lucide/moon
+      name: التبديل إلى الوضع الفاتح
+  font:
+    text: Noto Sans Arabic
+plugins:
+  mkdocstrings:
+    locale: ar
+extra:
+  analytics:
+    feedback:
+      title: هل أفادتك هذه الصفحة؟
+      ratings:
+      - icon: material/heart
+        name: هذه الصفحة مفيدة
+        data: 1
+        note: شكرًا لملاحظاتك!
+      - icon: material/heart-broken
+        name: تحتاج هذه الصفحة إلى تحسين
+        data: 0
+        note: شكرًا لملاحظاتك! ساعدنا في تحسين الصفحة عبر <a href="https://github.com/D4Vinci/Scrapling/issues/new?template=04-docs_issue.yml"
+          target="_blank" rel="noopener">فتح مشكلة في الوثائق</a>.
+  consent:
+    title: ملفات تعريف الارتباط
+    description: نستخدم ملفات تعريف الارتباط لحفظ تفضيلاتك ومعرفة مدى فائدة هذه الوثائق. تساعدنا موافقتك على تحسينها.
+    actions:
+    - accept
+    - reject
+    - manage

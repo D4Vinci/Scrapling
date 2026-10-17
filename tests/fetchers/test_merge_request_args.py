@@ -8,6 +8,60 @@ import pytest
 from scrapling.engines.static import FetcherClient
 
 
+class TestHeadersMergeIsCaseInsensitive:
+    """A per-request header replaces a session header whose name only differs by case."""
+
+    URL = "https://example.com"
+
+    def _merge(self, session_headers, request_headers, **extra):
+        client = FetcherClient(headers=session_headers, **extra)
+        return client._headers_job(self.URL, request_headers, False, True)
+
+    def test_lowercase_request_header_replaces_session_header(self):
+        headers = self._merge(
+            {"User-Agent": "SessionUA/1.0", "Authorization": "Bearer SESSION"},
+            {"user-agent": "RequestUA/2.0", "authorization": "Bearer REQUEST"},
+        )
+        assert headers == {"user-agent": "RequestUA/2.0", "authorization": "Bearer REQUEST"}
+
+    def test_uppercase_request_header_replaces_lowercase_session_header(self):
+        headers = self._merge({"x-token": "session"}, {"X-Token": "request"})
+        assert headers == {"X-Token": "request"}
+
+    def test_same_case_override_still_works(self):
+        headers = self._merge({"User-Agent": "SessionUA/1.0"}, {"User-Agent": "RequestUA/2.0"})
+        assert headers == {"User-Agent": "RequestUA/2.0"}
+
+    def test_session_headers_not_overridden_are_kept_in_order(self):
+        headers = self._merge(
+            {"Accept": "text/html", "User-Agent": "SessionUA/1.0", "X-Trace": "1"},
+            {"user-agent": "RequestUA/2.0", "X-New": "2"},
+        )
+        assert list(headers.items()) == [
+            ("Accept", "text/html"),
+            ("X-Trace", "1"),
+            ("user-agent", "RequestUA/2.0"),
+            ("X-New", "2"),
+        ]
+
+    def test_mixed_case_duplicates_inside_request_are_left_alone(self):
+        headers = self._merge({}, {"X-Dup": "a", "x-dup": "b"})
+        assert headers == {"X-Dup": "a", "x-dup": "b"}
+
+    def test_stealth_does_not_overwrite_user_header_of_any_case(self):
+        client = FetcherClient(headers={"Accept-Language": "fr"})
+        headers = client._headers_job(
+            self.URL, {"user-agent": "RequestUA/2.0", "REFERER": "https://a.example/"}, True, False
+        )
+        names = [k.lower() for k in headers]
+        assert names.count("user-agent") == 1
+        assert names.count("accept-language") == 1
+        assert names.count("referer") == 1
+        assert headers["user-agent"] == "RequestUA/2.0"
+        assert headers["Accept-Language"] == "fr"
+        assert headers["REFERER"] == "https://a.example/"
+
+
 class TestMergeRequestArgsSkipsBrowserParams:
     """Verify that browser-only keyword arguments are stripped before
     the request dict is forwarded to curl_cffi's Session.request()."""
@@ -42,3 +96,67 @@ class TestMergeRequestArgsSkipsBrowserParams:
         """Arbitrary curl_cffi-compatible kwargs should survive."""
         args = self._build_args(cookies={"session": "abc"})
         assert args.get("cookies") == {"session": "abc"}
+
+
+class TestMergeRequestArgsEncodesDataAndParams:
+    """Verify repeated form values and preserve existing query values."""
+
+    def _build_args(self, **extra_kwargs):
+        client = FetcherClient()
+        return client._merge_request_args(url="https://example.com", **extra_kwargs)
+
+    def test_data_list_becomes_repeated_keys(self):
+        args = self._build_args(data={"tags": ["a", "b"]})
+        assert args["data"] == "tags=a&tags=b"
+
+    def test_data_int_list_becomes_repeated_keys(self):
+        args = self._build_args(data={"ids": [1, 2]})
+        assert args["data"] == "ids=1&ids=2"
+
+    def test_data_tuple_and_set_values_are_expanded(self):
+        args = self._build_args(data={"t": ("a", "b"), "s": {"x"}})
+        assert args["data"] == "t=a&t=b&s=x"
+
+    def test_data_none_value_is_preserved(self):
+        args = self._build_args(data={"opt": None, "q": "x"})
+        assert args["data"] == "opt=None&q=x"
+
+    def test_data_scalars_are_unchanged(self):
+        args = self._build_args(data={"a": "1", "b": 2, "c": "x y"})
+        assert args["data"] == "a=1&b=2&c=x+y"
+
+    def test_data_dict_keeps_form_content_type(self):
+        args = self._build_args(data={"tags": ["a", "b"]})
+        assert args["headers"]["Content-Type"] == "application/x-www-form-urlencoded"
+
+    def test_data_dict_keeps_caller_content_type(self):
+        args = self._build_args(data={"a": "1"}, headers={"content-type": "text/plain"})
+        assert args["headers"]["content-type"] == "text/plain"
+        assert "Content-Type" not in args["headers"]
+
+    def test_params_none_value_is_preserved(self):
+        args = self._build_args(params={"page": None, "q": "x"})
+        assert args["params"] == {"page": None, "q": "x"}
+
+    def test_params_list_is_unchanged(self):
+        args = self._build_args(params={"tag": ["a", "b"]})
+        assert args["params"] == {"tag": ["a", "b"]}
+
+    def test_non_dict_data_is_untouched(self):
+        pairs = [("tags", ["a", "b"]), ("opt", None)]
+        assert self._build_args(data="a=1&b=2")["data"] == "a=1&b=2"
+        assert self._build_args(data=b"raw")["data"] == b"raw"
+        assert self._build_args(data=pairs)["data"] is pairs
+        assert "Content-Type" not in self._build_args(data="a=1")["headers"]
+
+    def test_non_dict_params_is_untouched(self):
+        pairs = [("page", None), ("q", "x")]
+        assert self._build_args(params=pairs)["params"] is pairs
+
+    def test_dict_data_with_multipart_stays_a_dict(self):
+        """curl_cffi adds the items of a dict `data` to a `multipart` body, so it must not become a string."""
+        mime = object()
+        args = self._build_args(data={"a": "1"}, multipart=mime)
+        assert args["data"] == {"a": "1"}
+        assert args["multipart"] is mime
+        assert "Content-Type" not in args["headers"]

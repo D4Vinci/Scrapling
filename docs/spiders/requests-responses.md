@@ -1,3 +1,8 @@
+---
+title: "Spider Requests, Callbacks and Response.follow"
+description: "Create crawl requests, pass metadata and follow links with response.follow. Learn callbacks, priorities and request deduplication."
+---
+
 # Requests & Responses
 
 !!! success "Prerequisites"
@@ -53,7 +58,7 @@ yield Request(
 
 - **Relative URLs** are resolved automatically against the current page URL
 - **Referer header** is set to the current page URL by default
-- **Session kwargs** from the original request are inherited (headers, proxy settings, etc.)
+- **Session kwargs** from the original request are inherited (headers, proxy settings, etc.), except `method`, `params`, `data`, `json`, `files`, and `multipart`, so followed links are plain GETs
 - **Callback, session ID, and priority** are inherited from the original request if not specified
 
 ```python

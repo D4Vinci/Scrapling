@@ -1,10 +1,10 @@
 from random import randint
 from re import compile as re_compile
-from time import sleep as time_sleep
+from time import monotonic, sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
-from playwright.sync_api import Locator, Page
-from playwright.async_api import Page as async_Page, Locator as AsyncLocator
+from patchright.sync_api import Locator, Page, TimeoutError as PlaywrightTimeoutError
+from patchright.async_api import Page as async_Page, Locator as AsyncLocator
 from patchright.sync_api import sync_playwright
 from patchright.async_api import async_playwright
 
@@ -39,6 +39,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
     def __init__(self, **kwargs: Unpack[StealthSession]):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
+        :param record_requests: Save completed browser requests and responses. Failed or unfinished requests are omitted. Defaults to False.
+        :param max_recorded_requests: Maximum retained requests per session. Defaults to 1000; older entries are removed.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
@@ -62,6 +64,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
@@ -72,7 +75,10 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
         self.__validate__(**kwargs)
-        super().__init__()
+        super().__init__(
+            record_requests=self._config.record_requests,
+            max_recorded_requests=self._config.max_recorded_requests,
+        )
 
     def start(self) -> None:
         """Create a browser for this instance and context."""
@@ -112,18 +118,43 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param _attempts: The number of solve attempts done so far, used internally to cap the retries.
         :return:
         """
-        self._wait_for_networkidle(page, timeout=5000)
-        challenge_type = self._detect_cloudflare(ResponseFactory._get_page_content(page))
+        if _attempts:
+            self._wait_for_networkidle(page, timeout=5000)
+        deadline = monotonic() + 5
+        challenge_type = None
+        for poll in range(51):
+            if not poll % 5 or monotonic() >= deadline:
+                challenge_type = self._detect_cloudflare(ResponseFactory._get_page_content(page))
+            if challenge_type and (challenge_type != "embedded" or page.frame(url=__CF_PATTERN__) is not None):
+                break
+            if _attempts or poll == 50 or (remaining := deadline - monotonic()) <= 0:
+                challenge_type = None
+                break
+            page.wait_for_timeout(min(100, remaining * 1000))
         if not challenge_type:
-            log.error("No Cloudflare challenge found.")
+            log.info("No Cloudflare challenge found.")
             return None
         elif _attempts >= __CF_MAX_SOLVE_ATTEMPTS__:
             log.error(f"Failed to solve the Cloudflare challenge after {_attempts} attempts, returning the page as is")
             return None
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
+            if challenge_type == "embedded":
+                iframe = page.frame(url=__CF_PATTERN__)
+                if iframe is None:
+                    return None
+                self._wait_for_page_stability(iframe, True, False)
+                try:
+                    iframe.locator('input[type="checkbox"]').click(timeout=10000, delay=randint(100, 200))
+                except PlaywrightTimeoutError:
+                    return None
+                self._wait_for_networkidle(page, timeout=5000)
+                self._wait_for_page_stability(page, True, False)
+                return None
             if challenge_type == "non-interactive":
-                while self._detect_cloudflare(ResponseFactory._get_page_content(page)) == "non-interactive":
+                for _ in range(10):
+                    if self._detect_cloudflare(ResponseFactory._get_page_content(page)) != "non-interactive":
+                        break
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     page.wait_for_timeout(1000)
                     page.wait_for_load_state()
@@ -150,9 +181,12 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     self._wait_for_page_stability(iframe, True, False)
 
                     if challenge_type != "embedded":
-                        while not iframe.frame_element().is_visible():
-                            # Double-checking that the iframe is loaded
+                        for _ in range(20):
+                            if iframe.frame_element().is_visible():
+                                break
                             page.wait_for_timeout(500)
+                        else:
+                            return self._cloudflare_solver(page, _attempts + 1)
 
                     outer_box = iframe.frame_element().bounding_box()
 
@@ -161,7 +195,9 @@ class StealthySession(SyncSession, StealthySessionMixin):
                         log.info("Cloudflare captcha is solved")
                         return None
 
-                    outer_box = page.locator(box_selector).last.bounding_box()
+                    if elements := page.locator(box_selector).last.element_handles():
+                        outer_box = elements[0].bounding_box()
+                        elements[0].dispose()
                     if not outer_box:
                         page.wait_for_timeout(1000)
                         return self._cloudflare_solver(page, _attempts + 1)
@@ -209,6 +245,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
@@ -236,14 +273,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
                 params.timeout, params.extra_headers, params.disable_resources, proxy, params.blocked_domains
             ) as page_info:
                 final_response: List = [None]
-                xhr_captured: List = []
                 page = page_info.page
-                handler = self._create_response_handler(
-                    page_info,
-                    final_response,
-                    xhr_pattern=self._config.capture_xhr,
-                    xhr_container=xhr_captured,
-                )
+                handler = self._create_response_handler(page_info, final_response)
                 page.on("response", handler)
                 try:
                     if params.page_setup:
@@ -286,7 +317,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                             final_response[0],
                             params.selector_config,
                             meta={"proxy": proxy},
-                            xhr_captured=xhr_captured,
+                            pierce_shadow=params.pierce_shadow,
                         )
                         return response
 
@@ -325,6 +356,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
     def __init__(self, **kwargs: Unpack[StealthSession]):
         """A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.
 
+        :param record_requests: Save completed browser requests and responses. Failed or unfinished requests are omitted. Defaults to False.
+        :param max_recorded_requests: Maximum retained requests per session. Defaults to 1000; older entries are removed.
         :param headless: Run the browser in headless/hidden (default), or headful/visible mode.
         :param disable_resources: Drop requests for unnecessary resources for a speed boost.
             Requests dropped are of type `font`, `image`, `media`, `beacon`, `object`, `imageset`, `texttrack`, `websocket`, `csp_report`, and `stylesheet`.
@@ -348,6 +381,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param block_webrtc: Forces WebRTC to respect proxy settings to prevent local IP address leak.
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
@@ -358,7 +392,11 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param additional_args: Additional arguments to be passed to Playwright's context as additional settings, and it takes higher priority than Scrapling's settings.
         """
         self.__validate__(**kwargs)
-        super().__init__(max_pages=self._config.max_pages)
+        super().__init__(
+            max_pages=self._config.max_pages,
+            record_requests=self._config.record_requests,
+            max_recorded_requests=self._config.max_recorded_requests,
+        )
 
     async def start(self) -> None:
         """Create a browser for this instance and context."""
@@ -397,18 +435,46 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param _attempts: The number of solve attempts done so far, used internally to cap the retries.
         :return:
         """
-        await self._wait_for_networkidle(page, timeout=5000)
-        challenge_type = self._detect_cloudflare(await ResponseFactory._get_async_page_content(page))
+        if _attempts:
+            await self._wait_for_networkidle(page, timeout=5000)
+        deadline = monotonic() + 5
+        challenge_type = None
+        for poll in range(51):
+            if not poll % 5 or monotonic() >= deadline:
+                challenge_type = self._detect_cloudflare(await ResponseFactory._get_async_page_content(page))
+            if challenge_type and (challenge_type != "embedded" or page.frame(url=__CF_PATTERN__) is not None):
+                break
+            if _attempts or poll == 50 or (remaining := deadline - monotonic()) <= 0:
+                challenge_type = None
+                break
+            await page.wait_for_timeout(min(100, remaining * 1000))
         if not challenge_type:
-            log.error("No Cloudflare challenge found.")
+            log.info("No Cloudflare challenge found.")
             return None
         elif _attempts >= __CF_MAX_SOLVE_ATTEMPTS__:
             log.error(f"Failed to solve the Cloudflare challenge after {_attempts} attempts, returning the page as is")
             return None
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
+            if challenge_type == "embedded":
+                iframe = page.frame(url=__CF_PATTERN__)
+                if iframe is None:
+                    return None
+                await self._wait_for_page_stability(iframe, True, False)
+                try:
+                    await iframe.locator('input[type="checkbox"]').click(timeout=10000, delay=randint(100, 200))
+                except PlaywrightTimeoutError:
+                    return None
+                await self._wait_for_networkidle(page, timeout=5000)
+                await self._wait_for_page_stability(page, True, False)
+                return None
             if challenge_type == "non-interactive":
-                while self._detect_cloudflare(await ResponseFactory._get_async_page_content(page)) == "non-interactive":
+                for _ in range(10):
+                    if (
+                        self._detect_cloudflare(await ResponseFactory._get_async_page_content(page))
+                        != "non-interactive"
+                    ):
+                        break
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     await page.wait_for_timeout(1000)
                     await page.wait_for_load_state()
@@ -435,9 +501,12 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     await self._wait_for_page_stability(iframe, True, False)
 
                     if challenge_type != "embedded":
-                        while not await (await iframe.frame_element()).is_visible():
-                            # Double-checking that the iframe is loaded
+                        for _ in range(20):
+                            if await (await iframe.frame_element()).is_visible():
+                                break
                             await page.wait_for_timeout(500)
+                        else:
+                            return await self._cloudflare_solver(page, _attempts + 1)
 
                     outer_box = await (await iframe.frame_element()).bounding_box()
 
@@ -446,7 +515,9 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                         log.info("Cloudflare captcha is solved")
                         return None
 
-                    outer_box = await page.locator(box_selector).last.bounding_box()
+                    if elements := await page.locator(box_selector).last.element_handles():
+                        outer_box = await elements[0].bounding_box()
+                        await elements[0].dispose()
                     if not outer_box:
                         await page.wait_for_timeout(1000)
                         return await self._cloudflare_solver(page, _attempts + 1)
@@ -496,6 +567,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param wait_selector_state: The state to wait for the selector given with `wait_selector`. The default state is `attached`.
         :param network_idle: Wait for the page until there are no network connections for at least 500 ms.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
+        :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
         :param solve_cloudflare: Solves all types of the Cloudflare's Turnstile/Interstitial challenges before returning the response to you.
         :param selector_config: The arguments that will be passed in the end while creating the final Selector's class.
         :param proxy: Static proxy to override rotator and session proxy. A new browser context will be created and used with it.
@@ -524,14 +596,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                 params.timeout, params.extra_headers, params.disable_resources, proxy, params.blocked_domains
             ) as page_info:
                 final_response: List = [None]
-                xhr_captured: List = []
                 page = page_info.page
-                handler = self._create_response_handler(
-                    page_info,
-                    final_response,
-                    xhr_pattern=self._config.capture_xhr,
-                    xhr_container=xhr_captured,
-                )
+                handler = self._create_response_handler(page_info, final_response)
                 page.on("response", handler)
                 try:
                     if params.page_setup:
@@ -574,7 +640,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                             final_response[0],
                             params.selector_config,
                             meta={"proxy": proxy},
-                            xhr_captured=xhr_captured,
+                            pierce_shadow=params.pierce_shadow,
                         )
                         return response
 

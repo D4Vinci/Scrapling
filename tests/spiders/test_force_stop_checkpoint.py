@@ -225,6 +225,27 @@ class TestForceStopCheckpointPreservation:
             assert engine.paused is False
 
     @pytest.mark.anyio
+    async def test_crash_keeps_checkpoint(self):
+        """A crawl that ends with an exception must leave the checkpoint on disk."""
+
+        class CrashingSpider(SlowSpider):
+            async def is_blocked(self, response):
+                if response.url.endswith("/page/5"):
+                    raise RuntimeError("boom")
+                return False
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            spider = CrashingSpider(num_urls=20)
+            engine = _make_engine(spider, MockSession(delay=0.05), crawldir=tmpdir, interval=0.001)
+
+            with pytest.raises(Exception):
+                await engine.crawl()
+
+            assert (Path(tmpdir) / "checkpoint.pkl").exists(), "Checkpoint was deleted after the crawl crashed"
+            assert engine.paused is False
+            assert spider.on_close_calls == 1
+
+    @pytest.mark.anyio
     async def test_force_stop_without_checkpoint_system(self):
         """Force-stop without crawldir should not crash."""
         spider = SlowSpider(num_urls=10)

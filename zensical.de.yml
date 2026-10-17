@@ -1,0 +1,100 @@
+INHERIT: zensical-base.yml
+site_description: Scrapling - Daten aus dem modernen Web einfach extrahieren.
+site_url: https://scrapling.readthedocs.io/de/latest/
+docs_dir: docs/locales/de
+site_dir: site
+edit_uri: edit/main/docs/locales/de/
+copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">Cookie-Einstellungen ändern</a>
+nav:
+- Einführung: index.md
+- Überblick: overview.md
+- Leistungstests: benchmarks.md
+- Migration auf v0.5: migrating-to-v0.5.md
+- Anleitung:
+  - Seiten auswerten:
+    - Elemente auswählen: parsing/selection.md
+    - Hauptklassen: parsing/main_classes.md
+    - Adaptives Scraping: parsing/adaptive.md
+  - Seiten abrufen:
+    - Einen Fetcher wählen: fetching/choosing.md
+    - HTTP-Anfragen: fetching/static.md
+    - Abrufen mit dem Browser: fetching/stealthy.md
+  - Spider:
+    - Architektur: spiders/architecture.md
+    - Erste Schritte: spiders/getting-started.md
+    - Anfragen und Antworten: spiders/requests-responses.md
+    - Sitzungen: spiders/sessions.md
+    - Proxys und Sperren: spiders/proxy-blocking.md
+    - Allgemeine Vorlagen: spiders/generic-templates.md
+    - Plattformvorlagen: spiders/platform-templates.md
+    - Erweiterte Funktionen: spiders/advanced.md
+  - Kommandozeile:
+    - Überblick: cli/overview.md
+    - Interaktive Shell: cli/interactive-shell.md
+    - Extraktionsbefehle: cli/extract-commands.md
+  - Nutzung mit KI:
+    - MCP-Server: ai/mcp-server.md
+    - Agent Skill: ai/agent-skill.md
+    - RAG-Systeme aufbauen: ai/building-rag-systems.md
+  - Integration und Umstieg:
+    - Integration mit Scrapy: integrations/scrapy.md
+    - Von BeautifulSoup umsteigen: tutorials/migrating_from_beautifulsoup.md
+- Tutorials:
+  - Eine kostenlose Alternative zur Datenextraktion mit KI: tutorials/replacing_ai.md
+- Entwicklung:
+  - API-Referenz:
+    - Selector: api-reference/selector.md
+    - Fetcher: api-reference/fetchers.md
+    - MCP-Server: api-reference/mcp-server.md
+    - Eigene Datentypen: api-reference/custom-types.md
+    - Response: api-reference/response.md
+    - Spider: api-reference/spiders.md
+    - Proxy-Rotation: api-reference/proxy-rotation.md
+  - Ein eigenes System zum Wiederfinden erstellen: development/adaptive_storage_system.md
+  - Die Datentypen von Scrapling nutzen: development/scrapling_custom_types.md
+- Unterstützung und Werbung: donate.md
+- Mitwirken: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
+- Änderungsverlauf: changelog.md
+theme:
+  language: de
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    accent: green
+    primary: deep purple
+    toggle:
+      icon: lucide/sun
+      name: Zum dunklen Modus wechseln
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    accent: light green
+    primary: deep purple
+    toggle:
+      icon: lucide/moon
+      name: Zum hellen Modus wechseln
+markdown_extensions:
+  toc:
+    permalink_title: Dauerhafter Link
+plugins:
+  mkdocstrings:
+    locale: de
+extra:
+  analytics:
+    feedback:
+      title: War diese Seite hilfreich?
+      ratings:
+      - icon: material/heart
+        name: Diese Seite war hilfreich
+        data: 1
+        note: Vielen Dank für Ihre Rückmeldung!
+      - icon: material/heart-broken
+        name: Diese Seite kann verbessert werden
+        data: 0
+        note: 'Vielen Dank für Ihre Rückmeldung! Helfen Sie uns, diese Seite zu verbessern, und <a href="https://github.com/D4Vinci/Scrapling/issues/new?template=04-docs_issue.yml" target="_blank" rel="noopener">melden Sie ein Problem mit der Dokumentation</a>.'
+  consent:
+    title: Zustimmung zu Cookies
+    description: Wir verwenden Cookies, um Ihre Einstellungen zu speichern und zu erfahren, ob die Dokumentation Ihnen weiterhilft. Ihre Zustimmung hilft uns, sie zu verbessern.
+    actions:
+    - accept
+    - reject
+    - manage

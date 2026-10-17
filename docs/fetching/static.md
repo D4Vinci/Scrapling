@@ -1,3 +1,8 @@
+---
+title: "Python HTTP Scraping with Fetcher and FetcherSession"
+description: "Send sync or async HTTP requests with browser impersonation, cookies, proxies and reusable sessions. Extract data from the response with Scrapling."
+---
+
 # HTTP requests
 
 The `Fetcher` class provides rapid and lightweight HTTP requests using the high-performance `curl_cffi` library with a lot of stealth capabilities.
@@ -23,7 +28,7 @@ All methods for making requests here share some arguments, so let's discuss them
 - **stealthy_headers**: If enabled (default), it creates and adds real browser headers. It also sets a Google referer header.
 - **follow_redirects**: Controls redirect behavior. **Defaults to `"safe"`**, which follows redirects but rejects those targeting internal/private IPs (SSRF protection). Pass `True` to follow all redirects without restriction, or `False` to disable redirects entirely.
 - **timeout**: The number of seconds to wait for each request to be finished. **Defaults to 30 seconds**.
-- **retries**: The number of retries that the fetcher will do for failed requests. **Defaults to three retries**.
+- **retries**: The maximum number of attempts for failed requests, including the first attempt. **Defaults to 3**.
 - **retry_delay**: Number of seconds to wait between retry attempts. **Defaults to 1 second**.
 - **impersonate**: Impersonate specific browsers' TLS fingerprints. Accepts browser strings or a list of them like `"chrome110"`, `"firefox102"`, `"safari15_5"` to use specific versions or `"chrome"`, `"firefox"`, `"safari"`, `"edge"` to automatically use the latest version available. This makes your requests appear to come from real browsers at the TLS level. If you pass it a list of strings, it will choose a random one with each request. **Defaults to the latest available Chrome version.**
 - **http3**: Use HTTP/3 protocol for requests. **Defaults to False**. It might be problematic if used with `impersonate`.
@@ -45,6 +50,12 @@ All methods for making requests here share some arguments, so let's discuss them
     3. If any of the arguments `impersonate` or `stealthy_headers` are enabled, the fetchers will automatically generate real browser headers that match the browser version used.
 
 Other than this, for further customization, you can pass any arguments that `curl_cffi` supports for any method if that method doesn't already support them.
+
+### Text encoding
+
+If text looks garbled on a non-UTF-8 page, pass `default_encoding="shift_jis"` (or the page's encoding) with your request. This sets the fallback encoding when the `Content-Type` header has no charset. It does not override a charset supplied by the server.
+
+If the server supplies an incorrect charset, you can force the correct encoding with `selector_config={"encoding": "shift_jis"}`.
 
 ### HTTP Methods
 There are additional arguments for each method, depending on the method, such as `params` for GET requests and `data`/`json` for POST/PUT/DELETE requests.
@@ -79,8 +90,7 @@ page = await AsyncFetcher.get('https://example.com')
 page = await AsyncFetcher.get('https://scrapling.requestcatcher.com/get', stealthy_headers=True)
 page = await AsyncFetcher.get('https://scrapling.requestcatcher.com/get', proxy='http://username:password@localhost:8030')
 # With parameters
- page = await AsyncFetcher.get('https://example.com/search', params={'q': 'query'})
->>>
+page = await AsyncFetcher.get('https://example.com/search', params={'q': 'query'})
 # With headers
 page = await AsyncFetcher.get('https://example.com', headers={'User-Agent': 'Custom/1.0'})
 # Basic HTTP authentication

@@ -1,3 +1,8 @@
+---
+title: "Scrapling Selector and Selectors: Data and Navigation"
+description: "Learn how Selector and Selectors store HTML, text and attributes. Extract values, resolve URLs and move through parents, children and siblings."
+---
+
 # Parsing main classes
 
 !!! success "Prerequisites"
@@ -29,13 +34,12 @@ In other words, the main page is a [Selector](#selector) object, and the element
 ### Arguments explained
 The most important one is `content`, it's used to pass the HTML code you want to parse, and it accepts the HTML content as `str` or `bytes`.
 
-Otherwise, you have the arguments `url`, `adaptive`, `storage`, and `storage_args`. All these arguments are settings used with the `adaptive` feature, and they don't make a difference if you are not going to use that feature, so just ignore them for now, and we will explain them in the [adaptive](adaptive.md) feature page.
+The `url` argument sets the page URL used to resolve relative links and separate saved adaptive data by domain. The `adaptive`, `storage`, and `storage_args` arguments are settings used with the [adaptive](adaptive.md) feature, and they don't make a difference if you are not going to use that feature.
 
 Then you have the arguments for parsing adjustments or adjusting/manipulating the HTML content while the library is parsing it:
 
 - **encoding**: This is the encoding that will be used while parsing the HTML. The default is `UTF-8`.
 - **keep_comments**: This tells the library whether to keep HTML comments while parsing the page. It's disabled by default because it can cause issues with your scraping in various ways.
-- **keep_cdata**: Same logic as the HTML comments. [cdata](https://stackoverflow.com/questions/7092236/what-is-cdata-in-html) is removed by default for cleaner HTML.
 
 I have intended to ignore the arguments `huge_tree` and `root` to avoid making this page more complicated than needed.
 You may notice that I'm doing that a lot because it involves advanced features that you don't need to know to use the library. The development section will cover these missing parts if you are very invested.
@@ -344,60 +348,34 @@ Apart from the standard operations on Python lists, such as iteration and slicin
 You can do the following:
 
 Execute CSS and XPath selectors directly on the [Selector](#selector) instances it has, while the return types are the same as [Selector](#selector)'s `css` and `xpath` methods. The arguments are similar, except the `adaptive` argument is not available here. This, of course, makes chaining methods very straightforward.
-```python
->>> page.css('.product_pod a')
-[<data='<a href="catalogue/a-light-in-the-attic_...' parent='<div class="image_container"> <a href="c...'>,
- <data='<a href="catalogue/a-light-in-the-attic_...' parent='<h3><a href="catalogue/a-light-in-the-at...'>,
- <data='<a href="catalogue/tipping-the-velvet_99...' parent='<div class="image_container"> <a href="c...'>,
- <data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>,
- <data='<a href="catalogue/soumission_998/index....' parent='<div class="image_container"> <a href="c...'>,
- <data='<a href="catalogue/soumission_998/index....' parent='<h3><a href="catalogue/soumission_998/in...'>,
-...]
-
->>> page.css('.product_pod').css('a')  # Returns the same result
-[<data='<a href="catalogue/a-light-in-the-attic_...' parent='<div class="image_container"> <a href="c...'>,
- <data='<a href="catalogue/a-light-in-the-attic_...' parent='<h3><a href="catalogue/a-light-in-the-at...'>,
- <data='<a href="catalogue/tipping-the-velvet_99...' parent='<div class="image_container"> <a href="c...'>,
- <data='<a href="catalogue/tipping-the-velvet_99...' parent='<h3><a href="catalogue/tipping-the-velve...'>,
- <data='<a href="catalogue/soumission_998/index....' parent='<div class="image_container"> <a href="c...'>,
- <data='<a href="catalogue/soumission_998/index....' parent='<h3><a href="catalogue/soumission_998/in...'>,
-...]
+```pycon
+>>> page.css('.product h3::text').getall()
+['Product 1', 'Product 2', 'Product 3']
+>>> page.css('.product').css('h3::text').getall()
+['Product 1', 'Product 2', 'Product 3']
 ```
 Run the `re` and `re_first` methods directly. They take the same arguments passed to the [Selector](#selector) class. I will leave the explanation of these methods to the [TextHandler](#texthandler) section below.
 
 However, in this class, the `re_first` behaves differently as it runs `re` on each [Selector](#selector) within and returns the first one with a result. The `re` method will return a [TextHandlers](#texthandlers) object as normal, which combines all the [TextHandler](#texthandler) instances into one [TextHandlers](#texthandlers) instance.
-```python
->>> page.css('.price_color').re(r'[\d\.]+')
-['51.77',
- '53.74',
- '50.10',
- '47.82',
- '54.23',
-...]
-
->>> page.css('.product_pod h3 a::attr(href)').re(r'catalogue/(.*)/index.html')
-['a-light-in-the-attic_1000',
- 'tipping-the-velvet_999',
- 'soumission_998',
- 'sharp-objects_997',
-...]
+```pycon
+>>> page.css('.price::text').re(r'[\d.]+')
+['10.99', '20.99', '15.99']
+>>> page.css('.product h3::text').re(r'Product (\d+)')
+['1', '2', '3']
 ```
 With the `search` method, you can search quickly in the available [Selector](#selector) instances. The function you pass must accept a [Selector](#selector) instance as the first argument and return True/False. The method will return the first [Selector](#selector) instance that satisfies the function; otherwise, it will return `None`.
-```python
-# Find all the products with price '53.23'.
->>> search_function = lambda p: float(p.css('.price_color').re_first(r'[\d\.]+')) == 54.23
->>> page.css('.product_pod').search(search_function)
-<data='<article class="product_pod"><div class=...' parent='<li class="col-xs-6 col-sm-4 col-md-3 co...'>
+
+```pycon
+>>> product = page.css('.product').search(lambda p: p.css('.price::text').get() == '$20.99')
+>>> product.css('h3::text').get()
+'Product 2'
 ```
-You can use the `filter` method, too, which takes a function like the `search` method but returns an `Selectors` instance of all the [Selector](#selector) instances that satisfy the function
-```python
-# Find all products with prices over $50
->>> filtering_function = lambda p: float(p.css('.price_color').re_first(r'[\d\.]+')) > 50
->>> page.css('.product_pod').filter(filtering_function)
-[<data='<article class="product_pod"><div class=...' parent='<li class="col-xs-6 col-sm-4 col-md-3 co...'>,
- <data='<article class="product_pod"><div class=...' parent='<li class="col-xs-6 col-sm-4 col-md-3 co...'>,
- <data='<article class="product_pod"><div class=...' parent='<li class="col-xs-6 col-sm-4 col-md-3 co...'>,
-...]
+You can use the `filter` method, too, which takes a function like the `search` method but returns a `Selectors` instance of all the [Selector](#selector) instances that satisfy the function
+
+```pycon
+>>> products = page.css('.product').filter(lambda p: float(p.css('.price::text').re_first(r'[\d.]+')) > 15)
+>>> products.css('h3::text').getall()
+['Product 2', 'Product 3']
 ```
 You can safely access the first or last element without worrying about index errors:
 ```python
@@ -410,11 +388,11 @@ You can safely access the first or last element without worrying about index err
 
 If you are too lazy like me and want to know the number of [Selector](#selector) instances in a [Selectors](#selectors) instance. You can do this:
 ```python
-page.css('.product_pod').length
+page.css('.product').length
 ```
 which is equivalent to
 ```python
-len(page.css('.product_pod'))
+len(page.css('.product'))
 ```
 Yup, like JavaScript :)
 
@@ -438,21 +416,11 @@ First, we start with the `re` and `re_first` methods. These are the same methods
     - **case_sensitive**: It's enabled by default. As the name implies, disabling it causes the regex to ignore letter case during compilation.
   
     You have seen these examples before; the return result is [TextHandlers](#texthandlers) because we used the `re` method.
-    ```python
-    >>> page.css('.price_color').re(r'[\d\.]+')
-    ['51.77',
-     '53.74',
-     '50.10',
-     '47.82',
-     '54.23',
-    ...]
-    
-    >>> page.css('.product_pod h3 a::attr(href)').re(r'catalogue/(.*)/index.html')
-    ['a-light-in-the-attic_1000',
-     'tipping-the-velvet_999',
-     'soumission_998',
-     'sharp-objects_997',
-    ...]
+    ```pycon
+    >>> page.css('.price::text').re(r'[\d.]+')
+    ['10.99', '20.99', '15.99']
+    >>> page.css('.product h3::text').re(r'Product (\d+)')
+    ['1', '2', '3']
     ```
     To explain the other arguments better, we will use a custom string for each example below
     ```python
@@ -469,7 +437,7 @@ First, we start with the `re` and `re_first` methods. These are the same methods
     
     # Mixing arguments
     >>> test_string.re('hi there', clean_match=True, case_sensitive=False)
-    ['hi There']
+    ['hi there']
     ```
     Another use of the idea of replacing strings with `TextHandler` everywhere is that a property like `html_content` returns `TextHandler`, so you can do regex on the HTML content if you want:
     ```python

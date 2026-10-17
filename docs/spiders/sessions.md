@@ -1,9 +1,14 @@
+---
+title: "Use HTTP and Browser Sessions in One Crawler"
+description: "Set up named sessions and route spider requests through HTTP or browser fetchers. Reuse cookies, start sessions on demand and inspect API history."
+---
+
 # Spiders sessions
 
 !!! success "Prerequisites"
 
     1. You've read the [Getting started](getting-started.md) page and know how to create and run a basic spider.
-    2. You're familiar with [Fetchers basics](../fetching/choosing.md) and the differences between HTTP, Dynamic, and Stealthy sessions.
+    2. You're familiar with [Fetchers basics](../fetching/choosing.md) and the differences between HTTP and Stealthy sessions.
 
 A spider can use multiple fetcher sessions simultaneously. For example, a fast HTTP session for simple pages and a stealth browser session for protected pages. This page shows you how to configure and use sessions.
 
@@ -17,8 +22,7 @@ By default, every spider creates a single [FetcherSession](../fetching/static.md
 | Session Type                                    | Use Case                                 |
 |-------------------------------------------------|------------------------------------------|
 | [FetcherSession](../fetching/static.md)         | Fast HTTP requests, no JavaScript        |
-| [AsyncDynamicSession](../fetching/dynamic.md)   | Browser automation, JavaScript rendering |
-| [AsyncStealthySession](../fetching/stealthy.md) | Anti-bot bypass, Cloudflare, etc.        |
+| [AsyncStealthySession](../fetching/stealthy.md) | JavaScript, browser automation, anti-bot bypass        |
 
 
 ## Configuring Sessions
@@ -73,13 +77,12 @@ class ProductSpider(Spider):
         # Fast HTTP for listing pages (default)
         manager.add("http", FetcherSession())
 
-        # Stealth browser for protected product pages
-        # capture_xhr captures background API calls matching the regex
-        manager.add("stealth", AsyncStealthySession(
+        self.browser_session = AsyncStealthySession(
             headless=True,
             network_idle=True,
-            capture_xhr=r"https://api\.shop\.example\.com/.*",
-        ))
+            record_requests=True,
+        )
+        manager.add("stealth", self.browser_session)
 
     async def parse(self, response: Response):
         for link in response.css("a.product::attr(href)").getall():
@@ -91,15 +94,19 @@ class ProductSpider(Spider):
             yield response.follow(next_page)
 
     async def parse_product(self, response: Response):
-        # Access captured XHR/fetch API calls (if capture_xhr was set on the session)
-        for xhr in response.captured_xhr:
-            self.logger.info(f"Captured API call: {xhr.url} ({xhr.status})")
-
         yield {
             "name": response.css("h1::text").get(""),
             "price": response.css(".price::text").get(""),
         }
+
+    async def on_close(self):
+        for api_response in self.browser_session.network.search(
+            url_pattern=r"https://api\.shop\.example\.com/.*", limit=None
+        ):
+            self.logger.info(f"Saved API response: {api_response.url} ({api_response.status})")
 ```
+
+The example keeps the browser instance and reads its retained API history once in `on_close()`, before the sessions close. The history covers all product pages and stays readable after closure. Pending captures are not awaited, and retention limits still apply.
 
 The key is the `sid` parameter - it tells the spider which session to use for each request. When you call `response.follow()` without `sid`, the session ID from the original request is inherited.
 
@@ -164,7 +171,7 @@ async def parse(self, response: Response):
 
     Normally, when you use `FetcherSession`, `Fetcher`, or `AsyncFetcher`, you specify the HTTP method to use with the corresponding method like `.get()` and `.post()`. But while using `FetcherSession` in spiders, you can't do this. By default, the request is an _HTTP GET_ request; if you want to use another HTTP method, you have to pass it to the `method` argument, as in the above example. The reason for this is to unify the `Request` interface across all session types.
 
-For browser sessions (`AsyncDynamicSession`, `AsyncStealthySession`), you can pass browser-specific arguments like `wait_selector`, `page_action`, or `extra_headers`:
+With the `"stealth"` session (`AsyncStealthySession`) registered in the multi-session example above, you can pass browser-specific arguments like `wait_selector`, `page_action`, or `extra_headers`:
 
 ```python
 async def parse(self, response: Response):
@@ -181,7 +188,7 @@ async def parse(self, response: Response):
 
     yield response.follow(
         "/dynamic-page",
-        sid="browser",
+        sid="stealth",
         callback=self.parse_dynamic,
         wait_selector="div.loaded",
         network_idle=True,
@@ -190,7 +197,7 @@ async def parse(self, response: Response):
 
 !!! warning
 
-    Session arguments (**kwargs) passed from the original request are inherited by `response.follow()`. New kwargs take precedence over inherited ones.
+    Session arguments (**kwargs) passed from the original request are inherited by `response.follow()`, except `method`, `params`, `data`, `json`, `files`, and `multipart`, so following a link after a POST issues a plain GET. New kwargs take precedence over inherited ones.
 
 ```python
 from scrapling.spiders import Spider, Response
@@ -211,7 +218,7 @@ class ProductSpider(Spider):
 
         next_page = response.css("a.next::attr(href)").get()
         if next_page:
-            yield Request(next_page)
+            yield response.follow(next_page)
 
     async def parse_product(self, response: Response):
         yield {

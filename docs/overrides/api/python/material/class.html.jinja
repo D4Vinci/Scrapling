@@ -1,0 +1,8 @@
+{% set translation = "translations/" ~ locale ~ ".html.jinja" %}
+{% if translation is existing_template %}
+  {% import translation as translated %}
+  {% set rendered %}{% include "_base/class.html.jinja" %}{% endset %}
+  {{ translated.translate(rendered) }}
+{% else %}
+  {% include "_base/class.html.jinja" %}
+{% endif %}

@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from patchright._impl._errors import Error as PatchrightError
-from playwright._impl._errors import Error as PlaywrightError
 
 from scrapling.engines.toolbelt.convertor import ResponseFactory
 from scrapling.engines._browsers._stealth import StealthySession, AsyncStealthySession, __CF_MAX_SOLVE_ATTEMPTS__
@@ -30,7 +29,9 @@ class TestChallengeCleared:
 def _make_sync_page():
     page = MagicMock()
     page.frame.return_value = None
-    page.locator.return_value.last.bounding_box.return_value = {"x": 100, "y": 200}
+    element = MagicMock()
+    element.bounding_box.return_value = {"x": 100, "y": 200}
+    page.locator.return_value.last.element_handles.return_value = [element]
     return page
 
 
@@ -84,11 +85,15 @@ class TestAsyncSolver:
         page.frame.return_value = None
         page.wait_for_timeout = AsyncMock()
         page.wait_for_load_state = AsyncMock()
-        page.locator.return_value.last.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element = MagicMock()
+        element.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element.dispose = AsyncMock()
+        page.locator.return_value.last.element_handles = AsyncMock(return_value=[element])
         page.mouse.click = AsyncMock(side_effect=lambda *args, **kwargs: state.update(content=CLEAN_PAGE))
 
         assert await session._cloudflare_solver(page) is None
         assert page.mouse.click.await_count == 1
+        assert page.mouse.click.await_args is not None
         x, y = page.mouse.click.await_args.args
         assert 126 <= x <= 128
         assert 225 <= y <= 227
@@ -101,7 +106,10 @@ class TestAsyncSolver:
         page.frame.return_value = None
         page.wait_for_timeout = AsyncMock()
         page.wait_for_load_state = AsyncMock()
-        page.locator.return_value.last.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element = MagicMock()
+        element.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element.dispose = AsyncMock()
+        page.locator.return_value.last.element_handles = AsyncMock(return_value=[element])
         page.mouse.click = AsyncMock()
 
         assert await session._cloudflare_solver(page) is None
@@ -109,20 +117,18 @@ class TestAsyncSolver:
 
 
 class TestPageContentRetries:
-    @pytest.mark.parametrize("error_class", [PatchrightError, PlaywrightError])
-    def test_sync_content_errors_are_retried(self, error_class):
-        """Both patchright and playwright errors must trigger the retry workaround, not crash"""
+    def test_sync_content_errors_are_retried(self):
+        """Patchright errors must trigger the retry workaround"""
         page = MagicMock()
-        page.content.side_effect = [error_class("Page.content: page is navigating"), CLEAN_PAGE]
+        page.content.side_effect = [PatchrightError("Page.content: page is navigating"), CLEAN_PAGE]
 
         assert ResponseFactory._get_page_content(page) == CLEAN_PAGE
         assert page.wait_for_timeout.call_count == 1
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("error_class", [PatchrightError, PlaywrightError])
-    async def test_async_content_errors_are_retried(self, error_class):
+    async def test_async_content_errors_are_retried(self):
         page = MagicMock()
-        page.content = AsyncMock(side_effect=[error_class("Page.content: page is navigating"), CLEAN_PAGE])
+        page.content = AsyncMock(side_effect=[PatchrightError("Page.content: page is navigating"), CLEAN_PAGE])
         page.wait_for_timeout = AsyncMock()
 
         assert await ResponseFactory._get_async_page_content(page) == CLEAN_PAGE
@@ -154,11 +160,3 @@ class TestLocaleLaunchFlags:
         """Remote browsers can't take launch flags, so the context option is the best effort left"""
         session = StealthySession(locale="fr-FR", cdp_url="ws://127.0.0.1:9222/devtools/browser/x")
         assert session._context_options.get("locale") == "fr-FR"
-
-    def test_dynamic_session_gets_the_same_flags(self):
-        from scrapling.engines._browsers._controllers import DynamicSession
-
-        session = DynamicSession(locale="en-GB")
-        assert "--lang=en-GB" in session._browser_options["args"]
-        assert "--accept-lang=en-GB,en" in session._browser_options["args"]
-        assert "locale" not in session._context_options

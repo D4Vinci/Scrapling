@@ -1,0 +1,100 @@
+INHERIT: zensical-base.yml
+site_description: Scrapling - 轻松抓取现代网站。
+site_url: https://scrapling.readthedocs.io/zh-cn/latest/
+docs_dir: docs/locales/zh
+site_dir: site
+edit_uri: edit/main/docs/locales/zh/
+copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">更改 Cookie 设置</a>
+nav:
+- 简介: index.md
+- 入门: overview.md
+- 性能测试: benchmarks.md
+- 迁移到 v0.5: migrating-to-v0.5.md
+- 使用指南:
+  - 解析页面:
+    - 选择元素: parsing/selection.md
+    - 主要类: parsing/main_classes.md
+    - 自适应抓取: parsing/adaptive.md
+  - 获取页面:
+    - 选择 Fetcher: fetching/choosing.md
+    - HTTP 请求: fetching/static.md
+    - 浏览器抓取: fetching/stealthy.md
+  - 爬虫:
+    - 架构: spiders/architecture.md
+    - 快速开始: spiders/getting-started.md
+    - 请求和响应: spiders/requests-responses.md
+    - 会话: spiders/sessions.md
+    - 代理和拦截: spiders/proxy-blocking.md
+    - 通用模板: spiders/generic-templates.md
+    - 平台模板: spiders/platform-templates.md
+    - 进阶功能: spiders/advanced.md
+  - 命令行:
+    - 概览: cli/overview.md
+    - 交互式 Shell: cli/interactive-shell.md
+    - 提取命令: cli/extract-commands.md
+  - AI 集成:
+    - MCP 服务器: ai/mcp-server.md
+    - Agent Skill: ai/agent-skill.md
+    - 构建 RAG 系统: ai/building-rag-systems.md
+  - 集成和迁移:
+    - 集成 Scrapy: integrations/scrapy.md
+    - 从 BeautifulSoup 迁移: tutorials/migrating_from_beautifulsoup.md
+- 教程:
+  - 免费替代 AI 数据提取服务: tutorials/replacing_ai.md
+- 开发:
+  - API 参考:
+    - Selector: api-reference/selector.md
+    - Fetcher: api-reference/fetchers.md
+    - MCP 服务器: api-reference/mcp-server.md
+    - 自定义类型: api-reference/custom-types.md
+    - Response: api-reference/response.md
+    - Spider: api-reference/spiders.md
+    - 代理轮换: api-reference/proxy-rotation.md
+  - 创建自己的元素定位存储系统: development/adaptive_storage_system.md
+  - 使用 Scrapling 的类型: development/scrapling_custom_types.md
+- 赞助和广告: donate.md
+- 贡献: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
+- 更新日志: changelog.md
+theme:
+  language: zh
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    accent: green
+    primary: deep purple
+    toggle:
+      icon: lucide/sun
+      name: 切换到深色模式
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    accent: light green
+    primary: deep purple
+    toggle:
+      icon: lucide/moon
+      name: 切换到浅色模式
+markdown_extensions:
+  toc:
+    permalink_title: 永久链接
+plugins:
+  mkdocstrings:
+    locale: zh
+extra:
+  analytics:
+    feedback:
+      title: 这页内容有帮助吗？
+      ratings:
+      - icon: material/heart
+        name: 这页内容有帮助
+        data: 1
+        note: 感谢反馈！
+      - icon: material/heart-broken
+        name: 这页内容需要改进
+        data: 0
+        note: '感谢反馈！请<a href="https://github.com/D4Vinci/Scrapling/issues/new?template=04-docs_issue.yml" target="_blank" rel="noopener">报告文档问题</a>，帮助我们改进这一页。'
+  consent:
+    title: Cookie 许可
+    description: 我们使用 Cookie 保存偏好设置，并了解文档是否有帮助。你的许可有助于我们改进文档。
+    actions:
+    - accept
+    - reject
+    - manage

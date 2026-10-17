@@ -1,0 +1,100 @@
+INHERIT: zensical-base.yml
+site_description: Scrapling - 현대적인 웹을 간편하게 스크래핑하세요!
+site_url: https://scrapling.readthedocs.io/ko/latest/
+docs_dir: docs/locales/ko
+site_dir: site
+edit_uri: edit/main/docs/locales/ko/
+copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">쿠키 설정 변경</a>
+nav:
+- 소개: index.md
+- 시작하기: overview.md
+- 성능 테스트: benchmarks.md
+- v0.5로 마이그레이션: migrating-to-v0.5.md
+- 사용 가이드:
+  - 페이지 파싱:
+    - 요소 찾기: parsing/selection.md
+    - 주요 클래스: parsing/main_classes.md
+    - 적응형 스크래핑: parsing/adaptive.md
+  - 페이지 가져오기:
+    - Fetcher 선택: fetching/choosing.md
+    - HTTP 요청: fetching/static.md
+    - 브라우저로 가져오기: fetching/stealthy.md
+  - 스파이더:
+    - 구조: spiders/architecture.md
+    - 첫 스파이더: spiders/getting-started.md
+    - 요청과 응답: spiders/requests-responses.md
+    - 세션: spiders/sessions.md
+    - 프록시와 차단 처리: spiders/proxy-blocking.md
+    - 범용 템플릿: spiders/generic-templates.md
+    - 플랫폼별 템플릿: spiders/platform-templates.md
+    - 고급 기능: spiders/advanced.md
+  - 명령줄:
+    - 개요: cli/overview.md
+    - 대화형 셸: cli/interactive-shell.md
+    - 추출 명령어: cli/extract-commands.md
+  - AI 연동:
+    - MCP 서버: ai/mcp-server.md
+    - Agent Skill: ai/agent-skill.md
+    - RAG 시스템 만들기: ai/building-rag-systems.md
+  - 연동과 전환:
+    - Scrapy 연동: integrations/scrapy.md
+    - BeautifulSoup에서 옮기기: tutorials/migrating_from_beautifulsoup.md
+- 따라 하기:
+  - AI 스크래핑 서비스의 무료 대안: tutorials/replacing_ai.md
+- 개발:
+  - API 참고 문서:
+    - Selector: api-reference/selector.md
+    - Fetcher: api-reference/fetchers.md
+    - MCP 서버: api-reference/mcp-server.md
+    - 사용자 정의 자료형: api-reference/custom-types.md
+    - Response: api-reference/response.md
+    - Spider: api-reference/spiders.md
+    - 프록시 교체: api-reference/proxy-rotation.md
+  - 직접 저장 시스템 만들기: development/adaptive_storage_system.md
+  - Scrapling 자료형 사용하기: development/scrapling_custom_types.md
+- 후원과 광고: donate.md
+- 개발에 참여하기: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
+- 변경 기록: changelog.md
+theme:
+  language: ko
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    accent: green
+    primary: deep purple
+    toggle:
+      icon: lucide/sun
+      name: 어두운 테마로 전환
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    accent: light green
+    primary: deep purple
+    toggle:
+      icon: lucide/moon
+      name: 밝은 테마로 전환
+markdown_extensions:
+  toc:
+    permalink_title: 이 제목으로 연결되는 링크
+plugins:
+  mkdocstrings:
+    locale: ko
+extra:
+  analytics:
+    feedback:
+      title: 이 페이지가 도움이 되었나요?
+      ratings:
+      - icon: material/heart
+        name: 도움이 되었습니다
+        data: 1
+        note: 의견을 보내 주셔서 감사합니다!
+      - icon: material/heart-broken
+        name: 개선이 필요합니다
+        data: 0
+        note: '의견을 보내 주셔서 감사합니다. <a href="https://github.com/D4Vinci/Scrapling/issues/new?template=04-docs_issue.yml" target="_blank" rel="noopener">문서의 문제를 알려 주시면</a> 개선하는 데 도움이 됩니다.'
+  consent:
+    title: 쿠키 사용 안내
+    description: 설정을 기억하고 문서가 얼마나 도움이 되는지 확인하기 위해 쿠키를 사용합니다. 동의해 주시면 문서를 개선하는 데 도움이 됩니다.
+    actions:
+    - accept
+    - reject
+    - manage

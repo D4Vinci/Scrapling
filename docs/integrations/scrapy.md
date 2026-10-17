@@ -1,3 +1,8 @@
+---
+title: "Use Scrapling Parsing in a Scrapy Spider"
+description: "Convert Scrapy responses to Scrapling or decorate a callback. Keep your Scrapy crawler and use Scrapling selectors and adaptive parsing."
+---
+
 # Integrating Scrapling into Scrapy
 
 If you have an existing Scrapy project, you don't need to rewrite it to enjoy Scrapling's parsing API. The Scrapy integration converts Scrapy responses to Scrapling [Response](../fetching/choosing.md#response-object) objects right inside your spider callbacks, so Scrapy keeps handling the crawling while Scrapling handles the parsing.
@@ -49,7 +54,7 @@ If you have a Scrapy response at hand outside a callback (middlewares, pipelines
 ```python
 from scrapling.integrations.scrapy import convert_response
 
-scrapling_response = convert_response(scrapy_response, keep_comments=False, keep_cdata=False)
+scrapling_response = convert_response(scrapy_response, keep_comments=False)
 ```
 
 ## Notes

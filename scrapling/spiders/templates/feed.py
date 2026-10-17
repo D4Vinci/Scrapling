@@ -126,7 +126,8 @@ class CSVFeedSpider(Spider):
             self.logger.warning(f"Failed to decompress feed: {e}")
             return
 
-        text = body.decode(response.encoding or "utf-8", errors="replace")
+        # Spreadsheet exports often start with a BOM, which would otherwise end up in the first column name
+        text = body.decode(response.encoding or "utf-8", errors="replace").removeprefix("\N{BYTE ORDER MARK}")
         reader = DictReader(StringIO(text), fieldnames=self.headers, delimiter=self.delimiter, quotechar=self.quotechar)
         for row in reader:
             async for result in self.parse_row(response, dict(row)):

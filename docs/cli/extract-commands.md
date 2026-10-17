@@ -1,3 +1,8 @@
+---
+title: "Save Web Pages as Markdown, HTML or Text from the CLI"
+description: "Use scrapling extract to save HTTP or browser results. Filter content with CSS, set request options and choose a supported output format."
+---
+
 # Scrapling Extract Command Guide
 
 **Web Scraping through the terminal without requiring any programming!**
@@ -9,7 +14,7 @@ The `scrapling extract` command lets you download and extract content from websi
     1. You've completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
     2. You've completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
     3. You've completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
-    4. You've completed or read at least one page from the fetchers section to use here for requests: [HTTP requests](../fetching/static.md), [Dynamic websites](../fetching/dynamic.md), or [Dynamic websites with hard protections](../fetching/stealthy.md).
+    4. You've completed or read at least one page from the fetchers section to use here for requests: [HTTP requests](../fetching/static.md) or [browser fetching](../fetching/stealthy.md).
 
 
 ## What is the Extract Command group?
@@ -24,7 +29,7 @@ The extract command is a set of simple terminal tools that:
 
 !!! tip "AI-Targeted Mode"
 
-    All extract commands support an `--ai-targeted` flag. When enabled, it extracts only the main body content, strips noise tags (script, style, noscript, svg), removes hidden elements that could be used for prompt injection (CSS-hidden, aria-hidden, template tags), strips zero-width unicode characters, and removes HTML comments. For browser commands (`fetch`/`stealthy-fetch`), it also automatically enables ad blocking. This is ideal when the output is destined for an AI model.
+    All extract commands support an `--ai-targeted` flag. When enabled, it extracts only the main body content, strips noise tags (script, style, noscript, svg), removes hidden elements that could be used for prompt injection (inline hidden elements, aria-hidden, hidden slots, template tags), strips zero-width unicode characters, and removes HTML comments. For the browser command (`fetch`), it also automatically enables ad blocking. This is ideal when the output is destined for an AI model.
 
 ## Quick Start
 
@@ -73,8 +78,7 @@ Commands:
   post            Perform a POST request and save the content to a file.
   put             Perform a PUT request and save the content to a file.
   delete          Perform a DELETE request and save the content to a file.
-  fetch           Use DynamicFetcher to fetch content with browser...
-  stealthy-fetch  Use StealthyFetcher to fetch content with advanced...
+  fetch           Use StealthyFetcher to fetch content with advanced stealth features.
 ```
 
 We will go through each command in detail below.
@@ -104,7 +108,7 @@ We will go through each command in detail below.
     scrapling extract get "https://scrapling.requestcatcher.com" content.md --cookies "session=abc123; user=john"
    
     # Add user agent
-    scrapling extract get "https://api.site.com" data.json -H "User-Agent: MyBot 1.0"
+    scrapling extract get "https://api.site.com" data.txt -H "User-Agent: MyBot 1.0"
     
     # Add multiple headers
     scrapling extract get "https://site.com" page.html -H "Accept: text/html" -H "Accept-Language: en-US"
@@ -146,7 +150,7 @@ We will go through each command in detail below.
     scrapling extract post "https://api.site.com/search" results.html --data "query=python&type=tutorial"
     
     # Send JSON data
-    scrapling extract post "https://api.site.com" response.json --json '{"username": "test", "action": "search"}'
+    scrapling extract post "https://api.site.com" response.txt --json '{"username": "test", "action": "search"}'
     ```
     Get the available options for the command with `scrapling extract post --help` as follows:
     ```bash
@@ -186,7 +190,7 @@ We will go through each command in detail below.
     scrapling extract put "https://scrapling.requestcatcher.com/put" results.html --data "update=info" --impersonate "firefox"
     
     # Send JSON data
-    scrapling extract put "https://scrapling.requestcatcher.com/put" response.json --json '{"username": "test", "action": "search"}'
+    scrapling extract put "https://scrapling.requestcatcher.com/put" response.txt --json '{"username": "test", "action": "search"}'
     ```
     Get the available options for the command with `scrapling extract put --help` as follows:
     ```bash
@@ -250,110 +254,61 @@ We will go through each command in detail below.
       --help                                         Show this message and exit.
     ```
 
-### Browsers fetching
+### Browser fetching
 
-1. **fetch - Handle Dynamic Content**
+Use `fetch` for JavaScript pages, browser automation, and protected sites. It runs `StealthyFetcher` with all stealth options available.
 
-    For websites that load content with dynamic content or have slight protection
-    
-    ```bash
-    scrapling extract fetch [URL] [OUTPUT_FILE] [OPTIONS]
-    ```
-    
-    **Examples:**
-    ```bash
-    # Wait for JavaScript to load content and finish network activity
-    scrapling extract fetch "https://scrapling.requestcatcher.com/" content.md --network-idle
-    
-    # Wait for specific content to appear
-    scrapling extract fetch "https://scrapling.requestcatcher.com/" data.txt --wait-selector ".content-loaded"
-    
-    # Run in visible browser mode (helpful for debugging)
-    scrapling extract fetch "https://scrapling.requestcatcher.com/" page.html --no-headless --disable-resources
-    ```
-    Get the available options for the command with `scrapling extract fetch --help` as follows:
-    ```bash
-    Usage: scrapling extract fetch [OPTIONS] URL OUTPUT_FILE
-    
-      Use DynamicFetcher to fetch content with browser automation.
-    
-      The output file path can be an HTML file, a Markdown file of the HTML content, or the text content itself. Use file extensions (`.html`/`.md`/`.txt`) respectively.
-    
-    Options:
-      --headless / --no-headless                  Run browser in headless mode (default: True)
-      --disable-resources / --enable-resources    Drop unnecessary resources for speed boost (default: False)
-      --network-idle / --no-network-idle          Wait for network idle (default: False)
-      --timeout INTEGER                           Timeout in milliseconds (default: 30000)
-      --wait INTEGER                              Additional wait time in milliseconds after page load (default: 0)
-      -s, --css-selector TEXT                     CSS selector to extract specific content from the page. It returns all matches.
-      --wait-selector TEXT                        CSS selector to wait for before proceeding
-      --locale TEXT                               Specify user locale. Defaults to the system default locale.
-      --real-chrome/--no-real-chrome              If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
-      --proxy TEXT                                Proxy URL in format "http://username:password@host:port"
-      -H, --extra-headers TEXT                    Extra headers in format "Key: Value" (can be used multiple times)
-      --dns-over-https / --no-dns-over-https   Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)
-      --block-ads / --no-block-ads               Block requests to known ad and tracker domains (default: False)
-      --executable-path TEXT                      Path to a custom Chromium-compatible browser executable. Falls back to the SCRAPLING_EXECUTABLE_PATH environment variable when not set.
-      --ai-targeted                              Extract only main content and sanitize hidden elements for AI consumption (default: False)
-      --help                                      Show this message and exit.
-    ```
+```bash
+scrapling extract fetch "https://scrapling.requestcatcher.com/" content.md --network-idle
+scrapling extract fetch "https://scrapling.requestcatcher.com/" data.txt --wait-selector ".content-loaded"
+scrapling extract fetch "https://scrapling.requestcatcher.com/" page.html --no-headless --disable-resources
+scrapling extract fetch "https://nopecha.com/demo/cloudflare" data.txt --solve-cloudflare --css-selector "#padded_content a"
+scrapling extract fetch "https://site.com" content.md --proxy "http://proxy-server:8080"
+```
 
-2. **stealthy-fetch - Bypass Protection**
+Use `--pierce-shadow` to include open Shadow DOM content. It is off by default; `--no-pierce-shadow` disables it explicitly. See [Shadow DOM](../fetching/stealthy.md#shadow-dom) for selector examples and limits.
 
-    For websites with anti-bot protection or Cloudflare protection
-    
-    ```bash
-    scrapling extract stealthy-fetch [URL] [OUTPUT_FILE] [OPTIONS]
-    ```
-    
-    **Examples:**
-    ```bash
-    # Bypass basic protection
-    scrapling extract stealthy-fetch "https://scrapling.requestcatcher.com" content.md
-    
-    # Solve Cloudflare challenges
-    scrapling extract stealthy-fetch "https://nopecha.com/demo/cloudflare" data.txt --solve-cloudflare --css-selector "#padded_content a"
-    
-    # Use a proxy for anonymity.
-    scrapling extract stealthy-fetch "https://site.com" content.md --proxy "http://proxy-server:8080"
-    ```
-    Get the available options for the command with `scrapling extract stealthy-fetch --help` as follows:
-    ```bash
-    Usage: scrapling extract stealthy-fetch [OPTIONS] URL OUTPUT_FILE
-    
-      Use StealthyFetcher to fetch content with advanced stealth features.
-    
-      The output file path can be an HTML file, a Markdown file of the HTML content, or the text content itself. Use file extensions (`.html`/`.md`/`.txt`) respectively.
-    
-    Options:
-      --headless / --no-headless                  Run browser in headless mode (default: True)
-      --disable-resources / --enable-resources    Drop unnecessary resources for speed boost (default: False)
-      --block-webrtc / --allow-webrtc             Block WebRTC entirely (default: False)
-      --solve-cloudflare / --no-solve-cloudflare  Solve Cloudflare challenges (default: False)
-      --allow-webgl / --block-webgl               Allow WebGL (default: True)
-      --network-idle / --no-network-idle          Wait for network idle (default: False)
-      --real-chrome/--no-real-chrome              If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
-      --timeout INTEGER                           Timeout in milliseconds (default: 30000)
-      --wait INTEGER                              Additional wait time in milliseconds after page load (default: 0)
-      -s, --css-selector TEXT                     CSS selector to extract specific content from the page. It returns all matches.
-      --wait-selector TEXT                        CSS selector to wait for before proceeding
-      --hide-canvas / --show-canvas               Add noise to canvas operations (default: False)
-      --proxy TEXT                                Proxy URL in format "http://username:password@host:port"
-      -H, --extra-headers TEXT                    Extra headers in format "Key: Value" (can be used multiple times)
-      --dns-over-https / --no-dns-over-https   Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)
-      --block-ads / --no-block-ads               Block requests to known ad and tracker domains (default: False)
-      --executable-path TEXT                      Path to a custom Chromium-compatible browser executable. Falls back to the SCRAPLING_EXECUTABLE_PATH environment variable when not set.
-      --ai-targeted                              Extract only main content and sanitize hidden elements for AI consumption (default: False)
-      --help                                      Show this message and exit.
-    ```
+```bash
+scrapling extract fetch "https://example.com" content.md --pierce-shadow
+```
+
+Run `scrapling extract fetch --help` to see all options:
+
+```text
+Usage: scrapling extract fetch [OPTIONS] URL OUTPUT_FILE
+
+  Use StealthyFetcher to fetch content with advanced stealth features.
+
+Options:
+  --headless / --no-headless                  Run browser in headless mode (default: True)
+  --disable-resources / --enable-resources    Drop unnecessary resources for speed boost (default: False)
+  --block-webrtc / --allow-webrtc             Block WebRTC entirely (default: False)
+  --solve-cloudflare / --no-solve-cloudflare  Solve Cloudflare challenges (default: False)
+  --allow-webgl / --block-webgl               Allow WebGL (default: True)
+  --pierce-shadow / --no-pierce-shadow        Include open Shadow DOM content (default: False)
+  --network-idle / --no-network-idle          Wait for network idle (default: False)
+  --real-chrome/--no-real-chrome              If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False)
+  --timeout INTEGER                           Timeout in milliseconds (default: 30000)
+  --wait INTEGER                              Additional wait time in milliseconds after page load (default: 0)
+  -s, --css-selector TEXT                     CSS selector to extract specific content from the page. It returns all matches.
+  --wait-selector TEXT                        CSS selector to wait for before proceeding
+  --hide-canvas / --show-canvas               Add noise to canvas operations (default: False)
+  --locale TEXT                               Specify user locale. Defaults to the system default locale.
+  --proxy TEXT                                Proxy URL in format "http://username:password@host:port"
+  -H, --extra-headers TEXT                    Extra headers in format "Key: Value" (can be used multiple times)
+  --dns-over-https / --no-dns-over-https   Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)
+  --block-ads / --no-block-ads               Block requests to known ad and tracker domains (default: False)
+  --executable-path TEXT                      Path to a custom Chromium-compatible browser executable. Falls back to the SCRAPLING_EXECUTABLE_PATH environment variable when not set.
+  --ai-targeted                              Extract only main content and sanitize hidden elements for AI consumption (default: False)
+  --help                                      Show this message and exit.
+```
 
 ## When to use each command
 
 If you are not a Web Scraping expert and can't decide what to choose, you can use the following formula to help you decide:
 
 - Use **`get`** with simple websites, blogs, or news articles
-- Use **`fetch`** with modern web apps, or sites with dynamic content
-- Use **`stealthy-fetch`** with protected sites, Cloudflare, or anti-bot systems
+- Use **`fetch`** with JavaScript pages, browser automation, or protected sites, including Cloudflare
 
 ## Legal and Ethical Considerations
 

@@ -25,6 +25,9 @@ if TYPE_CHECKING:
     from scrapling.spiders import Request
 
 
+_NON_INHERITABLE_KWARGS = frozenset({"method", "data", "json", "params", "files", "multipart"})
+
+
 class Response(Selector):
     """This class is returned by all engines as a way to unify the response type between different libraries.
 
@@ -36,7 +39,6 @@ class Response(Selector):
     :param history: List of redirect responses, if any.
     :param meta: Metadata dictionary (e.g., proxy used).
     :param request: Associated spider Request object (set by crawler, in the spiders framework).
-    :param captured_xhr: List of captured XHR/fetch ``Response`` objects. Populated when ``capture_xhr`` is set on a browser session.
     """
 
     def __init__(
@@ -52,6 +54,8 @@ class Response(Selector):
         method: str = "GET",
         history: List | None = None,
         meta: Dict[str, Any] | None = None,
+        *,
+        _log: bool = True,
         **selector_config: Any,
     ):
         if isinstance(content, str):
@@ -59,6 +63,7 @@ class Response(Selector):
 
         adaptive_domain: str = cast(str, selector_config.pop("adaptive_domain", ""))
         self.status = status
+        self.method = method
         self.reason = reason
         self.cookies = cookies
         self.headers = headers
@@ -70,15 +75,14 @@ class Response(Selector):
             encoding=encoding,
             **selector_config,
         )
-        # For easier debugging while working from a Python shell
-        log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
+        if _log:
+            log.info(f"Fetched ({status}) <{method} {url}> (referer: {request_headers.get('referer')})")
 
         if meta and not isinstance(meta, dict):
             raise TypeError(f"Response meta should be dictionary but got {type(meta).__name__} instead!")
 
         self.meta: Dict[str, Any] = meta or {}
         self.request: Optional["Request"] = None  # Will be set by crawler
-        self.captured_xhr: List["Response"] = []
 
     @property
     def body(self) -> bytes:
@@ -99,7 +103,7 @@ class Response(Selector):
         page = (cast(Selector, self.css("body").first) or self) if main_content_only else self
         page = Convertor._sanitize_for_ai(Convertor._strip_noise_tags(page))
         pages = [page] if not css_selector else page.css(css_selector)
-        return "".join(Convertor._convert_to_markdown(element.html_content) for element in pages)
+        return "\n\n".join(Convertor._convert_to_markdown(element.html_content) for element in pages)
 
     def follow(
         self,
@@ -118,6 +122,8 @@ class Response(Selector):
 
         **IMPORTANT**: The below arguments if left empty, the corresponding value from the previous request will be used. The only exception is `dont_filter`.
 
+        The session kwargs of the previous request are inherited as well, except `method`, `params`, `data`, `json`, `files`, and `multipart`, so a followed link is a plain GET unless you pass them again.
+
         :param url: The URL to follow (can be relative, will be joined with current URL)
         :param sid: The session id to use
         :param callback: Spider callback method to use
@@ -134,7 +140,11 @@ class Response(Selector):
             raise TypeError("This response has no request set yet.")
 
         # Merge original session kwargs with new kwargs (new takes precedence)
-        session_kwargs = {**self.request._session_kwargs, **kwargs}
+        inherited = {k: v for k, v in self.request._session_kwargs.items() if k not in _NON_INHERITABLE_KWARGS}
+        for key in ("headers", "extra_headers"):
+            if inherited.get(key):
+                inherited[key] = {k: v for k, v in inherited[key].items() if k.lower() != "content-length"}
+        session_kwargs = {**inherited, **kwargs}
 
         if referer_flow:
             # For requests
@@ -168,7 +178,6 @@ class BaseFetcher:
     huge_tree: bool = True
     adaptive: Optional[bool] = False
     storage: Any = SQLiteStorageSystem
-    keep_cdata: Optional[bool] = False
     storage_args: Optional[Dict] = None
     keep_comments: Optional[bool] = False
     adaptive_domain: str = ""
@@ -176,7 +185,6 @@ class BaseFetcher:
         "huge_tree",
         "adaptive",
         "storage",
-        "keep_cdata",
         "storage_args",
         "keep_comments",
         "adaptive_domain",
@@ -199,7 +207,6 @@ class BaseFetcher:
         return dict(
             huge_tree=cls.huge_tree,
             keep_comments=cls.keep_comments,
-            keep_cdata=cls.keep_cdata,
             adaptive=cls.adaptive,
             storage=cls.storage,
             storage_args=cls.storage_args,
@@ -210,7 +217,7 @@ class BaseFetcher:
     def configure(cls, **kwargs):
         """Set multiple arguments for the parser at once globally
 
-        :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, keep_cdata, adaptive, storage, storage_args, adaptive_domain
+        :param kwargs: The keywords can be any arguments of the following: huge_tree, keep_comments, adaptive, storage, storage_args, adaptive_domain
         """
         for key, value in kwargs.items():
             key = key.strip().lower()
@@ -233,7 +240,6 @@ class BaseFetcher:
         parser_arguments = dict(
             huge_tree=cls.huge_tree,
             keep_comments=cls.keep_comments,
-            keep_cdata=cls.keep_cdata,
             adaptive=cls.adaptive,
             storage=cls.storage,
             storage_args=cls.storage_args,

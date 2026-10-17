@@ -1,3 +1,8 @@
+---
+title: "Test Web Scraping in the Scrapling Interactive Shell"
+description: "Fetch pages, try selectors and inspect results in an IPython shell. Convert curl commands, reuse recent responses and test scraping code."
+---
+
 # Scrapling Interactive Shell Guide
 
 <script src="https://asciinema.org/a/736339.js" id="asciicast-736339" async data-autoplay="1" data-loop="1" data-cols="225" data-rows="40" data-start-at="00:06" data-speed="1.5" data-theme="tango"></script>
@@ -11,7 +16,7 @@ The Scrapling Interactive Shell is an enhanced IPython-based environment designe
     1. You've completed or read the [Fetchers basics](../fetching/choosing.md) page to understand what the [Response object](../fetching/choosing.md#response-object) is and which fetcher to use.
     2. You've completed or read the [Querying elements](../parsing/selection.md) page to understand how to find/extract elements from the [Selector](../parsing/main_classes.md#selector)/[Response](../fetching/choosing.md#response-object) object.
     3. You've completed or read the [Main classes](../parsing/main_classes.md) page to know what properties/methods the [Response](../fetching/choosing.md#response-object) class is inheriting from the [Selector](../parsing/main_classes.md#selector) class.
-    4. You've completed or read at least one page from the fetchers section to use here for requests: [HTTP requests](../fetching/static.md), [Dynamic websites](../fetching/dynamic.md), or [Dynamic websites with hard protections](../fetching/stealthy.md).
+    4. You've completed or read at least one page from the fetchers section to use here for requests: [HTTP requests](../fetching/static.md) or [browser fetching](../fetching/stealthy.md).
 
 
 ## Why use the Interactive Shell?
@@ -54,9 +59,9 @@ len(stories)  # 30
 
 # Extract specific data
 for story in stories[:3]:
-...     title = story.text
-...     url = story['href']
-...     print(f"{title}: {url}")
+    title = story.text
+    url = story['href']
+    print(f"{title}: {url}")
 
 # Try different approaches
 titles = page.css('.titleline>a::text')  # Direct text extraction
@@ -71,10 +76,9 @@ The shell provides convenient shortcuts that eliminate boilerplate code:
 - **`post(url, **kwargs)`** - HTTP POST request (instead of `Fetcher.post`)
 - **`put(url, **kwargs)`** - HTTP PUT request (instead of `Fetcher.put`)
 - **`delete(url, **kwargs)`** - HTTP DELETE request (instead of `Fetcher.delete`)
-- **`fetch(url, **kwargs)`** - Browser-based fetch (instead of `DynamicFetcher.fetch`) 
-- **`stealthy_fetch(url, **kwargs)`** - Stealthy browser fetch (instead of `StealthyFetcher.fetch`)
+- **`fetch(url, **kwargs)`** - Stealthy browser fetch (instead of `StealthyFetcher.fetch`)
 
-The most commonly used classes are automatically available without any import, including `Fetcher`, `AsyncFetcher`, `DynamicFetcher`, `StealthyFetcher`, and `Selector`.
+The most commonly used classes are automatically available without any import, including `Fetcher`, `AsyncFetcher`, `StealthyFetcher`, and `Selector`.
 
 ### Smart Page Management
 
@@ -96,18 +100,18 @@ The shell automatically tracks your requests and pages:
     The `pages` command keeps track of the last five pages (it's a `Selectors` object):
     
     ```python
-     get('https://site1.com')
-     get('https://site2.com') 
-     get('https://site3.com')
+    get('https://site1.com')
+    get('https://site2.com')
+    get('https://site3.com')
     
-     # Access last 5 pages
-     len(pages)  # `Selectors` object with `page` history -> 3
-     pages[0].url  # First page in history -> 'https://site1.com'
-     pages[-1].url  # Most recent page -> 'https://site3.com'
+    # Access last 5 pages
+    len(pages)  # `Selectors` object with `page` history -> 3
+    pages[0].url  # First page in history -> 'https://site1.com'
+    pages[-1].url  # Most recent page -> 'https://site3.com'
     
-     # Work with historical pages
-     for i, old_page in enumerate(pages):
-    ...     print(f"Page {i}: {old_page.url} - {old_page.status}")
+    # Work with historical pages
+    for i, old_page in enumerate(pages):
+        print(f"Page {i}: {old_page.url} - {old_page.status}")
     ```
 
 ## Additional helpful commands
@@ -117,8 +121,8 @@ The shell automatically tracks your requests and pages:
 View scraped pages in your browser:
 
 ```python
- get('https://quotes.toscrape.com')
- view(page)  # Opens the page HTML in your default browser
+get('https://quotes.toscrape.com')
+view(page)  # Opens the page HTML in your default browser
 ```
 
 ### Curl Command Integration
@@ -132,24 +136,23 @@ First, you need to copy a request as a curl command like the following:
 - **Convert Curl command to Request Object**
 
     ```python
-     curl_cmd = '''curl 'https://scrapling.requestcatcher.com/post' \
-    ...   -X POST \
-    ...   -H 'Content-Type: application/json' \
-    ...   -d '{"name": "test", "value": 123}' '''
+    curl_cmd = '''curl 'https://scrapling.requestcatcher.com/post' \
+      -X POST \
+      -H 'Content-Type: application/json' \
+      -d '{"name": "test", "value": 123}' '''
     
-     request = uncurl(curl_cmd)
-     request.method  # -> 'post'
-     request.url  # -> 'https://scrapling.requestcatcher.com/post'
-     request.headers  # -> {'Content-Type': 'application/json'}
+    request = uncurl(curl_cmd)
+    request.method  # -> 'post'
+    request.url  # -> 'https://scrapling.requestcatcher.com/post'
+    request.headers  # -> {'Content-Type': 'application/json'}
     ```
 
 - **Execute Curl Command Directly**
 
     ```python
-     # Convert and execute in one step
-     curl2fetcher(curl_cmd)
-     page.status  # -> 200
-     page.json()['json']  # -> {'name': 'test', 'value': 123}
+    # Convert and execute in one step
+    curl2fetcher(curl_cmd)
+    page.status  # -> 200
     ```
 
 ### IPython Features
@@ -181,27 +184,27 @@ Here are a few examples generated via AI:
 catalog = get('https://shop.example.com/products')
 
 # Find product links
-product_links = catalog.css('.product-link::attr(href)')
+product_links = catalog.css('.product-link::attr(href)').getall()
 print(f"Found {len(product_links)} products")
 
 # Sample a few products first
 for link in product_links[:3]:
-...     product = get(f"https://shop.example.com{link}")
-...     name = product.css('.product-name::text').get('')
-...     price = product.css('.price::text').get('')
-...     print(f"{name}: {price}")
+    product = get(catalog.urljoin(link))
+    name = product.css('.product-name::text').get('')
+    price = product.css('.price::text').get('')
+    print(f"{name}: {price}")
 
 # Scale up with sessions for efficiency
 from scrapling.fetchers import FetcherSession
 with FetcherSession() as session:
-...     products = []
-...     for link in product_links:
-...         product = session.get(f"https://shop.example.com{link}")
-...         products.append({
-...             'name': product.css('.product-name::text').get(''),
-...             'price': product.css('.price::text').get(''),
-...             'url': link
-...         })
+    products = []
+    for link in product_links:
+        product = session.get(catalog.urljoin(link))
+        products.append({
+            'name': product.css('.product-name::text').get(''),
+            'price': product.css('.price::text').get(''),
+            'url': link
+        })
 ```
 
 #### API Integration and Testing
@@ -219,7 +222,7 @@ with FetcherSession() as session:
 101
 
 >>> # Test with different data
->>> updated = put(f'https://jsonplaceholder.typicode.com/posts/{new_post.json()["id"]}',
+>>> updated = put('https://jsonplaceholder.typicode.com/posts/1',
 ...               json={'title': 'Updated Title'})
 ```
 

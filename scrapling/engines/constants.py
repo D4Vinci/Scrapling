@@ -48,6 +48,7 @@ STEALTH_ARGS = (
     "--start-maximized",  # For headless check bypass
     "--enable-async-dns",
     "--use-mock-keychain",
+    "--do-not-de-elevate",
     "--disable-translate",
     "--disable-voice-input",
     "--window-position=0,0",

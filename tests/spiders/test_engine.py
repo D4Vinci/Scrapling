@@ -10,6 +10,7 @@ from scrapling.spiders.engine import CrawlerEngine, _dump
 from scrapling.spiders.request import Request
 from scrapling.spiders.robotstxt import RobotsTxtManager
 from scrapling.spiders.session import SessionManager
+from scrapling.spiders.scheduler import Scheduler
 from scrapling.spiders.result import CrawlStats, ItemList
 from scrapling.spiders.checkpoint import CheckpointData
 from scrapling.core._types import Any, Dict, Set, AsyncGenerator
@@ -378,16 +379,27 @@ class TestProcessRequest:
         assert engine.stats.requests_count == 0
 
     @pytest.mark.asyncio
-    async def test_blocked_response_triggers_retry(self):
+    @pytest.mark.parametrize("strategy", ["bfs", "dfs"])
+    async def test_blocked_response_triggers_retry(self, strategy):
         spider = MockSpider(is_blocked_fn=lambda r: True, max_blocked_retries=2)
         engine = _make_engine(spider=spider)
+        engine.scheduler = Scheduler(crawl_strategy=strategy)
 
+        other = Request("https://example.com/other", sid="default")
+        await engine.scheduler.enqueue(other)
         request = Request("https://example.com", sid="default")
         await engine._process_request(request)
 
         assert engine.stats.blocked_requests_count == 1
         # A retry request should be enqueued
         assert not engine.scheduler.is_empty
+        assert await engine.scheduler.dequeue() is other
+        retry = await engine.scheduler.dequeue()
+        assert retry.url == request.url
+        assert retry.priority == -1
+        assert request.priority == 0
+        assert retry._retry_count == 1
+        assert retry.dont_filter
 
     @pytest.mark.asyncio
     async def test_blocked_response_max_retries_exceeded(self):

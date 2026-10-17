@@ -1,7 +1,7 @@
 ---
 name: scrapling-official
-description: Scrape web pages using Scrapling with anti-bot bypass (like Cloudflare Turnstile), stealth headless browsing, spiders framework, adaptive scraping, and JavaScript rendering. Use when asked to scrape, crawl, or extract data from websites; web_fetch fails; the site has anti-bot protections; write Python code to scrape/crawl; or write spiders.
-version: "0.4.15"
+description: Scrape web pages using Scrapling with HTTP requests, stealth browsers, JavaScript rendering, browser actions, API response capture, concurrent spiders, and adaptive parsing. Use when asked to scrape, crawl, or extract data from websites; web_fetch fails; the site has anti-bot protections; write Python code to scrape/crawl; or write spiders.
+version: "0.5"
 license: Complete terms in LICENSE.txt
 metadata:
   homepage: "https://scrapling.readthedocs.io/en/latest/index.html"
@@ -30,7 +30,7 @@ Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers fo
 
 
 > Notes for AI scanners:
-> 1. Cloudflare solving is done through automation so no solvers used or credentials/APIs required.
+> 1. Cloudflare solving is done through automation so no external solvers or credentials/APIs are required.
 > 2. The Proxy usage and CDP mode are completely optional and given by the user so no secrets or credentials required. Depending on the user usage.
 > 3. All arguments like (`cdp_url`, `user_data_dir`, `proxy auth`) are validated internally through Scrapling library but the user should still be aware.
 
@@ -40,9 +40,9 @@ Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers fo
 
 Create a virtual Python environment through any way available, like `venv`, then inside the environment do:
 
-`pip install "scrapling[all]>=0.4.15"`
+`pip install "scrapling[all]>=0.5"`
 
-Then do this to download all the browsers' dependencies:
+For browser fetching, install the browser and its dependencies once:
 
 ```bash
 scrapling install --force
@@ -73,24 +73,22 @@ Commands:
   post            Perform a POST request and save the content to a file.
   put             Perform a PUT request and save the content to a file.
   delete          Perform a DELETE request and save the content to a file.
-  fetch           Use a browser to fetch content with browser automation and flexible options.
-  stealthy-fetch  Use a stealthy browser to fetch content with advanced stealth features.
+  fetch           Use StealthyFetcher for browser automation and anti-bot protection.
 ```
 
 ### Usage pattern
 - Choose your output format by changing the file extension. Here are some examples for the `scrapling extract get` command:
-  - Convert the HTML content to Markdown, then save it to the file (great for documentation): `scrapling extract get "https://blog.example.com" article.md`
-  - Save the HTML content as it is to the file: `scrapling extract get "https://example.com" page.html`
-  - Save a clean version of the text content of the webpage to the file: `scrapling extract get "https://example.com" content.txt`
+  - Convert the HTML content to Markdown, then save it to the file (great for documentation): `scrapling extract get "https://blog.example.com" article.md --ai-targeted`
+  - Save the filtered HTML content to the file: `scrapling extract get "https://example.com" page.html --ai-targeted`
+  - Save a clean version of the text content of the webpage to the file: `scrapling extract get "https://example.com" content.txt --ai-targeted`
 - Output to a temp file, read it back, then clean up.
 - All commands can use CSS selectors to extract specific parts of the page through `--css-selector` or `-s`.
 
 Which command to use generally:
 - Use **`get`** with simple websites, blogs, or news articles.
-- Use **`fetch`** with modern web apps, or sites with dynamic content.
-- Use **`stealthy-fetch`** with protected sites, Cloudflare, or anti-bot systems.
+- Use **`fetch`** with JavaScript pages, browser automation, or protected sites, including Cloudflare.
 
-> When unsure, start with `get`. If it fails or returns empty content, escalate to `fetch`, then `stealthy-fetch`. The speed of `fetch` and `stealthy-fetch` is nearly the same, so you are not sacrificing anything.
+> When unsure, start with `get`. If the page needs JavaScript or blocks HTTP requests, use `fetch`. Enable `--solve-cloudflare` when the page has a Cloudflare challenge.
 
 #### Key options (requests)
 
@@ -108,7 +106,7 @@ Those options are shared between the 4 HTTP request commands:
 | --verify / --no-verify                     |    None    | Whether to verify SSL certificates (default: True)                                                                                             |
 | --impersonate                              |    TEXT    | Browser to impersonate. Can be a single browser (e.g., Chrome) or a comma-separated list for random selection (e.g., Chrome, Firefox, Safari). |
 | --stealthy-headers / --no-stealthy-headers |    None    | Use stealthy browser headers (default: True)                                                                                                   |
-| --ai-targeted                              |    None    | Extract only main content and sanitize hidden elements for AI consumption (default: False)                                                     |
+| --ai-targeted                              |    None    | Select body content and filter common hidden elements for AI consumption (default: False)                                                     |
 
 Options shared between `post` and `put` only:
 
@@ -121,33 +119,34 @@ Examples:
 
 ```bash
 # Basic download
-scrapling extract get "https://news.site.com" news.md
+scrapling extract get "https://news.site.com" news.md --ai-targeted
 
 # Download with custom timeout
-scrapling extract get "https://example.com" content.txt --timeout 60
+scrapling extract get "https://example.com" content.txt --timeout 60 --ai-targeted
 
 # Extract only specific content using CSS selectors
-scrapling extract get "https://blog.example.com" articles.md --css-selector "article"
+scrapling extract get "https://blog.example.com" articles.md --css-selector "article" --ai-targeted
 
 # Send a request with cookies
-scrapling extract get "https://scrapling.requestcatcher.com" content.md --cookies "session=abc123; user=john"
+scrapling extract get "https://scrapling.requestcatcher.com" content.md --cookies "session=abc123; user=john" --ai-targeted
 
 # Add user agent
-scrapling extract get "https://api.site.com" data.json -H "User-Agent: MyBot 1.0"
+scrapling extract get "https://api.site.com" data.txt -H "User-Agent: MyBot 1.0" --ai-targeted
 
 # Add multiple headers
-scrapling extract get "https://site.com" page.html -H "Accept: text/html" -H "Accept-Language: en-US"
+scrapling extract get "https://site.com" page.html -H "Accept: text/html" -H "Accept-Language: en-US" --ai-targeted
 ```
 
 #### Key options (browsers)
 
-Both (`fetch` / `stealthy-fetch`) share options:
+The `fetch` command accepts these options:
 
 
 | Option                                   | Input type | Description                                                                                                                                              |
 |:-----------------------------------------|:----------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | --headless / --no-headless               |    None    | Run browser in headless mode (default: True)                                                                                                             |
 | --disable-resources / --enable-resources |    None    | Drop unnecessary resources for speed boost (default: False)                                                                                              |
+| --pierce-shadow / --no-pierce-shadow     |    None    | Include open Shadow DOM content (default: False).                                                                                                        |
 | --network-idle / --no-network-idle       |    None    | Wait for network idle (default: False)                                                                                                                   |
 | --real-chrome / --no-real-chrome         |    None    | If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch an instance of your browser and use it. (default: False) |
 | --timeout                                |  INTEGER   | Timeout in milliseconds (default: 30000)                                                                                                                 |
@@ -159,44 +158,33 @@ Both (`fetch` / `stealthy-fetch`) share options:
 | --dns-over-https / --no-dns-over-https   |    None    | Route DNS through Cloudflare's DoH to prevent DNS leaks when using proxies (default: False)                                                              |
 | --block-ads / --no-block-ads             |    None    | Block requests to ~3,500 known ad and tracker domains (default: False)                                                                                   |
 | --executable-path                        |    TEXT    | Path to a custom Chromium-compatible browser executable. Falls back to the SCRAPLING_EXECUTABLE_PATH environment variable when not set.                  |
-| --ai-targeted                            |    None    | Extract only main content and sanitize hidden elements for AI consumption (default: False). Also enables ad blocking automatically.                      |
-
-This option is specific to `fetch` only:
-
-| Option   | Input type | Description                                                 |
-|:---------|:----------:|:------------------------------------------------------------|
-| --locale |    TEXT    | Specify user locale. Defaults to the system default locale. |
-
-And these options are specific to `stealthy-fetch` only:
-
-| Option                                     | Input type | Description                                     |
-|:-------------------------------------------|:----------:|:------------------------------------------------|
-| --block-webrtc / --allow-webrtc            |    None    | Block WebRTC entirely (default: False)          |
-| --solve-cloudflare / --no-solve-cloudflare |    None    | Solve Cloudflare challenges (default: False)    |
-| --allow-webgl / --block-webgl              |    None    | Allow WebGL (default: True)                     |
-| --hide-canvas / --show-canvas              |    None    | Add noise to canvas operations (default: False) |
+| --ai-targeted                            |    None    | Select body content and filter common hidden elements for AI consumption (default: False). Also enables ad blocking automatically.                      |
+| --locale | TEXT | Specify user locale. Defaults to the system default locale. |
+| --block-webrtc / --allow-webrtc | None | Force WebRTC to respect proxy settings (default: False). |
+| --solve-cloudflare / --no-solve-cloudflare | None | Solve Cloudflare Turnstile/Interstitial challenges (default: False). |
+| --allow-webgl / --block-webgl | None | Allow WebGL (default: True). |
+| --hide-canvas / --show-canvas | None | Add noise to canvas operations (default: False). |
 
 
 Examples:
 
 ```bash
-# Wait for JavaScript to load content and finish network activity
-scrapling extract fetch "https://scrapling.requestcatcher.com/" content.md --network-idle
+scrapling extract fetch "https://scrapling.requestcatcher.com/" content.md --network-idle --ai-targeted
 
 # Wait for specific content to appear
-scrapling extract fetch "https://scrapling.requestcatcher.com/" data.txt --wait-selector ".content-loaded"
+scrapling extract fetch "https://quotes.toscrape.com/js/" quotes.txt --wait-selector ".quote" --ai-targeted
 
 # Run in visible browser mode (helpful for debugging)
-scrapling extract fetch "https://scrapling.requestcatcher.com/" page.html --no-headless --disable-resources
+scrapling extract fetch "https://scrapling.requestcatcher.com/" page.html --no-headless --disable-resources --ai-targeted
 
 # Bypass basic protection
-scrapling extract stealthy-fetch "https://scrapling.requestcatcher.com" content.md
+scrapling extract fetch "https://scrapling.requestcatcher.com" content.md --ai-targeted
 
 # Solve Cloudflare challenges
-scrapling extract stealthy-fetch "https://nopecha.com/demo/cloudflare" data.txt --solve-cloudflare --css-selector "#padded_content a"
+scrapling extract fetch "https://nopecha.com/demo/cloudflare" data.txt --solve-cloudflare --css-selector "#padded_content a" --ai-targeted
 
 # Use a proxy for anonymity.
-scrapling extract stealthy-fetch "https://site.com" content.md --proxy "http://proxy-server:8080"
+scrapling extract fetch "https://site.com" content.md --proxy "http://proxy-server:8080" --ai-targeted
 ```
 
 
@@ -236,21 +224,33 @@ with StealthySession(headless=True, solve_cloudflare=True) as session:  # Keep t
     data = page.css('#padded_content a').getall()
 
 # Or use one-off request style, it opens the browser for this request, then closes it after finishing
-page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare')
+page = StealthyFetcher.fetch('https://nopecha.com/demo/cloudflare', solve_cloudflare=True)
 data = page.css('#padded_content a').getall()
 ```
 Full browser automation
 ```python
-from scrapling.fetchers import DynamicFetcher, DynamicSession
+from scrapling.fetchers import StealthyFetcher, StealthySession
 
-with DynamicSession(headless=True, disable_resources=False, network_idle=True) as session:  # Keep the browser open until you finish
+with StealthySession(headless=True, disable_resources=False, network_idle=True) as session:  # Keep the browser open until you finish
     page = session.fetch('https://quotes.toscrape.com/', load_dom=False)
     data = page.xpath('//span[@class="text"]/text()').getall()  # XPath selector if you prefer it
 
 # Or use one-off request style, it opens the browser for this request, then closes it after finishing
-page = DynamicFetcher.fetch('https://quotes.toscrape.com/')
+page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
+
+### Shadow DOM
+
+Use `pierce_shadow=True` with StealthyFetcher and its session classes to include open shadow roots. It defaults to `False` and can be overridden per request. For MCP, pass `pierce_shadow=true` to `browser_fetch_once` or each `browser_fetch` call.
+
+The browser CLI command accepts `--pierce-shadow` and `--no-pierce-shadow`:
+
+```bash
+scrapling extract fetch "https://example.com" content.md --pierce-shadow --ai-targeted
+```
+
+The response includes `<shadow-root>` wrappers and `<slot>` elements. Use descendant selectors, or include those elements in direct-child paths. See [Shadow DOM](references/fetching/stealthy.md#shadow-dom) for assigned content, hidden slots, and extraction limits.
 
 ### Spiders
 Build full crawlers with concurrent requests, multiple session types, and pause/resume:
@@ -280,7 +280,7 @@ result.items.to_json("quotes.json")
 ```
 Use multiple session types in a single spider:
 ```python
-from scrapling.spiders import Spider, Request, Response
+from scrapling.spiders import Spider, Response
 from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
 class MultiSessionSpider(Spider):
@@ -295,15 +295,15 @@ class MultiSessionSpider(Spider):
         for link in response.css('a::attr(href)').getall():
             # Route protected pages through the stealth session
             if "protected" in link:
-                yield Request(link, sid="stealth")
+                yield response.follow(link, sid="stealth")
             else:
-                yield Request(link, sid="fast", callback=self.parse)  # explicit callback
+                yield response.follow(link, sid="fast", callback=self.parse)  # explicit callback
 ```
 Pause and resume long crawls with checkpoints by running the spider like this:
 ```python
 QuotesSpider(crawldir="./crawl_data").start()
 ```
-Press Ctrl+C to pause gracefully - progress is saved automatically. Later, when you start the spider again, pass the same `crawldir`, and it will resume from where it stopped.
+Press Ctrl+C to pause gracefully - pending requests and seen URLs are saved automatically. Later, when you start the spider again, pass the same `crawldir`, and it will resume from where it stopped.
 
 While iterating on a spider's `parse()` logic, set `development_mode = True` on the spider class to cache responses to disk on the first run and replay them on subsequent runs - so you can re-run the spider as many times as you want without re-hitting the target servers. The cache lives in `.scrapling_cache/{spider.name}/` by default and can be overridden with `development_cache_dir`. Don't ship a spider with this enabled.
 
@@ -328,7 +328,7 @@ For sitemap-driven crawls, use `SitemapSpider` with the same `rules()` API. It f
 
 For XML feeds (RSS, Atom, product feeds), use `XMLFeedSpider`: set `itertag` to the node name and override `parse_node(response, node)`, which receives each matching node as a namespace-stripped `lxml` element (`node.findtext("title")`). For CSV feeds, use `CSVFeedSpider`: override `parse_row(response, row)`, which receives each row as a dictionary, with `headers`/`delimiter`/`quotechar` for non-standard feeds. Both decompress gzipped feeds automatically. See `references/spiders/generic-templates.md`.
 
-For Shopify-powered stores, subclass `ShopifySpider` and set `target_website` to the store's domain; it extracts every product variant through Shopify's JSON API without touching the HTML. See `references/spiders/platform-templates.md`.
+For Shopify-powered stores, subclass `ShopifySpider` and set `target_website` to the store's domain; it extracts product variants through Shopify's public collection API without touching the HTML. See `references/spiders/platform-templates.md`.
 
 ### Advanced Parsing & Navigation
 ```python
@@ -346,18 +346,18 @@ quotes = page.find_all('div', class_='quote')
 quotes = page.find_all(['div'], class_='quote')
 quotes = page.find_all(class_='quote')  # and so on...
 # Find element by text content
-quotes = page.find_by_text('quote', tag='div')
+quotes = page.find_by_text('Albert Einstein', first_match=False)
 
 # Advanced navigation
 quote_text = page.css('.quote')[0].css('.text::text').get()
-quote_text = page.css('.quote').css('.text::text').getall()  # Chained selectors
+quote_texts = page.css('.quote').css('.text::text').getall()  # Chained selectors
 first_quote = page.css('.quote')[0]
-author = first_quote.next_sibling.css('.author::text')
+author = first_quote.css('.author::text').get()
 parent_container = first_quote.parent
 
 # Element relationships and similarity
 similar_elements = first_quote.find_similar()
-below_elements = first_quote.below_elements()
+below_elements = first_quote.below_elements
 ```
 You can use the parser right away if you don't want to fetch websites like below:
 ```python
@@ -367,38 +367,46 @@ page = Selector("<html>...</html>")
 ```
 And it works precisely the same way!
 ### Async Session Management Examples
+
+`FetcherSession` is context-aware and can work in both sync/async patterns. The `get_pool_stats()` method returns the status of the browser tabs pool.
+
 ```python
 import asyncio
-from scrapling.fetchers import FetcherSession, AsyncStealthySession, AsyncDynamicSession
+from scrapling.fetchers import FetcherSession, AsyncStealthySession
 
-async with FetcherSession(http3=True) as session:  # `FetcherSession` is context-aware and can work in both sync/async patterns
-    page1 = session.get('https://quotes.toscrape.com/')
-    page2 = session.get('https://quotes.toscrape.com/', impersonate='firefox135')
+async def main():
+    async with FetcherSession(http3=True) as http_session:
+        page1 = await http_session.get('https://quotes.toscrape.com/')
+        page2 = await http_session.get('https://quotes.toscrape.com/', impersonate='firefox135')
 
-# Async session usage
-async with AsyncStealthySession(max_pages=2) as session:
-    tasks = []
-    urls = ['https://example.com/page1', 'https://example.com/page2']
+    async with AsyncStealthySession(max_pages=2) as browser_session:
+        tasks = []
+        urls = ['https://example.com/page1', 'https://example.com/page2']
 
-    for url in urls:
-        task = session.fetch(url)
-        tasks.append(task)
+        for url in urls:
+            task = browser_session.fetch(url)
+            tasks.append(task)
 
-    print(session.get_pool_stats())  # Optional - The status of the browser tabs pool (busy/free/error)
-    results = await asyncio.gather(*tasks)
-    print(session.get_pool_stats())
+        print(browser_session.get_pool_stats())
+        results = await asyncio.gather(*tasks)
+        print(browser_session.get_pool_stats())
 
-# Capture XHR/fetch API calls during page load
-async with AsyncDynamicSession(capture_xhr=r"https://api\.example\.com/.*") as session:
-    page = await session.fetch('https://example.com')
-    for xhr in page.captured_xhr:  # Each is a full Response object
-        print(xhr.url, xhr.status, xhr.body)
+    async with AsyncStealthySession(record_requests=True) as recording_session:
+        await recording_session.fetch('https://example.com', network_idle=True)
+
+    for response in recording_session.network.search(url_pattern=r"https://api\.example\.com/.*", limit=None):
+        print(response.meta['network_id'], response.url, response.status)
+        print(response.meta.get('body_note') or response.body)
+
+asyncio.run(main())
 ```
+
+Recorded responses belong to the whole browser session. `search()` and `get()` return `Response` objects directly, with `network_id`, `resource_type`, and `request_body` in `.meta`. Searches filter saved history and return 100 matches by default; `limit=None` returns all retained matches. Only supported text response bodies are saved. Saved reads remain local after closure; unfinished captures are not awaited. See [Migrating in v5](references/fetching/stealthy.md#migrating-in-v5) for the removed API capture interface.
 
 ## References
 You already had a good glimpse of what the library can do. Use the references below to dig deeper when needed
 - `references/mcp-server.md` - MCP server tools, persistent session management, remote browsers over CDP, authentication, and capabilities
-- `references/building-rag-systems.md` - Converting pages/websites to LLM-ready Markdown with `Response.markdown()` and `SiteToMarkdownSpider` for RAG pipelines
+- `references/building-rag-systems.md` - Converting pages/websites to LLM-ready Markdown with `Response.markdown()` and `ContentSpider` for RAG pipelines
 - `references/parsing` - Everything you need for parsing HTML
 - `references/fetching` - Everything you need to fetch websites and session persistence
 - `references/spiders` - Everything you need to write spiders, proxy rotation, and advanced features. It follows a Scrapy-like format
@@ -406,7 +414,7 @@ You already had a good glimpse of what the library can do. Use the references be
 - `references/migrating_from_beautifulsoup.md` - A quick API comparison between scrapling and Beautifulsoup
 - `https://github.com/D4Vinci/Scrapling/tree/main/docs` - Full official docs in Markdown for quick access (use only if current references do not look up-to-date).
 
-This skill encapsulates almost all the published documentation in Markdown, so don't check external sources or search online without the user's permission.
+This skill includes guides and examples from the documentation in Markdown, so don't check external sources or search online without the user's permission.
 
 ## Guardrails (Always)
 - Only scrape content you're authorized to access.

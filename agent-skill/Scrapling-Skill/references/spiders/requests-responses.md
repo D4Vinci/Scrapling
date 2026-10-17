@@ -1,7 +1,5 @@
 # Requests & Responses
 
-This page covers the `Request` object in detail: how to construct requests, pass data between callbacks, control priority and deduplication, and use `response.follow()` for link-following.
-
 ## The Request Object
 
 A `Request` represents a URL to be fetched. You create requests either directly or via `response.follow()`:
@@ -49,7 +47,7 @@ yield Request(
 
 - **Relative URLs** are resolved automatically against the current page URL
 - **Referer header** is set to the current page URL by default
-- **Session kwargs** from the original request are inherited (headers, proxy settings, etc.)
+- **Session kwargs** from the original request are inherited (headers, proxy settings, etc.), except `method`, `params`, `data`, `json`, `files`, and `multipart`, so followed links are plain GETs
 - **Callback, session ID, and priority** are inherited from the original request if not specified
 
 ```python
@@ -95,9 +93,9 @@ yield response.follow("/page", referer_flow=False)
 
 Callbacks are async generator methods on your spider that process responses. They must `yield` one of three types:
 
-- **`dict`**: A scraped item, added to the results
-- **`Request`**: A follow-up request, added to the queue
-- **`None`**: Silently ignored
+- **`dict`** - A scraped item, added to the results
+- **`Request`** - A follow-up request, added to the queue
+- **`None`** - Silently ignored
 
 ```python
 class MySpider(Spider):
@@ -116,7 +114,9 @@ class MySpider(Spider):
         yield {"content": response.css("article::text").get("")}
 ```
 
-**Note:** All callback methods must be `async def` and use `yield` (not `return`). Even if a callback only yields items with no follow-up requests, it must still be an async generator.
+**Note:**
+
+All callback methods must be `async def` and use `yield` (not `return`). Even if a callback only yields items with no follow-up requests, it must still be an async generator.
 
 ## Request Priority
 

@@ -15,7 +15,14 @@ build:
       - pip install ".[all]"
     build:
       html:
-        - zensical build
+        - |
+          case "$READTHEDOCS_LANGUAGE" in
+            en) config=zensical.yml ;;
+            pt-br) config=zensical.pt-BR.yml ;;
+            zh-cn) config=zensical.zh.yml ;;
+            *) config="zensical.$READTHEDOCS_LANGUAGE.yml" ;;
+          esac
+          zensical build --config-file "$config"
     post_build:
-      - mkdir -p $READTHEDOCS_OUTPUT/html/
-      - cp --recursive site/* $READTHEDOCS_OUTPUT/html/
+      - mkdir -p "$READTHEDOCS_OUTPUT/html/"
+      - cp -R site/. "$READTHEDOCS_OUTPUT/html/"

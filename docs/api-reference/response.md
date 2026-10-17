@@ -1,6 +1,6 @@
 ---
-search:
-  exclude: true
+title: "Scrapling Response API Reference"
+description: "Look up response status, headers, body, metadata, Markdown conversion and follow. Use the inherited Selector methods to extract data."
 ---
 
 # Response Class

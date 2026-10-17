@@ -1,6 +1,7 @@
 from abc import ABC
 from random import choice
 from time import sleep as time_sleep
+from urllib.parse import urlencode
 from asyncio import sleep as asyncio_sleep
 
 from curl_cffi.curl import CurlError
@@ -156,6 +157,16 @@ class _ConfigurationLogic(ABC):
             if k not in skip_keys and v is not None:
                 final_args[k] = v
 
+        if (
+            isinstance(final_args.get("data"), dict)
+            and final_args.get("json") is None
+            and final_args.get("content") is None
+            and not final_args.get("multipart")
+        ):
+            final_args["data"] = urlencode(final_args["data"], doseq=True)
+            if not any(k.lower() == "content-type" for k in final_args["headers"]):
+                final_args["headers"]["Content-Type"] = "application/x-www-form-urlencoded"
+
         if http3_enabled:  # pragma: no cover
             final_args["http_version"] = CurlHttpVersion.V3ONLY
             if impersonate:
@@ -172,7 +183,13 @@ class _ConfigurationLogic(ABC):
         3. Sets a Google referer header.
         """
         # Merge session headers with request headers, request takes precedence (if it was set)
-        final_headers = {**self._default_headers, **(headers if headers else {})}
+        # Header names are case-insensitive, so a session header spelled differently must not be sent next to it
+        headers = headers if headers else {}
+        request_keys = {k.lower() for k in headers}
+        session_headers = {
+            k: v for k, v in self._default_headers.items() if k in headers or k.lower() not in request_keys
+        }
+        final_headers = {**session_headers, **headers}
         headers_keys = {k.lower() for k in final_headers}
         if stealth:
             if "referer" not in headers_keys:

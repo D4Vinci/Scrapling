@@ -1,0 +1,151 @@
+site_name: Scrapling
+site_description: Scrapling - Effortless Web Scraping for the Modern Web!
+site_author: Karim Shoair
+repo_url: https://github.com/D4Vinci/Scrapling
+edit_uri: edit/main/docs/
+repo_name: D4Vinci/Scrapling
+use_directory_urls: false
+exclude_docs: 'README*.md
+
+  locales/
+
+  '
+extra_css:
+- stylesheets/extra.css
+extra_javascript:
+- assets/javascripts/language-links.js
+theme:
+  custom_dir: docs/overrides
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
+  features:
+  - navigation.path
+  - navigation.top
+  - navigation.footer
+  - navigation.indexes
+  - navigation.sections
+  - navigation.tracking
+  - navigation.instant
+  - navigation.instant.prefetch
+  - navigation.instant.progress
+  - search.share
+  - search.suggest
+  - search.highlight
+  - content.action.view
+  - content.code.copy
+markdown_extensions:
+  pymdownx:
+    caret: {}
+    mark: {}
+    tilde: {}
+    details: {}
+    superfences:
+      custom_fences:
+      - name: mermaid
+        class: mermaid
+        format: pymdownx.superfences.fence_code_format
+    inlinehilite: {}
+    snippets:
+      base_path:
+      - includes
+      check_paths: true
+    emoji:
+      emoji_index: zensical.extensions.emoji.twemoji
+      emoji_generator: zensical.extensions.emoji.to_svg
+    highlight:
+      pygments_lang_class: true
+      anchor_linenums: true
+      line_spans: __span
+    tabbed:
+      alternate_style: true
+  admonition: {}
+  abbr: {}
+  attr_list: {}
+  tables: {}
+  codehilite:
+    css_class: highlight
+  toc:
+    permalink: true
+    toc_depth: 3
+plugins:
+  mkdocstrings:
+    custom_templates: docs/overrides/api
+    handlers:
+      python:
+        inventories:
+        - https://docs.python.org/3/objects.inv
+        paths:
+        - scrapling
+        options:
+          docstring_style: sphinx
+          show_source: true
+          show_root_heading: true
+          show_if_no_docstring: true
+          inherited_members: true
+          members_order: source
+          separate_signature: true
+          unwrap_annotated: true
+          filters: public
+          merge_init_into_class: true
+          docstring_section_style: spacy
+          signature_crossrefs: true
+          show_symbol_type_heading: true
+          show_symbol_type_toc: true
+          show_inheritance_diagram: true
+          modernize_annotations: true
+          extensions:
+          - griffe_runtime_objects
+          - griffe_sphinx
+          - griffe_inherited_docstrings:
+              merge: true
+extra:
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/D4Vinci/Scrapling
+  - icon: fontawesome/brands/x-twitter
+    link: https://x.com/Scrapling_dev
+  - icon: fontawesome/brands/discord
+    link: https://discord.gg/EMgGbDceNQ
+  - icon: fontawesome/brands/python
+    link: https://pypi.org/project/scrapling/
+  - icon: fontawesome/brands/docker
+    link: https://hub.docker.com/r/pyd4vinci/scrapling
+  analytics:
+    provider: google
+    property: G-CS3DKLY73Z
+  alternate:
+  - name: English
+    link: https://scrapling.readthedocs.io/en/latest/
+    lang: en
+  - name: العربية
+    link: https://scrapling.readthedocs.io/ar/latest/
+    lang: ar
+  - name: Español
+    link: https://scrapling.readthedocs.io/es/latest/
+    lang: es
+  - name: Português (Brasil)
+    link: https://scrapling.readthedocs.io/pt-br/latest/
+    lang: pt-BR
+  - name: Français
+    link: https://scrapling.readthedocs.io/fr/latest/
+    lang: fr
+  - name: Deutsch
+    link: https://scrapling.readthedocs.io/de/latest/
+    lang: de
+  - name: 简体中文
+    link: https://scrapling.readthedocs.io/zh-cn/latest/
+    lang: zh
+  - name: 日本語
+    link: https://scrapling.readthedocs.io/ja/latest/
+    lang: ja
+  - name: Русский
+    link: https://scrapling.readthedocs.io/ru/latest/
+    lang: ru
+  - name: 한국어
+    link: https://scrapling.readthedocs.io/ko/latest/
+    lang: ko
+watch:
+- zensical-base.yml
+- docs/assets
+- docs/stylesheets
+- includes

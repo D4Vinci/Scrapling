@@ -232,11 +232,12 @@ class LinkExtractor:
         if self.restrict_css:
             for cs in self.restrict_css:
                 scopes.extend(response.css(cs))
-        if not scopes:
+        # Only an unrestricted extractor reads the whole page; a restriction that matches nothing yields no links
+        if not self.restrict_xpath and not self.restrict_css:
             scopes = [response]
 
         out: List[str] = []
-        search_selector = "| ".join([f".//{tag}/@{attr}" for tag in self.tags for attr in self.attrs])
+        search_selector = "| ".join([f"descendant-or-self::{tag}/@{attr}" for tag in self.tags for attr in self.attrs])
         for scope in scopes:
             for url in scope._root.xpath(search_selector):
                 if not url:
