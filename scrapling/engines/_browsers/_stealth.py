@@ -1,9 +1,9 @@
 from random import randint
 from re import compile as re_compile
-from time import sleep as time_sleep
+from time import monotonic, sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
 
-from patchright.sync_api import Locator, Page
+from patchright.sync_api import Locator, Page, TimeoutError as PlaywrightTimeoutError
 from patchright.async_api import Page as async_Page, Locator as AsyncLocator
 from patchright.sync_api import sync_playwright
 from patchright.async_api import async_playwright
@@ -118,8 +118,19 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param _attempts: The number of solve attempts done so far, used internally to cap the retries.
         :return:
         """
-        self._wait_for_networkidle(page, timeout=5000)
-        challenge_type = self._detect_cloudflare(ResponseFactory._get_page_content(page))
+        if _attempts:
+            self._wait_for_networkidle(page, timeout=5000)
+        deadline = monotonic() + 5
+        challenge_type = None
+        for poll in range(51):
+            if not poll % 5 or monotonic() >= deadline:
+                challenge_type = self._detect_cloudflare(ResponseFactory._get_page_content(page))
+            if challenge_type and (challenge_type != "embedded" or page.frame(url=__CF_PATTERN__) is not None):
+                break
+            if _attempts or poll == 50 or (remaining := deadline - monotonic()) <= 0:
+                challenge_type = None
+                break
+            page.wait_for_timeout(min(100, remaining * 1000))
         if not challenge_type:
             log.info("No Cloudflare challenge found.")
             return None
@@ -128,6 +139,18 @@ class StealthySession(SyncSession, StealthySessionMixin):
             return None
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
+            if challenge_type == "embedded":
+                iframe = page.frame(url=__CF_PATTERN__)
+                if iframe is None:
+                    return None
+                self._wait_for_page_stability(iframe, True, False)
+                try:
+                    iframe.locator('input[type="checkbox"]').click(timeout=10000, delay=randint(100, 200))
+                except PlaywrightTimeoutError:
+                    return None
+                self._wait_for_networkidle(page, timeout=5000)
+                self._wait_for_page_stability(page, True, False)
+                return None
             if challenge_type == "non-interactive":
                 for _ in range(10):
                     if self._detect_cloudflare(ResponseFactory._get_page_content(page)) != "non-interactive":
@@ -412,8 +435,19 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param _attempts: The number of solve attempts done so far, used internally to cap the retries.
         :return:
         """
-        await self._wait_for_networkidle(page, timeout=5000)
-        challenge_type = self._detect_cloudflare(await ResponseFactory._get_async_page_content(page))
+        if _attempts:
+            await self._wait_for_networkidle(page, timeout=5000)
+        deadline = monotonic() + 5
+        challenge_type = None
+        for poll in range(51):
+            if not poll % 5 or monotonic() >= deadline:
+                challenge_type = self._detect_cloudflare(await ResponseFactory._get_async_page_content(page))
+            if challenge_type and (challenge_type != "embedded" or page.frame(url=__CF_PATTERN__) is not None):
+                break
+            if _attempts or poll == 50 or (remaining := deadline - monotonic()) <= 0:
+                challenge_type = None
+                break
+            await page.wait_for_timeout(min(100, remaining * 1000))
         if not challenge_type:
             log.info("No Cloudflare challenge found.")
             return None
@@ -422,6 +456,18 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
             return None
         else:
             log.info(f'The turnstile version discovered is "{challenge_type}"')
+            if challenge_type == "embedded":
+                iframe = page.frame(url=__CF_PATTERN__)
+                if iframe is None:
+                    return None
+                await self._wait_for_page_stability(iframe, True, False)
+                try:
+                    await iframe.locator('input[type="checkbox"]').click(timeout=10000, delay=randint(100, 200))
+                except PlaywrightTimeoutError:
+                    return None
+                await self._wait_for_networkidle(page, timeout=5000)
+                await self._wait_for_page_stability(page, True, False)
+                return None
             if challenge_type == "non-interactive":
                 for _ in range(10):
                     if (
