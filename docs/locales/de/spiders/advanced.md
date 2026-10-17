@@ -143,7 +143,17 @@ So ändern Sie den Abstand:
 spider = MySpider(crawldir="crawl_data/my_spider", interval=120.0)
 ```
 
-Das Schreiben auf die Festplatte ist atomar und verhindert dadurch unvollständige Dateien.
+Beim Speichern eines Checkpoints wird eine temporäre Datei verwendet. Der vorherige Checkpoint wird erst ersetzt, wenn das Schreiben erfolgreich war.
+
+!!! warning "Checkpoint-Daten"
+
+    Wenn Sie `crawldir` aktivieren, müssen sich die Werte in offenen Anfragen, einschließlich `meta` und Anfrageargumenten, mit Pythons Modul `pickle` speichern lassen. Kann ein Wert nicht gespeichert werden, schlägt das Speichern des Checkpoints fehl und der Crawl stoppt. Ein `Selector` kann in einem Callback verwendet werden, lässt sich aber nicht auf diese Weise speichern.
+
+    Speichern Sie extrahierte Werte wie Zeichenfolgen oder Zahlen statt `Selector`-Objekten. Auch Listen und Dictionaries dürfen nur Werte enthalten, die sich speichern lassen:
+
+    ```python
+    yield response.follow("/details", meta={"title": str(response.css("h1::text").get(""))})
+    ```
 
 !!! tip
 

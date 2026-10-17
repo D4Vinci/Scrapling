@@ -143,7 +143,17 @@ Vous pouvez changer l’intervalle ainsi :
 spider = MySpider(crawldir="crawl_data/my_spider", interval=120.0)
 ```
 
-L’écriture sur disque est atomique pour éviter les fichiers incomplets.
+L’enregistrement d’un point de reprise utilise un fichier temporaire et ne remplace le point précédent qu’une fois l’écriture réussie.
+
+!!! warning "Données du point de reprise"
+
+    Quand vous activez `crawldir`, les valeurs des requêtes en attente, y compris `meta` et les arguments des requêtes, doivent pouvoir être enregistrées avec le module Python `pickle`. Si une valeur ne peut pas être enregistrée, l’enregistrement du point de reprise échoue et l’exploration s’arrête. Un `Selector` peut fonctionner dans un callback, mais ne peut pas être enregistré de cette manière.
+
+    Enregistrez les valeurs extraites, comme des chaînes de caractères ou des nombres, au lieu d’objets `Selector`. Les listes et les dictionnaires doivent aussi contenir uniquement des valeurs qui peuvent être enregistrées :
+
+    ```python
+    yield response.follow("/details", meta={"title": str(response.css("h1::text").get(""))})
+    ```
 
 !!! tip "Conseil"
 

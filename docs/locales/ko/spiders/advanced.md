@@ -143,7 +143,17 @@ else:
 spider = MySpider(crawldir="crawl_data/my_spider", interval=120.0)
 ```
 
-디스크에 원자적으로 쓰므로 일부만 기록되는 일을 막습니다.
+체크포인트를 쓸 때는 임시 파일을 사용하고, 쓰기에 성공한 경우에만 이전 체크포인트를 교체합니다.
+
+!!! warning "체크포인트 데이터"
+
+    `crawldir`를 사용하면 `meta`와 요청 인수를 포함한 대기 요청의 값은 Python의 `pickle` 모듈로 저장할 수 있어야 합니다. 저장할 수 없는 값이 있으면 체크포인트 저장에 실패하고 크롤링이 중지됩니다. `Selector`는 콜백에서 사용할 수 있지만 이 방식으로 저장할 수는 없습니다.
+
+    `Selector` 객체 대신 문자열이나 숫자처럼 추출한 값을 저장하세요. 리스트와 딕셔너리에도 저장할 수 있는 값만 담아야 합니다.
+
+    ```python
+    yield response.follow("/details", meta={"title": str(response.css("h1::text").get(""))})
+    ```
 
 !!! tip
 

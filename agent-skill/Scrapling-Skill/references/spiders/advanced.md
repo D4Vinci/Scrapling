@@ -130,7 +130,17 @@ You can change the interval as follows:
 spider = MySpider(crawldir="crawl_data/my_spider", interval=120.0)
 ```
 
-The writing to the disk is atomic, so it's totally safe.
+Checkpoint writes use a temporary file and replace the previous checkpoint only after the write succeeds.
+
+**Warning: Checkpoint data**
+
+When you enable `crawldir`, values in pending requests, including `meta` and request arguments, must be saveable with Python's `pickle` module. If a value cannot be saved, the checkpoint fails and the crawl stops. A `Selector` can work in a callback but cannot be saved this way.
+
+Store extracted values, such as strings or numbers, instead of `Selector` objects. Lists and dictionaries must also contain only saveable values:
+
+```python
+yield response.follow("/details", meta={"title": str(response.css("h1::text").get(""))})
+```
 
 **Tip:**
 

@@ -143,7 +143,17 @@ else:
 spider = MySpider(crawldir="crawl_data/my_spider", interval=120.0)
 ```
 
-磁盘写入采用原子操作，避免产生不完整的文件。
+检查点先写入临时文件，仅在写入成功后才替换之前的检查点。
+
+!!! warning "检查点数据"
+
+    启用 `crawldir` 时，待处理请求中的值（包括 `meta` 和请求参数）必须能用 Python 的 `pickle` 模块保存。如果某个值无法保存，检查点保存就会失败，抓取也会停止。`Selector` 可以在回调中使用，但不能以这种方式保存。
+
+    保存提取出的字符串或数字等值，而不是 `Selector` 对象。列表和字典也必须只包含可保存的值：
+
+    ```python
+    yield response.follow("/details", meta={"title": str(response.css("h1::text").get(""))})
+    ```
 
 !!! tip
 

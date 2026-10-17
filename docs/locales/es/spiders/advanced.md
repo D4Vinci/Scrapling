@@ -143,7 +143,17 @@ Puedes cambiar el intervalo así:
 spider = MySpider(crawldir="crawl_data/my_spider", interval=120.0)
 ```
 
-La escritura en disco es atómica, para evitar archivos incompletos.
+Para escribir un punto de guardado, se usa un archivo temporal. El punto anterior solo se reemplaza cuando la escritura termina correctamente.
+
+!!! warning "Datos del punto de guardado"
+
+    Al activar `crawldir`, los valores de las solicitudes pendientes, incluidos `meta` y los argumentos de las solicitudes, deben poder guardarse con el módulo `pickle` de Python. Si un valor no se puede guardar, falla la creación del punto de guardado y el rastreo se detiene. Un `Selector` puede funcionar en un callback, pero no se puede guardar de esta forma.
+
+    Guarda los valores extraídos, como cadenas de texto o números, en lugar de objetos `Selector`. Las listas y los diccionarios también deben contener solo valores que se puedan guardar:
+
+    ```python
+    yield response.follow("/details", meta={"title": str(response.css("h1::text").get(""))})
+    ```
 
 !!! tip "Consejo"
 

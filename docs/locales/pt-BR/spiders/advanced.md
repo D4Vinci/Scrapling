@@ -143,7 +143,17 @@ Você pode mudar o intervalo assim:
 spider = MySpider(crawldir="crawl_data/my_spider", interval=120.0)
 ```
 
-A gravação em disco é atômica, para evitar arquivos incompletos.
+A gravação de um checkpoint usa um arquivo temporário e só substitui o checkpoint anterior após a gravação terminar com sucesso.
+
+!!! warning "Dados do checkpoint"
+
+    Quando você ativa `crawldir`, os valores das solicitações pendentes, incluindo `meta` e os argumentos das solicitações, devem poder ser salvos com o módulo `pickle` do Python. Se um valor não puder ser salvo, a gravação do checkpoint falha e o rastreamento para. Um `Selector` pode funcionar em um callback, mas não pode ser salvo dessa forma.
+
+    Salve os valores extraídos, como strings ou números, em vez de objetos `Selector`. As listas e os dicionários também devem conter apenas valores que possam ser salvos:
+
+    ```python
+    yield response.follow("/details", meta={"title": str(response.css("h1::text").get(""))})
+    ```
 
 !!! tip "Dica"
 
