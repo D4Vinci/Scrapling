@@ -7,6 +7,89 @@ description: "새 기능, 수정 사항, 호환성에 영향을 주는 변경 �
 
 [GitHub 릴리스](https://github.com/D4Vinci/Scrapling/releases)에서 가져온 Scrapling의 주요 변경 사항을 모두 모았습니다.
 
+## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
+
+**Scrapling v0.5는 가져오기, 파싱, 스파이더, 브라우저 자동화, AI 도구, 10개 언어로 된 문서까지 거의 모든 부분을 개선한 릴리스입니다 🚀**
+
+!!! warning "주의"
+
+    **이 릴리스에는 여기에 모두 담을 수 없을 만큼 호환성에 영향을 주는 변경 사항이 많습니다. 업데이트 전에 [v0.5 마이그레이션 가이드](migrating-to-v0.5.md)를 확인하세요.**
+
+### 🚀 새 기능과 사용 편의 개선 {#v0.5-new-stuff-and-quality-of-life-changes}
+
+- **AI 에이전트를 위한 MCP 서버의 기능이 크게 늘어나 거의 모든 CAPTCHA를 해결할 수 있습니다**([문서](ai/mcp-server.md) 참고):
+
+    - **브라우저 작업을 처음부터 끝까지 실행합니다**. 폼 입력, 클릭, 마우스 올리기, 스크롤, 키보드 사용, 대화 상자 처리, 결과 대기를 지정한 순서대로 실행합니다. 다양한 입력 필드와 느린 동작을 지원하며, 첫 오류가 발생하면 작업을 멈춥니다.
+    - **다시 로드하지 않고 현재 페이지를 읽고 검색합니다**. 페이지 전체나 요소 하나에서 HTML, Markdown, 텍스트를 추출합니다. 검색 가능한 페이지 스냅샷은 요소의 역할, 이름, 위치를 표시하며, 특정 부분만 볼 때도 주변 맥락을 유지합니다.
+    - **사용자 지정 JavaScript를 실행하고 원하는 부분을 캡처합니다**. 페이지 자체의 JavaScript에 접근해 비동기 작업을 포함한 스크립트를 실행합니다. 개별 요소, 뷰포트, 전체 페이지를 PNG나 JPEG로 캡처할 수 있습니다.
+    - **네트워크 활동을 확인하고 로그인 상태를 재사용합니다**. 기록된 요청과 응답을 살펴보고, 브라우저 로그인 상태를 저장하고 복원하며, 열리거나 닫힌 Shadow DOM 내부의 요소를 조작할 수 있습니다. 기록된 통신은 세션을 닫기 전에 읽으세요.
+    - **토큰 사용을 줄이고 오류를 더 명확히 전달합니다**. 짧은 도구 설명과 공통 지침으로 반복되는 내용을 줄였습니다. 브라우저나 요청이 실패하면 에이전트에 유용한 오류 메시지를 전달합니다.
+
+- **페이지 뒤에서 일어나는 요청을 볼 수 있습니다**. `record_requests=True`를 켜면 페이지 로드, 동작, 여러 탭에서 완료된 통신을 기록합니다. 요청을 다시 보내지 않고 저장된 응답을 확인할 수 있습니다([문서](fetching/stealthy.md#network-history) 참고).
+
+    ```python
+    from scrapling.fetchers import StealthySession
+
+    with StealthySession(record_requests=True) as session:
+        session.fetch("https://example.com", network_idle=True)
+        for response in session.network.search(url_pattern=r"/api/", limit=None):
+            print(response.url, response.status, response.body)
+    ```
+
+    - URL, 메서드, 리소스 유형, 상태로 필터링하거나 ID로 응답 하나를 가져올 수 있습니다. 기존 `Response` API로 헤더, 보낸 데이터, API 응답, HTTP 오류, 리디렉션을 확인합니다.
+    - 지원되는 텍스트 본문을 크기 제한 안에서 보관합니다. 메타데이터와 본문을 저장할 수 없을 때의 이유도 기록합니다. 기본 한도는 요청 1,000개입니다. 동기 및 비동기 세션을 지원하며, 저장된 Python 기록은 세션을 닫은 뒤에도 읽을 수 있습니다.
+
+- **로그인 상태를 한 번 저장하고 여러 실행에서 재사용합니다**. `save_state(path)`와 `load_state(path)`는 쿠키, 로컬 스토리지, IndexedDB를 Playwright와 호환되는 JSON으로 저장합니다. 동기 및 비동기 브라우저 세션에서 모두 지원합니다([문서](fetching/stealthy.md#save-and-load-session-state) 참고).
+    - 페이지를 가져오거나 다시 로드하기 전에 상태를 불러오세요. 시작된 공유 브라우저 컨텍스트가 필요하며 `proxy_rotator`는 사용할 수 없습니다. 탭, 브라우저 설정, `sessionStorage`는 저장하지 않습니다.
+
+- **`pierce_shadow=True`로 열린 Shadow DOM을 추출할 수 있습니다**. 그다음 평소처럼 CSS나 XPath를 사용하세요. 브라우저 Fetcher, 세션, CLI의 `--pierce-shadow` 옵션에서 사용할 수 있습니다. 실제 페이지를 바꾸지 않고 슬롯 내용을 유지합니다. 캡처한 HTML에는 닫힌 Shadow 루트와 iframe 문서가 포함되지 않습니다([문서](fetching/stealthy.md#shadow-dom) 참고).
+
+- **스파이더가 사이트를 탐색하는 순서를 선택할 수 있습니다**. `CrawlSpider`와 `ContentSpider`를 포함한 하위 클래스는 `crawl_strategy="bfs"`로 먼저 들어온 요청부터, `"dfs"`로 나중에 들어온 요청부터 처리하도록 예약할 수 있습니다. 요청의 우선순위가 계속 우선하며, 동시에 처리하는 페이지는 다른 순서로 완료될 수 있습니다([문서](spiders/generic-templates.md#crawl-order) 참고).
+
+### 🐛 버그 수정 {#v0.5-bug-fixes}
+
+- **Cloudflare 검사 처리를 개선했습니다**. 늦게 나타나는 위젯을 감지하고, 불필요한 대기를 줄였으며, 수동 조작이 필요 없는 검사와 숨겨진 프레임의 재시도 횟수에 제한을 두었습니다([#468](https://github.com/D4Vinci/Scrapling/issues/468)과 [#509](https://github.com/D4Vinci/Scrapling/issues/509) 수정).
+- **관리자 권한으로 실행한 Windows 셸에서 브라우저가 시작되지 않는 문제를 수정했습니다**([#463](https://github.com/D4Vinci/Scrapling/issues/463) 수정).
+- **사용자 지정 브라우저 플래그를 추가할 때도 기본 스텔스 플래그를 유지합니다**. @alkaz-nodemaven의 [#430](https://github.com/D4Vinci/Scrapling/pull/430) 기여입니다.
+- **브라우저 응답의 문자 집합 파싱을 개선했습니다**. 대소문자가 다르거나 공백, 따옴표로 감싼 값이 있는 선언도 지원합니다.
+- **해결할 Cloudflare 검사가 없을 때, 검사가 없다는 사실을 오류로 기록하지 않습니다**([#459](https://github.com/D4Vinci/Scrapling/issues/459) 수정).
+
+- **요청 지문을 수정했습니다**. 쿼리 매개변수는 @yetval의 [#448](https://github.com/D4Vinci/Scrapling/pull/448), 비어 있거나 거짓으로 평가되는 JSON 본문은 @ac1982의 [#480](https://github.com/D4Vinci/Scrapling/pull/480), 헤더 삽입 순서는 @SarwadnyaMahajan의 [#466](https://github.com/D4Vinci/Scrapling/pull/466) 기여입니다.
+- **링크를 따라갈 때 이전 요청의 데이터가 넘어가는 문제를 수정했습니다**. 남아 있던 본문 관련 헤더도 포함합니다. @yetval의 [#462](https://github.com/D4Vinci/Scrapling/pull/462) 기여입니다.
+- **차단된 응답이 성공한 응답으로 개발 캐시에 저장되지 않도록 했습니다**. @Kuang-xianxin의 [#446](https://github.com/D4Vinci/Scrapling/pull/446) 기여입니다.
+- **예외로 크롤링이 실패하면 체크포인트 파일을 보존합니다**. @SulimanAbdulrazzaq의 [#486](https://github.com/D4Vinci/Scrapling/pull/486) 기여입니다.
+- **robots.txt 조회 실패 처리를 수정했습니다**. 조회에 실패한 결과를 크롤링 허용으로 캐시하지 않습니다. @prateekraawat1의 [#443](https://github.com/D4Vinci/Scrapling/pull/443) 기여입니다.
+- **범위를 제한하는 선택자를 사용한 링크 추출을 수정했습니다**. 일치하는 요소가 없거나 선택자가 링크 요소 자체를 가리키는 경우도 처리합니다. @SulimanAbdulrazzaq의 [#452](https://github.com/D4Vinci/Scrapling/pull/452)와 [#483](https://github.com/D4Vinci/Scrapling/pull/483) 기여입니다.
+- **사이트맵의 콜백 연결을 수정했습니다**. @SulimanAbdulrazzaq의 [#458](https://github.com/D4Vinci/Scrapling/pull/458) 기여입니다. **주석이나 처리 명령이 포함된 XML의 파싱도 수정했습니다**. @sup3dev의 [#450](https://github.com/D4Vinci/Scrapling/pull/450) 기여입니다.
+- **robots.txt와 CSV 피드의 시작 부분에 있는 바이트 순서 표시를 처리합니다**. @SulimanAbdulrazzaq의 [#453](https://github.com/D4Vinci/Scrapling/pull/453) 기여입니다.
+- **스파이더 HTTP 세션에서 `stealthy_headers`를 처리하는 방식을 수정했습니다**. 옵션을 `curl_cffi`에 직접 전달하지 않고 세션에 전달합니다. @Yigtwxx의 [#475](https://github.com/D4Vinci/Scrapling/pull/475) 기여입니다.
+
+- **딕셔너리 폼에서 리스트와 튜플 값을 인코딩하는 문제를 수정했습니다**. 요청 본문의 우선순위와 기존 `None` 처리는 유지합니다. @SulimanAbdulrazzaq의 [#485](https://github.com/D4Vinci/Scrapling/pull/485) 기여를 포함합니다.
+- **세션과 개별 요청의 HTTP 헤더를 대소문자 구분 없이 합치는 처리를 수정했습니다**. @SulimanAbdulrazzaq의 [#487](https://github.com/D4Vinci/Scrapling/pull/487) 기여입니다.
+- **CLI 요청에서 비어 있거나 거짓으로 평가되는 JSON 본문을 알림 없이 버리는 문제를 수정했습니다**. @SulimanAbdulrazzaq의 [#484](https://github.com/D4Vinci/Scrapling/pull/484) 기여입니다.
+- **Markdown과 텍스트 파일을 내보낼 때 항상 UTF-8을 사용합니다**. 변환 오류로 기존 출력 파일의 내용이 잘리는 문제도 방지했습니다. @SulimanAbdulrazzaq의 [#488](https://github.com/D4Vinci/Scrapling/pull/488) 기여입니다.
+- **`curl2fetcher()`에서 curl의 User-Agent 및 프록시 옵션 처리를 수정했습니다**. @SulimanAbdulrazzaq의 [#490](https://github.com/D4Vinci/Scrapling/pull/490) 기여입니다.
+
+- **선택한 여러 요소를 `Response.markdown()`이나 CLI 추출로 변환할 때 Markdown 블록이 붙어 버리는 문제를 수정했습니다**. @Yigtwxx의 [#432](https://github.com/D4Vinci/Scrapling/pull/432) 기여를 포함합니다.
+- **AI 출력의 숨겨진 콘텐츠 정리를 수정했습니다**. `opacity:0.95`처럼 보이는 내용은 유지하고, 더 많은 숨김 스타일을 감지하며, 숨겨진 슬롯은 제거합니다. @Yigtwxx의 [#460](https://github.com/D4Vinci/Scrapling/pull/460) 기여를 포함합니다.
+- **중첩된 태그 주변에서 불필요한 태그 제거가 일찍 멈추는 문제를 수정했습니다**. @Yigtwxx의 [#474](https://github.com/D4Vinci/Scrapling/pull/474) 기여입니다.
+- **같은 태그를 가진 형제 요소가 여러 개일 때 첫 요소에 대해 생성하는 CSS와 XPath 선택자를 수정했습니다**. @yellow-dog-dog의 [#495](https://github.com/D4Vinci/Scrapling/pull/495) 기여입니다.
+- **lxml HTML 파서의 지원 중단 예정 경고를 해결했습니다**. @afsuyadi의 [#493](https://github.com/D4Vinci/Scrapling/pull/493) 기여입니다.
+
+### 문서 {#v0.5-docs}
+
+- **웹사이트 전체를 10개 언어로 제공합니다**. 영어, 아랍어, 스페인어, 브라질 포르투갈어, 프랑스어, 독일어, 중국어 간체, 일본어, 러시아어, 한국어를 지원합니다. 가이드, API 참조, 튜토리얼, [변경 기록](changelog.md)을 번역했습니다. 아랍어의 오른쪽에서 왼쪽으로 쓰는 방향을 지원하며, 언어를 바꿔도 현재 페이지와 섹션을 유지합니다.
+- **가이드, README 예제, 설정 단계를 더 명확히 했습니다**. 체크포인트 데이터, 브라우저 인코딩, 저장된 상태, 네트워크 기록, Shadow DOM, 크롤링 순서를 다룹니다.
+- **Agent Skill과 예제, 참고 자료, 다운로드용 압축 파일을 업데이트했습니다**. 현재 브라우저 및 MCP 도구에 맞췄습니다.
+- **변경 기록을 웹사이트로 옮겼습니다**. 각 페이지의 Markdown 원본에도 접근할 수 있습니다.
+
+### 프로젝트 {#v0.5-project}
+
+- Scrapling 로고, 표지 이미지, 웹사이트의 모습을 새롭게 바꿨습니다.
+- 브라우저 동작, 대화 상자, 추출, 스크린샷, JavaScript, 네트워크 기록, 상태 파일, Shadow DOM, 크롤러 수정 사항에 대한 테스트를 늘렸습니다.
+- 브라우저 테스트 마커를 추가하고 브라우저, 비동기, 병렬 테스트를 나누어 실행합니다. @diegobravtraps-oss의 [#457](https://github.com/D4Vinci/Scrapling/pull/457) 기여로 Windows에서 체크포인트와 CSV 테스트의 호환성을 개선했습니다.
+- 다국어 문서의 공통 빌드 설정과 기여 지침을 업데이트했습니다.
+
 ## [v0.4.15](https://github.com/D4Vinci/Scrapling/releases/tag/v0.4.15) - 2026-08-23 {#v0.4.15}
 
 **올해 가장 큰 릴리스 중 하나입니다. MCP 서버를 새롭게 구성하고, 한 줄로 RAG용 Markdown을 만들 수 있게 했습니다. Cloudflare 검사 처리도 개선했으며, 자동화를 위해 브라우저 탭을 열린 상태로 유지합니다 🚀**

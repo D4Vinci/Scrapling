@@ -7,6 +7,89 @@ description: "Versionshinweise zu Scrapling mit neuen Funktionen, Fehlerbehebung
 
 Alle wichtigen Änderungen an Scrapling aus den [GitHub-Releases](https://github.com/D4Vinci/Scrapling/releases).
 
+## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
+
+**Scrapling v0.5 verbessert fast alles: Abrufen, Parsen, Spider, Browser-Automatisierung, KI-Werkzeuge und Dokumentation in zehn Sprachen 🚀**
+
+!!! warning "Warnung"
+
+    **Diese Version enthält so viele inkompatible Änderungen, dass sie hier nicht alle aufgeführt werden können. Lesen Sie vor dem Update den [Leitfaden zur Migration auf v0.5](migrating-to-v0.5.md).**
+
+### 🚀 Neuerungen und Verbesserungen der Bedienung {#v0.5-new-stuff-and-quality-of-life-changes}
+
+- **Ein deutlich leistungsfähigerer MCP-Server für KI-Agenten, der fast jedes CAPTCHA lösen kann** (siehe [Dokumentation](ai/mcp-server.md)):
+
+    - **Vollständige Browser-Abläufe**: Formulare ausfüllen, klicken, den Mauszeiger über Elemente bewegen, scrollen, die Tastatur verwenden, Dialoge bedienen und auf Ergebnisse warten, alles in einer geordneten Folge. Unterstützt verschiedene Feldtypen und langsamere Interaktionen. Die Aktionen stoppen beim ersten Fehler.
+    - **Die aktuelle Seite ohne Neuladen lesen und durchsuchen**: HTML, Markdown oder Text aus einer ganzen Seite oder einem einzelnen Element extrahieren. Durchsuchbare Seitenansichten zeigen Rollen, Namen und Positionen der Elemente. Gezielte Ansichten behalten den umgebenden Kontext bei.
+    - **Eigenes JavaScript ausführen und gezielte Screenshots aufnehmen**: Skripte ausführen, auch mit asynchronen Vorgängen und Zugriff auf das JavaScript der Seite. Einzelne Elemente, den sichtbaren Bereich oder die ganze Seite als PNG oder JPEG aufnehmen.
+    - **Netzwerkaktivität prüfen und Anmeldungen wiederverwenden**: Aufgezeichnete Anfragen und Antworten untersuchen, den Anmeldestatus des Browsers speichern und wiederherstellen und mit Elementen in offenem oder geschlossenem Shadow DOM interagieren. Lesen Sie den aufgezeichneten Datenverkehr, bevor Sie die Sitzung schließen.
+    - **Weniger Tokens verwenden und klarere Fehler erhalten**: Kürzere Werkzeugbeschreibungen und gemeinsame Hinweise vermeiden Wiederholungen. Fehler bei Browsern und Anfragen erreichen die Agenten mit hilfreichen Meldungen.
+
+- **Sehen Sie die Anfragen hinter der Seite**. Aktivieren Sie `record_requests=True`, um abgeschlossenen Datenverkehr über Ladevorgänge, Aktionen und Tabs hinweg aufzuzeichnen. Prüfen Sie dann die gespeicherten Antworten, ohne Anfragen erneut zu senden. (Siehe [Dokumentation](fetching/stealthy.md#network-history))
+
+    ```python
+    from scrapling.fetchers import StealthySession
+
+    with StealthySession(record_requests=True) as session:
+        session.fetch("https://example.com", network_idle=True)
+        for response in session.network.search(url_pattern=r"/api/", limit=None):
+            print(response.url, response.status, response.body)
+    ```
+
+    - Nach URL, Methode, Ressourcentyp oder Status filtern und eine einzelne Antwort anhand ihrer ID abrufen. Header, gesendete Daten, API-Antworten, HTTP-Fehler und Weiterleitungen über die gewohnte `Response`-API prüfen.
+    - Speichert unterstützte Textkörper innerhalb der Größenlimits sowie Metadaten und einen Grund, wenn ein Antwortkörper nicht gespeichert werden kann. Das Standardlimit beträgt 1.000 Anfragen. Funktioniert mit synchronen und asynchronen Sitzungen. Der gespeicherte Python-Verlauf bleibt nach dem Schließen lesbar.
+
+- **Speichern Sie eine Anmeldung einmal und verwenden Sie sie bei weiteren Läufen wieder**. `save_state(path)` und `load_state(path)` speichern Cookies, lokalen Speicher und IndexedDB in Playwright-kompatiblem JSON. Sowohl synchrone als auch asynchrone Browser-Sitzungen unterstützen sie. (Siehe [Dokumentation](fetching/stealthy.md#save-and-load-session-state))
+    - Laden Sie den Zustand, bevor Sie eine Seite abrufen oder neu laden. Erfordert einen gestarteten, gemeinsam genutzten Browser-Kontext ohne `proxy_rotator`. Tabs, Browser-Einstellungen und `sessionStorage` werden nicht gespeichert.
+
+- **Extrahieren Sie offenes Shadow DOM mit `pierce_shadow=True`** und verwenden Sie anschließend CSS oder XPath wie gewohnt. Verfügbar in Browser-Fetchern, Sitzungen und über die CLI-Option `--pierce-shadow`. Behält Slot-Inhalte bei, ohne die aktive Seite zu ändern. Geschlossene Wurzeln und iframe-Dokumente sind in der HTML-Erfassung nicht enthalten. (Siehe [Dokumentation](fetching/stealthy.md#shadow-dom))
+
+- **Wählen Sie, wie Ihr Spider eine Website durchsucht**. `CrawlSpider` und seine Unterklassen, darunter `ContentSpider`, unterstützen `crawl_strategy="bfs"`, um die ältesten Anfragen zuerst einzuplanen, oder `"dfs"` für die neuesten zuerst. Die Priorität hat weiterhin Vorrang. Parallel verarbeitete Seiten können in einer anderen Reihenfolge fertig werden. (Siehe [Dokumentation](spiders/generic-templates.md#crawl-order))
+
+### 🐛 Fehlerbehebungen {#v0.5-bug-fixes}
+
+- **Verbessertes Lösen von Cloudflare-Prüfungen** durch Erkennung verzögert erscheinender Widgets, weniger unnötige Wartezeiten und begrenzte Wiederholungsschleifen für passive Prüfungen und versteckte Frames. Behebt [#468](https://github.com/D4Vinci/Scrapling/issues/468) und [#509](https://github.com/D4Vinci/Scrapling/issues/509).
+- **Browser-Start aus einer Windows-Shell mit Administratorrechten korrigiert**. Behebt [#463](https://github.com/D4Vinci/Scrapling/issues/463).
+- **Integrierte Stealth-Flags bleiben beim Hinzufügen eigener Browser-Flags erhalten**, von @alkaz-nodemaven in [#430](https://github.com/D4Vinci/Scrapling/pull/430).
+- **Verbessertes Parsen der Zeichensatzangaben in Browser-Antworten**, auch bei unterschiedlicher Groß- und Kleinschreibung, Leerzeichen oder Werten in Anführungszeichen.
+- **Das Fehlen einer Cloudflare-Prüfung wird nicht mehr als Fehler protokolliert**, wenn keine Prüfung gelöst werden muss. Behebt [#459](https://github.com/D4Vinci/Scrapling/issues/459).
+
+- **Anfrage-Fingerprints korrigiert** für URL-Parameter von @yetval in [#448](https://github.com/D4Vinci/Scrapling/pull/448), leere oder als falsch ausgewertete JSON-Körper von @ac1982 in [#480](https://github.com/D4Vinci/Scrapling/pull/480) und die Einfügereihenfolge der Header von @SarwadnyaMahajan in [#466](https://github.com/D4Vinci/Scrapling/pull/466).
+- **Unbeabsichtigte Übernahme von Anfragedaten beim Folgen von Links behoben**, einschließlich veralteter Header für den Anfragekörper, von @yetval in [#462](https://github.com/D4Vinci/Scrapling/pull/462).
+- **Blockierte Antworten werden nicht mehr als erfolgreiche Einträge im Entwicklungscache gespeichert**, von @Kuang-xianxin in [#446](https://github.com/D4Vinci/Scrapling/pull/446).
+- **Checkpoint-Dateien bleiben erhalten, wenn ein Crawl mit einer Ausnahme fehlschlägt**, von @SulimanAbdulrazzaq in [#486](https://github.com/D4Vinci/Scrapling/pull/486).
+- **Fehlerbehandlung für robots.txt korrigiert**, damit fehlgeschlagene Abfragen nicht als Erlaubnis zum Crawlen zwischengespeichert werden, von @prateekraawat1 in [#443](https://github.com/D4Vinci/Scrapling/pull/443).
+- **Link-Extraktion mit einschränkenden Selektoren korrigiert**, einschließlich leerer Treffer und Selektoren, die das Link-Element selbst auswählen, von @SulimanAbdulrazzaq in [#452](https://github.com/D4Vinci/Scrapling/pull/452) und [#483](https://github.com/D4Vinci/Scrapling/pull/483).
+- **Auswahl der Sitemap-Callbacks korrigiert**, von @SulimanAbdulrazzaq in [#458](https://github.com/D4Vinci/Scrapling/pull/458), **sowie XML-Parsing mit Kommentaren oder Verarbeitungsanweisungen**, von @sup3dev in [#450](https://github.com/D4Vinci/Scrapling/pull/450).
+- **Führende Byte-Reihenfolgemarkierungen in robots.txt und CSV-Feeds werden berücksichtigt**, von @SulimanAbdulrazzaq in [#453](https://github.com/D4Vinci/Scrapling/pull/453).
+- **Behandlung von `stealthy_headers` in HTTP-Sitzungen von Spidern korrigiert**: Die Option wird an die Sitzung statt direkt an `curl_cffi` übergeben, von @Yigtwxx in [#475](https://github.com/D4Vinci/Scrapling/pull/475).
+
+- **Formularkodierung von Dictionaries für Listen- und Tupelwerte korrigiert**, unter Beibehaltung des Vorrangs der Anfragekörper und der bisherigen Behandlung von `None`, mit Beiträgen von @SulimanAbdulrazzaq in [#485](https://github.com/D4Vinci/Scrapling/pull/485).
+- **Zusammenführen von HTTP-Headern aus Sitzung und einzelner Anfrage ohne Beachtung der Groß- und Kleinschreibung korrigiert**, von @SulimanAbdulrazzaq in [#487](https://github.com/D4Vinci/Scrapling/pull/487).
+- **Behoben: CLI-Anfragen verwarfen leere oder als falsch ausgewertete JSON-Körper ohne Hinweis**, von @SulimanAbdulrazzaq in [#484](https://github.com/D4Vinci/Scrapling/pull/484).
+- **Markdown- und Textdateien werden nun durchgängig als UTF-8 exportiert**. Konvertierungsfehler kürzen bestehende Ausgabedateien nicht mehr, von @SulimanAbdulrazzaq in [#488](https://github.com/D4Vinci/Scrapling/pull/488).
+- **Behandlung der User-Agent- und Proxy-Optionen von curl in `curl2fetcher()` korrigiert**, von @SulimanAbdulrazzaq in [#490](https://github.com/D4Vinci/Scrapling/pull/490).
+
+- **Zusammenlaufende Markdown-Blöcke korrigiert**, wenn mehrere ausgewählte Elemente mit `Response.markdown()` oder der CLI-Extraktion umgewandelt werden, mit Beiträgen von @Yigtwxx in [#432](https://github.com/D4Vinci/Scrapling/pull/432).
+- **Bereinigung versteckter Inhalte für KI-Ausgaben korrigiert**, um sichtbare Inhalte wie `opacity:0.95` beizubehalten, weitere versteckende Stile zu erkennen und versteckte Slots zu entfernen, mit Beiträgen von @Yigtwxx in [#460](https://github.com/D4Vinci/Scrapling/pull/460).
+- **Behoben: Das Entfernen störender Tags brach bei verschachtelten Tags zu früh ab**, von @Yigtwxx in [#474](https://github.com/D4Vinci/Scrapling/pull/474).
+- **Generierte CSS- und XPath-Selektoren für das erste von mehreren Geschwisterelementen mit demselben Tag korrigiert**, von @yellow-dog-dog in [#495](https://github.com/D4Vinci/Scrapling/pull/495).
+- **Eine Veraltungswarnung des lxml-HTML-Parsers behoben**, von @afsuyadi in [#493](https://github.com/D4Vinci/Scrapling/pull/493).
+
+### Dokumentation {#v0.5-docs}
+
+- **Die gesamte Website spricht jetzt zehn Sprachen**: Englisch, Arabisch, Spanisch, brasilianisches Portugiesisch, Französisch, Deutsch, vereinfachtes Chinesisch, Japanisch, Russisch und Koreanisch. Leitfäden, API-Referenzen, Tutorials und der [Änderungsverlauf](changelog.md) sind übersetzt. Arabisch unterstützt die Leserichtung von rechts nach links. Beim Sprachwechsel bleiben Seite und Abschnitt erhalten.
+- **Klarere Leitfäden, README-Beispiele und Einrichtungsschritte**, die Checkpoint-Daten, Browser-Kodierungen, gespeicherten Zustand, Netzwerkverlauf, Shadow DOM und Crawl-Reihenfolge abdecken.
+- **Den Agent Skill aktualisiert**, einschließlich Beispielen, Referenzen und herunterladbarem Archiv, für die aktuellen Browser- und MCP-Werkzeuge.
+- **Den Änderungsverlauf auf die Website verschoben** und Zugriff auf den Markdown-Quelltext jeder Seite hinzugefügt.
+
+### Projekt {#v0.5-project}
+
+- Scraplings Logo, Titelbilder und Website-Darstellung erneuert.
+- Tests für Browser-Aktionen, Dialoge, Extraktion, Screenshots, JavaScript, Netzwerkaufzeichnung, Zustandsdateien, Shadow DOM und Crawler-Korrekturen erweitert.
+- Einen Marker für Browser-Tests und getrennte Läufe für Browser-, asynchrone und parallele Tests hinzugefügt. Windows-Kompatibilität der Checkpoint- und CSV-Tests verbessert, von @diegobravtraps-oss in [#457](https://github.com/D4Vinci/Scrapling/pull/457).
+- Gemeinsame Build-Konfiguration der mehrsprachigen Dokumentation und Hinweise für Beiträge aktualisiert.
+
 ## [v0.4.15](https://github.com/D4Vinci/Scrapling/releases/tag/v0.4.15) - 2026-08-23 {#v0.4.15}
 
 **Eine der größten Veröffentlichungen dieses Jahres: ein überarbeiteter MCP-Server, Markdown für RAG mit einer Zeile Code, besseres Lösen von Cloudflare-Prüfungen und Browser-Tabs, die für die Automatisierung offen bleiben 🚀**
