@@ -5,7 +5,7 @@ description: "将 AI 客户端连接到 Scrapling，进行 HTTP 或浏览器抓�
 
 # Scrapling MCP 服务器指南 {#scrapling-mcp-server-guide}
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="YouTube 视频播放器" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NHwWEiTOoPQ" title="YouTube 视频播放器" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Scrapling MCP 服务器**将 Scrapling 的网页抓取能力直接提供给 AI 聊天机器人或智能体。通过 Claude 或其他支持 MCP 的界面，可以在对话中抓取网站、提取数据并绕过反爬保护。
 

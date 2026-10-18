@@ -5,7 +5,7 @@ description: "AI クライアントを Scrapling に接続し、HTTP やブラ�
 
 # Scrapling MCP サーバーの使い方 {#scrapling-mcp-server-guide}
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="YouTube 動画プレーヤー" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NHwWEiTOoPQ" title="YouTube 動画プレーヤー" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Scrapling MCP サーバー**は、Scrapling の Web スクレイピング機能を、普段使う AI チャットボットや AI エージェントに直接提供します。Claude や MCP 対応のインターフェースで会話しながら、サイトのスクレイピング、データ抽出、ボット対策の回避を行えます。
 

@@ -5,7 +5,7 @@ description: "Conecte um cliente de IA ao Scrapling para extrair dados por HTTP 
 
 # Guia do servidor MCP do Scrapling {#scrapling-mcp-server-guide}
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="Reprodutor de vídeo do YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NHwWEiTOoPQ" title="Reprodutor de vídeo do YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 O **servidor MCP do Scrapling** leva as funções de extração de dados web do Scrapling ao seu chatbot ou agente de IA. Você pode pedir que ele visite sites, extraia dados e contorne proteções contra bots por meio de uma conversa no Claude ou em qualquer interface compatível com MCP.
 

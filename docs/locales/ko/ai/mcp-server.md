@@ -5,7 +5,7 @@ description: "AI 클라이언트를 Scrapling에 연결해 HTTP와 브라우저�
 
 # Scrapling MCP 서버 안내 {#scrapling-mcp-server-guide}
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="YouTube 동영상 플레이어" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NHwWEiTOoPQ" title="YouTube 동영상 플레이어" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Scrapling MCP 서버**는 즐겨 쓰는 AI 챗봇이나 AI 에이전트에 Scrapling의 웹 스크래핑 기능을 제공합니다. Claude나 MCP를 지원하는 인터페이스에서 대화하며 웹사이트를 스크래핑하고, 데이터를 추출하고, 봇 차단을 우회할 수 있습니다.
 

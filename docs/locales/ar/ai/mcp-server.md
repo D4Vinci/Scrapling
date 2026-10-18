@@ -5,7 +5,7 @@ description: "اربط عميل ذكاء اصطناعي بـ Scrapling للجل�
 
 # دليل خادم Scrapling MCP {#scrapling-mcp-server-guide}
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="مشغّل فيديو YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NHwWEiTOoPQ" title="مشغّل فيديو YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **خادم Scrapling MCP** ميزة جديدة توفر قدرات Scrapling القوية لاستخراج بيانات الويب مباشرة داخل مساعد الذكاء الاصطناعي أو الوكيل الذي تفضّله. يتيح هذا التكامل جلب المواقع واستخراج بياناتها وتجاوز الحماية من البوتات بالمحادثة، عبر واجهة Claude أو أي واجهة تدعم MCP.
 

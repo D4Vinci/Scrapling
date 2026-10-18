@@ -5,7 +5,7 @@ description: "Verbinden Sie einen KI-Client mit Scrapling für HTTP- und Browser
 
 # Anleitung zum MCP-Server von Scrapling {#scrapling-mcp-server-guide}
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="YouTube-Videoplayer" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NHwWEiTOoPQ" title="YouTube-Videoplayer" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 Der **MCP-Server von Scrapling** stellt die Web-Scraping-Funktionen von Scrapling direkt in Ihrem KI-Chatbot oder KI-Agenten bereit. So können Sie im Gespräch Websites abrufen, Daten extrahieren und Bot-Schutz umgehen. Das funktioniert in Claude und jeder anderen Oberfläche, die MCP unterstützt.
 
