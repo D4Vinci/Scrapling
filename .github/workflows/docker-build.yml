@@ -37,6 +37,10 @@ jobs:
         INPUT_VERSION: ${{ inputs.version }}
       run: |
         VERSION="${INPUT_VERSION:-$PR_TITLE}"
+        # metadata-action only accepts full semver, so a two-part release like 'v0.5' becomes 'v0.5.0'.
+        if [[ $VERSION =~ ^v[0-9]+\.[0-9]+$ ]]; then
+          VERSION="$VERSION.0"
+        fi
         if [[ $VERSION =~ ^v[0-9] ]]; then
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Tagging the images with $VERSION"
