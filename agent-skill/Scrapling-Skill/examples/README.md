@@ -9,7 +9,7 @@ The demo site has **100 quotes across 10 pages**. Each example follows paginatio
 Make sure Scrapling is installed:
 
 ```bash
-pip install "scrapling[all]>=0.5"
+pip install "scrapling[all]>=0.5.1"
 scrapling install
 ```
 

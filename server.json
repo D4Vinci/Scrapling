@@ -14,12 +14,12 @@
       "mimeType": "image/png"
     }
   ],
-  "version": "0.5",
+  "version": "0.5.1",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "scrapling",
-      "version": "0.5",
+      "version": "0.5.1",
       "runtimeHint": "uvx",
       "packageArguments": [
         {

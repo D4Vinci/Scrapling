@@ -1,7 +1,7 @@
 ---
 name: scrapling-official
 description: Scrape web pages using Scrapling with HTTP requests, stealth browsers, JavaScript rendering, browser actions, API response capture, concurrent spiders, and adaptive parsing. Use when asked to scrape, crawl, or extract data from websites; web_fetch fails; the site has anti-bot protections; write Python code to scrape/crawl; or write spiders.
-version: "0.5"
+version: "0.5.1"
 license: Complete terms in LICENSE.txt
 metadata:
   homepage: "https://scrapling.readthedocs.io/en/latest/index.html"
@@ -40,7 +40,7 @@ Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers fo
 
 Create a virtual Python environment through any way available, like `venv`, then inside the environment do:
 
-`pip install "scrapling[all]>=0.5"`
+`pip install "scrapling[all]>=0.5.1"`
 
 For browser fetching, install the browser and its dependencies once:
 
