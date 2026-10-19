@@ -93,7 +93,55 @@ def test_fetch_common_options(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
         solve_cloudflare=False,
         allow_webgl=True,
         hide_canvas=False,
+        additional_args={"ignore_https_errors": False},
     )
+    assert output.read_text() == "Content"
+
+
+@pytest.mark.parametrize(
+    ("flags", "ignore_https_errors"), [([], False), (["--verify"], False), (["--no-verify"], True)]
+)
+def test_fetch_tls_options(tmp_path: Path, flags: list[str], ignore_https_errors: bool) -> None:
+    """Forward the CLI's certificate choice through native context overrides."""
+    output = tmp_path / "page.txt"
+    with patch.object(StealthyFetcher, "fetch", return_value=Selector("<p>Content</p>")) as fetch:
+        result = CliRunner().invoke(cli.main, ["extract", "fetch", "https://example.com", str(output), *flags])
+    assert result.exit_code == 0, result.output
+    assert fetch.call_args.kwargs["additional_args"] == {"ignore_https_errors": ignore_https_errors}
+    assert output.read_text() == "Content"
+
+
+def test_fetch_callback_preserves_positional_arguments(tmp_path: Path) -> None:
+    """Keep existing direct callback invocations valid with the secure default."""
+    callback = cli.fetch.callback
+    assert callback is not None
+    output = tmp_path / "page.txt"
+    with patch.object(StealthyFetcher, "fetch", return_value=Selector("<p>Content</p>")) as fetch:
+        callback(
+            "https://example.com",
+            str(output),
+            True,
+            False,
+            False,
+            False,
+            30000,
+            0,
+            None,
+            None,
+            None,
+            False,
+            None,
+            [],
+            False,
+            False,
+            True,
+            False,
+            False,
+            None,
+            False,
+            False,
+        )
+    assert fetch.call_args.kwargs["additional_args"] == {"ignore_https_errors": False}
     assert output.read_text() == "Content"
 
 
@@ -102,7 +150,7 @@ def test_browser_command_help_and_removed_command() -> None:
     result = runner.invoke(cli.main, ["extract", "fetch", "--help"])
     assert result.exit_code == 0
     assert "StealthyFetcher" in result.output
-    for option in ("--block-webrtc", "--solve-cloudflare", "--allow-webgl", "--hide-canvas"):
+    for option in ("--block-webrtc", "--solve-cloudflare", "--allow-webgl", "--hide-canvas", "--verify", "--no-verify"):
         assert option in result.output
     result = runner.invoke(cli.main, ["extract", "stealthy-fetch", "--help"])
     assert result.exit_code == 2

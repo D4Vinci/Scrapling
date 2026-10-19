@@ -605,6 +605,7 @@ def __build_browser_kwargs(
     default=False,
     help="Add noise to canvas operations (default: False)",
 )
+@option("--verify/--no-verify", default=True, help="Whether to verify SSL certificates (default: True)")
 @_common_browser_options
 def fetch(
     url,
@@ -629,6 +630,7 @@ def fetch(
     executable_path,
     dns_over_https,
     block_ads,
+    verify=True,
 ):
     """Opens up a browser with advanced stealth features and fetch content using StealthyFetcher."""
     parsed_headers, _ = _ParseHeaders(extra_headers, False)
@@ -654,6 +656,7 @@ def fetch(
             "solve_cloudflare": solve_cloudflare,
             "allow_webgl": allow_webgl,
             "hide_canvas": hide_canvas,
+            "additional_args": {"ignore_https_errors": not verify},
         }
     )
     from scrapling.fetchers import StealthyFetcher

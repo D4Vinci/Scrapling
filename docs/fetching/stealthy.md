@@ -60,6 +60,19 @@ Instead of launching a browser locally (Chromium/Google Chrome), you can connect
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser (ex: `http://localhost:9222`).
 
 
+## HTTPS certificate verification
+
+- Browser contexts verify HTTPS certificates by default, including one-shot fetches and reusable sessions.
+- For an intentional opt-out, pass `additional_args={"ignore_https_errors": True}` when creating the fetch or session. This disables certificate verification for that browser context.
+- The CLI equivalent is `scrapling extract fetch URL OUTPUT_FILE --no-verify`; `--verify` explicitly retains verification.
+
+```python
+StealthyFetcher.fetch(
+    "https://localhost:8443",
+    additional_args={"ignore_https_errors": True},
+)
+```
+
 ## What does it do?
 
 StealthyFetcher supports these anti-bot features:
