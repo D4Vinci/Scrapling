@@ -58,6 +58,8 @@ Os arquivos de estado ficam no computador que executa o servidor MCP. Eles não 
 
     Mostra menus e dicas ao passar o mouse, clica em botões e links, ou move o mouse sobre um painel aninhado para rolá-lo na vertical ou horizontal. Movimentos e cliques aceitam seletores, referências de snapshots ou coordenadas. Quando o alvo é um elemento, esperam e rolam a página até ele ficar visível de forma automática. Aceitam movimentos por coordenadas em várias etapas, cliques com os botões esquerdo, direito e do meio, além de clique duplo.
 
+    Arraste itens sobre outros elementos com seletores ou referências de snapshots, ou siga um caminho de pontos da tela para mover controles deslizantes e outros controles. Durante o arraste, o botão esquerdo do mouse fica pressionado, e o movimento pode ocorrer em várias etapas. Se o arraste falhar ou for cancelado, a ferramenta tenta soltar o botão antes de a página ficar disponível novamente.
+
     Localize campos em qualquer parte da página com seletores ou referências de snapshots. Preencha texto, marque ou desmarque caixas, selecione botões de opção e escolha uma ou mais opções de listas suspensas nativas pelo texto visível. O texto pode substituir o conteúdo atual, apagá-lo ou continuar da posição do cursor. Atalhos de teclado podem selecionar e apagar texto, mudar o foco, enviar formulários ou fechar menus. O modo lento digita um caractere por vez, com pausas aleatórias entre os caracteres e entre todas as ações.
 
     Espere os resultados aparecerem, as camadas de carregamento sumirem ou os eventos de carregamento da página antes da próxima ação. Também aceita pausas fixas e espera pela redução da atividade de rede.

@@ -58,6 +58,8 @@ Los archivos de estado se guardan en el equipo donde se ejecuta el servidor MCP.
 
     Muestra menús y ayudas al pasar el ratón, pulsa botones y enlaces, o mueve el ratón sobre un panel anidado para desplazarlo en vertical u horizontal. Los movimientos y clics admiten selectores, referencias de la vista estructurada o coordenadas. Si el destino es un elemento, esperan y lo desplazan hasta dejarlo visible de forma automática. Admiten movimientos por coordenadas en varios pasos, clic izquierdo, derecho y central, además de doble clic.
 
+    Arrastra elementos sobre otros elementos mediante selectores o referencias de la vista estructurada, o sigue una ruta de puntos de la pantalla para mover controles deslizantes y otros controles. Al arrastrar, se mantiene pulsado el botón izquierdo del ratón y se admiten movimientos en varios pasos. Si el arrastre falla o se cancela, la herramienta intenta soltar el botón antes de que la página vuelva a estar disponible.
+
     Localiza campos en cualquier parte de la página mediante selectores o referencias. Rellena texto, marca o desmarca casillas, selecciona botones de opción y elige una o varias opciones de listas desplegables nativas por su etiqueta visible. Puedes sustituir el texto, borrarlo o continuar desde la posición del cursor. Los atajos de teclado permiten seleccionar y borrar texto, cambiar el foco, enviar formularios o cerrar menús. El modo lento escribe un carácter cada vez, con pausas aleatorias entre caracteres y entre todas las acciones.
 
     Espera a que aparezcan resultados, desaparezcan capas de carga o se produzcan eventos de carga de la página antes de la siguiente acción. También admite pausas fijas y esperar a que se calme la actividad de red.
