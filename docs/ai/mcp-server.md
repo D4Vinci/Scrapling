@@ -54,6 +54,8 @@ State files are stored on the machine running the MCP server. They do not includ
 
     Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks support selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
 
+    Drag items onto other elements using selectors or snapshot references, or follow a path of screen points to move sliders and other controls. Drags hold the left mouse button and support movement in multiple steps. Failed or cancelled drags attempt to release the button before the page is available again.
+
     Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by their visible labels. Text can replace existing content, clear it, or continue at the current caret. Keyboard shortcuts can select and delete text, move focus, submit forms, or dismiss menus. Slow mode types one character at a time with random pauses between characters and all actions.
 
     Wait for results to appear, loading overlays to disappear, or page load events before the next action. Also supports fixed pauses and waiting for network activity to settle.

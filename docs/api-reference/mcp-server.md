@@ -82,6 +82,8 @@ The main MCP server class that provides all web scraping tools:
 
     Moves and clicks target selectors, snapshot references, or coordinates; element targets wait and scroll into view. Supports movement in multiple steps, left, right, and middle clicks, double-clicks, and scrolling nested panels.
 
+    Drag from one element to another through selectors or snapshot references, or follow a path of viewport points for sliders and custom controls. Drags use the left mouse button and support movement in multiple steps. Failed or cancelled drags attempt button release before the page becomes available again.
+
     Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by label. Replace or clear text, or type at the current caret. Keyboard shortcuts use the current focus. Slow mode adds random pauses between typed characters and all actions.
 
     Wait for content or loading overlays through selectors or snapshot references, wait for page load events or settled network activity, or add a fixed pause before continuing.

@@ -47,6 +47,8 @@ State files are stored on the machine running the MCP server. They do not includ
 
     Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks support selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
 
+    Drag with `{"type": "drag", "source": "#item", "target": "#drop"}`; selectors also accept snapshot references such as `aria-ref=e1`. For coordinates, use `{"type": "drag", "path": [{"x": 100, "y": 150}, {"x": 300, "y": 150}]}`. Supply either both element targets or a path of at least two viewport CSS points. Drags use the left button. Optional `steps` controls mousemove events per segment (default 1); `timeout` applies only to element drags (default 30000 ms, 0 disables it). Failed or cancelled drags attempt button release before the page becomes available again.
+
     Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by their visible labels. Text can replace existing content, clear it, or continue at the current caret. Keyboard shortcuts can select and delete text, move focus, submit forms, or dismiss menus. Slow mode types one character at a time with random pauses between characters and all actions.
 
     Wait for results to appear, loading overlays to disappear, or page load events before the next action. Also supports fixed pauses and waiting for network activity to settle.
