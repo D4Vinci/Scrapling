@@ -86,7 +86,7 @@ class Request:
         body = b""
         if post_data:
             if isinstance(post_data, dict | list | tuple):
-                body = urlencode(post_data).encode()
+                body = urlencode(post_data, doseq=True).encode()
             elif isinstance(post_data, str):
                 body = post_data.encode()
             elif isinstance(post_data, BytesIO):
