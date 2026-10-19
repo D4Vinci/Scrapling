@@ -100,6 +100,40 @@ class TestRequestProperties:
         r2 = Request("https://example.com/page2")
         assert r1.update_fingerprint() != r2.update_fingerprint()
 
+    @pytest.mark.parametrize(
+        "form, encoded",
+        [
+            ({"tag": ["a", "b"]}, "tag=a&tag=b"),
+            ({"tag": ("a", "b")}, "tag=a&tag=b"),
+            ({"tag": [], "page": "1"}, "page=1"),
+            ({"tag": [b"a", b"b"]}, "tag=a&tag=b"),
+            ({"tag": ["café", "a b"]}, "tag=caf%C3%A9&tag=a+b"),
+        ],
+    )
+    def test_fingerprint_form_sequences_match_encoded_body(self, form: dict[str, Any], encoded: str) -> None:
+        """Fingerprint the same bytes that HTTP sessions send for form sequences."""
+        request = Request("https://example.com/api", method="POST", data=form)
+        encoded_request = Request("https://example.com/api", method="POST", data=encoded)
+
+        assert request.update_fingerprint() == encoded_request.update_fingerprint()
+
+    def test_fingerprint_distinguishes_form_sequence_from_literal_repr(self) -> None:
+        """Different form bodies must not collide in the duplicate filter."""
+        sequence = Request("https://example.com/api", method="POST", data={"tag": ["a", "b"]})
+        literal = Request("https://example.com/api", method="POST", data={"tag": "['a', 'b']"})
+
+        assert sequence.update_fingerprint() != literal.update_fingerprint()
+
+    @pytest.mark.parametrize("container", [list, tuple])
+    def test_fingerprint_form_pairs_match_transport_encoding(self, container: type) -> None:
+        """Only dictionaries are expanded before curl_cffi serializes the body."""
+        pairs = Request("https://example.com/api", method="POST", data=container([("tag", ["a", "b"])]))
+        encoded = Request("https://example.com/api", method="POST", data="tag=%5B%27a%27%2C+%27b%27%5D")
+        expanded = Request("https://example.com/api", method="POST", data="tag=a&tag=b")
+
+        assert pairs.update_fingerprint() == encoded.update_fingerprint()
+        assert pairs.update_fingerprint() != expanded.update_fingerprint()
+
     @pytest.mark.parametrize("payload", [{}, [], False, 0, ""])
     def test_fingerprint_preserves_falsy_json_bodies(self, payload):
         url = "https://example.com/api"
