@@ -124,6 +124,16 @@ class TestRequestProperties:
 
         assert sequence.update_fingerprint() != literal.update_fingerprint()
 
+    @pytest.mark.parametrize("container", [list, tuple])
+    def test_fingerprint_form_pairs_match_transport_encoding(self, container: type) -> None:
+        """Only dictionaries are expanded before curl_cffi serializes the body."""
+        pairs = Request("https://example.com/api", method="POST", data=container([("tag", ["a", "b"])]))
+        encoded = Request("https://example.com/api", method="POST", data="tag=%5B%27a%27%2C+%27b%27%5D")
+        expanded = Request("https://example.com/api", method="POST", data="tag=a&tag=b")
+
+        assert pairs.update_fingerprint() == encoded.update_fingerprint()
+        assert pairs.update_fingerprint() != expanded.update_fingerprint()
+
     @pytest.mark.parametrize("payload", [{}, [], False, 0, ""])
     def test_fingerprint_preserves_falsy_json_bodies(self, payload):
         url = "https://example.com/api"

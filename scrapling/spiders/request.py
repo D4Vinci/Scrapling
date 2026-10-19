@@ -86,7 +86,8 @@ class Request:
         body = b""
         if post_data:
             if isinstance(post_data, dict | list | tuple):
-                body = urlencode(post_data, doseq=True).encode()
+                # HTTP sessions expand dict values; curl_cffi encodes pair sequences directly.
+                body = urlencode(post_data, doseq=isinstance(post_data, dict)).encode()
             elif isinstance(post_data, str):
                 body = post_data.encode()
             elif isinstance(post_data, BytesIO):

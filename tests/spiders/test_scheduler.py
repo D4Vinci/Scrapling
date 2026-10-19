@@ -92,6 +92,20 @@ class TestSchedulerEnqueue:
         assert len(scheduler) == 2
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("container", [list, tuple])
+    async def test_form_dict_and_pairs_remain_distinct(self, container: type) -> None:
+        """The HTTP transport expands dict values but stringifies pair-list values."""
+        scheduler = Scheduler()
+        mapping = Request("https://example.com/api", method="POST", data={"tag": ["a", "b"]})
+        pairs = Request("https://example.com/api", method="POST", data=container([("tag", ["a", "b"])]))
+        literal = Request("https://example.com/api", method="POST", data={"tag": "['a', 'b']"})
+
+        assert await scheduler.enqueue(mapping)
+        assert await scheduler.enqueue(pairs)
+        assert not await scheduler.enqueue(literal)
+        assert len(scheduler) == 2
+
+    @pytest.mark.asyncio
     async def test_enqueue_single_request(self):
         """Test enqueueing a single request."""
         scheduler = Scheduler()
