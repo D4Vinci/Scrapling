@@ -66,6 +66,23 @@ class TestSyncSolver:
         assert session._cloudflare_solver(page) is None
         assert page.mouse.click.call_count == __CF_MAX_SOLVE_ATTEMPTS__
 
+    def test_solver_bounds_post_click_networkidle_timeout(self, monkeypatch):
+        """The post-click wait_for_networkidle must specify timeout=5000 to avoid burning the full page timeout"""
+        state = {"content": FRENCH_CHALLENGE}
+        session = self._solver_setup(monkeypatch, state)
+        waited_timeouts = []
+        monkeypatch.setattr(
+            StealthySession,
+            "_wait_for_networkidle",
+            lambda self, page, timeout=None: waited_timeouts.append(timeout),
+        )
+        page = _make_sync_page()
+        page.mouse.click.side_effect = lambda *args, **kwargs: state.update(content=CLEAN_PAGE)
+
+        assert session._cloudflare_solver(page) is None
+        assert 5000 in waited_timeouts
+        assert all(t == 5000 for t in waited_timeouts)
+
 
 class TestAsyncSolver:
     def _solver_setup(self, monkeypatch, content_state):
@@ -114,6 +131,27 @@ class TestAsyncSolver:
 
         assert await session._cloudflare_solver(page) is None
         assert page.mouse.click.await_count == __CF_MAX_SOLVE_ATTEMPTS__
+
+    @pytest.mark.asyncio
+    async def test_solver_bounds_post_click_networkidle_timeout(self, monkeypatch):
+        state = {"content": FRENCH_CHALLENGE}
+        session = self._solver_setup(monkeypatch, state)
+        waited_timeouts = []
+        mock_wait = AsyncMock(side_effect=lambda page, timeout=None: waited_timeouts.append(timeout))
+        monkeypatch.setattr(AsyncStealthySession, "_wait_for_networkidle", mock_wait)
+        page = MagicMock()
+        page.frame.return_value = None
+        page.wait_for_timeout = AsyncMock()
+        page.wait_for_load_state = AsyncMock()
+        element = MagicMock()
+        element.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element.dispose = AsyncMock()
+        page.locator.return_value.last.element_handles = AsyncMock(return_value=[element])
+        page.mouse.click = AsyncMock(side_effect=lambda *args, **kwargs: state.update(content=CLEAN_PAGE))
+
+        assert await session._cloudflare_solver(page) is None
+        assert 5000 in waited_timeouts
+        assert all(t == 5000 for t in waited_timeouts)
 
 
 class TestPageContentRetries:
