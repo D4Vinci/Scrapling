@@ -66,6 +66,27 @@ class TestSyncSolver:
         assert session._cloudflare_solver(page) is None
         assert page.mouse.click.call_count == __CF_MAX_SOLVE_ATTEMPTS__
 
+    def test_post_click_wait_for_networkidle_has_bounded_timeout(self, monkeypatch):
+        """The post-click wait_for_networkidle must pass an explicit timeout bound (5000ms)"""
+        state = {"content": FRENCH_CHALLENGE}
+        recorded_timeouts = []
+        monkeypatch.setattr(ResponseFactory, "_get_page_content", staticmethod(lambda page: state["content"]))
+        monkeypatch.setattr(
+            StealthySession,
+            "_wait_for_networkidle",
+            lambda self, page, timeout=None: recorded_timeouts.append(timeout),
+        )
+        monkeypatch.setattr(
+            StealthySession, "_wait_for_page_stability", lambda self, page, load_dom, network_idle: None
+        )
+        session = object.__new__(StealthySession)
+        page = _make_sync_page()
+        page.mouse.click.side_effect = lambda *args, **kwargs: state.update(content=CLEAN_PAGE)
+
+        session._cloudflare_solver(page)
+        assert 5000 in recorded_timeouts
+        assert None not in recorded_timeouts
+
 
 class TestAsyncSolver:
     def _solver_setup(self, monkeypatch, content_state):
@@ -114,6 +135,36 @@ class TestAsyncSolver:
 
         assert await session._cloudflare_solver(page) is None
         assert page.mouse.click.await_count == __CF_MAX_SOLVE_ATTEMPTS__
+
+    @pytest.mark.asyncio
+    async def test_post_click_wait_for_networkidle_has_bounded_timeout(self, monkeypatch):
+        """The post-click wait_for_networkidle must pass an explicit timeout bound (5000ms)"""
+        state = {"content": FRENCH_CHALLENGE}
+        recorded_timeouts = []
+
+        async def content(page):
+            return state["content"]
+
+        async def record_wait(self, page, timeout=None):
+            recorded_timeouts.append(timeout)
+
+        monkeypatch.setattr(ResponseFactory, "_get_async_page_content", staticmethod(content))
+        monkeypatch.setattr(AsyncStealthySession, "_wait_for_networkidle", record_wait)
+        monkeypatch.setattr(AsyncStealthySession, "_wait_for_page_stability", AsyncMock())
+        session = object.__new__(AsyncStealthySession)
+        page = MagicMock()
+        page.frame.return_value = None
+        page.wait_for_timeout = AsyncMock()
+        page.wait_for_load_state = AsyncMock()
+        element = MagicMock()
+        element.bounding_box = AsyncMock(return_value={"x": 100, "y": 200})
+        element.dispose = AsyncMock()
+        page.locator.return_value.last.element_handles = AsyncMock(return_value=[element])
+        page.mouse.click = AsyncMock(side_effect=lambda *args, **kwargs: state.update(content=CLEAN_PAGE))
+
+        await session._cloudflare_solver(page)
+        assert 5000 in recorded_timeouts
+        assert None not in recorded_timeouts
 
 
 class TestPageContentRetries:
