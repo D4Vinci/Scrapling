@@ -380,6 +380,17 @@ class TestCrawlStats:
         assert result["elapsed_seconds"] == 5.0
         assert result["requests_per_second"] == 3.0
         assert result["response_status_count"] == {"status_200": 1}
+        assert result["randomize_download_delay"] is False
+
+    def test_randomize_download_delay_in_stats(self):
+        """Test randomize_download_delay stat recording and serialization."""
+        stats_bool = CrawlStats(randomize_download_delay=True)
+        assert stats_bool.randomize_download_delay is True
+        assert stats_bool.to_dict()["randomize_download_delay"] is True
+
+        stats_tuple = CrawlStats(randomize_download_delay=(0.5, 1.5))
+        assert stats_tuple.randomize_download_delay == (0.5, 1.5)
+        assert stats_tuple.to_dict()["randomize_download_delay"] == (0.5, 1.5)
 
     def test_custom_stats(self):
         """Test custom_stats can be used."""

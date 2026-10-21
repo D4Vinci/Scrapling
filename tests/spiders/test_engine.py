@@ -12,6 +12,7 @@ from scrapling.spiders.robotstxt import RobotsTxtManager
 from scrapling.spiders.session import SessionManager
 from scrapling.spiders.scheduler import Scheduler
 from scrapling.spiders.result import CrawlStats, ItemList
+from scrapling.spiders.throttle import AutoThrottle
 from scrapling.spiders.checkpoint import CheckpointData
 from scrapling.core._types import Any, Dict, Set, AsyncGenerator
 
@@ -24,7 +25,9 @@ from scrapling.core._types import Any, Dict, Set, AsyncGenerator
 class MockResponse:
     """Minimal Response stand-in."""
 
-    def __init__(self, status: int = 200, body: bytes = b"ok", url: str = "https://example.com", encoding: str = "utf-8"):
+    def __init__(
+        self, status: int = 200, body: bytes = b"ok", url: str = "https://example.com", encoding: str = "utf-8"
+    ):
         self.status = status
         self.body = body
         self.url = url
@@ -78,6 +81,7 @@ class MockSpider:
         concurrent_requests: int = 4,
         concurrent_requests_per_domain: int = 0,
         download_delay: float = 0.0,
+        randomize_download_delay: bool | tuple[float, float] = False,
         max_blocked_retries: int = 3,
         autothrottle_enabled: bool = False,
         autothrottle_start_delay: float = 5.0,
@@ -97,6 +101,7 @@ class MockSpider:
         self.concurrent_requests = concurrent_requests
         self.concurrent_requests_per_domain = concurrent_requests_per_domain
         self.download_delay = download_delay
+        self.randomize_download_delay = randomize_download_delay
         self.max_blocked_retries = max_blocked_retries
         self.autothrottle_enabled = autothrottle_enabled
         self.autothrottle_start_delay = autothrottle_start_delay
@@ -1010,3 +1015,118 @@ class TestPrefetchRobotsTxt:
         # set of Request.domain values deduplicates to one task per domain
         assert len(calls) == 1
         assert calls[0][0] == "https://example.com/robots.txt"
+
+
+# ---------------------------------------------------------------------------
+# Tests: randomize_download_delay
+# ---------------------------------------------------------------------------
+
+
+class TestRandomizeDownloadDelay:
+    @pytest.mark.asyncio
+    async def test_delay_without_randomization(self, monkeypatch):
+        sleep_calls = []
+
+        async def fake_sleep(seconds: float):
+            sleep_calls.append(seconds)
+
+        monkeypatch.setattr("anyio.sleep", fake_sleep)
+
+        spider = MockSpider(download_delay=2.0, randomize_download_delay=False)
+        engine = _make_engine(spider=spider)
+
+        request = Request("https://example.com", sid="default")
+        await engine._process_request(request)
+
+        assert len(sleep_calls) == 1
+        assert sleep_calls[0] == 2.0
+
+    @pytest.mark.asyncio
+    async def test_delay_with_randomization_bool(self, monkeypatch):
+        sleep_calls = []
+
+        async def fake_sleep(seconds: float):
+            sleep_calls.append(seconds)
+
+        monkeypatch.setattr("anyio.sleep", fake_sleep)
+
+        spider = MockSpider(download_delay=2.0, randomize_download_delay=True)
+        engine = _make_engine(spider=spider)
+
+        request = Request("https://example.com", sid="default")
+        for _ in range(20):
+            await engine._process_request(request)
+
+        assert len(sleep_calls) == 20
+        assert all(1.0 <= s <= 3.0 for s in sleep_calls)
+        assert len(set(sleep_calls)) > 1
+
+    @pytest.mark.asyncio
+    async def test_delay_with_randomization_custom_range(self, monkeypatch):
+        sleep_calls = []
+
+        async def fake_sleep(seconds: float):
+            sleep_calls.append(seconds)
+
+        monkeypatch.setattr("anyio.sleep", fake_sleep)
+
+        spider = MockSpider(download_delay=10.0, randomize_download_delay=(0.8, 1.2))
+        engine = _make_engine(spider=spider)
+
+        request = Request("https://example.com", sid="default")
+        for _ in range(20):
+            await engine._process_request(request)
+
+        assert len(sleep_calls) == 20
+        assert all(8.0 <= s <= 12.0 for s in sleep_calls)
+        assert len(set(sleep_calls)) > 1
+
+    @pytest.mark.asyncio
+    async def test_zero_delay_no_sleep_even_with_randomize(self, monkeypatch):
+        sleep_calls = []
+
+        async def fake_sleep(seconds: float):
+            sleep_calls.append(seconds)
+
+        monkeypatch.setattr("anyio.sleep", fake_sleep)
+
+        spider = MockSpider(download_delay=0.0, randomize_download_delay=True)
+        engine = _make_engine(spider=spider)
+
+        request = Request("https://example.com", sid="default")
+        await engine._process_request(request)
+
+        assert sleep_calls == []
+
+    @pytest.mark.asyncio
+    async def test_randomize_delay_with_autothrottle(self, monkeypatch):
+        sleep_calls = []
+
+        async def fake_sleep(seconds: float):
+            sleep_calls.append(seconds)
+
+        monkeypatch.setattr("anyio.sleep", fake_sleep)
+
+        spider = MockSpider(
+            download_delay=1.0,
+            autothrottle_enabled=True,
+            autothrottle_start_delay=4.0,
+            randomize_download_delay=True,
+        )
+        engine = _make_engine(spider=spider)
+        engine._autothrottle = AutoThrottle(start_delay=4.0)
+
+        request = Request("https://example.com", sid="default")
+        await engine._process_request(request)
+
+        assert len(sleep_calls) == 1
+        assert 2.0 <= sleep_calls[0] <= 6.0
+
+    @pytest.mark.asyncio
+    async def test_crawl_sets_randomize_download_delay_in_stats(self):
+        spider = MockSpider(randomize_download_delay=(0.5, 1.5))
+        engine = _make_engine(spider=spider)
+
+        await engine.crawl()
+
+        assert engine.stats.randomize_download_delay == (0.5, 1.5)
