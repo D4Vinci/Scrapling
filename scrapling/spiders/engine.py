@@ -1,5 +1,6 @@
 import json
 import pprint
+from random import uniform
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -216,7 +217,24 @@ class CrawlerEngine:
                 delay = self._autothrottle.delay_for(request.domain, floor)
 
             if delay:
-                await anyio.sleep(delay)
+                actual_delay = delay
+                randomize = getattr(self.spider, "randomize_download_delay", False)
+                if randomize:
+                    min_factor, max_factor = (
+                        randomize
+                        if isinstance(randomize, (tuple, list))
+                        and len(randomize) == 2
+                        and isinstance(randomize[0], (int, float))
+                        and isinstance(randomize[1], (int, float))
+                        and not isinstance(randomize[0], bool)
+                        and not isinstance(randomize[1], bool)
+                        and 0 <= randomize[0] <= randomize[1]
+                        else (0.5, 1.5)
+                    )
+                    actual_delay = uniform(min_factor, max_factor) * delay
+
+                if actual_delay > 0:
+                    await anyio.sleep(actual_delay)
 
             if request._session_kwargs.get("proxy"):
                 self.stats.proxies.append(request._session_kwargs["proxy"])
@@ -375,6 +393,7 @@ class CrawlerEngine:
             self.stats.concurrent_requests = self.spider.concurrent_requests
             self.stats.concurrent_requests_per_domain = self.spider.concurrent_requests_per_domain
             self.stats.download_delay = self.spider.download_delay
+            self.stats.randomize_download_delay = getattr(self.spider, "randomize_download_delay", False)
             self.stats.autothrottle_enabled = self.spider.autothrottle_enabled
             await self.spider.on_start(resuming=resuming)
 

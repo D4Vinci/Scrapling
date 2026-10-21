@@ -508,6 +508,126 @@ class TestSpiderCustomization:
         spider = SlowSpider()
         assert spider.download_delay == 1.5
 
+    def test_default_randomize_download_delay(self):
+        """Test default randomize_download_delay is False."""
+        spider = ConcreteSpider()
+        assert spider.randomize_download_delay is False
+
+    def test_custom_randomize_download_delay_bool(self):
+        """Test spider with boolean randomize_download_delay."""
+
+        class JitterSpider(Spider):
+            name = "jitter"
+            download_delay = 1.0
+            randomize_download_delay = True
+            start_urls = ["https://example.com"]
+
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+        spider = JitterSpider()
+        assert spider.randomize_download_delay is True
+
+    def test_custom_randomize_download_delay_tuple(self):
+        """Test spider with tuple randomize_download_delay."""
+
+        class CustomJitterSpider(Spider):
+            name = "custom_jitter"
+            download_delay = 2.0
+            randomize_download_delay = (0.8, 1.2)
+            start_urls = ["https://example.com"]
+
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+        spider = CustomJitterSpider()
+        assert spider.randomize_download_delay == (0.8, 1.2)
+
+    def test_custom_randomize_download_delay_list(self):
+        """Test spider with list randomize_download_delay."""
+
+        class ListJitterSpider(Spider):
+            name = "list_jitter"
+            download_delay = 2.0
+            randomize_download_delay = [0.5, 2.0]
+            start_urls = ["https://example.com"]
+
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+        spider = ListJitterSpider()
+        assert spider.randomize_download_delay == [0.5, 2.0]
+
+    def test_invalid_randomize_download_delay_type(self):
+        """Test spider with invalid randomize_download_delay type raises TypeError."""
+
+        class BadTypeSpider(Spider):
+            name = "bad_type"
+            randomize_download_delay = "invalid"
+            start_urls = ["https://example.com"]
+
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+        with pytest.raises(TypeError, match="must be a boolean or a tuple/list"):
+            BadTypeSpider()
+
+    def test_invalid_randomize_download_delay_length(self):
+        """Test spider with tuple of wrong length raises ValueError."""
+
+        class WrongLengthSpider(Spider):
+            name = "wrong_length"
+            randomize_download_delay = (0.5, 1.0, 1.5)
+            start_urls = ["https://example.com"]
+
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+        with pytest.raises(ValueError, match="must contain exactly 2 elements"):
+            WrongLengthSpider()
+
+    def test_invalid_randomize_download_delay_elements_type(self):
+        """Test spider with non-numeric factors raises TypeError."""
+
+        class NonNumericSpider(Spider):
+            name = "non_numeric"
+            randomize_download_delay = ("0.5", "1.5")
+            start_urls = ["https://example.com"]
+
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+        with pytest.raises(TypeError, match="elements must be numbers"):
+            NonNumericSpider()
+
+    def test_invalid_randomize_download_delay_negative(self):
+        """Test spider with negative factor raises ValueError."""
+
+        class NegativeSpider(Spider):
+            name = "negative"
+            randomize_download_delay = (-0.5, 1.5)
+            start_urls = ["https://example.com"]
+
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+        with pytest.raises(ValueError, match="must be non-negative"):
+            NegativeSpider()
+
+    def test_invalid_randomize_download_delay_inverted(self):
+        """Test spider with min_factor > max_factor raises ValueError."""
+
+        class InvertedSpider(Spider):
+            name = "inverted"
+            randomize_download_delay = (1.5, 0.5)
+            start_urls = ["https://example.com"]
+
+            async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                yield None
+
+        with pytest.raises(ValueError, match="cannot be greater than max_factor"):
+            InvertedSpider()
+
 
 class TestSpiderLogging:
     """Test Spider logging configuration."""
@@ -542,9 +662,7 @@ class TestSpiderLogging:
             spider = FileLogSpider()
 
             # Should have a file handler
-            file_handlers = [
-                h for h in spider.logger.handlers if isinstance(h, logging.FileHandler)
-            ]
+            file_handlers = [h for h in spider.logger.handlers if isinstance(h, logging.FileHandler)]
             assert len(file_handlers) == 1
 
             # Clean up

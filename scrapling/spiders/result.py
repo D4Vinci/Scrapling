@@ -136,6 +136,7 @@ class CrawlStats:
     start_time: float = 0.0
     end_time: float = 0.0
     download_delay: float = 0.0
+    randomize_download_delay: Union[bool, Tuple[float, float]] = False
     autothrottle_enabled: bool = False
     blocked_requests_count: int = 0
     autothrottle_delays: Dict = field(default_factory=dict)
@@ -173,6 +174,7 @@ class CrawlStats:
             "items_dropped": self.items_dropped,
             "elapsed_seconds": round(self.elapsed_seconds, 2),
             "download_delay": round(self.download_delay, 2),
+            "randomize_download_delay": self.randomize_download_delay,
             "autothrottle_enabled": self.autothrottle_enabled,
             "autothrottle_delays": {domain: round(delay, 2) for domain, delay in self.autothrottle_delays.items()},
             "concurrent_requests": self.concurrent_requests,

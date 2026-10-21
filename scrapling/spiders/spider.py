@@ -11,7 +11,7 @@ from scrapling.spiders.engine import CrawlerEngine
 from scrapling.spiders.session import SessionManager
 from scrapling.core.utils import set_logger, reset_logger
 from scrapling.spiders.result import CrawlResult, CrawlStats
-from scrapling.core._types import Set, Any, Dict, Optional, Union, TYPE_CHECKING, AsyncGenerator
+from scrapling.core._types import Set, Any, Dict, Optional, Union, Tuple, TYPE_CHECKING, AsyncGenerator
 
 BLOCKED_CODES = {401, 403, 407, 429, 444, 500, 502, 503, 504}
 if TYPE_CHECKING:
@@ -83,6 +83,7 @@ class Spider(ABC):
     concurrent_requests: int = 4
     concurrent_requests_per_domain: int = 0
     download_delay: float = 0.0
+    randomize_download_delay: Union[bool, Tuple[float, float]] = False
     max_blocked_retries: int = 3
 
     # AutoThrottle settings
@@ -111,6 +112,33 @@ class Spider(ABC):
         """
         if self.name is None:
             raise ValueError(f"{self.__class__.__name__} must have a name.")
+
+        if isinstance(self.randomize_download_delay, bool):
+            pass
+        elif isinstance(self.randomize_download_delay, (tuple, list)):
+            if len(self.randomize_download_delay) != 2:
+                raise ValueError(
+                    f"{self.__class__.__name__}.randomize_download_delay tuple/list must contain exactly 2 elements (min_factor, max_factor)"
+                )
+            min_factor, max_factor = self.randomize_download_delay
+            if (
+                isinstance(min_factor, bool)
+                or isinstance(max_factor, bool)
+                or not isinstance(min_factor, (int, float))
+                or not isinstance(max_factor, (int, float))
+            ):
+                raise TypeError(f"{self.__class__.__name__}.randomize_download_delay elements must be numbers")
+            if min_factor < 0 or max_factor < 0:
+                raise ValueError(f"{self.__class__.__name__}.randomize_download_delay factors must be non-negative")
+            if min_factor > max_factor:
+                raise ValueError(
+                    f"{self.__class__.__name__}.randomize_download_delay min_factor ({min_factor}) cannot be greater than max_factor ({max_factor})"
+                )
+        else:
+            raise TypeError(
+                f"{self.__class__.__name__}.randomize_download_delay must be a boolean or a tuple/list of two numbers, "
+                f"got {type(self.randomize_download_delay).__name__}"
+            )
 
         self.logger = logging.getLogger(f"scrapling.spiders.{self.name}")
         self.logger.setLevel(self.logging_level)
