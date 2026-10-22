@@ -105,12 +105,12 @@ result.items.to_json("quotes.json")
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingoctober" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> は、ウェブスクレイピングと自動化向けの最も効率的なプロキシサービスです。市場最高品質の IP を提供します。コード SCRAPLING35 で 35% 割引になります。
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> は、ウェブスクレイピングと自動化向けの最も効率的なプロキシサービスです。市場最高品質の IP を提供します。コード SCRAPLING35 で 35% 割引になります。
     </td>
   </tr>
   <tr>

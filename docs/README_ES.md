@@ -105,12 +105,12 @@ Imprime `10` y guarda las citas y sus autores en `quotes.json`.
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingoctober" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> - el proveedor de proxies más eficiente para Web Scraping y automatización, con la mayor calidad de IP del mercado. Usa el código SCRAPLING35 para obtener un 35% de descuento.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - el proveedor de proxies más eficiente para Web Scraping y automatización, con la mayor calidad de IP del mercado. Usa el código SCRAPLING35 para obtener un 35% de descuento.
     </td>
   </tr>
   <tr>
