@@ -150,6 +150,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     return None
                 self._wait_for_networkidle(page, timeout=5000)
                 self._wait_for_page_stability(page, True, False)
+                log.info("Embedded Turnstile solve status cannot be verified; returning the page as is.")
                 return None
             if challenge_type == "non-interactive":
                 for _ in range(10):
@@ -158,7 +159,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     page.wait_for_timeout(1000)
                     page.wait_for_load_state()
-                if self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
+                if self._challenge_cleared(ResponseFactory._get_page_content(page)):
                     log.info("Cloudflare captcha is solved")
                     return None
                 return self._cloudflare_solver(page, _attempts + 1)
@@ -170,7 +171,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     for _ in range(20):
                         # Waiting for the verify spinner to resolve into the widget iframe or pass on its own
                         if page.frame(url=__CF_PATTERN__) is not None or self._challenge_cleared(
-                            ResponseFactory._get_page_content(page), challenge_type
+                            ResponseFactory._get_page_content(page)
                         ):
                             break
                         page.wait_for_timeout(500)
@@ -191,7 +192,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
                     outer_box = iframe.frame_element().bounding_box()
 
                 if not iframe or not outer_box:
-                    if self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
+                    if self._challenge_cleared(ResponseFactory._get_page_content(page)):
                         log.info("Cloudflare captcha is solved")
                         return None
 
@@ -211,7 +212,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
 
                 if challenge_type != "embedded":
                     attempts = 0
-                    while not self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
+                    while not self._challenge_cleared(ResponseFactory._get_page_content(page)):
                         # Wait for the page
                         if attempts >= 100:
                             log.info("Cloudflare page didn't disappear after 10s, continuing...")
@@ -221,7 +222,7 @@ class StealthySession(SyncSession, StealthySessionMixin):
 
                 self._wait_for_page_stability(page, True, False)
 
-                if self._challenge_cleared(ResponseFactory._get_page_content(page), challenge_type):
+                if self._challenge_cleared(ResponseFactory._get_page_content(page)):
                     log.info("Cloudflare captcha is solved")
                     return None
                 else:
@@ -467,6 +468,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     return None
                 await self._wait_for_networkidle(page, timeout=5000)
                 await self._wait_for_page_stability(page, True, False)
+                log.info("Embedded Turnstile solve status cannot be verified; returning the page as is.")
                 return None
             if challenge_type == "non-interactive":
                 for _ in range(10):
@@ -478,7 +480,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     log.info("Waiting for Cloudflare wait page to disappear.")
                     await page.wait_for_timeout(1000)
                     await page.wait_for_load_state()
-                if self._challenge_cleared(await ResponseFactory._get_async_page_content(page), challenge_type):
+                if self._challenge_cleared(await ResponseFactory._get_async_page_content(page)):
                     log.info("Cloudflare captcha is solved")
                     return None
                 return await self._cloudflare_solver(page, _attempts + 1)
@@ -490,7 +492,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     for _ in range(20):
                         # Waiting for the verify spinner to resolve into the widget iframe or pass on its own
                         if page.frame(url=__CF_PATTERN__) is not None or self._challenge_cleared(
-                            await ResponseFactory._get_async_page_content(page), challenge_type
+                            await ResponseFactory._get_async_page_content(page)
                         ):
                             break
                         await page.wait_for_timeout(500)
@@ -511,7 +513,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
                     outer_box = await (await iframe.frame_element()).bounding_box()
 
                 if not iframe or not outer_box:
-                    if self._challenge_cleared(await ResponseFactory._get_async_page_content(page), challenge_type):
+                    if self._challenge_cleared(await ResponseFactory._get_async_page_content(page)):
                         log.info("Cloudflare captcha is solved")
                         return None
 
@@ -531,9 +533,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
 
                 if challenge_type != "embedded":
                     attempts = 0
-                    while not self._challenge_cleared(
-                        await ResponseFactory._get_async_page_content(page), challenge_type
-                    ):
+                    while not self._challenge_cleared(await ResponseFactory._get_async_page_content(page)):
                         # Wait for the page
                         if attempts >= 100:
                             log.info("Cloudflare page didn't disappear after 10s, continuing...")
@@ -543,7 +543,7 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
 
                 await self._wait_for_page_stability(page, True, False)
 
-                if self._challenge_cleared(await ResponseFactory._get_async_page_content(page), challenge_type):
+                if self._challenge_cleared(await ResponseFactory._get_async_page_content(page)):
                     log.info("Cloudflare captcha is solved")
                     return None
                 else:
