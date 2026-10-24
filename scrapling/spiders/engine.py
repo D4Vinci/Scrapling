@@ -9,6 +9,7 @@ from anyio import create_task_group, CapacityLimiter, create_memory_object_strea
 
 from scrapling.core.utils import log
 from scrapling.spiders.scheduler import Scheduler
+from scrapling.spiders.seen_store import SeenStore
 from scrapling.spiders.session import SessionManager
 from scrapling.spiders.request import Request, Response
 from scrapling.spiders.robotstxt import RobotsTxtManager
@@ -38,11 +39,21 @@ class CrawlerEngine:
     ):
         self.spider = spider
         self.session_manager = session_manager
+
+        self._seen_store: Optional[SeenStore] = None
+        if getattr(spider, "persistent_seen", False):
+            if spider.development_mode:
+                # Replaying cached pages would mark them as seen, so the next run would skip all of them
+                log.warning("The persistent seen-set is disabled in development mode")
+            else:
+                self._seen_store = SeenStore(spider.persistent_seen_file or f".scrapling_seen/{spider.name}.db")
+
         self.scheduler = Scheduler(
             include_kwargs=spider.fp_include_kwargs,
             include_headers=spider.fp_include_headers,
             keep_fragments=spider.fp_keep_fragments,
             crawl_strategy=getattr(spider, "crawl_strategy", "bfs"),
+            seen_store=self._seen_store,
         )
         self.stats = CrawlStats()
 
@@ -155,6 +166,7 @@ class CrawlerEngine:
     async def _run_callbacks(self, request: Request, response: Response) -> None:
         """Dispatch response to the request's callback and process yielded items/requests."""
         callback = request.callback if request.callback else self.spider.parse
+        produced_items = False
         try:
             async for result in callback(response):
                 if isinstance(result, Request):
@@ -165,6 +177,7 @@ class CrawlerEngine:
                         self.stats.offsite_requests_count += 1
                         log.debug(f"Filtered offsite request to: {result.url}")
                 elif isinstance(result, dict):
+                    produced_items = True
                     processed_result = await self.spider.on_scraped_item(result)
                     if processed_result:
                         self.stats.items_scraped += 1
@@ -182,6 +195,11 @@ class CrawlerEngine:
             msg = f"Spider error processing {request}:\n {e}"
             log.error(msg, exc_info=e)
             await self.spider.on_error(request, e)
+            return
+
+        # Pages that only lead to other pages, like listings, feeds, and sitemaps, are fetched again on every run
+        if produced_items and self._seen_store is not None and request._fp is not None:
+            self._seen_store.add(request._fp)
 
     async def _process_request(self, request: Request) -> None:
         """Download and process a single request."""
@@ -370,6 +388,8 @@ class CrawlerEngine:
         # Check for existing checkpoint
         resuming = (await self._restore_from_checkpoint()) if self._checkpoint_system_enabled else False
         self._last_checkpoint_time = anyio.current_time()
+        if self._seen_store:
+            self._seen_store.open()
 
         async with self.session_manager:
             self.stats.concurrent_requests = self.spider.concurrent_requests
@@ -443,9 +463,13 @@ class CrawlerEngine:
                 # Clean up checkpoint files only on successful completion (not paused, not crashed)
                 if finished and not self.paused and self._checkpoint_system_enabled:
                     await self._checkpoint_manager.cleanup()
+                if self._seen_store:
+                    self._seen_store.close()
 
         if self._autothrottle:
             self.stats.autothrottle_delays = dict(self._autothrottle.delays)
+
+        self.stats.previously_seen_count = self.scheduler.previously_seen_count
 
         self.stats.log_levels_counter = self.spider._log_counter.get_counts()
         self.stats.end_time = anyio.current_time()
