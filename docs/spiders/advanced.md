@@ -216,6 +216,37 @@ There's no automatic expiration. To force a fresh crawl, delete the cache direct
 
     Development mode is meant for development, not production. Cached responses never expire, and replay bypasses rate limiting and blocked-request retries. Don't ship a spider with `development_mode = True`.
 
+## Conditional Requests
+
+Spiders that run on a schedule, like one that checks a set of feeds every few minutes, mostly download pages that haven't changed since the last run. With `conditional_requests = True`, the spider saves the `ETag` and `Last-Modified` headers of each page it processed, and the next run sends them back as `If-None-Match` / `If-Modified-Since`. A website that supports them answers `304 Not Modified` with an empty body instead of the whole page.
+
+```python
+class FeedMonitor(Spider):
+    name = "feed_monitor"
+    start_urls = ["https://example.com/feed.xml"]
+    conditional_requests = True
+
+    async def parse(self, response: Response):
+        for item in response.css("item"):
+            yield {"title": item.css("title::text").get("")}
+
+    async def on_not_modified(self, request, response):
+        self.logger.info(f"No changes in {request.url}")
+```
+
+When the answer is `304`, the request's callback is skipped, since there's nothing new for it to process, and the `on_not_modified()` hook is called instead. The `not_modified_count` stat counts these responses, and AutoThrottle treats them as healthy ones.
+
+### How It Works
+
+1. **Which requests**: GET and HEAD requests made with HTTP sessions (`FetcherSession`). Browser sessions fetch normally, and requests that already set their own `If-None-Match` / `If-Modified-Since` headers are left as they are.
+2. **When validators are saved**: Only after the callback of a `2xx` response finished without raising. A page whose callback failed, or that was blocked, is downloaded in full on the next run.
+3. **Following links**: The conditional headers are sent for that single fetch only, so requests created with `response.follow()` don't inherit them.
+4. **Storage**: One small JSON file per request fingerprint in `.scrapling_validators/{spider.name}/`, or in the directory set with `conditional_requests_dir`. Delete it to make the next run download everything again.
+
+!!! note
+
+    Conditional requests are disabled while `development_mode` is on, since the response cache already replays pages without fetching them, and a `304` would leave it nothing to cache.
+
 ## Streaming
 
 For long-running spiders or applications that need real-time access to scraped items, use the `stream()` method instead of `start()`:
@@ -357,6 +388,7 @@ print(f"Offsite filtered: {stats.offsite_requests_count}")
 print(f"Robots.txt disallowed: {stats.robots_disallowed_count}")
 print(f"Cache hits: {stats.cache_hits}")
 print(f"Cache misses: {stats.cache_misses}")
+print(f"Not modified: {stats.not_modified_count}")
 print(f"Items scraped: {stats.items_scraped}")
 print(f"Items dropped: {stats.items_dropped}")
 print(f"Response bytes: {stats.response_bytes}")

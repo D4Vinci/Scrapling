@@ -3,7 +3,7 @@ from asyncio import Lock
 from scrapling.spiders.request import Request
 from scrapling.engines.static import _ASyncSessionLogic
 from scrapling.engines.toolbelt.convertor import Response
-from scrapling.core._types import Set, cast, SUPPORTED_HTTP_METHODS
+from scrapling.core._types import Dict, Optional, Set, cast, SUPPORTED_HTTP_METHODS
 from scrapling.fetchers import AsyncStealthySession, FetcherSession
 
 Session = FetcherSession | AsyncStealthySession
@@ -100,7 +100,13 @@ class SessionManager:
 
         self._started = False
 
-    async def fetch(self, request: Request) -> Response:
+    async def fetch(self, request: Request, headers: Optional[Dict[str, str]] = None) -> Response:
+        """Fetch a request with the session its `sid` points to.
+
+        :param request: The request to fetch.
+        :param headers: Headers to add for this fetch only. They aren't saved on the request, so requests followed
+            from the response don't inherit them. Browser sessions read `extra_headers` instead, so they ignore these.
+        """
         sid = request.sid if request.sid else self.default_session_id
         session = self.get(sid)
 
@@ -110,11 +116,15 @@ class SessionManager:
                     if not session._is_alive:
                         await session.__aenter__()
 
+            session_kwargs = request._session_kwargs
+            if headers:
+                session_kwargs = {**session_kwargs, "headers": {**(session_kwargs.get("headers") or {}), **headers}}
+
             if isinstance(session, FetcherSession):
                 client = session._client
 
                 if isinstance(client, _ASyncSessionLogic):
-                    kwargs = request._session_kwargs.copy()
+                    kwargs = session_kwargs.copy()
                     method = cast(SUPPORTED_HTTP_METHODS, kwargs.pop("method", "GET"))
                     if "stealthy_headers" in kwargs:
                         # Same mapping as the public session methods (`get`, `post`, ...), so it doesn't reach curl_cffi
@@ -128,7 +138,7 @@ class SessionManager:
                     # Sync session or other types - shouldn't happen in async context
                     raise TypeError(f"Session type {type(client)} not supported for async fetch")
             else:
-                response = await session.fetch(url=request.url, **request._session_kwargs)
+                response = await session.fetch(url=request.url, **session_kwargs)
 
             response.request = request
             # Merge request meta into response meta (response meta takes priority)
