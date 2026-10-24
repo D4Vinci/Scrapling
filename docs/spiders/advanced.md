@@ -171,6 +171,40 @@ async def on_start(self, resuming: bool = False):
         self.logger.info("Starting fresh crawl")
 ```
 
+## Skipping Pages Seen in Previous Runs
+
+Checkpoints only remember what was seen until the crawl finishes. For a spider that runs on a schedule, like one that checks a news site every few minutes, set `persistent_seen = True` so later runs skip the pages earlier runs already scraped:
+
+```python
+class NewsMonitor(Spider):
+    name = "news_monitor"
+    start_urls = ["https://example.com/latest"]
+    persistent_seen = True
+
+    async def parse(self, response: Response):
+        for link in response.css("article a::attr(href)").getall():
+            yield response.follow(link, callback=self.parse_article)
+
+    async def parse_article(self, response: Response):
+        yield {"title": response.css("h1::text").get(""), "url": response.url}
+```
+
+The first run scrapes every article. Every later run fetches `/latest` again, but only follows the links to articles it hasn't scraped yet.
+
+### How It Works
+
+1. **What's remembered**: The fingerprint of every request whose callback yielded at least one item and finished without raising. Pages that only lead to other pages, like listings, feeds, and sitemaps, yield requests and no items, so they are fetched again on every run. Items dropped by `on_scraped_item()` still count, since the page itself was processed.
+2. **What's skipped**: Any request whose fingerprint was remembered, unless it has `dont_filter=True`. The `previously_seen_count` stat shows how many were skipped.
+3. **Storage**: A SQLite file at `.scrapling_seen/{spider.name}.db`, or at the path set with `persistent_seen_file`. Delete it to start over. Because fingerprints depend on `fp_include_kwargs`, `fp_include_headers`, and `fp_keep_fragments`, changing those makes earlier runs' fingerprints stop matching.
+
+!!! tip
+
+    If the page you start from yields items itself, like a feed whose entries are the items, it gets remembered and skipped on the next run. Yield it with `dont_filter=True` from `start_requests()` to check it on every run.
+
+!!! note
+
+    The persistent seen-set is disabled while `development_mode` is on. Replaying the response cache would otherwise mark every page as seen, and the next run would skip all of them.
+
 ## Development Mode
 
 When you're iterating on a spider's `parse()` logic, re-hitting the target servers on every run is slow and noisy. Development mode caches every response to disk on the first run and replays them from disk on subsequent runs, so you can tweak your selectors and re-run the spider as many times as you want without fetching those pages again.
@@ -355,6 +389,7 @@ print(f"Failed: {stats.failed_requests_count}")
 print(f"Blocked: {stats.blocked_requests_count}")
 print(f"Offsite filtered: {stats.offsite_requests_count}")
 print(f"Robots.txt disallowed: {stats.robots_disallowed_count}")
+print(f"Seen in previous runs: {stats.previously_seen_count}")
 print(f"Cache hits: {stats.cache_hits}")
 print(f"Cache misses: {stats.cache_misses}")
 print(f"Items scraped: {stats.items_scraped}")
