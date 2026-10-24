@@ -9,6 +9,7 @@ from scrapling.spiders.engine import CrawlerEngine
 from scrapling.spiders.request import Request
 from scrapling.spiders.session import SessionManager
 from scrapling.spiders.spider import Spider
+from scrapling.spiders.throttle import AutoThrottle
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.core._types import Any, Dict, List, Optional, AsyncGenerator
 
@@ -319,7 +320,16 @@ class TestConditionalCrawl:
         assert site.sent_headers == [{}, {}]
         assert not (tmp_path / "validators").exists()
 
-    def test_not_modified_counts_as_healthy_for_autothrottle(self, tmp_path: Path):
+    def test_not_modified_counts_as_healthy_for_autothrottle(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        recorded: List[bool] = []
+        original_record = AutoThrottle.record
+
+        def record(self: AutoThrottle, domain: str, latency: float, ok: bool, *args: Any) -> float:
+            recorded.append(ok)
+            return original_record(self, domain, latency, ok, *args)
+
+        monkeypatch.setattr(AutoThrottle, "record", record)
+
         class ThrottledSpider(MonitorSpider):
             autothrottle_enabled = True
             autothrottle_start_delay = 0.01
@@ -329,8 +339,8 @@ class TestConditionalCrawl:
         ThrottledSpider(site, tmp_path).start()
         result = ThrottledSpider(site, tmp_path).start()
         assert result.stats.not_modified_count == 1
-        # A failed response would have doubled the delay instead of easing it
-        assert result.stats.autothrottle_delays["example.com"] <= 0.01
+        # A `304` is a healthy answer, so it must not make the throttle back off like a failed response would
+        assert recorded == [True, True]
 
 
 class TestWithHttpSession:
