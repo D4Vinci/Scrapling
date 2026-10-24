@@ -130,6 +130,7 @@ class CrawlStats:
     robots_disallowed_count: int = 0
     cache_hits: int = 0
     cache_misses: int = 0
+    not_modified_count: int = 0
     response_bytes: int = 0
     items_scraped: int = 0
     items_dropped: int = 0
@@ -185,6 +186,7 @@ class CrawlStats:
             "robots_disallowed_count": self.robots_disallowed_count,
             "cache_hits": self.cache_hits,
             "cache_misses": self.cache_misses,
+            "not_modified_count": self.not_modified_count,
             "blocked_requests_count": self.blocked_requests_count,
             "response_status_count": self.response_status_count,
             "response_bytes": self.response_bytes,

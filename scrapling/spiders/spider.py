@@ -79,6 +79,10 @@ class Spider(ABC):
     development_mode: bool = False
     development_cache_dir: Optional[str] = None
 
+    # Conditional requests (ETag / Last-Modified validators saved between runs)
+    conditional_requests: bool = False
+    conditional_requests_dir: Optional[str] = None
+
     # Concurrency settings
     concurrent_requests: int = 4
     concurrent_requests_per_domain: int = 0
@@ -194,6 +198,14 @@ class Spider(ABC):
         Handle request errors for all spider requests.
 
         Override for custom error handling.
+        """
+        pass
+
+    async def on_not_modified(self, request: Request, response: "Response") -> None:
+        """Called instead of the request's callback when `conditional_requests` is enabled and the website answered
+        `304 Not Modified`, meaning the page didn't change since a previous run processed it.
+
+        Override to act on unchanged pages.
         """
         pass
 

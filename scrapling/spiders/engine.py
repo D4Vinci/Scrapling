@@ -15,6 +15,7 @@ from scrapling.spiders.robotstxt import RobotsTxtManager
 from scrapling.spiders.result import CrawlStats, ItemList
 from scrapling.spiders.throttle import AutoThrottle, parse_retry_after
 from scrapling.spiders.cache import ResponseCacheManager
+from scrapling.spiders.conditional import ConditionalRequestManager, CONDITIONAL_HEADERS
 from scrapling.spiders.checkpoint import CheckpointManager, CheckpointData
 from scrapling.core._types import Dict, Union, Optional, TYPE_CHECKING, Any, AsyncGenerator
 
@@ -61,6 +62,15 @@ class CrawlerEngine:
             log.warning("Development mode enabled -- responses will be cached to disk and replayed on subsequent runs")
         else:
             self._cache_manager = None
+
+        self._conditional_manager: Optional[ConditionalRequestManager] = None
+        if getattr(self.spider, "conditional_requests", False):
+            if self._cache_manager:
+                # A cache miss needs the full body to cache it, so a 304 would leave nothing to replay
+                log.warning("Conditional requests are disabled in development mode, the response cache is used instead")
+            else:
+                validators_dir = self.spider.conditional_requests_dir or f".scrapling_validators/{self.spider.name}"
+                self._conditional_manager = ConditionalRequestManager(validators_dir)
 
         if self.spider.autothrottle_enabled:
             self._autothrottle: Optional[AutoThrottle] = AutoThrottle(
@@ -152,8 +162,19 @@ class CrawlerEngine:
         if not request.sid:
             request.sid = self.session_manager.default_session_id
 
-    async def _run_callbacks(self, request: Request, response: Response) -> None:
-        """Dispatch response to the request's callback and process yielded items/requests."""
+    @staticmethod
+    def _uses_validators(request: Request) -> bool:
+        """Whether conditional requests apply to this request: only GET/HEAD ones that don't set their own validators."""
+        if str(request._session_kwargs.get("method", "GET")).upper() not in ("GET", "HEAD"):
+            return False
+        headers = request._session_kwargs.get("headers") or {}
+        return not any(key.lower() in CONDITIONAL_HEADERS for key in headers)
+
+    async def _run_callbacks(self, request: Request, response: Response) -> bool:
+        """Dispatch response to the request's callback and process yielded items/requests.
+
+        Returns whether the callback finished without raising.
+        """
         callback = request.callback if request.callback else self.spider.parse
         try:
             async for result in callback(response):
@@ -182,6 +203,8 @@ class CrawlerEngine:
             msg = f"Spider error processing {request}:\n {e}"
             log.error(msg, exc_info=e)
             await self.spider.on_error(request, e)
+            return False
+        return True
 
     async def _process_request(self, request: Request) -> None:
         """Download and process a single request."""
@@ -211,6 +234,10 @@ class CrawlerEngine:
                 await self._run_callbacks(request, cached)
                 return
 
+        conditional_headers: Dict[str, str] = {}
+        if self._conditional_manager and request._fp is not None and self._uses_validators(request):
+            conditional_headers = await self._conditional_manager.get_headers(request._fp)
+
         async with self._rate_limiter(request.domain):
             if self._autothrottle:
                 delay = self._autothrottle.delay_for(request.domain, floor)
@@ -224,7 +251,7 @@ class CrawlerEngine:
                 self.stats.proxies.append(dict(request._session_kwargs["proxies"]))
             try:
                 started_at = anyio.current_time()
-                response = await self.session_manager.fetch(request)
+                response = await self.session_manager.fetch(request, headers=conditional_headers)
                 latency = anyio.current_time() - started_at
                 self.stats.increment_requests_count(request.sid or self.session_manager.default_session_id)
                 self.stats.increment_response_bytes(request.domain, len(response.body))
@@ -237,6 +264,15 @@ class CrawlerEngine:
 
         if self._cache_manager and request._fp is not None:
             self.stats.cache_misses += 1
+
+        if conditional_headers and response.status == 304:
+            # Nothing changed since a previous run processed this page, so the callback has nothing new to work on
+            self.stats.not_modified_count += 1
+            if self._autothrottle:
+                self._autothrottle.record(request.domain, latency, True, floor)
+            log.debug(f"Not modified since the last run: {request.url}")
+            await self.spider.on_not_modified(request, response)
+            return
 
         blocked = await self.spider.is_blocked(response)
         if self._autothrottle:
@@ -267,7 +303,16 @@ class CrawlerEngine:
         if self._cache_manager and request._fp is not None:
             await self._cache_manager.put(request._fp, response, request._session_kwargs.get("method", "GET"))
 
-        await self._run_callbacks(request, response)
+        processed = await self._run_callbacks(request, response)
+        # Validators are saved only once the callback succeeded, so a page that failed is downloaded in full next time
+        if (
+            processed
+            and self._conditional_manager
+            and request._fp is not None
+            and 200 <= response.status < 300
+            and self._uses_validators(request)
+        ):
+            await self._conditional_manager.put(request._fp, response)
 
     async def _task_wrapper(self, request: Request) -> None:
         """Wrapper to track active task count."""
