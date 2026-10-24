@@ -142,6 +142,44 @@ class MySitemap(SitemapSpider):
 
 Set `sitemap_alternate_links = True` to also dispatch `<xhtml:link rel="alternate" hreflang="...">` URLs through your rules.
 
+### Dates and Google News sitemaps
+
+Every request `SitemapSpider` makes for a sitemap URL carries what the sitemap says about it in `meta`:
+
+| Key                             | Source                                           |
+|---------------------------------|--------------------------------------------------|
+| `sitemap_lastmod`               | `<lastmod>`                                      |
+| `sitemap_news_publication_date` | `<news:publication_date>` (Google News sitemaps) |
+| `sitemap_news_title`            | `<news:title>` (Google News sitemaps)            |
+
+Dates are timezone-aware `datetime` objects (UTC when the sitemap gives no offset). A value the sitemap doesn't give, or gives in a form that can't be read, is `None`.
+
+```python
+class NewsSitemap(SitemapSpider):
+    name = "news"
+    sitemap_urls = ["https://example.com/news-sitemap.xml"]
+
+    async def parse(self, response):
+        yield {
+            "url": response.url,
+            "title": response.meta["sitemap_news_title"],
+            "published": response.meta["sitemap_news_publication_date"],
+        }
+```
+
+To only crawl what changed recently, set `sitemap_since`. URLs whose dates are all older than it are skipped, and so are child sitemaps of a `<sitemapindex>` whose `<lastmod>` is older, so they aren't even fetched. URLs and child sitemaps without a date are always kept.
+
+```python
+from datetime import timedelta
+
+class RecentNews(SitemapSpider):
+    name = "recent"
+    sitemap_urls = ["https://example.com/robots.txt"]
+    sitemap_since = timedelta(days=2)  # or a fixed `datetime`; naive ones are taken as UTC
+```
+
+A `timedelta` is counted back from the moment each sitemap is parsed, which suits spiders that run on a schedule.
+
 ## XMLFeedSpider
 
 `XMLFeedSpider` iterates over the nodes of an XML feed (RSS, Atom, product feeds, etc.). Set `itertag` to the node name you want (default: `"item"`) and override `parse_node()`, which is called once per matching node:
