@@ -168,12 +168,12 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：将封禁和 CAPTCHA 验证码减少 90%。提供 2800 万个优质住宅 IP，适用于大规模网页抓取。覆盖 195 个国家。支持城市、ISP、邮政编码（ZIP）定向。支持使用固定 IP 或轮换 IP 的会话。流量永不过期，低至 $2/GB。使用优惠码 <strong>SCRAPEANDTAKE</strong> 可享 <em>25% 折扣</em>。
+    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：Scrapling 运行中的 CAPTCHA 验证码减少 90%。2800 万台真实 P2P 住宅设备，干净 IP 占比 98.7%，覆盖 195 个国家。支持城市/ISP/邮政编码（ZIP）定向、固定/轮换 IP 会话，流量永不过期。花 $1.95 试用 350 MB。使用优惠码 <strong>SCRAPEANDTAKE</strong> 可享 <em>25% 折扣</em>。
     </td>
   </tr>
   <tr>

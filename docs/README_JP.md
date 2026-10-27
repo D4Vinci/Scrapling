@@ -168,12 +168,12 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：ブロックと CAPTCHA を 90% 削減します。大規模なウェブスクレイピング向けに、2,800 万の高品質なレジデンシャル IP を提供します。195 か国に対応し、都市・ISP・郵便番号（ZIP）を指定できます。同じ IP を保つセッションと、IP を切り替えるセッションを使えます。有効期限のない通信量を $2/GB から提供します。コード <strong>SCRAPEANDTAKE</strong> で<em>25% オフ</em>になります。
+    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：Scrapling の実行時に CAPTCHA を 90% 削減。2,800 万台の実在する家庭用 P2P デバイスを提供し、IP の 98.7% がクリーンで、195 か国に対応。都市・ISP・郵便番号（ZIP）の指定、固定 IP・ローテーション IP のセッションに対応し、通信量に有効期限はありません。350 MB を $1.95 でお試しください。コード <strong>SCRAPEANDTAKE</strong> で<em>25% オフ</em>になります。
     </td>
   </tr>
   <tr>

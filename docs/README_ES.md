@@ -168,12 +168,12 @@ Imprime `10` y guarda las citas y sus autores en `quotes.json`.
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Reduce los bloqueos y los CAPTCHAs en un 90%. 28 millones de IPs residenciales premium para scraping web intensivo. 195 países. Segmentación por ciudad/ISP/código postal. Sesiones persistentes o rotativas. Tráfico sin caducidad desde $2/GB. Código <strong>SCRAPEANDTAKE</strong>: <em>25% de descuento</em>.
+    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 90% menos CAPTCHAs en tus ejecuciones de Scrapling. 28 millones de dispositivos residenciales P2P reales, 98,7% de IPs limpias, 195 países. Segmentación por ciudad/ISP/código postal, sesiones con IP fija o rotativa, tráfico que nunca caduca. Prueba 350 MB por $1.95. Código <strong>SCRAPEANDTAKE</strong>: <em>25% de descuento</em>.
     </td>
   </tr>
   <tr>

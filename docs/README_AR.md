@@ -168,12 +168,12 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: قلّل الحظر واختبارات CAPTCHA بنسبة 90%. 28 مليون عنوان IP سكني عالي الجودة لاستخراج بيانات الويب بكثافة. 195 دولة. استهداف حسب المدينة/ISP/الرمز البريدي (ZIP). جلسات بعنوان IP ثابت أو متغير. رصيد بيانات لا تنتهي صلاحيته يبدأ من $2/GB. الكود <strong>SCRAPEANDTAKE</strong>: <em>خصم 25%</em>.
+    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: اختبارات CAPTCHA أقل بنسبة 90% عند تشغيل Scrapling. 28 مليون جهاز منزلي حقيقي ضمن شبكة P2P، وعناوين IP نظيفة بنسبة 98.7%، و195 دولة. استهداف حسب المدينة/ISP/الرمز البريدي (ZIP)، وجلسات بعنوان IP ثابت أو متغير، ورصيد بيانات لا تنتهي صلاحيته. جرّب 350 MB مقابل $1.95. الكود <strong>SCRAPEANDTAKE</strong>: <em>خصم 25%</em>.
     </td>
   </tr>
   <tr>
