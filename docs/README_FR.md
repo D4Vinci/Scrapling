@@ -188,6 +188,16 @@ Cet exemple affiche `10` et enregistre les citations et leurs auteurs dans `quot
   </tr>
   <tr>
     <td width="200">
+      <a href="https://resolvr.com/?ref=scrapling" target="_blank" title="Captcha and Browser challenges, solved on real devices loading the page.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/resolvr.jpg">
+      </a>
+    </td>
+    <td>
+    <a href="https://resolvr.com/?ref=scrapling" target="_blank">Resolvr</a> : Le scraping à grande échelle implique de nombreux CAPTCHAs. Resolvr résout les défis reCAPTCHA et Cloudflare sur de vrais appareils via une seule API. L’accès gratuit à la version bêta est disponible dès maintenant.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
       </a>
