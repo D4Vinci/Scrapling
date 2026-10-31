@@ -61,7 +61,7 @@ class DataRequestParams(GetRequestParams, total=False):
 
 
 # Types for browser session
-class PlaywrightSession(TypedDict, total=False):
+class _BrowserSession(TypedDict, total=False):
     max_pages: int
     headless: bool
     disable_resources: bool
@@ -85,8 +85,6 @@ class PlaywrightSession(TypedDict, total=False):
     selector_config: Optional[Dict]
     additional_args: Optional[Dict]
     locale: Optional[str]
-    real_chrome: bool
-    cdp_url: Optional[str]
     useragent: Optional[str]
     extra_flags: Optional[List[str]]
     blocked_domains: Optional[Set[str]]
@@ -97,6 +95,10 @@ class PlaywrightSession(TypedDict, total=False):
     max_recorded_requests: int
     executable_path: Optional[str]
     dns_over_https: bool
+
+
+class PlaywrightSession(_BrowserSession, total=False):
+    real_chrome: bool
 
 
 class PlaywrightFetchParams(TypedDict, total=False):
@@ -117,11 +119,19 @@ class PlaywrightFetchParams(TypedDict, total=False):
     proxy: Optional[str | Dict[str, str]]
 
 
-class StealthSession(PlaywrightSession, total=False):
+class _StealthOptions(TypedDict, total=False):
     allow_webgl: bool
     hide_canvas: bool
     block_webrtc: bool
     solve_cloudflare: bool
+
+
+class StealthSession(PlaywrightSession, _StealthOptions, total=False):
+    pass
+
+
+class RemoteSessionParams(_BrowserSession, _StealthOptions, total=False):
+    pass
 
 
 class StealthFetchParams(PlaywrightFetchParams, total=False):

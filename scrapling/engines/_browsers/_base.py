@@ -60,6 +60,7 @@ class SyncSession:
         self.context: Any = None
         self.browser: Any = None
         self._is_alive = False
+        self._owns_context = True
 
     def start(self) -> None:
         pass
@@ -95,19 +96,22 @@ class SyncSession:
             return
 
         self.close_pages()
-        if self.context:
-            self.context.close()
+        try:
+            if self.context and self._owns_context:
+                self.context.close()
+        finally:
             self.context = None
-
-        if self.browser:
-            self.browser.close()
-            self.browser = None
-
-        if self.playwright:
-            self.playwright.stop()
-            self.playwright = None  # pyright: ignore
-
-        self._is_alive = False
+            try:
+                if self.browser:
+                    self.browser.close()
+            finally:
+                self.browser = None
+                try:
+                    if self.playwright:
+                        self.playwright.stop()
+                finally:
+                    self.playwright = None
+                    self._is_alive = False
 
     def __enter__(self):
         self.start()
@@ -265,6 +269,7 @@ class AsyncSession:
         self.context: Any = None
         self.browser: Any = None
         self._is_alive = False
+        self._owns_context = True
         self._lock = Lock()
 
     async def start(self) -> None:
@@ -301,19 +306,22 @@ class AsyncSession:
             return
 
         await self.close_pages()
-        if self.context:
-            await self.context.close()
-            self.context = None  # pyright: ignore
-
-        if self.browser:
-            await self.browser.close()
-            self.browser = None
-
-        if self.playwright:
-            await self.playwright.stop()
-            self.playwright = None  # pyright: ignore
-
-        self._is_alive = False
+        try:
+            if self.context and self._owns_context:
+                await self.context.close()
+        finally:
+            self.context = None
+            try:
+                if self.browser:
+                    await self.browser.close()
+            finally:
+                self.browser = None
+                try:
+                    if self.playwright:
+                        await self.playwright.stop()
+                finally:
+                    self.playwright = None
+                    self._is_alive = False
 
     async def __aenter__(self):
         await self.start()
@@ -506,7 +514,7 @@ class BaseSessionMixin:
 
         return config
 
-    def __generate_options__(self, extra_flags: Tuple | None = None) -> None:
+    def __generate_context_options__(self) -> None:
         config: PlaywrightConfig | StealthConfig = self._config
         self._context_options.update(
             {
@@ -515,9 +523,6 @@ class BaseSessionMixin:
                 "extra_http_headers": config.extra_headers,
             }
         )
-        if config.locale and config.cdp_url:
-            # Launch flags can't be set on remote browsers, so the detectable context option is the best effort left
-            self._context_options["locale"] = config.locale
         # The default useragent in the headful is always correct now in the current versions of Playwright
         if config.useragent:
             self._context_options["user_agent"] = config.useragent
@@ -526,45 +531,27 @@ class BaseSessionMixin:
                 __default_chrome_useragent__ if config.real_chrome else __default_useragent__
             )
 
-        if not config.cdp_url:
-            flags = self._browser_options["args"]
-            if config.extra_flags or extra_flags:
-                flags = list(set(tuple(flags) + tuple(extra_flags or ()) + tuple(config.extra_flags or ())))
-
-            if config.dns_over_https:
-                doh_flag = "--dns-over-https-templates=https://cloudflare-dns.com/dns-query"
-                if isinstance(flags, list):
-                    flags.append(doh_flag)
-                else:
-                    flags = list(flags) + [doh_flag]
-
-            if config.locale:
-                # The context `locale` option patches the main thread only, so Web Workers keep the browser's real
-                # language and WAFs like Cloudflare flag the mismatch. Launch flags set it browser-wide instead,
-                # so workers, `Intl`, and the `Accept-Language` header all follow natively.
-                base_lang = config.locale.split("-")[0].lower()
-                accept_lang = f"{config.locale},{base_lang}" if base_lang != config.locale.lower() else config.locale
-                flags = (flags if isinstance(flags, list) else list(flags)) + [
-                    f"--lang={config.locale}",
-                    f"--accept-lang={accept_lang}",
-                ]
-
-            self._browser_options.update(
-                {
-                    "args": flags,
-                    "headless": config.headless,
-                    "channel": "chrome" if config.real_chrome else "chromium",
-                }
-            )
-            if config.executable_path:
-                self._browser_options["executable_path"] = config.executable_path
-
-            self._user_data_dir = config.user_data_dir
-        else:
-            self._browser_options = {}
-
         if config.additional_args:
             self._context_options.update(config.additional_args)
+
+    def __generate_options__(self, extra_flags: Tuple | None = None) -> None:
+        self.__generate_context_options__()
+        config = self._config
+        flags = self._browser_options["args"]
+        if config.extra_flags or extra_flags:
+            flags = list(set(tuple(flags) + tuple(extra_flags or ()) + tuple(config.extra_flags or ())))
+        if config.dns_over_https:
+            flags = list(flags) + ["--dns-over-https-templates=https://cloudflare-dns.com/dns-query"]
+        if config.locale:
+            base_lang = config.locale.split("-")[0].lower()
+            accept_lang = f"{config.locale},{base_lang}" if base_lang != config.locale.lower() else config.locale
+            flags = list(flags) + [f"--lang={config.locale}", f"--accept-lang={accept_lang}"]
+        self._browser_options.update(
+            {"args": flags, "headless": config.headless, "channel": "chrome" if config.real_chrome else "chromium"}
+        )
+        if config.executable_path:
+            self._browser_options["executable_path"] = config.executable_path
+        self._user_data_dir = config.user_data_dir
 
     def _build_context_with_proxy(self, proxy: Optional[ProxyType] = None) -> Dict[str, Any]:
         """
@@ -584,8 +571,10 @@ class BaseSessionMixin:
 
 
 class StealthySessionMixin(BaseSessionMixin):
+    _config_class: type[StealthConfig] = StealthConfig
+
     def __validate__(self, **params):
-        self._config = self.__validate_routine__(params, model=StealthConfig)
+        self._config = self.__validate_routine__(params, model=self._config_class)
         self._context_options.update(
             {
                 "is_mobile": False,
@@ -602,25 +591,14 @@ class StealthySessionMixin(BaseSessionMixin):
 
     def __generate_stealth_options(self) -> None:
         config = cast(StealthConfig, self._config)
-        flags: Tuple[str, ...] = tuple()
-        if not config.cdp_url:
-            flags = tuple(DEFAULT_ARGS) + tuple(STEALTH_ARGS)
-
-            if config.block_webrtc:
-                flags += (
-                    "--webrtc-ip-handling-policy=disable_non_proxied_udp",
-                    "--force-webrtc-ip-handling-policy",  # Ensures the policy is enforced
-                )
-            if not config.allow_webgl:
-                flags += (
-                    "--disable-webgl",
-                    "--disable-webgl-image-chromium",
-                    "--disable-webgl2",
-                )
-            if config.hide_canvas:
-                flags += ("--fingerprinting-canvas-image-data-noise",)
-
-        super(StealthySessionMixin, self).__generate_options__(flags)
+        flags = tuple(DEFAULT_ARGS) + tuple(STEALTH_ARGS)
+        if config.block_webrtc:
+            flags += ("--webrtc-ip-handling-policy=disable_non_proxied_udp", "--force-webrtc-ip-handling-policy")
+        if not config.allow_webgl:
+            flags += ("--disable-webgl", "--disable-webgl-image-chromium", "--disable-webgl2")
+        if config.hide_canvas:
+            flags += ("--fingerprinting-canvas-image-data-noise",)
+        self.__generate_options__(flags)
 
     @staticmethod
     def _detect_cloudflare(page_content: str) -> str | None:

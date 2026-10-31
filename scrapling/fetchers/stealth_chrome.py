@@ -42,7 +42,6 @@ class StealthyFetcher(BaseFetcher):
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -95,7 +94,6 @@ class StealthyFetcher(BaseFetcher):
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.

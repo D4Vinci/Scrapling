@@ -4,6 +4,7 @@ from scrapling.engines.toolbelt import ProxyRotator
 if TYPE_CHECKING:
     from scrapling.fetchers.requests import Fetcher, AsyncFetcher, FetcherSession
     from scrapling.fetchers.stealth_chrome import StealthyFetcher, StealthySession, AsyncStealthySession
+    from scrapling.engines._browsers._remote import RemoteSession, AsyncRemoteSession
 
 
 # Lazy import mapping
@@ -14,6 +15,8 @@ _LAZY_IMPORTS = {
     "StealthyFetcher": ("scrapling.fetchers.stealth_chrome", "StealthyFetcher"),
     "StealthySession": ("scrapling.fetchers.stealth_chrome", "StealthySession"),
     "AsyncStealthySession": ("scrapling.fetchers.stealth_chrome", "AsyncStealthySession"),
+    "RemoteSession": ("scrapling.engines._browsers._remote", "RemoteSession"),
+    "AsyncRemoteSession": ("scrapling.engines._browsers._remote", "AsyncRemoteSession"),
 }
 
 __all__ = [
@@ -24,6 +27,8 @@ __all__ = [
     "StealthyFetcher",
     "StealthySession",
     "AsyncStealthySession",
+    "RemoteSession",
+    "AsyncRemoteSession",
 ]
 
 
