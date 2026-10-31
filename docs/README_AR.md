@@ -105,12 +105,12 @@ result.items.to_json("quotes.json")
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingoctober" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> - أكفأ مزود بروكسيات لجمع بيانات الويب والأتمتة، مع أعلى جودة لعناوين IP في السوق. استخدم الكود SCRAPLING35 للحصول على خصم 35%.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - أكفأ مزود بروكسيات لجمع بيانات الويب والأتمتة، مع أعلى جودة لعناوين IP في السوق. استخدم الكود SCRAPLING35 للحصول على خصم 35%.
     </td>
   </tr>
   <tr>
@@ -134,16 +134,6 @@ result.items.to_json("quotes.json")
         <b>Evomi</b>
       </a>: بروكسيات سكنية تبدأ من 0.49$/جيجابايت. متصفح لجمع البيانات يستخدم Chromium مع تمويه كامل لبصمته، وعناوين IP سكنية، وحل تلقائي لـ CAPTCHA، وتجاوز أنظمة كشف البوتات. </br>
       <b>واجهة Scraper API لنتائج بدون عناء. يدعم الربط مع MCP و N8N.</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank" title="Unlock the Power of Social Media Data & AI">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
-      </a>
-    </td>
-    <td>
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank">TikHub.io</a> يوفر أكثر من 900 واجهة API مستقرة عبر أكثر من 16 منصة تشمل TikTok و X و YouTube و Instagram، مع أكثر من 40 مليون مجموعة بيانات. <br /> يقدم أيضاً <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">نماذج ذكاء اصطناعي بأسعار مخفضة</a> - Claude و GPT و GEMINI والمزيد بخصم يصل إلى 71%.
     </td>
   </tr>
   <tr>
@@ -178,12 +168,12 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: قلّل الحظر واختبارات CAPTCHA بنسبة 90%. 28 مليون عنوان IP سكني عالي الجودة لاستخراج بيانات الويب بكثافة. 195 دولة. استهداف حسب المدينة/ISP/الرمز البريدي (ZIP). جلسات بعنوان IP ثابت أو متغير. رصيد بيانات لا تنتهي صلاحيته يبدأ من $2/GB. الكود <strong>SCRAPEANDTAKE</strong>: <em>خصم 25%</em>.
+    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: اختبارات CAPTCHA أقل بنسبة 90% عند تشغيل Scrapling. 28 مليون جهاز منزلي حقيقي ضمن شبكة P2P، وعناوين IP نظيفة بنسبة 98.7%، و195 دولة. استهداف حسب المدينة/ISP/الرمز البريدي (ZIP)، وجلسات بعنوان IP ثابت أو متغير، ورصيد بيانات لا تنتهي صلاحيته. جرّب 350 MB مقابل $1.95. الكود <strong>SCRAPEANDTAKE</strong>: <em>خصم 25%</em>.
     </td>
   </tr>
   <tr>
@@ -194,6 +184,16 @@ result.items.to_json("quotes.json")
     </td>
     <td>
     <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: توقّف عن الدفع لكل GB. نقل بيانات بلا حد عبر بروكسيات سكنية، وأكثر من 100 مليون عنوان IP في أكثر من 190 دولة. ادفع حسب سرعة الاتصال (bandwidth). اطلب تجربة مجانية للبروكسيات السكنية بسرعة 50 Mbps.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://resolvr.com/?ref=scrapling" target="_blank" title="Captcha and Browser challenges, solved on real devices loading the page.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/resolvr.jpg">
+      </a>
+    </td>
+    <td>
+    <a href="https://resolvr.com/?ref=scrapling" target="_blank">Resolvr</a>: جمع بيانات الويب بكميات كبيرة يعني مواجهة اختبارات CAPTCHA كثيرة. يحل Resolvr اختبارات reCAPTCHA وتحديات Cloudflare على أجهزة حقيقية من خلال API واحدة. الوصول المجاني إلى النسخة التجريبية متاح الآن.
     </td>
   </tr>
   <tr>
@@ -222,6 +222,7 @@ result.items.to_json("quotes.json")
 <a href="https://proxyempire.io/?ref=scrapling&utm_source=github&utm_medium=paid_referral&utm_campaign=open_source_sponsorship&utm_content=scrapling" target="_blank" title="Collect The Data Your Project Needs with the Best Residential Proxies"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/ProxyEmpire.png"></a>
 <a href="https://www.webshare.io/?referral_code=48r2m2cd5uz1" target="_blank" title="The Most Reliable Proxy with Unparalleled Performance"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/webshare.png"></a>
 <a href="https://proxiware.com/?ref=scrapling" target="_blank" title="Collect Any Data. At Any Scale."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxiware.png"></a>
+<a href="https://singaporemobileproxy.com/?utm_source=scrapling&utm_medium=sponsor&utm_campaign=paid_test_q4" target="_blank" title="Dedicated 4G/5G mobile proxies on real Singapore SIMs"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SingaporeMobileProxy.png"></a>
 
 
 <!-- /sponsors -->

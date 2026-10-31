@@ -105,12 +105,12 @@ result.items.to_json("quotes.json")
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingoctober" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> は、ウェブスクレイピングと自動化向けの最も効率的なプロキシサービスです。市場最高品質の IP を提供します。コード SCRAPLING35 で 35% 割引になります。
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> は、ウェブスクレイピングと自動化向けの最も効率的なプロキシサービスです。市場最高品質の IP を提供します。コード SCRAPLING35 で 35% 割引になります。
     </td>
   </tr>
   <tr>
@@ -134,16 +134,6 @@ result.items.to_json("quotes.json")
         <b>Evomi</b>
       </a>：レジデンシャルプロキシが $0.49/GB から。フィンガープリントを全面的に偽装した Chromium のスクレイピングブラウザを提供します。レジデンシャル IP、CAPTCHA の自動解決、ボット対策の回避に対応します。</br>
       <b>Scraper API で手間なく結果を取得できます。MCP と N8N との連携にも対応します。</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank" title="Unlock the Power of Social Media Data & AI">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
-      </a>
-    </td>
-    <td>
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank">TikHub.io</a> は TikTok、X、YouTube、Instagram を含む 16 以上のプラットフォームで 900 以上の安定した API を提供し、4,000 万以上のデータセットを提供します。<br /> さらに <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">割引価格の AI モデル</a>も提供します。Claude、GPT、GEMINI などが最大 71% オフです。
     </td>
   </tr>
   <tr>
@@ -178,12 +168,12 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：ブロックと CAPTCHA を 90% 削減します。大規模なウェブスクレイピング向けに、2,800 万の高品質なレジデンシャル IP を提供します。195 か国に対応し、都市・ISP・郵便番号（ZIP）を指定できます。同じ IP を保つセッションと、IP を切り替えるセッションを使えます。有効期限のない通信量を $2/GB から提供します。コード <strong>SCRAPEANDTAKE</strong> で<em>25% オフ</em>になります。
+    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：Scrapling の実行時に CAPTCHA を 90% 削減。2,800 万台の実在する家庭用 P2P デバイスを提供し、IP の 98.7% がクリーンで、195 か国に対応。都市・ISP・郵便番号（ZIP）の指定、固定 IP・ローテーション IP のセッションに対応し、通信量に有効期限はありません。350 MB を $1.95 でお試しください。コード <strong>SCRAPEANDTAKE</strong> で<em>25% オフ</em>になります。
     </td>
   </tr>
   <tr>
@@ -194,6 +184,16 @@ result.items.to_json("quotes.json")
     </td>
     <td>
     <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>：GB 単位の課金は不要です。レジデンシャルプロキシの通信量は無制限です。1 億以上の IP、190 か国以上に対応します。料金は帯域幅に応じて決まります。50 Mbps のレジデンシャルプロキシの無料トライアルをお申し込みください。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://resolvr.com/?ref=scrapling" target="_blank" title="Captcha and Browser challenges, solved on real devices loading the page.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/resolvr.jpg">
+      </a>
+    </td>
+    <td>
+    <a href="https://resolvr.com/?ref=scrapling" target="_blank">Resolvr</a>：大規模なスクレイピングには、大量の CAPTCHA が伴います。Resolvr は単一の API を通じて、実機上で reCAPTCHA と Cloudflare のチャレンジを解決します。ベータ版を今すぐ無料で利用できます。
     </td>
   </tr>
   <tr>
@@ -222,6 +222,7 @@ result.items.to_json("quotes.json")
 <a href="https://proxyempire.io/?ref=scrapling&utm_source=github&utm_medium=paid_referral&utm_campaign=open_source_sponsorship&utm_content=scrapling" target="_blank" title="Collect The Data Your Project Needs with the Best Residential Proxies"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/ProxyEmpire.png"></a>
 <a href="https://www.webshare.io/?referral_code=48r2m2cd5uz1" target="_blank" title="The Most Reliable Proxy with Unparalleled Performance"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/webshare.png"></a>
 <a href="https://proxiware.com/?ref=scrapling" target="_blank" title="Collect Any Data. At Any Scale."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxiware.png"></a>
+<a href="https://singaporemobileproxy.com/?utm_source=scrapling&utm_medium=sponsor&utm_campaign=paid_test_q4" target="_blank" title="Dedicated 4G/5G mobile proxies on real Singapore SIMs"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SingaporeMobileProxy.png"></a>
 
 
 <!-- /sponsors -->

@@ -105,12 +105,12 @@ Imprime `10` y guarda las citas y sus autores en `quotes.json`.
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingoctober" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> - el proveedor de proxies más eficiente para Web Scraping y automatización, con la mayor calidad de IP del mercado. Usa el código SCRAPLING35 para obtener un 35% de descuento.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - el proveedor de proxies más eficiente para Web Scraping y automatización, con la mayor calidad de IP del mercado. Usa el código SCRAPLING35 para obtener un 35% de descuento.
     </td>
   </tr>
   <tr>
@@ -134,16 +134,6 @@ Imprime `10` y guarda las citas y sus autores en `quotes.json`.
         <b>Evomi</b>
       </a>: proxies residenciales desde 0,49 $/GB. Navegador de scraping con Chromium con la huella completamente modificada, IPs residenciales, resolución automática de CAPTCHA y evasión anti-bot. </br>
       <b>API Scraper para resultados sin complicaciones. Integraciones MCP y N8N disponibles.</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank" title="Unlock the Power of Social Media Data & AI">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
-      </a>
-    </td>
-    <td>
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank">TikHub.io</a> ofrece más de 900 APIs estables en más de 16 plataformas, incluyendo TikTok, X, YouTube e Instagram, con más de 40M de conjuntos de datos. <br /> También ofrece <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">modelos de IA con descuento</a> - Claude, GPT, GEMINI y más con hasta un 71% de descuento.
     </td>
   </tr>
   <tr>
@@ -178,12 +168,12 @@ Imprime `10` y guarda las citas y sus autores en `quotes.json`.
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Reduce los bloqueos y los CAPTCHAs en un 90%. 28 millones de IPs residenciales premium para scraping web intensivo. 195 países. Segmentación por ciudad/ISP/código postal. Sesiones persistentes o rotativas. Tráfico sin caducidad desde $2/GB. Código <strong>SCRAPEANDTAKE</strong>: <em>25% de descuento</em>.
+    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 90% menos CAPTCHAs en tus ejecuciones de Scrapling. 28 millones de dispositivos residenciales P2P reales, 98,7% de IPs limpias, 195 países. Segmentación por ciudad/ISP/código postal, sesiones con IP fija o rotativa, tráfico que nunca caduca. Prueba 350 MB por $1.95. Código <strong>SCRAPEANDTAKE</strong>: <em>25% de descuento</em>.
     </td>
   </tr>
   <tr>
@@ -194,6 +184,16 @@ Imprime `10` y guarda las citas y sus autores en `quotes.json`.
     </td>
     <td>
     <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: Deja de pagar por GB. Tráfico residencial ilimitado, más de 100 millones de IPs, más de 190 países. Paga según el ancho de banda. Solicita una prueba gratuita de proxies residenciales de 50 Mbps.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://resolvr.com/?ref=scrapling" target="_blank" title="Captcha and Browser challenges, solved on real devices loading the page.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/resolvr.jpg">
+      </a>
+    </td>
+    <td>
+    <a href="https://resolvr.com/?ref=scrapling" target="_blank">Resolvr</a>: El scraping a gran escala implica CAPTCHAs a gran escala. Resolvr resuelve desafíos de reCAPTCHA y Cloudflare en dispositivos reales mediante una única API. El acceso gratuito a la versión beta ya está disponible.
     </td>
   </tr>
   <tr>
@@ -222,6 +222,7 @@ Imprime `10` y guarda las citas y sus autores en `quotes.json`.
 <a href="https://proxyempire.io/?ref=scrapling&utm_source=github&utm_medium=paid_referral&utm_campaign=open_source_sponsorship&utm_content=scrapling" target="_blank" title="Collect The Data Your Project Needs with the Best Residential Proxies"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/ProxyEmpire.png"></a>
 <a href="https://www.webshare.io/?referral_code=48r2m2cd5uz1" target="_blank" title="The Most Reliable Proxy with Unparalleled Performance"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/webshare.png"></a>
 <a href="https://proxiware.com/?ref=scrapling" target="_blank" title="Collect Any Data. At Any Scale."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxiware.png"></a>
+<a href="https://singaporemobileproxy.com/?utm_source=scrapling&utm_medium=sponsor&utm_campaign=paid_test_q4" target="_blank" title="Dedicated 4G/5G mobile proxies on real Singapore SIMs"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SingaporeMobileProxy.png"></a>
 
 
 <!-- /sponsors -->

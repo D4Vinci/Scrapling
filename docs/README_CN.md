@@ -105,12 +105,12 @@ result.items.to_json("quotes.json")
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingoctober" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> - 最高效的网页抓取与自动化代理提供商，拥有市场上质量最高的 IP。使用优惠码 SCRAPLING35 可享 35% 折扣。
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - 最高效的网页抓取与自动化代理提供商，拥有市场上质量最高的 IP。使用优惠码 SCRAPLING35 可享 35% 折扣。
     </td>
   </tr>
   <tr>
@@ -134,16 +134,6 @@ result.items.to_json("quotes.json")
         <b>Evomi</b>
       </a>：住宅代理低至 0.49 美元/GB。提供指纹全面伪装的 Chromium 抓取浏览器，配备住宅 IP，并支持自动处理验证码和绕过反机器人防护。</br>
       <b>Scraper API 轻松获取结果。支持 MCP 和 N8N 集成。</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank" title="Unlock the Power of Social Media Data & AI">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
-      </a>
-    </td>
-    <td>
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank">TikHub.io</a> 提供覆盖 16+ 平台（包括 TikTok、X、YouTube 和 Instagram）的 900+ 稳定 API，拥有 4000 万+ 数据集。<br /> 还提供<a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">优惠 AI 模型</a> - Claude、GPT、GEMINI 等，最高优惠 71%。
     </td>
   </tr>
   <tr>
@@ -178,12 +168,12 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：将封禁和 CAPTCHA 验证码减少 90%。提供 2800 万个优质住宅 IP，适用于大规模网页抓取。覆盖 195 个国家。支持城市、ISP、邮政编码（ZIP）定向。支持使用固定 IP 或轮换 IP 的会话。流量永不过期，低至 $2/GB。使用优惠码 <strong>SCRAPEANDTAKE</strong> 可享 <em>25% 折扣</em>。
+    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：Scrapling 运行中的 CAPTCHA 验证码减少 90%。2800 万台真实 P2P 住宅设备，干净 IP 占比 98.7%，覆盖 195 个国家。支持城市/ISP/邮政编码（ZIP）定向、固定/轮换 IP 会话，流量永不过期。花 $1.95 试用 350 MB。使用优惠码 <strong>SCRAPEANDTAKE</strong> 可享 <em>25% 折扣</em>。
     </td>
   </tr>
   <tr>
@@ -194,6 +184,16 @@ result.items.to_json("quotes.json")
     </td>
     <td>
     <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>：无需再按 GB 付费。住宅代理流量不限量，1 亿+ IP，覆盖 190+ 个国家。按带宽付费。申请免费试用 50 Mbps 住宅代理。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://resolvr.com/?ref=scrapling" target="_blank" title="Captcha and Browser challenges, solved on real devices loading the page.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/resolvr.jpg">
+      </a>
+    </td>
+    <td>
+    <a href="https://resolvr.com/?ref=scrapling" target="_blank">Resolvr</a>：大规模抓取意味着大量 CAPTCHA。Resolvr 通过一个 API，在真实设备上解决 reCAPTCHA 和 Cloudflare 挑战。现在即可免费使用测试版。
     </td>
   </tr>
   <tr>
@@ -222,6 +222,7 @@ result.items.to_json("quotes.json")
 <a href="https://proxyempire.io/?ref=scrapling&utm_source=github&utm_medium=paid_referral&utm_campaign=open_source_sponsorship&utm_content=scrapling" target="_blank" title="Collect The Data Your Project Needs with the Best Residential Proxies"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/ProxyEmpire.png"></a>
 <a href="https://www.webshare.io/?referral_code=48r2m2cd5uz1" target="_blank" title="The Most Reliable Proxy with Unparalleled Performance"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/webshare.png"></a>
 <a href="https://proxiware.com/?ref=scrapling" target="_blank" title="Collect Any Data. At Any Scale."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxiware.png"></a>
+<a href="https://singaporemobileproxy.com/?utm_source=scrapling&utm_medium=sponsor&utm_campaign=paid_test_q4" target="_blank" title="Dedicated 4G/5G mobile proxies on real Singapore SIMs"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SingaporeMobileProxy.png"></a>
 
 
 <!-- /sponsors -->
