@@ -63,6 +63,21 @@ class TestCurlParser:
         assert request.cookies["user"] == "john"
         assert request.cookies["extra"] == "cookie"
 
+    def test_curl_with_cookie_values_containing_spaces_and_quotes(self, parser):
+        """Test that DevTools cookie values with spaces or quotes don't drop the other cookies"""
+        curl_cmd = """curl https://example.com \
+            -H 'Cookie: sid=abc123; prefs={"theme":"dark"}' \
+            -b 'last_search=red shoes; lang=en'"""
+
+        request = parser.parse(curl_cmd)
+
+        assert request.cookies == {
+            "sid": "abc123",
+            "prefs": '{"theme":"dark"}',
+            "last_search": "red shoes",
+            "lang": "en",
+        }
+
     def test_curl_with_proxy(self, parser):
         """Test parsing curl with proxy"""
         curl_cmd = "curl https://example.com -x http://proxy:8080 -U user:pass"
