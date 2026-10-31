@@ -30,7 +30,7 @@ from scrapling.fetchers import StealthyFetcher
     `fetch` 的异步版本是 `async_fetch`。
 
 
-目前提供三种主要运行方式，可以按需要组合使用。
+此 Fetcher 提供两种本地浏览器运行方式。
 
 分别是：
 
@@ -51,13 +51,36 @@ StealthyFetcher.fetch('https://example.com', real_chrome=True)
 playwright install chrome
 ```
 
-### 3. CDP 连接 {#3-cdp-connection}
-```python
-StealthyFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
-```
-除了在本机启动 Chromium 或 Google Chrome，还可以通过 [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) 连接远程浏览器。
+## 远程会话 {#3-cdp-connection}
 
-URL 可以是浏览器服务商提供的 WebSocket 地址（`ws://`/`wss://`），也可以是浏览器的 HTTP 地址，例如 `http://localhost:9222`。
+使用 `RemoteSession` 或 `AsyncRemoteSession`，通过 [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) 连接已运行的浏览器。将 WebSocket 地址（`ws://`/`wss://`）或 HTTP 地址（如 `http://localhost:9222`）传给 `cdp_url`。这些类仅用于会话。`StealthySession` 和 `StealthyFetcher` 不接受 `cdp_url`。
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+    page = session.fetch("https://example.com")
+```
+
+`new_context=True` 是默认值。它会创建独立的上下文，应用上下文选项，并在会话结束时关闭该上下文。
+
+`new_context=False` 使用现有的默认上下文及其登录状态。会话结束后，该上下文保持打开。如果没有可用的上下文，启动会话时会报错。
+
+复用上下文时，会忽略 `useragent`、`locale`、`timezone_id`、`proxy`、`proxy_rotator` 和 `additional_args`，也会忽略每次请求的 `proxy`。继续使用上下文的现有设置。
+
+两种模式下，Scrapling 都会创建自己的标签页，并仅关闭这些标签页。原有标签页保持打开。`extra_headers`、`timeout`、`page_setup` 和 `page_action` 等页面选项仍然有效。
+
+仍可添加 `cookies` 和 `init_script`，但在 `new_context=False` 时，它们会影响共享上下文。远程会话类不接受 `real_chrome`；浏览器由 `cdp_url` 指定。浏览器已在运行，因此其他浏览器启动选项不生效。
+
+通过 `async with` 和 `await` 使用 `AsyncRemoteSession`：
+
+```python
+from scrapling.fetchers import AsyncRemoteSession
+
+async def scrape_remote():
+    async with AsyncRemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        return await session.fetch("https://example.com")
+```
 
 
 ## 它提供哪些功能？ {#what-does-it-do}
@@ -98,7 +121,6 @@ StealthyFetcher 提供以下反机器人应对功能：
 | real_chrome | 启用后，Fetcher 会启动并使用设备上已安装的 Chrome。 | ✔️ |
 | locale | 区域设置，例如 `en-GB`、`de-DE`。影响 `navigator.language`、请求头 `Accept-Language`，以及数字和日期格式。默认使用系统区域设置。 | ✔️ |
 | timezone_id | 修改浏览器时区，默认使用系统时区。 | ✔️ |
-| cdp_url | 连接此 CDP URL 来控制已有浏览器，而不是启动新实例。 | ✔️ |
 | user_data_dir | 用户数据目录的路径，用于保存 Cookie、本地存储等浏览器会话数据。默认创建临时目录。**仅支持会话。** | ✔️ |
 | extra_flags | 启动浏览器时传入的额外参数列表。 | ✔️ |
 | solve_cloudflare | 返回响应前，处理所有类型的 Cloudflare Turnstile 和 Interstitial 挑战。默认为 `False`。 | ✔️ |

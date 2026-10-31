@@ -30,7 +30,7 @@ from scrapling.fetchers import StealthyFetcher
     `fetch`의 비동기 버전은 `async_fetch`입니다.
 
 
-현재 이 Fetcher에는 세 가지 주요 실행 방법이 있으며 필요에 따라 함께 사용할 수 있습니다.
+이 Fetcher는 로컬 브라우저 실행 옵션 두 가지를 제공합니다.
 
 다음 방법을 제공합니다.
 
@@ -51,13 +51,36 @@ Google Chrome을 아직 설치하지 않았다면 직접 설치하는 대신 다
 playwright install chrome
 ```
 
-### 3. CDP 연결 {#3-cdp-connection}
-```python
-StealthyFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
-```
-로컬에서 Chromium이나 Google Chrome을 실행하는 대신 [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/)로 원격 브라우저에 연결할 수 있습니다.
+## 원격 세션 {#3-cdp-connection}
 
-URL은 브라우저 서비스가 제공하는 WebSocket 주소(`ws://`/`wss://`)나 브라우저의 HTTP 주소(예: `http://localhost:9222`)일 수 있습니다.
+`RemoteSession` 또는 `AsyncRemoteSession`으로 [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/)을 통해 이미 실행 중인 브라우저에 연결합니다. `cdp_url`에 WebSocket 주소(`ws://`/`wss://`) 또는 `http://localhost:9222` 같은 HTTP 주소를 전달하세요. 이 클래스들은 세션 전용입니다. `StealthySession`과 `StealthyFetcher`는 `cdp_url`을 받지 않습니다.
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+    page = session.fetch("https://example.com")
+```
+
+기본값은 `new_context=True`입니다. 별도 컨텍스트를 만들고 컨텍스트 옵션을 적용합니다. 세션이 끝나면 이 컨텍스트를 닫습니다.
+
+`new_context=False`는 기존 기본 컨텍스트와 로그인 상태를 사용합니다. 세션이 끝나도 컨텍스트는 열려 있습니다. 사용할 컨텍스트가 없으면 세션 시작 시 오류가 발생합니다.
+
+컨텍스트를 재사용하면 `useragent`, `locale`, `timezone_id`, `proxy`, `proxy_rotator`, `additional_args`를 무시합니다. 요청별 `proxy`도 무시합니다. 기존 컨텍스트 설정을 그대로 사용합니다.
+
+두 모드 모두 Scrapling이 자체 탭을 만들고 그 탭만 닫습니다. 기존 탭은 열려 있습니다. `extra_headers`, `timeout`, `page_setup`, `page_action` 같은 페이지 옵션은 계속 작동합니다.
+
+`cookies`와 `init_script`는 추가할 수 있지만, `new_context=False`에서는 공유 컨텍스트에 영향을 줍니다. 원격 세션 클래스는 `real_chrome`을 받지 않습니다. 브라우저는 `cdp_url`로 지정합니다. 브라우저가 이미 실행 중이므로 다른 브라우저 실행 옵션은 적용되지 않습니다.
+
+`AsyncRemoteSession`은 `async with` 및 `await`와 함께 사용합니다.
+
+```python
+from scrapling.fetchers import AsyncRemoteSession
+
+async def scrape_remote():
+    async with AsyncRemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        return await session.fetch("https://example.com")
+```
 
 
 ## 어떤 기능이 있나요? {#what-does-it-do}
@@ -98,7 +121,6 @@ StealthyFetcher는 다음과 같은 봇 차단 우회 기능을 제공합니다.
 | real_chrome | 기기에 Chrome이 설치되어 있다면 이 옵션을 켜서 해당 브라우저를 실행할 수 있습니다. | ✔️ |
 | locale | `en-GB`, `de-DE` 같은 로캘입니다. `navigator.language`, 요청의 `Accept-Language` 헤더, 숫자와 날짜 표시 형식에 영향을 줍니다. 기본값은 시스템 로캘입니다. | ✔️ |
 | timezone_id | 브라우저의 시간대를 바꿉니다. 기본값은 시스템 시간대입니다. | ✔️ |
-| cdp_url | 새 브라우저를 실행하는 대신 이 CDP URL에 연결해 브라우저를 제어합니다. | ✔️ |
 | user_data_dir | 쿠키와 로컬 스토리지 같은 브라우저 세션 데이터를 저장하는 사용자 데이터 디렉터리입니다. 기본적으로 임시 디렉터리를 만듭니다. **세션에서만 사용할 수 있습니다.** | ✔️ |
 | extra_flags | 브라우저 시작 시 전달할 추가 플래그 리스트입니다. | ✔️ |
 | solve_cloudflare | 켜면 모든 종류의 Cloudflare Turnstile/Interstitial 검사를 통과한 뒤 응답을 반환합니다. 기본값은 `False`입니다. | ✔️ |

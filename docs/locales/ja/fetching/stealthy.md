@@ -30,7 +30,7 @@ from scrapling.fetchers import StealthyFetcher
     `fetch` メソッドの非同期版は `async_fetch` です。
 
 
-この Fetcher には、現在、主に 3 つの実行方法があります。必要に応じて組み合わせられます。
+この Fetcher では、ローカルブラウザの起動方法を 2 つから選べます。
 
 次の方法があります。
 
@@ -51,13 +51,36 @@ Google Chrome が未インストールの場合は、手動でインストール
 playwright install chrome
 ```
 
-### 3. CDP 接続 {#3-cdp-connection}
-```python
-StealthyFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
-```
-ローカルで Chromium や Google Chrome を起動する代わりに、[Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) を通じてリモートのブラウザに接続できます。
+## リモートセッション {#3-cdp-connection}
 
-URL には、ブラウザサービスから提供される WebSocket エンドポイント（`ws://`/`wss://`）、またはブラウザの HTTP エンドポイント（例：`http://localhost:9222`）を使えます。
+`RemoteSession` または `AsyncRemoteSession` を使うと、[Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) を通じて起動済みのブラウザに接続できます。`cdp_url` には WebSocket エンドポイント（`ws://`/`wss://`）または `http://localhost:9222` などの HTTP エンドポイントを渡します。これらはセッション専用クラスです。`StealthySession` と `StealthyFetcher` は `cdp_url` を受け付けません。
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+    page = session.fetch("https://example.com")
+```
+
+既定値は `new_context=True` です。独立したコンテキストを作成し、コンテキストの設定を適用します。セッション終了時にこのコンテキストを閉じます。
+
+`new_context=False` は既存の既定コンテキストとそのログイン状態を使います。セッション終了後もコンテキストは開いたままです。利用できるコンテキストがない場合、セッションの開始時にエラーになります。
+
+コンテキストを再利用する場合、`useragent`、`locale`、`timezone_id`、`proxy`、`proxy_rotator`、`additional_args` は無視されます。リクエストごとの `proxy` も無視されます。既存のコンテキスト設定をそのまま使います。
+
+どちらのモードでも Scrapling は専用のタブを作成し、そのタブだけを閉じます。既存のタブは開いたままです。`extra_headers`、`timeout`、`page_setup`、`page_action` などのページ設定は引き続き使えます。
+
+`cookies` と `init_script` は追加できますが、`new_context=False` では共有コンテキストに影響します。リモートセッションのクラスは `real_chrome` を受け付けません。ブラウザは `cdp_url` で指定します。ブラウザは起動済みのため、その他のブラウザ起動設定は適用されません。
+
+`AsyncRemoteSession` は `async with` と `await` で使います。
+
+```python
+from scrapling.fetchers import AsyncRemoteSession
+
+async def scrape_remote():
+    async with AsyncRemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        return await session.fetch("https://example.com")
+```
 
 
 ## どのような機能がありますか？ {#what-does-it-do}
@@ -98,7 +121,6 @@ Scrapling は、この Fetcher とセッションクラスに多くのオプシ�
 | real_chrome | 端末に Chrome がインストールされている場合に有効にすると、Fetcher がそのブラウザを起動して使います。 | ✔️ |
 | locale | `en-GB`、`de-DE` などのロケールを指定します。`navigator.language`、リクエストの `Accept-Language` ヘッダー、数値と日付の表示形式に影響します。既定ではシステムのロケールを使います。 | ✔️ |
 | timezone_id | ブラウザのタイムゾーンを変更します。既定ではシステムのタイムゾーンを使います。 | ✔️ |
-| cdp_url | 新しいブラウザを起動する代わりに、この CDP URL に接続してブラウザを操作します。 | ✔️ |
 | user_data_dir | Cookie やローカルストレージなどのブラウザセッションデータを保存するユーザーデータディレクトリのパスです。既定では一時ディレクトリを作成します。**セッションでのみ使えます。** | ✔️ |
 | extra_flags | 起動時にブラウザへ渡す追加フラグのリストです。 | ✔️ |
 | solve_cloudflare | 有効にすると、Fetcher は Cloudflare のあらゆる Turnstile/Interstitial チャレンジを解決してからレスポンスを返します。既定値は `False` です。 | ✔️ |

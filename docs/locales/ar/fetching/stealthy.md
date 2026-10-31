@@ -30,7 +30,7 @@ from scrapling.fetchers import StealthyFetcher
     النسخة غير المتزامنة من دالة `fetch` هي `async_fetch`.
 
 
-توفر أداة الجلب حاليًا ثلاثة خيارات أساسية للتشغيل، ويمكن الجمع بين الخيارات حسب الحاجة.
+توفر أداة الجلب خيارين لتشغيل متصفح محلي.
 
 وهي:
 
@@ -51,13 +51,36 @@ StealthyFetcher.fetch('https://example.com', real_chrome=True)
 playwright install chrome
 ```
 
-### 3. الاتصال عبر CDP {#3-cdp-connection}
-```python
-StealthyFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
-```
-بدلًا من تشغيل Chromium أو Chrome محليًا، يمكنك الاتصال بمتصفح بعيد عبر [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/).
+## الجلسات البعيدة {#3-cdp-connection}
 
-يمكن أن يكون الرابط عنوان WebSocket يبدأ بـ`ws://` أو `wss://`، وهو ما يقدمه مزودو المتصفحات، أو عنوان HTTP للمتصفح مثل `http://localhost:9222`.
+استخدم `RemoteSession` أو `AsyncRemoteSession` للاتصال بمتصفح يعمل بالفعل عبر [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/). مرّر عنوان WebSocket يبدأ بـ`ws://` أو `wss://`، أو عنوان HTTP مثل `http://localhost:9222`، في `cdp_url`. هاتان الفئتان للجلسات فقط. لا يقبل `StealthySession` ولا `StealthyFetcher` الخيار `cdp_url`.
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+    page = session.fetch("https://example.com")
+```
+
+القيمة الافتراضية هي `new_context=True`. تنشئ سياقًا منفصلًا، وتطبّق خيارات السياق عليه، وتغلقه عند انتهاء الجلسة.
+
+يستخدم `new_context=False` السياق الافتراضي الموجود وحالة تسجيل الدخول فيه. يظل السياق مفتوحًا بعد انتهاء الجلسة. إذا لم يتوفر سياق، يحدث خطأ عند بدء الجلسة.
+
+عند إعادة استخدام سياق، يتم تجاهل `useragent` و`locale` و`timezone_id` و`proxy` و`proxy_rotator` و`additional_args`. يتم تجاهل `proxy` على مستوى الطلب أيضًا. تظل إعدادات السياق الحالية فعالة.
+
+ينشئ Scrapling تبويباته الخاصة في الحالتين، ويغلق هذه التبويبات فقط. تظل التبويبات الموجودة مفتوحة. تظل خيارات الصفحة مثل `extra_headers` و`timeout` و`page_setup` و`page_action` فعالة.
+
+يمكن إضافة `cookies` و`init_script`، لكنهما يؤثران في السياق المشترك عند استخدام `new_context=False`. لا تقبل فئات الجلسات البعيدة `real_chrome`؛ يحدد `cdp_url` المتصفح المطلوب. لا تُطبّق خيارات تشغيل المتصفح الأخرى لأنه يعمل بالفعل.
+
+استخدم `AsyncRemoteSession` مع `async with` و`await`:
+
+```python
+from scrapling.fetchers import AsyncRemoteSession
+
+async def scrape_remote():
+    async with AsyncRemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        return await session.fetch("https://example.com")
+```
 
 
 ## ما الذي توفره الأداة؟ {#what-does-it-do}
@@ -98,7 +121,6 @@ StealthyFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
 | real_chrome | فعّله إذا كان Chrome مثبّتًا على جهازك، لتشغّل أداة الجلب نسخة منه وتستخدمها. | ✔️ |
 | locale | لغة المستخدم وإعداداته المحلية، مثل `en-GB` أو `de-DE`. يؤثر في `navigator.language` وترويسة `Accept-Language` وقواعد تنسيق الأرقام والتواريخ. يستخدم إعداد النظام افتراضيًا. | ✔️ |
 | timezone_id | يغيّر المنطقة الزمنية للمتصفح. الافتراضي هو منطقة النظام الزمنية. | ✔️ |
-| cdp_url | يتصل بهذا الرابط للتحكم بمتصفح عبر CDP بدلًا من تشغيل متصفح جديد. | ✔️ |
 | user_data_dir | مسار مجلد بيانات المستخدم، الذي يحفظ ملفات تعريف الارتباط والتخزين المحلي. ينشئ مجلدًا مؤقتًا افتراضيًا. **يعمل مع الجلسات فقط.** | ✔️ |
 | extra_flags | قائمة خيارات إضافية تُمرّر إلى المتصفح عند تشغيله. | ✔️ |
 | solve_cloudflare | يحل كل أنواع اختبارات Cloudflare Turnstile وInterstitial قبل إعادة الرد. الافتراضي `False`. | ✔️ |
