@@ -1,8 +1,10 @@
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from patchright._impl._errors import Error as PatchrightError
 
+from scrapling.engines._browsers import _stealth
 from scrapling.engines.toolbelt.convertor import ResponseFactory
 from scrapling.engines._browsers._stealth import StealthySession, AsyncStealthySession, __CF_MAX_SOLVE_ATTEMPTS__
 from scrapling.fetchers import RemoteSession
@@ -16,15 +18,47 @@ CLEAN_PAGE = "<html><head><title>La Redoute</title></head><body>content</body></
 class TestChallengeCleared:
     def test_localized_challenge_is_not_cleared(self):
         """The check must catch the challenge markers no matter what language the page is displayed with"""
-        assert StealthySession._challenge_cleared(FRENCH_CHALLENGE, "interactive") is False
+        assert StealthySession._challenge_cleared(FRENCH_CHALLENGE) is False
 
     def test_clean_page_is_cleared(self):
-        assert StealthySession._challenge_cleared(CLEAN_PAGE, "interactive") is True
+        assert StealthySession._challenge_cleared(CLEAN_PAGE) is True
 
-    def test_embedded_is_always_cleared(self):
-        """Embedded widgets stay in the page after solving, so they are always reported as cleared"""
+    def test_embedded_widget_is_not_assumed_cleared(self):
+        """A permanent widget does not prove that its challenge was solved."""
         content = '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>'
-        assert StealthySession._challenge_cleared(content, "embedded") is True
+        assert StealthySession._challenge_cleared(content) is False
+
+    def test_embedded_widget_that_disappears_is_cleared(self):
+        assert StealthySession._challenge_cleared(CLEAN_PAGE) is True
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+def test_embedded_solver_reports_unverifiable_status(monkeypatch, asynchronous):
+    content = '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>'
+    iframe, page = MagicMock(), MagicMock()
+    page.frame.return_value = iframe
+    logger = MagicMock()
+    monkeypatch.setattr(_stealth, "log", logger)
+
+    if asynchronous:
+        get_content = AsyncMock(return_value=content)
+        iframe.locator.return_value.click = AsyncMock()
+        monkeypatch.setattr(ResponseFactory, "_get_async_page_content", staticmethod(get_content))
+        monkeypatch.setattr(AsyncStealthySession, "_wait_for_networkidle", AsyncMock())
+        monkeypatch.setattr(AsyncStealthySession, "_wait_for_page_stability", AsyncMock())
+        session = object.__new__(AsyncStealthySession)
+        asyncio.run(session._cloudflare_solver(page))
+    else:
+        monkeypatch.setattr(ResponseFactory, "_get_page_content", MagicMock(return_value=content))
+        monkeypatch.setattr(StealthySession, "_wait_for_networkidle", lambda *args, **kwargs: None)
+        monkeypatch.setattr(StealthySession, "_wait_for_page_stability", lambda *args, **kwargs: None)
+        session = object.__new__(StealthySession)
+        session._cloudflare_solver(page)
+
+    info_messages = [call.args for call in logger.info.call_args_list]
+    assert ("Embedded Turnstile solve status cannot be verified; returning the page as is.",) in info_messages
+    assert ("Cloudflare captcha is solved",) not in info_messages
+    assert iframe.locator.return_value.click.call_count == 1
 
 
 def _make_sync_page():

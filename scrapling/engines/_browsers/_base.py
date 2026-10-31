@@ -636,15 +636,13 @@ class StealthySessionMixin(BaseSessionMixin):
         return None
 
     @classmethod
-    def _challenge_cleared(cls, page_content: str, challenge_type: str) -> bool:
+    def _challenge_cleared(cls, page_content: str) -> bool:
         """
         Check whether the Cloudflare challenge is no longer present in the page content.
 
         Args:
             page_content (str): The content of the page to analyze.
-            challenge_type (str): The challenge type returned by `_detect_cloudflare`.
-
         Returns:
             bool: True if the challenge is gone from the page, False otherwise.
         """
-        return challenge_type == "embedded" or cls._detect_cloudflare(page_content) is None
+        return cls._detect_cloudflare(page_content) is None
