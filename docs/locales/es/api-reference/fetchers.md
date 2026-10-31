@@ -12,7 +12,8 @@ Puedes importarlas directamente:
 ```python
 from scrapling.fetchers import (
     Fetcher, AsyncFetcher, StealthyFetcher,
-    FetcherSession, AsyncStealthySession, StealthySession
+    FetcherSession, AsyncStealthySession, StealthySession,
+    RemoteSession, AsyncRemoteSession
 )
 ```
 
@@ -44,5 +45,15 @@ from scrapling.fetchers import (
     :docstring:
 
 ## ::: scrapling.fetchers.AsyncStealthySession
+    handler: python
+    :docstring:
+
+### Sesiones remotas {#remote-sessions}
+
+## ::: scrapling.fetchers.RemoteSession
+    handler: python
+    :docstring:
+
+## ::: scrapling.fetchers.AsyncRemoteSession
     handler: python
     :docstring:

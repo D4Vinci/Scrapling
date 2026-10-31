@@ -4,6 +4,8 @@
 
 When scraping at scale, you'll often need to rotate through multiple proxies to avoid rate limits and blocks. Scrapling's `ProxyRotator` makes this straightforward. It works with all session types and integrates with the spider's blocked request retry system.
 
+If you want to set up a proxy provider and don't know where to start, feel free to pick a random provider from our sponsors in the [README](https://github.com/D4Vinci/Scrapling/blob/main/README.md#platinum-sponsors).
+
 ## ProxyRotator
 
 The `ProxyRotator` class manages a list of proxies and rotates through them automatically. Pass it to any session type via the `proxy_rotator` parameter:

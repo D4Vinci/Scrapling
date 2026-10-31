@@ -38,7 +38,7 @@ from ._snapshot_search import _search_snapshot
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.engines.toolbelt.convertor import ResponseFactory
-from scrapling.fetchers import FetcherSession, AsyncStealthySession
+from scrapling.fetchers import FetcherSession, AsyncRemoteSession, AsyncStealthySession
 from scrapling.engines._browsers._types import StealthFetchParams
 from scrapling.core._types import (
     Optional,
@@ -93,8 +93,8 @@ def _session_settings(session: Any) -> Dict[str, Any]:
             name: value for name, value in fields.items() if isinstance(value, (str, int, float, bool)) or value is None
         }
     config = session._config
-    if config.cdp_url:
-        return {}
+    if getattr(config, "cdp_url", None):
+        return {"new_context": config.new_context}
     return {
         f: value
         for f in config.__struct_fields__
@@ -288,9 +288,15 @@ class ScraplingMCPServer:
         cdp_url: Annotated[
             Optional[str],
             Field(
-                description="Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply."
+                description="Connect to an existing Chromium browser over CDP; browser launch settings do not apply."
             ),
         ] = None,
+        new_context: Annotated[
+            bool,
+            Field(
+                description="With cdp_url, create and close a separate context. False reuses and preserves the default context, ignoring useragent, locale, timezone_id, proxy and additional_args."
+            ),
+        ] = True,
         executable_path: Annotated[
             Optional[str],
             Field(description="Absolute Chromium-compatible executable path; overrides the server default."),
@@ -305,24 +311,30 @@ class ScraplingMCPServer:
             Optional[Dict], Field(description="Browser context options that override Scrapling settings.")
         ] = None,
     ) -> SessionCreatedModel:
-        """Open a reusable stealthy browser session. Pass per-request options to `browser_fetch`."""
+        """Open a reusable local or remote browser session. Pass per-request options to `browser_fetch`."""
         session_id = self._new_session_id(session_id)
-        session = AsyncStealthySession(
+        options: Dict[str, Any] = dict(
             proxy=proxy,
             locale=locale,
             cookies=cookies,
-            cdp_url=cdp_url,
-            headless=headless,
             block_ads=True,
             record_requests=True,
             useragent=useragent,
             timezone_id=timezone_id,
-            real_chrome=real_chrome,
-            executable_path=self._resolve_executable_path(executable_path),
-            hide_canvas=hide_canvas,
-            block_webrtc=block_webrtc,
-            allow_webgl=allow_webgl,
             additional_args=additional_args,
+        )
+        session = (
+            AsyncRemoteSession(cdp_url, new_context=new_context, **options)
+            if cdp_url is not None
+            else AsyncStealthySession(
+                headless=headless,
+                real_chrome=real_chrome,
+                executable_path=self._resolve_executable_path(executable_path),
+                hide_canvas=hide_canvas,
+                block_webrtc=block_webrtc,
+                allow_webgl=allow_webgl,
+                **options,
+            )
         )
         await session.start()
         return self._register_session(session_id, session, "stealthy")
@@ -751,12 +763,6 @@ class ScraplingMCPServer:
             Field(description="User-Agent override; otherwise generated in headless mode, native in headful mode."),
         ] = None,
         hide_canvas: Annotated[bool, Field(description="Add noise to canvas operations.")] = False,
-        cdp_url: Annotated[
-            Optional[str],
-            Field(
-                description="Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply."
-            ),
-        ] = None,
         executable_path: Annotated[
             Optional[str],
             Field(description="Absolute Chromium-compatible executable path; overrides the server default."),
@@ -797,7 +803,6 @@ class ScraplingMCPServer:
             wait=wait,
             proxy=proxy,
             locale=locale,
-            cdp_url=cdp_url,
             timeout=timeout,
             cookies=cookies,
             headless=headless,

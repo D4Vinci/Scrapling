@@ -118,12 +118,12 @@ This prints `10` and saves the quotes and authors to `quotes.json`.
 <table>
   <tr>
     <td width="200">
-      <a href="https://go.nodemaven.com/scraplingseptember" target="_blank" title="Proxies with the Highest IP Scores">
+      <a href="https://go.nodemaven.com/scraplingoctober" target="_blank" title="Proxies with the Highest IP Scores">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/NodeMaven.jpg" width="240" height="100">
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingseptember" target="_blank">NodeMaven</a> - The most efficient proxy provider for Web Scraping and Automation with the Highest Quality IP on the market. Use code SCRAPLING35 for 35% discount.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - The most efficient proxy provider for Web Scraping and Automation with the Highest Quality IP on the market. Use code SCRAPLING35 for 35% discount.
     </td>
   </tr>
   <tr>
@@ -147,16 +147,6 @@ This prints `10` and saves the quotes and authors to `quotes.json`.
         <b>Evomi</b>
       </a>: residential proxies from $0.49/GB. Scraping browser with fully spoofed Chromium, residential IPs, auto CAPTCHA solving, and anti-bot bypass. </br>
       <b>Scraper API for hassle-free results. MCP and N8N integrations are available.</b>
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank" title="Unlock the Power of Social Media Data & AI">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/TikHub.jpg">
-      </a>
-    </td>
-    <td>
-      <a href="https://tikhub.io/?utm_source=github.com/D4Vinci/Scrapling&utm_medium=marketing_social&utm_campaign=retargeting&utm_content=carousel_ad" target="_blank">TikHub.io</a> provides 900+ stable APIs across 16+ platforms including TikTok, X, YouTube & Instagram, with 40M+ datasets. <br /> Also offers <a href="https://ai.tikhub.io/?ref=KarimShoair" target="_blank">DISCOUNTED AI models</a> - Claude, GPT, GEMINI & more up to 71% off.
     </td>
   </tr>
   <tr>
@@ -191,12 +181,12 @@ This prints `10` and saves the quotes and authors to `quotes.json`.
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="28M+ clean residential IPs for browser automation. No Blocks. No CAPTCHAs. Pay-as-you-Go.">
+      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
       </a>
     </td>
     <td>
-    <a href="https://proxylane.dev/?utm_source=scrapling&utm_medium=partnership&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Reduce blocks and CAPTCHAs by 90%. 28M Premium Residential IPs for Heavy Web Scraping. 195 countries. City/ISP/ZIP targeting. Sticky/rotating sessions. Non-expiring traffic from $2/GB. Code <strong>SCRAPEANDTAKE</strong>: <em>25% off</em>.
+    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 90% fewer CAPTCHAs on your Scrapling runs. 28M real P2P residential devices, 98.7% clean IPs, 195 countries. City/ISP/ZIP targeting, sticky/rotating sessions, traffic never expires. Try 350 MB for $1.95. Code <strong>SCRAPEANDTAKE</strong>: <em>25% off</em>.
     </td>
   </tr>
   <tr>
@@ -207,6 +197,16 @@ This prints `10` and saves the quotes and authors to `quotes.json`.
     </td>
     <td>
     <a href="https://www.lundproxy.com?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=text" target="_blank">LundProxy</a>: Stop paying per GB. Unlimited residential traffic, 100M+ IPs, 190+ countries. Pay by bandwidth. Request a free 50 Mbps residential proxies trial.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
+      <a href="https://resolvr.com/?ref=scrapling" target="_blank" title="Captcha and Browser challenges, solved on real devices loading the page.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/resolvr.jpg">
+      </a>
+    </td>
+    <td>
+    <a href="https://resolvr.com/?ref=scrapling" target="_blank">Resolvr</a>: Scraping at scale means CAPTCHAs at scale. Resolvr solves reCAPTCHA and Cloudflare challenges on real devices through one API. Free beta access is available now.
     </td>
   </tr>
   <tr>
@@ -235,6 +235,7 @@ This prints `10` and saves the quotes and authors to `quotes.json`.
 <a href="https://proxyempire.io/?ref=scrapling&utm_source=github&utm_medium=paid_referral&utm_campaign=open_source_sponsorship&utm_content=scrapling" target="_blank" title="Collect The Data Your Project Needs with the Best Residential Proxies"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/ProxyEmpire.png"></a>
 <a href="https://www.webshare.io/?referral_code=48r2m2cd5uz1" target="_blank" title="The Most Reliable Proxy with Unparalleled Performance"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/webshare.png"></a>
 <a href="https://proxiware.com/?ref=scrapling" target="_blank" title="Collect Any Data. At Any Scale."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxiware.png"></a>
+<a href="https://singaporemobileproxy.com/?utm_source=scrapling&utm_medium=sponsor&utm_campaign=paid_test_q4" target="_blank" title="Dedicated 4G/5G mobile proxies on real Singapore SIMs"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SingaporeMobileProxy.png"></a>
 
 
 <!-- /sponsors -->

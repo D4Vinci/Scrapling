@@ -33,8 +33,8 @@ from scrapling.core.ai.server import (
     _STEALTH_FETCH_KEYS,
     _translate_response,
 )
-from scrapling.engines._browsers._validators import StealthConfig, models_default_values, validate
-from scrapling.fetchers import AsyncStealthySession, FetcherSession
+from scrapling.engines._browsers._validators import RemoteConfig, StealthConfig, models_default_values, validate
+from scrapling.fetchers import AsyncRemoteSession, AsyncStealthySession, FetcherSession
 
 
 MCP_TOOLS = {
@@ -95,7 +95,8 @@ class _FakeStealthySession:
         self._is_alive = False
         # `executable_path` is validated against the filesystem; drop it so the fake accepts test paths.
         self._config = validate(
-            {name: value for name, value in kwargs.items() if name != "executable_path"}, StealthConfig
+            {name: value for name, value in kwargs.items() if name != "executable_path"},
+            RemoteConfig if "cdp_url" in kwargs else StealthConfig,
         )
         type(self).instances.append(self)
 
@@ -125,6 +126,11 @@ class _FakeStealthySession:
             headers={},
             request_headers={},
         )
+
+
+class _FakeRemoteSession(_FakeStealthySession):
+    def __init__(self, cdp_url: str, **kwargs: Any) -> None:
+        super().__init__(cdp_url=cdp_url, **kwargs)
 
 
 class TestOneShotTools:
@@ -737,7 +743,6 @@ class TestOneShotBrowserForwarding:
                 "extra_headers": {"X-Test": "value"},
                 "useragent": "test-agent",
                 "hide_canvas": True,
-                "cdp_url": "ws://127.0.0.1:9222/devtools/browser/test",
                 "executable_path": "/tmp/chromium",
                 "timeout": 45000,
                 "disable_resources": True,
@@ -772,7 +777,6 @@ class TestOneShotBrowserForwarding:
             "extra_headers": None,
             "useragent": None,
             "hide_canvas": False,
-            "cdp_url": None,
             "executable_path": None,
             "timeout": 30000,
             "disable_resources": False,
@@ -956,7 +960,6 @@ class TestModeSplitContract:
             "locale": "en-GB",
             "useragent": "test-agent",
             "proxy": {"server": "http://host:8080", "username": "user", "password": "pass"},
-            "cdp_url": "ws://127.0.0.1:9222/devtools/browser/test",
             "executable_path": "/tmp/chromium",
             "cookies": [{"name": "theme", "value": "dark", "url": "https://example.com"}],
             "hide_canvas": True,
@@ -966,7 +969,7 @@ class TestModeSplitContract:
         }
         async with Client(server._build_server("127.0.0.1", 8000)) as client:
             tool = next(tool for tool in (await client.list_tools()).tools if tool.name == "browser_open")
-            assert set(tool.input_schema["properties"]) == {"session_id", *options}
+            assert set(tool.input_schema["properties"]) == {"session_id", "cdp_url", "new_context", *options}
             assert not tool.input_schema.get("required")
             result = await client.call_tool("browser_open", {"session_id": "browser", **options})
             assert not result.is_error
@@ -984,6 +987,84 @@ class TestModeSplitContract:
             assert set(model.model_json_schema()["properties"]["session_type"]["enum"]) == {"stealthy", "static"}
 
 
+class TestRemoteBrowserSessions:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("new_context", [True, False])
+    async def test_remote_session_lifecycle_through_mcp(self, monkeypatch, new_context):
+        local = Mock()
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", local)
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncRemoteSession", _FakeRemoteSession)
+        server = ScraplingMCPServer(executable_path="/missing/local/browser")
+        cdp_url = "ws://127.0.0.1:9222/devtools/browser/test"
+        async with Client(server._build_server("127.0.0.1", 8000)) as client:
+            opened = await client.call_tool(
+                "browser_open",
+                {
+                    "session_id": "remote",
+                    "cdp_url": cdp_url,
+                    "new_context": new_context,
+                    "headless": False,
+                    "real_chrome": True,
+                    "hide_canvas": True,
+                    "block_webrtc": True,
+                    "allow_webgl": False,
+                    "executable_path": "/missing/other/browser",
+                    "useragent": "remote-test",
+                    "locale": "en-GB",
+                    "timezone_id": "Europe/London",
+                    "proxy": "http://localhost:8080",
+                    "additional_args": {"viewport": {"width": 800, "height": 600}},
+                },
+            )
+            assert not opened.is_error
+            assert opened.structured_content == {"session_id": "remote", "session_type": "stealthy"}
+            session = server._sessions["remote"].session
+            assert isinstance(session, _FakeRemoteSession)
+            assert session.kwargs == {
+                "cdp_url": cdp_url,
+                "new_context": new_context,
+                "proxy": "http://localhost:8080",
+                "locale": "en-GB",
+                "cookies": None,
+                "block_ads": True,
+                "record_requests": True,
+                "useragent": "remote-test",
+                "timezone_id": "Europe/London",
+                "additional_args": {"viewport": {"width": 800, "height": 600}},
+            }
+            listed = await server.list_sessions()
+            assert listed[0].settings == {"new_context": new_context}
+            fetched = await client.call_tool(
+                "browser_fetch",
+                {"session_id": "remote", "url": "https://example.com", "extra_headers": {"X-Test": "remote"}},
+            )
+            assert not fetched.is_error
+            assert session.fetch_calls[0]["extra_headers"] == {"X-Test": "remote"}
+            closed = await client.call_tool("close_session", {"session_id": "remote"})
+            assert not closed.is_error
+            assert not session._is_alive
+            assert not server._sessions
+        local.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_remote_session_uses_new_context_by_default(self, monkeypatch):
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncRemoteSession", _FakeRemoteSession)
+        server = ScraplingMCPServer()
+        await server.browser_open(session_id="remote", cdp_url="http://localhost:9222")
+        assert server._sessions["remote"].session.kwargs["new_context"] is True
+        await server.close_session("remote")
+
+    @pytest.mark.asyncio
+    async def test_one_shot_rejects_cdp_before_creating_session(self, monkeypatch):
+        local = Mock()
+        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", local)
+        with pytest.raises(TypeError, match="cdp_url"):
+            await ScraplingMCPServer().browser_fetch_once(
+                **{"url": "https://example.com", "cdp_url": "http://localhost:9222"}
+            )
+        local.assert_not_called()
+
+
 class TestSessionSettingsReceipt:
     """list_sessions returns the session's effective settings."""
 
@@ -995,9 +1076,10 @@ class TestSessionSettingsReceipt:
         assert "cookies" not in settings, "non-primitive fields (list) must be dropped"
         assert all(isinstance(v, (str, int, float, bool)) or v is None for v in settings.values()), settings
 
-    def test_cdp_session_reports_empty_settings(self):
-        """A CDP session drives a remote browser, so the local config is not reported as its settings"""
-        assert _session_settings(AsyncStealthySession(cdp_url="ws://127.0.0.1:9222/devtools/browser/x")) == {}
+    @pytest.mark.parametrize("new_context", [True, False])
+    def test_remote_session_reports_context_mode(self, new_context):
+        session = AsyncRemoteSession("ws://127.0.0.1:9222/devtools/browser/x", new_context=new_context)
+        assert _session_settings(session) == {"new_context": new_context}
 
     def test_static_session_settings_extracts_json_safe_fields(self):
         """A static session reports its HTTP defaults (impersonate, proxy, timeout, ...)"""
@@ -1409,6 +1491,8 @@ class TestServerToolRegistration:
             assert open_props[option]["default"] is False
         assert open_props["allow_webgl"]["default"] is True
         assert open_props["additional_args"]["default"] is None
+        assert open_props["new_context"]["type"] == "boolean"
+        assert open_props["new_context"]["default"] is True
         open_props = set(open_props)
         assert open_props.isdisjoint(_STEALTH_FETCH_KEYS), (
             f"browser_open still exposes per-request params: {open_props & set(_STEALTH_FETCH_KEYS)}"
@@ -1432,6 +1516,7 @@ class TestServerToolRegistration:
         assert request_props["timeout"]["default"] == 30
         assert request_props["follow_redirects"]["default"] == "safe"
         props = tools["browser_fetch_once"].input_schema["properties"]
+        assert {"cdp_url", "new_context"}.isdisjoint(props)
         assert props["timeout"]["default"] == 30000
         assert props["google_search"]["default"] is True
         for option in ("pierce_shadow", "hide_canvas", "block_webrtc", "solve_cloudflare"):
