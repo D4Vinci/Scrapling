@@ -1017,7 +1017,7 @@ class Selector(SelectorsGeneration):
 
         if checks:
             return round(score / checks, 2) >= similarity_threshold
-        return False
+        return 0 >= similarity_threshold
 
     def find_similar(
         self,
