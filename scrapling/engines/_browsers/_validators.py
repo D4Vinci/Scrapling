@@ -54,6 +54,9 @@ def _is_invalid_cdp_url(cdp_url: str) -> bool | str:
 PagesCount = Annotated[int, Meta(ge=1, le=50)]
 RetriesCount = Annotated[int, Meta(ge=1, le=10)]
 Seconds = Annotated[float, Meta(ge=0)]
+# Playwright expects milliseconds for timeouts/waits (goto, wait_for_timeout),
+# unlike `retry_delay` below which is true seconds (time.sleep)
+Milliseconds = Annotated[float, Meta(ge=0)]
 
 
 class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
@@ -69,14 +72,14 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     wait_selector_state: SelectorWaitStates = "attached"
     cookies: Sequence[SetCookieParam] | None = []
     google_search: bool = True
-    wait: Seconds = 0
+    wait: Milliseconds = 0
     timezone_id: str | None = ""
     page_action: Optional[Callable] = None
     page_setup: Optional[Callable] = None
     proxy: Optional[str | Dict[str, str] | Tuple] = None  # The default value for proxy in Playwright's source is `None`
     proxy_rotator: Optional[ProxyRotator] = None
     extra_headers: Optional[Dict[str, str]] = None
-    timeout: Seconds = 30000
+    timeout: Milliseconds = 30000
     init_script: Optional[str] = None
     user_data_dir: str = ""
     selector_config: Optional[Dict] = {}
@@ -168,8 +171,8 @@ class _fetch_params:
     """A dataclass of all parameters used by `fetch` calls"""
 
     google_search: bool
-    timeout: Seconds
-    wait: Seconds
+    timeout: Milliseconds
+    wait: Milliseconds
     page_action: Optional[Callable]
     page_setup: Optional[Callable]
     extra_headers: Optional[Dict[str, str]]
