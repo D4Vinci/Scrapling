@@ -131,7 +131,7 @@ class Spider(ABC):
 
         if self.log_file:
             Path(self.log_file).parent.mkdir(parents=True, exist_ok=True)
-            file_handler = logging.FileHandler(self.log_file)
+            file_handler = logging.FileHandler(self.log_file, encoding="utf-8")
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
 

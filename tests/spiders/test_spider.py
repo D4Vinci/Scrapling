@@ -551,6 +551,31 @@ class TestSpiderLogging:
             for h in file_handlers:
                 h.close()
 
+    def test_log_file_is_utf8(self):
+        """Test that the log file is UTF-8 whatever the locale encoding is (e.g. cp932 on Japanese Windows)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log_path = Path(tmpdir) / "spider.log"
+
+            class FileLogSpider(Spider):
+                name = "file_log_utf8"
+                log_file = str(log_path)
+                start_urls = ["https://example.com"]
+
+                async def parse(self, response) -> AsyncGenerator[Dict[str, Any] | Request | None, None]:
+                    yield None
+
+            spider = FileLogSpider()
+            file_handlers = [h for h in spider.logger.handlers if isinstance(h, logging.FileHandler)]
+
+            # Scraped items are logged at DEBUG level and can hold any text
+            message = "Scraped {'title': 'カフェ ☕ café €5'}"
+            spider.logger.debug(message)
+            for h in file_handlers:
+                h.close()
+
+            assert file_handlers[0].encoding == "utf-8"
+            assert message in log_path.read_text(encoding="utf-8")
+
     def test_logger_does_not_propagate(self):
         """Test that spider logger does not propagate to parent."""
         spider = ConcreteSpider()
