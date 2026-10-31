@@ -2,13 +2,14 @@
 
 import gzip
 import pickle
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.spiders.links import LinkExtractor
 from scrapling.spiders.request import Request
-from scrapling.spiders.templates.sitemap import SitemapSpider
+from scrapling.spiders.templates.sitemap import SitemapSpider, _parse_w3c_datetime
 from scrapling.spiders.templates import CrawlRule
 from scrapling.core._types import AsyncGenerator
 
@@ -59,6 +60,61 @@ INDEX_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
   <sitemap><loc>https://example.com/skip-sitemap.xml</loc></sitemap>
 </sitemapindex>
 """
+
+INDEX_WITH_LASTMOD = b"""<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://example.com/news-sitemap.xml</loc>
+    <lastmod>2026-03-01T08:00:00Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://example.com/archive-2025-sitemap.xml</loc>
+    <lastmod>2025-12-31</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://example.com/undated-sitemap.xml</loc>
+  </sitemap>
+</sitemapindex>
+"""
+
+NEWS_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  <url>
+    <loc>https://example.com/news/rates</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Example Times</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-03-01T09:30:00+01:00</news:publication_date>
+      <news:title><![CDATA[Central bank holds rates & signals cuts]]></news:title>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://example.com/news/old-story</loc>
+    <lastmod>2026-02-28T12:00:00Z</lastmod>
+    <news:news>
+      <news:publication_date>2026-01-10</news:publication_date>
+      <news:title>An old story, updated recently</news:title>
+    </news:news>
+  </url>
+</urlset>
+"""
+
+URLSET_WITH_BAD_DATES = b"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://example.com/a</loc><lastmod>yesterday</lastmod></url>
+  <url><loc>https://example.com/b</loc><lastmod>2026-13-45</lastmod></url>
+  <url><loc>https://example.com/c</loc><lastmod></lastmod></url>
+</urlset>
+"""
+
+
+def _urlset(*entries: tuple[str, datetime]) -> bytes:
+    urls = "".join(f"<url><loc>{url}</loc><lastmod>{date.isoformat()}</lastmod></url>" for url, date in entries)
+    return f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'.encode()
+
 
 def _make_response(body: bytes, url: str = "https://example.com/sitemap.xml", headers: dict | None = None) -> Response:
     resp = Response(
@@ -219,6 +275,218 @@ class TestSitemapSpiderFlow:
         assert len(out) == 3
 
 
+class TestW3CDatetime:
+    @pytest.mark.parametrize(
+        "value, expected",
+        [
+            ("2026", datetime(2026, 1, 1, tzinfo=timezone.utc)),
+            ("2026-02", datetime(2026, 2, 1, tzinfo=timezone.utc)),
+            ("2026-02-20", datetime(2026, 2, 20, tzinfo=timezone.utc)),
+            ("  2026-02-20\n", datetime(2026, 2, 20, tzinfo=timezone.utc)),
+            ("2026-02-20T10:30Z", datetime(2026, 2, 20, 10, 30, tzinfo=timezone.utc)),
+            ("2026-02-20T10:30:15", datetime(2026, 2, 20, 10, 30, 15, tzinfo=timezone.utc)),
+            ("2026-02-20 10:30:15 +0000", datetime(2026, 2, 20, 10, 30, 15, tzinfo=timezone.utc)),
+            ("2026-02-20T10:30:15.5Z", datetime(2026, 2, 20, 10, 30, 15, 500000, tzinfo=timezone.utc)),
+            ("2026-02-20T10:30:15.1234567Z", datetime(2026, 2, 20, 10, 30, 15, 123456, tzinfo=timezone.utc)),
+            (
+                "2026-02-20T10:30:15+02:00",
+                datetime(2026, 2, 20, 10, 30, 15, tzinfo=timezone(timedelta(hours=2))),
+            ),
+            (
+                "2026-02-20T10:30:15-05:30",
+                datetime(2026, 2, 20, 10, 30, 15, tzinfo=timezone(-timedelta(hours=5, minutes=30))),
+            ),
+        ],
+    )
+    def test_parses_w3c_formats(self, value, expected):
+        parsed = _parse_w3c_datetime(value)
+        assert parsed == expected
+        assert parsed is not None and parsed.utcoffset() == expected.utcoffset()
+
+    @pytest.mark.parametrize(
+        "value", [None, "", "yesterday", "2026-13-01", "2026-02-30", "2026-02-20T25:00Z", "2026-02-20T10:00+24:00"]
+    )
+    def test_unreadable_dates_return_none(self, value):
+        assert _parse_w3c_datetime(value) is None
+
+
+class TestSitemapMetadata:
+    @pytest.mark.asyncio
+    async def test_lastmod_is_passed_in_meta(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        spider = S()
+        out = await _collect(spider._parse_sitemap(_make_response(URLSET_XML)))
+        metas = {r.url: r.meta for r in out}
+        assert metas["https://example.com/posts/1"] == {
+            "sitemap_lastmod": datetime(2026, 1, 15, tzinfo=timezone.utc),
+            "sitemap_news_publication_date": None,
+            "sitemap_news_title": None,
+        }
+        assert metas["https://example.com/posts/2"]["sitemap_lastmod"] == datetime(2026, 2, 20, tzinfo=timezone.utc)
+        assert metas["https://example.com/about"]["sitemap_lastmod"] is None
+
+    @pytest.mark.asyncio
+    async def test_google_news_fields_are_passed_in_meta(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/news-sitemap.xml"]
+
+            def rules(self):
+                return [CrawlRule(LinkExtractor(allow=r"/news/"), callback=self.parse_article)]
+
+            async def parse_article(self, response):
+                yield {"url": response.url}
+
+        spider = S()
+        out = await _collect(spider._parse_sitemap(_make_response(NEWS_XML)))
+        metas = {r.url: r.meta for r in out}
+        assert metas["https://example.com/news/rates"] == {
+            "sitemap_lastmod": None,
+            "sitemap_news_publication_date": datetime(2026, 3, 1, 8, 30, tzinfo=timezone.utc),
+            "sitemap_news_title": "Central bank holds rates & signals cuts",
+        }
+        assert metas["https://example.com/news/old-story"]["sitemap_news_title"] == "An old story, updated recently"
+        assert all(r.callback == spider.parse_article for r in out)
+
+    @pytest.mark.asyncio
+    async def test_alternate_links_share_the_entry_metadata(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+            sitemap_alternate_links = True
+
+        body = URLSET_WITH_ALTERNATES.replace(b"</loc>", b"</loc><lastmod>2026-02-01</lastmod>")
+        out = await _collect(S()._parse_sitemap(_make_response(body)))
+        assert len(out) == 3
+        assert {r.meta["sitemap_lastmod"] for r in out} == {datetime(2026, 2, 1, tzinfo=timezone.utc)}
+
+    @pytest.mark.asyncio
+    async def test_unreadable_dates_become_none(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        out = await _collect(S()._parse_sitemap(_make_response(URLSET_WITH_BAD_DATES)))
+        assert [r.url for r in out] == ["https://example.com/a", "https://example.com/b", "https://example.com/c"]
+        assert all(r.meta["sitemap_lastmod"] is None for r in out)
+
+    @pytest.mark.asyncio
+    async def test_sitemap_request_meta_is_kept_but_never_stands_in_for_missing_dates(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        response = _make_response(URLSET_XML)
+        response.meta = {"source": "monitor", "sitemap_lastmod": datetime(2020, 1, 1, tzinfo=timezone.utc)}
+        out = await _collect(S()._parse_sitemap(response))
+        about = next(r for r in out if r.url.endswith("/about"))
+        assert about.meta["source"] == "monitor"
+        assert about.meta["sitemap_lastmod"] is None
+
+
+class TestSitemapSince:
+    @pytest.mark.asyncio
+    async def test_urls_older_than_since_are_skipped(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+            sitemap_since = datetime(2026, 2, 1, tzinfo=timezone.utc)
+
+        out = await _collect(S()._parse_sitemap(_make_response(URLSET_XML)))
+        # posts/1 (2026-01-15) is skipped, posts/2 (2026-02-20) is newer, and /about has no date so it's kept
+        assert [r.url for r in out] == ["https://example.com/posts/2", "https://example.com/about"]
+
+    @pytest.mark.asyncio
+    async def test_naive_since_is_taken_as_utc(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+            sitemap_since = datetime(2026, 2, 1)
+
+        out = await _collect(S()._parse_sitemap(_make_response(URLSET_XML)))
+        assert [r.url for r in out] == ["https://example.com/posts/2", "https://example.com/about"]
+
+    @pytest.mark.asyncio
+    async def test_offsets_are_compared_in_absolute_time(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+            sitemap_since = datetime(2026, 2, 1, tzinfo=timezone.utc)
+
+        before = datetime(2026, 2, 1, 0, 30, tzinfo=timezone(timedelta(hours=1)))  # 2026-01-31T23:30Z
+        after = datetime(2026, 1, 31, 23, 30, tzinfo=timezone(-timedelta(hours=1)))  # 2026-02-01T00:30Z
+        body = _urlset(("https://example.com/before", before), ("https://example.com/after", after))
+        out = await _collect(S()._parse_sitemap(_make_response(body)))
+        assert [r.url for r in out] == ["https://example.com/after"]
+
+    @pytest.mark.asyncio
+    async def test_timedelta_since_counts_back_from_now(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+            sitemap_since = timedelta(days=2)
+
+        now = datetime.now(timezone.utc)
+        body = _urlset(
+            ("https://example.com/fresh", now - timedelta(hours=1)),
+            ("https://example.com/stale", now - timedelta(days=10)),
+        )
+        out = await _collect(S()._parse_sitemap(_make_response(body)))
+        assert [r.url for r in out] == ["https://example.com/fresh"]
+
+    @pytest.mark.asyncio
+    async def test_newest_of_lastmod_and_publication_date_counts(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/news-sitemap.xml"]
+            sitemap_since = datetime(2026, 2, 15, tzinfo=timezone.utc)
+
+        out = await _collect(S()._parse_sitemap(_make_response(NEWS_XML)))
+        # old-story was published in January but its lastmod is in late February, so it's kept
+        assert {r.url for r in out} == {"https://example.com/news/rates", "https://example.com/news/old-story"}
+
+        S.sitemap_since = datetime(2026, 3, 1, tzinfo=timezone.utc)
+        out = await _collect(S()._parse_sitemap(_make_response(NEWS_XML)))
+        assert [r.url for r in out] == ["https://example.com/news/rates"]
+
+    @pytest.mark.asyncio
+    async def test_stale_child_sitemaps_are_not_fetched(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+            sitemap_since = datetime(2026, 2, 1, tzinfo=timezone.utc)
+
+        spider = S()
+        out = await _collect(spider._parse_sitemap(_make_response(INDEX_WITH_LASTMOD)))
+        assert [r.url for r in out] == [
+            "https://example.com/news-sitemap.xml",
+            "https://example.com/undated-sitemap.xml",
+        ]
+        assert all(r.callback == spider._parse_sitemap for r in out)
+
+    @pytest.mark.asyncio
+    async def test_child_sitemaps_are_all_fetched_without_since(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        out = await _collect(S()._parse_sitemap(_make_response(INDEX_WITH_LASTMOD)))
+        assert len(out) == 3
+
+    @pytest.mark.asyncio
+    async def test_unreadable_dates_are_never_skipped(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+            sitemap_since = datetime(2030, 1, 1, tzinfo=timezone.utc)
+
+        out = await _collect(S()._parse_sitemap(_make_response(URLSET_WITH_BAD_DATES)))
+        assert len(out) == 3
+
+
 class TestSitemapSpiderStartRequests:
     @pytest.mark.asyncio
     async def test_start_requests_uses_sitemap_urls(self):
@@ -317,3 +585,6 @@ class TestSitemapSpiderPickle:
         fresh = S()
         restored._restore_callback(fresh)
         assert restored.callback == fresh.parse_post
+        # The sitemap dates in meta must survive checkpoints too
+        assert restored.meta == post_req.meta
+        assert restored.meta["sitemap_lastmod"] == datetime(2026, 1, 15, tzinfo=timezone.utc)
