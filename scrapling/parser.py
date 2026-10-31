@@ -5,6 +5,7 @@ from difflib import SequenceMatcher
 from re import Pattern as re_Pattern
 
 from lxml.html import HtmlElement, HTMLParser
+from w3lib.encoding import resolve_encoding
 from cssselect import SelectorError, SelectorSyntaxError, parse as split_selectors
 from lxml.etree import (
     XPath,
@@ -130,7 +131,7 @@ class Selector(SelectorsGeneration):
 
         self.url = url
         self._raw_body: str | bytes = ""
-        self.encoding = encoding
+        self.encoding = encoding or "utf-8"
         self.__huge_tree_enabled = huge_tree
         self.__keep_comments = keep_comments
         # For selector stuff
@@ -148,11 +149,12 @@ class Selector(SelectorsGeneration):
                 raise TypeError(f"content argument must be str or bytes, got {type(content)}")
 
             # https://lxml.de/api/lxml.etree.HTMLParser-class.html
+            lxml_encoding = resolve_encoding(self.encoding) or self.encoding
             _parser_kwargs: Dict[str, Any] = dict(
                 recover=True,
                 remove_blank_text=True,
                 remove_comments=(not keep_comments),
-                encoding=encoding,
+                encoding=lxml_encoding,
                 compact=True,
                 huge_tree=huge_tree,
                 default_doctype=True,  # Supported by lxml but missing from stubs
@@ -349,9 +351,10 @@ class Selector(SelectorsGeneration):
         """Return the inner HTML code of the element"""
         if self._is_text_node(self._root):
             return TextHandler(str(self._root))
-        content = tostring(self._root, encoding=self.encoding, method="html", with_tail=False)
+        lxml_encoding = resolve_encoding(self.encoding) or self.encoding
+        content = tostring(self._root, encoding=lxml_encoding, method="html", with_tail=False)
         if isinstance(content, bytes):
-            content = content.strip().decode(self.encoding)
+            content = content.strip().decode(lxml_encoding or "utf-8", errors="replace")
         return TextHandler(content)
 
     @property
@@ -365,15 +368,16 @@ class Selector(SelectorsGeneration):
         """Return a prettified version of the element's inner html-code"""
         if self._is_text_node(self._root):
             return TextHandler(str(self._root))
+        lxml_encoding = resolve_encoding(self.encoding) or self.encoding
         content = tostring(
             self._root,
-            encoding=self.encoding,
+            encoding=lxml_encoding,
             pretty_print=True,
             method="html",
             with_tail=False,
         )
         if isinstance(content, bytes):
-            content = content.strip().decode(self.encoding)
+            content = content.strip().decode(lxml_encoding or "utf-8", errors="replace")
         return TextHandler(content)
 
     def has_class(self, class_name: str) -> bool:
@@ -931,7 +935,7 @@ class Selector(SelectorsGeneration):
             else:
                 if TYPE_CHECKING:
                     assert isinstance(self._raw_body, bytes)
-                return TextHandler(self._raw_body.decode()).json()
+                return TextHandler(self._raw_body.decode(self.encoding or "utf-8", errors="replace")).json()
         elif self.text:
             return self.text.json()
         else:

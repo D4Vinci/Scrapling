@@ -408,3 +408,32 @@ def test_regex_on_text(page):
     assert match == "10.99"
     match = element.text.re(r"(\d+)", replace_entities=False)
     assert len(match) == 2
+
+
+def test_selector_encoding_resolution():
+    """Test that web encoding aliases like latin-1 are normalized and do not crash parser with LookupError"""
+    for enc in ("latin-1", "latin_1", "iso-8859-1", "cp1252", "utf-8"):
+        s = Selector(b"<html><body><p>Hello</p></body></html>", encoding=enc)
+        assert s.css("p::text").get() == "Hello"
+        assert s.encoding is not None
+
+
+def test_selector_json_with_encoding():
+    """Test that Selector.json() respects the encoding passed to Selector"""
+    text_cp1252 = '{"name": "café", "price": "10€"}'
+    s = Selector(text_cp1252.encode("cp1252"), encoding="cp1252")
+    assert s.json() == {"name": "café", "price": "10€"}
+
+    text_latin1 = '{"name": "café"}'
+    s2 = Selector(text_latin1.encode("latin-1"), encoding="latin-1")
+    assert s2.json() == {"name": "café"}
+
+
+def test_selector_html_content_and_prettify_malformed_bytes():
+    """Test that html_content, prettify, repr, and get() do not crash with UnicodeDecodeError on malformed bytes"""
+    s = Selector(b"<html><body><p>\xff\xfe</p></body></html>")
+    assert isinstance(s.html_content, str)
+    assert isinstance(s.prettify(), str)
+    assert isinstance(repr(s), str)
+    assert isinstance(s.css("p").first.get(), str)
+
