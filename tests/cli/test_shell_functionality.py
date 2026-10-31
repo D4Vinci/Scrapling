@@ -1,9 +1,11 @@
 import pytest
+from inspect import signature
 from unittest.mock import patch, MagicMock
 
 from scrapling.parser import Selector
 from scrapling.core._types import cast, extraction_types
 from scrapling.core.shell import CustomShell, CurlParser, Convertor
+from scrapling.fetchers import AsyncRemoteSession, RemoteSession
 
 
 class TestCurlParser:
@@ -267,5 +269,9 @@ class TestCustomShell:
         assert "post" in namespace
         assert "Fetcher" in namespace
         assert "StealthyFetcher" in namespace
+        assert namespace["RemoteSession"] is RemoteSession
+        assert namespace["AsyncRemoteSession"] is AsyncRemoteSession
+        assert "RemoteFetcher" not in namespace
+        assert "cdp_url" not in signature(namespace["fetch"]).parameters
         assert "view" in namespace
         assert "uncurl" in namespace

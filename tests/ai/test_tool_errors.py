@@ -43,6 +43,7 @@ async def test_expected_tool_errors_keep_their_message(error: Exception) -> None
     [
         ({"executable_path": "/missing/scrapling-browser-binary"}, "Browser executable path not found"),
         ({"cdp_url": "invalid://localhost:9222"}, "CDP URL must use"),
+        ({"cdp_url": ""}, "CDP URL must use"),
         ({"proxy": {"username": "test"}}, "server"),
     ],
 )

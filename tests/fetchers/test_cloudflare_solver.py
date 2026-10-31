@@ -5,6 +5,7 @@ from patchright._impl._errors import Error as PatchrightError
 
 from scrapling.engines.toolbelt.convertor import ResponseFactory
 from scrapling.engines._browsers._stealth import StealthySession, AsyncStealthySession, __CF_MAX_SOLVE_ATTEMPTS__
+from scrapling.fetchers import RemoteSession
 
 FRENCH_CHALLENGE = (
     "<html><head><title>Un instant…</title></head><body><script>cType: 'interactive'</script></body></html>"
@@ -158,5 +159,5 @@ class TestLocaleLaunchFlags:
 
     def test_cdp_url_keeps_context_locale(self):
         """Remote browsers can't take launch flags, so the context option is the best effort left"""
-        session = StealthySession(locale="fr-FR", cdp_url="ws://127.0.0.1:9222/devtools/browser/x")
+        session = RemoteSession(locale="fr-FR", cdp_url="ws://127.0.0.1:9222/devtools/browser/x")
         assert session._context_options.get("locale") == "fr-FR"

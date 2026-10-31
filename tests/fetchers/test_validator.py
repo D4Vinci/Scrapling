@@ -7,6 +7,7 @@ from scrapling.engines._browsers._validators import (
     validate_fetch,
     StealthConfig,
     PlaywrightConfig,
+    RemoteConfig,
 )
 
 
@@ -72,26 +73,25 @@ class TestValidators:
         with pytest.raises(TypeError):
             validate(params, PlaywrightConfig)
 
-    def test_playwright_config_invalid_cdp_url(self):
-        """Test PlaywrightConfig with invalid CDP URL"""
+    def test_remote_config_invalid_cdp_url(self):
         params = {"cdp_url": "invalid-url"}
 
         with pytest.raises(TypeError):
-            validate(params, PlaywrightConfig)
+            validate(params, RemoteConfig)
 
         for cdp_url in ("ftp://localhost:9222", "localhost:9222", "http://"):
             with pytest.raises(TypeError):
-                validate({"cdp_url": cdp_url}, PlaywrightConfig)
+                validate({"cdp_url": cdp_url}, RemoteConfig)
 
-    def test_playwright_config_cdp_url_schemes(self):
-        """Test PlaywrightConfig accepts both WebSocket and HTTP CDP endpoints"""
+    def test_remote_config_cdp_url_schemes(self):
         for cdp_url in (
             "ws://localhost:9222",
             "wss://cdp.example.com/session",
             "http://localhost:9222",
             "https://cdp.example.com",
         ):
-            assert validate({"cdp_url": cdp_url}, PlaywrightConfig).cdp_url == cdp_url
+            config = validate({"cdp_url": cdp_url}, RemoteConfig)
+            assert isinstance(config, RemoteConfig) and config.cdp_url == cdp_url
 
     def test_stealth_config_valid(self):
         """Test valid StealthConfig"""
