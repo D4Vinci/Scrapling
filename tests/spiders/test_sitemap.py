@@ -60,6 +60,7 @@ INDEX_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
 </sitemapindex>
 """
 
+
 def _make_response(body: bytes, url: str = "https://example.com/sitemap.xml", headers: dict | None = None) -> Response:
     resp = Response(
         url=url,
@@ -217,6 +218,20 @@ class TestSitemapSpiderFlow:
         body = gzip.compress(URLSET_XML)
         out = await _collect(spider._parse_sitemap(_make_response(body, url="https://example.com/sitemap.xml.gz")))
         assert len(out) == 3
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("damage", ["truncated", "deflate"])
+    async def test_invalid_gzip_yields_nothing(self, damage: str) -> None:
+        """Malformed gzip must follow the sitemap's existing error handling."""
+
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml.gz"]
+
+        body = gzip.compress(URLSET_XML)
+        body = body[:-4] if damage == "truncated" else body[:10] + b"\x07" + body[11:]
+
+        assert await _collect(S()._parse_sitemap(_make_response(body))) == []
 
 
 class TestSitemapSpiderStartRequests:
