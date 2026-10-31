@@ -3,10 +3,11 @@ from itertools import count
 
 from scrapling.core.utils import log
 from scrapling.spiders.request import Request
-from scrapling.core._types import List, Set, Tuple, Literal, TYPE_CHECKING
+from scrapling.core._types import List, Set, Tuple, Literal, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scrapling.spiders.checkpoint import CheckpointData
+    from scrapling.spiders.seen_store import SeenStore
 
 
 class Scheduler:
@@ -15,7 +16,7 @@ class Scheduler:
 
     Higher priority requests are processed first.
     For equal priorities, bfs takes the oldest queued request and dfs takes the newest.
-    Duplicate URLs are filtered unless dont_filter=True.
+    Duplicate URLs are filtered unless dont_filter=True, and so are the ones in `seen_store` from previous runs.
     """
 
     def __init__(
@@ -24,6 +25,7 @@ class Scheduler:
         include_headers: bool = False,
         keep_fragments: bool = False,
         crawl_strategy: Literal["bfs", "dfs"] = "bfs",
+        seen_store: Optional["SeenStore"] = None,
     ):
         if crawl_strategy not in ("bfs", "dfs"):
             raise ValueError("crawl_strategy must be 'bfs' or 'dfs'")
@@ -37,6 +39,8 @@ class Scheduler:
         self._include_kwargs = include_kwargs
         self._include_headers = include_headers
         self._keep_fragments = keep_fragments
+        self._seen_store = seen_store
+        self.previously_seen_count = 0
 
     async def enqueue(self, request: Request) -> bool:
         """Add a request to the queue."""
@@ -47,6 +51,11 @@ class Scheduler:
             return False
 
         self._seen.add(fingerprint)
+
+        if not request.dont_filter and self._seen_store is not None and fingerprint in self._seen_store:
+            self.previously_seen_count += 1
+            log.debug("Dropped request already processed in a previous run: %s", request)
+            return False
 
         # Negative priority so higher priority = dequeued first
         counter = next(self._counter)

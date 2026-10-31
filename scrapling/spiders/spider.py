@@ -97,6 +97,10 @@ class Spider(ABC):
     fp_keep_fragments: bool = False
     fp_include_headers: bool = False
 
+    # Skip pages whose callback produced items in a previous run
+    persistent_seen: bool = False
+    persistent_seen_file: Optional[str] = None
+
     # Logging settings
     logging_level: int = logging.DEBUG
     logging_format: str = "[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"
