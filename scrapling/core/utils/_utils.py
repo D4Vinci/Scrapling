@@ -118,3 +118,31 @@ class _StorageTools:
 def clean_spaces(string):
     string = string.translate(__CLEANING_TABLE__)
     return __CONSECUTIVE_SPACES_REGEX__.sub(" ", string)
+
+
+_ALLOWED_URL_SCHEMES = frozenset({"http", "https"})
+
+
+def validate_url_scheme(url: str, allowed: frozenset[str] = _ALLOWED_URL_SCHEMES) -> None:
+    """Reject URLs whose scheme is not explicitly allowed.
+
+    Without this, URLs such as ``file:///etc/passwd``, ``ftp://host/file`` or
+    ``gopher://host/`` are passed unchanged to the underlying HTTP client
+    (curl_cffi) or browser (Patchright/Chromium), both of which support them
+    and return the content as a ``Response``.
+
+    Raises:
+        ValueError: if the scheme is not in ``allowed`` or the URL is malformed.
+    """
+    from urllib.parse import urlsplit
+
+    try:
+        scheme = urlsplit(url).scheme.lower()
+    except ValueError as exc:
+        raise ValueError(f"Invalid URL: {url!r}") from exc
+
+    if scheme not in allowed:
+        raise ValueError(
+            f"Unsupported URL scheme {scheme!r}. Allowed schemes: {sorted(allowed)}. "
+            f"Refusing to fetch: {url!r}"
+        )

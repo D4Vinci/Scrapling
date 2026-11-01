@@ -12,7 +12,7 @@ from curl_cffi.requests import (
     AsyncSession as AsyncCurlSession,
 )
 
-from scrapling.core.utils import log
+from scrapling.core.utils import log, validate_url_scheme
 from scrapling.core._types import (
     Any,
     Dict,
@@ -103,6 +103,11 @@ class _ConfigurationLogic(ABC):
     def _merge_request_args(self, **method_kwargs) -> Dict[str, Any]:
         """Merge request-specific arguments with default session arguments."""
         url = method_kwargs.pop("url")
+
+        # Defense in depth: reject non-http(s) schemes before curl_cffi sees them.
+        # file://, ftp://, gopher:// etc. are otherwise passed straight to libcurl
+        # and the response is returned as a valid Response object.
+        validate_url_scheme(url)
 
         # Get parameters from kwargs or use defaults
         impersonate = self._get_param(method_kwargs, "impersonate", self._default_impersonate)
