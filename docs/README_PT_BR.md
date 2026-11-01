@@ -200,6 +200,16 @@ Este exemplo imprime `10` e salva as citações e seus autores em `quotes.json`.
   </tr>
   <tr>
     <td width="200">
+      <a href="https://nonecap.com/solutions/scrapling/?ref=scrapling" target="_blank" title="hCaptcha solver as an API.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/Nonecap.png">
+      </a>
+    </td>
+    <td>
+    hCaptcha nas suas execuções do Scrapling? O <a href="https://nonecap.com/solutions/scrapling/?ref=scrapling" target="_blank">NoneCap</a> retorna tokens hCaptcha válidos por meio de uma única API, com suporte também a sitekeys Enterprise. 1.300 créditos grátis ao se cadastrar.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
       </a>
