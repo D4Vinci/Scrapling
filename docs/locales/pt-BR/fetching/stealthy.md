@@ -30,7 +30,7 @@ Vamos ver os principais argumentos com exemplos. Se preferir uma tabela de consu
     A versão assíncrona de `fetch` se chama `async_fetch`.
 
 
-Este fetcher oferece três opções principais de execução, que você pode combinar conforme precisar.
+Este fetcher oferece duas opções de navegador local.
 
 São elas:
 
@@ -51,13 +51,38 @@ Se você não tiver Google Chrome, pode instalá-lo para a biblioteca com este c
 playwright install chrome
 ```
 
-### 3. Conexão CDP {#3-cdp-connection}
-```python
-StealthyFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
-```
-Em vez de abrir um navegador local, você pode se conectar a um navegador remoto pelo [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/).
+## Sessões remotas {#3-cdp-connection}
 
-A URL pode ser um endpoint WebSocket (`ws://`/`wss://`), como os fornecidos por serviços de navegador, ou o endpoint HTTP de um navegador, como `http://localhost:9222`.
+Use `RemoteSession` ou `AsyncRemoteSession` para se conectar a um navegador já aberto pelo [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/). Passe um endpoint WebSocket (`ws://`/`wss://`) ou HTTP, como `http://localhost:9222`, em `cdp_url`. Essas classes são apenas para sessões. `StealthySession` e `StealthyFetcher` não aceitam `cdp_url`.
+
+Essas classes herdam de `StealthySession` e `AsyncStealthySession`, respectivamente, então todas as suas opções e funcionalidades, incluindo a resolução de desafios do Cloudflare com `solve_cloudflare=True`, funcionam normalmente, exceto pelas limitações de inicialização do navegador e de contexto descritas abaixo.
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+    page = session.fetch("https://example.com")
+```
+
+`new_context=True` é o padrão. Cria um contexto separado, aplica as opções de contexto e fecha esse contexto ao encerrar a sessão.
+
+`new_context=False` usa o contexto padrão existente e seu estado de login. O contexto fica aberto ao encerrar a sessão. Se não houver um contexto disponível, iniciar a sessão gera um erro.
+
+Ao reutilizar um contexto, `useragent`, `locale`, `timezone_id`, `proxy`, `proxy_rotator` e `additional_args` são ignorados. O `proxy` por requisição também é ignorado. As configurações existentes do contexto são mantidas.
+
+Scrapling cria suas próprias abas nos dois modos e fecha apenas essas abas. As abas existentes ficam abertas. Opções de página, como `extra_headers`, `timeout`, `page_setup` e `page_action`, continuam funcionando.
+
+Ainda é possível adicionar `cookies` e `init_script`, mas eles afetam o contexto compartilhado com `new_context=False`. As classes remotas não aceitam `real_chrome`; `cdp_url` seleciona o navegador. As outras opções de inicialização do navegador não se aplicam porque ele já está aberto.
+
+Use `AsyncRemoteSession` com `async with` e `await`:
+
+```python
+from scrapling.fetchers import AsyncRemoteSession
+
+async def scrape_remote():
+    async with AsyncRemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        return await session.fetch("https://example.com")
+```
 
 
 ## O que ele faz? {#what-does-it-do}
@@ -98,7 +123,6 @@ Este fetcher e suas classes de sessão oferecem várias opções. Antes dos [exe
 |      real_chrome      | Ative para abrir e usar o Google Chrome instalado no seu computador. |    ✔️    |
 |        locale         | Configuração regional, como `en-GB` ou `de-DE`. Afeta `navigator.language`, o cabeçalho `Accept-Language` e os formatos de números e datas. O padrão é o valor do sistema. |    ✔️    |
 |      timezone_id      | Fuso horário do navegador. O padrão é o fuso do sistema. |    ✔️    |
-|        cdp_url        | URL CDP à qual se conectar para controlar um navegador existente em vez de abrir outro. |    ✔️    |
 |     user_data_dir     | Pasta onde são guardados dados do navegador, como cookies e armazenamento local. Por padrão, uma pasta temporária é criada. **Só funciona com sessões.** |    ✔️    |
 |      extra_flags      | Lista de opções extras passadas ao iniciar o navegador. |    ✔️    |
 |   solve_cloudflare    | Resolve os tipos de desafios Turnstile e Interstitial do Cloudflare antes de retornar a resposta. O padrão é `False`. |    ✔️    |

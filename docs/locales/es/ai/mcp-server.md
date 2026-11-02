@@ -27,7 +27,7 @@ El servidor MCP de Scrapling ofrece dieciséis herramientas para extraer datos w
 
 #### 🔌 Gestión de sesiones {#session-management}
 
-- **`browser_open`**: Crea una sesión persistente de navegador Stealthy que permanece abierta entre llamadas a `browser_fetch`. Así no hace falta abrir un navegador cada vez. Guarda la configuración del navegador y solo devuelve `session_id` y `session_type`. Usa `list_sessions` para ver su configuración efectiva en `settings`, que está vacía en las sesiones CDP.
+- **`browser_open`**: Crea una sesión persistente de navegador Stealthy que permanece abierta entre llamadas a `browser_fetch`. Así no hace falta abrir un navegador cada vez. Guarda la configuración del navegador y solo devuelve `session_id` y `session_type`. Usa `list_sessions` para ver su configuración efectiva en `settings`.
 - **`open_request_session`**: Crea una sesión HTTP persistente sin navegador para usar con `session_make_request`. Conserva cookies, conexiones y la huella del navegador (`impersonate`) entre solicitudes. Solo devuelve `session_id` y `session_type`, con el tipo `static`. Usa `list_sessions` para ver su configuración efectiva en `settings`.
 - **`close_session`**: Cierra una sesión persistente, de navegador o de solicitudes, y libera sus recursos.
 - **`list_sessions`**: Muestra todas las sesiones activas con sus detalles y su `settings`.
@@ -241,7 +241,8 @@ En ese caso, conéctate con `cdp_url="http://localhost:9222"`, o con la direcci�
 !!! note "Notas"
 
     * Como el navegador ya está abierto, las sesiones CDP ignoran las opciones que solo se aplican al iniciarlo: `headless`, `real_chrome` y `executable_path`, incluida la opción predeterminada del servidor descrita antes.<br/>
-    * Las demás opciones siguen funcionando (`locale`, `useragent`, `proxy`, `cookies`, `timezone_id`, etc.), porque cada sesión crea su propio contexto en el navegador remoto.
+    * Tu agente de IA puede iniciar una sesión nueva o reutilizar una existente para trabajar con sitios en los que ya has iniciado sesión.
+    * Scrapling cierra las sesiones nuevas al terminar la tarea. Al reutilizar una sesión, mantiene abiertos el navegador y tus pestañas existentes, y solo cierra las pestañas que ha creado.
 
 ### Streamable HTTP {#streamable-http}
 
@@ -478,7 +479,7 @@ Esta protección se aplica automáticamente al extraer HTML, Markdown o texto. M
 - Las sesiones conservan la configuración definida al abrirlas: headless, locale, cookies y opciones de ocultación para navegadores; `impersonate` y `proxy` para sesiones HTTP. Las opciones de cada solicitud, como timeout, wait_selector, network_idle o solve_cloudflare, se pasan a `browser_fetch`/`session_make_request` en cada llamada. Sus valores predeterminados aparecen en los esquemas de las herramientas.
 - `browser_fetch` puede resolver desafíos de Cloudflare mediante la sesión abierta de navegador Stealthy.
 - Cierra siempre las sesiones con `close_session` al terminar para liberar recursos.
-- Usa `list_sessions` para comprobar qué sesiones siguen activas y consultar el `settings` con el que se creó cada una. Se devuelve al agente de IA y está vacío en las sesiones CDP.
+- Usa `list_sessions` para comprobar qué sesiones siguen activas y consultar el `settings` con el que se creó cada una. Se devuelve al agente de IA.
 - Pasa un `session_id` propio a las herramientas que abren sesiones para darles nombres claros, como `"search"` o `"checkout"`, en lugar del valor hexadecimal aleatorio. Si el identificador ya está en uso, generan un error para que puedas detectar el conflicto desde el principio.
 
 ### 7. Capturas de pantalla {#7-capturing-screenshots}

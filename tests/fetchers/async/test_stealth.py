@@ -79,8 +79,7 @@ class TestStealthyFetcher:
         response = await fetcher.async_fetch(urls["html_url"], **kwargs)
         assert response.status == 200
 
-    async def test_cdp_url_invalid(self, fetcher, urls):
-        with pytest.raises(TypeError):
-            await fetcher.async_fetch(urls["html_url"], cdp_url="blahblah")
-        with pytest.raises(Exception):
-            await fetcher.async_fetch(urls["html_url"], cdp_url="ws://blahblah")
+    @pytest.mark.parametrize("endpoint", [None, "blahblah", "ws://blahblah"])
+    async def test_cdp_url_requires_remote_session(self, fetcher, urls, endpoint):
+        with pytest.raises(TypeError, match="RemoteSession"):
+            await fetcher.async_fetch(urls["html_url"], cdp_url=endpoint)

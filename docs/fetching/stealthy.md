@@ -30,7 +30,7 @@ Now, we will review most of the arguments one by one, using examples. If you wan
     The async version of the `fetch` method is `async_fetch`, of course.
 
 
-This fetcher currently provides three main run options that can be combined as desired.
+This fetcher provides two local browser options.
 
 Which are:
 
@@ -51,13 +51,38 @@ If you don't have Google Chrome installed and want to use this option, you can u
 playwright install chrome
 ```
 
-### 3. CDP Connection
-```python
-StealthyFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
-```
-Instead of launching a browser locally (Chromium/Google Chrome), you can connect to a remote browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/).
+## Remote Sessions {#3-cdp-connection}
 
-The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser (ex: `http://localhost:9222`).
+Use `RemoteSession` or `AsyncRemoteSession` to connect to an already-running browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/). Pass a WebSocket endpoint (`ws://`/`wss://`) or an HTTP endpoint such as `http://localhost:9222` as `cdp_url`. These are session classes only. `StealthySession` and `StealthyFetcher` do not accept `cdp_url`.
+
+These classes inherit from `StealthySession` and `AsyncStealthySession`, respectively, so all their options and features, including Cloudflare solving with `solve_cloudflare=True`, work as usual except for the browser launch and context limits below.
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+    page = session.fetch("https://example.com")
+```
+
+`new_context=True` is the default. It creates a separate context, applies the context options and closes that context when the session ends.
+
+`new_context=False` uses the existing default context and its login state. The context stays open when the session ends. If no context is available, starting the session raises an error.
+
+When reusing a context, `useragent`, `locale`, `timezone_id`, `proxy`, `proxy_rotator` and `additional_args` are ignored. Per-request `proxy` is also ignored. The existing context settings remain in use.
+
+Scrapling creates its own tabs in either mode and closes only those tabs. Existing tabs stay open. Page options such as `extra_headers`, `timeout`, `page_setup` and `page_action` still work.
+
+`cookies` and `init_script` can still be added, but they affect the shared context when `new_context=False`. The remote classes do not accept `real_chrome`; `cdp_url` selects the browser. Other browser launch options do not apply because the browser is already running.
+
+Use `AsyncRemoteSession` with `async with` and `await`:
+
+```python
+from scrapling.fetchers import AsyncRemoteSession
+
+async def scrape_remote():
+    async with AsyncRemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        return await session.fetch("https://example.com")
+```
 
 
 ## What does it do?
@@ -98,7 +123,6 @@ Scrapling provides many options with this fetcher and its session classes. Befor
 |      real_chrome      | If you have a Chrome browser installed on your device, enable this, and the Fetcher will launch and use an instance of your browser.                                                                                                |    ✔️    |
 |        locale         | Specify user locale, for example, `en-GB`, `de-DE`, etc. Locale will affect `navigator.language` value, `Accept-Language` request header value, as well as number and date formatting rules. Defaults to the system default locale. |    ✔️    |
 |      timezone_id      | Changes the timezone of the browser. Defaults to the system timezone.                                                                                                                                                               |    ✔️    |
-|        cdp_url        | Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.                                                                                                                          |    ✔️    |
 |     user_data_dir     | Path to a User Data Directory, which stores browser session data like cookies and local storage. The default is to create a temporary directory. **Only Works with sessions**                                                       |    ✔️    |
 |      extra_flags      | A list of additional browser flags to pass to the browser on launch.                                                                                                                                                                |    ✔️    |
 |   solve_cloudflare    | When enabled, fetcher solves all types of Cloudflare's Turnstile/Interstitial challenges before returning the response to you. Defaults to `False`.                                                                                                      |    ✔️    |

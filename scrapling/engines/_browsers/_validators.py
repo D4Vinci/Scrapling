@@ -83,7 +83,6 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
     additional_args: Optional[Dict] = {}
     locale: str | None = None
     real_chrome: bool = False
-    cdp_url: Optional[str] = None
     useragent: Optional[str] = None
     extra_flags: Optional[List[str]] = None
     blocked_domains: Optional[Set[str]] = None
@@ -108,10 +107,6 @@ class PlaywrightConfig(Struct, kw_only=True, frozen=False, weakref=True):
             )
         if self.proxy:
             self.proxy = construct_proxy_dict(self.proxy)
-        if self.cdp_url:
-            cdp_msg = _is_invalid_cdp_url(self.cdp_url)
-            if cdp_msg:
-                raise ValueError(cdp_msg)
 
         if not self.cookies:
             self.cookies = []
@@ -155,6 +150,19 @@ class StealthConfig(PlaywrightConfig, kw_only=True, frozen=False, weakref=True):
             self.timeout = 60_000
 
 
+class RemoteConfig(StealthConfig, kw_only=True):
+    cdp_url: str = ""
+    new_context: bool = True
+
+    def __post_init__(self):
+        if not self.new_context:
+            self.useragent = self.locale = self.timezone_id = self.proxy = self.proxy_rotator = None
+            self.additional_args = {}
+        super().__post_init__()
+        if error := _is_invalid_cdp_url(self.cdp_url):
+            raise ValueError(error)
+
+
 @dataclass
 class _fetch_params:
     """A dataclass of all parameters used by `fetch` calls"""
@@ -183,6 +191,8 @@ def validate_fetch(
 ) -> _fetch_params:  # pragma: no cover
     if "capture_xhr" in method_kwargs:
         raise TypeError("capture_xhr was removed; use record_requests=True and session.network.")
+    if "cdp_url" in method_kwargs or "new_context" in method_kwargs:
+        raise TypeError("cdp_url and new_context must be set on RemoteSession or AsyncRemoteSession.")
     result: Dict[str, Any] = {}
     overrides: Dict[str, Any] = {}
     kwargs_dict: Dict[str, Any] = dict(method_kwargs)
@@ -221,7 +231,7 @@ def validate_fetch(
 # Cache default values for each model to reduce validation overhead
 models_default_values = {}
 
-for _model in (StealthConfig, PlaywrightConfig):
+for _model in (StealthConfig, PlaywrightConfig, RemoteConfig):
     _defaults = {}
     if hasattr(_model, "__struct_defaults__") and hasattr(_model, "__struct_fields__"):
         for field_name, default_value in zip(_model.__struct_fields__, _model.__struct_defaults__):  # type: ignore
@@ -249,6 +259,10 @@ def validate(params: Dict, model: type[PlaywrightConfig]) -> PlaywrightConfig: .
 def validate(params: Dict, model: type[PlaywrightConfig] | type[StealthConfig]) -> PlaywrightConfig | StealthConfig:
     if "capture_xhr" in params:
         raise TypeError("capture_xhr was removed; use record_requests=True and session.network.")
+    if ("cdp_url" in params or "new_context" in params) and not issubclass(model, RemoteConfig):
+        raise TypeError("cdp_url and new_context require RemoteSession or AsyncRemoteSession.")
+    if "real_chrome" in params and issubclass(model, RemoteConfig):
+        raise TypeError("Remote sessions do not accept real_chrome; cdp_url selects the browser.")
     try:
         # Filter out params with the default values (no need to validate them) to speed up validation
         filtered = _filter_defaults(params, model.__name__)
