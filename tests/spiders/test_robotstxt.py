@@ -505,6 +505,27 @@ class TestCacheAndConcurrency:
         assert fetch_count == 3
 
     @pytest.mark.asyncio
+    async def test_concurrent_calls_same_domain_fetch_once(self):
+        """Concurrent cache misses for one domain share a single robots.txt fetch."""
+        fetch_count = 0
+
+        async def slow_fetch(url: str, sid: str) -> MockResponse:
+            nonlocal fetch_count
+            fetch_count += 1
+            await asyncio.sleep(0.01)
+            return MockResponse(status=200, body=ROBOTS_BASIC.encode(), encoding="utf-8")
+
+        mgr = RobotsTxtManager(slow_fetch)
+
+        results = await asyncio.gather(*[
+            mgr.can_fetch(f"https://example.com/page{i}", "s1")
+            for i in range(6)
+        ])
+
+        assert fetch_count == 1
+        assert all(r is True for r in results)
+
+    @pytest.mark.asyncio
     async def test_concurrent_calls_consistent_results(self):
         """All concurrent callers should see the same allow/disallow result."""
         mgr = RobotsTxtManager(make_fetch_fn(content=ROBOTS_BASIC))
