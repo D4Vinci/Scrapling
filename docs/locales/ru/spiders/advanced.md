@@ -422,6 +422,7 @@ print(stats.to_dict())
 | `logging_format` | `"[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"` | Формат сообщения |
 | `logging_date_format` | `"%Y-%m-%d %H:%M:%S"` | Формат даты в сообщениях |
 | `log_file` | `None` | Путь к файлу журнала в дополнение к выводу в консоль |
+| `log_file_encoding` | `None` | Кодировка файла журнала; `None` использует кодировку Python по умолчанию |
 
 ```python
 import logging
@@ -431,6 +432,7 @@ class MySpider(Spider):
     start_urls = ["https://example.com"]
     logging_level = logging.INFO
     log_file = "logs/my_spider.log"
+    log_file_encoding = "utf-8"
 
     async def parse(self, response: Response):
         self.logger.info(f"Processing {response.url}")
@@ -438,3 +440,5 @@ class MySpider(Spider):
 ```
 
 Каталог файла журнала создаётся автоматически, если его нет. Консоль и файл используют один формат.
+
+Новые записи добавляются в конец файла. Если файл уже существует, используйте его кодировку.

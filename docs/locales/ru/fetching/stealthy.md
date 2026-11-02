@@ -30,7 +30,7 @@ from scrapling.fetchers import StealthyFetcher
     Асинхронная версия метода `fetch` называется `async_fetch`.
 
 
-Сейчас этот Fetcher предоставляет три основных варианта запуска, которые можно сочетать по необходимости.
+Этот Fetcher предлагает два варианта запуска локального браузера.
 
 Вот эти варианты:
 
@@ -51,13 +51,38 @@ StealthyFetcher.fetch('https://example.com', real_chrome=True)
 playwright install chrome
 ```
 
-### 3. Подключение по CDP {#3-cdp-connection}
-```python
-StealthyFetcher.fetch('https://example.com', cdp_url='ws://localhost:9222')
-```
-Вместо локального запуска Chromium или Google Chrome можно подключиться к удалённому браузеру через [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/).
+## Удалённые сессии {#3-cdp-connection}
 
-URL может быть адресом WebSocket (`ws://`/`wss://`), который выдают браузерные сервисы, или HTTP-адресом браузера, например `http://localhost:9222`.
+Используйте `RemoteSession` или `AsyncRemoteSession` для подключения к уже запущенному браузеру через [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/). В `cdp_url` передайте адрес WebSocket (`ws://`/`wss://`) или HTTP, например `http://localhost:9222`. Эти классы предназначены только для сессий. `StealthySession` и `StealthyFetcher` не принимают `cdp_url`.
+
+Эти классы наследуют `StealthySession` и `AsyncStealthySession` соответственно, поэтому все их параметры и возможности, включая решение проверок Cloudflare с помощью `solve_cloudflare=True`, работают как обычно, кроме описанных ниже ограничений запуска браузера и контекста.
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+    page = session.fetch("https://example.com")
+```
+
+По умолчанию используется `new_context=True`. Создаётся отдельный контекст, к нему применяются настройки контекста, а при завершении сессии он закрывается.
+
+`new_context=False` использует существующий контекст по умолчанию и сохранённое в нём состояние авторизации. После завершения сессии контекст остаётся открытым. Если доступного контекста нет, запуск сессии вызывает ошибку.
+
+При повторном использовании контекста параметры `useragent`, `locale`, `timezone_id`, `proxy`, `proxy_rotator` и `additional_args` игнорируются. Параметр `proxy` для отдельного запроса также игнорируется. Сохраняются существующие настройки контекста.
+
+В обоих режимах Scrapling создаёт собственные вкладки и закрывает только их. Существующие вкладки остаются открытыми. Параметры страницы, такие как `extra_headers`, `timeout`, `page_setup` и `page_action`, продолжают работать.
+
+`cookies` и `init_script` по-прежнему можно добавить, но при `new_context=False` они влияют на общий контекст. Классы удалённых сессий не принимают `real_chrome`; браузер задаётся через `cdp_url`. Остальные параметры запуска браузера не применяются, поскольку он уже запущен.
+
+Используйте `AsyncRemoteSession` с `async with` и `await`:
+
+```python
+from scrapling.fetchers import AsyncRemoteSession
+
+async def scrape_remote():
+    async with AsyncRemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        return await session.fetch("https://example.com")
+```
 
 
 ## Что он умеет? {#what-does-it-do}
@@ -98,7 +123,6 @@ StealthyFetcher предоставляет следующие средства �
 | real_chrome | Если на устройстве установлен Chrome, включите эту настройку, и Fetcher запустит ваш браузер. | ✔️ |
 | locale | Локаль, например `en-GB` или `de-DE`. Влияет на `navigator.language`, заголовок запроса `Accept-Language`, а также формат чисел и дат. По умолчанию используется системная локаль. | ✔️ |
 | timezone_id | Меняет часовой пояс браузера. По умолчанию используется системный часовой пояс. | ✔️ |
-| cdp_url | Подключается к браузеру по этому CDP URL вместо запуска нового экземпляра. | ✔️ |
 | user_data_dir | Путь к каталогу пользовательских данных браузера, например cookie и local storage. По умолчанию создаётся временный каталог. **Работает только с сессиями.** | ✔️ |
 | extra_flags | Список дополнительных флагов, передаваемых браузеру при запуске. | ✔️ |
 | solve_cloudflare | При включении Fetcher проходит все виды Cloudflare Turnstile/Interstitial перед возвратом ответа. По умолчанию `False`. | ✔️ |

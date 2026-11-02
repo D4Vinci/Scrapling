@@ -27,7 +27,7 @@ Der MCP-Server von Scrapling bietet sechzehn Werkzeuge für Web Scraping und Bro
 
 #### 🔌 Sitzungen verwalten {#session-management}
 
-- **`browser_open`**: Erstellt eine dauerhafte Stealthy-Browser-Sitzung, die über mehrere `browser_fetch`-Aufrufe hinweg offen bleibt. So muss nicht jedes Mal ein neuer Browser starten. Sie speichert die Browser-Konfiguration und gibt nur `session_id` und `session_type` zurück. Mit `list_sessions` sehen Sie die tatsächlich verwendeten `settings`. Bei CDP-Sitzungen ist dieser Wert leer.
+- **`browser_open`**: Erstellt eine dauerhafte Stealthy-Browser-Sitzung, die über mehrere `browser_fetch`-Aufrufe hinweg offen bleibt. So muss nicht jedes Mal ein neuer Browser starten. Sie speichert die Browser-Konfiguration und gibt nur `session_id` und `session_type` zurück. Mit `list_sessions` sehen Sie die tatsächlich verwendeten `settings`.
 - **`open_request_session`**: Erstellt eine dauerhafte HTTP-Sitzung ohne Browser zur Verwendung mit `session_make_request`. Sie behält Cookies, Verbindungen und den Browser-Fingerprint (`impersonate`) zwischen Anfragen. Sie gibt nur `session_id` und `session_type` mit dem Typ `static` zurück. Mit `list_sessions` sehen Sie die tatsächlich verwendeten `settings`.
 - **`close_session`**: Schließt eine dauerhafte Browser- oder HTTP-Sitzung und gibt ihre Ressourcen frei.
 - **`list_sessions`**: Listet alle aktiven Sitzungen mit ihren Details und `settings` auf.
@@ -241,7 +241,8 @@ Verwenden Sie dafür `cdp_url="http://localhost:9222"` oder die Adresse des ande
 !!! note "Hinweise"
 
     * Da der Browser bereits läuft, ignorieren CDP-Sitzungen Optionen, die nur beim Start gelten: `headless`, `real_chrome` und `executable_path`, einschließlich des oben beschriebenen Server-Standardwerts.<br/>
-    * Alle anderen Optionen gelten weiterhin (`locale`, `useragent`, `proxy`, `cookies`, `timezone_id` usw.). Jede Sitzung erstellt ihren eigenen Browser-Kontext im entfernten Browser.
+    * Ihr KI-Agent kann eine neue Sitzung starten oder eine vorhandene wiederverwenden, um auf Websites zu arbeiten, bei denen Sie bereits angemeldet sind.
+    * Scrapling schließt neue Sitzungen, wenn die Aufgabe beendet ist. Beim Wiederverwenden einer Sitzung bleiben der Browser und Ihre vorhandenen Tabs offen. Nur die von Scrapling erstellten Tabs werden geschlossen.
 
 ### Streamable HTTP {#streamable-http}
 
@@ -478,7 +479,7 @@ Dieser Schutz läuft automatisch bei der Extraktion von HTML, Markdown und Text.
 - Sitzungen behalten die beim Öffnen gesetzte Konfiguration. Dazu gehören headless, locale, Cookies und Optionen gegen Erkennung für Browser sowie `impersonate` und `proxy` für HTTP-Sitzungen. Optionen einzelner Anfragen wie timeout, wait_selector, network_idle und solve_cloudflare werden bei jedem Aufruf an `browser_fetch`/`session_make_request` übergeben. Ihre Standardwerte stehen in den Werkzeug-Schemas.
 - `browser_fetch` kann Cloudflare-Prüfungen in der offenen Stealthy-Browser-Sitzung lösen.
 - Schließen Sie Sitzungen am Ende immer mit `close_session`, um Ressourcen freizugeben.
-- Prüfen Sie mit `list_sessions`, welche Sitzungen noch aktiv sind und mit welchen `settings` sie erstellt wurden. Diese werden dem KI-Agenten zurückgegeben und sind bei CDP-Sitzungen leer.
+- Prüfen Sie mit `list_sessions`, welche Sitzungen noch aktiv sind und mit welchen `settings` sie erstellt wurden. Diese werden dem KI-Agenten zurückgegeben.
 - Übergeben Sie den Werkzeugen zum Öffnen eine eigene `session_id`, um aussagekräftige Namen wie `"search"` oder `"checkout"` zu vergeben. Sonst wird ein zufälliger Hexadezimalwert verwendet. Wenn die gewählte ID schon belegt ist, wird ein Fehler ausgelöst. So erkennen Sie Konflikte frühzeitig.
 
 ### 7. Screenshots erstellen {#7-capturing-screenshots}

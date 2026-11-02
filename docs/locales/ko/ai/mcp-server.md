@@ -24,7 +24,7 @@ Scrapling MCP 서버는 웹 스크래핑과 브라우저 조작을 위한 도구
 ### 세션 도구 {#session-tools}
 
 #### 🔌 세션 관리 {#session-management}
-- **`browser_open`**: 여러 `browser_fetch` 호출 사이에 계속 열려 있는 스텔스 브라우저 세션을 만듭니다. 매번 새 브라우저를 실행하는 부담을 줄입니다. 브라우저 수준의 설정을 보관하고 `session_id`와 `session_type`만 반환합니다. 실제 적용된 `settings`는 `list_sessions`로 확인하세요. CDP 세션에서는 비어 있습니다.
+- **`browser_open`**: 여러 `browser_fetch` 호출 사이에 계속 열려 있는 스텔스 브라우저 세션을 만듭니다. 매번 새 브라우저를 실행하는 부담을 줄입니다. 브라우저 수준의 설정을 보관하고 `session_id`와 `session_type`만 반환합니다. 실제 적용된 `settings`는 `list_sessions`로 확인하세요.
 - **`open_request_session`**: `session_make_request`에서 사용하는 지속 HTTP 세션을 만듭니다. 브라우저는 사용하지 않으며 요청 사이에 쿠키, 연결, 브라우저 지문(`impersonate`)을 유지합니다. `session_id`와 `session_type`만 반환하고 타입은 `static`입니다. 실제 적용된 `settings`는 `list_sessions`로 확인하세요.
 - **`close_session`**: 브라우저 또는 HTTP 세션을 닫고 자원을 해제합니다.
 - **`list_sessions`**: 활성 세션과 각 세션의 정보 및 `settings`를 나열합니다.
@@ -235,7 +235,8 @@ chrome --remote-debugging-port=9222
 !!! note "참고:"
 
     * 브라우저가 이미 실행 중이므로 실행할 때만 쓰는 옵션은 CDP 세션에서 무시됩니다. `headless`, `real_chrome`, `executable_path`가 이에 해당하며, 앞에서 설명한 서버 전체 기본 경로도 포함됩니다.<br/>
-    * 각 세션이 원격 브라우저에 별도의 브라우저 컨텍스트를 만들기 때문에 나머지 옵션(`locale`, `useragent`, `proxy`, `cookies`, `timezone_id` 등)은 그대로 적용됩니다.
+    * AI 에이전트는 새 세션을 시작하거나 기존 세션을 재사용해 이미 로그인한 사이트에서 작업할 수 있습니다.
+    * Scrapling은 작업이 끝나면 새로 만든 세션을 닫습니다. 세션을 재사용할 때는 브라우저와 기존 탭을 열어 두고, Scrapling이 만든 탭만 닫습니다.
 
 ### Streamable HTTP {#streamable-http}
 버전 0.3.6부터 기존 'stdio' 전송 방식 대신 'Streamable HTTP' 전송 방식으로 MCP 서버를 실행할 수 있습니다.
@@ -465,7 +466,7 @@ MCP 서버는 `main_content_only`가 켜져 있으면 스크래핑한 내용을 
 - 세션은 열 때 지정한 세션 설정을 유지합니다. 브라우저에서는 headless, locale, cookies, 스텔스 옵션 등이 해당하고, 요청 세션에서는 `impersonate`, `proxy`가 해당합니다. timeout, wait_selector, network_idle, solve_cloudflare 같은 요청별 옵션은 `browser_fetch`/`session_make_request`를 호출할 때마다 전달합니다. 기본값은 각 도구의 스키마에 나와 있습니다.
 - `browser_fetch`는 열려 있는 스텔스 브라우저 세션에서 Cloudflare 검증을 통과할 수 있습니다.
 - 작업이 끝나면 항상 `close_session`으로 세션을 닫아 리소스를 해제하세요.
-- `list_sessions`로 아직 활성 상태인 세션과 생성할 때 사용한 `settings`를 확인하세요. 이 정보는 AI 에이전트에 반환되며, CDP 세션에서는 비어 있습니다.
+- `list_sessions`로 아직 활성 상태인 세션과 생성할 때 사용한 `settings`를 확인하세요. 이 정보는 AI 에이전트에 반환됩니다.
 - 세션을 여는 도구에 원하는 `session_id`를 전달하면 기본값인 임의의 16진수 대신 의미 있는 이름(예: `"search"`, `"checkout"`)을 붙일 수 있습니다. 이미 사용 중인 ID를 지정하면 오류가 발생하므로 이름 충돌을 바로 알 수 있습니다.
 
 ### 7. 스크린샷 찍기 {#7-capturing-screenshots}

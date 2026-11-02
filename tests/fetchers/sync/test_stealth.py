@@ -71,10 +71,7 @@ class TestStealthyFetcher:
         response = fetcher.fetch(self.html_url, **kwargs)
         assert response.status == 200
 
-    def test_cdp_url_invalid(self, fetcher):
-        """Test if invalid CDP URLs raise appropriate exceptions"""
-        with pytest.raises(TypeError):
-            fetcher.fetch(self.html_url, cdp_url="blahblah")
-
-        with pytest.raises(Exception):
-            fetcher.fetch(self.html_url, cdp_url="ws://blahblah")
+    @pytest.mark.parametrize("endpoint", [None, "blahblah", "ws://blahblah"])
+    def test_cdp_url_requires_remote_session(self, fetcher, endpoint):
+        with pytest.raises(TypeError, match="RemoteSession"):
+            fetcher.fetch(self.html_url, cdp_url=endpoint)

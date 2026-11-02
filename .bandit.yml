@@ -10,3 +10,4 @@ skips:
 - B301  # Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue.
 - B108  # Probable insecure usage of temp file/directory.
 - B102  # Use of exec detected.
+- B603  # B603:subprocess_without_shell_equals_true - Used in tests
