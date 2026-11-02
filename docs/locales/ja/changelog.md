@@ -7,6 +7,89 @@ description: "Scrapling のリリースノートです。新機能、修正、�
 
 Scrapling の主な変更を、[GitHub のリリース](https://github.com/D4Vinci/Scrapling/releases)からまとめています。
 
+## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
+
+**Scrapling v0.5 は、取得処理、解析、Spider、ブラウザの自動操作、AI ツール、10 言語のドキュメントまで、ほぼすべてを更新するリリースです 🚀**
+
+!!! warning "警告"
+
+    **このリリースには互換性に影響する変更が多数あり、ここではすべてを紹介できません。更新前に[v0.5 への移行ガイド](migrating-to-v0.5.md)を確認してください。**
+
+### 🚀 新機能と使いやすさの改善 {#v0.5-new-stuff-and-quality-of-life-changes}
+
+- **AI エージェント向けの MCP サーバーの機能を大幅に増やし、ほぼすべての CAPTCHA を解決できるようになりました**（[ドキュメント](ai/mcp-server.md)を参照）：
+
+    - **ブラウザ上の操作をまとめて実行できます**。フォーム入力、クリック、ホバー、スクロール、キーボード操作、ダイアログ処理、結果の待機を、指定した順番で実行します。さまざまな入力欄とゆっくりした操作に対応し、最初のエラーで操作を停止します。
+    - **再読み込みせずに現在のページを読み取り、検索できます**。ページ全体または単一の要素から、HTML、Markdown、テキストを抽出します。検索できるページスナップショットには、要素のロール、名前、位置が表示されます。対象を絞った表示でも、周囲の文脈を保持します。
+    - **独自の JavaScript を実行し、必要な部分のスクリーンショットを撮影できます**。ページ自身の JavaScript にアクセスして、非同期処理を含むスクリプトを実行できます。個別の要素、ビューポート、ページ全体を PNG または JPEG で撮影できます。
+    - **ネットワーク通信を確認し、ログイン状態を再利用できます**。記録したリクエストとレスポンスを調べ、ブラウザのログイン状態を保存、復元できます。開いた Shadow DOM と閉じた Shadow DOM の中にある要素も操作できます。記録した通信は、セッションを閉じる前に読み取ってください。
+    - **トークンの使用量を減らし、エラーをわかりやすくしました**。短いツール説明と共通の案内で重複する文章を減らしました。ブラウザやリクエストの失敗も、役に立つエラーメッセージとともにエージェントに届きます。
+
+- **ページの裏側で発生するリクエストを確認できます**。`record_requests=True` を有効にすると、ページの読み込み、操作、タブをまたいで完了した通信を記録します。リクエストを再送せずに、保存したレスポンスを調べられます（[ドキュメント](fetching/stealthy.md#network-history)を参照）。
+
+    ```python
+    from scrapling.fetchers import StealthySession
+
+    with StealthySession(record_requests=True) as session:
+        session.fetch("https://example.com", network_idle=True)
+        for response in session.network.search(url_pattern=r"/api/", limit=None):
+            print(response.url, response.status, response.body)
+    ```
+
+    - URL、メソッド、リソースの種類、ステータスで絞り込み、ID で 1 つのレスポンスを取得できます。通常の `Response` API を使って、ヘッダー、送信データ、API レスポンス、HTTP エラー、リダイレクトを確認できます。
+    - 対応するテキスト本文をサイズ制限内で保持し、メタデータと、本文を保存できない場合の理由も記録します。既定の上限は 1,000 リクエストです。同期、非同期のセッションに対応し、保存した Python の履歴はセッションを閉じた後も読み取れます。
+
+- **一度保存したログイン状態を、次の実行でも再利用できます**。`save_state(path)` と `load_state(path)` は、Cookie、ローカルストレージ、IndexedDB を Playwright と互換性のある JSON で保存します。同期、非同期のブラウザセッションで利用できます（[ドキュメント](fetching/stealthy.md#save-and-load-session-state)を参照）。
+    - ページの取得や再読み込みの前に状態を読み込んでください。起動済みの共有ブラウザコンテキストが必要で、`proxy_rotator` は使用できません。タブ、ブラウザ設定、`sessionStorage` は保存されません。
+
+- **`pierce_shadow=True` で開いた Shadow DOM を抽出できます**。抽出後は、通常どおり CSS や XPath を使えます。ブラウザ Fetcher、セッション、CLI の `--pierce-shadow` オプションで利用できます。実際のページを変更せず、スロットの内容を保持します。取得する HTML には、閉じた Shadow ルートと iframe のドキュメントは含まれません（[ドキュメント](fetching/stealthy.md#shadow-dom)を参照）。
+
+- **Spider がサイトをたどる順序を選べます**。`CrawlSpider` と、`ContentSpider` を含むそのサブクラスでは、`crawl_strategy="bfs"` で先に追加したリクエストから、`"dfs"` で後に追加したリクエストから処理するように設定できます。リクエストの優先度はこの順序より優先され、同時に処理するページの完了順は異なる場合があります（[ドキュメント](spiders/generic-templates.md#crawl-order)を参照）。
+
+### 🐛 バグ修正 {#v0.5-bug-fixes}
+
+- **Cloudflare チャレンジの解決を改善しました**。遅れて表示されるウィジェットを検出し、不要な待機を減らし、受動型チャレンジと非表示フレームの再試行ループに上限を設けました（[#468](https://github.com/D4Vinci/Scrapling/issues/468) と [#509](https://github.com/D4Vinci/Scrapling/issues/509) を修正）。
+- **管理者権限で実行した Windows シェルからブラウザを起動する問題を修正しました**（[#463](https://github.com/D4Vinci/Scrapling/issues/463) を修正）。
+- **独自のブラウザフラグを追加しても、組み込みのステルス用フラグを保持するようにしました**。@alkaz-nodemaven による [#430](https://github.com/D4Vinci/Scrapling/pull/430) の変更です。
+- **ブラウザのレスポンスの文字セット解析を改善しました**。大文字と小文字の違い、空白、引用符で囲まれた値を含む宣言にも対応します。
+- **解決すべき Cloudflare チャレンジがない場合に、チャレンジが見つからないことをエラーとして記録しないようにしました**（[#459](https://github.com/D4Vinci/Scrapling/issues/459) を修正）。
+
+- **リクエストのフィンガープリントを修正しました**。クエリパラメーターは @yetval による [#448](https://github.com/D4Vinci/Scrapling/pull/448)、空または偽と評価される JSON 本文は @ac1982 による [#480](https://github.com/D4Vinci/Scrapling/pull/480)、ヘッダーの挿入順序は @SarwadnyaMahajan による [#466](https://github.com/D4Vinci/Scrapling/pull/466) の変更です。
+- **リンクをたどる際に、前のリクエストのデータが引き継がれる問題を修正しました**。古い本文関連ヘッダーが残る問題も含みます。@yetval による [#462](https://github.com/D4Vinci/Scrapling/pull/462) の変更です。
+- **ブロックされたレスポンスが、成功したレスポンスとして開発用キャッシュに保存されないようにしました**。@Kuang-xianxin による [#446](https://github.com/D4Vinci/Scrapling/pull/446) の変更です。
+- **クロールが例外で失敗した場合に、チェックポイントファイルを保持するようにしました**。@SulimanAbdulrazzaq による [#486](https://github.com/D4Vinci/Scrapling/pull/486) の変更です。
+- **robots.txt の取得に失敗した場合の処理を修正しました**。取得失敗をクロールの許可としてキャッシュしないようにしました。@prateekraawat1 による [#443](https://github.com/D4Vinci/Scrapling/pull/443) の変更です。
+- **範囲を制限するセレクターを使ったリンク抽出を修正しました**。一致する要素がない場合と、リンク要素自体を選択する場合に対応します。@SulimanAbdulrazzaq による [#452](https://github.com/D4Vinci/Scrapling/pull/452) と [#483](https://github.com/D4Vinci/Scrapling/pull/483) の変更です。
+- **サイトマップのコールバックの振り分けを修正しました**。@SulimanAbdulrazzaq による [#458](https://github.com/D4Vinci/Scrapling/pull/458) の変更です。**コメントや処理命令を含む XML の解析も修正しました**。@sup3dev による [#450](https://github.com/D4Vinci/Scrapling/pull/450) の変更です。
+- **robots.txt と CSV フィードの先頭にあるバイトオーダーマークに対応しました**。@SulimanAbdulrazzaq による [#453](https://github.com/D4Vinci/Scrapling/pull/453) の変更です。
+- **Spider の HTTP セッションでの `stealthy_headers` の扱いを修正しました**。`curl_cffi` に直接渡さず、セッションに渡すようにしました。@Yigtwxx による [#475](https://github.com/D4Vinci/Scrapling/pull/475) の変更です。
+
+- **辞書形式のフォームで、リストとタプルの値のエンコードを修正しました**。リクエスト本文の優先順位と、既存の `None` の扱いは維持します。@SulimanAbdulrazzaq による [#485](https://github.com/D4Vinci/Scrapling/pull/485) の貢献を含みます。
+- **セッションとリクエストごとの HTTP ヘッダーを、大文字と小文字を区別せずに結合する処理を修正しました**。@SulimanAbdulrazzaq による [#487](https://github.com/D4Vinci/Scrapling/pull/487) の変更です。
+- **CLI のリクエストで、空または偽と評価される JSON 本文が通知なく捨てられる問題を修正しました**。@SulimanAbdulrazzaq による [#484](https://github.com/D4Vinci/Scrapling/pull/484) の変更です。
+- **Markdown とテキストファイルの書き出しで、常に UTF-8 を使うようにしました**。変換エラーによって既存の出力ファイルが切り詰められる問題も防ぎます。@SulimanAbdulrazzaq による [#488](https://github.com/D4Vinci/Scrapling/pull/488) の変更です。
+- **`curl2fetcher()` での curl の User-Agent とプロキシのオプション処理を修正しました**。@SulimanAbdulrazzaq による [#490](https://github.com/D4Vinci/Scrapling/pull/490) の変更です。
+
+- **選択した複数の要素を `Response.markdown()` または CLI の抽出処理で変換すると、Markdown のブロックがつながってしまう問題を修正しました**。@Yigtwxx による [#432](https://github.com/D4Vinci/Scrapling/pull/432) の貢献を含みます。
+- **AI 向け出力での非表示コンテンツの除去を修正しました**。`opacity:0.95` のような表示される内容を残し、より多くの非表示スタイルを認識し、非表示のスロットを取り除きます。@Yigtwxx による [#460](https://github.com/D4Vinci/Scrapling/pull/460) の貢献を含みます。
+- **タグが入れ子になっている箇所で、不要なタグの除去が途中で止まる問題を修正しました**。@Yigtwxx による [#474](https://github.com/D4Vinci/Scrapling/pull/474) の変更です。
+- **同じタグの兄弟要素が複数あるとき、最初の要素に対して生成する CSS と XPath のセレクターを修正しました**。@yellow-dog-dog による [#495](https://github.com/D4Vinci/Scrapling/pull/495) の変更です。
+- **lxml の HTML パーサーの非推奨警告を解消しました**。@afsuyadi による [#493](https://github.com/D4Vinci/Scrapling/pull/493) の変更です。
+
+### ドキュメント {#v0.5-docs}
+
+- **Web サイト全体が 10 言語に対応しました**。英語、アラビア語、スペイン語、ブラジルポルトガル語、フランス語、ドイツ語、簡体字中国語、日本語、ロシア語、韓国語で利用できます。ガイド、API リファレンス、チュートリアル、[変更履歴](changelog.md)を翻訳しました。アラビア語の右から左への表示に対応し、言語を切り替えても現在のページとセクションを保持します。
+- **ガイド、README の例、セットアップ手順をわかりやすくしました**。チェックポイントのデータ、ブラウザの文字コード、保存した状態、ネットワーク履歴、Shadow DOM、クロール順序について説明しています。
+- **Agent Skill と、その例、参考資料、ダウンロード用アーカイブを更新しました**。現在のブラウザと MCP のツールに対応しています。
+- **変更履歴を Web サイトに移しました**。各ページの Markdown ソースも参照できるようにしました。
+
+### プロジェクト {#v0.5-project}
+
+- Scrapling のロゴ、カバー画像、Web サイトの見た目を更新しました。
+- ブラウザ操作、ダイアログ、抽出、スクリーンショット、JavaScript、ネットワーク記録、状態ファイル、Shadow DOM、クローラーの修正に関するテストを増やしました。
+- ブラウザテスト用のマーカーを追加し、ブラウザ、非同期、並列のテストを分けて実行するようにしました。@diegobravtraps-oss による [#457](https://github.com/D4Vinci/Scrapling/pull/457) で、Windows でのチェックポイントと CSV のテストの移植性を改善しました。
+- 多言語ドキュメントで共有するビルド設定と、貢献の案内を更新しました。
+
 ## [v0.4.15](https://github.com/D4Vinci/Scrapling/releases/tag/v0.4.15) - 2026-08-23 {#v0.4.15}
 
 **今年最大規模のリリースの 1 つです。MCP サーバーを作り直し、1 行で RAG 用の Markdown を生成できるようにしました。Cloudflare チャレンジの解決を改善し、自動操作のためにブラウザタブを開いたままにします 🚀**

@@ -7,6 +7,89 @@ description: "Scrapling 各版本的发布说明，包括新功能、问题修�
 
 Scrapling 的所有重要变更，整理自 [GitHub 发布记录](https://github.com/D4Vinci/Scrapling/releases)。
 
+## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
+
+**Scrapling v0.5 几乎全面升级：页面获取、解析、Spider、浏览器自动化、AI 工具，以及十种语言的文档 🚀**
+
+!!! warning "警告"
+
+    **此版本包含大量不兼容变更，无法在此全部列出。更新前请查看[迁移到 v0.5 指南](migrating-to-v0.5.md)。**
+
+### 🚀 新功能与使用体验改进 {#v0.5-new-stuff-and-quality-of-life-changes}
+
+- **面向 AI 智能体的 MCP 服务器功能大幅增强，能够处理几乎所有 CAPTCHA 验证码**（参见[文档](ai/mcp-server.md)）：
+
+    - **完整的浏览器操作流程**：按顺序填表、点击、悬停、滚动、使用键盘、处理对话框并等待结果。支持多种字段类型和放慢操作速度，遇到第一个错误时停止执行。
+    - **无需重新加载，即可读取和搜索当前页面**：从整个页面或单个元素中提取 HTML、Markdown 或文本。可搜索的页面快照会显示元素的角色、名称和位置，聚焦查看时仍保留周围的上下文。
+    - **运行自定义 JavaScript 并截取指定区域**：执行脚本，包括异步操作，并可访问页面自身的 JavaScript。可以将单个元素、视口或整个页面保存为 PNG 或 JPEG 截图。
+    - **检查网络活动并复用登录状态**：查看记录的请求和响应，保存和恢复浏览器登录状态，并与开放或封闭 Shadow DOM 内的元素交互。请在关闭会话前读取记录的网络流量。
+    - **减少 token 消耗，让错误更清晰**：更简洁的工具描述和共享说明减少了重复文本，浏览器及请求失败时也会向智能体提供有用的错误信息。
+
+- **查看页面背后的请求**。启用 `record_requests=True`，记录页面加载、操作和标签页中已完成的网络流量，然后直接查看保存的响应，无需再次发送请求。（参见[文档](fetching/stealthy.md#network-history)）
+
+    ```python
+    from scrapling.fetchers import StealthySession
+
+    with StealthySession(record_requests=True) as session:
+        session.fetch("https://example.com", network_idle=True)
+        for response in session.network.search(url_pattern=r"/api/", limit=None):
+            print(response.url, response.status, response.body)
+    ```
+
+    - 按 URL、方法、资源类型或状态筛选，也可通过 ID 获取单个响应。通过常用的 `Response` API 查看请求头和响应头、发送的数据、API 响应、HTTP 错误和重定向。
+    - 在大小限制内保留支持的文本正文，并保存元数据；无法保存正文时会记录原因。默认上限为 1,000 个请求。支持同步和异步会话，保存的 Python 历史记录在会话关闭后仍可读取。
+
+- **登录状态只需保存一次，即可在多次运行中复用**。`save_state(path)` 和 `load_state(path)` 以兼容 Playwright 的 JSON 格式保存 Cookie、本地存储和 IndexedDB。同步和异步浏览器会话均支持这两个方法。（参见[文档](fetching/stealthy.md#save-and-load-session-state)）
+    - 获取或重新加载页面前先加载状态。需要已启动的共享浏览器上下文，且不能使用 `proxy_rotator`；标签页、浏览器设置和 `sessionStorage` 不会保存。
+
+- **使用 `pierce_shadow=True` 提取开放的 Shadow DOM**，然后照常使用 CSS 或 XPath。浏览器获取器、会话以及 CLI 的 `--pierce-shadow` 选项均支持此功能。保留插槽内容，同时不修改实时页面。捕获的 HTML 不包含封闭的 Shadow 根和 iframe 文档。（参见[文档](fetching/stealthy.md#shadow-dom)）
+
+- **选择 Spider 探索网站的顺序**。`CrawlSpider` 及其子类（包括 `ContentSpider`）支持 `crawl_strategy="bfs"`，优先调度最早加入的请求；也可使用 `"dfs"`，优先调度最新加入的请求。优先级仍然优先，并发页面的完成顺序可能不同。（参见[文档](spiders/generic-templates.md#crawl-order)）
+
+### 🐛 问题修复 {#v0.5-bug-fixes}
+
+- **改进 Cloudflare 挑战处理**，检测延迟出现的验证组件，减少不必要的等待，并限制被动挑战和隐藏框架的重试循环。修复 [#468](https://github.com/D4Vinci/Scrapling/issues/468) 和 [#509](https://github.com/D4Vinci/Scrapling/issues/509)。
+- **修复从以管理员权限运行的 Windows shell 启动浏览器的问题**。修复 [#463](https://github.com/D4Vinci/Scrapling/issues/463)。
+- **添加自定义浏览器参数时保留内置的隐身参数**，由 @alkaz-nodemaven 在 [#430](https://github.com/D4Vinci/Scrapling/pull/430) 中贡献。
+- **改进浏览器响应的字符集解析**，支持大小写不同、包含空格或带引号的声明值。
+- **无需处理 Cloudflare 挑战时，不再将未检测到挑战记录为错误**。修复 [#459](https://github.com/D4Vinci/Scrapling/issues/459)。
+
+- **修正请求指纹**：查询参数由 @yetval 在 [#448](https://github.com/D4Vinci/Scrapling/pull/448) 中修复，空值或假值 JSON 正文由 @ac1982 在 [#480](https://github.com/D4Vinci/Scrapling/pull/480) 中修复，请求头插入顺序由 @SarwadnyaMahajan 在 [#466](https://github.com/D4Vinci/Scrapling/pull/466) 中修复。
+- **修复请求数据被带入后续链接请求的问题**，包括残留的正文相关请求头，由 @yetval 在 [#462](https://github.com/D4Vinci/Scrapling/pull/462) 中贡献。
+- **防止被拦截的响应作为成功响应存入开发缓存**，由 @Kuang-xianxin 在 [#446](https://github.com/D4Vinci/Scrapling/pull/446) 中贡献。
+- **抓取因异常失败时保留检查点文件**，由 @SulimanAbdulrazzaq 在 [#486](https://github.com/D4Vinci/Scrapling/pull/486) 中贡献。
+- **修正 robots.txt 获取失败的处理方式**，不再将获取失败缓存为允许抓取，由 @prateekraawat1 在 [#443](https://github.com/D4Vinci/Scrapling/pull/443) 中贡献。
+- **修复使用范围限制选择器提取链接的问题**，包括没有匹配项，以及选择器直接指向链接元素本身的情况，由 @SulimanAbdulrazzaq 在 [#452](https://github.com/D4Vinci/Scrapling/pull/452) 和 [#483](https://github.com/D4Vinci/Scrapling/pull/483) 中贡献。
+- **修复 sitemap 的回调路由**，由 @SulimanAbdulrazzaq 在 [#458](https://github.com/D4Vinci/Scrapling/pull/458) 中贡献；**修复包含注释或处理指令时的 XML 解析问题**，由 @sup3dev 在 [#450](https://github.com/D4Vinci/Scrapling/pull/450) 中贡献。
+- **处理 robots.txt 和 CSV Feed 开头的字节顺序标记**，由 @SulimanAbdulrazzaq 在 [#453](https://github.com/D4Vinci/Scrapling/pull/453) 中贡献。
+- **修复 Spider HTTP 会话对 `stealthy_headers` 的处理**，将该选项传给会话，而不是直接传给 `curl_cffi`，由 @Yigtwxx 在 [#475](https://github.com/D4Vinci/Scrapling/pull/475) 中贡献。
+
+- **修复字典表单中列表和元组值的编码**，同时保留请求正文的优先顺序和现有的 `None` 处理方式，包含 @SulimanAbdulrazzaq 在 [#485](https://github.com/D4Vinci/Scrapling/pull/485) 中的贡献。
+- **修复会话与单次请求的 HTTP 请求头合并，正确忽略大小写**，由 @SulimanAbdulrazzaq 在 [#487](https://github.com/D4Vinci/Scrapling/pull/487) 中贡献。
+- **修复 CLI 请求无提示地丢弃空值或假值 JSON 正文的问题**，由 @SulimanAbdulrazzaq 在 [#484](https://github.com/D4Vinci/Scrapling/pull/484) 中贡献。
+- **让 Markdown 和文本文件导出统一使用 UTF-8**，并防止转换错误截断已有的输出文件，由 @SulimanAbdulrazzaq 在 [#488](https://github.com/D4Vinci/Scrapling/pull/488) 中贡献。
+- **修复 `curl2fetcher()` 对 curl 的 User-Agent 和代理选项的处理**，由 @SulimanAbdulrazzaq 在 [#490](https://github.com/D4Vinci/Scrapling/pull/490) 中贡献。
+
+- **修复 Markdown 块连在一起的问题**，该问题发生在通过 `Response.markdown()` 或 CLI 提取转换多个选中元素时，包含 @Yigtwxx 在 [#432](https://github.com/D4Vinci/Scrapling/pull/432) 中的贡献。
+- **修复 AI 输出的隐藏内容清理**，保留 `opacity:0.95` 这类可见内容，识别更多隐藏样式并移除隐藏插槽，包含 @Yigtwxx 在 [#460](https://github.com/D4Vinci/Scrapling/pull/460) 中的贡献。
+- **修复在嵌套标签附近过早停止移除噪声标签的问题**，由 @Yigtwxx 在 [#474](https://github.com/D4Vinci/Scrapling/pull/474) 中贡献。
+- **修复为多个同标签兄弟元素中的第一个元素生成 CSS 和 XPath 选择器的问题**，由 @yellow-dog-dog 在 [#495](https://github.com/D4Vinci/Scrapling/pull/495) 中贡献。
+- **解决 lxml HTML 解析器的弃用警告**，由 @afsuyadi 在 [#493](https://github.com/D4Vinci/Scrapling/pull/493) 中贡献。
+
+### 文档 {#v0.5-docs}
+
+- **整个网站现已支持十种语言**：英语、阿拉伯语、西班牙语、巴西葡萄牙语、法语、德语、简体中文、日语、俄语和韩语。指南、API 参考、教程和[更新日志](changelog.md)均已翻译，支持阿拉伯语从右到左的布局，切换语言时会保留当前页面和章节。
+- **改进指南、README 示例和设置步骤**，涵盖检查点数据、浏览器编码、保存的状态、网络历史记录、Shadow DOM 和抓取顺序。
+- **更新 Agent Skill** 及其示例、参考资料和可下载的压缩包，使其与当前的浏览器和 MCP 工具保持一致。
+- **将更新日志移至网站**，并提供每个页面的 Markdown 源文件入口。
+
+### 项目 {#v0.5-project}
+
+- 更新 Scrapling 的徽标、封面图片和网站外观。
+- 扩展测试，覆盖浏览器操作、对话框、内容提取、截图、JavaScript、网络记录、状态文件、Shadow DOM 和爬虫修复。
+- 添加浏览器测试标记，将浏览器、异步和并行测试分别运行。@diegobravtraps-oss 在 [#457](https://github.com/D4Vinci/Scrapling/pull/457) 中改进了 Windows 上检查点和 CSV 测试的兼容性。
+- 更新共享的多语言文档构建配置和贡献指南。
+
 ## [v0.4.15](https://github.com/D4Vinci/Scrapling/releases/tag/v0.4.15) - 2026-08-23 {#v0.4.15}
 
 **今年规模最大的版本之一：重构 MCP 服务器，一行代码生成可用于 RAG 的 Markdown，改进 Cloudflare 挑战处理，并让浏览器标签页保持打开以便继续自动化操作 🚀**

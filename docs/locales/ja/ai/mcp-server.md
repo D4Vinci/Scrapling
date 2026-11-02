@@ -5,7 +5,7 @@ description: "AI クライアントを Scrapling に接続し、HTTP やブラ�
 
 # Scrapling MCP サーバーの使い方 {#scrapling-mcp-server-guide}
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="YouTube 動画プレーヤー" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NHwWEiTOoPQ" title="YouTube 動画プレーヤー" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Scrapling MCP サーバー**は、Scrapling の Web スクレイピング機能を、普段使う AI チャットボットや AI エージェントに直接提供します。Claude や MCP 対応のインターフェースで会話しながら、サイトのスクレイピング、データ抽出、ボット対策の回避を行えます。
 
@@ -24,7 +24,7 @@ Scrapling MCP サーバーには、Web スクレイピングとブラウザ操�
 ### セッションツール {#session-tools}
 
 #### 🔌 セッション管理 {#session-management}
-- **`browser_open`**：複数の `browser_fetch` 呼び出しで使い続けられるステルスブラウザのセッションを作ります。毎回ブラウザを起動する負荷を省けます。ブラウザレベルの設定を保持し、`session_id` と `session_type` だけを返します。有効な `settings` は `list_sessions` で確認できます。CDP セッションでは空になります。
+- **`browser_open`**：複数の `browser_fetch` 呼び出しで使い続けられるステルスブラウザのセッションを作ります。毎回ブラウザを起動する負荷を省けます。ブラウザレベルの設定を保持し、`session_id` と `session_type` だけを返します。有効な `settings` は `list_sessions` で確認できます。
 - **`open_request_session`**：`session_make_request` で使う永続 HTTP セッションを作ります。ブラウザは使いません。リクエスト間で Cookie、接続、ブラウザのフィンガープリント（`impersonate`）を保持します。`session_id` と `session_type` だけを返し、型は `static` です。有効な `settings` は `list_sessions` で確認できます。
 - **`close_session`**：ブラウザまたは HTTP のセッションを閉じ、リソースを解放します。
 - **`list_sessions`**：実行中のすべてのセッションについて、詳細と `settings` を一覧表示します。
@@ -53,6 +53,8 @@ Scrapling MCP サーバーには、Web スクレイピングとブラウザ操�
 - **`browser_actions`**：1 回の呼び出しで、マウス操作、入力欄の操作、キーボードショートカット、ダイアログへの応答、待機を続けて実行します。アラートや確認ダイアログを受け入れる、閉じる、入力ダイアログにテキストを入れる、といった操作ができます。例えば、検索欄への入力、送信、結果の待機、結果を開く操作をまとめられます。AI は手順が分かっている操作をまとめ、ページの変化を確認したいときは別途スナップショットを取得できます。操作ごとにエージェントとのやり取りを挟まずに済むため、短時間で消えるメニューなど、すぐに次の操作をする必要がある場面で役立ちます。
 
     ホバーでメニューやツールチップを表示し、ボタンやリンクをクリックし、入れ子のパネル上に移動して縦や横にスクロールできます。移動とクリックでは、セレクター、スナップショットの参照、座標を指定できます。要素を対象にする場合は、自動で待機して表示範囲までスクロールします。座標間の移動を複数の段階に分けるほか、左、右、中央ボタンのクリックとダブルクリックにも対応しています。
+
+    セレクターやスナップショットの参照で項目を他の要素へドラッグしたり、画面上の点を結ぶ経路に沿ってスライダーなどのコントロールを動かしたりできます。ドラッグ中はマウスの左ボタンを押したままにし、移動を複数の段階に分けることもできます。ドラッグが失敗またはキャンセルされた場合は、ページが再び利用可能になる前にボタンを離す処理を試みます。
 
     セレクターやスナップショットの参照で、ページ上の入力欄を指定します。テキスト入力、チェックボックスのオンとオフ、ラジオボタンの選択、標準のドロップダウンで表示ラベルに基づく 1 つ以上の選択ができます。既存のテキストを置き換える、消す、現在のカーソル位置から入力を続けることもできます。キーボードショートカットで、テキストの選択や削除、フォーカス移動、フォーム送信、メニューを閉じる操作を行えます。低速モードでは 1 文字ずつ入力し、文字間と各操作の間にランダムな待ち時間を入れます。
 
@@ -233,7 +235,8 @@ chrome --remote-debugging-port=9222
 !!! note "注意点"
 
     * ブラウザはすでに動いているため、起動時だけに使うオプションは CDP セッションでは無視されます。対象は `headless`、`real_chrome`、`executable_path` で、上で説明したサーバー全体のデフォルト値も含みます。<br/>
-    * 各セッションはリモートブラウザに専用のブラウザコンテキストを作るため、それ以外の設定（`locale`、`useragent`、`proxy`、`cookies`、`timezone_id` など）は適用されます。
+    * AI エージェントは、新しいセッションを開始することも、既存のセッションを再利用してログイン済みのサイトで作業することもできます。
+    * Scrapling はタスク終了時に新しく作成したセッションを閉じます。セッションを再利用する場合は、ブラウザと既存のタブを開いたままにして、Scrapling が作成したタブだけを閉じます。
 
 ### Streamable HTTP {#streamable-http}
 バージョン 0.3.6 から、従来の stdio の代わりに Streamable HTTP で MCP サーバーを使えるようになりました。
@@ -464,7 +467,7 @@ HTML、Markdown、テキストの抽出で、この保護が自動で働きま�
 - セッションは作成時のセッションレベルの設定を保持します。ブラウザでは headless、locale、cookies、ステルス機能の切り替えなど、HTTP セッションでは `impersonate` と `proxy` です。timeout、wait_selector、network_idle、solve_cloudflare などのリクエスト単位の設定は、各 `browser_fetch`/`session_make_request` 呼び出しに渡します。デフォルト値はツールのスキーマに記載されています。
 - `browser_fetch` は、開いているステルスブラウザセッションを使って Cloudflare のチャレンジを解決できます。
 - 作業後は必ず `close_session` でセッションを閉じ、リソースを解放します。
-- `list_sessions` で実行中のセッションと、作成時の `settings` を確認します。これらは AI エージェントに返されますが、CDP セッションでは空です。
+- `list_sessions` で実行中のセッションと、作成時の `settings` を確認します。これらは AI エージェントに返されます。
 - セッションを開くツールに独自の `session_id` を渡すと、ランダムな十六進数の代わりに `"search"`、`"checkout"` などの分かりやすい名前を使えます。その ID が使用中ならエラーになるため、重複を早く検出できます。
 
 ### 7. スクリーンショットを撮る {#7-capturing-screenshots}

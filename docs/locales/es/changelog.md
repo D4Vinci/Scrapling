@@ -7,6 +7,89 @@ description: "Notas de las versiones de Scrapling, con nuevas funciones, correcc
 
 Todos los cambios importantes de Scrapling, tomados de las [versiones de GitHub](https://github.com/D4Vinci/Scrapling/releases).
 
+## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
+
+**Scrapling v0.5 mejora casi todo: obtención de páginas, análisis, spiders, automatización del navegador, herramientas de IA y documentación en diez idiomas 🚀**
+
+!!! warning "Advertencia"
+
+    **Esta versión introduce muchos cambios incompatibles que no caben aquí. Consulta la [guía de migración a v0.5](migrating-to-v0.5.md) antes de actualizar.**
+
+### 🚀 Novedades y mejoras de uso {#v0.5-new-stuff-and-quality-of-life-changes}
+
+- **Un servidor MCP mucho más capaz para agentes de IA que pueden resolver casi cualquier CAPTCHA** (consulta la [documentación](ai/mcp-server.md)):
+
+    - **Flujos completos en el navegador**: rellena formularios, haz clic, pasa el cursor sobre elementos, desplázate, usa el teclado, gestiona diálogos y espera resultados en una sola secuencia ordenada. Admite distintos tipos de campos e interacciones más lentas, y las acciones se detienen ante el primer error.
+    - **Lee y busca en la página actual sin recargarla**: extrae HTML, Markdown o texto de una página completa o de un elemento. Las instantáneas de página permiten buscar y muestran los roles, nombres y posiciones de los elementos, con vistas enfocadas que conservan el contexto que los rodea.
+    - **Ejecuta JavaScript propio y toma capturas de zonas concretas**: ejecuta scripts, incluidas tareas asíncronas, con acceso al JavaScript de la propia página. Captura elementos individuales, el área visible o la página completa en PNG o JPEG.
+    - **Inspecciona la actividad de red y reutiliza los inicios de sesión**: examina solicitudes y respuestas registradas, guarda y restaura el estado de inicio de sesión del navegador e interactúa con elementos dentro de Shadow DOM abierto o cerrado. Lee el tráfico registrado antes de cerrar la sesión.
+    - **Usa menos tokens y recibe errores más claros**: las descripciones más breves de las herramientas y las instrucciones compartidas reducen el texto repetido, mientras que los fallos del navegador y de las solicitudes llegan a los agentes con mensajes de error útiles.
+
+- **Ve las solicitudes que hay detrás de la página**. Activa `record_requests=True` para registrar el tráfico completado durante cargas, acciones y entre pestañas, y luego inspecciona las respuestas guardadas sin volver a enviar solicitudes. (Consulta la [documentación](fetching/stealthy.md#network-history))
+
+    ```python
+    from scrapling.fetchers import StealthySession
+
+    with StealthySession(record_requests=True) as session:
+        session.fetch("https://example.com", network_idle=True)
+        for response in session.network.search(url_pattern=r"/api/", limit=None):
+            print(response.url, response.status, response.body)
+    ```
+
+    - Filtra por URL, método, tipo de recurso o estado; recupera una respuesta por su ID. Inspecciona cabeceras, datos enviados, respuestas de API, errores HTTP y redirecciones mediante la API habitual de `Response`.
+    - Conserva los cuerpos de texto admitidos con límites de tamaño, junto con los metadatos y el motivo cuando un cuerpo no se puede guardar. El límite predeterminado es de 1000 solicitudes. Funciona con sesiones síncronas y asíncronas; el historial guardado en Python sigue disponible para lectura después del cierre.
+
+- **Guarda un inicio de sesión una vez y reutilízalo entre ejecuciones**. `save_state(path)` y `load_state(path)` guardan y cargan cookies, almacenamiento local e IndexedDB en JSON compatible con Playwright. Las sesiones de navegador síncronas y asíncronas admiten ambos métodos. (Consulta la [documentación](fetching/stealthy.md#save-and-load-session-state))
+    - Carga el estado antes de obtener o recargar una página. Requiere un contexto de navegador compartido ya iniciado y sin `proxy_rotator`; no se guardan las pestañas, los ajustes del navegador ni `sessionStorage`.
+
+- **Extrae Shadow DOM abierto con `pierce_shadow=True`** y luego usa CSS o XPath como siempre. Disponible en los fetchers de navegador, las sesiones y la opción `--pierce-shadow` de la CLI. Conserva el contenido de los slots sin cambiar la página activa. La captura de HTML excluye las raíces cerradas y los documentos de iframes. (Consulta la [documentación](fetching/stealthy.md#shadow-dom))
+
+- **Elige cómo explora tu spider un sitio**. `CrawlSpider` y sus subclases, incluida `ContentSpider`, admiten `crawl_strategy="bfs"` para programar primero las solicitudes más antiguas o `"dfs"` para programar primero las más recientes. La prioridad sigue prevaleciendo, y las páginas procesadas de forma concurrente pueden terminar en otro orden. (Consulta la [documentación](spiders/generic-templates.md#crawl-order))
+
+### 🐛 Correcciones de errores {#v0.5-bug-fixes}
+
+- **Mejorada la resolución de Cloudflare** con detección de widgets que aparecen tarde, menos esperas innecesarias y límites en los bucles de reintentos para desafíos pasivos e iframes ocultos. Corrige [#468](https://github.com/D4Vinci/Scrapling/issues/468) y [#509](https://github.com/D4Vinci/Scrapling/issues/509).
+- **Corregido el inicio del navegador desde una consola de Windows con permisos de administrador**. Corrige [#463](https://github.com/D4Vinci/Scrapling/issues/463).
+- **Se conservan las opciones de ocultación integradas al añadir opciones propias del navegador**, por @alkaz-nodemaven en [#430](https://github.com/D4Vinci/Scrapling/pull/430).
+- **Mejorada la lectura de la codificación de caracteres en las respuestas del navegador**, incluidas las declaraciones con distintas mayúsculas y minúsculas, espacios o valores entre comillas.
+- **Ya no se registra como error la ausencia de un desafío de Cloudflare** cuando no hay ningún desafío que resolver. Corrige [#459](https://github.com/D4Vinci/Scrapling/issues/459).
+
+- **Corregidas las huellas de las solicitudes** para los parámetros de consulta, por @yetval en [#448](https://github.com/D4Vinci/Scrapling/pull/448), los cuerpos JSON vacíos o con valores evaluados como falsos, por @ac1982 en [#480](https://github.com/D4Vinci/Scrapling/pull/480), y el orden de inserción de cabeceras, por @SarwadnyaMahajan en [#466](https://github.com/D4Vinci/Scrapling/pull/466).
+- **Corregida la transferencia no deseada de datos de la solicitud a los enlaces seguidos**, incluidas las cabeceras antiguas relacionadas con el cuerpo, por @yetval en [#462](https://github.com/D4Vinci/Scrapling/pull/462).
+- **Se impide guardar las respuestas bloqueadas como entradas correctas en la caché de desarrollo**, por @Kuang-xianxin en [#446](https://github.com/D4Vinci/Scrapling/pull/446).
+- **Se conservan los archivos de puntos de control cuando un rastreo falla con una excepción**, por @SulimanAbdulrazzaq en [#486](https://github.com/D4Vinci/Scrapling/pull/486).
+- **Corregida la gestión de errores de robots.txt** para que las consultas fallidas no se guarden en caché como permiso para rastrear, por @prateekraawat1 en [#443](https://github.com/D4Vinci/Scrapling/pull/443).
+- **Corregida la extracción de enlaces con selectores que limitan el ámbito**, incluidas las coincidencias vacías y los selectores que apuntan al propio elemento del enlace, por @SulimanAbdulrazzaq en [#452](https://github.com/D4Vinci/Scrapling/pull/452) y [#483](https://github.com/D4Vinci/Scrapling/pull/483).
+- **Corregida la asignación de callbacks del mapa del sitio**, por @SulimanAbdulrazzaq en [#458](https://github.com/D4Vinci/Scrapling/pull/458), **y el análisis de XML con comentarios o instrucciones de procesamiento**, por @sup3dev en [#450](https://github.com/D4Vinci/Scrapling/pull/450).
+- **Se manejan las marcas de orden de bytes al inicio de robots.txt y de los feeds CSV**, por @SulimanAbdulrazzaq en [#453](https://github.com/D4Vinci/Scrapling/pull/453).
+- **Corregido el manejo de `stealthy_headers` en las sesiones HTTP de los spiders**, pasando la opción a la sesión en lugar de enviarla directamente a `curl_cffi`, por @Yigtwxx en [#475](https://github.com/D4Vinci/Scrapling/pull/475).
+
+- **Corregida la codificación de formularios a partir de diccionarios con valores de tipo lista o tupla**, manteniendo la precedencia del cuerpo de la solicitud y el manejo existente de `None`, con aportes de @SulimanAbdulrazzaq en [#485](https://github.com/D4Vinci/Scrapling/pull/485).
+- **Corregida la combinación de cabeceras HTTP de sesión y de cada solicitud sin distinguir mayúsculas de minúsculas**, por @SulimanAbdulrazzaq en [#487](https://github.com/D4Vinci/Scrapling/pull/487).
+- **Corregidas las solicitudes de la CLI que descartaban sin avisar los cuerpos JSON vacíos o con valores evaluados como falsos**, por @SulimanAbdulrazzaq en [#484](https://github.com/D4Vinci/Scrapling/pull/484).
+- **Las exportaciones a archivos Markdown y de texto ahora usan siempre UTF-8**, y los errores de conversión ya no truncan un archivo de salida existente, por @SulimanAbdulrazzaq en [#488](https://github.com/D4Vinci/Scrapling/pull/488).
+- **Corregido el manejo de las opciones de agente de usuario y proxy de curl en `curl2fetcher()`**, por @SulimanAbdulrazzaq en [#490](https://github.com/D4Vinci/Scrapling/pull/490).
+
+- **Corregidos los bloques Markdown que se unían sin separación** al convertir varios elementos seleccionados mediante `Response.markdown()` o la extracción de la CLI, con aportes de @Yigtwxx en [#432](https://github.com/D4Vinci/Scrapling/pull/432).
+- **Corregida la limpieza del contenido oculto en la salida para IA** para conservar contenido visible como `opacity:0.95`, reconocer más estilos que ocultan contenido y eliminar slots ocultos, con aportes de @Yigtwxx en [#460](https://github.com/D4Vinci/Scrapling/pull/460).
+- **Corregida la eliminación de etiquetas de ruido que se detenía antes de tiempo ante etiquetas anidadas**, por @Yigtwxx en [#474](https://github.com/D4Vinci/Scrapling/pull/474).
+- **Corregidos los selectores CSS y XPath generados para el primero de varios elementos hermanos con la misma etiqueta**, por @yellow-dog-dog en [#495](https://github.com/D4Vinci/Scrapling/pull/495).
+- **Resuelta una advertencia de obsolescencia del analizador HTML de lxml**, por @afsuyadi en [#493](https://github.com/D4Vinci/Scrapling/pull/493).
+
+### Documentación {#v0.5-docs}
+
+- **El sitio completo ahora está en diez idiomas**: inglés, árabe, español, portugués de Brasil, francés, alemán, chino simplificado, japonés, ruso y coreano. Las guías, las referencias de API, los tutoriales y el [historial de cambios](changelog.md) están traducidos, con escritura de derecha a izquierda para el árabe y cambios de idioma que conservan la página y la sección.
+- **Guías, ejemplos del README y pasos de configuración más claros**, que abarcan los datos de puntos de control, las codificaciones del navegador, el estado guardado, el historial de red, Shadow DOM y el orden de rastreo.
+- **Actualizada la habilidad para agentes**, junto con sus ejemplos, referencias y archivo descargable, para las herramientas actuales del navegador y de MCP.
+- **El historial de cambios se ha trasladado al sitio web** y se ha añadido acceso al código fuente Markdown de cada página.
+
+### Proyecto {#v0.5-project}
+
+- Renovados el logotipo de Scrapling, las imágenes de portada y la presentación del sitio web.
+- Ampliadas las pruebas de acciones del navegador, diálogos, extracción, capturas de pantalla, JavaScript, registro de red, archivos de estado, Shadow DOM y correcciones del rastreador.
+- Añadido un marcador para las pruebas del navegador y ejecuciones separadas de las pruebas de navegador, asíncronas y en paralelo. Mejorada la compatibilidad con Windows de las pruebas de puntos de control y CSV, por @diegobravtraps-oss en [#457](https://github.com/D4Vinci/Scrapling/pull/457).
+- Actualizada la configuración compartida para compilar la documentación multilingüe y las instrucciones para contribuir.
+
 ## [v0.4.15](https://github.com/D4Vinci/Scrapling/releases/tag/v0.4.15) - 2026-08-23 {#v0.4.15}
 
 **Una de las mayores versiones de este año: un servidor MCP renovado, Markdown listo para RAG en una línea, un solucionador de Cloudflare mejorado y pestañas del navegador que siguen abiertas para la automatización 🚀**

@@ -1,7 +1,7 @@
 ---
 name: scrapling-official
 description: Scrape web pages using Scrapling with HTTP requests, stealth browsers, JavaScript rendering, browser actions, API response capture, concurrent spiders, and adaptive parsing. Use when asked to scrape, crawl, or extract data from websites; web_fetch fails; the site has anti-bot protections; write Python code to scrape/crawl; or write spiders.
-version: "0.5"
+version: "0.5.1"
 license: Complete terms in LICENSE.txt
 metadata:
   homepage: "https://scrapling.readthedocs.io/en/latest/index.html"
@@ -40,7 +40,7 @@ Blazing fast crawls with real-time stats and streaming. Built by Web Scrapers fo
 
 Create a virtual Python environment through any way available, like `venv`, then inside the environment do:
 
-`pip install "scrapling[all]>=0.5"`
+`pip install "scrapling[all]>=0.5.1"`
 
 For browser fetching, install the browser and its dependencies once:
 
@@ -239,6 +239,27 @@ with StealthySession(headless=True, disable_resources=False, network_idle=True) 
 page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
+
+### Remote Browser Sessions
+
+Use `RemoteSession` or `AsyncRemoteSession` to connect to an already-running browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/). Pass a WebSocket endpoint (`ws://`/`wss://`) or an HTTP endpoint such as `http://localhost:9222` as `cdp_url`. These are session classes only. `StealthySession` and `StealthyFetcher` do not accept `cdp_url`.
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+    page = session.fetch("https://example.com")
+```
+
+`new_context=True` is the default. It creates a separate context, applies the context options and closes that context when the session ends.
+
+`new_context=False` uses the existing default context and its login state. The context stays open when the session ends. If no context is available, starting the session raises an error.
+
+When reusing a context, `useragent`, `locale`, `timezone_id`, `proxy`, `proxy_rotator` and `additional_args` are ignored. Per-request `proxy` is also ignored. The existing context settings remain in use.
+
+Scrapling creates its own tabs in either mode and closes only those tabs. Existing tabs stay open. Page options such as `extra_headers`, `timeout`, `page_setup` and `page_action` still work.
+
+`cookies` and `init_script` can still be added, but they affect the shared context when `new_context=False`. The remote classes do not accept `real_chrome`; `cdp_url` selects the browser. Other browser launch options do not apply because the browser is already running.
 
 ### Shadow DOM
 

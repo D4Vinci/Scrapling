@@ -5,7 +5,7 @@ description: "将 AI 客户端连接到 Scrapling，进行 HTTP 或浏览器抓�
 
 # Scrapling MCP 服务器指南 {#scrapling-mcp-server-guide}
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qyFk3ZNwOxE?si=3FHzgcYCb66iJ6e3" title="YouTube 视频播放器" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NHwWEiTOoPQ" title="YouTube 视频播放器" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 **Scrapling MCP 服务器**将 Scrapling 的网页抓取能力直接提供给 AI 聊天机器人或智能体。通过 Claude 或其他支持 MCP 的界面，可以在对话中抓取网站、提取数据并绕过反爬保护。
 
@@ -27,7 +27,7 @@ Scrapling MCP 服务器提供十六个工具，用于网页抓取和浏览器交
 
 #### 🔌 会话管理 {#session-management}
 
-- **`browser_open`**：创建持久的隐身浏览器会话，在多次 `browser_fetch` 调用之间保持打开，避免每次重新启动浏览器。它保留浏览器级配置，只返回 `session_id` 和 `session_type`。使用 `list_sessions` 查看实际生效的 `settings`，CDP 会话的该值为空。
+- **`browser_open`**：创建持久的隐身浏览器会话，在多次 `browser_fetch` 调用之间保持打开，避免每次重新启动浏览器。它保留浏览器级配置，只返回 `session_id` 和 `session_type`。使用 `list_sessions` 查看实际生效的 `settings`。
 - **`open_request_session`**：创建不使用浏览器的持久 HTTP 会话，配合 `session_make_request` 使用。在请求之间保留 Cookie、连接和浏览器指纹（`impersonate`）。它只返回 `session_id` 和 `session_type`，类型为 `static`。使用 `list_sessions` 查看实际生效的 `settings`。
 - **`close_session`**：关闭持久的浏览器或 HTTP 会话，并释放资源。
 - **`list_sessions`**：列出所有活动会话及其详细信息和 `settings`。
@@ -57,6 +57,8 @@ Scrapling MCP 服务器提供十六个工具，用于网页抓取和浏览器交
 - **`browser_actions`**：在一次调用中串联鼠标操作、字段填写、快捷键、对话框响应和等待。可以接受或关闭浏览器提示和确认框，也可以在输入对话框中填写文本。例如，填写搜索框、提交、等待结果，然后打开一个结果。AI 可以合并已知步骤；需要检查页面变化时，再单独获取快照。这样就不必在每一步之后都把控制权交回智能体，再由它发起下一次调用，有助于处理只短暂显示的菜单，以及需要快速衔接操作的其他控件。
 
     悬停以显示菜单和提示，点击按钮和链接，或将鼠标移到嵌套区域内进行纵向或横向滚动。移动和点击支持选择器、快照引用或坐标。以元素为目标时，会自动等待并将其滚动到可见区域。支持分多步移动到坐标、左键、右键和中键点击，以及双击。
+
+    使用选择器或快照引用将项目拖到其他元素上，也可以沿屏幕坐标点组成的路径拖动滑块和其他控件。拖动时按住鼠标左键，并支持分多步移动。拖动失败或被取消时，会在页面再次可用前尝试释放鼠标按钮。
 
     使用选择器或快照引用定位页面中的字段。可以填写文本、勾选或取消勾选复选框、选择单选按钮，以及按可见标签选择原生下拉列表中的一个或多个选项。文本可以替换现有内容、清空内容，或从当前光标位置继续输入。快捷键可以选择和删除文本、移动焦点、提交表单或关闭菜单。慢速模式逐字输入，并在字符之间及各个操作之间加入随机暂停。
 
@@ -239,7 +241,8 @@ chrome --remote-debugging-port=9222
 !!! note "说明"
 
     * 浏览器已经在运行，因此 CDP 会话会忽略仅在启动浏览器时生效的选项：`headless`、`real_chrome` 和 `executable_path`（包括上面提到的服务器默认值）。<br/>
-    * 其他选项仍然生效（`locale`、`useragent`、`proxy`、`cookies`、`timezone_id` 等），因为每个会话都会在远程浏览器中创建自己的浏览器上下文。
+    * AI 智能体可以启动新会话，或复用现有会话来操作你已登录的网站。
+    * 任务结束时，Scrapling 会关闭新建的会话。复用会话时，它会让浏览器和你原有的标签页保持打开，仅关闭它创建的标签页。
 
 ### Streamable HTTP {#streamable-http}
 从 0.3.6 版起，MCP 服务器可以使用 Streamable HTTP 传输方式，替代传统的 stdio 传输方式。
@@ -470,7 +473,7 @@ scrapling-mcp --http --allowed-host 'your-server.example.com:8000'
 - 会话会保留创建时的会话级配置，浏览器会话包括 headless、locale、cookies、隐身功能开关等，HTTP 请求会话包括 `impersonate` 和 `proxy`。每次调用时，通过 `browser_fetch`/`session_make_request` 传入请求级选项，如 timeout、wait_selector、network_idle、solve_cloudflare 等；默认值见工具的 schema
 - `browser_fetch` 可以通过已打开的隐身浏览器会话处理 Cloudflare 验证
 - 使用完毕后，务必调用 `close_session` 关闭会话并释放资源
-- 使用 `list_sessions` 查看仍在运行的会话，以及各会话创建时使用的 `settings`（返回给 AI 智能体；CDP 会话中为空）
+- 使用 `list_sessions` 查看仍在运行的会话，以及各会话创建时使用的 `settings`（返回给 AI 智能体）
 - 调用创建会话的工具时，可以传入自定义 `session_id`，用有意义的名称（如 `"search"`、`"checkout"`）代替默认的随机十六进制值。如果所选 ID 已被使用，工具会抛出异常，便于及时发现冲突
 
 ### 7. 截图 {#7-capturing-screenshots}

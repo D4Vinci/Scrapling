@@ -17,7 +17,7 @@ The Scrapling MCP Server provides sixteen tools for web scraping and browser int
 ### Session tools
 
 #### 🔌 Session Management
-- **`browser_open`**: Create a persistent stealthy browser session that stays open across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns only `session_id` and `session_type`. Use `list_sessions` to see its effective `settings` (empty for CDP sessions).
+- **`browser_open`**: Create a persistent stealthy browser session that stays open across multiple `browser_fetch` calls, avoiding the overhead of launching a new browser each time. It holds the browser-level configuration and returns only `session_id` and `session_type`. Use `list_sessions` to see its effective `settings`.
 - **`open_request_session`**: Create a persistent HTTP requests session (no browser) used with `session_make_request`, keeping cookies, connections, and the browser fingerprint (`impersonate`) between requests. It returns only `session_id` and `session_type`, with type `static`. Use `list_sessions` to see its effective `settings`.
 - **`close_session`**: Close a persistent session (browser or requests) and free its resources.
 - **`list_sessions`**: List all active sessions with their details and `settings`.
@@ -46,6 +46,8 @@ State files are stored on the machine running the MCP server. They do not includ
 - **`browser_actions`**: Chain mouse actions, field filling, keyboard shortcuts, dialog replies, and waits in one call. Accept or dismiss browser alerts and confirmations, or enter text in prompts. For example, fill a search box, submit it, wait for results, and open a result. The AI can combine known steps while keeping snapshots separate when it needs to inspect a page change. This avoids a separate agent round trip between each step and helps with short-lived menus and other controls that need prompt follow-up.
 
     Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks support selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
+
+    Drag with `{"type": "drag", "source": "#item", "target": "#drop"}`; selectors also accept snapshot references such as `aria-ref=e1`. For coordinates, use `{"type": "drag", "path": [{"x": 100, "y": 150}, {"x": 300, "y": 150}]}`. Supply either both element targets or a path of at least two viewport CSS points. Drags use the left button. Optional `steps` controls mousemove events per segment (default 1); `timeout` applies only to element drags (default 30000 ms, 0 disables it). Failed or cancelled drags attempt button release before the page becomes available again.
 
     Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by their visible labels. Text can replace existing content, clear it, or continue at the current caret. Keyboard shortcuts can select and delete text, move focus, submit forms, or dismiss menus. Slow mode types one character at a time with random pauses between characters and all actions.
 
@@ -224,7 +226,8 @@ That one is reached with `cdp_url="http://localhost:9222"`, or with the host's a
 **Notes:**
 
 * The browser is already running, so options that only apply while launching one are ignored for CDP sessions: `headless`, `real_chrome`, and `executable_path` (including the server-wide default above).
-* Everything else still applies (`locale`, `useragent`, `proxy`, `cookies`, `timezone_id`, and so on), as each session creates its own browser context on the remote browser.
+* Your AI agent can start a fresh session or reuse an existing one to work with sites where you're already logged in.
+* Scrapling cleans up fresh sessions when the task ends. When reusing a session, it keeps the browser and your existing tabs open and closes only the tabs it created.
 
 ### Streamable HTTP
 Since version 0.3.6, we have added the ability to make the MCP server use the 'Streamable HTTP' transport mode instead of the traditional 'stdio' transport.
@@ -443,7 +446,7 @@ This protection runs automatically for HTML, Markdown, and text extraction. Keep
 - Sessions hold the session-level configuration set when opened (headless, locale, cookies, stealth toggles, etc. for browsers; `impersonate` and `proxy` for requests sessions); the per-request options (timeout, wait_selector, network_idle, solve_cloudflare, etc.) are passed to `browser_fetch`/`session_make_request` on each call, with their defaults shown in the tool schemas
 - `browser_fetch` can solve Cloudflare challenges through the open stealthy browser session
 - Always close sessions with `close_session` when done to free resources
-- Use `list_sessions` to check which sessions are still active and see the `settings` each was created with (returned for the AI agent; empty for CDP sessions)
+- Use `list_sessions` to check which sessions are still active and see the `settings` each was created with (returned for the AI agent)
 - Pass a custom `session_id` to the open tools to give sessions meaningful names (e.g. `"search"`, `"checkout"`) instead of the random hex default. They raise if the chosen ID is already in use, so you can detect collisions up front
 
 ### 7. Capturing Screenshots

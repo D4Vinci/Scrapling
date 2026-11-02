@@ -82,6 +82,8 @@ A classe principal do servidor MCP oferece as seguintes ferramentas:
 
     Os movimentos e cliques aceitam seletores, referências de capturas ou coordenadas. A ferramenta espera pelos elementos e os traz para a área visível. Aceita movimentos em etapas, cliques esquerdo, direito e central, clique duplo e rolagem em painéis aninhados.
 
+    Arraste de um elemento para outro com seletores ou referências de capturas, ou siga um caminho de pontos da área visível para controles deslizantes e controles personalizados. Os arrastes usam o botão esquerdo do mouse e aceitam movimentos em várias etapas. Se o arraste falhar ou for cancelado, a ferramenta tenta soltar o botão antes de a página ficar disponível novamente.
+
     Selecione campos por seletores ou referências de capturas. Digite texto, marque ou desmarque caixas de seleção, selecione botões de opção e escolha uma ou várias opções de listas nativas pelo rótulo. Substitua ou apague o texto, ou digite na posição do cursor. Os atalhos usam o foco atual. O modo lento adiciona pausas aleatórias entre os caracteres e as ações.
 
     Espere pelo conteúdo ou até que os indicadores de carregamento desapareçam usando seletores ou referências de capturas. Você também pode esperar por eventos de carregamento, pelo fim da atividade de rede ou por um tempo fixo.
