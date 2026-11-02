@@ -422,6 +422,7 @@ print(stats.to_dict())
 | `logging_format` | `"[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"` | 로그 메시지 형식 |
 | `logging_date_format` | `"%Y-%m-%d %H:%M:%S"` | 로그 메시지의 날짜 형식 |
 | `log_file` | `None` | 콘솔 출력과 함께 사용할 로그 파일 경로 |
+| `log_file_encoding` | `None` | 로그 파일 인코딩. `None`이면 Python 기본 인코딩 사용 |
 
 ```python
 import logging
@@ -431,6 +432,7 @@ class MySpider(Spider):
     start_urls = ["https://example.com"]
     logging_level = logging.INFO
     log_file = "logs/my_spider.log"
+    log_file_encoding = "utf-8"
 
     async def parse(self, response: Response):
         self.logger.info(f"Processing {response.url}")
@@ -438,3 +440,5 @@ class MySpider(Spider):
 ```
 
 로그 파일의 디렉터리가 없으면 자동으로 만듭니다. 콘솔과 파일은 같은 출력 형식을 사용합니다.
+
+새 로그는 파일 끝에 추가됩니다. 기존 파일을 사용한다면 해당 파일의 인코딩을 지정하세요.
