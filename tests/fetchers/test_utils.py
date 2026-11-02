@@ -208,6 +208,13 @@ class TestConstructProxyDict:
         expected = {"server": "http://proxy.example.com:8080", "username": "user", "password": "pass"}
         assert result == expected
 
+    def test_proxy_string_with_percent_encoded_auth(self):
+        """Test proxy string with percent-encoded credentials"""
+        result = construct_proxy_dict("http://user%40mail.com:p%40ss%3Aw0rd%2F@proxy.example.com:8080")
+
+        expected = {"server": "http://proxy.example.com:8080", "username": "user@mail.com", "password": "p@ss:w0rd/"}
+        assert result == expected
+
     def test_proxy_dict_input(self):
         """Test proxy dictionary input"""
         input_dict = {"server": "http://proxy.example.com:8080", "username": "user", "password": "pass"}
