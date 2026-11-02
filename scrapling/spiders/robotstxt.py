@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from anyio import create_task_group
+from anyio import Lock, create_task_group
 from protego import Protego
 
 from scrapling.core._types import Dict, Optional, Callable, Awaitable
@@ -13,6 +13,7 @@ class RobotsTxtManager:
     def __init__(self, fetch_fn: Callable[[str, str], Awaitable]):
         self._fetch_fn = fetch_fn
         self._cache: Dict[str, Protego] = {}
+        self._locks: Dict[str, Lock] = {}
 
     async def _get_parser(self, url: str, sid: str) -> Protego:
         parsed = urlparse(url)
@@ -21,7 +22,14 @@ class RobotsTxtManager:
         if domain in self._cache:
             return self._cache[domain]
 
-        scheme = parsed.scheme or "https"
+        async with self._locks.setdefault(domain, Lock()):
+            if domain in self._cache:
+                return self._cache[domain]
+            return await self._fetch_parser(parsed.scheme, domain, sid)
+
+    async def _fetch_parser(self, scheme: str, domain: str, sid: str) -> Protego:
+        """Fetch and parse the robots.txt of a domain, then cache the parser."""
+        scheme = scheme or "https"
         robots_url = f"{scheme}://{domain}/robots.txt"
         content = ""
         try:

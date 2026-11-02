@@ -240,6 +240,27 @@ page = StealthyFetcher.fetch('https://quotes.toscrape.com/')
 data = page.css('.quote .text::text').getall()
 ```
 
+### Remote Browser Sessions
+
+Use `RemoteSession` or `AsyncRemoteSession` to connect to an already-running browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/). Pass a WebSocket endpoint (`ws://`/`wss://`) or an HTTP endpoint such as `http://localhost:9222` as `cdp_url`. These are session classes only. `StealthySession` and `StealthyFetcher` do not accept `cdp_url`.
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+    page = session.fetch("https://example.com")
+```
+
+`new_context=True` is the default. It creates a separate context, applies the context options and closes that context when the session ends.
+
+`new_context=False` uses the existing default context and its login state. The context stays open when the session ends. If no context is available, starting the session raises an error.
+
+When reusing a context, `useragent`, `locale`, `timezone_id`, `proxy`, `proxy_rotator` and `additional_args` are ignored. Per-request `proxy` is also ignored. The existing context settings remain in use.
+
+Scrapling creates its own tabs in either mode and closes only those tabs. Existing tabs stay open. Page options such as `extra_headers`, `timeout`, `page_setup` and `page_action` still work.
+
+`cookies` and `init_script` can still be added, but they affect the shared context when `new_context=False`. The remote classes do not accept `real_chrome`; `cdp_url` selects the browser. Other browser launch options do not apply because the browser is already running.
+
 ### Shadow DOM
 
 Use `pierce_shadow=True` with StealthyFetcher and its session classes to include open shadow roots. It defaults to `False` and can be overridden per request. For MCP, pass `pierce_shadow=true` to `browser_fetch_once` or each `browser_fetch` call.

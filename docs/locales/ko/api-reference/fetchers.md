@@ -12,7 +12,8 @@ description: "Fetcher, AsyncFetcher, StealthyFetcher와 세션의 API를 확인�
 ```python
 from scrapling.fetchers import (
     Fetcher, AsyncFetcher, StealthyFetcher,
-    FetcherSession, AsyncStealthySession, StealthySession
+    FetcherSession, AsyncStealthySession, StealthySession,
+    RemoteSession, AsyncRemoteSession
 )
 ```
 
@@ -44,5 +45,15 @@ from scrapling.fetchers import (
     :docstring:
 
 ## ::: scrapling.fetchers.AsyncStealthySession
+    handler: python
+    :docstring:
+
+### 원격 세션 {#remote-sessions}
+
+## ::: scrapling.fetchers.RemoteSession
+    handler: python
+    :docstring:
+
+## ::: scrapling.fetchers.AsyncRemoteSession
     handler: python
     :docstring:

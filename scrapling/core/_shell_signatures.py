@@ -62,7 +62,6 @@ _FETCH_PARAMS = {
     "additional_args": Optional[Dict],
     "locale": Optional[str],
     "real_chrome": bool,
-    "cdp_url": Optional[str],
     "useragent": Optional[str],
     "extra_flags": Optional[List[str]],
     "blocked_domains": Optional[Set[str]],

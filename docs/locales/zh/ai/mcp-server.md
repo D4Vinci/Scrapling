@@ -27,7 +27,7 @@ Scrapling MCP 服务器提供十六个工具，用于网页抓取和浏览器交
 
 #### 🔌 会话管理 {#session-management}
 
-- **`browser_open`**：创建持久的隐身浏览器会话，在多次 `browser_fetch` 调用之间保持打开，避免每次重新启动浏览器。它保留浏览器级配置，只返回 `session_id` 和 `session_type`。使用 `list_sessions` 查看实际生效的 `settings`，CDP 会话的该值为空。
+- **`browser_open`**：创建持久的隐身浏览器会话，在多次 `browser_fetch` 调用之间保持打开，避免每次重新启动浏览器。它保留浏览器级配置，只返回 `session_id` 和 `session_type`。使用 `list_sessions` 查看实际生效的 `settings`。
 - **`open_request_session`**：创建不使用浏览器的持久 HTTP 会话，配合 `session_make_request` 使用。在请求之间保留 Cookie、连接和浏览器指纹（`impersonate`）。它只返回 `session_id` 和 `session_type`，类型为 `static`。使用 `list_sessions` 查看实际生效的 `settings`。
 - **`close_session`**：关闭持久的浏览器或 HTTP 会话，并释放资源。
 - **`list_sessions`**：列出所有活动会话及其详细信息和 `settings`。
@@ -241,7 +241,8 @@ chrome --remote-debugging-port=9222
 !!! note "说明"
 
     * 浏览器已经在运行，因此 CDP 会话会忽略仅在启动浏览器时生效的选项：`headless`、`real_chrome` 和 `executable_path`（包括上面提到的服务器默认值）。<br/>
-    * 其他选项仍然生效（`locale`、`useragent`、`proxy`、`cookies`、`timezone_id` 等），因为每个会话都会在远程浏览器中创建自己的浏览器上下文。
+    * AI 智能体可以启动新会话，或复用现有会话来操作你已登录的网站。
+    * 任务结束时，Scrapling 会关闭新建的会话。复用会话时，它会让浏览器和你原有的标签页保持打开，仅关闭它创建的标签页。
 
 ### Streamable HTTP {#streamable-http}
 从 0.3.6 版起，MCP 服务器可以使用 Streamable HTTP 传输方式，替代传统的 stdio 传输方式。
@@ -472,7 +473,7 @@ scrapling-mcp --http --allowed-host 'your-server.example.com:8000'
 - 会话会保留创建时的会话级配置，浏览器会话包括 headless、locale、cookies、隐身功能开关等，HTTP 请求会话包括 `impersonate` 和 `proxy`。每次调用时，通过 `browser_fetch`/`session_make_request` 传入请求级选项，如 timeout、wait_selector、network_idle、solve_cloudflare 等；默认值见工具的 schema
 - `browser_fetch` 可以通过已打开的隐身浏览器会话处理 Cloudflare 验证
 - 使用完毕后，务必调用 `close_session` 关闭会话并释放资源
-- 使用 `list_sessions` 查看仍在运行的会话，以及各会话创建时使用的 `settings`（返回给 AI 智能体；CDP 会话中为空）
+- 使用 `list_sessions` 查看仍在运行的会话，以及各会话创建时使用的 `settings`（返回给 AI 智能体）
 - 调用创建会话的工具时，可以传入自定义 `session_id`，用有意义的名称（如 `"search"`、`"checkout"`）代替默认的随机十六进制值。如果所选 ID 已被使用，工具会抛出异常，便于及时发现冲突
 
 ### 7. 截图 {#7-capturing-screenshots}

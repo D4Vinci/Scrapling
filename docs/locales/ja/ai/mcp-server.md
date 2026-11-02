@@ -24,7 +24,7 @@ Scrapling MCP サーバーには、Web スクレイピングとブラウザ操�
 ### セッションツール {#session-tools}
 
 #### 🔌 セッション管理 {#session-management}
-- **`browser_open`**：複数の `browser_fetch` 呼び出しで使い続けられるステルスブラウザのセッションを作ります。毎回ブラウザを起動する負荷を省けます。ブラウザレベルの設定を保持し、`session_id` と `session_type` だけを返します。有効な `settings` は `list_sessions` で確認できます。CDP セッションでは空になります。
+- **`browser_open`**：複数の `browser_fetch` 呼び出しで使い続けられるステルスブラウザのセッションを作ります。毎回ブラウザを起動する負荷を省けます。ブラウザレベルの設定を保持し、`session_id` と `session_type` だけを返します。有効な `settings` は `list_sessions` で確認できます。
 - **`open_request_session`**：`session_make_request` で使う永続 HTTP セッションを作ります。ブラウザは使いません。リクエスト間で Cookie、接続、ブラウザのフィンガープリント（`impersonate`）を保持します。`session_id` と `session_type` だけを返し、型は `static` です。有効な `settings` は `list_sessions` で確認できます。
 - **`close_session`**：ブラウザまたは HTTP のセッションを閉じ、リソースを解放します。
 - **`list_sessions`**：実行中のすべてのセッションについて、詳細と `settings` を一覧表示します。
@@ -235,7 +235,8 @@ chrome --remote-debugging-port=9222
 !!! note "注意点"
 
     * ブラウザはすでに動いているため、起動時だけに使うオプションは CDP セッションでは無視されます。対象は `headless`、`real_chrome`、`executable_path` で、上で説明したサーバー全体のデフォルト値も含みます。<br/>
-    * 各セッションはリモートブラウザに専用のブラウザコンテキストを作るため、それ以外の設定（`locale`、`useragent`、`proxy`、`cookies`、`timezone_id` など）は適用されます。
+    * AI エージェントは、新しいセッションを開始することも、既存のセッションを再利用してログイン済みのサイトで作業することもできます。
+    * Scrapling はタスク終了時に新しく作成したセッションを閉じます。セッションを再利用する場合は、ブラウザと既存のタブを開いたままにして、Scrapling が作成したタブだけを閉じます。
 
 ### Streamable HTTP {#streamable-http}
 バージョン 0.3.6 から、従来の stdio の代わりに Streamable HTTP で MCP サーバーを使えるようになりました。
@@ -466,7 +467,7 @@ HTML、Markdown、テキストの抽出で、この保護が自動で働きま�
 - セッションは作成時のセッションレベルの設定を保持します。ブラウザでは headless、locale、cookies、ステルス機能の切り替えなど、HTTP セッションでは `impersonate` と `proxy` です。timeout、wait_selector、network_idle、solve_cloudflare などのリクエスト単位の設定は、各 `browser_fetch`/`session_make_request` 呼び出しに渡します。デフォルト値はツールのスキーマに記載されています。
 - `browser_fetch` は、開いているステルスブラウザセッションを使って Cloudflare のチャレンジを解決できます。
 - 作業後は必ず `close_session` でセッションを閉じ、リソースを解放します。
-- `list_sessions` で実行中のセッションと、作成時の `settings` を確認します。これらは AI エージェントに返されますが、CDP セッションでは空です。
+- `list_sessions` で実行中のセッションと、作成時の `settings` を確認します。これらは AI エージェントに返されます。
 - セッションを開くツールに独自の `session_id` を渡すと、ランダムな十六進数の代わりに `"search"`、`"checkout"` などの分かりやすい名前を使えます。その ID が使用中ならエラーになるため、重複を早く検出できます。
 
 ### 7. スクリーンショットを撮る {#7-capturing-screenshots}
