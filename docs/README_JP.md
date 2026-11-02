@@ -198,6 +198,16 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
+      <a href="https://nonecap.com/solutions/scrapling/?ref=scrapling" target="_blank" title="hCaptcha solver as an API.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/Nonecap.png">
+      </a>
+    </td>
+    <td>
+    Scrapling の実行中に hCaptcha が表示されますか？<a href="https://nonecap.com/solutions/scrapling/?ref=scrapling" target="_blank">NoneCap</a> は単一の API を通じて有効な hCaptcha トークンを返し、Enterprise のサイトキーにも対応します。登録時に 1,300 クレジットを無料で受け取れます。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
       </a>
