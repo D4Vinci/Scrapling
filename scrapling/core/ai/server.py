@@ -356,7 +356,7 @@ class ScraplingMCPServer:
 
     async def browser_save_state(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; no page fetch required.")],
+        session_id: Annotated[str, Field(description="Browser session ID.")],
         path: Annotated[
             NonEmptyString,
             Field(
@@ -370,7 +370,7 @@ class ScraplingMCPServer:
 
     async def browser_load_state(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; no page fetch required.")],
+        session_id: Annotated[str, Field(description="Browser session ID.")],
         path: Annotated[
             NonEmptyString, Field(description="File on the MCP server host; relative to its working directory.")
         ],
@@ -475,7 +475,7 @@ class ScraplingMCPServer:
 
     async def browser_extract(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         extraction_type: Annotated[
             SessionExtractionType, Field(description="Output format; defaults to an AI ARIA snapshot.")
         ] = "snapshot",
@@ -561,7 +561,7 @@ class ScraplingMCPServer:
 
     async def browser_actions(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         actions: Annotated[
             List[BrowserAction],
             Field(
@@ -576,12 +576,13 @@ class ScraplingMCPServer:
             ),
         ] = False,
     ) -> str:
-        """Run mouse, field, key, dialog, and wait actions in order; return plain text without a snapshot.
-        Stop on the first error, identifying its action; partial effects remain. No retries.
+        """Chain all kinds of browser actions. Do actions without multiple calls or plan ahead to execute a sequence of actions.
+        Run mouse, field, key, dialog, and wait actions on the current page in order.
+        Load waits observe the current document; wait for a result element for delayed navigation.
+        Stops on the first error, identifying its action; partial effects remain. No retries.
         Element mouse targets auto-wait and scroll into view; coordinates and wheel do not wait for navigation or scrolling.
         Drag uses the left button with source/target selectors or refs, or a viewport path.
-        Failed/cancelled drags and cancelled/timed-out clicks attempt button release.
-        Load waits observe the current document, not future navigation."""
+        Failed/cancelled drags and cancelled/timed-out clicks attempt button release."""
         _validate_actions(actions)
         with self._browser_page(session_id) as (_, page):
             await _run_actions(page, actions, slowly)
@@ -589,7 +590,7 @@ class ScraplingMCPServer:
 
     async def browser_evaluate(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         expression: Annotated[NonEmptyString, Field(description="JavaScript expression or function to invoke.")],
         arg: Annotated[
             Optional[Dict[str, Any]],
@@ -615,7 +616,7 @@ class ScraplingMCPServer:
 
     async def browser_screenshot(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         image_type: Annotated[ScreenshotType, Field(description="Image format.")] = "png",
         full_page: Annotated[
             bool, Field(description="Capture the full scrollable page; incompatible with selector/ref.")
@@ -896,7 +897,7 @@ class ScraplingMCPServer:
     async def browser_fetch(
         self,
         url: Annotated[str, Field(description="URL to fetch.")],
-        session_id: Annotated[str, Field(description="ID from `browser_open`.")],
+        session_id: Annotated[str, Field(description="Browser session ID.")],
         extraction_type: Annotated[
             SessionExtractionType, Field(description="Content output format; snapshots include element bounding boxes.")
         ] = "markdown",
@@ -1064,8 +1065,7 @@ class ScraplingMCPServer:
 5. Session options persist from opening; fetch options apply per call, with schema defaults.
 6. Each browser session uses one page; finish each call before starting the next in that session.
 7. `browser_extract` reads the current page without navigation, as a snapshot by default. Snapshots include refs and boxes; `main_content_only` and `pierce_shadow` do not filter them.
-8. `browser_actions` chains mouse, field, key, dialog and wait actions on the current page. Element actions use `target`: a Playwright selector or `aria-ref=<ref>` from the current snapshot. Move/click can instead use viewport (x, y) in CSS pixels. Drag uses `source` and `target` selectors/refs, or a `path` of at least two viewport {x, y} points. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
-9. Network history saves completed requests and responses across page changes. Failed/unfinished requests are omitted; closing does not wait for running captures. Use `include_static=True` to list successful non-API traffic. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Only response bodies with a text Content-Type are read and saved. Response bodies over 1 MiB are skipped; unavailable bodies are marked.""",
+8. Network history saves completed requests and responses across page changes. Failed/unfinished requests are omitted; closing does not wait for running captures. Use `include_static=True` to list successful non-API traffic. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Only response bodies with a text Content-Type are read and saved. Response bodies over 1 MiB are skipped; unavailable bodies are marked.""",
         }
         if self._auth_token:
             base_url = AnyHttpUrl(f"http://{host}:{port}")
