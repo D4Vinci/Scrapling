@@ -443,7 +443,7 @@ class ScraplingMCPServer:
         ] = 0,
         limit: Annotated[int, Field(ge=1, le=200, description="Maximum requests to return.")] = 50,
     ) -> NetworkRequestsModel:
-        """List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens."""
+        """List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens and closing does not wait for running captures."""
         network = self._get_session(session_id, ["stealthy"]).session.network
         records = network.search(
             url_pattern=url_pattern, include_static=include_static, after_id=after_id, limit=limit + 1
@@ -566,7 +566,7 @@ class ScraplingMCPServer:
             List[BrowserAction],
             Field(
                 min_length=1,
-                description="Ordered actions; fields need target; move/click need target or viewport (x, y); drag needs source/target or path.",
+                description="Ordered actions; fields need target; move/click need target or viewport (x, y); mouse_down/mouse_up act at the current pointer.",
             ),
         ],
         slowly: Annotated[
@@ -581,8 +581,8 @@ class ScraplingMCPServer:
         Load waits observe the current document; wait for a result element for delayed navigation.
         Stops on the first error, identifying its action; partial effects remain. No retries.
         Element mouse targets auto-wait and scroll into view; coordinates and wheel do not wait for navigation or scrolling.
-        Drag uses the left button with source/target selectors or refs, or a viewport path.
-        Failed/cancelled drags and cancelled/timed-out clicks attempt button release."""
+        mouse_down holds across calls for observation and further moves; mouse_up releases, including after errors.
+        For drag and drop, move over the target twice before releasing. Cancelled/timed-out clicks attempt release."""
         _validate_actions(actions)
         with self._browser_page(session_id) as (_, page):
             await _run_actions(page, actions, slowly)
@@ -1064,8 +1064,8 @@ class ScraplingMCPServer:
 4. Fetch tools use `css_selector` to reduce output. HTML/Markdown/text return all matches; snapshots require one match or no selector for the whole page.
 5. Session options persist from opening; fetch options apply per call, with schema defaults.
 6. Each browser session uses one page; finish each call before starting the next in that session.
-7. `browser_extract` reads the current page without navigation, as a snapshot by default. Snapshots include refs and boxes; `main_content_only` and `pierce_shadow` do not filter them.
-8. Network history saves completed requests and responses across page changes. Failed/unfinished requests are omitted; closing does not wait for running captures. Use `include_static=True` to list successful non-API traffic. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Only response bodies with a text Content-Type are read and saved. Response bodies over 1 MiB are skipped; unavailable bodies are marked.""",
+7. Network history capturing omits failed/unfinished requests. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Response bodies over 1 MiB are skipped.
+8. For challenges that have a slider with changing speed, don't release the mouse click without checking the page first to see if mouse adjustment needed before releasing. Keep repeating until you are certain.""",
         }
         if self._auth_token:
             base_url = AnyHttpUrl(f"http://{host}:{port}")
