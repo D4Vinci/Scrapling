@@ -1,4 +1,5 @@
 import re
+from asyncio import CancelledError, create_task, shield, sleep
 from uuid import uuid4
 from os import environ
 from json import dumps
@@ -215,6 +216,20 @@ def _mcp_tool(tool: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[An
             raise ToolError(str(error)) from error
 
     return wrapped
+
+
+async def _stop_screencast(page: Any) -> None:
+    with CancelScope(shield=True):
+        stopped = create_task(page.screencast.stop())
+        cancelled = None
+        while not stopped.done():
+            try:
+                await shield(stopped)
+            except CancelledError as error:
+                cancelled = error
+        stopped.result()
+        if cancelled:
+            raise cancelled
 
 
 class ScraplingMCPServer:
@@ -649,6 +664,55 @@ class ScraplingMCPServer:
             else:
                 data = await page.screenshot(full_page=full_page, **options)
             return [Image(data=data, format=image_type).to_image_content(), TextContent(type="text", text=page.url)]
+
+    async def browser_observe(
+        self,
+        session_id: Annotated[str, Field(description="Browser session ID")],
+        duration_ms: Annotated[int, Field(ge=100, le=5000, description="Observation window in milliseconds.")] = 1500,
+        max_frames: Annotated[int, Field(ge=2, le=20, description="Maximum number of sampled frames.")] = 12,
+    ) -> List[ImageContent | TextContent]:
+        """Inspect browser page motion through a short sequence of timestamped viewport images. The page keeps running during and after capture.
+        Use this tool when you get any challenge that require timed actions like games, appearing/disappearing CAPTCHAs, or interacting with any moving elements.
+        """
+        with self._browser_page(session_id) as (_, page):
+            frames: Dict[int, Dict[str, Any]] = {}
+            started = monotonic()
+
+            def capture(frame: Dict[str, Any]) -> None:
+                elapsed = (monotonic() - started) * 1000
+                if elapsed < duration_ms:
+                    frames[int(elapsed * max_frames / duration_ms)] = frame
+
+            try:
+                await page.screencast.start(on_frame=capture, quality=60, size={"width": 800, "height": 800})
+                await sleep(max(0, duration_ms / 1000 - (monotonic() - started)))
+            except BaseException as error:
+                try:
+                    await _stop_screencast(page)
+                except Exception as cleanup_error:
+                    raise error from cleanup_error
+                raise
+            await _stop_screencast(page)
+            if not frames:
+                raise RuntimeError("No frames were captured. Try browser_screenshot or a longer observation window.")
+            return [
+                content
+                for frame in frames.values()
+                for content in (
+                    TextContent(
+                        type="text",
+                        text=dumps(
+                            {
+                                "timestamp_ms": frame["timestamp"],
+                                "viewport_width": frame["viewportWidth"],
+                                "viewport_height": frame["viewportHeight"],
+                            },
+                            separators=(",", ":"),
+                        ),
+                    ),
+                    Image(data=frame["data"], format="jpeg").to_image_content(),
+                )
+            ]
 
     @staticmethod
     async def make_request(
@@ -1111,6 +1175,13 @@ class ScraplingMCPServer:
             _mcp_tool(self.browser_screenshot),
             title="Take browser session screenshot",
             description=self.browser_screenshot.__doc__,
+            structured_output=False,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            _mcp_tool(self.browser_observe),
+            title="Observe browser motion",
+            description=self.browser_observe.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )
