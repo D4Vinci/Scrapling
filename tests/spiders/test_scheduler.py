@@ -79,6 +79,27 @@ class TestSchedulerEnqueue:
     """Test Scheduler enqueue functionality."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "overrides, body",
+        [
+            ({"json": {"id": 2}}, b'{"id":2}'),
+            ({"json": {}}, b"{}"),
+            ({"content": b"second"}, b"second"),
+            ({"content": b""}, b""),
+        ],
+    )
+    async def test_mixed_body_requests_are_not_dropped(self, overrides: dict, body: bytes) -> None:
+        """Keep both selected bodies and filter equivalent form and raw bodies."""
+        scheduler = Scheduler()
+        url = "https://example.com/api"
+
+        assert await scheduler.enqueue(Request(url, method="POST", data={"tag": ["a", "b"]}))
+        assert await scheduler.enqueue(Request(url, method="POST", data="tag=a&tag=b", **overrides))
+        assert not await scheduler.enqueue(Request(url, method="POST", data="tag=a&tag=b"))
+        assert not await scheduler.enqueue(Request(url, method="POST", data=body))
+        assert len(scheduler) == 2
+
+    @pytest.mark.asyncio
     async def test_form_sequence_is_distinct_from_literal_repr(self) -> None:
         """Keep distinct POST bodies while filtering their equivalent encodings."""
         scheduler = Scheduler()

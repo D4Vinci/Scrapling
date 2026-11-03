@@ -1,6 +1,7 @@
 """Tests for the Request class."""
 
 import pickle
+from io import BytesIO
 
 import pytest
 
@@ -147,6 +148,58 @@ class TestRequestProperties:
             for payload in ({}, [], False, 0, "")
         }
         assert len(fingerprints) == 5
+
+    @pytest.mark.parametrize(
+        "kwargs, equivalent",
+        [
+            ({"data": "ignored", "json": {"id": 2}}, {"json": {"id": 2}}),
+            ({"data": "ignored", "json": {}}, {"json": {}}),
+            ({"data": "ignored", "json": []}, {"json": []}),
+            ({"data": "ignored", "json": False}, {"json": False}),
+            ({"data": "ignored", "json": 0}, {"json": 0}),
+            ({"data": "ignored", "json": ""}, {"json": ""}),
+            ({"data": "ignored", "content": b"second"}, {"data": b"second"}),
+            ({"data": "ignored", "content": "second"}, {"data": b"second"}),
+            ({"data": "ignored", "content": b""}, {}),
+            ({"data": "ignored", "content": ""}, {}),
+            ({"data": "ignored", "content": bytearray(b"second")}, {"data": b"second"}),
+            ({"data": "ignored", "content": bytearray()}, {}),
+            ({"data": "ignored", "content": b"second", "json": {}}, {"json": {}}),
+            ({"data": "ignored", "content": b"second", "json": None}, {"data": b"second"}),
+            ({"data": "tag=a&tag=b", "content": None, "json": None}, {"data": "tag=a&tag=b"}),
+        ],
+    )
+    def test_fingerprint_selects_effective_body(self, kwargs: dict[str, Any], equivalent: dict[str, Any]) -> None:
+        """Match transport body selection, including empty JSON and raw content."""
+        request = Request("https://example.com/api", method="POST", **kwargs)
+        selected = Request("https://example.com/api", method="POST", **equivalent)
+
+        assert request.update_fingerprint() == selected.update_fingerprint()
+
+    def test_fingerprint_preserves_upload_stream_handling(self) -> None:
+        """Preserve existing stream fingerprints without consuming the upload."""
+        stream = BytesIO(b"upload")
+        stream.seek(2)
+        url = "https://example.com/api"
+        request = Request(url, method="POST", data=stream)
+        original = Request(url, method="POST", data=b"upload")
+        assert request.update_fingerprint() == original.update_fingerprint()
+        assert stream.tell() == 2
+
+        request = Request(url, method="POST", data="tag=a", content=stream)
+        original = Request(url, method="POST", data="tag=a")
+        assert request.update_fingerprint() == original.update_fingerprint()
+        assert stream.tell() == 2
+
+    def test_fingerprint_matches_escaped_json_transport_body(self) -> None:
+        """Use the transport's escaped JSON bytes, not an unescaped lookalike."""
+        url = "https://example.com/api"
+        request = Request(url, method="POST", data="ignored", json={"label": "café"})
+        escaped = Request(url, method="POST", data=b'{"label":"caf\\u00e9"}')
+        unescaped = Request(url, method="POST", data='{"label":"café"}'.encode())
+
+        assert request.update_fingerprint() == escaped.update_fingerprint()
+        assert request.update_fingerprint() != unescaped.update_fingerprint()
 
     def test_fingerprint_include_kwargs_uses_kwarg_values(self):
         """Test kwargs with different values produce different fingerprints."""
