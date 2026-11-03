@@ -82,7 +82,7 @@ La classe principale du serveur MCP propose les outils suivants :
 
     Les mouvements et clics acceptent des sélecteurs, des références de vues structurées ou des coordonnées. L’outil attend les éléments et les amène dans la zone visible. Il accepte les mouvements par étapes, les clics gauche, droit et central, le double-clic et le défilement dans des panneaux imbriqués.
 
-    Faites glisser un élément vers un autre avec des sélecteurs ou des références de vues structurées, ou suivez un chemin de points dans la zone visible pour déplacer des curseurs et des contrôles personnalisés. Le glissement utilise le bouton gauche de la souris et accepte des déplacements en plusieurs étapes. En cas d’échec ou d’annulation du glissement, l’outil tente de relâcher le bouton avant que la page soit à nouveau disponible.
+    Maintenez un bouton de la souris enfoncé pour déplacer des éléments ou des curseurs. L’IA peut examiner la page tout en gardant le bouton enfoncé, ajuster la position avec d’autres mouvements, puis le relâcher à destination.
 
     Sélectionnez les champs par sélecteur ou référence de vue structurée. Saisissez du texte, cochez ou décochez des cases, sélectionnez des boutons radio et choisissez une ou plusieurs options de listes natives par leur libellé. Remplacez ou effacez le texte, ou écrivez à la position du curseur. Les raccourcis utilisent le focus actuel. Le mode lent ajoute des pauses aléatoires entre les caractères et les actions.
 

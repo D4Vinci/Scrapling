@@ -82,7 +82,7 @@ Die Hauptklasse des MCP-Servers bietet diese Werkzeuge:
 
     Bewegungen und Klicks akzeptieren Selektoren, Referenzen aus strukturierten Ansichten oder Koordinaten. Das Werkzeug wartet auf Elemente und scrollt sie in den sichtbaren Bereich. Es unterstützt Bewegungen in Schritten, linke, rechte und mittlere Mausklicks, Doppelklicks und Scrollen in verschachtelten Bereichen.
 
-    Ziehen Sie mit Selektoren oder Referenzen aus strukturierten Ansichten ein Element auf ein anderes, oder folgen Sie einem Pfad aus Punkten im sichtbaren Seitenbereich, um Schieberegler und eigene Bedienelemente zu bewegen. Das Ziehen nutzt die linke Maustaste und unterstützt Bewegungen in mehreren Schritten. Wenn das Ziehen fehlschlägt oder abgebrochen wird, versucht das Werkzeug, die Maustaste loszulassen, bevor die Seite wieder verfügbar ist.
+    Halten Sie eine Maustaste gedrückt, um Elemente zu ziehen oder Schieberegler zu bewegen. Die KI kann die Seite bei gedrückter Taste prüfen, die Position durch weitere Bewegungen anpassen und die Taste am Ziel loslassen.
 
     Wählen Sie Felder mit Selektoren oder Referenzen aus strukturierten Ansichten. Geben Sie Text ein, aktivieren oder deaktivieren Sie Kontrollkästchen, wählen Sie Optionsfelder und eine oder mehrere Optionen nativer Listen anhand ihrer Beschriftung. Ersetzen oder löschen Sie Text, oder schreiben Sie an der Cursorposition weiter. Tastenkürzel nutzen den aktuellen Fokus. Der langsame Modus fügt zufällige Pausen zwischen Zeichen und Aktionen ein.
 
