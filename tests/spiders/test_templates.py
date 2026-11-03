@@ -1,6 +1,9 @@
 """Tests for `CrawlSpider` and `CrawlRule`."""
 
 import pickle
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
+from typing import Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -52,7 +55,62 @@ async def _collect(agen: AsyncGenerator) -> list:
     return [item async for item in agen]
 
 
+@pytest.fixture
+def linked_pages() -> Iterator[tuple[str, list[str]]]:
+    """Serve a local index with valid article links around one malformed URL."""
+    visited: list[str] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            """Return the index or the requested article."""
+            visited.append(self.path)
+            body = (
+                '<a href="/before">before</a><a href="http://[broken">bad</a><a href="/after">after</a>'
+                if self.path == "/"
+                else f"<h1>{self.path[1:]}</h1>"
+            ).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, format: str, *args: Any) -> None:
+            """Keep the test server quiet."""
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}/", visited
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
 class TestCrawlSpider:
+    @pytest.mark.asyncio
+    async def test_malformed_link_does_not_drop_articles(self, linked_pages: tuple[str, list[str]]) -> None:
+        """A real HTTP crawl must fetch both valid articles despite a bad href."""
+        index_url, visited = linked_pages
+
+        class PagesSpider(CrawlSpider):
+            name = "malformed-links"
+            start_urls = [index_url]
+
+            def rules(self) -> list[CrawlRule]:
+                """Follow the index links to article callbacks."""
+                return [CrawlRule(LinkExtractor(), callback=self.parse_article)]
+
+            async def parse_article(self, response: Response) -> AsyncGenerator[Dict[str, Any], None]:
+                """Extract an item from each article reached over HTTP."""
+                yield {"title": response.css("h1::text").get()}
+
+        items = [item async for item in PagesSpider().stream()]
+        assert sorted(item["title"] for item in items) == ["after", "before"]
+        assert sorted(visited) == ["/", "/after", "/before"]
+
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "strategy, order", [("bfs", ["/", "/a", "/b", "/a/1", "/b/1"]), ("dfs", ["/", "/b", "/b/1", "/a", "/a/1"])]
