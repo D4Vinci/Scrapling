@@ -62,6 +62,46 @@ class TestExtractBasic:
         assert len(out) == 2
 
 
+class TestMalformedLinks:
+    @pytest.mark.parametrize("canonicalize", [True, False])
+    @pytest.mark.parametrize("href", ["http://[broken", "//[not-an-ip]/", "https://example.com\uff0fother/"])
+    def test_bad_href_does_not_discard_valid_links(self, href: str, canonicalize: bool) -> None:
+        """A bad link must not prevent either neighboring link from being returned."""
+        response = _make_response(f'<a href="/before">before</a><a href="{href}">bad</a><a href="/after">after</a>')
+        assert LinkExtractor(canonicalize=canonicalize).extract(response) == [
+            "https://example.com/before",
+            "https://example.com/after",
+        ]
+
+    @pytest.mark.parametrize("canonicalize", [True, False])
+    def test_bad_url_returned_by_process_is_skipped(self, canonicalize: bool) -> None:
+        """URL normalization also handles malformed output from a process callback."""
+
+        def process(url: str) -> str:
+            """Rewrite one URL to a malformed bracketed host."""
+            return "http://[broken" if url.endswith("/bad") else url
+
+        response = _make_response('<a href="/bad">bad</a><a href="/after">after</a>')
+        assert LinkExtractor(process=process, canonicalize=canonicalize).extract(response) == [
+            "https://example.com/after"
+        ]
+
+    def test_process_errors_still_propagate(self) -> None:
+        """Exceptions raised by user code must not be mistaken for malformed URLs."""
+
+        def process(url: str) -> str:
+            """Fail to process an otherwise valid URL."""
+            raise ValueError("process callback failed")
+
+        with pytest.raises(ValueError, match="process callback failed"):
+            LinkExtractor(process=process).extract(_make_response('<a href="/valid">valid</a>'))
+
+    def test_valid_ipv6_link_is_kept(self) -> None:
+        """Bracketed IPv6 hosts are valid when their address is well formed."""
+        response = _make_response('<a href="http://[::1]/page">IPv6</a>')
+        assert LinkExtractor().extract(response) == ["http://[::1]/page"]
+
+
 class TestAllowDeny:
     def test_allow_regex_filters_in(self):
         resp = _make_response(HTML_BASIC)

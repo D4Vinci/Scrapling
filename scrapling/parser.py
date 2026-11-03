@@ -160,7 +160,10 @@ class Selector(SelectorsGeneration):
                 default_doctype=True,  # Supported by lxml but missing from stubs
             )
             parser = HTMLParser(**_parser_kwargs)
-            self._root = cast(HtmlElement, fromstring(body or "<html/>", parser=parser, base_url=url or ""))
+            parsed_root = fromstring(body or "<html/>", parser=parser, base_url=url or "")
+            if parsed_root is None:
+                parsed_root = fromstring("<html/>", parser=parser, base_url=url or "")
+            self._root = cast(HtmlElement, parsed_root)
             self._raw_body = content
 
         else:
@@ -1021,7 +1024,7 @@ class Selector(SelectorsGeneration):
 
         if checks:
             return round(score / checks, 2) >= similarity_threshold
-        return False
+        return 0 >= similarity_threshold
 
     def find_similar(
         self,

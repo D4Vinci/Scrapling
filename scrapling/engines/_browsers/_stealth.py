@@ -2,6 +2,7 @@ from random import randint
 from re import compile as re_compile
 from time import monotonic, sleep as time_sleep
 from asyncio import sleep as asyncio_sleep
+from contextlib import suppress
 
 from patchright.sync_api import Locator, Page, TimeoutError as PlaywrightTimeoutError
 from patchright.async_api import Page as async_Page, Locator as AsyncLocator
@@ -65,7 +66,6 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -84,32 +84,25 @@ class StealthySession(SyncSession, StealthySessionMixin):
         """Create a browser for this instance and context."""
         if not self.playwright:
             self.playwright = sync_playwright().start()
-
+            self._is_alive = True
             try:
-                if self._config.cdp_url:  # pragma: no cover
-                    self.browser = self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                    if not self._config.proxy_rotator:
-                        assert self.browser is not None
-                        self.context = self.browser.new_context(**self._context_options)
-                elif self._config.proxy_rotator:
-                    self.browser = self.playwright.chromium.launch(**self._browser_options)
-                else:
-                    persistent_options = (
-                        self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
-                    )
-                    self.context = self.playwright.chromium.launch_persistent_context(**persistent_options)
-
+                self._create_context()
                 if self.context:
                     self.context = self._initialize_context(self._config, self.context)
-
-                self._is_alive = True
-            except Exception:
-                # Clean up playwright if browser setup fails
-                self.playwright.stop()
-                self.playwright = None
+            except BaseException:
+                with suppress(Exception):
+                    self.close()
                 raise
         else:
             raise RuntimeError("Session has been already started")
+
+    def _create_context(self) -> None:
+        if self._config.proxy_rotator:
+            self.browser = self.playwright.chromium.launch(**self._browser_options)
+        else:
+            self.context = self.playwright.chromium.launch_persistent_context(
+                **(self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir})
+            )
 
     def _cloudflare_solver(self, page: Page, _attempts: int = 0) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
@@ -252,6 +245,8 @@ class StealthySession(SyncSession, StealthySessionMixin):
         :return: A `Response` object.
         """
         static_proxy = kwargs.pop("proxy", None)
+        if not self._owns_context:
+            static_proxy = None
 
         params = _validate(kwargs, self, StealthConfig)
         if not self._is_alive:  # pragma: no cover
@@ -382,7 +377,6 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :param allow_webgl: Enabled by default. Disabling it disables WebGL and WebGL 2.0 support entirely. Disabling WebGL is not recommended as many WAFs now check if WebGL is enabled.
         :param load_dom: Enabled by default, wait for all JavaScript on page(s) to fully load and execute.
         :param pierce_shadow: Include open Shadow DOM content in the response HTML. Defaults to False.
-        :param cdp_url: Instead of launching a new browser instance, connect to this CDP URL to control real browsers through CDP.
         :param google_search: Enabled by default, Scrapling will set a Google referer header.
         :param extra_headers: A dictionary of extra headers to add to the request. _The referer set by `google_search` takes priority over the referer set here if used together._
         :param proxy: The proxy to be used with requests, it can be a string or a dictionary with the keys 'server', 'username', and 'password' only.
@@ -402,31 +396,25 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         """Create a browser for this instance and context."""
         if not self.playwright:
             self.playwright = await async_playwright().start()
+            self._is_alive = True
             try:
-                if self._config.cdp_url:
-                    self.browser = await self.playwright.chromium.connect_over_cdp(endpoint_url=self._config.cdp_url)
-                    if not self._config.proxy_rotator:
-                        assert self.browser is not None
-                        self.context = await self.browser.new_context(**self._context_options)
-                elif self._config.proxy_rotator:
-                    self.browser = await self.playwright.chromium.launch(**self._browser_options)
-                else:
-                    persistent_options = (
-                        self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir}
-                    )
-                    self.context = await self.playwright.chromium.launch_persistent_context(**persistent_options)
-
+                await self._create_context()
                 if self.context:
                     self.context = await self._initialize_context(self._config, self.context)
-
-                self._is_alive = True
-            except Exception:
-                # Clean up playwright if browser setup fails
-                await self.playwright.stop()
-                self.playwright = None
+            except BaseException:
+                with suppress(Exception):
+                    await self.close()
                 raise
         else:
             raise RuntimeError("Session has been already started")
+
+    async def _create_context(self) -> None:
+        if self._config.proxy_rotator:
+            self.browser = await self.playwright.chromium.launch(**self._browser_options)
+        else:
+            self.context = await self.playwright.chromium.launch_persistent_context(
+                **(self._browser_options | self._context_options | {"user_data_dir": self._user_data_dir})
+            )
 
     async def _cloudflare_solver(self, page: async_Page, _attempts: int = 0) -> None:  # pragma: no cover
         """Solve the cloudflare challenge displayed on the playwright page passed
@@ -574,6 +562,8 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
         :return: A `Response` object.
         """
         static_proxy = kwargs.pop("proxy", None)
+        if not self._owns_context:
+            static_proxy = None
 
         params = _validate(kwargs, self, StealthConfig)
 

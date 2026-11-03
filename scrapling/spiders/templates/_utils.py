@@ -1,7 +1,8 @@
 """Shared helpers for template spiders."""
 
-from gzip import GzipFile
+from gzip import BadGzipFile, GzipFile
 from io import BytesIO
+from zlib import error as ZlibError
 
 from scrapling.core._types import Optional
 
@@ -15,10 +16,13 @@ def _decompress(body: bytes, content_type: Optional[str]) -> bytes:
     """Gunzip `body` when the content-type or the magic bytes say it's gzipped, capped against gzip bombs."""
     if (content_type and ("gzip" in content_type.lower())) or (body[:2] == _GZIP_MAGIC):
         out = bytearray()
-        with GzipFile(fileobj=BytesIO(body)) as f:
-            while chunk := f.read1(8192):
-                out.extend(chunk)
-                if len(out) > _GUNZIP_MAX_SIZE:
-                    raise OSError(f"gzip output exceeds {_GUNZIP_MAX_SIZE} bytes")
+        try:
+            with GzipFile(fileobj=BytesIO(body)) as f:
+                while chunk := f.read1(8192):
+                    out.extend(chunk)
+                    if len(out) > _GUNZIP_MAX_SIZE:
+                        raise OSError(f"gzip output exceeds {_GUNZIP_MAX_SIZE} bytes")
+        except (EOFError, ZlibError) as e:
+            raise BadGzipFile(str(e)) from e
         return bytes(out)
     return body
