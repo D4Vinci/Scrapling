@@ -8,7 +8,7 @@ from patchright.async_api import Page as async_Page, Locator as AsyncLocator
 from patchright.sync_api import sync_playwright
 from patchright.async_api import async_playwright
 
-from scrapling.core.utils import log
+from scrapling.core.utils import log, validate_url_scheme
 from scrapling.core._types import Any, List, Optional, ProxyType, Unpack
 from scrapling.engines.toolbelt.proxy_rotation import is_proxy_error
 from scrapling.engines.toolbelt.convertor import Response, ResponseFactory
@@ -256,6 +256,9 @@ class StealthySession(SyncSession, StealthySessionMixin):
         params = _validate(kwargs, self, StealthConfig)
         if not self._is_alive:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
+
+        # Reject file://, ftp:// etc. before Chromium navigates.
+        validate_url_scheme(url)
 
         request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
         referer = (
@@ -579,6 +582,9 @@ class AsyncStealthySession(AsyncSession, StealthySessionMixin):
 
         if not self._is_alive:  # pragma: no cover
             raise RuntimeError("Context manager has been closed")
+
+        # Reject file://, ftp:// etc. before Chromium navigates.
+        validate_url_scheme(url)
 
         request_headers_keys = {h.lower() for h in params.extra_headers.keys()} if params.extra_headers else set()
         referer = (
