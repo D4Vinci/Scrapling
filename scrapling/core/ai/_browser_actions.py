@@ -60,27 +60,14 @@ class _MouseClick(_MouseTarget):
     ]
 
 
-class _Point(TypedDict):
-    x: FiniteFloat
-    y: FiniteFloat
+class _MouseDown(TypedDict):
+    type: Literal["mouse_down"]
+    button: NotRequired[Annotated[MouseButton, Field(default="left")]]
 
 
-class _MouseDrag(TypedDict):
-    type: Literal["drag"]
-    source: NotRequired[_Target]
-    target: NotRequired[_Target]
-    path: NotRequired[
-        Annotated[
-            List[_Point],
-            Field(min_length=2, description="Viewport CSS points from press to release; excludes source/target."),
-        ]
-    ]
-    steps: NotRequired[Annotated[PositiveInt, Field(default=1, description="Mousemove events per drag segment.")]]
-    timeout: NotRequired[
-        Annotated[
-            NonNegativeFiniteFloat, Field(default=30000, description="Element drag timeout in ms; 0 disables it.")
-        ]
-    ]
+class _MouseUp(TypedDict):
+    type: Literal["mouse_up"]
+    button: NotRequired[Annotated[MouseButton, Field(default="left")]]
 
 
 class _MouseWheel(TypedDict):
@@ -161,7 +148,8 @@ BrowserAction = Annotated[
     Union[
         _MouseMove,
         _MouseClick,
-        _MouseDrag,
+        _MouseDown,
+        _MouseUp,
         _MouseWheel,
         _TextFormField,
         _CheckboxFormField,
@@ -180,11 +168,6 @@ BrowserAction = Annotated[
 def _validate_actions(actions: List[BrowserAction]) -> None:
     """Validate every action target before reserving the page."""
     for index, action in enumerate(actions, 1):
-        if action["type"] == "drag" and (
-            (action.get("path") is None) == (action.get("source") is None)
-            or (action.get("source") is None) != (action.get("target") is None)
-        ):
-            raise ValueError(f"Action {index} (drag) needs both 'source' and 'target', or 'path', not both.")
         if action["type"] in ("move", "click") and (
             (action.get("target") is None) == (action.get("x") is None)
             or (action.get("x") is None) != (action.get("y") is None)
@@ -192,29 +175,6 @@ def _validate_actions(actions: List[BrowserAction]) -> None:
             raise ValueError(f"Action {index} ({action['type']}) needs 'target' or both 'x' and 'y', not both.")
         if action["type"] in ("textbox", "checkbox", "radio", "combobox") and action.get("target") is None:
             raise ValueError(f"Action {index} ({action['type']}) needs 'target'.")
-
-
-async def _drag(page: Any, action: _MouseDrag) -> None:
-    try:
-        if path := action.get("path"):
-            await page.mouse.move(**path[0])
-            await page.mouse.down()
-            for point in path[1:]:
-                await page.mouse.move(**point, steps=action.get("steps", 1))
-            await page.mouse.move(**path[-1])
-            await page.mouse.up()
-        else:
-            await page.locator(action.get("source")).drag_to(
-                page.locator(action.get("target")), steps=action.get("steps", 1), timeout=action.get("timeout", 30000)
-            )
-    except (Exception, CancelledError) as exc:
-        try:
-            with CancelScope(shield=True):
-                if not page.is_closed():
-                    await page.mouse.up()
-        except Exception as cleanup_error:
-            raise exc from cleanup_error
-        raise
 
 
 async def _run_actions(page: Any, actions: List[BrowserAction], slowly: bool = False) -> None:
@@ -265,8 +225,10 @@ async def _run_actions(page: Any, actions: List[BrowserAction], slowly: bool = F
                         await page.keyboard.press(action["key"])
                     elif action["type"] == "wheel":
                         await page.mouse.wheel(action.get("delta_x", 0), action.get("delta_y", 0))
-                    elif action["type"] == "drag":
-                        await _drag(page, action)
+                    elif action["type"] == "mouse_down":
+                        await page.mouse.down(button=action.get("button", "left"))
+                    elif action["type"] == "mouse_up":
+                        await page.mouse.up(button=action.get("button", "left"))
                     else:
                         target = action.get("target")
                         timeout = action.get("timeout", 30000)

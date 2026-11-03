@@ -50,6 +50,7 @@ MCP_TOOLS = {
     "browser_evaluate",
     "browser_extract",
     "browser_screenshot",
+    "browser_observe",
     "browser_network_requests",
     "browser_network_request",
     "close_session",
@@ -1414,6 +1415,7 @@ class TestServerToolRegistration:
         assert set(tools) == MCP_TOOLS
         assert {"bulk_get", "browser_fetch_many_once"}.isdisjoint(tools)
         assert tools["browser_screenshot"].output_schema is None
+        assert tools["browser_observe"].output_schema is None
         assert tools["browser_extract"].output_schema is None
         assert tools["browser_actions"].output_schema is None
         assert tools["browser_evaluate"].output_schema is None
@@ -1447,6 +1449,7 @@ class TestServerToolRegistration:
             if name
             not in (
                 "browser_screenshot",
+                "browser_observe",
                 "browser_extract",
                 "browser_actions",
                 "browser_evaluate",
@@ -1589,6 +1592,7 @@ class TestServerToolRegistration:
             "session_make_request",
             "browser_extract",
             "browser_screenshot",
+            "browser_observe",
         ):
             assert annotations[name].read_only_hint is True
             assert annotations[name].open_world_hint is True
