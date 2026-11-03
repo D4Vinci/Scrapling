@@ -11,7 +11,7 @@ description: "اربط عميل ذكاء اصطناعي بـ Scrapling للجل�
 
 ## الميزات {#features}
 
-يوفر خادم Scrapling MCP ست عشرة أداة لاستخراج بيانات الويب والتفاعل مع المتصفح. تجلب أدوات الاستخدام الواحد رابطًا واحدًا، ثم تغلق المتصفح أو العميل الذي فتحته. أما أدوات الجلسات فتحتفظ بـ cookies والإعدادات بين الاستدعاءات، ليواصل الذكاء الاصطناعي إجراءات المتصفح في التبويب نفسه ويفحص سجل الشبكة.
+يوفر خادم Scrapling MCP سبع عشرة أداة لاستخراج بيانات الويب والتفاعل مع المتصفح. تجلب أدوات الاستخدام الواحد رابطًا واحدًا، ثم تغلق المتصفح أو العميل الذي فتحته. أما أدوات الجلسات فتحتفظ بـ cookies والإعدادات بين الاستدعاءات، ليواصل الذكاء الاصطناعي إجراءات المتصفح في التبويب نفسه ويفحص سجل الشبكة.
 
 ### أدوات الاستخدام الواحد {#one-shot-tools}
 
@@ -47,6 +47,7 @@ description: "اربط عميل ذكاء اصطناعي بـ Scrapling للجل�
 #### 📸 لقطات الشاشة {#screenshots}
 
 - **`browser_screenshot`**: يلتقط الصفحة الحالية أو عنصرًا محددًا بصيغة PNG أو JPEG دون إعادة تحميلها. افحص الحقول المملوءة والقوائم المفتوحة والرسوم وبطاقات النتائج، مع تقليل المحتوى غير المرتبط عند تصوير عنصر واحد. يدعم الجزء المرئي والصفحة الكاملة والعنصر الواحد، مع إمكانية ضبط جودة JPEG. تُرجع اللقطة ككتلة صورة فعلية يستطيع النموذج رؤيتها مباشرة.
+- **`browser_observe`**: يساعد الوكيل على فهم الحركة والتغييرات عبر سلسلة قصيرة من الصور من الصفحة الحالية.
 
 #### محتوى الصفحة الحالية {#current-page-content}
 
@@ -244,7 +245,7 @@ scrapling-mcp --executable-path "/path/to/chromium"
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
 
-تستخدم `session_id` الناتج كالمعتاد مع `browser_fetch` و`browser_extract` و`browser_actions` و`browser_evaluate` و`browser_screenshot` و`browser_network_requests` و`browser_network_request` و`browser_save_state` و`browser_load_state`.
+تستخدم `session_id` الناتج كالمعتاد مع `browser_fetch` و`browser_extract` و`browser_actions` و`browser_evaluate` و`browser_screenshot` و`browser_observe` و`browser_network_requests` و`browser_network_request` و`browser_save_state` و`browser_load_state`.
 
 يمكن أن يكون الرابط عنوان WebSocket يبدأ بـ `ws://` أو `wss://`، كما يوفره مزوّدو المتصفحات المُدارة، أو عنوان HTTP لمتصفح شغّلته بنفسك مع تفعيل منفذ تصحيح الأخطاء عن بعد:
 
@@ -536,6 +537,8 @@ scrapling-mcp --http --allowed-host 'your-server.example.com:8000'
 - التقط حقلًا أو رسمًا أو بطاقة أو نتيجة واحدة لفحصها دون محتوى كثير حولها. قد تمرّر لقطة العنصر الصفحة لإظهاره.
 - اختر PNG لصور دون فقدان جودة، أو JPEG بجودة قابلة للضبط لتقليل حجم البيانات.
 - يستطيع الذكاء الاصطناعي استخدام `browser_actions` لانتظار المحتوى أو إكمال التفاعل قبل التصوير.
+
+تساعد `browser_observe` الوكيل على متابعة الرسوم المتحركة وعناصر التحكم المتحركة والتغييرات الأخرى التي قد لا تظهر في لقطة واحدة.
 
 ## اعتبارات قانونية وأخلاقية {#legal-and-ethical-considerations}
 

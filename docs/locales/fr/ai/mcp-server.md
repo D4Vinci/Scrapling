@@ -11,7 +11,7 @@ Le **serveur MCP de Scrapling** met les fonctions d’extraction de données web
 
 ## Fonctions {#features}
 
-Le serveur MCP de Scrapling fournit seize outils pour extraire des données web et interagir avec le navigateur. Les outils à usage unique récupèrent une URL, puis ferment leur navigateur ou client. Les outils de session gardent les cookies et les réglages entre les appels. L’IA peut ainsi poursuivre ses actions dans le même onglet et consulter l’historique réseau.
+Le serveur MCP de Scrapling fournit dix-sept outils pour extraire des données web et interagir avec le navigateur. Les outils à usage unique récupèrent une URL, puis ferment leur navigateur ou client. Les outils de session gardent les cookies et les réglages entre les appels. L’IA peut ainsi poursuivre ses actions dans le même onglet et consulter l’historique réseau.
 
 ### Outils à usage unique {#one-shot-tools}
 
@@ -47,6 +47,7 @@ Les fichiers d’état se trouvent sur l’ordinateur qui exécute le serveur MC
 #### 📸 Captures d’écran {#screenshots}
 
 - **`browser_screenshot`** : Capture la page actuelle ou un élément en PNG ou JPEG sans la recharger. Vous pouvez vérifier les champs remplis, les menus ouverts, les graphiques ou les cartes de résultats. Capturer un seul élément réduit le contenu inutile. L’outil accepte la zone visible, la page entière ou un élément, avec une qualité JPEG réglable. La capture est renvoyée sous forme de bloc d’image réel que le modèle peut voir directement.
+- **`browser_observe`**: Aide l’agent à comprendre les mouvements et les changements grâce à une courte série d’images de la page actuelle.
 
 #### Contenu de la page actuelle {#current-page-content}
 
@@ -230,7 +231,7 @@ Vous pouvez aussi définir la variable d’environnement `SCRAPLING_EXECUTABLE_P
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Le `session_id` renvoyé s’utilise comme d’habitude avec `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state` et `browser_load_state`.
+Le `session_id` renvoyé s’utilise comme d’habitude avec `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_observe`, `browser_network_requests`, `browser_network_request`, `browser_save_state` et `browser_load_state`.
 
 L’URL peut être un endpoint WebSocket (`ws://`/`wss://`), comme ceux fournis par les services de navigateurs, ou l’endpoint HTTP d’un navigateur que vous avez lancé avec le port de débogage distant activé :
 ```commandline
@@ -490,6 +491,8 @@ Cette protection s’applique automatiquement à l’extraction HTML, Markdown e
 - Capturez un champ, un graphique, une carte ou un résultat pour l’inspecter avec moins de contenu autour. La capture d’un élément peut faire défiler la page pour le rendre visible.
 - Choisissez PNG pour une image sans perte ou JPEG avec une qualité réglable pour réduire la taille.
 - L’IA peut utiliser `browser_actions` pour attendre le contenu ou terminer les interactions avant la capture.
+
+`browser_observe` aide l’agent à suivre les animations, les commandes en mouvement et les autres changements qu’une seule capture d’écran peut manquer.
 
 ## Aspects juridiques et éthiques {#legal-and-ethical-considerations}
 

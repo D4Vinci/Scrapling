@@ -11,7 +11,7 @@ Der **MCP-Server von Scrapling** stellt die Web-Scraping-Funktionen von Scraplin
 
 ## Funktionen {#features}
 
-Der MCP-Server von Scrapling bietet sechzehn Werkzeuge für Web Scraping und Browser-Aktionen. Werkzeuge für Einzelaufrufe rufen eine URL ab und schließen danach ihren Browser oder Client. Sitzungswerkzeuge behalten Cookies und Einstellungen zwischen Aufrufen. So kann die KI im selben Tab weiterarbeiten und den Netzwerkverlauf prüfen.
+Der MCP-Server von Scrapling bietet siebzehn Werkzeuge für Web Scraping und Browser-Aktionen. Werkzeuge für Einzelaufrufe rufen eine URL ab und schließen danach ihren Browser oder Client. Sitzungswerkzeuge behalten Cookies und Einstellungen zwischen Aufrufen. So kann die KI im selben Tab weiterarbeiten und den Netzwerkverlauf prüfen.
 
 ### Werkzeuge für Einzelaufrufe {#one-shot-tools}
 
@@ -47,6 +47,7 @@ Die Zustandsdateien liegen auf dem Rechner, auf dem der MCP-Server läuft. Sie e
 #### 📸 Screenshots {#screenshots}
 
 - **`browser_screenshot`**: Erstellt einen Screenshot der aktuellen Seite oder eines Elements als PNG oder JPEG, ohne die Seite neu zu laden. Damit lassen sich ausgefüllte Felder, offene Menüs, Diagramme oder Ergebniskarten prüfen. Ein Screenshot eines einzelnen Elements enthält weniger unnötige Inhalte. Das Werkzeug unterstützt den sichtbaren Bereich, die ganze Seite oder ein Element sowie eine einstellbare JPEG-Qualität. Der Screenshot wird als echter Bildinhaltsblock zurückgegeben, den das Modell direkt sehen kann.
+- **`browser_observe`**: Hilft dem Agenten, Bewegungen und Änderungen anhand einer kurzen Bildfolge der aktuellen Seite zu verstehen.
 
 #### Inhalt der aktuellen Seite {#current-page-content}
 
@@ -230,7 +231,7 @@ Sie können vor dem Start auch die Umgebungsvariable `SCRAPLING_EXECUTABLE_PATH`
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Die zurückgegebene `session_id` verwenden Sie wie gewohnt mit `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state` und `browser_load_state`.
+Die zurückgegebene `session_id` verwenden Sie wie gewohnt mit `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_observe`, `browser_network_requests`, `browser_network_request`, `browser_save_state` und `browser_load_state`.
 
 Die URL kann ein WebSocket-Endpunkt (`ws://`/`wss://`) sein, wie ihn Browser-Dienste bereitstellen. Oder sie kann der HTTP-Endpunkt eines Browsers sein, den Sie selbst mit aktiviertem Remote-Debugging-Port gestartet haben:
 ```commandline
@@ -490,6 +491,8 @@ Dieser Schutz läuft automatisch bei der Extraktion von HTML, Markdown und Text.
 - Erfassen Sie ein einzelnes Feld, Diagramm, eine Karte oder ein Ergebnis, um weniger umgebenden Inhalt zu erhalten. Dafür kann das Zielelement ins Blickfeld gescrollt werden.
 - Wählen Sie PNG für verlustfreie Bilder oder JPEG mit einstellbarer Qualität für kleinere Dateien.
 - Die KI kann mit `browser_actions` vor der Aufnahme auf Inhalte warten oder Aktionen abschließen.
+
+`browser_observe` hilft dem Agenten, Animationen, bewegte Bedienelemente und andere Änderungen zu verfolgen, die ein einzelner Screenshot übersehen kann.
 
 ## Rechtliche und ethische Hinweise {#legal-and-ethical-considerations}
 

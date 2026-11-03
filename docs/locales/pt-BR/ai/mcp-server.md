@@ -11,7 +11,7 @@ O **servidor MCP do Scrapling** leva as funções de extração de dados web do 
 
 ## Funções {#features}
 
-O servidor MCP do Scrapling oferece dezesseis ferramentas para extrair dados web e interagir com o navegador. As ferramentas de uso único obtêm uma URL e fecham seu próprio navegador ou cliente. As ferramentas de sessão mantêm cookies e configurações entre chamadas, para que a IA possa continuar as ações na mesma aba e consultar o histórico de rede.
+O servidor MCP do Scrapling oferece dezessete ferramentas para extrair dados web e interagir com o navegador. As ferramentas de uso único obtêm uma URL e fecham seu próprio navegador ou cliente. As ferramentas de sessão mantêm cookies e configurações entre chamadas, para que a IA possa continuar as ações na mesma aba e consultar o histórico de rede.
 
 ### Ferramentas de uso único {#one-shot-tools}
 
@@ -47,6 +47,7 @@ Os arquivos de estado ficam no computador que executa o servidor MCP. Eles não 
 #### 📸 Capturas de tela {#screenshots}
 
 - **`browser_screenshot`**: Captura a página atual ou um elemento em PNG ou JPEG sem recarregar. Permite conferir campos preenchidos, menus abertos, gráficos ou cartões de resultados. Capturar um só elemento reduz o conteúdo que não interessa. Aceita a área visível, a página inteira ou um elemento, com qualidade JPEG ajustável. A captura é devolvida como um bloco de imagem real que o modelo pode ver diretamente.
+- **`browser_observe`**: Ajuda o agente a entender movimentos e mudanças por meio de uma sequência curta de imagens da página atual.
 
 #### Conteúdo da página atual {#current-page-content}
 
@@ -230,7 +231,7 @@ Você também pode definir a variável de ambiente `SCRAPLING_EXECUTABLE_PATH` a
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-O `session_id` recebido é usado normalmente com `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state` e `browser_load_state`.
+O `session_id` recebido é usado normalmente com `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_observe`, `browser_network_requests`, `browser_network_request`, `browser_save_state` e `browser_load_state`.
 
 A URL pode ser um endpoint WebSocket (`ws://`/`wss://`), como os fornecidos por serviços de navegadores, ou o endpoint HTTP de um navegador que você iniciou com a porta de depuração remota ativada:
 ```commandline
@@ -490,6 +491,8 @@ Essa proteção é aplicada automaticamente na extração de HTML, Markdown e te
 - Capture um campo, gráfico, cartão ou resultado para conferir com menos conteúdo ao redor. A captura de um elemento pode rolar a página até ele ficar visível.
 - Escolha PNG para imagens sem perda ou JPEG com qualidade ajustável para reduzir o tamanho.
 - A IA pode usar `browser_actions` para esperar o conteúdo ou terminar as interações antes da captura.
+
+`browser_observe` ajuda o agente a acompanhar animações, controles em movimento e outras mudanças que uma única captura de tela pode não mostrar.
 
 ## Questões legais e éticas {#legal-and-ethical-considerations}
 

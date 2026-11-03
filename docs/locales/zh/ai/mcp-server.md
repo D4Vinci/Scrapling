@@ -11,7 +11,7 @@ description: "将 AI 客户端连接到 Scrapling，进行 HTTP 或浏览器抓�
 
 ## 功能 {#features}
 
-Scrapling MCP 服务器提供十六个工具，用于网页抓取和浏览器交互。单次调用工具获取一个 URL 后，会关闭自己创建的浏览器或客户端。会话工具则在调用之间保留 Cookie 和设置，让 AI 可以继续操作同一个标签页，并查看网络历史记录。
+Scrapling MCP 服务器提供十七个工具，用于网页抓取和浏览器交互。单次调用工具获取一个 URL 后，会关闭自己创建的浏览器或客户端。会话工具则在调用之间保留 Cookie 和设置，让 AI 可以继续操作同一个标签页，并查看网络历史记录。
 
 ### 单次调用工具 {#one-shot-tools}
 
@@ -47,6 +47,7 @@ Scrapling MCP 服务器提供十六个工具，用于网页抓取和浏览器交
 #### 📸 截图 {#screenshots}
 
 - **`browser_screenshot`**：无需重新加载，将当前页面或指定元素截图为 PNG 或 JPEG。可以检查已填写的字段、打开的菜单、图表或结果卡片。只截取一个元素可以减少无关内容。支持可见区域、整页或单个元素，并可调整 JPEG 质量。截图以图像内容块返回，模型可以直接查看。
+- **`browser_observe`**: 通过当前页面的一小段图像序列，帮助智能体理解运动和变化。
 
 #### 当前页面内容 {#current-page-content}
 
@@ -230,7 +231,7 @@ scrapling-mcp --executable-path "/path/to/chromium"
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-返回的 `session_id` 可以照常用于 `browser_fetch`、`browser_extract`、`browser_actions`、`browser_evaluate`、`browser_screenshot`、`browser_network_requests`、`browser_network_request`、`browser_save_state` 和 `browser_load_state`。
+返回的 `session_id` 可以照常用于 `browser_fetch`、`browser_extract`、`browser_actions`、`browser_evaluate`、`browser_screenshot`、`browser_observe`、`browser_network_requests`、`browser_network_request`、`browser_save_state` 和 `browser_load_state`。
 
 URL 可以是浏览器服务提供的 WebSocket 地址（`ws://`/`wss://`），也可以是自行启动并开启远程调试端口的浏览器 HTTP 地址：
 ```commandline
@@ -484,6 +485,8 @@ scrapling-mcp --http --allowed-host 'your-server.example.com:8000'
 - 可以只截取某个字段、图表、卡片或结果，减少周围内容的干扰。截取元素时，可以将目标滚动到可见区域。
 - 需要无损图片时选择 PNG；需要减少数据量时选择 JPEG，并调整画质。
 - 截图前，AI 可以使用 `browser_actions` 等待内容加载或完成交互。
+
+`browser_observe` 帮助智能体跟踪动画、移动的控件，以及单张截图可能遗漏的其他变化。
 
 ## 法律和道德事项 {#legal-and-ethical-considerations}
 

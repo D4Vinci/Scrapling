@@ -11,7 +11,7 @@ The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful W
 
 ## Features
 
-The Scrapling MCP Server provides sixteen tools for web scraping and browser interaction. One-shot tools fetch a single URL and close their own browser or client. Session tools keep cookies and settings across calls, so the AI can continue browser actions on the same tab and inspect network history.
+The Scrapling MCP Server provides seventeen tools for web scraping and browser interaction. One-shot tools fetch a single URL and close their own browser or client. Session tools keep cookies and settings across calls, so the AI can continue browser actions on the same tab and inspect network history.
 
 ### One-shot tools
 
@@ -43,6 +43,7 @@ State files are stored on the machine running the MCP server. They do not includ
 #### 📸 Screenshots
 
 - **`browser_screenshot`**: Capture the current page or a chosen element as PNG or JPEG without reloading it. Inspect filled fields, open menus, charts, or result cards, with less unrelated content in element captures. Supports the visible viewport, the full page, or one element, with adjustable JPEG quality. The screenshot is returned as a real image content block the model can see directly.
+- **`browser_observe`**: Help the agent understand motion and changes through a short sequence of images from the current page.
 
 #### Current Page Content
 
@@ -224,7 +225,7 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, and `browser_load_state` as usual.
+The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_observe`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, and `browser_load_state` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline
@@ -478,6 +479,8 @@ This protection runs automatically for HTML, Markdown, and text extraction. Keep
 - Capture one field, chart, card, or result to inspect it with less surrounding content. Element capture can scroll the target into view.
 - Choose PNG for lossless images or JPEG with adjustable quality for smaller payloads.
 - The AI can use `browser_actions` to wait for content or finish interactions before capture.
+
+`browser_observe` helps the agent follow animations, moving controls, and other changes that a single screenshot can miss.
 
 ## Legal and Ethical Considerations
 

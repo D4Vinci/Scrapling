@@ -11,7 +11,7 @@ description: "AI クライアントを Scrapling に接続し、HTTP やブラ�
 
 ## 機能 {#features}
 
-Scrapling MCP サーバーには、Web スクレイピングとブラウザ操作のための 16 個のツールがあります。単発ツールは 1 つの URL を取得し、使ったブラウザやクライアントを閉じます。セッションツールは呼び出し間で Cookie と設定を保つため、AI は同じタブで操作を続け、ネットワーク履歴を確認できます。
+Scrapling MCP サーバーには、Web スクレイピングとブラウザ操作のための 17 個のツールがあります。単発ツールは 1 つの URL を取得し、使ったブラウザやクライアントを閉じます。セッションツールは呼び出し間で Cookie と設定を保つため、AI は同じタブで操作を続け、ネットワーク履歴を確認できます。
 
 ### 単発ツール {#one-shot-tools}
 
@@ -43,6 +43,7 @@ Scrapling MCP サーバーには、Web スクレイピングとブラウザ操�
 #### 📸 スクリーンショット {#screenshots}
 
 - **`browser_screenshot`**：再読み込みせずに、現在のページや指定した要素を PNG または JPEG で撮影します。入力済みの欄、開いたメニュー、グラフ、結果カードなどを確認できます。要素だけを撮影すれば、周囲の不要な内容を減らせます。表示領域、ページ全体、1 つの要素を選べ、JPEG の画質も調整できます。画像はモデルが直接見られる画像コンテンツブロックとして返します。
+- **`browser_observe`**: 現在のページの短い画像列を使い、エージェントが動きや変化を理解できるようにします。
 
 #### 現在のページの内容 {#current-page-content}
 
@@ -224,7 +225,7 @@ Claude Desktop の設定では、サーバーの引数にオプションを追�
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-返される `session_id` は、通常どおり `browser_fetch`、`browser_extract`、`browser_actions`、`browser_evaluate`、`browser_screenshot`、`browser_network_requests`、`browser_network_request`、`browser_save_state`、`browser_load_state` で使います。
+返される `session_id` は、通常どおり `browser_fetch`、`browser_extract`、`browser_actions`、`browser_evaluate`、`browser_screenshot`、`browser_observe`、`browser_network_requests`、`browser_network_request`、`browser_save_state`、`browser_load_state` で使います。
 
 URL には、ブラウザ提供サービスが発行する WebSocket アドレス（`ws://`/`wss://`）、またはリモートデバッグポートを有効にして起動したブラウザの HTTP アドレスを指定できます。
 ```commandline
@@ -478,6 +479,8 @@ HTML、Markdown、テキストの抽出で、この保護が自動で働きま�
 - 1 つの入力欄、グラフ、カード、結果だけを撮影すれば、周囲の内容を減らして確認できます。要素の撮影では、対象を表示範囲までスクロールできます。
 - 劣化のない画像には PNG、データ量を減らしたい場合は画質を調整できる JPEG を選びます。
 - AI は撮影前に `browser_actions` で内容を待ち、必要な操作を終えられます。
+
+`browser_observe` は、1 枚のスクリーンショットでは見逃すことがあるアニメーション、動く操作部品、その他の変化をエージェントが追えるようにします。
 
 ## 法律と倫理への配慮 {#legal-and-ethical-considerations}
 
