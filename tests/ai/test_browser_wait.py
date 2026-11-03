@@ -49,7 +49,8 @@ async def test_browser_wait_schema_and_annotations() -> None:
     assert set(variants) == {
         "move",
         "click",
-        "drag",
+        "mouse_down",
+        "mouse_up",
         "wheel",
         "wait_time",
         "wait_element",
@@ -61,7 +62,7 @@ async def test_browser_wait_schema_and_annotations() -> None:
         "press_key",
         "dialog",
     }
-    assert len(items["oneOf"]) == 13
+    assert len(items["oneOf"]) == 14
     assert variants["wait_time"]["required"] == ["type", "milliseconds"]
     assert variants["wait_time"]["properties"]["milliseconds"]["minimum"] == 0
     assert variants["wait_element"]["required"] == ["type", "target"]
