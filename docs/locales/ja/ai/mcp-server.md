@@ -11,7 +11,7 @@ description: "AI クライアントを Scrapling に接続し、HTTP やブラ�
 
 ## 機能 {#features}
 
-Scrapling MCP サーバーには、Web スクレイピングとブラウザ操作のための 16 個のツールがあります。単発ツールは 1 つの URL を取得し、使ったブラウザやクライアントを閉じます。セッションツールは呼び出し間で Cookie と設定を保つため、AI は同じタブで操作を続け、ネットワーク履歴を確認できます。
+Scrapling MCP サーバーには、Web スクレイピングとブラウザ操作のための 17 個のツールがあります。単発ツールは 1 つの URL を取得し、使ったブラウザやクライアントを閉じます。セッションツールは呼び出し間で Cookie と設定を保つため、AI は同じタブで操作を続け、ネットワーク履歴を確認できます。
 
 ### 単発ツール {#one-shot-tools}
 
@@ -43,6 +43,7 @@ Scrapling MCP サーバーには、Web スクレイピングとブラウザ操�
 #### 📸 スクリーンショット {#screenshots}
 
 - **`browser_screenshot`**：再読み込みせずに、現在のページや指定した要素を PNG または JPEG で撮影します。入力済みの欄、開いたメニュー、グラフ、結果カードなどを確認できます。要素だけを撮影すれば、周囲の不要な内容を減らせます。表示領域、ページ全体、1 つの要素を選べ、JPEG の画質も調整できます。画像はモデルが直接見られる画像コンテンツブロックとして返します。
+- **`browser_observe`**: 現在のページの短い画像列を使い、エージェントが動きや変化を理解できるようにします。
 
 #### 現在のページの内容 {#current-page-content}
 
@@ -54,7 +55,7 @@ Scrapling MCP サーバーには、Web スクレイピングとブラウザ操�
 
     ホバーでメニューやツールチップを表示し、ボタンやリンクをクリックし、入れ子のパネル上に移動して縦や横にスクロールできます。移動とクリックでは、セレクター、スナップショットの参照、座標を指定できます。要素を対象にする場合は、自動で待機して表示範囲までスクロールします。座標間の移動を複数の段階に分けるほか、左、右、中央ボタンのクリックとダブルクリックにも対応しています。
 
-    セレクターやスナップショットの参照で項目を他の要素へドラッグしたり、画面上の点を結ぶ経路に沿ってスライダーなどのコントロールを動かしたりできます。ドラッグ中はマウスの左ボタンを押したままにし、移動を複数の段階に分けることもできます。ドラッグが失敗またはキャンセルされた場合は、ページが再び利用可能になる前にボタンを離す処理を試みます。
+    マウスボタンを押したまま、項目をドラッグしたりスライダーを動かしたりできます。AIはボタンを押したままページを確認し、さらに動かして位置を調整してから、目的の位置でボタンを離せます。
 
     セレクターやスナップショットの参照で、ページ上の入力欄を指定します。テキスト入力、チェックボックスのオンとオフ、ラジオボタンの選択、標準のドロップダウンで表示ラベルに基づく 1 つ以上の選択ができます。既存のテキストを置き換える、消す、現在のカーソル位置から入力を続けることもできます。キーボードショートカットで、テキストの選択や削除、フォーカス移動、フォーム送信、メニューを閉じる操作を行えます。低速モードでは 1 文字ずつ入力し、文字間と各操作の間にランダムな待ち時間を入れます。
 
@@ -224,7 +225,7 @@ Claude Desktop の設定では、サーバーの引数にオプションを追�
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-返される `session_id` は、通常どおり `browser_fetch`、`browser_extract`、`browser_actions`、`browser_evaluate`、`browser_screenshot`、`browser_network_requests`、`browser_network_request`、`browser_save_state`、`browser_load_state` で使います。
+返される `session_id` は、通常どおり `browser_fetch`、`browser_extract`、`browser_actions`、`browser_evaluate`、`browser_screenshot`、`browser_observe`、`browser_network_requests`、`browser_network_request`、`browser_save_state`、`browser_load_state` で使います。
 
 URL には、ブラウザ提供サービスが発行する WebSocket アドレス（`ws://`/`wss://`）、またはリモートデバッグポートを有効にして起動したブラウザの HTTP アドレスを指定できます。
 ```commandline
@@ -478,6 +479,8 @@ HTML、Markdown、テキストの抽出で、この保護が自動で働きま�
 - 1 つの入力欄、グラフ、カード、結果だけを撮影すれば、周囲の内容を減らして確認できます。要素の撮影では、対象を表示範囲までスクロールできます。
 - 劣化のない画像には PNG、データ量を減らしたい場合は画質を調整できる JPEG を選びます。
 - AI は撮影前に `browser_actions` で内容を待ち、必要な操作を終えられます。
+
+`browser_observe` は、1 枚のスクリーンショットでは見逃すことがあるアニメーション、動く操作部品、その他の変化をエージェントが追えるようにします。
 
 ## 法律と倫理への配慮 {#legal-and-ethical-considerations}
 

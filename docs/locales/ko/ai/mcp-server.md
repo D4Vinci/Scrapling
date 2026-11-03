@@ -11,7 +11,7 @@ description: "AI 클라이언트를 Scrapling에 연결해 HTTP와 브라우저�
 
 ## 기능 {#features}
 
-Scrapling MCP 서버는 웹 스크래핑과 브라우저 조작을 위한 도구 16개를 제공합니다. 일회성 도구는 URL 하나를 가져온 뒤 사용한 브라우저나 클라이언트를 닫습니다. 세션 도구는 호출 사이에 쿠키와 설정을 유지합니다. 따라서 AI가 같은 탭에서 브라우저 작업을 이어 가고 네트워크 기록을 확인할 수 있습니다.
+Scrapling MCP 서버는 웹 스크래핑과 브라우저 조작을 위한 도구 17개를 제공합니다. 일회성 도구는 URL 하나를 가져온 뒤 사용한 브라우저나 클라이언트를 닫습니다. 세션 도구는 호출 사이에 쿠키와 설정을 유지합니다. 따라서 AI가 같은 탭에서 브라우저 작업을 이어 가고 네트워크 기록을 확인할 수 있습니다.
 
 ### 일회성 도구 {#one-shot-tools}
 
@@ -43,6 +43,7 @@ Scrapling MCP 서버는 웹 스크래핑과 브라우저 조작을 위한 도구
 #### 📸 스크린샷 {#screenshots}
 
 - **`browser_screenshot`**: 새로고침 없이 현재 페이지나 선택한 요소를 PNG 또는 JPEG로 캡처합니다. 입력한 필드, 열린 메뉴, 차트, 결과 카드를 확인할 수 있습니다. 요소만 캡처하면 관련 없는 주변 내용을 줄일 수 있습니다. 현재 보이는 영역, 전체 페이지, 요소 하나를 지원하며 JPEG 품질도 조절할 수 있습니다. 스크린샷은 모델이 직접 볼 수 있는 실제 이미지 콘텐츠 블록으로 반환됩니다.
+- **`browser_observe`**: 현재 페이지의 짧은 이미지 시퀀스로 에이전트가 움직임과 변화를 이해하도록 돕습니다.
 
 #### 현재 페이지 내용 {#current-page-content}
 
@@ -54,7 +55,7 @@ Scrapling MCP 서버는 웹 스크래핑과 브라우저 조작을 위한 도구
 
     마우스를 올려 메뉴나 툴팁을 표시하고, 버튼이나 링크를 클릭하고, 중첩 패널 위로 이동해 세로나 가로로 스크롤할 수 있습니다. 이동과 클릭에는 선택자, 스냅샷 참조, 좌표를 사용합니다. 대상이 요소라면 자동으로 기다린 뒤 화면 안으로 스크롤합니다. 여러 단계의 좌표 이동, 왼쪽·오른쪽·가운데 버튼 클릭, 더블 클릭을 지원합니다.
 
-    선택자나 스냅샷 참조로 항목을 다른 요소 위로 드래그하거나, 화면의 점을 잇는 경로를 따라 슬라이더와 다른 컨트롤을 움직일 수 있습니다. 드래그 중에는 마우스 왼쪽 버튼을 누른 상태를 유지하며, 여러 단계의 이동을 지원합니다. 드래그가 실패하거나 취소되면 페이지를 다시 사용할 수 있게 되기 전에 버튼 해제를 시도합니다.
+    마우스 버튼을 누른 상태로 항목을 드래그하거나 슬라이더를 움직일 수 있습니다. AI는 버튼을 누른 채 페이지를 확인하고, 추가 이동으로 위치를 조정한 다음 목표 지점에서 버튼을 놓을 수 있습니다.
 
     선택자나 스냅샷 참조로 페이지 어디에 있는 필드든 지정할 수 있습니다. 텍스트 입력, 체크박스 선택과 해제, 라디오 버튼 선택, 기본 드롭다운에서 보이는 라벨로 하나 이상의 옵션 선택을 지원합니다. 기존 텍스트를 바꾸거나 지우거나 현재 커서 위치에서 이어 쓸 수 있습니다. 키보드 단축키로 텍스트 선택과 삭제, 포커스 이동, 폼 제출, 메뉴 닫기를 할 수 있습니다. 느린 모드는 한 글자씩 입력하며 글자 사이와 모든 동작 사이에 무작위로 잠시 멈춥니다.
 
@@ -224,7 +225,7 @@ Claude Desktop 설정에서는 서버 인수에 옵션을 추가합니다.
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-반환된 `session_id`는 평소처럼 `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, `browser_load_state`에 사용합니다.
+반환된 `session_id`는 평소처럼 `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_observe`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, `browser_load_state`에 사용합니다.
 
 URL에는 브라우저 서비스에서 제공하는 WebSocket 주소(`ws://`/`wss://`)나, 원격 디버깅 포트를 켜고 직접 실행한 브라우저의 HTTP 주소를 사용할 수 있습니다.
 ```commandline
@@ -477,6 +478,8 @@ MCP 서버는 `main_content_only`가 켜져 있으면 스크래핑한 내용을 
 - 필드, 차트, 카드, 결과 하나만 캡처해 주변 내용을 줄일 수 있습니다. 요소를 캡처할 때는 대상이 보이도록 스크롤할 수 있습니다.
 - 손실 없는 이미지에는 PNG를, 더 작은 전송 크기에는 품질을 조절할 수 있는 JPEG를 선택하세요.
 - AI는 캡처 전에 `browser_actions`로 콘텐츠를 기다리거나 필요한 조작을 마칠 수 있습니다.
+
+`browser_observe`는 에이전트가 애니메이션, 움직이는 컨트롤, 스크린샷 한 장으로 놓칠 수 있는 다른 변화를 따라가도록 돕습니다.
 
 ## 법적 사항과 윤리 {#legal-and-ethical-considerations}
 

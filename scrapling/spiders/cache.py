@@ -1,5 +1,6 @@
 from base64 import b64encode, b64decode
 from pathlib import Path
+from uuid import uuid4
 
 import orjson
 import anyio
@@ -53,7 +54,7 @@ class ResponseCacheManager:
 
     async def put(self, fingerprint: bytes, response: Response, method: str = "GET") -> None:
         await self._cache_dir.mkdir(parents=True, exist_ok=True)
-        temp_path = self._cache_path(fingerprint).with_suffix(".tmp")
+        temp_path = self._cache_dir / f"{fingerprint.hex()}.{uuid4().hex}.tmp"
 
         try:
             serialized = orjson.dumps(
