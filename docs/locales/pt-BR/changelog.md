@@ -7,6 +7,55 @@ description: "Notas das versões do Scrapling, com novos recursos, correções e
 
 Todas as mudanças importantes do Scrapling, extraídas das [versões no GitHub](https://github.com/D4Vinci/Scrapling/releases).
 
+## [v0.5.1](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5.1) - 2026-11-04 {#v0.5.1}
+
+**Pequena mudança de versão, grande melhoria no navegador! Esta versão permite que agentes de IA acompanhem movimentos e controlem ações de arrastar e soltar, adiciona sessões dedicadas para navegadores remotos e traz correções na análise, nos spiders, nos proxies e no shell 🚀**
+
+!!! warning "Aviso"
+
+    **Esta versão traz mudanças incompatíveis nas conexões com navegadores remotos. A conexão com navegadores remotos agora exige uma nova classe de sessão de navegador. Confira o [guia de migração de sessões remotas](migrating-to-v0.5.md#move-cdp-connections-to-remote-sessions) antes de atualizar.**
+
+### 🚀 Novidades e melhorias de uso {#v0.5.1-new-stuff-and-quality-of-life-changes}
+
+- **Os agentes de IA agora podem acompanhar movimentos e controlar o mouse com mais precisão** (confira a [documentação](ai/mcp-server.md)):
+
+    - **Veja a página em movimento**: uma breve sequência de imagens ajuda o agente a entender animações, controles em movimento e mudanças que uma única captura de tela pode não mostrar.
+    - **Arraste, inspecione, ajuste e solte**: mantenha um botão do mouse pressionado, mova um item ou controle deslizante, inspecione a página sem soltar o botão e depois ajuste e solte. Aceita os botões esquerdo, direito e central.
+    - **Reutilize um navegador remoto com login ativo** ou comece com um contexto de navegador separado, para que o agente possa escolher a sessão certa para a tarefa.
+    - **Use menos tokens nas descrições das ferramentas** com textos mais curtos e menos orientações repetidas.
+
+- **Sessões dedicadas para navegadores remotos com controle sobre a reutilização do login**. `RemoteSession` e `AsyncRemoteSession` se conectam a um navegador Chromium existente por um endpoint CDP HTTP ou WebSocket. Elas aceitam os recursos habituais das sessões de navegação furtiva, incluindo a resolução de Cloudflare. As duas classes também estão disponíveis no shell interativo. (Confira a [documentação](fetching/stealthy.md#3-cdp-connection))
+
+    ```python
+    from scrapling.fetchers import RemoteSession
+
+    with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        page = session.fetch("https://example.com")
+    ```
+
+    - `new_context=False` reutiliza o contexto padrão existente do navegador e seu estado de login. As configurações desse contexto continuam em uso, e as abas existentes permanecem abertas quando o Scrapling se desconecta.
+    - O padrão, `new_context=True`, cria um contexto separado e o fecha quando a sessão termina. O Scrapling usa suas próprias abas nos dois modos.
+
+- **Escolha a codificação do arquivo de log do seu spider** com `log_file_encoding="utf-8"` ou outra codificação. O padrão, `None`, mantém a codificação padrão do Python. (Confira a [documentação](spiders/advanced.md#logging))
+
+### 🐛 Correções de erros {#v0.5.1-bug-fixes}
+
+- **As expressões XPath agora retornam seus valores corretamente**, incluindo `string()`, `count()` e `boolean()`. Strings vazias, zero e falso continuam disponíveis pela API habitual de seletores, por @jayhemnani9910 em [#552](https://github.com/D4Vinci/Scrapling/pull/552).
+- **Corrigida a análise de HTML sem elemento raiz**, incluindo entradas que contêm apenas espaços em branco, comentários ou uma declaração doctype, por @rushilnimbalker250 em [#536](https://github.com/D4Vinci/Scrapling/pull/536).
+- **Corrigido `find_similar(similarity_threshold=0)` quando a referência não tem atributos para comparar**, por @Master-Norna em [#539](https://github.com/D4Vinci/Scrapling/pull/539).
+
+- **Corrigidas as buscas duplicadas de robots.txt quando solicitações simultâneas chegam ao mesmo domínio**, por @RayenMlayeh em [#538](https://github.com/D4Vinci/Scrapling/pull/538).
+- **Corrigidos os conflitos entre arquivos temporários durante gravações simultâneas no cache de desenvolvimento**, por @xixihaha-ha em [#546](https://github.com/D4Vinci/Scrapling/pull/546).
+- **Links malformados não impedem mais a extração de links válidos na mesma página**, por @dajiaohuang em [#548](https://github.com/D4Vinci/Scrapling/pull/548).
+- **Corrigidos os feeds CSV que usam retornos de carro como separadores de linhas**, preservando as quebras de linha dentro de campos entre aspas, por @xunguangzlj-cloud em [#551](https://github.com/D4Vinci/Scrapling/pull/551).
+- **Feeds gzip truncados ou danificados agora seguem o fluxo normal de emitir um aviso e ignorar o conteúdo** nos spiders de sitemap, feeds XML e feeds CSV, por @cangen185-sudo em [#522](https://github.com/D4Vinci/Scrapling/pull/522).
+
+- **Corrigida a autenticação de proxies do navegador com nomes de usuário e senhas codificados com porcentagem**, por @kevin9327 em [#545](https://github.com/D4Vinci/Scrapling/pull/545).
+- **Melhorada a liberação de recursos do navegador quando a configuração da sessão ou o fechamento do contexto falha**, liberando os recursos próprios e mantendo abertos os contextos remotos reutilizados.
+- **A análise de cookies no shell e na CLI HTTP não descarta mais valores de cookies do navegador com espaços ou aspas**, nem os cookies que vêm depois deles, por @waw666waw666 em [#541](https://github.com/D4Vinci/Scrapling/pull/541). Corrige [#540](https://github.com/D4Vinci/Scrapling/issues/540).
+- **A conversão de curl agora aceita `-L` e `--location`**, mantendo o comportamento existente dos redirecionamentos, por @jayhemnani9910 em [#554](https://github.com/D4Vinci/Scrapling/pull/554).
+- **Corrigido `scrapling extract fetch --ai-targeted`, que não ativava o bloqueio de anúncios como indicava a documentação**, por @postoso em [#527](https://github.com/D4Vinci/Scrapling/pull/527).
+
 ## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
 
 **O Scrapling v0.5 melhora quase tudo: busca de páginas, análise, spiders, automação do navegador, ferramentas de IA e documentação em dez idiomas 🚀**

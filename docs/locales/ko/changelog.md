@@ -7,6 +7,55 @@ description: "새 기능, 수정 사항, 호환성에 영향을 주는 변경 �
 
 [GitHub 릴리스](https://github.com/D4Vinci/Scrapling/releases)에서 가져온 Scrapling의 주요 변경 사항을 모두 모았습니다.
 
+## [v0.5.1](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5.1) - 2026-11-04 {#v0.5.1}
+
+**버전 숫자는 조금 바뀌었지만, 브라우저 기능은 크게 좋아졌습니다! 이 버전은 AI 에이전트가 움직임을 따라가며 드래그 앤 드롭을 제어하게 하고, 전용 원격 브라우저 세션을 추가하며, 파싱, 스파이더, 프록시, 셸의 문제를 수정합니다 🚀**
+
+!!! warning "주의"
+
+    **이 릴리스에는 원격 브라우저 연결의 호환성에 영향을 주는 변경 사항이 있습니다. 원격 브라우저에 연결하려면 이제 새로운 브라우저 세션 클래스가 필요합니다. 업데이트 전에 [원격 세션 마이그레이션 가이드](migrating-to-v0.5.md#move-cdp-connections-to-remote-sessions)를 확인하세요.**
+
+### 🚀 새 기능과 사용 편의 개선 {#v0.5.1-new-stuff-and-quality-of-life-changes}
+
+- **AI 에이전트가 움직임을 따라가고 마우스를 더 세밀하게 제어할 수 있습니다**([문서](ai/mcp-server.md) 참고):
+
+    - **움직이는 페이지를 관찰합니다**. 짧은 연속 이미지로 에이전트가 애니메이션, 움직이는 컨트롤, 스크린샷 한 장으로 놓칠 수 있는 변화를 이해할 수 있습니다.
+    - **드래그하고, 확인하고, 조정한 뒤 놓습니다**. 마우스 버튼을 누른 채 항목이나 슬라이더를 옮기고, 계속 누른 상태에서 페이지를 확인한 다음 위치를 조정하고 버튼을 놓을 수 있습니다. 왼쪽, 오른쪽, 가운데 버튼을 지원합니다.
+    - **로그인된 원격 브라우저를 재사용하거나 별도의 브라우저 컨텍스트로 시작합니다**. 에이전트가 작업에 맞는 세션을 선택할 수 있습니다.
+    - **도구 설명에 쓰는 토큰을 줄였습니다**. 설명을 짧게 하고 반복되는 지침을 줄였습니다.
+
+- **로그인 상태 재사용을 제어할 수 있는 전용 원격 브라우저 세션을 추가했습니다**. `RemoteSession`과 `AsyncRemoteSession`은 HTTP 또는 WebSocket CDP 엔드포인트를 통해 실행 중인 Chromium 브라우저에 연결합니다. Cloudflare 해결을 포함한 일반적인 스텔스 세션 기능을 지원합니다. 두 클래스 모두 대화형 셸에서도 사용할 수 있습니다([문서](fetching/stealthy.md#3-cdp-connection) 참고).
+
+    ```python
+    from scrapling.fetchers import RemoteSession
+
+    with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        page = session.fetch("https://example.com")
+    ```
+
+    - `new_context=False`는 브라우저의 기존 기본 컨텍스트와 로그인 상태를 재사용합니다. 해당 컨텍스트의 설정을 계속 사용하며, Scrapling이 연결을 끊어도 기존 탭은 열린 상태로 유지됩니다.
+    - 기본값인 `new_context=True`는 별도의 컨텍스트를 만들고 세션이 끝나면 닫습니다. 두 모드 모두 Scrapling이 직접 만든 탭을 사용합니다.
+
+- **스파이더의 로그 파일 인코딩을 선택할 수 있습니다**. `log_file_encoding="utf-8"`이나 다른 인코딩을 지정하세요. 기본값인 `None`은 Python의 기본 인코딩을 유지합니다([문서](spiders/advanced.md#logging) 참고).
+
+### 🐛 버그 수정 {#v0.5.1-bug-fixes}
+
+- **XPath 표현식이 값을 올바르게 반환합니다**. `string()`, `count()`, `boolean()`을 포함하며, 빈 문자열, 0, false도 기존 선택자 API로 가져올 수 있습니다. @jayhemnani9910의 [#552](https://github.com/D4Vinci/Scrapling/pull/552).
+- **루트 요소가 없는 HTML의 파싱을 수정했습니다**. 공백만 있는 입력, 주석만 있는 입력, doctype만 있는 입력을 포함합니다. @rushilnimbalker250의 [#536](https://github.com/D4Vinci/Scrapling/pull/536).
+- **기준 요소에 비교할 속성이 없을 때의 `find_similar(similarity_threshold=0)`를 수정했습니다**. @Master-Norna의 [#539](https://github.com/D4Vinci/Scrapling/pull/539).
+
+- **동시 요청이 같은 도메인에 접근할 때 robots.txt를 중복으로 가져오는 문제를 수정했습니다**. @RayenMlayeh의 [#538](https://github.com/D4Vinci/Scrapling/pull/538).
+- **개발용 캐시에 동시에 쓸 때 발생하는 임시 파일 충돌을 수정했습니다**. @xixihaha-ha의 [#546](https://github.com/D4Vinci/Scrapling/pull/546).
+- **잘못된 형식의 링크가 있어도 같은 페이지의 유효한 링크 추출이 멈추지 않습니다**. @dajiaohuang의 [#548](https://github.com/D4Vinci/Scrapling/pull/548).
+- **캐리지 리턴을 행 구분자로 사용하는 CSV 피드를 수정했습니다**. 따옴표로 묶인 필드 안의 줄바꿈은 유지합니다. @xunguangzlj-cloud의 [#551](https://github.com/D4Vinci/Scrapling/pull/551).
+- **잘리거나 손상된 gzip 피드는 이제 정상적인 경고 후 건너뛰기 경로로 처리합니다**. 사이트맵, XML 피드, CSV 피드 스파이더에 적용됩니다. @cangen185-sudo의 [#522](https://github.com/D4Vinci/Scrapling/pull/522).
+
+- **퍼센트 인코딩된 사용자 이름과 비밀번호를 사용하는 브라우저 프록시 인증을 수정했습니다**. @kevin9327의 [#545](https://github.com/D4Vinci/Scrapling/pull/545).
+- **세션 설정이나 컨텍스트 닫기가 실패할 때 브라우저 정리를 개선했습니다**. 직접 소유한 리소스는 해제하고, 빌려 쓰는 원격 컨텍스트는 열린 상태로 유지합니다.
+- **셸과 HTTP CLI의 쿠키 파싱에서 공백이나 따옴표가 있는 브라우저 쿠키 값과 그 뒤의 쿠키가 사라지지 않도록 했습니다**. @waw666waw666의 [#541](https://github.com/D4Vinci/Scrapling/pull/541). [#540](https://github.com/D4Vinci/Scrapling/issues/540)을 수정합니다.
+- **curl 변환에서 `-L`과 `--location`을 허용합니다**. 기존 리다이렉트 동작은 유지합니다. @jayhemnani9910의 [#554](https://github.com/D4Vinci/Scrapling/pull/554).
+- **`scrapling extract fetch --ai-targeted`가 문서에 나온 대로 광고 차단을 켜지 않던 문제를 수정했습니다**. @postoso의 [#527](https://github.com/D4Vinci/Scrapling/pull/527).
+
 ## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
 
 **Scrapling v0.5는 가져오기, 파싱, 스파이더, 브라우저 자동화, AI 도구, 10개 언어로 된 문서까지 거의 모든 부분을 개선한 릴리스입니다 🚀**

@@ -7,6 +7,55 @@ description: "Scrapling のリリースノートです。新機能、修正、�
 
 Scrapling の主な変更を、[GitHub のリリース](https://github.com/D4Vinci/Scrapling/releases)からまとめています。
 
+## [v0.5.1](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5.1) - 2026-11-04 {#v0.5.1}
+
+**バージョン番号の変化は小さくても、ブラウザ機能は大きく進化！このバージョンでは、AI エージェントが動きを追いながらドラッグ＆ドロップを操作できます。専用のリモートブラウザセッションを追加し、解析、Spider、プロキシ、シェルの問題も修正しました 🚀**
+
+!!! warning "警告"
+
+    **このリリースには、リモートブラウザへの接続方法に互換性に影響する変更があります。リモートブラウザに接続するには、新しいブラウザセッションクラスが必要になりました。更新前に[リモートセッションの移行ガイド](migrating-to-v0.5.md#move-cdp-connections-to-remote-sessions)を確認してください。**
+
+### 🚀 新機能と使いやすさの改善 {#v0.5.1-new-stuff-and-quality-of-life-changes}
+
+- **AI エージェントが動きを追い、マウスをより細かく操作できるようになりました**（[ドキュメント](ai/mcp-server.md)を参照）：
+
+    - **ページの動きを確認できます**。短い連続画像によって、1 枚のスクリーンショットでは捉えられないアニメーション、動くコントロール、ページの変化をエージェントが理解できます。
+    - **ドラッグし、確認し、調整してからドロップできます**。マウスボタンを押したまま要素やスライダーを動かし、その状態でページを確認して、位置を調整してからボタンを放せます。左、右、中央のボタンに対応します。
+    - **ログイン済みのリモートブラウザを再利用することも、別のブラウザコンテキストで始めることもできます**。エージェントが作業に合ったセッションを選べます。
+    - **ツール説明のトークン使用量を削減しました**。説明を短くし、案内の重複を減らしました。
+
+- **ログイン状態の再利用を選べる専用のリモートブラウザセッションを追加しました**。`RemoteSession` と `AsyncRemoteSession` は、HTTP または WebSocket の CDP エンドポイントを使って、起動済みの Chromium ブラウザに接続します。Cloudflare の解決を含む、通常のステルスセッション機能に対応します。両クラスは対話型シェルでも使えます（[ドキュメント](fetching/stealthy.md#3-cdp-connection)を参照）。
+
+    ```python
+    from scrapling.fetchers import RemoteSession
+
+    with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        page = session.fetch("https://example.com")
+    ```
+
+    - `new_context=False` は、ブラウザの既存のデフォルトコンテキストとログイン状態を再利用します。そのコンテキストの設定を引き続き使い、Scrapling が切断しても既存のタブは開いたままです。
+    - デフォルトの `new_context=True` は別のコンテキストを作成し、セッション終了時に閉じます。どちらのモードでも、Scrapling は自分で作成したタブを使います。
+
+- **Spider のログファイルの文字エンコーディングを選べるようになりました**。`log_file_encoding="utf-8"` または別のエンコーディングを指定できます。デフォルトの `None` は Python のデフォルトエンコーディングを使います（[ドキュメント](spiders/advanced.md#logging)を参照）。
+
+### 🐛 バグ修正 {#v0.5.1-bug-fixes}
+
+- **XPath 式が値を正しく返すようになりました**。`string()`、`count()`、`boolean()` に対応し、空文字列、ゼロ、false も通常のセレクター API で取得できます。@jayhemnani9910 による [#552](https://github.com/D4Vinci/Scrapling/pull/552)。
+- **ルート要素のない HTML の解析を修正しました**。空白だけ、コメントだけ、doctype だけの入力も含みます。@rushilnimbalker250 による [#536](https://github.com/D4Vinci/Scrapling/pull/536)。
+- **参照要素に比較対象の属性がない場合の `find_similar(similarity_threshold=0)` を修正しました**。@Master-Norna による [#539](https://github.com/D4Vinci/Scrapling/pull/539)。
+
+- **並行リクエストが同じドメインにアクセスした際に、robots.txt を重複して取得する問題を修正しました**。@RayenMlayeh による [#538](https://github.com/D4Vinci/Scrapling/pull/538)。
+- **開発用キャッシュへの並行書き込みで、一時ファイルが競合する問題を修正しました**。@xixihaha-ha による [#546](https://github.com/D4Vinci/Scrapling/pull/546)。
+- **不正な形式のリンクがあっても、同じページの有効なリンクの抽出が止まらなくなりました**。@dajiaohuang による [#548](https://github.com/D4Vinci/Scrapling/pull/548)。
+- **キャリッジリターンを行区切りに使う CSV フィードを修正しました**。引用符で囲まれたフィールド内の改行は保持します。@xunguangzlj-cloud による [#551](https://github.com/D4Vinci/Scrapling/pull/551)。
+- **途中で切れた、または破損した gzip フィードを、通常どおり警告を出してスキップするようにしました**。サイトマップ、XML フィード、CSV フィードの Spider が対象です。@cangen185-sudo による [#522](https://github.com/D4Vinci/Scrapling/pull/522)。
+
+- **パーセントエンコードされたユーザー名とパスワードによるブラウザのプロキシ認証を修正しました**。@kevin9327 による [#545](https://github.com/D4Vinci/Scrapling/pull/545)。
+- **セッションの準備やコンテキストを閉じる処理が失敗した場合のブラウザの後処理を改善しました**。所有するリソースを解放し、借用したリモートコンテキストは開いたまま保持します。
+- **シェルと HTTP CLI の Cookie 解析で、空白や引用符を含むブラウザの Cookie 値と、その後に続く Cookie が失われる問題を修正しました**。@waw666waw666 による [#541](https://github.com/D4Vinci/Scrapling/pull/541)。[#540](https://github.com/D4Vinci/Scrapling/issues/540) を修正します。
+- **curl の変換で `-L` と `--location` を受け付けるようになりました**。既存のリダイレクト動作は維持します。@jayhemnani9910 による [#554](https://github.com/D4Vinci/Scrapling/pull/554)。
+- **`scrapling extract fetch --ai-targeted` が、説明どおりに広告ブロックを有効にしない問題を修正しました**。@postoso による [#527](https://github.com/D4Vinci/Scrapling/pull/527)。
+
 ## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
 
 **Scrapling v0.5 は、取得処理、解析、Spider、ブラウザの自動操作、AI ツール、10 言語のドキュメントまで、ほぼすべてを更新するリリースです 🚀**

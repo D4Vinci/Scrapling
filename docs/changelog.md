@@ -7,6 +7,55 @@ description: "Release notes for Scrapling, including new features, fixes, and br
 
 All notable changes to Scrapling, taken from the [GitHub releases](https://github.com/D4Vinci/Scrapling/releases).
 
+## [v0.5.1](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5.1) - 2026-11-04 {#v0.5.1}
+
+**Small version bump, big browser upgrade! This version lets AI agents follow motion and control drag and drop, adds dedicated remote browser sessions, and brings fixes across parsing, spiders, proxies, and the shell 🚀**
+
+!!! warning "Warning"
+
+    **This release introduces breaking changes to remote browser connections. Connecting to remote browsers now requires a new browser session class. Check the [remote-session migration guide](migrating-to-v0.5.md#move-cdp-connections-to-remote-sessions) before updating.**
+
+### 🚀 New Stuff and quality of life changes {#v0.5.1-new-stuff-and-quality-of-life-changes}
+
+- **AI agents can now follow motion and take finer control of the mouse** (Check the [docs](ai/mcp-server.md)):
+
+    - **Watch the page in motion**: a short sequence of images helps the agent understand animations, moving controls, and changes that a single screenshot can miss.
+    - **Drag, inspect, adjust, and drop**: hold a mouse button, move an item or slider, inspect the page while still holding it, then adjust and release. Supports left, right, and middle buttons.
+    - **Reuse a logged-in remote browser** or start with a separate browser context, so the agent can choose the right session for the job.
+    - **Spend fewer tokens on tool descriptions** with shorter text and less repeated guidance.
+
+- **Dedicated remote browser sessions with control over login reuse**. `RemoteSession` and `AsyncRemoteSession` connect to an existing Chromium browser through an HTTP or WebSocket CDP endpoint. They support the usual stealth session features, including Cloudflare solving. Both classes are also available in the interactive shell. (Check the [docs](fetching/stealthy.md#3-cdp-connection))
+
+    ```python
+    from scrapling.fetchers import RemoteSession
+
+    with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        page = session.fetch("https://example.com")
+    ```
+
+    - `new_context=False` reuses the browser's existing default context and login state. Its context settings stay in use, and its existing tabs remain open when Scrapling disconnects.
+    - The default, `new_context=True`, creates a separate context and closes it when the session ends. Scrapling uses its own tabs in either mode.
+
+- **Choose your spider's log file encoding** with `log_file_encoding="utf-8"` or another encoding. The default, `None`, keeps Python's default encoding. (Check the [docs](spiders/advanced.md#logging))
+
+### 🐛 Bug Fixes {#v0.5.1-bug-fixes}
+
+- **XPath expressions now return their values correctly**, including `string()`, `count()`, and `boolean()`. Empty strings, zero, and false remain available through the usual selector API, by @jayhemnani9910 in [#552](https://github.com/D4Vinci/Scrapling/pull/552).
+- **Fixed parsing of HTML with no root element**, including whitespace-only, comment-only, and doctype-only input, by @rushilnimbalker250 in [#536](https://github.com/D4Vinci/Scrapling/pull/536).
+- **Fixed `find_similar(similarity_threshold=0)` when the reference has no attributes to compare**, by @Master-Norna in [#539](https://github.com/D4Vinci/Scrapling/pull/539).
+
+- **Fixed duplicate robots.txt fetches when concurrent requests reach the same domain**, by @RayenMlayeh in [#538](https://github.com/D4Vinci/Scrapling/pull/538).
+- **Fixed temporary-file collisions during concurrent development-cache writes**, by @xixihaha-ha in [#546](https://github.com/D4Vinci/Scrapling/pull/546).
+- **Malformed links no longer stop extraction of valid links on the same page**, by @dajiaohuang in [#548](https://github.com/D4Vinci/Scrapling/pull/548).
+- **Fixed CSV feeds that use carriage returns as row separators**, while preserving line breaks inside quoted fields, by @xunguangzlj-cloud in [#551](https://github.com/D4Vinci/Scrapling/pull/551).
+- **Truncated or damaged gzip feeds now follow the normal warning-and-skip path** in sitemap, XML-feed, and CSV-feed spiders, by @cangen185-sudo in [#522](https://github.com/D4Vinci/Scrapling/pull/522).
+
+- **Fixed browser proxy authentication with percent-encoded usernames and passwords**, by @kevin9327 in [#545](https://github.com/D4Vinci/Scrapling/pull/545).
+- **Improved browser cleanup when session setup or context closing fails**, releasing owned resources while keeping borrowed remote contexts open.
+- **Stopped shell and HTTP CLI cookie parsing from dropping browser cookie values with spaces or quotes**, including the cookies that follow them, by @waw666waw666 in [#541](https://github.com/D4Vinci/Scrapling/pull/541). Fixes [#540](https://github.com/D4Vinci/Scrapling/issues/540).
+- **Curl conversion now accepts `-L` and `--location`**, keeping the existing redirect behavior, by @jayhemnani9910 in [#554](https://github.com/D4Vinci/Scrapling/pull/554).
+- **Fixed `scrapling extract fetch --ai-targeted` not enabling ad blocking as documented**, by @postoso in [#527](https://github.com/D4Vinci/Scrapling/pull/527).
+
 ## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
 
 **Scrapling v0.5 upgrades almost everything: fetching, parsing, spiders, browser automation, AI tools, and docs in ten languages 🚀**
