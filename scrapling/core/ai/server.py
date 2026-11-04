@@ -1,4 +1,5 @@
 import re
+from asyncio import CancelledError, create_task, shield, sleep
 from uuid import uuid4
 from os import environ
 from json import dumps
@@ -38,7 +39,7 @@ from ._snapshot_search import _search_snapshot
 from scrapling.core.shell import Convertor, _CONTROL_CHARS_PATTERN
 from scrapling.engines.toolbelt.custom import Response as _ScraplingResponse
 from scrapling.engines.toolbelt.convertor import ResponseFactory
-from scrapling.fetchers import FetcherSession, AsyncStealthySession
+from scrapling.fetchers import FetcherSession, AsyncRemoteSession, AsyncStealthySession
 from scrapling.engines._browsers._types import StealthFetchParams
 from scrapling.core._types import (
     Optional,
@@ -93,8 +94,8 @@ def _session_settings(session: Any) -> Dict[str, Any]:
             name: value for name, value in fields.items() if isinstance(value, (str, int, float, bool)) or value is None
         }
     config = session._config
-    if config.cdp_url:
-        return {}
+    if getattr(config, "cdp_url", None):
+        return {"new_context": config.new_context}
     return {
         f: value
         for f in config.__struct_fields__
@@ -217,6 +218,20 @@ def _mcp_tool(tool: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[An
     return wrapped
 
 
+async def _stop_screencast(page: Any) -> None:
+    with CancelScope(shield=True):
+        stopped = create_task(page.screencast.stop())
+        cancelled = None
+        while not stopped.done():
+            try:
+                await shield(stopped)
+            except CancelledError as error:
+                cancelled = error
+        stopped.result()
+        if cancelled:
+            raise cancelled
+
+
 class ScraplingMCPServer:
     def __init__(self, executable_path: Optional[str] = None, auth_token: Optional[str] = None):
         """Create a Scrapling MCP server.
@@ -288,9 +303,15 @@ class ScraplingMCPServer:
         cdp_url: Annotated[
             Optional[str],
             Field(
-                description="Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply."
+                description="Connect to an existing Chromium browser over CDP; browser launch settings do not apply."
             ),
         ] = None,
+        new_context: Annotated[
+            bool,
+            Field(
+                description="With cdp_url, create and close a separate context. False reuses and preserves the default context, ignoring useragent, locale, timezone_id, proxy and additional_args."
+            ),
+        ] = True,
         executable_path: Annotated[
             Optional[str],
             Field(description="Absolute Chromium-compatible executable path; overrides the server default."),
@@ -305,31 +326,37 @@ class ScraplingMCPServer:
             Optional[Dict], Field(description="Browser context options that override Scrapling settings.")
         ] = None,
     ) -> SessionCreatedModel:
-        """Open a reusable stealthy browser session. Pass per-request options to `browser_fetch`."""
+        """Open a reusable local or remote browser session. Pass per-request options to `browser_fetch`."""
         session_id = self._new_session_id(session_id)
-        session = AsyncStealthySession(
+        options: Dict[str, Any] = dict(
             proxy=proxy,
             locale=locale,
             cookies=cookies,
-            cdp_url=cdp_url,
-            headless=headless,
             block_ads=True,
             record_requests=True,
             useragent=useragent,
             timezone_id=timezone_id,
-            real_chrome=real_chrome,
-            executable_path=self._resolve_executable_path(executable_path),
-            hide_canvas=hide_canvas,
-            block_webrtc=block_webrtc,
-            allow_webgl=allow_webgl,
             additional_args=additional_args,
+        )
+        session = (
+            AsyncRemoteSession(cdp_url, new_context=new_context, **options)
+            if cdp_url is not None
+            else AsyncStealthySession(
+                headless=headless,
+                real_chrome=real_chrome,
+                executable_path=self._resolve_executable_path(executable_path),
+                hide_canvas=hide_canvas,
+                block_webrtc=block_webrtc,
+                allow_webgl=allow_webgl,
+                **options,
+            )
         )
         await session.start()
         return self._register_session(session_id, session, "stealthy")
 
     async def browser_save_state(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; no page fetch required.")],
+        session_id: Annotated[str, Field(description="Browser session ID.")],
         path: Annotated[
             NonEmptyString,
             Field(
@@ -343,7 +370,7 @@ class ScraplingMCPServer:
 
     async def browser_load_state(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; no page fetch required.")],
+        session_id: Annotated[str, Field(description="Browser session ID.")],
         path: Annotated[
             NonEmptyString, Field(description="File on the MCP server host; relative to its working directory.")
         ],
@@ -416,7 +443,7 @@ class ScraplingMCPServer:
         ] = 0,
         limit: Annotated[int, Field(ge=1, le=200, description="Maximum requests to return.")] = 50,
     ) -> NetworkRequestsModel:
-        """List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens."""
+        """List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens and closing does not wait for running captures."""
         network = self._get_session(session_id, ["stealthy"]).session.network
         records = network.search(
             url_pattern=url_pattern, include_static=include_static, after_id=after_id, limit=limit + 1
@@ -448,7 +475,7 @@ class ScraplingMCPServer:
 
     async def browser_extract(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         extraction_type: Annotated[
             SessionExtractionType, Field(description="Output format; defaults to an AI ARIA snapshot.")
         ] = "snapshot",
@@ -534,11 +561,12 @@ class ScraplingMCPServer:
 
     async def browser_actions(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         actions: Annotated[
             List[BrowserAction],
             Field(
-                min_length=1, description="Ordered actions; fields need target; mouse needs target or viewport (x, y)."
+                min_length=1,
+                description="Ordered actions; fields need target; move/click need target or viewport (x, y); mouse_down/mouse_up act at the current pointer.",
             ),
         ],
         slowly: Annotated[
@@ -548,10 +576,13 @@ class ScraplingMCPServer:
             ),
         ] = False,
     ) -> str:
-        """Run mouse, field, key, dialog, and wait actions in order; return plain text without a snapshot.
-        Stop on the first error, identifying its action; partial effects remain. No retries.
+        """Chain all kinds of browser actions. Do actions without multiple calls or plan ahead to execute a sequence of actions.
+        Run mouse, field, key, dialog, and wait actions on the current page in order.
+        Load waits observe the current document; wait for a result element for delayed navigation.
+        Stops on the first error, identifying its action; partial effects remain. No retries.
         Element mouse targets auto-wait and scroll into view; coordinates and wheel do not wait for navigation or scrolling.
-        Cancelled/timed-out clicks attempt button release. Load waits observe the current document, not future navigation."""
+        mouse_down holds across calls for observation and further moves; mouse_up releases, including after errors.
+        For drag and drop, move over the target twice before releasing. Cancelled/timed-out clicks attempt release."""
         _validate_actions(actions)
         with self._browser_page(session_id) as (_, page):
             await _run_actions(page, actions, slowly)
@@ -559,7 +590,7 @@ class ScraplingMCPServer:
 
     async def browser_evaluate(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         expression: Annotated[NonEmptyString, Field(description="JavaScript expression or function to invoke.")],
         arg: Annotated[
             Optional[Dict[str, Any]],
@@ -585,7 +616,7 @@ class ScraplingMCPServer:
 
     async def browser_screenshot(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         image_type: Annotated[ScreenshotType, Field(description="Image format.")] = "png",
         full_page: Annotated[
             bool, Field(description="Capture the full scrollable page; incompatible with selector/ref.")
@@ -634,6 +665,55 @@ class ScraplingMCPServer:
             else:
                 data = await page.screenshot(full_page=full_page, **options)
             return [Image(data=data, format=image_type).to_image_content(), TextContent(type="text", text=page.url)]
+
+    async def browser_observe(
+        self,
+        session_id: Annotated[str, Field(description="Browser session ID")],
+        duration_ms: Annotated[int, Field(ge=100, le=5000, description="Observation window in milliseconds.")] = 1500,
+        max_frames: Annotated[int, Field(ge=2, le=20, description="Maximum number of sampled frames.")] = 12,
+    ) -> List[ImageContent | TextContent]:
+        """Inspect browser page motion through a short sequence of timestamped viewport images. The page keeps running during and after capture.
+        Use this tool when you get any challenge that require timed actions like games, appearing/disappearing CAPTCHAs, or interacting with any moving elements.
+        """
+        with self._browser_page(session_id) as (_, page):
+            frames: Dict[int, Dict[str, Any]] = {}
+            started = monotonic()
+
+            def capture(frame: Dict[str, Any]) -> None:
+                elapsed = (monotonic() - started) * 1000
+                if elapsed < duration_ms:
+                    frames[int(elapsed * max_frames / duration_ms)] = frame
+
+            try:
+                await page.screencast.start(on_frame=capture, quality=60, size={"width": 800, "height": 800})
+                await sleep(max(0, duration_ms / 1000 - (monotonic() - started)))
+            except BaseException as error:
+                try:
+                    await _stop_screencast(page)
+                except Exception as cleanup_error:
+                    raise error from cleanup_error
+                raise
+            await _stop_screencast(page)
+            if not frames:
+                raise RuntimeError("No frames were captured. Try browser_screenshot or a longer observation window.")
+            return [
+                content
+                for frame in frames.values()
+                for content in (
+                    TextContent(
+                        type="text",
+                        text=dumps(
+                            {
+                                "timestamp_ms": frame["timestamp"],
+                                "viewport_width": frame["viewportWidth"],
+                                "viewport_height": frame["viewportHeight"],
+                            },
+                            separators=(",", ":"),
+                        ),
+                    ),
+                    Image(data=frame["data"], format="jpeg").to_image_content(),
+                )
+            ]
 
     @staticmethod
     async def make_request(
@@ -748,12 +828,6 @@ class ScraplingMCPServer:
             Field(description="User-Agent override; otherwise generated in headless mode, native in headful mode."),
         ] = None,
         hide_canvas: Annotated[bool, Field(description="Add noise to canvas operations.")] = False,
-        cdp_url: Annotated[
-            Optional[str],
-            Field(
-                description="Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply."
-            ),
-        ] = None,
         executable_path: Annotated[
             Optional[str],
             Field(description="Absolute Chromium-compatible executable path; overrides the server default."),
@@ -794,7 +868,6 @@ class ScraplingMCPServer:
             wait=wait,
             proxy=proxy,
             locale=locale,
-            cdp_url=cdp_url,
             timeout=timeout,
             cookies=cookies,
             headless=headless,
@@ -824,7 +897,7 @@ class ScraplingMCPServer:
     async def browser_fetch(
         self,
         url: Annotated[str, Field(description="URL to fetch.")],
-        session_id: Annotated[str, Field(description="ID from `browser_open`.")],
+        session_id: Annotated[str, Field(description="Browser session ID.")],
         extraction_type: Annotated[
             SessionExtractionType, Field(description="Content output format; snapshots include element bounding boxes.")
         ] = "markdown",
@@ -991,9 +1064,8 @@ class ScraplingMCPServer:
 4. Fetch tools use `css_selector` to reduce output. HTML/Markdown/text return all matches; snapshots require one match or no selector for the whole page.
 5. Session options persist from opening; fetch options apply per call, with schema defaults.
 6. Each browser session uses one page; finish each call before starting the next in that session.
-7. `browser_extract` reads the current page without navigation, as a snapshot by default. Snapshots include refs and boxes; `main_content_only` and `pierce_shadow` do not filter them.
-8. `browser_actions` chains mouse, field, key, dialog and wait actions on the current page. Element actions use `target`: a Playwright selector or `aria-ref=<ref>` from the current snapshot. Move/click can instead use viewport (x, y) in CSS pixels. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
-9. Network history saves completed requests and responses across page changes. Failed/unfinished requests are omitted; closing does not wait for running captures. Use `include_static=True` to list successful non-API traffic. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Only response bodies with a text Content-Type are read and saved. Response bodies over 1 MiB are skipped; unavailable bodies are marked.""",
+7. Network history capturing omits failed/unfinished requests. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Response bodies over 1 MiB are skipped.
+8. For challenges that have a slider with changing speed, don't release the mouse click without checking the page first to see if mouse adjustment needed before releasing. Keep repeating until you are certain.""",
         }
         if self._auth_token:
             base_url = AnyHttpUrl(f"http://{host}:{port}")
@@ -1103,6 +1175,13 @@ class ScraplingMCPServer:
             _mcp_tool(self.browser_screenshot),
             title="Take browser session screenshot",
             description=self.browser_screenshot.__doc__,
+            structured_output=False,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            _mcp_tool(self.browser_observe),
+            title="Observe browser motion",
+            description=self.browser_observe.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )

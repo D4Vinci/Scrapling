@@ -7,6 +7,55 @@ description: "Notes des versions de Scrapling, avec les nouvelles fonctionnalit�
 
 Tous les changements importants de Scrapling, tirés des [versions publiées sur GitHub](https://github.com/D4Vinci/Scrapling/releases).
 
+## [v0.5.1](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5.1) - 2026-11-04 {#v0.5.1}
+
+**Petit changement de version, grande avancée pour le navigateur ! Cette version permet aux agents IA de suivre les mouvements et de contrôler le glisser-déposer, ajoute des sessions dédiées aux navigateurs distants et corrige l’analyse, les spiders, les proxys et le shell 🚀**
+
+!!! warning "Avertissement"
+
+    **Cette version introduit des changements incompatibles dans les connexions aux navigateurs distants. La connexion aux navigateurs distants nécessite désormais une nouvelle classe de session de navigateur. Consultez le [guide de migration des sessions distantes](migrating-to-v0.5.md#move-cdp-connections-to-remote-sessions) avant de mettre à jour.**
+
+### 🚀 Nouveautés et améliorations d’utilisation {#v0.5.1-new-stuff-and-quality-of-life-changes}
+
+- **Les agents IA peuvent désormais suivre les mouvements et contrôler la souris plus finement** (consultez la [documentation](ai/mcp-server.md)) :
+
+    - **Observez la page en mouvement** : une courte séquence d’images aide l’agent à comprendre les animations, les commandes mobiles et les changements qu’une seule capture d’écran peut manquer.
+    - **Glissez, inspectez, ajustez et déposez** : maintenez un bouton de souris enfoncé, déplacez un élément ou un curseur, inspectez la page sans relâcher le bouton, puis ajustez et relâchez. Prend en charge les boutons gauche, droit et central.
+    - **Réutilisez un navigateur distant déjà connecté à un compte** ou démarrez avec un contexte de navigateur séparé, pour que l’agent puisse choisir la session adaptée à la tâche.
+    - **Consommez moins de tokens pour les descriptions d’outils**, grâce à des textes plus courts et moins d’instructions répétées.
+
+- **Des sessions dédiées aux navigateurs distants, avec le choix de réutiliser les connexions aux comptes**. `RemoteSession` et `AsyncRemoteSession` se connectent à un navigateur Chromium existant via un point de terminaison CDP HTTP ou WebSocket. Elles prennent en charge les fonctions habituelles des sessions discrètes, y compris la résolution des défis Cloudflare. Les deux classes sont aussi disponibles dans le shell interactif. (Consultez la [documentation](fetching/stealthy.md#3-cdp-connection))
+
+    ```python
+    from scrapling.fetchers import RemoteSession
+
+    with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        page = session.fetch("https://example.com")
+    ```
+
+    - `new_context=False` réutilise le contexte par défaut existant du navigateur et son état de connexion. Les réglages de ce contexte restent actifs et ses onglets existants restent ouverts lorsque Scrapling se déconnecte.
+    - La valeur par défaut, `new_context=True`, crée un contexte séparé et le ferme à la fin de la session. Scrapling utilise ses propres onglets dans les deux modes.
+
+- **Choisissez l’encodage du fichier journal de votre spider** avec `log_file_encoding="utf-8"` ou un autre encodage. La valeur par défaut, `None`, conserve l’encodage par défaut de Python. (Consultez la [documentation](spiders/advanced.md#logging))
+
+### 🐛 Corrections de bugs {#v0.5.1-bug-fixes}
+
+- **Les expressions XPath renvoient désormais leurs valeurs correctement**, notamment `string()`, `count()` et `boolean()`. Les chaînes vides, zéro et faux restent accessibles via l’API habituelle des sélecteurs, par @jayhemnani9910 dans [#552](https://github.com/D4Vinci/Scrapling/pull/552).
+- **Correction de l’analyse du HTML sans élément racine**, y compris les entrées qui contiennent uniquement des espaces blancs, des commentaires ou une déclaration doctype, par @rushilnimbalker250 dans [#536](https://github.com/D4Vinci/Scrapling/pull/536).
+- **Correction de `find_similar(similarity_threshold=0)` lorsque la référence n’a aucun attribut à comparer**, par @Master-Norna dans [#539](https://github.com/D4Vinci/Scrapling/pull/539).
+
+- **Correction des récupérations en double de robots.txt lorsque des requêtes simultanées atteignent le même domaine**, par @RayenMlayeh dans [#538](https://github.com/D4Vinci/Scrapling/pull/538).
+- **Correction des collisions de fichiers temporaires lors d’écritures simultanées dans le cache de développement**, par @xixihaha-ha dans [#546](https://github.com/D4Vinci/Scrapling/pull/546).
+- **Les liens mal formés n’arrêtent plus l’extraction des liens valides sur la même page**, par @dajiaohuang dans [#548](https://github.com/D4Vinci/Scrapling/pull/548).
+- **Correction des flux CSV qui utilisent des retours chariot comme séparateurs de lignes**, tout en conservant les sauts de ligne dans les champs entre guillemets, par @xunguangzlj-cloud dans [#551](https://github.com/D4Vinci/Scrapling/pull/551).
+- **Les flux gzip tronqués ou endommagés suivent maintenant le traitement habituel avec avertissement puis omission** dans les spiders de sitemap, de flux XML et de flux CSV, par @cangen185-sudo dans [#522](https://github.com/D4Vinci/Scrapling/pull/522).
+
+- **Correction de l’authentification auprès des proxys du navigateur avec des noms d’utilisateur et mots de passe encodés en pourcentage**, par @kevin9327 dans [#545](https://github.com/D4Vinci/Scrapling/pull/545).
+- **Amélioration du nettoyage des ressources du navigateur en cas d’échec de la configuration de session ou de la fermeture du contexte**, en libérant les ressources détenues tout en gardant ouverts les contextes distants empruntés.
+- **L’analyse des cookies dans le shell et la CLI HTTP ne supprime plus les valeurs de cookies du navigateur contenant des espaces ou des guillemets**, ni les cookies qui les suivent, par @waw666waw666 dans [#541](https://github.com/D4Vinci/Scrapling/pull/541). Corrige [#540](https://github.com/D4Vinci/Scrapling/issues/540).
+- **La conversion de commandes curl accepte désormais `-L` et `--location`**, tout en conservant le comportement existant des redirections, par @jayhemnani9910 dans [#554](https://github.com/D4Vinci/Scrapling/pull/554).
+- **Correction de `scrapling extract fetch --ai-targeted`, qui n’activait pas le blocage des publicités comme indiqué dans la documentation**, par @postoso dans [#527](https://github.com/D4Vinci/Scrapling/pull/527).
+
 ## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
 
 **Scrapling v0.5 améliore presque tout : la récupération, l’analyse, les spiders, l’automatisation du navigateur, les outils IA et la documentation en dix langues 🚀**

@@ -5,7 +5,7 @@ description: "Consulta las herramientas del servidor MCP y sus modelos de solici
 
 # Referencia del servidor MCP {#mcp-server-api-reference}
 
-El **servidor MCP de Scrapling** ofrece dieciséis herramientas para extraer datos e interactuar con el navegador mediante Model Context Protocol (MCP). Integra Scrapling en asistentes y agentes de IA para extraer datos mediante conversaciones, con funciones para evitar la detección de bots.
+El **servidor MCP de Scrapling** ofrece diecisiete herramientas para extraer datos e interactuar con el navegador mediante Model Context Protocol (MCP). Integra Scrapling en asistentes y agentes de IA para extraer datos mediante conversaciones, con funciones para evitar la detección de bots.
 
 Inicia el servidor MCP con este comando:
 
@@ -82,11 +82,14 @@ La clase principal del servidor MCP ofrece las siguientes herramientas:
 
     Los movimientos y clics admiten selectores, referencias de instantáneas o coordenadas. La herramienta espera a los elementos y los lleva a la vista. Admite movimientos por pasos, clics izquierdo, derecho y central, doble clic y desplazamiento en paneles anidados.
 
+    Mantén pulsado un botón del ratón para arrastrar elementos o mover controles deslizantes. La IA puede revisar la página mientras mantiene el botón pulsado, ajustar la posición con más movimientos y soltarlo al llegar al destino.
+
     Selecciona campos mediante selectores o referencias de instantáneas. Escribe texto, marca o desmarca casillas, selecciona botones de opción y elige una o varias opciones de listas nativas por su etiqueta. Sustituye o borra el texto, o escribe en la posición del cursor. Los atajos usan el foco actual. El modo lento añade pausas aleatorias entre los caracteres y las acciones.
 
     Espera al contenido o a que desaparezcan los indicadores de carga mediante selectores o referencias de instantáneas. También puedes esperar a eventos de carga, a que termine la actividad de red o durante un tiempo fijo.
 
 - **`browser_evaluate`**: Ejecuta JavaScript en la página actual para extraer datos personalizados, calcular resultados, leer el estado de la aplicación o modificar el contenido. Admite scripts asíncronos y devuelve sus resultados como JSON.
+- **`browser_observe`**: Ayuda al agente a entender el movimiento y los cambios mediante una breve secuencia de imágenes de la página actual.
 - **`browser_network_requests`**: Busca solicitudes de navegador completadas entre pestañas, navegaciones y acciones. Encuentra llamadas API, errores HTTP y redirecciones guardadas. Oculta los recursos estáticos de forma predeterminada para reducir los resultados. Omite las solicitudes fallidas o incompletas. Devuelve datos estructurados con paginación.
 - **`browser_network_request`**: Lee el resumen, las cabeceras, los datos enviados o el contenido de texto de una solicitud guardada como JSON estructurado, sin repetirla. Devuelve la parte elegida completa. Las respuestas guardadas siguen disponibles después de cambiar de página, incluidas las respuestas HTTP 4xx y 5xx. Las entradas aparecen cuando termina la captura. Consultar el historial o cerrar la sesión no espera a las capturas pendientes, que pueden perderse al navegar o cerrar. Los bytes proceden de Playwright y pueden ser distintos de los enviados por el servidor. El texto usa la decodificación UTF-8 de Playwright cuando es válida; en otro caso, usa el charset declarado. Solo se lee y guarda el contenido con un `Content-Type` de texto compatible. Para los tipos binarios, ausentes o desconocidos, se conservan los metadatos y las cabeceras sin leer el contenido. Esto no cambia la carga de la página. El historial tiene límites de tamaño. Una nota opcional explica si el contenido no es texto, es demasiado grande o no se puede leer. Lee los datos que necesitas antes de cerrar la sesión MCP.
 - **`browser_fetch`**: Obtiene una página mediante una sesión de navegador sigiloso abierta y extrae HTML, Markdown, texto o una instantánea estructurada. Las instantáneas pueden cubrir toda la página o un elemento, e incluyen referencias, posiciones y tamaños para interactuar después.

@@ -5,7 +5,7 @@ description: "Look up MCP server tools, request models, response models and sess
 
 # MCP Server API Reference
 
-The **Scrapling MCP Server** provides sixteen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
+The **Scrapling MCP Server** provides seventeen tools for web scraping and browser interaction through the Model Context Protocol (MCP). This server integrates Scrapling's capabilities directly into AI chatbots and agents, allowing conversational web scraping with advanced anti-bot bypass features.
 
 You can start the MCP server by running:
 
@@ -82,11 +82,14 @@ The main MCP server class that provides all web scraping tools:
 
     Moves and clicks target selectors, snapshot references, or coordinates; element targets wait and scroll into view. Supports movement in multiple steps, left, right, and middle clicks, double-clicks, and scrolling nested panels.
 
+    Press and hold a mouse button to drag items or move sliders. The AI can inspect the page while holding the button, adjust the position with more moves, then release at the target.
+
     Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by label. Replace or clear text, or type at the current caret. Keyboard shortcuts use the current focus. Slow mode adds random pauses between typed characters and all actions.
 
     Wait for content or loading overlays through selectors or snapshot references, wait for page load events or settled network activity, or add a fixed pause before continuing.
 
 - **`browser_evaluate`**: Run JavaScript on the current page to extract custom data, calculate results, read application state, or update page content. Supports asynchronous scripts and returns their results as JSON.
+- **`browser_observe`**: Help the agent understand motion and changes through a short sequence of images from the current page.
 - **`browser_network_requests`**: Search completed browser requests across tabs, navigation, and actions. Find API calls, HTTP errors, and saved redirects, with static resources hidden by default for smaller results. Failed and unfinished requests are omitted. Returns structured request details with pagination.
 - **`browser_network_request`**: Read a recorded request's summary, headers, sent data, or text response body as structured JSON without repeating the request. Returns the selected part in full, including saved body text. Saved responses remain available after page changes, including HTTP 4xx and 5xx responses. Entries appear after capture finishes; reading history or closing the session does not wait. Captures still running at navigation or closure may be omitted. Saved bytes come from Playwright and can differ from the server's bytes. Recorded text follows Playwright's UTF-8 decoding when valid, with the declared charset as a fallback. Only response bodies with a supported text `Content-Type` are read and saved. Binary, missing, or unrecognized types keep metadata and headers without body reads; browser loading is unchanged. Size limits bound the saved history, and an optional note explains non-text, oversized, or unreadable bodies. Read needed details before closing the MCP session.
 - **`browser_fetch`**: Fetch a page through an open stealthy browser session and extract HTML, Markdown, text, or a structured snapshot. Snapshots can cover the whole page or a chosen element and include element references, positions, and sizes for later interaction.

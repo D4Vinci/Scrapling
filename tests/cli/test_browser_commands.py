@@ -36,6 +36,17 @@ def test_fetch_stealth_options(tmp_path: Path, flags: list[str], options: dict[s
     assert options.items() <= fetch.call_args.kwargs.items()
 
 
+@pytest.mark.parametrize("flags", [[], ["--block-ads"], ["--no-block-ads"]])
+def test_fetch_ai_targeted_enables_ad_blocking(tmp_path: Path, flags: list[str]) -> None:
+    """`--ai-targeted` turns on ad blocking for `fetch`, as the extract docs say"""
+    with patch.object(StealthyFetcher, "fetch", return_value=Selector("<p>Content</p>")) as fetch:
+        result = CliRunner().invoke(
+            cli.main, ["extract", "fetch", "https://example.com", str(tmp_path / "page.txt"), "--ai-targeted", *flags]
+        )
+    assert result.exit_code == 0, result.output
+    assert fetch.call_args.kwargs["block_ads"] is True
+
+
 def test_fetch_common_options(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("SCRAPLING_EXECUTABLE_PATH", raising=False)
     output = tmp_path / "page.txt"

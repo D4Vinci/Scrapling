@@ -423,6 +423,7 @@ print(stats.to_dict())
 | `logging_format` | `"[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"` | تنسيق رسالة السجل |
 | `logging_date_format` | `"%Y-%m-%d %H:%M:%S"` | تنسيق التاريخ في الرسائل |
 | `log_file` | `None` | مسار ملف السجل، بالإضافة إلى الرسائل في الطرفية |
+| `log_file_encoding` | `None` | ترميز ملف السجل؛ تستخدم القيمة `None` الترميز الافتراضي في Python |
 
 ```python
 import logging
@@ -432,6 +433,7 @@ class MySpider(Spider):
     start_urls = ["https://example.com"]
     logging_level = logging.INFO
     log_file = "logs/my_spider.log"
+    log_file_encoding = "utf-8"
 
     async def parse(self, response: Response):
         self.logger.info(f"Processing {response.url}")
@@ -439,3 +441,5 @@ class MySpider(Spider):
 ```
 
 يُنشأ مجلد ملف السجل تلقائيًا إذا لم يكن موجودًا. تستخدم الرسائل في الطرفية والملف التنسيق نفسه.
+
+تُضاف رسائل السجل الجديدة إلى نهاية الملف. إذا كان الملف موجودًا، فاستخدم ترميزه الحالي.

@@ -7,6 +7,55 @@ description: "Scrapling 各版本的发布说明，包括新功能、问题修�
 
 Scrapling 的所有重要变更，整理自 [GitHub 发布记录](https://github.com/D4Vinci/Scrapling/releases)。
 
+## [v0.5.1](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5.1) - 2026-11-04 {#v0.5.1}
+
+**版本号小升级，浏览器能力大提升！此版本让 AI 智能体跟踪动态变化、控制拖放操作，新增专用远程浏览器会话，并修复了解析、Spider、代理和 Shell 中的多项问题 🚀**
+
+!!! warning "警告"
+
+    **此版本对远程浏览器连接引入了不兼容变更。连接远程浏览器现在需要使用新的浏览器会话类。更新前请查看[远程会话迁移指南](migrating-to-v0.5.md#move-cdp-connections-to-remote-sessions)。**
+
+### 🚀 新功能与使用体验改进 {#v0.5.1-new-stuff-and-quality-of-life-changes}
+
+- **AI 智能体现在可以跟踪动态变化，更精细地控制鼠标**（参见[文档](ai/mcp-server.md)）：
+
+    - **观察页面的运动过程**：通过一组短时连续图像，智能体可以理解动画、移动控件，以及单张截图可能遗漏的变化。
+    - **拖动、检查、调整，再放下**：按住鼠标按钮，移动项目或滑块，在保持按住的同时检查页面，然后调整位置并松开。支持左键、右键和中键。
+    - **复用已登录的远程浏览器**，或使用独立的浏览器上下文，让智能体选择适合当前任务的会话。
+    - **减少工具描述的 token 消耗**：缩短说明文字，减少重复指导。
+
+- **新增专用远程浏览器会话，可控制是否复用登录状态**。`RemoteSession` 和 `AsyncRemoteSession` 通过 HTTP 或 WebSocket CDP 端点连接到已运行的 Chromium 浏览器。它们支持常规隐身会话功能，包括 Cloudflare 验证处理。这两个类也可在交互式 Shell 中使用。（参见[文档](fetching/stealthy.md#3-cdp-connection)）
+
+    ```python
+    from scrapling.fetchers import RemoteSession
+
+    with RemoteSession(cdp_url="http://localhost:9222", new_context=False) as session:
+        page = session.fetch("https://example.com")
+    ```
+
+    - `new_context=False` 复用浏览器现有的默认上下文和登录状态。该上下文的设置继续生效，Scrapling 断开连接时，原有标签页保持打开。
+    - 默认的 `new_context=True` 会创建独立上下文，并在会话结束时关闭它。两种模式下，Scrapling 都使用自己创建的标签页。
+
+- **可选择 Spider 日志文件的编码**，设置 `log_file_encoding="utf-8"` 或其他编码即可。默认值 `None` 保留 Python 的默认编码。（参见[文档](spiders/advanced.md#logging)）
+
+### 🐛 问题修复 {#v0.5.1-bug-fixes}
+
+- **XPath 表达式现在能正确返回值**，包括 `string()`、`count()` 和 `boolean()`。空字符串、零和 false 也能通过常规选择器 API 获取。由 @jayhemnani9910 在 [#552](https://github.com/D4Vinci/Scrapling/pull/552) 中修复。
+- **修复了没有根元素的 HTML 的解析**，包括仅含空白、注释或 doctype 的输入。由 @rushilnimbalker250 在 [#536](https://github.com/D4Vinci/Scrapling/pull/536) 中修复。
+- **修复了参考元素没有可比较属性时的 `find_similar(similarity_threshold=0)`**。由 @Master-Norna 在 [#539](https://github.com/D4Vinci/Scrapling/pull/539) 中修复。
+
+- **修复了并发请求访问同一域名时重复获取 robots.txt 的问题**。由 @RayenMlayeh 在 [#538](https://github.com/D4Vinci/Scrapling/pull/538) 中修复。
+- **修复了并发写入开发缓存时的临时文件冲突**。由 @xixihaha-ha 在 [#546](https://github.com/D4Vinci/Scrapling/pull/546) 中修复。
+- **格式错误的链接不再中断同一页面中有效链接的提取**。由 @dajiaohuang 在 [#548](https://github.com/D4Vinci/Scrapling/pull/548) 中修复。
+- **修复了使用回车符作为行分隔符的 CSV 数据源**，同时保留引号内字段中的换行。由 @xunguangzlj-cloud 在 [#551](https://github.com/D4Vinci/Scrapling/pull/551) 中修复。
+- **被截断或损坏的 gzip 数据源现在会按正常流程发出警告并跳过**，适用于站点地图、XML 数据源和 CSV 数据源 Spider。由 @cangen185-sudo 在 [#522](https://github.com/D4Vinci/Scrapling/pull/522) 中修复。
+
+- **修复了用户名和密码包含百分号编码时的浏览器代理认证**。由 @kevin9327 在 [#545](https://github.com/D4Vinci/Scrapling/pull/545) 中修复。
+- **改进了会话设置或上下文关闭失败时的浏览器清理**，释放自身拥有的资源，同时保持借用的远程上下文打开。
+- **Shell 和 HTTP CLI 的 Cookie 解析不再丢弃含空格或引号的浏览器 Cookie 值，以及它们后面的 Cookie**。由 @waw666waw666 在 [#541](https://github.com/D4Vinci/Scrapling/pull/541) 中修复。解决 [#540](https://github.com/D4Vinci/Scrapling/issues/540)。
+- **curl 转换现在接受 `-L` 和 `--location`**，并保持原有的重定向行为。由 @jayhemnani9910 在 [#554](https://github.com/D4Vinci/Scrapling/pull/554) 中修复。
+- **修复了 `scrapling extract fetch --ai-targeted` 未按文档说明启用广告拦截的问题**。由 @postoso 在 [#527](https://github.com/D4Vinci/Scrapling/pull/527) 中修复。
+
 ## [v0.5](https://github.com/D4Vinci/Scrapling/releases/tag/v0.5) - 2026-10-17 {#v0.5}
 
 **Scrapling v0.5 几乎全面升级：页面获取、解析、Spider、浏览器自动化、AI 工具，以及十种语言的文档 🚀**

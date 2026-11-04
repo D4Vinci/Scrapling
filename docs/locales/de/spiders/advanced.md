@@ -422,6 +422,7 @@ Der Spider hat einen eingebauten Logger, auf den Sie über `self.logger` zugreif
 | `logging_format`      | `"[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"` | Format der Protokollmeldungen                        |
 | `logging_date_format` | `"%Y-%m-%d %H:%M:%S"`                                        | Datumsformat in Protokollmeldungen                   |
 | `log_file`            | `None`                                                       | Pfad einer Protokolldatei zusätzlich zur Konsolenausgabe |
+| `log_file_encoding`   | `None`                                                       | Kodierung der Protokolldatei; `None` verwendet die Standardkodierung von Python |
 
 ```python
 import logging
@@ -431,6 +432,7 @@ class MySpider(Spider):
     start_urls = ["https://example.com"]
     logging_level = logging.INFO
     log_file = "logs/my_spider.log"
+    log_file_encoding = "utf-8"
 
     async def parse(self, response: Response):
         self.logger.info(f"Processing {response.url}")
@@ -438,3 +440,5 @@ class MySpider(Spider):
 ```
 
 Das Verzeichnis der Protokolldatei wird bei Bedarf automatisch erstellt. Die Ausgabe in Konsole und Datei verwendet dasselbe Format.
+
+Neue Protokolleinträge werden angehängt. Wenn die Datei bereits existiert, verwenden Sie ihre Kodierung.

@@ -158,7 +158,10 @@ class Selector(SelectorsGeneration):
                 default_doctype=True,  # Supported by lxml but missing from stubs
             )
             parser = HTMLParser(**_parser_kwargs)
-            self._root = cast(HtmlElement, fromstring(body or "<html/>", parser=parser, base_url=url or ""))
+            parsed_root = fromstring(body or "<html/>", parser=parser, base_url=url or "")
+            if parsed_root is None:
+                parsed_root = fromstring("<html/>", parser=parser, base_url=url or "")
+            self._root = cast(HtmlElement, parsed_root)
             self._raw_body = content
 
         else:
@@ -660,7 +663,13 @@ class Selector(SelectorsGeneration):
             return Selectors()
 
         try:
-            if elements := self._root.xpath(selector, **kwargs):
+            elements = self._root.xpath(selector, **kwargs)
+            # string(), count(), boolean() and the like return one value instead of a list of nodes
+            if not isinstance(elements, list):
+                value = ("1" if elements else "0") if isinstance(elements, bool) else str(elements)
+                return self.__elements_convertor([_ElementUnicodeResult(value)])
+
+            if elements:
                 if not self.__adaptive_enabled and auto_save:
                     log.warning(
                         "Argument `auto_save` will be ignored because `adaptive` wasn't enabled on initialization. Check docs for more info."
@@ -1017,7 +1026,7 @@ class Selector(SelectorsGeneration):
 
         if checks:
             return round(score / checks, 2) >= similarity_threshold
-        return False
+        return 0 >= similarity_threshold
 
     def find_similar(
         self,

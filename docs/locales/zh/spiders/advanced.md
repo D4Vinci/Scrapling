@@ -422,6 +422,7 @@ Spider 内置日志记录器，可通过 `self.logger` 使用。它已配置好 
 | `logging_format` | `"[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"` | 日志消息格式 |
 | `logging_date_format` | `"%Y-%m-%d %H:%M:%S"` | 日志中的日期格式 |
 | `log_file` | `None` | 日志文件路径，除控制台输出外也写入文件 |
+| `log_file_encoding` | `None` | 日志文件编码；`None` 使用 Python 的默认编码 |
 
 ```python
 import logging
@@ -431,6 +432,7 @@ class MySpider(Spider):
     start_urls = ["https://example.com"]
     logging_level = logging.INFO
     log_file = "logs/my_spider.log"
+    log_file_encoding = "utf-8"
 
     async def parse(self, response: Response):
         self.logger.info(f"Processing {response.url}")
@@ -438,3 +440,5 @@ class MySpider(Spider):
 ```
 
 如果日志文件的目录不存在，会自动创建。控制台和文件输出使用相同格式。
+
+新日志会追加到文件末尾。如果文件已存在，请使用与该文件相同的编码。

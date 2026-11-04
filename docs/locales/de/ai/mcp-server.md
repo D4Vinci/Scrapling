@@ -11,7 +11,7 @@ Der **MCP-Server von Scrapling** stellt die Web-Scraping-Funktionen von Scraplin
 
 ## Funktionen {#features}
 
-Der MCP-Server von Scrapling bietet sechzehn Werkzeuge für Web Scraping und Browser-Aktionen. Werkzeuge für Einzelaufrufe rufen eine URL ab und schließen danach ihren Browser oder Client. Sitzungswerkzeuge behalten Cookies und Einstellungen zwischen Aufrufen. So kann die KI im selben Tab weiterarbeiten und den Netzwerkverlauf prüfen.
+Der MCP-Server von Scrapling bietet siebzehn Werkzeuge für Web Scraping und Browser-Aktionen. Werkzeuge für Einzelaufrufe rufen eine URL ab und schließen danach ihren Browser oder Client. Sitzungswerkzeuge behalten Cookies und Einstellungen zwischen Aufrufen. So kann die KI im selben Tab weiterarbeiten und den Netzwerkverlauf prüfen.
 
 ### Werkzeuge für Einzelaufrufe {#one-shot-tools}
 
@@ -27,7 +27,7 @@ Der MCP-Server von Scrapling bietet sechzehn Werkzeuge für Web Scraping und Bro
 
 #### 🔌 Sitzungen verwalten {#session-management}
 
-- **`browser_open`**: Erstellt eine dauerhafte Stealthy-Browser-Sitzung, die über mehrere `browser_fetch`-Aufrufe hinweg offen bleibt. So muss nicht jedes Mal ein neuer Browser starten. Sie speichert die Browser-Konfiguration und gibt nur `session_id` und `session_type` zurück. Mit `list_sessions` sehen Sie die tatsächlich verwendeten `settings`. Bei CDP-Sitzungen ist dieser Wert leer.
+- **`browser_open`**: Erstellt eine dauerhafte Stealthy-Browser-Sitzung, die über mehrere `browser_fetch`-Aufrufe hinweg offen bleibt. So muss nicht jedes Mal ein neuer Browser starten. Sie speichert die Browser-Konfiguration und gibt nur `session_id` und `session_type` zurück. Mit `list_sessions` sehen Sie die tatsächlich verwendeten `settings`.
 - **`open_request_session`**: Erstellt eine dauerhafte HTTP-Sitzung ohne Browser zur Verwendung mit `session_make_request`. Sie behält Cookies, Verbindungen und den Browser-Fingerprint (`impersonate`) zwischen Anfragen. Sie gibt nur `session_id` und `session_type` mit dem Typ `static` zurück. Mit `list_sessions` sehen Sie die tatsächlich verwendeten `settings`.
 - **`close_session`**: Schließt eine dauerhafte Browser- oder HTTP-Sitzung und gibt ihre Ressourcen frei.
 - **`list_sessions`**: Listet alle aktiven Sitzungen mit ihren Details und `settings` auf.
@@ -47,6 +47,7 @@ Die Zustandsdateien liegen auf dem Rechner, auf dem der MCP-Server läuft. Sie e
 #### 📸 Screenshots {#screenshots}
 
 - **`browser_screenshot`**: Erstellt einen Screenshot der aktuellen Seite oder eines Elements als PNG oder JPEG, ohne die Seite neu zu laden. Damit lassen sich ausgefüllte Felder, offene Menüs, Diagramme oder Ergebniskarten prüfen. Ein Screenshot eines einzelnen Elements enthält weniger unnötige Inhalte. Das Werkzeug unterstützt den sichtbaren Bereich, die ganze Seite oder ein Element sowie eine einstellbare JPEG-Qualität. Der Screenshot wird als echter Bildinhaltsblock zurückgegeben, den das Modell direkt sehen kann.
+- **`browser_observe`**: Hilft dem Agenten, Bewegungen und Änderungen anhand einer kurzen Bildfolge der aktuellen Seite zu verstehen.
 
 #### Inhalt der aktuellen Seite {#current-page-content}
 
@@ -57,6 +58,8 @@ Die Zustandsdateien liegen auf dem Rechner, auf dem der MCP-Server läuft. Sie e
 - **`browser_actions`**: Verbindet Mausaktionen, das Ausfüllen von Feldern, Tastenkürzel, Antworten auf Dialoge und Wartebedingungen in einem Aufruf. Es kann Browser-Meldungen und Bestätigungen annehmen oder schließen und Text in Eingabedialoge schreiben. Zum Beispiel: ein Suchfeld ausfüllen, die Suche senden, Ergebnisse abwarten und ein Ergebnis öffnen. Die KI kann bekannte Schritte zusammenfassen und separate Seitenansichten anfordern, wenn sie eine Änderung prüfen muss. Dadurch muss der Agent nicht für jeden Schritt einen eigenen Aufruf senden. Das hilft bei kurz eingeblendeten Menüs und anderen Bedienelementen, die eine schnelle Folgeaktion erfordern.
 
     Zeigen Sie Menüs und Tooltips durch Überfahren mit der Maus an, klicken Sie auf Schaltflächen und Links oder bewegen Sie die Maus über einen verschachtelten Bereich, um dort senkrecht oder waagerecht zu scrollen. Bewegungen und Klicks unterstützen Selektoren, Referenzen aus der Seitenansicht und Koordinaten. Bei Zielelementen wartet das Werkzeug automatisch auf das Element und scrollt es ins Blickfeld. Es unterstützt Bewegungen über mehrere Koordinatenschritte, Links-, Rechts- und Mittelklicks sowie Doppelklicks.
+
+    Halten Sie eine Maustaste gedrückt, um Elemente zu ziehen oder Schieberegler zu bewegen. Die KI kann die Seite bei gedrückter Taste prüfen, die Position durch weitere Bewegungen anpassen und die Taste am Ziel loslassen.
 
     Wählen Sie Felder überall auf der Seite mit Selektoren oder Referenzen aus. Geben Sie Text ein, aktivieren oder deaktivieren Sie Kontrollkästchen, wählen Sie Optionsfelder und eine oder mehrere native Dropdown-Optionen anhand ihrer sichtbaren Beschriftung. Text kann den bisherigen Inhalt ersetzen, ihn löschen oder an der aktuellen Cursorposition fortsetzen. Tastenkürzel können Text auswählen und löschen, den Fokus wechseln, Formulare absenden oder Menüs schließen. Der langsame Modus tippt ein Zeichen nach dem anderen und macht zufällige Pausen zwischen Zeichen und allen Aktionen.
 
@@ -228,7 +231,7 @@ Sie können vor dem Start auch die Umgebungsvariable `SCRAPLING_EXECUTABLE_PATH`
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Die zurückgegebene `session_id` verwenden Sie wie gewohnt mit `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state` und `browser_load_state`.
+Die zurückgegebene `session_id` verwenden Sie wie gewohnt mit `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_observe`, `browser_network_requests`, `browser_network_request`, `browser_save_state` und `browser_load_state`.
 
 Die URL kann ein WebSocket-Endpunkt (`ws://`/`wss://`) sein, wie ihn Browser-Dienste bereitstellen. Oder sie kann der HTTP-Endpunkt eines Browsers sein, den Sie selbst mit aktiviertem Remote-Debugging-Port gestartet haben:
 ```commandline
@@ -239,7 +242,8 @@ Verwenden Sie dafür `cdp_url="http://localhost:9222"` oder die Adresse des ande
 !!! note "Hinweise"
 
     * Da der Browser bereits läuft, ignorieren CDP-Sitzungen Optionen, die nur beim Start gelten: `headless`, `real_chrome` und `executable_path`, einschließlich des oben beschriebenen Server-Standardwerts.<br/>
-    * Alle anderen Optionen gelten weiterhin (`locale`, `useragent`, `proxy`, `cookies`, `timezone_id` usw.). Jede Sitzung erstellt ihren eigenen Browser-Kontext im entfernten Browser.
+    * Ihr KI-Agent kann eine neue Sitzung starten oder eine vorhandene wiederverwenden, um auf Websites zu arbeiten, bei denen Sie bereits angemeldet sind.
+    * Scrapling schließt neue Sitzungen, wenn die Aufgabe beendet ist. Beim Wiederverwenden einer Sitzung bleiben der Browser und Ihre vorhandenen Tabs offen. Nur die von Scrapling erstellten Tabs werden geschlossen.
 
 ### Streamable HTTP {#streamable-http}
 
@@ -476,7 +480,7 @@ Dieser Schutz läuft automatisch bei der Extraktion von HTML, Markdown und Text.
 - Sitzungen behalten die beim Öffnen gesetzte Konfiguration. Dazu gehören headless, locale, Cookies und Optionen gegen Erkennung für Browser sowie `impersonate` und `proxy` für HTTP-Sitzungen. Optionen einzelner Anfragen wie timeout, wait_selector, network_idle und solve_cloudflare werden bei jedem Aufruf an `browser_fetch`/`session_make_request` übergeben. Ihre Standardwerte stehen in den Werkzeug-Schemas.
 - `browser_fetch` kann Cloudflare-Prüfungen in der offenen Stealthy-Browser-Sitzung lösen.
 - Schließen Sie Sitzungen am Ende immer mit `close_session`, um Ressourcen freizugeben.
-- Prüfen Sie mit `list_sessions`, welche Sitzungen noch aktiv sind und mit welchen `settings` sie erstellt wurden. Diese werden dem KI-Agenten zurückgegeben und sind bei CDP-Sitzungen leer.
+- Prüfen Sie mit `list_sessions`, welche Sitzungen noch aktiv sind und mit welchen `settings` sie erstellt wurden. Diese werden dem KI-Agenten zurückgegeben.
 - Übergeben Sie den Werkzeugen zum Öffnen eine eigene `session_id`, um aussagekräftige Namen wie `"search"` oder `"checkout"` zu vergeben. Sonst wird ein zufälliger Hexadezimalwert verwendet. Wenn die gewählte ID schon belegt ist, wird ein Fehler ausgelöst. So erkennen Sie Konflikte frühzeitig.
 
 ### 7. Screenshots erstellen {#7-capturing-screenshots}
@@ -487,6 +491,8 @@ Dieser Schutz läuft automatisch bei der Extraktion von HTML, Markdown und Text.
 - Erfassen Sie ein einzelnes Feld, Diagramm, eine Karte oder ein Ergebnis, um weniger umgebenden Inhalt zu erhalten. Dafür kann das Zielelement ins Blickfeld gescrollt werden.
 - Wählen Sie PNG für verlustfreie Bilder oder JPEG mit einstellbarer Qualität für kleinere Dateien.
 - Die KI kann mit `browser_actions` vor der Aufnahme auf Inhalte warten oder Aktionen abschließen.
+
+`browser_observe` hilft dem Agenten, Animationen, bewegte Bedienelemente und andere Änderungen zu verfolgen, die ein einzelner Screenshot übersehen kann.
 
 ## Rechtliche und ethische Hinweise {#legal-and-ethical-considerations}
 

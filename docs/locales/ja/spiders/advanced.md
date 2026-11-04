@@ -422,6 +422,7 @@ Spider には、`self.logger` で使えるロガーが組み込まれていま�
 | `logging_format` | `"[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"` | ログメッセージの形式 |
 | `logging_date_format` | `"%Y-%m-%d %H:%M:%S"` | ログの日付形式 |
 | `log_file` | `None` | コンソールに加えて書き込むログファイルのパス |
+| `log_file_encoding` | `None` | ログファイルの文字コード。`None` の場合は Python のデフォルトを使用 |
 
 ```python
 import logging
@@ -431,6 +432,7 @@ class MySpider(Spider):
     start_urls = ["https://example.com"]
     logging_level = logging.INFO
     log_file = "logs/my_spider.log"
+    log_file_encoding = "utf-8"
 
     async def parse(self, response: Response):
         self.logger.info(f"Processing {response.url}")
@@ -438,3 +440,5 @@ class MySpider(Spider):
 ```
 
 ログファイルのディレクトリがなければ自動で作成します。コンソールとファイルは同じ形式で出力します。
+
+新しいログはファイルの末尾に追記されます。既存のファイルを使う場合は、そのファイルと同じ文字コードを指定してください。

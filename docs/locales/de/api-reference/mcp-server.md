@@ -5,7 +5,7 @@ description: "Sehen Sie sich die Werkzeuge des MCP-Servers sowie seine Modelle f
 
 # Referenz des MCP-Servers {#mcp-server-api-reference}
 
-Der **MCP-Server von Scrapling** bietet sechzehn Werkzeuge zum Extrahieren von Daten und zur Bedienung des Browsers über das Model Context Protocol (MCP). Binden Sie Scrapling in Assistenten und KI-Agenten ein, um Daten per Gespräch zu extrahieren, mit Funktionen gegen Bot-Erkennung.
+Der **MCP-Server von Scrapling** bietet siebzehn Werkzeuge zum Extrahieren von Daten und zur Bedienung des Browsers über das Model Context Protocol (MCP). Binden Sie Scrapling in Assistenten und KI-Agenten ein, um Daten per Gespräch zu extrahieren, mit Funktionen gegen Bot-Erkennung.
 
 Starten Sie den MCP-Server mit diesem Befehl:
 
@@ -82,11 +82,14 @@ Die Hauptklasse des MCP-Servers bietet diese Werkzeuge:
 
     Bewegungen und Klicks akzeptieren Selektoren, Referenzen aus strukturierten Ansichten oder Koordinaten. Das Werkzeug wartet auf Elemente und scrollt sie in den sichtbaren Bereich. Es unterstützt Bewegungen in Schritten, linke, rechte und mittlere Mausklicks, Doppelklicks und Scrollen in verschachtelten Bereichen.
 
+    Halten Sie eine Maustaste gedrückt, um Elemente zu ziehen oder Schieberegler zu bewegen. Die KI kann die Seite bei gedrückter Taste prüfen, die Position durch weitere Bewegungen anpassen und die Taste am Ziel loslassen.
+
     Wählen Sie Felder mit Selektoren oder Referenzen aus strukturierten Ansichten. Geben Sie Text ein, aktivieren oder deaktivieren Sie Kontrollkästchen, wählen Sie Optionsfelder und eine oder mehrere Optionen nativer Listen anhand ihrer Beschriftung. Ersetzen oder löschen Sie Text, oder schreiben Sie an der Cursorposition weiter. Tastenkürzel nutzen den aktuellen Fokus. Der langsame Modus fügt zufällige Pausen zwischen Zeichen und Aktionen ein.
 
     Warten Sie mit Selektoren oder Referenzen aus strukturierten Ansichten auf Inhalte oder Ladeanzeigen. Sie können auch auf Ladeereignisse, das Ende der Netzwerkaktivität oder eine feste Zeitspanne warten.
 
 - **`browser_evaluate`**: Führt JavaScript auf der aktuellen Seite aus, um eigene Daten zu extrahieren, Berechnungen auszuführen, den Anwendungszustand zu lesen oder Inhalte zu ändern. Unterstützt asynchrone Skripte und gibt deren Ergebnisse als JSON zurück.
+- **`browser_observe`**: Hilft dem Agenten, Bewegungen und Änderungen anhand einer kurzen Bildfolge der aktuellen Seite zu verstehen.
 - **`browser_network_requests`**: Durchsucht abgeschlossene Browseranfragen über Tabs, Seitenwechsel und Aktionen hinweg. Finden Sie gespeicherte API-Aufrufe, HTTP-Fehler und Weiterleitungen. Statische Ressourcen werden standardmäßig ausgeblendet, um die Ergebnismenge zu verringern. Fehlgeschlagene oder unvollständige Anfragen werden ausgelassen. Gibt strukturierte Daten mit Seiteneinteilung zurück.
 - **`browser_network_request`**: Liest die Zusammenfassung, Header, gesendeten Daten oder den Textinhalt einer gespeicherten Anfrage als strukturiertes JSON, ohne die Anfrage zu wiederholen. Gibt den gewählten Teil vollständig zurück. Gespeicherte Antworten bleiben nach Seitenwechseln verfügbar, auch HTTP-Antworten mit 4xx und 5xx. Einträge erscheinen, sobald die Aufzeichnung abgeschlossen ist. Lesen des Verlaufs oder Schließen der Sitzung wartet nicht auf laufende Aufzeichnungen. Diese können bei einem Seitenwechsel oder beim Schließen verloren gehen. Die Bytes stammen von Playwright und können von den vom Server gesendeten Bytes abweichen. Für den Text wird die UTF-8-Dekodierung von Playwright genutzt, wenn sie gültig ist, sonst der angegebene Zeichensatz. Nur Inhalte mit einem unterstützten textbasierten `Content-Type` werden gelesen und gespeichert. Bei binären, fehlenden oder unbekannten Typen bleiben Metadaten und Header erhalten, ohne den Inhalt zu lesen. Das Laden der Seite ändert sich dadurch nicht. Der Verlauf hat Größenlimits. Ein optionaler Hinweis erklärt, ob der Inhalt kein Text ist, zu groß ist oder nicht gelesen werden kann. Lesen Sie benötigte Daten, bevor Sie die MCP-Sitzung schließen.
 - **`browser_fetch`**: Ruft eine Seite in einer offenen Stealth-Browsersitzung ab und extrahiert HTML, Markdown, Text oder eine strukturierte Ansicht. Die Ansicht kann die ganze Seite oder ein Element umfassen und enthält Referenzen, Positionen und Größen für spätere Aktionen.

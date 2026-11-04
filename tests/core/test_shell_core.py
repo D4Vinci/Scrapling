@@ -35,6 +35,35 @@ class TestCookieParser:
         assert len(cookies) == 1
         assert cookies[0] == ("session_id", "abc123")
     
+    def test_cookie_values_simplecookie_rejects(self):
+        """Values with spaces or double quotes must not drop the cookies around them"""
+        cookie_string = 'sid=abc123; prefs={"theme":"dark"}; last_search=red shoes; lang=en'
+        cookies = dict(_CookieParser(cookie_string))
+        assert cookies == {
+            "sid": "abc123",
+            "prefs": '{"theme":"dark"}',
+            "last_search": "red shoes",
+            "lang": "en",
+        }
+
+    def test_quoted_cookie_value_is_kept_as_sent(self):
+        """A quoted value is sent back by browsers with its quotes"""
+        cookies = dict(_CookieParser('session-token="a+b/c=="; x=1'))
+        assert cookies == {"session-token": '"a+b/c=="', "x": "1"}
+
+    def test_cookie_named_partitioned_is_kept(self):
+        """`partitioned` is a valid cookie name, only the bare `Partitioned` flag is an attribute"""
+        assert dict(_CookieParser("partitioned=blue; sid=abc123")) == {
+            "partitioned": "blue",
+            "sid": "abc123",
+        }
+
+    def test_bare_partitioned_flag_is_skipped(self):
+        """A pasted `Set-Cookie` value with the `Partitioned` flag gives only the cookie itself"""
+        assert dict(_CookieParser("sid=abc123; Path=/; Secure; HttpOnly; Partitioned")) == {
+            "sid": "abc123",
+        }
+
     def test_empty_cookie_string(self):
         """Test parsing empty cookie string"""
         cookies = list(_CookieParser(""))

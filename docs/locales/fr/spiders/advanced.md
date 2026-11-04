@@ -423,6 +423,7 @@ Le spider a un logger intégré, disponible dans `self.logger`. Il utilise déj�
 | `logging_format` | `"[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"` | Format des messages |
 | `logging_date_format` | `"%Y-%m-%d %H:%M:%S"` | Format de la date dans les messages |
 | `log_file` | `None` | Chemin d’un fichier journal, en plus de la sortie dans la console |
+| `log_file_encoding` | `None` | Encodage du fichier journal ; `None` utilise l’encodage par défaut de Python |
 
 ```python
 import logging
@@ -432,6 +433,7 @@ class MySpider(Spider):
     start_urls = ["https://example.com"]
     logging_level = logging.INFO
     log_file = "logs/my_spider.log"
+    log_file_encoding = "utf-8"
 
     async def parse(self, response: Response):
         self.logger.info(f"Processing {response.url}")
@@ -439,3 +441,5 @@ class MySpider(Spider):
 ```
 
 Si le dossier du fichier journal n’existe pas, il est créé automatiquement. La console et le fichier utilisent le même format.
+
+Les nouveaux messages sont ajoutés à la fin du fichier. Si le fichier existe déjà, utilisez son encodage.

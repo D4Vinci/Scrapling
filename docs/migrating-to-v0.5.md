@@ -9,16 +9,17 @@ This guide covers the changes you need to check when moving from **v0.4.15 to v0
 
 ## Quick migration checklist {#quick-migration-checklist}
 
-| If you use... | What to change |
-| --- | --- |
-| `DynamicFetcher`, `DynamicSession`, or `AsyncDynamicSession` | Use the matching stealthy class. |
-| `capture_xhr` or `response.captured_xhr` | Use a browser session with `record_requests=True` and `session.network`. |
-| `keep_cdata` | Remove it from parser and fetcher settings. |
-| `scrapling extract stealthy-fetch` or the shell's `stealthy_fetch()` | Use `fetch` instead. |
-| MCP tools | Update tool names, screenshot calls, and session creation response handling. |
-| `response.follow()` after a POST or a request with query parameters | Pass the method, query, and body again when you need them. |
-| Saved crawl checkpoints or response caches | Start a fresh crawl when your requests use the changed fingerprint inputs. |
-| `robots_txt_obey=True` | Handle robots.txt fetch failures, which now block crawling for that domain. |
+| If you use...                                                        | What to change                                                               |
+|----------------------------------------------------------------------|------------------------------------------------------------------------------|
+| `DynamicFetcher`, `DynamicSession`, or `AsyncDynamicSession`         | Use the matching stealthy class.                                             |
+| `cdp_url` in Python browser calls                                    | Use `RemoteSession` or `AsyncRemoteSession`.                                 |
+| `capture_xhr` or `response.captured_xhr`                             | Use a browser session with `record_requests=True` and `session.network`.     |
+| `keep_cdata`                                                         | Remove it from parser and fetcher settings.                                  |
+| `scrapling extract stealthy-fetch` or the shell's `stealthy_fetch()` | Use `fetch` instead.                                                         |
+| MCP tools                                                            | Update tool names, screenshot calls, and session creation response handling. |
+| `response.follow()` after a POST or a request with query parameters  | Pass the method, query, and body again when you need them.                   |
+| Saved crawl checkpoints or response caches                           | Start a fresh crawl when your requests use the changed fingerprint inputs.   |
+| `robots_txt_obey=True`                                               | Handle robots.txt fetch failures, which now block crawling for that domain.  |
 
 ## Browser fetching {#browser-fetching}
 
@@ -26,13 +27,13 @@ This guide covers the changes you need to check when moving from **v0.4.15 to v0
 
 The plain Playwright browser backend has been removed. All browser fetching now uses the Patchright-based stealthy backend.
 
-| Removed API | Replacement |
-| --- | --- |
-| `scrapling.DynamicFetcher` | `scrapling.StealthyFetcher` |
-| `scrapling.fetchers.DynamicFetcher` | `scrapling.fetchers.StealthyFetcher` |
-| `scrapling.fetchers.chrome.PlayWrightFetcher` | `scrapling.fetchers.StealthyFetcher` |
-| `scrapling.fetchers.DynamicSession` | `scrapling.fetchers.StealthySession` |
-| `scrapling.fetchers.AsyncDynamicSession` | `scrapling.fetchers.AsyncStealthySession` |
+| Removed API                                   | Replacement                               |
+|-----------------------------------------------|-------------------------------------------|
+| `scrapling.DynamicFetcher`                    | `scrapling.StealthyFetcher`               |
+| `scrapling.fetchers.DynamicFetcher`           | `scrapling.fetchers.StealthyFetcher`      |
+| `scrapling.fetchers.chrome.PlayWrightFetcher` | `scrapling.fetchers.StealthyFetcher`      |
+| `scrapling.fetchers.DynamicSession`           | `scrapling.fetchers.StealthySession`      |
+| `scrapling.fetchers.AsyncDynamicSession`      | `scrapling.fetchers.AsyncStealthySession` |
 
 The `scrapling.fetchers.chrome` module and the private `_browsers._controllers` module are gone. Use the public imports above.
 
@@ -61,6 +62,40 @@ Patchright evaluates JavaScript in an isolated context by default. If a callback
 This changes the browser's behavior as well as its import name. Review your browser flags and fingerprint settings. Cloudflare solving still requires `solve_cloudflare=True`; it is not enabled by default. Also, `extra_flags` now adds to the built-in stealth flags instead of replacing them.
 
 See [Browser fetching](fetching/stealthy.md) for the current options.
+
+### Move CDP connections to remote sessions {#move-cdp-connections-to-remote-sessions}
+
+v0.5.1 adds `RemoteSession` and `AsyncRemoteSession` for connecting to an existing Chromium browser through the Chrome DevTools Protocol (CDP). Import them from `scrapling.fetchers` and pass the browser's HTTP or WebSocket endpoint as `cdp_url`.
+
+`StealthyFetcher`, `StealthySession`, and `AsyncStealthySession` no longer accept `cdp_url`. Move remote browser calls to the new session classes, even for a single fetch.
+
+**Before:**
+
+```python
+from scrapling.fetchers import StealthySession
+
+with StealthySession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+**Now:**
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+For async code, use `AsyncRemoteSession` with `async with` and `await session.fetch(...)`.
+
+- `new_context=True` is the default. It creates a separate browser context and closes it when the session ends.
+- Use `new_context=False` to reuse the existing default context and its login state. That context and its existing tabs stay open when the session ends. Scrapling closes only the tabs it creates.
+- When reusing a context, `useragent`, `locale`, `timezone_id`, `proxy`, `proxy_rotator`, and `additional_args` are ignored, including per-request `proxy`. `cookies` and `init_script` affect the shared context.
+
+The new classes inherit the options and features of `StealthySession` and `AsyncStealthySession`, including Cloudflare solving with `solve_cloudflare=True`, subject to these context limits. Browser launch options do not apply, and `real_chrome` is not accepted because `cdp_url` selects the browser.
+
+See [Remote sessions](fetching/stealthy.md#3-cdp-connection) for more examples and options.
 
 ### Replace XHR capture with session network history {#replace-xhr-capture-with-session-network-history}
 
@@ -162,14 +197,14 @@ Update saved prompts, tool allowlists, wrappers, and MCP client tool definitions
 
 ### Update tool names and bulk calls {#update-tool-names-and-bulk-calls}
 
-| v0.4.15 tool | v0.5 replacement |
-| --- | --- |
-| `fetch`, `stealthy_fetch` | `browser_fetch_once` |
-| `open_session` | `browser_open` |
-| `session_fetch` | `browser_fetch` |
-| `screenshot` | `browser_screenshot` |
+| v0.4.15 tool                        | v0.5 replacement                                                                                 |
+|-------------------------------------|--------------------------------------------------------------------------------------------------|
+| `fetch`, `stealthy_fetch`           | `browser_fetch_once`                                                                             |
+| `open_session`                      | `browser_open`                                                                                   |
+| `session_fetch`                     | `browser_fetch`                                                                                  |
+| `screenshot`                        | `browser_screenshot`                                                                             |
 | `bulk_fetch`, `bulk_stealthy_fetch` | One `browser_fetch_once` call per URL, or repeated `browser_fetch` calls through an open session |
-| `bulk_get` | One `make_request` or `session_make_request` call per URL |
+| `bulk_get`                          | One `make_request` or `session_make_request` call per URL                                        |
 
 All bulk tools have been removed. Single-URL fetch tools return one `ResponseModel` with `status`, `content`, and `url`, not a list of responses. `content` itself is still a list of strings.
 

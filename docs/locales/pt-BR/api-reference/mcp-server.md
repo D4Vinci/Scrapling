@@ -5,7 +5,7 @@ description: "Veja as ferramentas do servidor MCP e seus modelos de solicitaçõ
 
 # Referência do servidor MCP {#mcp-server-api-reference}
 
-O **servidor MCP do Scrapling** oferece dezesseis ferramentas para extrair dados e interagir com o navegador por meio do Model Context Protocol (MCP). Integre o Scrapling a assistentes e agentes de IA para extrair dados por conversas, com recursos para evitar a detecção de bots.
+O **servidor MCP do Scrapling** oferece dezessete ferramentas para extrair dados e interagir com o navegador por meio do Model Context Protocol (MCP). Integre o Scrapling a assistentes e agentes de IA para extrair dados por conversas, com recursos para evitar a detecção de bots.
 
 Inicie o servidor MCP com este comando:
 
@@ -82,11 +82,14 @@ A classe principal do servidor MCP oferece as seguintes ferramentas:
 
     Os movimentos e cliques aceitam seletores, referências de capturas ou coordenadas. A ferramenta espera pelos elementos e os traz para a área visível. Aceita movimentos em etapas, cliques esquerdo, direito e central, clique duplo e rolagem em painéis aninhados.
 
+    Mantenha um botão do mouse pressionado para arrastar itens ou mover controles deslizantes. A IA pode verificar a página enquanto mantém o botão pressionado, ajustar a posição com mais movimentos e soltá-lo ao chegar ao destino.
+
     Selecione campos por seletores ou referências de capturas. Digite texto, marque ou desmarque caixas de seleção, selecione botões de opção e escolha uma ou várias opções de listas nativas pelo rótulo. Substitua ou apague o texto, ou digite na posição do cursor. Os atalhos usam o foco atual. O modo lento adiciona pausas aleatórias entre os caracteres e as ações.
 
     Espere pelo conteúdo ou até que os indicadores de carregamento desapareçam usando seletores ou referências de capturas. Você também pode esperar por eventos de carregamento, pelo fim da atividade de rede ou por um tempo fixo.
 
 - **`browser_evaluate`**: Executa JavaScript na página atual para extrair dados personalizados, fazer cálculos, ler o estado da aplicação ou alterar o conteúdo. Aceita scripts assíncronos e retorna seus resultados como JSON.
+- **`browser_observe`**: Ajuda o agente a entender movimentos e mudanças por meio de uma sequência curta de imagens da página atual.
 - **`browser_network_requests`**: Busca solicitações de navegador concluídas entre abas, navegações e ações. Encontre chamadas de API, erros HTTP e redirecionamentos salvos. Oculta recursos estáticos por padrão para reduzir os resultados. Ignora solicitações que falharam ou não foram concluídas. Retorna dados estruturados com paginação.
 - **`browser_network_request`**: Lê o resumo, os cabeçalhos, os dados enviados ou o conteúdo de texto de uma solicitação salva como JSON estruturado, sem repeti-la. Retorna a parte escolhida completa. As respostas salvas continuam disponíveis após mudar de página, incluindo respostas HTTP 4xx e 5xx. Os registros aparecem quando a captura termina. Consultar o histórico ou fechar a sessão não espera pelas capturas pendentes, que podem se perder ao navegar ou fechar. Os bytes vêm do Playwright e podem ser diferentes dos enviados pelo servidor. O texto usa a decodificação UTF-8 do Playwright quando ela é válida; caso contrário, usa o charset declarado. Só lê e salva o conteúdo com um `Content-Type` de texto compatível. Para tipos binários, ausentes ou desconhecidos, mantém os metadados e cabeçalhos sem ler o conteúdo. Isso não muda o carregamento da página. O histórico tem limites de tamanho. Uma nota opcional explica se o conteúdo não é texto, é muito grande ou não pode ser lido. Leia os dados de que precisa antes de fechar a sessão MCP.
 - **`browser_fetch`**: Obtém uma página usando uma sessão de navegador furtivo aberta e extrai HTML, Markdown, texto ou uma captura estruturada. As capturas podem cobrir toda a página ou um elemento e incluem referências, posições e tamanhos para interagir depois.

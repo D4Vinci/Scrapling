@@ -47,6 +47,7 @@ def _server(session_type: SessionType = "stealthy") -> tuple[ScraplingMCPServer,
     page.is_closed.return_value = False
     page.mouse.move = AsyncMock()
     page.mouse.click = AsyncMock()
+    page.mouse.down = AsyncMock()
     page.mouse.up = AsyncMock()
     page.mouse.wheel = AsyncMock()
     page.locator.return_value.click = AsyncMock()
@@ -78,6 +79,8 @@ async def test_browser_mouse_schema_and_annotations() -> None:
     assert set(variants) == {
         "move",
         "click",
+        "mouse_down",
+        "mouse_up",
         "wheel",
         "wait_time",
         "wait_element",
@@ -89,7 +92,7 @@ async def test_browser_mouse_schema_and_annotations() -> None:
         "press_key",
         "dialog",
     }
-    assert len(items["oneOf"]) == 12
+    assert len(items["oneOf"]) == 14
     assert "_Selector" not in schema["$defs"] and "_Ref" not in schema["$defs"]
     for kind in ("move", "click", "wheel"):
         variant = variants[kind]

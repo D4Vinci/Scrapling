@@ -192,6 +192,36 @@ class TestFindByEscapedAttributes:
         assert page.find("a", title="one\ntwo").get_all_text() == "broken"
 
 
+@pytest.mark.parametrize(
+    "content",
+    [
+        "",
+        b"",
+        " \t\r\n",
+        b" \t\r\n",
+        b"\x00 \t\r\n\x00",
+        "<!DOCTYPE html>",
+        b"<!DOCTYPE html>",
+        "<!-- comment -->",
+        b"<!-- comment -->",
+    ],
+)
+@pytest.mark.parametrize("keep_comments", [False, True])
+def test_content_without_root_uses_empty_html(content, keep_comments):
+    """Inputs with no document element should support normal selector operations."""
+    url = "https://example.com/empty"
+    page = Selector(content, url=url, keep_comments=keep_comments)
+
+    assert page.tag == "html"
+    assert page.html_content == "<html></html>"
+    assert len(page.css("html")) == 1
+    assert page.xpath("//p") == []
+    assert page.get_all_text() == ""
+    assert page.body == content
+    assert page.url == url
+    assert page._root.base_url == url
+
+
 # Error Handling Tests
 class TestErrorHandling:
     def test_invalid_selector_initialization(self):
@@ -408,3 +438,16 @@ def test_regex_on_text(page):
     assert match == "10.99"
     match = element.text.re(r"(\d+)", replace_entities=False)
     assert len(match) == 2
+
+
+def test_xpath_expressions_returning_one_value():
+    page = Selector("<div><h1>Hello <b>big</b> world</h1><ul><li>A</li><li>B</li></ul></div>")
+    assert page.xpath("string(//h1)").getall() == ["Hello big world"]
+    assert page.xpath("normalize-space(//li[2])").get() == "B"
+    assert page.xpath("string(//nope)").getall() == [""]
+    assert page.xpath("count(//li)").get() == "2.0"
+    assert page.xpath("count(//nope)").get() == "0.0"
+    assert page.xpath("boolean(//li)").get() == "1"
+    assert page.xpath("boolean(//nope)").get() == "0"
+    assert page.css("ul").xpath("count(./li)").get() == "2.0"
+    assert page.css("ul")[0].xpath("string(./li[1])").get() == "A"
