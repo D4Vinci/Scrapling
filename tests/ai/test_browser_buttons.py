@@ -282,7 +282,7 @@ async def test_live_slider_stays_held_across_observation_calls(observe: str) -> 
                 observe,
                 {
                     "session_id": "browser",
-                    **({"duration_ms": 100, "max_frames": 2} if observe == "browser_observe" else {}),
+                    **({"max_frames": 2} if observe == "browser_observe" else {}),
                 },
             )
             assert not observed.is_error, observed

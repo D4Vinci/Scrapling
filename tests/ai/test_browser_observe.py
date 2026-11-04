@@ -380,9 +380,7 @@ async def test_browser_observe_live_motion_and_page_reuse() -> None:
                 "browser_actions", {"session_id": "browser", "actions": [{"type": "click", "target": "#done"}]}
             )
             assert not actions.is_error and await page.get_attribute("body", "data-done") == "yes"
-            repeated = await client.call_tool(
-                "browser_observe", {"session_id": "browser", "duration_ms": 100, "max_frames": 2}
-            )
+            repeated = await client.call_tool("browser_observe", {"session_id": "browser", "max_frames": 2})
             assert not repeated.is_error, repeated.content
             assert session.page_pool.pages[0] is page_info
         finally:
