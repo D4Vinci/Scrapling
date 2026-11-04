@@ -56,7 +56,7 @@ def __Request_and_Save(
         output_path = Path.cwd() / output_file
 
     if ai_targeted:
-        kwargs.setdefault("block_ads", True)
+        kwargs["block_ads"] = True
     response = fetcher_func(url, **kwargs)
     Convertor.write_content_to_file(response, str(output_path), css_selector, main_content_only=ai_targeted)
     log.info(f"Content successfully saved to '{output_path}'")

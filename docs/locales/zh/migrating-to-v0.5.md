@@ -12,6 +12,7 @@ description: "从 Scrapling v0.4.15 升级到 v0.5。更新浏览器导入、网
 | 如果使用了…… | 需要修改的内容 |
 | --- | --- |
 | `DynamicFetcher`、`DynamicSession` 或 `AsyncDynamicSession` | 使用对应的隐身类。 |
+| Python 浏览器调用中的 `cdp_url` | 使用 `RemoteSession` 或 `AsyncRemoteSession`。 |
 | `capture_xhr` 或 `response.captured_xhr` | 使用启用了 `record_requests=True` 的浏览器会话和 `session.network`。 |
 | `keep_cdata` | 从解析器和 Fetcher 设置中移除。 |
 | `scrapling extract stealthy-fetch` 或 Shell 中的 `stealthy_fetch()` | 改用 `fetch`。 |
@@ -61,6 +62,40 @@ Patchright 默认在隔离的上下文中执行 JavaScript。如果回调需要�
 除了导入名称，浏览器行为也会改变。请检查浏览器启动参数和指纹设置。处理 Cloudflare 验证仍需设置 `solve_cloudflare=True`，默认不会启用。此外，`extra_flags` 现在会追加到内置隐身启动参数中，而不是替换它们。
 
 当前选项见[浏览器抓取](fetching/stealthy.md)。
+
+### 将 CDP 连接迁移到远程会话 {#move-cdp-connections-to-remote-sessions}
+
+v0.5.1 新增了 `RemoteSession` 和 `AsyncRemoteSession`，用于通过 Chrome DevTools Protocol（CDP）连接已运行的 Chromium 浏览器。从 `scrapling.fetchers` 导入这些类，并将浏览器的 HTTP 或 WebSocket 地址传给 `cdp_url`。
+
+`StealthyFetcher`、`StealthySession` 和 `AsyncStealthySession` 不再接受 `cdp_url`。请将远程浏览器调用改为使用新的会话类，即使只抓取一次也是如此。
+
+**之前：**
+
+```python
+from scrapling.fetchers import StealthySession
+
+with StealthySession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+**现在：**
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+在异步代码中，将 `AsyncRemoteSession` 与 `async with` 和 `await session.fetch(...)` 一起使用。
+
+- `new_context=True` 是默认值。它会创建独立的浏览器上下文，并在会话结束时关闭该上下文。
+- 使用 `new_context=False` 可复用现有的默认上下文及其登录状态。会话结束后，该上下文及其原有标签页保持打开。Scrapling 只会关闭自己创建的标签页。
+- 复用上下文时，会忽略 `useragent`、`locale`、`timezone_id`、`proxy`、`proxy_rotator` 和 `additional_args`，也会忽略每次请求的 `proxy`。`cookies` 和 `init_script` 会影响共享上下文。
+
+在上述上下文限制范围内，新类继承了 `StealthySession` 和 `AsyncStealthySession` 的选项和功能，包括通过 `solve_cloudflare=True` 解决 Cloudflare 验证。浏览器启动选项不生效，也不接受 `real_chrome`，因为浏览器由 `cdp_url` 指定。
+
+更多示例和选项见[远程会话](fetching/stealthy.md#3-cdp-connection)。
 
 ### 用会话网络历史替代 XHR 捕获 {#replace-xhr-capture-with-session-network-history}
 

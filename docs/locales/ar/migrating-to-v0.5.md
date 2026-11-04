@@ -9,16 +9,17 @@ description: "انتقل من Scrapling v0.4.15 إلى v0.5. حدّث استير
 
 ## قائمة سريعة للانتقال {#quick-migration-checklist}
 
-| إذا كنت تستخدم... | ما يجب تغييره |
-| --- | --- |
-| `DynamicFetcher` أو `DynamicSession` أو `AsyncDynamicSession` | استخدم فئة التخفي المقابلة. |
-| `capture_xhr` أو `response.captured_xhr` | استخدم جلسة متصفح مع `record_requests=True` و`session.network`. |
-| `keep_cdata` | احذفه من إعدادات المحلّل وFetcher. |
-| `scrapling extract stealthy-fetch` أو `stealthy_fetch()` في البيئة التفاعلية | استخدم `fetch` بدلًا منه. |
-| أدوات MCP | حدّث أسماء الأدوات واستدعاءات لقطات الشاشة وطريقة التعامل مع استجابة إنشاء الجلسة. |
-| `response.follow()` بعد طلب POST أو طلب يحتوي على معاملات استعلام | مرّر الطريقة والاستعلام والمحتوى من جديد عند الحاجة إليها. |
-| نقاط استئناف الزحف أو ذاكرة الاستجابات المؤقتة المحفوظة | ابدأ زحفًا جديدًا إذا كانت طلباتك تستخدم مدخلات بصمة الطلب التي تغيّرت. |
-| `robots_txt_obey=True` | تعامل مع فشل جلب robots.txt، فهو يمنع الزحف إلى ذلك النطاق الآن. |
+| إذا كنت تستخدم...                                                            | ما يجب تغييره                                                                      |
+|------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| `DynamicFetcher` أو `DynamicSession` أو `AsyncDynamicSession`                | استخدم فئة التخفي المقابلة.                                                        |
+| `cdp_url` في استدعاءات المتصفح في Python                                     | استخدم `RemoteSession` أو `AsyncRemoteSession`.                                    |
+| `capture_xhr` أو `response.captured_xhr`                                     | استخدم جلسة متصفح مع `record_requests=True` و`session.network`.                    |
+| `keep_cdata`                                                                 | احذفه من إعدادات المحلّل وFetcher.                                                 |
+| `scrapling extract stealthy-fetch` أو `stealthy_fetch()` في البيئة التفاعلية | استخدم `fetch` بدلًا منه.                                                          |
+| أدوات MCP                                                                    | حدّث أسماء الأدوات واستدعاءات لقطات الشاشة وطريقة التعامل مع استجابة إنشاء الجلسة. |
+| `response.follow()` بعد طلب POST أو طلب يحتوي على معاملات استعلام            | مرّر الطريقة والاستعلام والمحتوى من جديد عند الحاجة إليها.                         |
+| نقاط استئناف الزحف أو ذاكرة الاستجابات المؤقتة المحفوظة                      | ابدأ زحفًا جديدًا إذا كانت طلباتك تستخدم مدخلات بصمة الطلب التي تغيّرت.            |
+| `robots_txt_obey=True`                                                       | تعامل مع فشل جلب robots.txt، فهو يمنع الزحف إلى ذلك النطاق الآن.                   |
 
 ## الجلب بالمتصفح {#browser-fetching}
 
@@ -26,13 +27,13 @@ description: "انتقل من Scrapling v0.4.15 إلى v0.5. حدّث استير
 
 حُذف محرك المتصفح الذي يستخدم Playwright مباشرة. كل عمليات الجلب بالمتصفح تستخدم الآن محرك التخفي المبني على Patchright.
 
-| واجهة API المحذوفة | البديل |
-| --- | --- |
-| `scrapling.DynamicFetcher` | `scrapling.StealthyFetcher` |
-| `scrapling.fetchers.DynamicFetcher` | `scrapling.fetchers.StealthyFetcher` |
-| `scrapling.fetchers.chrome.PlayWrightFetcher` | `scrapling.fetchers.StealthyFetcher` |
-| `scrapling.fetchers.DynamicSession` | `scrapling.fetchers.StealthySession` |
-| `scrapling.fetchers.AsyncDynamicSession` | `scrapling.fetchers.AsyncStealthySession` |
+| واجهة API المحذوفة                            | البديل                                    |
+|-----------------------------------------------|-------------------------------------------|
+| `scrapling.DynamicFetcher`                    | `scrapling.StealthyFetcher`               |
+| `scrapling.fetchers.DynamicFetcher`           | `scrapling.fetchers.StealthyFetcher`      |
+| `scrapling.fetchers.chrome.PlayWrightFetcher` | `scrapling.fetchers.StealthyFetcher`      |
+| `scrapling.fetchers.DynamicSession`           | `scrapling.fetchers.StealthySession`      |
+| `scrapling.fetchers.AsyncDynamicSession`      | `scrapling.fetchers.AsyncStealthySession` |
 
 حُذفت وحدة `scrapling.fetchers.chrome` والوحدة الخاصة `_browsers._controllers`. استخدم الاستيرادات العامة المذكورة أعلاه.
 
@@ -61,6 +62,40 @@ page = StealthyFetcher.fetch("https://example.com", headless=True)
 يتغيّر سلوك المتصفح إلى جانب اسم الاستيراد. راجع خيارات المتصفح وإعدادات البصمة. ما زال حل Cloudflare يتطلب `solve_cloudflare=True`؛ فهو غير مفعّل افتراضيًا. كذلك، يضيف `extra_flags` الآن إلى خيارات التخفي المدمجة بدلًا من استبدالها.
 
 راجع [الجلب بالمتصفح](fetching/stealthy.md) لمعرفة الخيارات الحالية.
+
+### انقل اتصالات CDP إلى الجلسات البعيدة {#move-cdp-connections-to-remote-sessions}
+
+يضيف v0.5.1 الفئتين `RemoteSession` و`AsyncRemoteSession` للاتصال بمتصفح Chromium يعمل بالفعل عبر Chrome DevTools Protocol (CDP). استوردهما من `scrapling.fetchers`، ومرّر عنوان HTTP أو WebSocket الخاص بالمتصفح في `cdp_url`.
+
+لم تعد `StealthyFetcher` و`StealthySession` و`AsyncStealthySession` تقبل `cdp_url`. انقل استدعاءات المتصفح البعيد إلى فئات الجلسات الجديدة، حتى لعملية جلب واحدة.
+
+**قبل:**
+
+```python
+from scrapling.fetchers import StealthySession
+
+with StealthySession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+**الآن:**
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+للكود غير المتزامن، استخدم `AsyncRemoteSession` مع `async with` و`await session.fetch(...)`.
+
+- القيمة الافتراضية هي `new_context=True`. تنشئ سياق متصفح منفصلًا، وتغلقه عند انتهاء الجلسة.
+- استخدم `new_context=False` لإعادة استخدام السياق الافتراضي الموجود وحالة تسجيل الدخول فيه. يظل هذا السياق وتبويباته الموجودة مفتوحة عند انتهاء الجلسة. يغلق Scrapling التبويبات التي ينشئها فقط.
+- عند إعادة استخدام سياق، يتم تجاهل `useragent` و`locale` و`timezone_id` و`proxy` و`proxy_rotator` و`additional_args`، بما فيها `proxy` على مستوى الطلب. يؤثر `cookies` و`init_script` في السياق المشترك.
+
+ترث الفئتان الجديدتان خيارات وميزات `StealthySession` و`AsyncStealthySession`، بما فيها حل اختبارات Cloudflare باستخدام `solve_cloudflare=True`، مع مراعاة قيود السياق هذه. لا تُطبّق خيارات تشغيل المتصفح، ولا يُقبل `real_chrome` لأن `cdp_url` يحدد المتصفح.
+
+راجع [الجلسات البعيدة](fetching/stealthy.md#3-cdp-connection) لمزيد من الأمثلة والخيارات.
 
 ### استبدل التقاط XHR بسجل شبكة الجلسة {#replace-xhr-capture-with-session-network-history}
 
@@ -162,14 +197,14 @@ scrapling extract fetch "https://example.com" page.md
 
 ### حدّث أسماء الأدوات والاستدعاءات المجمّعة {#update-tool-names-and-bulk-calls}
 
-| أداة v0.4.15 | البديل في v0.5 |
-| --- | --- |
-| `fetch`, `stealthy_fetch` | `browser_fetch_once` |
-| `open_session` | `browser_open` |
-| `session_fetch` | `browser_fetch` |
-| `screenshot` | `browser_screenshot` |
+| أداة v0.4.15                        | البديل في v0.5                                                                                     |
+|-------------------------------------|----------------------------------------------------------------------------------------------------|
+| `fetch`, `stealthy_fetch`           | `browser_fetch_once`                                                                               |
+| `open_session`                      | `browser_open`                                                                                     |
+| `session_fetch`                     | `browser_fetch`                                                                                    |
+| `screenshot`                        | `browser_screenshot`                                                                               |
 | `bulk_fetch`, `bulk_stealthy_fetch` | استدعاء واحد لـ`browser_fetch_once` لكل URL، أو استدعاءات متكررة لـ`browser_fetch` عبر جلسة مفتوحة |
-| `bulk_get` | استدعاء واحد لـ`make_request` أو `session_make_request` لكل URL |
+| `bulk_get`                          | استدعاء واحد لـ`make_request` أو `session_make_request` لكل URL                                    |
 
 حُذفت كل أدوات العمليات المجمّعة. تعيد أدوات جلب URL واحد كائن `ResponseModel` واحدًا يحتوي على `status` و`content` و`url`، وليس قائمة استجابات. ما زال `content` نفسه قائمة نصوص.
 

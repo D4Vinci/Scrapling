@@ -60,6 +60,16 @@ class _MouseClick(_MouseTarget):
     ]
 
 
+class _MouseDown(TypedDict):
+    type: Literal["mouse_down"]
+    button: NotRequired[Annotated[MouseButton, Field(default="left")]]
+
+
+class _MouseUp(TypedDict):
+    type: Literal["mouse_up"]
+    button: NotRequired[Annotated[MouseButton, Field(default="left")]]
+
+
 class _MouseWheel(TypedDict):
     type: Literal["wheel"]
     delta_x: NotRequired[
@@ -138,6 +148,8 @@ BrowserAction = Annotated[
     Union[
         _MouseMove,
         _MouseClick,
+        _MouseDown,
+        _MouseUp,
         _MouseWheel,
         _TextFormField,
         _CheckboxFormField,
@@ -213,6 +225,10 @@ async def _run_actions(page: Any, actions: List[BrowserAction], slowly: bool = F
                         await page.keyboard.press(action["key"])
                     elif action["type"] == "wheel":
                         await page.mouse.wheel(action.get("delta_x", 0), action.get("delta_y", 0))
+                    elif action["type"] == "mouse_down":
+                        await page.mouse.down(button=action.get("button", "left"))
+                    elif action["type"] == "mouse_up":
+                        await page.mouse.up(button=action.get("button", "left"))
                     else:
                         target = action.get("target")
                         timeout = action.get("timeout", 30000)

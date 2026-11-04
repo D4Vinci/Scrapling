@@ -11,7 +11,7 @@ Le **serveur MCP de Scrapling** met les fonctions d’extraction de données web
 
 ## Fonctions {#features}
 
-Le serveur MCP de Scrapling fournit seize outils pour extraire des données web et interagir avec le navigateur. Les outils à usage unique récupèrent une URL, puis ferment leur navigateur ou client. Les outils de session gardent les cookies et les réglages entre les appels. L’IA peut ainsi poursuivre ses actions dans le même onglet et consulter l’historique réseau.
+Le serveur MCP de Scrapling fournit dix-sept outils pour extraire des données web et interagir avec le navigateur. Les outils à usage unique récupèrent une URL, puis ferment leur navigateur ou client. Les outils de session gardent les cookies et les réglages entre les appels. L’IA peut ainsi poursuivre ses actions dans le même onglet et consulter l’historique réseau.
 
 ### Outils à usage unique {#one-shot-tools}
 
@@ -27,7 +27,7 @@ Le serveur MCP de Scrapling fournit seize outils pour extraire des données web 
 
 #### 🔌 Gestion des sessions {#session-management}
 
-- **`browser_open`** : Crée une session persistante de navigateur Stealthy qui reste ouverte entre les appels à `browser_fetch`. Il n’est donc pas nécessaire de lancer un navigateur à chaque fois. Elle garde la configuration du navigateur et renvoie seulement `session_id` et `session_type`. Utilisez `list_sessions` pour voir sa configuration effective dans `settings`, qui est vide pour les sessions CDP.
+- **`browser_open`** : Crée une session persistante de navigateur Stealthy qui reste ouverte entre les appels à `browser_fetch`. Il n’est donc pas nécessaire de lancer un navigateur à chaque fois. Elle garde la configuration du navigateur et renvoie seulement `session_id` et `session_type`. Utilisez `list_sessions` pour voir sa configuration effective dans `settings`.
 - **`open_request_session`** : Crée une session HTTP persistante sans navigateur, à utiliser avec `session_make_request`. Elle garde les cookies, les connexions et l’empreinte du navigateur (`impersonate`) entre les requêtes. Elle renvoie seulement `session_id` et `session_type`, avec le type `static`. Utilisez `list_sessions` pour voir sa configuration effective dans `settings`.
 - **`close_session`** : Ferme une session persistante de navigateur ou de requêtes et libère ses ressources.
 - **`list_sessions`** : Liste toutes les sessions actives avec leurs détails et leur `settings`.
@@ -47,6 +47,7 @@ Les fichiers d’état se trouvent sur l’ordinateur qui exécute le serveur MC
 #### 📸 Captures d’écran {#screenshots}
 
 - **`browser_screenshot`** : Capture la page actuelle ou un élément en PNG ou JPEG sans la recharger. Vous pouvez vérifier les champs remplis, les menus ouverts, les graphiques ou les cartes de résultats. Capturer un seul élément réduit le contenu inutile. L’outil accepte la zone visible, la page entière ou un élément, avec une qualité JPEG réglable. La capture est renvoyée sous forme de bloc d’image réel que le modèle peut voir directement.
+- **`browser_observe`**: Aide l’agent à comprendre les mouvements et les changements grâce à une courte série d’images de la page actuelle.
 
 #### Contenu de la page actuelle {#current-page-content}
 
@@ -57,6 +58,8 @@ Les fichiers d’état se trouvent sur l’ordinateur qui exécute le serveur MC
 - **`browser_actions`** : Enchaîne les actions de la souris, le remplissage des champs, les raccourcis clavier, les réponses aux boîtes de dialogue et les attentes dans un seul appel. Accepte ou ferme les alertes et confirmations du navigateur, ou saisit du texte dans les boîtes de saisie. Par exemple, remplit un champ de recherche, envoie la requête, attend les résultats et en ouvre un. L’IA peut regrouper les étapes connues et demander des vues séparées lorsqu’elle doit vérifier une modification de la page. Cela évite un aller-retour avec l’agent entre deux étapes. C’est utile pour les menus qui disparaissent rapidement et les autres contrôles qui demandent d’enchaîner vite les actions.
 
     Affiche les menus et infobulles au survol, clique sur les boutons et liens, ou place la souris sur un panneau imbriqué pour le faire défiler verticalement ou horizontalement. Les déplacements et clics acceptent des sélecteurs, des références de la vue structurée ou des coordonnées. Pour les éléments ciblés, l’outil attend automatiquement leur présence et fait défiler la page pour les rendre visibles. Il accepte les déplacements par coordonnées en plusieurs étapes, les clics gauche, droit et central, ainsi que les doubles clics.
+
+    Maintenez un bouton de la souris enfoncé pour déplacer des éléments ou des curseurs. L’IA peut examiner la page tout en gardant le bouton enfoncé, ajuster la position avec d’autres mouvements, puis le relâcher à destination.
 
     Ciblez les champs n’importe où sur la page avec des sélecteurs ou des références. Saisissez du texte, cochez ou décochez des cases, sélectionnez des boutons radio et choisissez une ou plusieurs options de listes déroulantes natives par leur libellé visible. Le texte peut remplacer le contenu, l’effacer ou continuer à la position du curseur. Les raccourcis clavier permettent de sélectionner et supprimer du texte, de changer le focus, d’envoyer des formulaires ou de fermer des menus. Le mode lent saisit un caractère à la fois, avec des pauses aléatoires entre les caractères et entre toutes les actions.
 
@@ -228,7 +231,7 @@ Vous pouvez aussi définir la variable d’environnement `SCRAPLING_EXECUTABLE_P
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-Le `session_id` renvoyé s’utilise comme d’habitude avec `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state` et `browser_load_state`.
+Le `session_id` renvoyé s’utilise comme d’habitude avec `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_observe`, `browser_network_requests`, `browser_network_request`, `browser_save_state` et `browser_load_state`.
 
 L’URL peut être un endpoint WebSocket (`ws://`/`wss://`), comme ceux fournis par les services de navigateurs, ou l’endpoint HTTP d’un navigateur que vous avez lancé avec le port de débogage distant activé :
 ```commandline
@@ -239,7 +242,8 @@ Dans ce cas, connectez-vous avec `cdp_url="http://localhost:9222"`, ou avec l’
 !!! note "Notes"
 
     * Comme le navigateur est déjà ouvert, les sessions CDP ignorent les options qui ne servent qu’au lancement : `headless`, `real_chrome` et `executable_path`, y compris la valeur par défaut du serveur décrite plus haut.<br/>
-    * Les autres options s’appliquent toujours (`locale`, `useragent`, `proxy`, `cookies`, `timezone_id`, etc.), car chaque session crée son propre contexte dans le navigateur distant.
+    * Votre agent IA peut démarrer une nouvelle session ou réutiliser une session existante pour travailler sur les sites auxquels vous êtes déjà connecté.
+    * Scrapling ferme les nouvelles sessions à la fin de la tâche. Lorsqu’il réutilise une session, il garde le navigateur et vos onglets existants ouverts et ferme uniquement les onglets qu’il a créés.
 
 ### Streamable HTTP {#streamable-http}
 
@@ -476,7 +480,7 @@ Cette protection s’applique automatiquement à l’extraction HTML, Markdown e
 - Les sessions gardent la configuration définie à leur ouverture : headless, locale, cookies et options de discrétion pour les navigateurs ; `impersonate` et `proxy` pour les sessions HTTP. Les options propres à une requête, comme timeout, wait_selector, network_idle et solve_cloudflare, sont passées à `browser_fetch`/`session_make_request` à chaque appel. Leurs valeurs par défaut figurent dans les schémas des outils.
 - `browser_fetch` peut résoudre les défis Cloudflare dans la session ouverte de navigateur Stealthy.
 - Fermez toujours les sessions avec `close_session` à la fin pour libérer les ressources.
-- Utilisez `list_sessions` pour vérifier quelles sessions restent actives et consulter le `settings` utilisé à leur création. Il est renvoyé à l’agent IA et reste vide pour les sessions CDP.
+- Utilisez `list_sessions` pour vérifier quelles sessions restent actives et consulter le `settings` utilisé à leur création. Il est renvoyé à l’agent IA.
 - Passez votre propre `session_id` aux outils d’ouverture pour donner des noms clairs aux sessions, comme `"search"` ou `"checkout"`, plutôt que la valeur hexadécimale aléatoire. Les outils lèvent une erreur si l’identifiant est déjà utilisé, pour que vous détectiez le conflit dès le départ.
 
 ### 7. Captures d’écran {#7-capturing-screenshots}
@@ -487,6 +491,8 @@ Cette protection s’applique automatiquement à l’extraction HTML, Markdown e
 - Capturez un champ, un graphique, une carte ou un résultat pour l’inspecter avec moins de contenu autour. La capture d’un élément peut faire défiler la page pour le rendre visible.
 - Choisissez PNG pour une image sans perte ou JPEG avec une qualité réglable pour réduire la taille.
 - L’IA peut utiliser `browser_actions` pour attendre le contenu ou terminer les interactions avant la capture.
+
+`browser_observe` aide l’agent à suivre les animations, les commandes en mouvement et les autres changements qu’une seule capture d’écran peut manquer.
 
 ## Aspects juridiques et éthiques {#legal-and-ethical-considerations}
 

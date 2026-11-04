@@ -12,6 +12,7 @@ Diese Anleitung beschreibt die Änderungen, die Sie beim Wechsel von **v0.4.15 a
 | Wenn Sie Folgendes verwenden... | Was Sie ändern müssen |
 | --- | --- |
 | `DynamicFetcher`, `DynamicSession` oder `AsyncDynamicSession` | Verwenden Sie die passende Stealth-Klasse. |
+| `cdp_url` in Python-Browseraufrufen | Verwenden Sie `RemoteSession` oder `AsyncRemoteSession`. |
 | `capture_xhr` oder `response.captured_xhr` | Verwenden Sie eine Browsersitzung mit `record_requests=True` und `session.network`. |
 | `keep_cdata` | Entfernen Sie die Option aus den Parser- und Fetcher-Einstellungen. |
 | `scrapling extract stealthy-fetch` oder `stealthy_fetch()` in der Shell | Verwenden Sie stattdessen `fetch`. |
@@ -61,6 +62,40 @@ Patchright führt JavaScript standardmäßig in einem isolierten Kontext aus. We
 Neben dem Importnamen ändert sich auch das Verhalten des Browsers. Prüfen Sie Ihre Browser-Flags und Fingerprint-Einstellungen. Das Lösen von Cloudflare-Prüfungen erfordert weiterhin `solve_cloudflare=True` und ist standardmäßig nicht aktiviert. Außerdem ergänzt `extra_flags` jetzt die eingebauten Stealth-Flags, statt sie zu ersetzen.
 
 Die aktuellen Optionen finden Sie unter [Abrufen mit dem Browser](fetching/stealthy.md).
+
+### Verschieben Sie CDP-Verbindungen in Remote-Sitzungen {#move-cdp-connections-to-remote-sessions}
+
+v0.5.1 führt `RemoteSession` und `AsyncRemoteSession` ein, um sich über das Chrome DevTools Protocol (CDP) mit einem bereits laufenden Chromium-Browser zu verbinden. Importieren Sie die Klassen aus `scrapling.fetchers` und übergeben Sie den HTTP- oder WebSocket-Endpunkt des Browsers als `cdp_url`.
+
+`StealthyFetcher`, `StealthySession` und `AsyncStealthySession` akzeptieren kein `cdp_url` mehr. Verwenden Sie für Remote-Browseraufrufe die neuen Sitzungsklassen, auch für einen einzelnen Abruf.
+
+**Vorher:**
+
+```python
+from scrapling.fetchers import StealthySession
+
+with StealthySession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+**Jetzt:**
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+Verwenden Sie für asynchronen Code `AsyncRemoteSession` mit `async with` und `await session.fetch(...)`.
+
+- `new_context=True` ist der Standard. Damit wird ein eigener Browserkontext erstellt und am Sitzungsende geschlossen.
+- Verwenden Sie `new_context=False`, um den vorhandenen Standardkontext samt Anmeldestatus wiederzuverwenden. Dieser Kontext und seine vorhandenen Tabs bleiben am Sitzungsende offen. Scrapling schließt nur die Tabs, die es selbst erstellt.
+- Beim Wiederverwenden eines Kontexts werden `useragent`, `locale`, `timezone_id`, `proxy`, `proxy_rotator` und `additional_args` ignoriert, einschließlich `proxy` pro Anfrage. `cookies` und `init_script` wirken sich auf den gemeinsamen Kontext aus.
+
+Die neuen Klassen erben die Optionen und Funktionen von `StealthySession` und `AsyncStealthySession`, einschließlich des Lösens von Cloudflare-Prüfungen mit `solve_cloudflare=True`, unter den genannten Einschränkungen für den Kontext. Browser-Startoptionen werden nicht angewendet, und `real_chrome` wird nicht akzeptiert, da `cdp_url` den Browser bestimmt.
+
+Weitere Beispiele und Optionen finden Sie unter [Remote-Sitzungen](fetching/stealthy.md#3-cdp-connection).
 
 ### Ersetzen Sie die XHR-Erfassung durch den Netzwerkverlauf der Sitzung {#replace-xhr-capture-with-session-network-history}
 

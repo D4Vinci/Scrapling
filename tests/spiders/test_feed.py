@@ -149,6 +149,15 @@ class TestXMLFeedSpider:
         assert len(items) == 2
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("damage", ["truncated", "deflate"])
+    async def test_invalid_gzip_yields_nothing(self, damage: str) -> None:
+        """Malformed gzip must follow the feed's existing error handling."""
+        body = gzip.compress(RSS_XML)
+        body = body[:-4] if damage == "truncated" else body[:10] + b"\x07" + body[11:]
+
+        assert await _collect(_RSSSpider().parse(_make_response(body))) == []
+
+    @pytest.mark.asyncio
     async def test_malformed_xml_logs_warning_and_yields_nothing(self):
         spider = _RSSSpider()
         records = []
@@ -203,6 +212,28 @@ class _PriceSpider(CSVFeedSpider):
 
 class TestCSVFeedSpider:
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("newline", ["\n", "\r\n", "\r"])
+    @pytest.mark.parametrize("explicit_headers", [False, True])
+    @pytest.mark.parametrize("compressed", [False, True])
+    async def test_record_newlines_preserve_quoted_line_breaks(
+        self, newline: str, explicit_headers: bool, compressed: bool
+    ) -> None:
+        """记录分隔符应兼容 CR，同时保留引号字段里的原始换行。"""
+        spider = _PriceSpider()
+        records = ['"First\rPost",10', '"Second\r\nPost",20']
+        if explicit_headers:
+            spider.headers = ["title", "price"]
+        else:
+            records.insert(0, "title,price")
+        body = (newline.join(records) + newline).encode()
+        if compressed:
+            body = gzip.compress(body)
+
+        rows = await _collect(spider.parse(_make_response(body)))
+
+        assert rows == [{"title": "First\rPost", "price": "10"}, {"title": "Second\r\nPost", "price": "20"}]
+
+    @pytest.mark.asyncio
     async def test_first_row_is_the_header(self):
         rows = await _collect(_PriceSpider().parse(_make_response(CSV_BODY)))
 
@@ -230,6 +261,15 @@ class TestCSVFeedSpider:
     async def test_gzipped_feed_is_decompressed(self):
         rows = await _collect(_PriceSpider().parse(_make_response(gzip.compress(CSV_BODY))))
         assert len(rows) == 2
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("damage", ["truncated", "deflate"])
+    async def test_invalid_gzip_yields_nothing(self, damage: str) -> None:
+        """Malformed gzip must follow the feed's existing error handling."""
+        body = gzip.compress(CSV_BODY)
+        body = body[:-4] if damage == "truncated" else body[:10] + b"\x07" + body[11:]
+
+        assert await _collect(_PriceSpider().parse(_make_response(body))) == []
 
     @pytest.mark.asyncio
     async def test_leading_byte_order_mark_stays_out_of_the_first_column(self):

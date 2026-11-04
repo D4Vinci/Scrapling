@@ -422,6 +422,7 @@ The spider has a built-in logger accessible via `self.logger`. It's pre-configur
 | `logging_format`      | `"[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"` | Log message format                                 |
 | `logging_date_format` | `"%Y-%m-%d %H:%M:%S"`                                        | Date format in log messages                        |
 | `log_file`            | `None`                                                       | Path to a log file (in addition to console output) |
+| `log_file_encoding`   | `None`                                                       | Log file encoding; `None` uses Python's default    |
 
 ```python
 import logging
@@ -431,6 +432,7 @@ class MySpider(Spider):
     start_urls = ["https://example.com"]
     logging_level = logging.INFO
     log_file = "logs/my_spider.log"
+    log_file_encoding = "utf-8"
 
     async def parse(self, response: Response):
         self.logger.info(f"Processing {response.url}")
@@ -438,3 +440,5 @@ class MySpider(Spider):
 ```
 
 The log file directory is created automatically if it doesn't exist. Both console and file output use the same format.
+
+New log entries are appended. If the file already exists, use its encoding.

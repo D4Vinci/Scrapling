@@ -1,9 +1,11 @@
 import pytest
+from inspect import signature
 from unittest.mock import patch, MagicMock
 
 from scrapling.parser import Selector
 from scrapling.core._types import cast, extraction_types
 from scrapling.core.shell import CustomShell, CurlParser, Convertor
+from scrapling.fetchers import AsyncRemoteSession, RemoteSession
 
 
 class TestCurlParser:
@@ -12,6 +14,12 @@ class TestCurlParser:
     @pytest.fixture
     def parser(self):
         return CurlParser()
+
+    def test_location_flag(self, parser):
+        for flag in ("-L", "--location"):
+            request = parser.parse(f"curl {flag} https://example.com")
+            assert request.url == "https://example.com"
+            assert request.follow_redirects == "safe"
 
     def test_basic_curl_parse(self, parser):
         """Test parsing basic curl commands"""
@@ -60,6 +68,31 @@ class TestCurlParser:
         assert request.cookies["session"] == "abc123"
         assert request.cookies["user"] == "john"
         assert request.cookies["extra"] == "cookie"
+
+    def test_curl_with_cookie_values_containing_spaces_and_quotes(self, parser):
+        """Test that DevTools cookie values with spaces or quotes don't drop the other cookies"""
+        curl_cmd = """curl https://example.com \
+            -H 'Cookie: sid=abc123; prefs={"theme":"dark"}' \
+            -b 'last_search=red shoes; lang=en'"""
+
+        request = parser.parse(curl_cmd)
+
+        assert request.cookies == {
+            "sid": "abc123",
+            "prefs": '{"theme":"dark"}',
+            "last_search": "red shoes",
+            "lang": "en",
+        }
+
+    def test_curl_with_cookie_named_partitioned(self, parser):
+        """Test that a request cookie named `partitioned` is kept, only the bare flag is skipped"""
+        curl_cmd = """curl https://example.com \
+            -H 'Cookie: partitioned=blue; sid=abc123' \
+            -b 'lang=en; Partitioned'"""
+
+        request = parser.parse(curl_cmd)
+
+        assert request.cookies == {"partitioned": "blue", "sid": "abc123", "lang": "en"}
 
     def test_curl_with_proxy(self, parser):
         """Test parsing curl with proxy"""
@@ -267,5 +300,9 @@ class TestCustomShell:
         assert "post" in namespace
         assert "Fetcher" in namespace
         assert "StealthyFetcher" in namespace
+        assert namespace["RemoteSession"] is RemoteSession
+        assert namespace["AsyncRemoteSession"] is AsyncRemoteSession
+        assert "RemoteFetcher" not in namespace
+        assert "cdp_url" not in signature(namespace["fetch"]).parameters
         assert "view" in namespace
         assert "uncurl" in namespace

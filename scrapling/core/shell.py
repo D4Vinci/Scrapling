@@ -178,6 +178,7 @@ class CurlParser:
         # Connection/Security
         _parser.add_argument("-k", "--insecure", action="store_true")
         _parser.add_argument("--compressed", action="store_true")  # Very common from browsers
+        _parser.add_argument("-L", "--location", action="store_true")  # Redirects are followed anyway
 
         # Other flags often included but may not map directly to request args
         _parser.add_argument("-i", "--include", action="store_true")
@@ -442,6 +443,8 @@ class CustomShell:
             StealthyFetcher as __StealthyFetcher,
             StealthySession as __StealthySession,
             AsyncStealthySession as __AsyncStealthySession,
+            RemoteSession as __RemoteSession,
+            AsyncRemoteSession as __AsyncRemoteSession,
         )
 
         self.__InteractiveShellEmbed = __InteractiveShellEmbed
@@ -451,6 +454,8 @@ class CustomShell:
         self.__StealthyFetcher = __StealthyFetcher
         self.__StealthySession = __StealthySession
         self.__AsyncStealthySession = __AsyncStealthySession
+        self.__RemoteSession = __RemoteSession
+        self.__AsyncRemoteSession = __AsyncRemoteSession
         self.code = code
         self.page = None
         self.pages = Selectors([])
@@ -488,6 +493,7 @@ class CustomShell:
 -> Available Scrapling objects:
    - Fetcher/AsyncFetcher/FetcherSession
    - StealthyFetcher/StealthySession/AsyncStealthySession
+   - RemoteSession/AsyncRemoteSession
    - Selector
 
 -> Useful shortcuts:
@@ -564,6 +570,8 @@ Type 'exit' or press Ctrl+D to exit.
             "FetcherSession": self.__FetcherSession,
             "StealthySession": self.__StealthySession,
             "AsyncStealthySession": self.__AsyncStealthySession,
+            "RemoteSession": self.__RemoteSession,
+            "AsyncRemoteSession": self.__AsyncRemoteSession,
             "fetch": fetch,
             "StealthyFetcher": self.__StealthyFetcher,
             "Selector": Selector,

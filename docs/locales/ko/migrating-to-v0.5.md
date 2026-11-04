@@ -12,6 +12,7 @@ description: "Scrapling v0.4.15에서 v0.5로 업그레이드하세요. 브라�
 | 사용 중인 기능 | 변경할 내용 |
 | --- | --- |
 | `DynamicFetcher`, `DynamicSession` 또는 `AsyncDynamicSession` | 대응하는 스텔스 클래스를 사용하세요. |
+| Python 브라우저 호출의 `cdp_url` | `RemoteSession` 또는 `AsyncRemoteSession`을 사용하세요. |
 | `capture_xhr` 또는 `response.captured_xhr` | `record_requests=True`로 설정한 브라우저 세션과 `session.network`를 사용하세요. |
 | `keep_cdata` | 파서와 Fetcher 설정에서 삭제하세요. |
 | `scrapling extract stealthy-fetch` 또는 셸의 `stealthy_fetch()` | 대신 `fetch`를 사용하세요. |
@@ -61,6 +62,40 @@ Patchright는 기본적으로 격리된 컨텍스트에서 JavaScript를 실행�
 가져오기 이름과 함께 브라우저 동작도 바뀝니다. 브라우저 플래그와 지문 설정을 확인하세요. Cloudflare 해결에는 여전히 `solve_cloudflare=True`가 필요하며, 기본적으로 활성화되지 않습니다. 또한 `extra_flags`는 이제 내장 스텔스 플래그를 교체하지 않고 추가합니다.
 
 현재 옵션은 [브라우저로 가져오기](fetching/stealthy.md)를 참고하세요.
+
+### CDP 연결을 원격 세션으로 이전 {#move-cdp-connections-to-remote-sessions}
+
+v0.5.1에는 Chrome DevTools Protocol(CDP)을 통해 이미 실행 중인 Chromium 브라우저에 연결하는 `RemoteSession`과 `AsyncRemoteSession`이 추가되었습니다. `scrapling.fetchers`에서 가져오고 브라우저의 HTTP 또는 WebSocket 주소를 `cdp_url`에 전달하세요.
+
+`StealthyFetcher`, `StealthySession`, `AsyncStealthySession`은 더 이상 `cdp_url`을 받지 않습니다. 한 번만 가져오더라도 원격 브라우저 호출에는 새 세션 클래스를 사용하세요.
+
+**이전:**
+
+```python
+from scrapling.fetchers import StealthySession
+
+with StealthySession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+**현재:**
+
+```python
+from scrapling.fetchers import RemoteSession
+
+with RemoteSession(cdp_url="http://localhost:9222") as session:
+    page = session.fetch("https://example.com")
+```
+
+비동기 코드에서는 `AsyncRemoteSession`을 `async with` 및 `await session.fetch(...)`와 함께 사용하세요.
+
+- 기본값은 `new_context=True`입니다. 별도 브라우저 컨텍스트를 만들고 세션이 끝나면 닫습니다.
+- 기존 기본 컨텍스트와 로그인 상태를 재사용하려면 `new_context=False`를 사용하세요. 세션이 끝나도 해당 컨텍스트와 기존 탭은 열려 있습니다. Scrapling은 자체 생성한 탭만 닫습니다.
+- 컨텍스트를 재사용하면 `useragent`, `locale`, `timezone_id`, `proxy`, `proxy_rotator`, `additional_args`를 무시합니다. 요청별 `proxy`도 무시합니다. `cookies`와 `init_script`는 공유 컨텍스트에 영향을 줍니다.
+
+새 클래스들은 이러한 컨텍스트 제한 내에서 `StealthySession`과 `AsyncStealthySession`의 옵션과 기능을 상속합니다. `solve_cloudflare=True`를 통한 Cloudflare 챌린지 해결도 포함됩니다. 브라우저 실행 옵션은 적용되지 않으며, `cdp_url`로 브라우저를 지정하므로 `real_chrome`은 받지 않습니다.
+
+더 많은 예제와 옵션은 [원격 세션](fetching/stealthy.md#3-cdp-connection)을 참고하세요.
 
 ### XHR 캡처를 세션 네트워크 기록으로 교체 {#replace-xhr-capture-with-session-network-history}
 
