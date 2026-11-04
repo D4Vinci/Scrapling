@@ -247,15 +247,18 @@ class LinkExtractor:
                     url = strip_html5_whitespace(url)
                     if not url:
                         continue
-                url = str(response.urljoin(url))
+                try:
+                    url = str(response.urljoin(url))
+                except ValueError:
+                    log.debug(f"Skipping the extraction of bad URL {url!r}")
+                    continue
                 url = self.process(url)
                 if not url:
                     continue
 
-                if self.canonicalize:
-                    url = canonicalize_url(url, keep_fragments=self.keep_fragment)
-
                 try:
+                    if self.canonicalize:
+                        url = canonicalize_url(url, keep_fragments=self.keep_fragment)
                     url = safe_url_string(url, encoding=response.encoding)
                 except ValueError:
                     log.debug(f"Skipping the extraction of bad URL {url!r}")

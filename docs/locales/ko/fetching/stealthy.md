@@ -55,6 +55,8 @@ playwright install chrome
 
 `RemoteSession` 또는 `AsyncRemoteSession`으로 [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/)을 통해 이미 실행 중인 브라우저에 연결합니다. `cdp_url`에 WebSocket 주소(`ws://`/`wss://`) 또는 `http://localhost:9222` 같은 HTTP 주소를 전달하세요. 이 클래스들은 세션 전용입니다. `StealthySession`과 `StealthyFetcher`는 `cdp_url`을 받지 않습니다.
 
+이 클래스들은 각각 `StealthySession`과 `AsyncStealthySession`을 상속하므로 `solve_cloudflare=True`를 통한 Cloudflare 챌린지 해결을 포함해 모든 옵션과 기능이 평소처럼 작동합니다. 단, 아래에 설명된 브라우저 실행 및 컨텍스트 제한은 적용됩니다.
+
 ```python
 from scrapling.fetchers import RemoteSession
 

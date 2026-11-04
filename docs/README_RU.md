@@ -200,6 +200,16 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
+      <a href="https://nonecap.com/solutions/scrapling/?ref=scrapling" target="_blank" title="hCaptcha solver as an API.">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/Nonecap.png">
+      </a>
+    </td>
+    <td>
+    hCaptcha при работе со Scrapling? <a href="https://nonecap.com/solutions/scrapling/?ref=scrapling" target="_blank">NoneCap</a> возвращает действительные токены hCaptcha через единый API, в том числе для ключей сайтов Enterprise. 1 300 бесплатных кредитов при регистрации.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://dataimpulse.com/?utm_source=website&utm_medium=github_readme&utm_campaign=scrapling_platinum" target="_blank" title="Buy Pay-as-you-go proxies from $1/GB">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/DataImpulse_Platinum.png">
       </a>

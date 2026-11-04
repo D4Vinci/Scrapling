@@ -102,6 +102,7 @@ class Spider(ABC):
     logging_format: str = "[%(asctime)s]:({spider_name}) %(levelname)s: %(message)s"
     logging_date_format: str = "%Y-%m-%d %H:%M:%S"
     log_file: Optional[str] = None
+    log_file_encoding: Optional[str] = None
 
     def __init__(self, crawldir: Optional[Union[str, Path, AsyncPath]] = None, interval: float = 300.0):
         """Initialize the spider.
@@ -131,7 +132,7 @@ class Spider(ABC):
 
         if self.log_file:
             Path(self.log_file).parent.mkdir(parents=True, exist_ok=True)
-            file_handler = logging.FileHandler(self.log_file)
+            file_handler = logging.FileHandler(self.log_file, encoding=self.log_file_encoding)
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
 

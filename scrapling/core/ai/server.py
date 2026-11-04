@@ -1,4 +1,5 @@
 import re
+from asyncio import CancelledError, create_task, shield, sleep
 from uuid import uuid4
 from os import environ
 from json import dumps
@@ -217,6 +218,20 @@ def _mcp_tool(tool: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[An
     return wrapped
 
 
+async def _stop_screencast(page: Any) -> None:
+    with CancelScope(shield=True):
+        stopped = create_task(page.screencast.stop())
+        cancelled = None
+        while not stopped.done():
+            try:
+                await shield(stopped)
+            except CancelledError as error:
+                cancelled = error
+        stopped.result()
+        if cancelled:
+            raise cancelled
+
+
 class ScraplingMCPServer:
     def __init__(self, executable_path: Optional[str] = None, auth_token: Optional[str] = None):
         """Create a Scrapling MCP server.
@@ -341,7 +356,7 @@ class ScraplingMCPServer:
 
     async def browser_save_state(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; no page fetch required.")],
+        session_id: Annotated[str, Field(description="Browser session ID.")],
         path: Annotated[
             NonEmptyString,
             Field(
@@ -355,7 +370,7 @@ class ScraplingMCPServer:
 
     async def browser_load_state(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; no page fetch required.")],
+        session_id: Annotated[str, Field(description="Browser session ID.")],
         path: Annotated[
             NonEmptyString, Field(description="File on the MCP server host; relative to its working directory.")
         ],
@@ -428,7 +443,7 @@ class ScraplingMCPServer:
         ] = 0,
         limit: Annotated[int, Field(ge=1, le=200, description="Maximum requests to return.")] = 50,
     ) -> NetworkRequestsModel:
-        """List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens."""
+        """List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens and closing does not wait for running captures."""
         network = self._get_session(session_id, ["stealthy"]).session.network
         records = network.search(
             url_pattern=url_pattern, include_static=include_static, after_id=after_id, limit=limit + 1
@@ -460,7 +475,7 @@ class ScraplingMCPServer:
 
     async def browser_extract(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         extraction_type: Annotated[
             SessionExtractionType, Field(description="Output format; defaults to an AI ARIA snapshot.")
         ] = "snapshot",
@@ -546,12 +561,12 @@ class ScraplingMCPServer:
 
     async def browser_actions(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         actions: Annotated[
             List[BrowserAction],
             Field(
                 min_length=1,
-                description="Ordered actions; fields need target; move/click need target or viewport (x, y); drag needs source/target or path.",
+                description="Ordered actions; fields need target; move/click need target or viewport (x, y); mouse_down/mouse_up act at the current pointer.",
             ),
         ],
         slowly: Annotated[
@@ -561,12 +576,13 @@ class ScraplingMCPServer:
             ),
         ] = False,
     ) -> str:
-        """Run mouse, field, key, dialog, and wait actions in order; return plain text without a snapshot.
-        Stop on the first error, identifying its action; partial effects remain. No retries.
+        """Chain all kinds of browser actions. Do actions without multiple calls or plan ahead to execute a sequence of actions.
+        Run mouse, field, key, dialog, and wait actions on the current page in order.
+        Load waits observe the current document; wait for a result element for delayed navigation.
+        Stops on the first error, identifying its action; partial effects remain. No retries.
         Element mouse targets auto-wait and scroll into view; coordinates and wheel do not wait for navigation or scrolling.
-        Drag uses the left button with source/target selectors or refs, or a viewport path.
-        Failed/cancelled drags and cancelled/timed-out clicks attempt button release.
-        Load waits observe the current document, not future navigation."""
+        mouse_down holds across calls for observation and further moves; mouse_up releases, including after errors.
+        For drag and drop, move over the target twice before releasing. Cancelled/timed-out clicks attempt release."""
         _validate_actions(actions)
         with self._browser_page(session_id) as (_, page):
             await _run_actions(page, actions, slowly)
@@ -574,7 +590,7 @@ class ScraplingMCPServer:
 
     async def browser_evaluate(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         expression: Annotated[NonEmptyString, Field(description="JavaScript expression or function to invoke.")],
         arg: Annotated[
             Optional[Dict[str, Any]],
@@ -600,7 +616,7 @@ class ScraplingMCPServer:
 
     async def browser_screenshot(
         self,
-        session_id: Annotated[str, Field(description="ID from `browser_open`; call `browser_fetch` first.")],
+        session_id: Annotated[str, Field(description="Browser session ID")],
         image_type: Annotated[ScreenshotType, Field(description="Image format.")] = "png",
         full_page: Annotated[
             bool, Field(description="Capture the full scrollable page; incompatible with selector/ref.")
@@ -649,6 +665,55 @@ class ScraplingMCPServer:
             else:
                 data = await page.screenshot(full_page=full_page, **options)
             return [Image(data=data, format=image_type).to_image_content(), TextContent(type="text", text=page.url)]
+
+    async def browser_observe(
+        self,
+        session_id: Annotated[str, Field(description="Browser session ID")],
+        duration_ms: Annotated[int, Field(ge=100, le=5000, description="Observation window in milliseconds.")] = 1500,
+        max_frames: Annotated[int, Field(ge=2, le=20, description="Maximum number of sampled frames.")] = 12,
+    ) -> List[ImageContent | TextContent]:
+        """Inspect browser page motion through a short sequence of timestamped viewport images. The page keeps running during and after capture.
+        Use this tool when you get any challenge that require timed actions like games, appearing/disappearing CAPTCHAs, or interacting with any moving elements.
+        """
+        with self._browser_page(session_id) as (_, page):
+            frames: Dict[int, Dict[str, Any]] = {}
+            started = monotonic()
+
+            def capture(frame: Dict[str, Any]) -> None:
+                elapsed = (monotonic() - started) * 1000
+                if elapsed < duration_ms:
+                    frames[int(elapsed * max_frames / duration_ms)] = frame
+
+            try:
+                await page.screencast.start(on_frame=capture, quality=60, size={"width": 800, "height": 800})
+                await sleep(max(0, duration_ms / 1000 - (monotonic() - started)))
+            except BaseException as error:
+                try:
+                    await _stop_screencast(page)
+                except Exception as cleanup_error:
+                    raise error from cleanup_error
+                raise
+            await _stop_screencast(page)
+            if not frames:
+                raise RuntimeError("No frames were captured. Try browser_screenshot or a longer observation window.")
+            return [
+                content
+                for frame in frames.values()
+                for content in (
+                    TextContent(
+                        type="text",
+                        text=dumps(
+                            {
+                                "timestamp_ms": frame["timestamp"],
+                                "viewport_width": frame["viewportWidth"],
+                                "viewport_height": frame["viewportHeight"],
+                            },
+                            separators=(",", ":"),
+                        ),
+                    ),
+                    Image(data=frame["data"], format="jpeg").to_image_content(),
+                )
+            ]
 
     @staticmethod
     async def make_request(
@@ -832,7 +897,7 @@ class ScraplingMCPServer:
     async def browser_fetch(
         self,
         url: Annotated[str, Field(description="URL to fetch.")],
-        session_id: Annotated[str, Field(description="ID from `browser_open`.")],
+        session_id: Annotated[str, Field(description="Browser session ID.")],
         extraction_type: Annotated[
             SessionExtractionType, Field(description="Content output format; snapshots include element bounding boxes.")
         ] = "markdown",
@@ -999,9 +1064,8 @@ class ScraplingMCPServer:
 4. Fetch tools use `css_selector` to reduce output. HTML/Markdown/text return all matches; snapshots require one match or no selector for the whole page.
 5. Session options persist from opening; fetch options apply per call, with schema defaults.
 6. Each browser session uses one page; finish each call before starting the next in that session.
-7. `browser_extract` reads the current page without navigation, as a snapshot by default. Snapshots include refs and boxes; `main_content_only` and `pierce_shadow` do not filter them.
-8. `browser_actions` chains mouse, field, key, dialog and wait actions on the current page. Element actions use `target`: a Playwright selector or `aria-ref=<ref>` from the current snapshot. Move/click can instead use viewport (x, y) in CSS pixels. Drag uses `source` and `target` selectors/refs, or a `path` of at least two viewport {x, y} points. Wheel uses the current pointer without waiting for scrolling; coordinate clicks do not wait for navigation. Load waits observe the current document; wait for a result element for delayed navigation.
-9. Network history saves completed requests and responses across page changes. Failed/unfinished requests are omitted; closing does not wait for running captures. Use `include_static=True` to list successful non-API traffic. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Only response bodies with a text Content-Type are read and saved. Response bodies over 1 MiB are skipped; unavailable bodies are marked.""",
+7. Network history capturing omits failed/unfinished requests. Limits: 1000 requests and 20 MiB of saved response bodies; oldest records are removed first. Response bodies over 1 MiB are skipped.
+8. For challenges that have a slider with changing speed, don't release the mouse click without checking the page first to see if mouse adjustment needed before releasing. Keep repeating until you are certain.""",
         }
         if self._auth_token:
             base_url = AnyHttpUrl(f"http://{host}:{port}")
@@ -1111,6 +1175,13 @@ class ScraplingMCPServer:
             _mcp_tool(self.browser_screenshot),
             title="Take browser session screenshot",
             description=self.browser_screenshot.__doc__,
+            structured_output=False,
+            annotations=_FETCH_TOOL_ANNOTATIONS,
+        )
+        server.add_tool(
+            _mcp_tool(self.browser_observe),
+            title="Observe browser motion",
+            description=self.browser_observe.__doc__,
             structured_output=False,
             annotations=_FETCH_TOOL_ANNOTATIONS,
         )

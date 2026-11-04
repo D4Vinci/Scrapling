@@ -55,6 +55,8 @@ playwright install chrome
 
 Use `RemoteSession` or `AsyncRemoteSession` to connect to an already-running browser through the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/). Pass a WebSocket endpoint (`ws://`/`wss://`) or an HTTP endpoint such as `http://localhost:9222` as `cdp_url`. These are session classes only. `StealthySession` and `StealthyFetcher` do not accept `cdp_url`.
 
+These classes inherit from `StealthySession` and `AsyncStealthySession`, respectively, so all their options and features, including Cloudflare solving with `solve_cloudflare=True`, work as usual except for the browser launch and context limits below.
+
 ```python
 from scrapling.fetchers import RemoteSession
 

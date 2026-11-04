@@ -55,6 +55,8 @@ playwright install chrome
 
 `RemoteSession` または `AsyncRemoteSession` を使うと、[Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) を通じて起動済みのブラウザに接続できます。`cdp_url` には WebSocket エンドポイント（`ws://`/`wss://`）または `http://localhost:9222` などの HTTP エンドポイントを渡します。これらはセッション専用クラスです。`StealthySession` と `StealthyFetcher` は `cdp_url` を受け付けません。
 
+これらのクラスはそれぞれ `StealthySession` と `AsyncStealthySession` を継承するため、`solve_cloudflare=True` による Cloudflare チャレンジの解決を含め、すべてのオプションと機能を通常どおり使えます。ただし、以下に示すブラウザの起動とコンテキストの制限は適用されます。
+
 ```python
 from scrapling.fetchers import RemoteSession
 

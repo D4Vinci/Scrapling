@@ -32,6 +32,22 @@ def product_page():
 
 
 class TestFindSimilarAdvanced:
+    @pytest.mark.parametrize("reference_attributes", ["", 'href="/alpha"'])
+    @pytest.mark.parametrize("threshold, expected", [(0, ["Beta"]), (0.2, [])])
+    def test_find_similar_zero_threshold_without_reference_attributes(
+        self, reference_attributes: str, threshold: float, expected: list[str]
+    ) -> None:
+        """A zero threshold disables attribute filtering even without scored attributes."""
+        page = Selector(
+            f'<div><a {reference_attributes}>Alpha</a>'
+            '<a href="/beta" class="sale">Beta</a></div>'
+        )
+        reference = page.css("a")[0]
+
+        similar = reference.find_similar(similarity_threshold=threshold)
+
+        assert [element.text for element in similar] == expected
+
     def test_find_similar_default_finds_same_tag_siblings(self, product_page):
         """find_similar() with defaults should find div.product siblings, not the section"""
         first = product_page.css("div.product")[0]

@@ -4,7 +4,7 @@ The **Scrapling MCP Server** is a new feature that brings Scrapling's powerful W
 
 ## Features
 
-The Scrapling MCP Server provides sixteen tools for web scraping and browser interaction. One-shot tools fetch a single URL and close their own browser or client. Session tools keep cookies and settings across calls, so the AI can continue browser actions on the same tab and inspect network history.
+The Scrapling MCP Server provides seventeen tools for web scraping and browser interaction. One-shot tools fetch a single URL and close their own browser or client. Session tools keep cookies and settings across calls, so the AI can continue browser actions on the same tab and inspect network history.
 
 ### One-shot tools
 
@@ -36,6 +36,7 @@ State files are stored on the machine running the MCP server. They do not includ
 #### 📸 Screenshots
 
 - **`browser_screenshot`**: Capture the current page or a chosen element as PNG or JPEG without reloading it. Inspect filled fields, open menus, charts, or result cards, with less unrelated content in element captures. Supports the visible viewport, the full page, or one element, with adjustable JPEG quality. The screenshot is returned as a real image content block the model can see directly.
+- **`browser_observe`**: Help the agent understand motion and changes through a short sequence of images from the current page.
 
 #### Current Page Content
 
@@ -47,7 +48,7 @@ State files are stored on the machine running the MCP server. They do not includ
 
     Reveal hover menus and tooltips, click buttons and links, or move over a nested panel and scroll it vertically or horizontally. Moves and clicks support selectors, snapshot references, or coordinates, with automatic waiting and scrolling into view for element targets. Supports coordinate movement in multiple steps, left, right, and middle clicks, plus double-clicks.
 
-    Drag with `{"type": "drag", "source": "#item", "target": "#drop"}`; selectors also accept snapshot references such as `aria-ref=e1`. For coordinates, use `{"type": "drag", "path": [{"x": 100, "y": 150}, {"x": 300, "y": 150}]}`. Supply either both element targets or a path of at least two viewport CSS points. Drags use the left button. Optional `steps` controls mousemove events per segment (default 1); `timeout` applies only to element drags (default 30000 ms, 0 disables it). Failed or cancelled drags attempt button release before the page becomes available again.
+    Use `move`, `mouse_down`, more `move` actions, then `mouse_up` for drag and drop. For example: `[{"type": "move", "target": "#item"}, {"type": "mouse_down"}, {"type": "move", "target": "#drop"}, {"type": "move", "target": "#drop"}, {"type": "mouse_up"}]`. Move over the drop target twice to trigger HTML5 `dragover`. Both button actions use the current pointer position and accept `button` (`left` by default, `right`, or `middle`). The button stays held across calls, including page observation. Use `mouse_up` to release it, including after a failed or cancelled sequence.
 
     Target fields anywhere on the page through selectors or snapshot references. Fill text, check or uncheck boxes, select radio buttons, and choose one or more native dropdown options by their visible labels. Text can replace existing content, clear it, or continue at the current caret. Keyboard shortcuts can select and delete text, move focus, submit forms, or dismiss menus. Slow mode types one character at a time with random pauses between characters and all actions.
 
@@ -215,7 +216,7 @@ You can also set the `SCRAPLING_EXECUTABLE_PATH` environment variable before sta
 ```
 Open a stealthy browser session on wss://cdp.provider.example/session/abc123, then use it to scrape the product details from https://shop.example.com. Close the session when you're done.
 ```
-The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, and `browser_load_state` as usual.
+The `session_id` you get back is used with `browser_fetch`, `browser_extract`, `browser_actions`, `browser_evaluate`, `browser_screenshot`, `browser_observe`, `browser_network_requests`, `browser_network_request`, `browser_save_state`, and `browser_load_state` as usual.
 
 The URL can be a WebSocket endpoint (`ws://`/`wss://`), which is what managed browser providers hand out, or the HTTP endpoint of a browser you started yourself with the remote debugging port enabled:
 ```commandline
@@ -457,3 +458,5 @@ This protection runs automatically for HTML, Markdown, and text extraction. Keep
 - Capture one field, chart, card, or result to inspect it with less surrounding content. Element capture can scroll the target into view.
 - Choose PNG for lossless images or JPEG with adjustable quality for smaller payloads.
 - The AI can use `browser_actions` to wait for content or finish interactions before capture.
+
+`browser_observe` helps the agent follow animations, moving controls, and other changes that a single screenshot can miss.

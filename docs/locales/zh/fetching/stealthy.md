@@ -55,6 +55,8 @@ playwright install chrome
 
 使用 `RemoteSession` 或 `AsyncRemoteSession`，通过 [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) 连接已运行的浏览器。将 WebSocket 地址（`ws://`/`wss://`）或 HTTP 地址（如 `http://localhost:9222`）传给 `cdp_url`。这些类仅用于会话。`StealthySession` 和 `StealthyFetcher` 不接受 `cdp_url`。
 
+这两个类分别继承自 `StealthySession` 和 `AsyncStealthySession`，因此所有选项和功能都可照常使用，包括通过 `solve_cloudflare=True` 解决 Cloudflare 验证，但下文列出的浏览器启动和上下文限制除外。
+
 ```python
 from scrapling.fetchers import RemoteSession
 
