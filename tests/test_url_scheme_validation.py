@@ -20,11 +20,15 @@ class TestUrlSchemeValidation:
 
     def test_stealth_fetcher_blocks_file(self):
         session = StealthySession(headless=True)
+        # Mock the alive state to bypass the context manager check
+        session._is_alive = True
         with pytest.raises(ValueError, match="Unsupported URL scheme"):
             session.fetch("file:///etc/passwd")
 
     @pytest.mark.asyncio
     async def test_async_stealth_fetcher_blocks_file(self):
         session = AsyncStealthySession(headless=True)
+        # Mock the alive state to bypass the context manager check
+        session._is_alive = True
         with pytest.raises(ValueError, match="Unsupported URL scheme"):
             await session.fetch("file:///etc/passwd")
