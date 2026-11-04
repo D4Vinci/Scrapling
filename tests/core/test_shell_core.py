@@ -51,6 +51,19 @@ class TestCookieParser:
         cookies = dict(_CookieParser('session-token="a+b/c=="; x=1'))
         assert cookies == {"session-token": '"a+b/c=="', "x": "1"}
 
+    def test_cookie_named_partitioned_is_kept(self):
+        """`partitioned` is a valid cookie name, only the bare `Partitioned` flag is an attribute"""
+        assert dict(_CookieParser("partitioned=blue; sid=abc123")) == {
+            "partitioned": "blue",
+            "sid": "abc123",
+        }
+
+    def test_bare_partitioned_flag_is_skipped(self):
+        """A pasted `Set-Cookie` value with the `Partitioned` flag gives only the cookie itself"""
+        assert dict(_CookieParser("sid=abc123; Path=/; Secure; HttpOnly; Partitioned")) == {
+            "sid": "abc123",
+        }
+
     def test_empty_cookie_string(self):
         """Test parsing empty cookie string"""
         cookies = list(_CookieParser(""))

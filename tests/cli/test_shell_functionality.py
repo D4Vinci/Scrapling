@@ -78,6 +78,16 @@ class TestCurlParser:
             "lang": "en",
         }
 
+    def test_curl_with_cookie_named_partitioned(self, parser):
+        """Test that a request cookie named `partitioned` is kept, only the bare flag is skipped"""
+        curl_cmd = """curl https://example.com \
+            -H 'Cookie: partitioned=blue; sid=abc123' \
+            -b 'lang=en; Partitioned'"""
+
+        request = parser.parse(curl_cmd)
+
+        assert request.cookies == {"partitioned": "blue", "sid": "abc123", "lang": "en"}
+
     def test_curl_with_proxy(self, parser):
         """Test parsing curl with proxy"""
         curl_cmd = "curl https://example.com -x http://proxy:8080 -U user:pass"

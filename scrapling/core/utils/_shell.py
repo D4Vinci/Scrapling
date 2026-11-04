@@ -5,9 +5,11 @@ from scrapling.core._types import (
     Generator,
 )
 
-# `Set-Cookie` attributes, skipped so a pasted `Set-Cookie` value still gives only the cookie itself
+# `Set-Cookie` attributes, skipped so a pasted `Set-Cookie` value still gives only the cookie itself.
+# Bare flags (`Secure`, `HttpOnly`, `Partitioned`) have no `=` and are skipped anyway, so `partitioned` isn't listed:
+# it's a valid cookie name, and listing it would drop a real `partitioned=...` request cookie.
 _COOKIE_ATTRIBUTES = frozenset(
-    {"expires", "path", "comment", "domain", "max-age", "secure", "httponly", "version", "samesite", "partitioned"}
+    {"expires", "path", "comment", "domain", "max-age", "secure", "httponly", "version", "samesite"}
 )
 
 
