@@ -15,6 +15,12 @@ class TestCurlParser:
     def parser(self):
         return CurlParser()
 
+    def test_location_flag(self, parser):
+        for flag in ("-L", "--location"):
+            request = parser.parse(f"curl {flag} https://example.com")
+            assert request.url == "https://example.com"
+            assert request.follow_redirects == "safe"
+
     def test_basic_curl_parse(self, parser):
         """Test parsing basic curl commands"""
         # Simple GET
