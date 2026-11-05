@@ -8,5 +8,4 @@ from ._utils import (
     _StorageTools,
     clean_spaces,
     html_forbidden,
-    validate_url_scheme,
 )
