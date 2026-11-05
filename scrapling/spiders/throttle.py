@@ -22,7 +22,11 @@ def parse_retry_after(headers: Mapping[str, str]) -> Optional[float]:
         pass
 
     try:  # The header can be an HTTP date instead of a number of seconds
-        return max((parsedate_to_datetime(value) - datetime.now(timezone.utc)).total_seconds(), 0.0)
+        retry_at = parsedate_to_datetime(value)
+        if retry_at.tzinfo is None:
+            # HTTP-date's asctime format has no timezone, but represents UTC (RFC 9110, section 5.6.7).
+            retry_at = retry_at.replace(tzinfo=timezone.utc)
+        return max((retry_at - datetime.now(timezone.utc)).total_seconds(), 0.0)
     except (TypeError, ValueError):
         log.debug(f"Ignoring an unreadable `Retry-After` header: {value!r}")
         return None
