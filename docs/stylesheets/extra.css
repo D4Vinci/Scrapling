@@ -2,6 +2,18 @@
   max-width: 90%;
 }
 
+.video-demos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 1rem;
+}
+
+.video-demos iframe {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
 @font-face {
   font-family: 'Maple Mono';
   font-style: normal;
