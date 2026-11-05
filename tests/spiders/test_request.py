@@ -553,3 +553,82 @@ class TestResponseFollow:
         )
 
         assert followed._session_kwargs == {"method": "POST", "data": "q=books", "headers": {"Content-Length": "7"}}
+
+    def _credentialed_parent(self) -> Request:
+        return Request(
+            "https://example.com/account",
+            headers={"Authorization": "Bearer dummy-token", "Cookie": "session=dummy-session", "X-Token": "abc"},
+            extra_headers={"Authorization": "Bearer dummy-token"},
+            auth=("username", "password"),
+            cookies={"session": "dummy-session"},
+            proxy="http://proxy:8080",
+        )
+
+    @pytest.mark.parametrize(
+        "destination",
+        [
+            "https://other.example/page",
+            "https://sub.example.com/page",
+            "http://example.com/page",
+            "https://example.com:8443/page",
+        ],
+    )
+    def test_follow_strips_inherited_credentials_cross_origin(self, destination):
+        parent = self._credentialed_parent()
+
+        followed = self._response(parent).follow(destination, referer_flow=False)
+
+        assert followed.url == destination
+        assert followed._session_kwargs == {
+            "headers": {"X-Token": "abc"},
+            "extra_headers": {},
+            "proxy": "http://proxy:8080",
+        }
+        # The parent request itself must not be mutated by the stripping.
+        assert parent._session_kwargs["headers"]["Authorization"] == "Bearer dummy-token"
+        assert parent._session_kwargs["cookies"] == {"session": "dummy-session"}
+        assert parent._session_kwargs["auth"] == ("username", "password")
+
+    def test_follow_keeps_inherited_credentials_same_origin(self):
+        parent = self._credentialed_parent()
+
+        followed = self._response(parent).follow("/other", referer_flow=False)
+
+        assert followed.url == "https://example.com/other"
+        assert followed._session_kwargs == {
+            "headers": {"Authorization": "Bearer dummy-token", "Cookie": "session=dummy-session", "X-Token": "abc"},
+            "extra_headers": {"Authorization": "Bearer dummy-token"},
+            "auth": ("username", "password"),
+            "cookies": {"session": "dummy-session"},
+            "proxy": "http://proxy:8080",
+        }
+
+    def test_follow_keeps_inherited_credentials_with_explicit_default_port(self):
+        parent = self._credentialed_parent()
+
+        followed = self._response(parent).follow("https://example.com:443/other", referer_flow=False)
+
+        assert followed.url == "https://example.com:443/other"
+        assert followed._session_kwargs["headers"]["Authorization"] == "Bearer dummy-token"
+        assert followed._session_kwargs["cookies"] == {"session": "dummy-session"}
+        assert followed._session_kwargs["auth"] == ("username", "password")
+
+    def test_follow_keeps_explicit_credentials_cross_origin(self):
+        parent = self._credentialed_parent()
+
+        followed = self._response(parent).follow(
+            "https://other.example/page",
+            referer_flow=False,
+            headers={"Authorization": "Bearer explicit-token"},
+            extra_headers={"Authorization": "Bearer explicit-token"},
+            auth=("explicit-user", "explicit-password"),
+            cookies={"session": "explicit-session"},
+        )
+
+        assert followed._session_kwargs == {
+            "headers": {"Authorization": "Bearer explicit-token"},
+            "extra_headers": {"Authorization": "Bearer explicit-token"},
+            "auth": ("explicit-user", "explicit-password"),
+            "cookies": {"session": "explicit-session"},
+            "proxy": "http://proxy:8080",
+        }

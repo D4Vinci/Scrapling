@@ -3,6 +3,7 @@ Functions related to custom types or type checking
 """
 
 from functools import lru_cache
+from urllib.parse import urlparse
 
 from scrapling.core.utils import log
 from scrapling.core._types import (
@@ -26,6 +27,34 @@ if TYPE_CHECKING:
 
 
 _NON_INHERITABLE_KWARGS = frozenset({"method", "data", "json", "params", "files", "multipart"})
+
+# Credential-bearing headers that must not leak to a different origin.
+_CREDENTIAL_HEADERS = frozenset({"authorization", "cookie"})
+
+_DEFAULT_PORTS = {"http": 80, "https": 443, "ws": 80, "wss": 443}
+
+
+def _request_origin(url: str) -> tuple[str, str | None, int | None]:
+    """Return the origin of a URL as (scheme, hostname, effective port).
+
+    Explicit default ports are normalized, so ``https://example.com`` and
+    ``https://example.com:443`` share the same origin. Raises ValueError
+    for URLs with an invalid port, which callers treat as cross-origin.
+    """
+    parsed = urlparse(url)
+    port = parsed.port
+    if port is None:
+        port = _DEFAULT_PORTS.get(parsed.scheme.lower())
+    hostname = parsed.hostname.lower() if parsed.hostname else None
+    return (parsed.scheme.lower(), hostname, port)
+
+
+def _same_origin(url_a: str, url_b: str) -> bool:
+    """Return True if both URLs share scheme, hostname, and effective port."""
+    try:
+        return _request_origin(url_a) == _request_origin(url_b)
+    except ValueError:
+        return False
 
 
 class Response(Selector):
@@ -124,6 +153,11 @@ class Response(Selector):
 
         The session kwargs of the previous request are inherited as well, except `method`, `params`, `data`, `json`, `files`, and `multipart`, so a followed link is a plain GET unless you pass them again.
 
+        Inherited credentials (`auth`, `cookies`, and credential-bearing headers such as `Authorization`) are only kept
+        when the followed URL has the same origin (scheme, hostname, and effective port) as the original request.
+        When the origin differs, they are stripped from the inherited kwargs; credentials passed explicitly to
+        `follow()` are never stripped.
+
         :param url: The URL to follow (can be relative, will be joined with current URL)
         :param sid: The session id to use
         :param callback: Spider callback method to use
@@ -139,8 +173,20 @@ class Response(Selector):
         if not self.request or not isinstance(self.request, Request):
             raise TypeError("This response has no request set yet.")
 
+        followed_url = self.urljoin(url)
+
         # Merge original session kwargs with new kwargs (new takes precedence)
         inherited = {k: v for k, v in self.request._session_kwargs.items() if k not in _NON_INHERITABLE_KWARGS}
+        if not _same_origin(self.request.url, followed_url):
+            # Credentials belong to the original origin; never send the
+            # inherited ones to a different origin. This runs before the
+            # merge below, so credentials passed explicitly to follow()
+            # (which overwrite the whole kwarg) are preserved untouched.
+            inherited.pop("auth", None)
+            inherited.pop("cookies", None)
+            for key in ("headers", "extra_headers"):
+                if inherited.get(key):
+                    inherited[key] = {k: v for k, v in inherited[key].items() if k.lower() not in _CREDENTIAL_HEADERS}
         for key in ("headers", "extra_headers"):
             if inherited.get(key):
                 inherited[key] = {k: v for k, v in inherited[key].items() if k.lower() != "content-length"}
@@ -160,7 +206,7 @@ class Response(Selector):
             session_kwargs["google_search"] = False
 
         return Request(
-            url=self.urljoin(url),
+            url=followed_url,
             sid=sid or self.request.sid,
             callback=callback or self.request.callback,
             priority=priority if priority is not None else self.request.priority,
