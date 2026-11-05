@@ -176,8 +176,8 @@ class TestRequestProperties:
 
         assert request.update_fingerprint() == selected.update_fingerprint()
 
-    def test_fingerprint_preserves_upload_stream_handling(self) -> None:
-        """Preserve existing stream fingerprints without consuming the upload."""
+    def test_fingerprint_preserves_data_buffer_handling(self) -> None:
+        """Preserve the existing data buffer fingerprint without moving its cursor."""
         stream = BytesIO(b"upload")
         stream.seek(2)
         url = "https://example.com/api"
@@ -186,10 +186,81 @@ class TestRequestProperties:
         assert request.update_fingerprint() == original.update_fingerprint()
         assert stream.tell() == 2
 
-        request = Request(url, method="POST", data="tag=a", content=stream)
-        original = Request(url, method="POST", data="tag=a")
+    @pytest.mark.parametrize("form", [{}, {"tag": []}, {"tag": ()}, {"tag": ["a", "b"]}, {"tag": "value"}])
+    def test_fingerprint_separates_content_streams_from_forms(self, form: dict[str, Any]) -> None:
+        """Do not confuse an opaque upload with an empty or ignored form body."""
+        url = "https://example.com/api"
+        stream = BytesIO(b"prefix-second")
+        stream.seek(7)
+        form_request = Request(url, method="POST", data=form)
+        stream_request = Request(url, method="POST", content=stream)
+        mixed_request = Request(url, method="POST", data=form, content=stream)
+
+        assert stream_request.update_fingerprint() != form_request.update_fingerprint()
+        assert mixed_request.update_fingerprint() != form_request.update_fingerprint()
+        assert stream.tell() == 7
+
+    def test_fingerprint_does_not_inspect_opaque_streams(self) -> None:
+        """Separate opaque uploads even when their representations are identical."""
+
+        class OpaqueStream:
+            def read(self, *args: Any) -> bytes:
+                """Fail if fingerprinting tries to consume the stream."""
+                raise AssertionError("fingerprinting must not read the stream")
+
+            def seek(self, *args: Any) -> int:
+                """Fail if fingerprinting tries to reposition the stream."""
+                raise AssertionError("fingerprinting must not seek the stream")
+
+            def tell(self) -> int:
+                """Fail if fingerprinting requires a seekable stream."""
+                raise AssertionError("fingerprinting must not query the cursor")
+
+            def __iter__(self) -> Any:
+                """Fail if fingerprinting tries to iterate over the stream."""
+                raise AssertionError("fingerprinting must not iterate over the stream")
+
+            def __repr__(self) -> str:
+                """Use an identical representation for every stream."""
+                return "opaque-upload"
+
+        url = "https://example.com/api"
+        stream = OpaqueStream()
+        first = Request(url, method="POST", data={"tag": []}, content=stream)
+        second = Request(url, method="POST", data={"tag": []}, content=OpaqueStream())
+        shared = Request(url, method="POST", data={"tag": []}, content=stream)
+        fingerprint = first.update_fingerprint()
+
+        assert fingerprint != second.update_fingerprint()
+        assert fingerprint != shared.update_fingerprint()
+        assert fingerprint == first.update_fingerprint()
+        first._fp = None
+        assert fingerprint == first.update_fingerprint()
+
+    def test_fingerprint_stream_identity_survives_pickle(self) -> None:
+        """Keep a request's opaque identity across checkpoint serialization."""
+        request = Request("https://example.com/api", method="POST", content=BytesIO(b"second"))
+        fingerprint = request.update_fingerprint()
+        restored = pickle.loads(pickle.dumps(request))
+        restored._fp = None
+
+        assert restored.update_fingerprint() == fingerprint
+        assert request.copy().update_fingerprint() != fingerprint
+        assert request._session_kwargs["content"].tell() == 0
+        assert restored._session_kwargs["content"].tell() == 0
+
+    @pytest.mark.parametrize("value", [[], ["a", "b"]])
+    def test_fingerprint_preserves_multipart_form_encoding(self, value: list[str]) -> None:
+        """Keep the existing multipart path outside ordinary form normalization."""
+        from urllib.parse import urlencode
+
+        url = "https://example.com/api"
+        multipart = object()
+        form = {"tag": value}
+        request = Request(url, method="POST", data=form, multipart=multipart)
+        original = Request(url, method="POST", data=urlencode(form), multipart=multipart)
+
         assert request.update_fingerprint() == original.update_fingerprint()
-        assert stream.tell() == 2
 
     def test_fingerprint_matches_escaped_json_transport_body(self) -> None:
         """Use the transport's escaped JSON bytes, not an unescaped lookalike."""

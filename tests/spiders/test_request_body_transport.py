@@ -2,7 +2,9 @@
 
 from collections.abc import AsyncGenerator, Iterator
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from io import BytesIO
 from threading import Thread
+from urllib.parse import urlencode
 
 import pytest
 
@@ -93,3 +95,52 @@ async def test_crawl_sends_selected_bodies(
 
     assert received == [(b"tag=a&tag=b", "form"), (body, "selected")]
     assert len(items) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("form", [{}, {"tag": []}, {"tag": ()}, {"tag": ["a", "b"]}])
+@pytest.mark.parametrize("stream_kind", ["buffer", "positioned", "iterator", "with_json"])
+async def test_crawl_sends_form_and_content_streams(
+    body_echo_server: tuple[str, list[tuple[bytes, str]]], form: dict[str, Any], stream_kind: str
+) -> None:
+    """Send empty forms and distinct uploads while retaining ordinary deduplication."""
+    url, received = body_echo_server
+    form_body = urlencode(form, doseq=True).encode()
+
+    class StreamSpider(Spider):
+        name = "stream_fingerprint"
+        concurrent_requests = 1
+
+        def configure_sessions(self, manager: SessionManager) -> None:
+            """Use the real HTTP transport with bounded loopback requests."""
+            manager.add("default", FetcherSession(stealthy_headers=False, retries=1, timeout=5))
+
+        async def start_requests(self) -> AsyncGenerator[Request, None]:
+            """Queue the maintainer's pair, another upload, and ordinary duplicates."""
+            yield Request(url, method="POST", headers={"X-Body-Variant": "form"}, data=form)
+            for label, body in (("stream", b"second"), ("mixed-stream", b"third")):
+                headers = {"X-Body-Variant": label}
+                if stream_kind == "iterator":
+                    content = iter([body[:2], body[2:]])
+                    headers["Content-Length"] = str(len(body))
+                else:
+                    content = BytesIO(body if stream_kind != "positioned" else b"prefix-" + body)
+                    if stream_kind == "positioned":
+                        content.seek(7)
+                kwargs: dict[str, Any] = {"content": content}
+                if label == "mixed-stream":
+                    kwargs["data"] = form
+                if stream_kind == "with_json":
+                    kwargs["json"] = {}
+                yield Request(url, method="POST", headers=headers, **kwargs)
+            yield Request(url, method="POST", headers={"X-Body-Variant": "duplicate-form"}, data=form)
+            yield Request(url, method="POST", headers={"X-Body-Variant": "duplicate-raw"}, data=form_body)
+
+        async def parse(self, response: Response) -> AsyncGenerator[dict[str, Any] | Request | None, None]:
+            """Count successful responses from the real HTTP server."""
+            yield {"url": response.url}
+
+    items = [item async for item in StreamSpider().stream()]
+
+    assert received == [(form_body, "form"), (b"second", "stream"), (b"third", "mixed-stream")]
+    assert len(items) == 3

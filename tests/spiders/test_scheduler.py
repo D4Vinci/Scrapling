@@ -1,6 +1,7 @@
 """Tests for the Scheduler class."""
 
 import pickle
+from io import BytesIO
 
 import pytest
 
@@ -77,6 +78,21 @@ class TestSchedulerOrder:
 
 class TestSchedulerEnqueue:
     """Test Scheduler enqueue functionality."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("form", [{}, {"tag": []}, {"tag": ["a", "b"]}])
+    async def test_form_and_content_stream_requests_are_not_dropped(self, form: dict) -> None:
+        """Retain opaque uploads even when they include the same ignored form."""
+        scheduler = Scheduler()
+        url = "https://example.com/api"
+        first = Request(url, method="POST", content=BytesIO(b"second"))
+        second = Request(url, method="POST", data=form, content=BytesIO(b"third"))
+
+        assert await scheduler.enqueue(Request(url, method="POST", data=form))
+        assert await scheduler.enqueue(first)
+        assert await scheduler.enqueue(second)
+        assert not await scheduler.enqueue(first)
+        assert len(scheduler) == 3
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
