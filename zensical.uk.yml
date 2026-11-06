@@ -1,0 +1,100 @@
+INHERIT: zensical-base.yml
+site_description: Scrapling - Простий веб-скрапінг для сучасного інтернету!
+site_url: https://scrapling.readthedocs.io/uk/latest/
+docs_dir: docs/locales/uk
+site_dir: site
+edit_uri: edit/main/docs/locales/uk/
+copyright: Copyright &copy; 2025 Karim Shoair - <a href="#__consent">Изменить настройки cookie</a>
+nav:
+- Введення: index.md
+- Початок работи: overview.md
+- Тести продуктивності: benchmarks.md
+- Перехід на v0.5: migrating-to-v0.5.md
+- Посібники:
+  - Розбір сторінок:
+    - Пошук елементів: parsing/selection.md
+    - Основні класи: parsing/main_classes.md
+    - Адаптивний скрапінг: parsing/adaptive.md
+  - Завантаження сторінок:
+    - Вибір Fetcher: fetching/choosing.md
+    - HTTP-запити: fetching/static.md
+    - Завантаження через браузер: fetching/stealthy.md
+  - Павуки:
+    - Пристрій: spiders/architecture.md
+    - Перший павук: spiders/getting-started.md
+    - Запити та відповіді: spiders/requests-responses.md
+    - Сесії: spiders/sessions.md
+    - Проксі і блокування: spiders/proxy-blocking.md
+    - Спільні шаблони: spiders/generic-templates.md
+    - Шаблони для платформ: spiders/platform-templates.md
+    - Додаткові можливості: spiders/advanced.md
+  - Командна строка:
+    - Огляд: cli/overview.md
+    - Интерактивна оболонка: cli/interactive-shell.md
+    - Команди извлечения: cli/extract-commands.md
+  - Інтеграція с AI:
+    - MCP-сервер: ai/mcp-server.md
+    - Скілл агента: ai/agent-skill.md
+    - створення RAG-систем: ai/building-rag-systems.md
+  - Інтеграції і перехід:
+    - Інтеграція з Scrapy: integrations/scrapy.md
+    - Перехід з BeautifulSoup: tutorials/migrating_from_beautifulsoup.md
+- Практичні приклади:
+  - Безкоштовна заміна AI-сервісам збору даних: tutorials/replacing_ai.md
+- Розробка:
+  - Справочник API:
+    - Селектор: api-reference/selector.md
+    - Фетчер: api-reference/fetchers.md
+    - MCP-сервер: api-reference/mcp-server.md
+    - Користувацькі типи: api-reference/custom-types.md
+    - Віповідь: api-reference/response.md
+    - Павук: api-reference/spiders.md
+    - зміна проксі: api-reference/proxy-rotation.md
+  - Самостійна система збереження: development/adaptive_storage_system.md
+  - Типи Scrapling: development/scrapling_custom_types.md
+- Подтримка і реклама: donate.md
+- Участь в розробці: https://github.com/D4Vinci/Scrapling/blob/main/CONTRIBUTING.md
+- Історія змін: changelog.md
+theme:
+  language: uk
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    accent: green
+    primary: deep purple
+    toggle:
+      icon: lucide/sun
+      name: Ввімкнути темну тему
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    accent: light green
+    primary: deep purple
+    toggle:
+      icon: lucide/moon
+      name: Ввімкнути світлу тему
+markdown_extensions:
+  toc:
+    permalink_title: Посилання на цей розділ 
+plugins:
+  mkdocstrings:
+    locale: uk
+extra:
+  analytics:
+    feedback:
+      title: Ця сторінка була корисна?
+      ratings:
+      - icon: material/heart
+        name: Так, корисна
+        data: 1
+        note: Дякуємо за відгук!
+      - icon: material/heart-broken
+        name: Треба покращити
+        data: 0
+        note: 'Дякуємо за відгук! Допоможіть нам покращити сторінку: <a href="https://github.com/D4Vinci/Scrapling/issues/new?template=04-docs_issue.yml" target="_blank" rel="noopener">повідомте про проблему в документації</a>.'
+  consent:
+    title: Використання cookie
+    description: Ми використовуємо cookie, щоб запам'ятовувати ваші налаштування і розуміти, чи корисна документація. Ваша згода допомогає нам покращувати її.
+    actions:
+    - accept
+    - reject
+    - manage
