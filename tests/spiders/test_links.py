@@ -64,9 +64,9 @@ class TestExtractBasic:
 
 class TestMalformedLinks:
     @pytest.mark.parametrize("canonicalize", [True, False])
-    @pytest.mark.parametrize("url", ["https://[broken/page", "https://[not-an-ip]/", "https://example.com\uff0fother/"])
+    @pytest.mark.parametrize("url", ["https://[broken/page", "https://broken]/page", "https://example.com\uff0fother/"])
     def test_matches_rejects_bad_urls(self, url: str, canonicalize: bool) -> None:
-        """URL 过滤接口应与网页链接提取一致地拒绝格式错误的 URL。"""
+        """URL 过滤接口应在解析失败时返回 False。"""
         assert LinkExtractor(canonicalize=canonicalize).matches(url) is False
 
     @pytest.mark.parametrize("canonicalize", [True, False])
