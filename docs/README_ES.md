@@ -110,7 +110,7 @@ Imprime `10` y guarda las citas y sus autores en `quotes.json`.
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - el proveedor de proxies más eficiente para Web Scraping y automatización, con la mayor calidad de IP del mercado. Usa el código SCRAPLING35 para obtener un 35% de descuento.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - el proveedor de proxies más eficiente para Web Scraping y automatización, con la mayor calidad de IP del mercado. SCRAPLING2X - El doble de tráfico por el Black Friday
     </td>
   </tr>
   <tr>

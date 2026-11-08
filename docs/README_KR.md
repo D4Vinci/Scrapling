@@ -110,7 +110,7 @@ result.items.to_json("quotes.json")
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - 웹 스크래핑과 자동화를 위한 가장 효율적인 프록시 제공업체로, 시장에서 가장 높은 품질의 IP를 제공합니다. 코드 SCRAPLING35를 사용하면 35% 할인을 받을 수 있습니다.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - 웹 스크래핑과 자동화를 위한 가장 효율적인 프록시 제공업체로, 시장에서 가장 높은 품질의 IP를 제공합니다. SCRAPLING2X - 블랙 프라이데이 기념 트래픽 2배
     </td>
   </tr>
   <tr>

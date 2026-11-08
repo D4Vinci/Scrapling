@@ -110,7 +110,7 @@ Das gibt `10` aus und speichert Zitate und Autoren in `quotes.json`.
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - der effizienteste Proxy-Anbieter für Web Scraping und Automatisierung mit der höchsten IP-Qualität auf dem Markt. Nutzen Sie den Code SCRAPLING35 für 35 % Rabatt.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - der effizienteste Proxy-Anbieter für Web Scraping und Automatisierung mit der höchsten IP-Qualität auf dem Markt. SCRAPLING2X - Doppeltes Datenvolumen zum Black Friday
     </td>
   </tr>
   <tr>

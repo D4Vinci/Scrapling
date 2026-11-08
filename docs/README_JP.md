@@ -110,7 +110,7 @@ result.items.to_json("quotes.json")
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> は、ウェブスクレイピングと自動化向けの最も効率的なプロキシサービスです。市場最高品質の IP を提供します。コード SCRAPLING35 で 35% 割引になります。
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> は、ウェブスクレイピングと自動化向けの最も効率的なプロキシサービスです。市場最高品質の IP を提供します。SCRAPLING2X - ブラックフライデーは通信量が2倍
     </td>
   </tr>
   <tr>

@@ -110,7 +110,7 @@ result.items.to_json("quotes.json")
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - أكفأ مزود بروكسيات لجمع بيانات الويب والأتمتة، مع أعلى جودة لعناوين IP في السوق. استخدم الكود SCRAPLING35 للحصول على خصم 35%.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - أكفأ مزود بروكسيات لجمع بيانات الويب والأتمتة، مع أعلى جودة لعناوين IP في السوق. SCRAPLING2X - ضعف حجم البيانات بمناسبة الجمعة السوداء
     </td>
   </tr>
   <tr>

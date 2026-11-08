@@ -110,7 +110,7 @@ result.items.to_json("quotes.json")
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - самый эффективный провайдер прокси для веб-скрапинга и автоматизации с IP-адресами самого высокого качества на рынке. Используйте код SCRAPLING35 для получения скидки 35%.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - самый эффективный провайдер прокси для веб-скрапинга и автоматизации с IP-адресами самого высокого качества на рынке. SCRAPLING2X - Вдвое больше трафика в Чёрную пятницу
     </td>
   </tr>
   <tr>
