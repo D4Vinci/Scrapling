@@ -545,6 +545,47 @@ class TestResponseFollow:
         assert followed._session_kwargs == {"headers": {"X-Token": "abc"}, "extra_headers": {}}
         assert parent._session_kwargs["headers"] == {"Content-Length": "15", "X-Token": "abc"}
 
+    def test_follow_drops_credentials_for_a_different_origin(self):
+        parent = Request(
+            "https://example.com/account",
+            headers={
+                "Authorization": "Bearer dummy-token",
+                "Proxy-Authorization": "Basic proxy-token",
+                "Cookie": "session=dummy-session",
+                "X-Token": "abc",
+            },
+            extra_headers={"Authorization": "Bearer dummy-token", "Cookie": "session=dummy-session"},
+            auth=("user", "pass"),
+            cookies={"session": "dummy-session"},
+        )
+
+        followed = self._response(parent).follow("https://other.example/page", referer_flow=False)
+
+        assert followed._session_kwargs == {"headers": {"X-Token": "abc"}, "extra_headers": {}}
+
+    def test_follow_keeps_credentials_for_the_same_origin(self):
+        parent = Request(
+            "https://example.com:443/account",
+            headers={"Authorization": "Bearer dummy-token", "Cookie": "session=dummy-session"},
+            auth=("user", "pass"),
+            cookies={"session": "dummy-session"},
+        )
+
+        followed = self._response(parent).follow("/page", referer_flow=False)
+
+        assert followed._session_kwargs == {
+            "headers": {"Authorization": "Bearer dummy-token", "Cookie": "session=dummy-session"},
+            "auth": ("user", "pass"),
+            "cookies": {"session": "dummy-session"},
+        }
+
+    def test_follow_drops_credentials_on_scheme_downgrade(self):
+        parent = Request("https://example.com/account", headers={"Authorization": "Bearer dummy-token"})
+
+        followed = self._response(parent).follow("http://example.com/page", referer_flow=False)
+
+        assert followed._session_kwargs == {"headers": {}}
+
     def test_follow_keeps_explicit_content_length(self):
         parent = Request("https://example.com/login", method="POST", headers={"Content-Length": "15"})
 

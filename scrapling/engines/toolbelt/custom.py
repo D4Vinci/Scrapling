@@ -3,6 +3,7 @@ Functions related to custom types or type checking
 """
 
 from functools import lru_cache
+from urllib.parse import urlparse
 
 from scrapling.core.utils import log
 from scrapling.core._types import (
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
 
 
 _NON_INHERITABLE_KWARGS = frozenset({"method", "data", "json", "params", "files", "multipart"})
+_DEFAULT_PORTS = {"http": 80, "https": 443}
 
 
 class Response(Selector):
@@ -139,11 +141,25 @@ class Response(Selector):
         if not self.request or not isinstance(self.request, Request):
             raise TypeError("This response has no request set yet.")
 
+        destination = self.urljoin(url)
+        source, target = urlparse(self.request.url), urlparse(destination)
+        same_origin = (source.scheme, source.hostname, source.port or _DEFAULT_PORTS.get(source.scheme)) == (
+            target.scheme,
+            target.hostname,
+            target.port or _DEFAULT_PORTS.get(target.scheme),
+        )
+        dropped_headers = (
+            {"content-length"} if same_origin else {"content-length", "authorization", "proxy-authorization", "cookie"}
+        )
+
         # Merge original session kwargs with new kwargs (new takes precedence)
         inherited = {k: v for k, v in self.request._session_kwargs.items() if k not in _NON_INHERITABLE_KWARGS}
         for key in ("headers", "extra_headers"):
             if inherited.get(key):
-                inherited[key] = {k: v for k, v in inherited[key].items() if k.lower() != "content-length"}
+                inherited[key] = {k: v for k, v in inherited[key].items() if k.lower() not in dropped_headers}
+        if not same_origin:
+            inherited.pop("auth", None)
+            inherited.pop("cookies", None)
         session_kwargs = {**inherited, **kwargs}
 
         if referer_flow:
@@ -160,7 +176,7 @@ class Response(Selector):
             session_kwargs["google_search"] = False
 
         return Request(
-            url=self.urljoin(url),
+            url=destination,
             sid=sid or self.request.sid,
             callback=callback or self.request.callback,
             priority=priority if priority is not None else self.request.priority,
