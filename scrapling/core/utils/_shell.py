@@ -29,8 +29,8 @@ def _CookieParser(cookie_string: str) -> Generator[Tuple[str, str], None, None]:
 
 def _ParseHeaders(header_lines: List[str], parse_cookies: bool = True) -> Tuple[Dict[str, str], Dict[str, str]]:
     """Parses headers into separate header and cookie dictionaries."""
-    header_dict = dict()
-    cookie_dict = dict()
+    header_dict: Dict[str, str] = dict()
+    cookie_dict: Dict[str, str] = dict()
 
     for header_line in header_lines:
         if ":" not in header_line:
@@ -48,7 +48,9 @@ def _ParseHeaders(header_lines: List[str], parse_cookies: bool = True) -> Tuple[
             if parse_cookies:
                 if header_key.lower() == "cookie":
                     try:
-                        cookie_dict = {key: value for key, value in _CookieParser(header_value)}
+                        # Merge repeated `Cookie:` headers like curl does with multiple -H flags;
+                        # later lines win per cookie name, matching the -b/--cookie merge in shell.py.
+                        cookie_dict.update(_CookieParser(header_value))
                     except Exception as e:  # pragma: no cover
                         raise ValueError(f"Could not parse cookie string from header '{header_value}': {e}")
                 else:
