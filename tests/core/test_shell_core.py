@@ -105,6 +105,17 @@ class TestParseHeaders:
         assert headers["Content-Type"] == "text/html"
         assert "Set-Cookie" in headers  # Should contain the first Set-Cookie
         # Cookie parsing behavior depends on implementation
+
+    def test_multiple_cookie_headers_merge(self):
+        """Multiple `Cookie:` header lines merge like repeated curl -H flags, later names win"""
+        header_lines = [
+            "Cookie: session_id=abc123; theme=dark",
+            "Cookie: lang=en; theme=light",
+        ]
+        headers, cookies = _ParseHeaders(header_lines)
+
+        assert cookies == {"session_id": "abc123", "theme": "light", "lang": "en"}
+        assert "Cookie" not in headers
     
     def test_headers_without_colons(self):
         """Test headers without colons"""
