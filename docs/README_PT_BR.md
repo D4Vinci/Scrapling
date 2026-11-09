@@ -112,7 +112,7 @@ Este exemplo imprime `10` e salva as citações e seus autores em `quotes.json`.
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - o provedor de proxies mais eficiente para Web Scraping e automação, com a mais alta qualidade de IP do mercado. Use o código SCRAPLING35 para obter 35% de desconto.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - o provedor de proxies mais eficiente para Web Scraping e automação, com a mais alta qualidade de IP do mercado. SCRAPLING2X - O dobro de tráfego na Black Friday
     </td>
   </tr>
   <tr>

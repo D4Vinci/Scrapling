@@ -110,7 +110,7 @@ result.items.to_json("quotes.json")
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - 最高效的网页抓取与自动化代理提供商，拥有市场上质量最高的 IP。使用优惠码 SCRAPLING35 可享 35% 折扣。
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - 最高效的网页抓取与自动化代理提供商，拥有市场上质量最高的 IP。SCRAPLING2X - 黑色星期五享双倍流量
     </td>
   </tr>
   <tr>

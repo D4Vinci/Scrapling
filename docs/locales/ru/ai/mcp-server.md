@@ -5,7 +5,10 @@ description: "Подключите ИИ-клиент к Scrapling для сбо�
 
 # MCP-сервер Scrapling {#scrapling-mcp-server-guide}
 
+<div class="video-demos">
 <iframe width="560" height="315" src="https://www.youtube.com/embed/NHwWEiTOoPQ" title="Видеоплеер YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/rxUpSfKUd2o" title="Видеоплеер YouTube" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
 
 **MCP-сервер Scrapling** добавляет возможности сбора данных Scrapling в ваш любимый ИИ-чатбот или ИИ-агент. Через интерфейс Claude или любого другого клиента с поддержкой MCP можно в диалоге загружать сайты, извлекать данные и обходить защиту от ботов.
 

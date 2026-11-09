@@ -110,7 +110,7 @@ Cet exemple affiche `10` et enregistre les citations et leurs auteurs dans `quot
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - le fournisseur de proxys le plus efficace pour le Web Scraping et l'automatisation, avec la meilleure qualité d'IP du marché. Utilisez le code SCRAPLING35 pour obtenir 35 % de réduction.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - le fournisseur de proxys le plus efficace pour le Web Scraping et l'automatisation, avec la meilleure qualité d'IP du marché. SCRAPLING2X - Deux fois plus de trafic pour le Black Friday
     </td>
   </tr>
   <tr>

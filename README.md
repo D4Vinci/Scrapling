@@ -123,7 +123,7 @@ This prints `10` and saves the quotes and authors to `quotes.json`.
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - The most efficient proxy provider for Web Scraping and Automation with the Highest Quality IP on the market. Use code SCRAPLING35 for 35% discount.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - The most efficient proxy provider for Web Scraping and Automation with the Highest Quality IP on the market. SCRAPLING2X - 2X traffic for Black Friday
     </td>
   </tr>
   <tr>
