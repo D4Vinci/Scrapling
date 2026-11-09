@@ -165,6 +165,78 @@ class TestSitemapSpiderFlow:
         assert [r.url for r in out] == ["https://example.com/posts/1"]
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "body",
+        [
+            pytest.param(
+                b'<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                b"<url><loc>https://example.com/posts/1</loc></url>"
+                b"<url><loc>https://example.com/search?q=a&page=2</loc></url></urlset>",
+                id="unescaped-ampersand",
+            ),
+            pytest.param(
+                b'\n  <?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                b"<url><loc>https://example.com/posts/1</loc></url>"
+                b"<url><loc>https://example.com/search?q=a&amp;page=2</loc></url></urlset>",
+                id="whitespace-before-declaration",
+            ),
+        ],
+    )
+    async def test_common_sitemap_mistakes_keep_their_urls(self, body: bytes):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        out = await _collect(S()._parse_sitemap(_make_response(body)))
+        assert [r.url for r in out] == ["https://example.com/posts/1", "https://example.com/search?q=a&page=2"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "body",
+        [
+            pytest.param(
+                b'<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                b"<url><loc><![CDATA[https://example.com/search?q=a&page=2]]></loc></url></urlset>",
+                id="cdata",
+            ),
+            pytest.param(
+                '<?xml version="1.0" encoding="UTF-16"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                "<url><loc>https://example.com/search?q=a&amp;page=2</loc></url></urlset>".encode("utf-16"),
+                id="utf-16",
+            ),
+        ],
+    )
+    async def test_valid_sitemap_with_ampersand_is_unchanged(self, body: bytes):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        out = await _collect(S()._parse_sitemap(_make_response(body)))
+        assert [r.url for r in out] == ["https://example.com/search?q=a&page=2"]
+
+    @pytest.mark.asyncio
+    async def test_unescaped_ampersand_in_sitemapindex(self):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        body = (
+            b'<?xml version="1.0"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            b"<sitemap><loc>https://example.com/sitemap.php?type=posts&page=1</loc></sitemap></sitemapindex>"
+        )
+        out = await _collect(S()._parse_sitemap(_make_response(body)))
+        assert [r.url for r in out] == ["https://example.com/sitemap.php?type=posts&page=1"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("body", [b"", b"not a sitemap", b"<html><body>Not found</body></html>"])
+    async def test_non_sitemap_body_yields_nothing(self, body: bytes):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        assert await _collect(S()._parse_sitemap(_make_response(body))) == []
+
+    @pytest.mark.asyncio
     async def test_sitemapindex_descends_into_children(self):
         class S(SitemapSpider):
             name = "s"

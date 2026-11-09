@@ -1,5 +1,6 @@
 """Sitemap template spider."""
 
+import re
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
@@ -26,6 +27,9 @@ if TYPE_CHECKING:
 
 
 __all__ = ["SitemapSpider"]
+
+# A `&` that doesn't start an entity or character reference, like the raw query strings many sitemaps carry
+_BARE_AMPERSAND = re.compile(rb"&(?!(?:[A-Za-z][\w.-]*|#[0-9]+|#x[0-9A-Fa-f]+);)")
 
 
 @dataclass
@@ -118,9 +122,15 @@ class SitemapSpider(Spider):
 
         try:
             root = etree.fromstring(body)
-        except etree.XMLSyntaxError as e:
-            self.logger.warning(f"Failed to parse sitemap XML: {e}")
-            return SitemapResult()
+        except etree.XMLSyntaxError:
+            # Retry once without a bare `&` or whitespace before the XML declaration, which would otherwise drop
+            # the whole sitemap. Valid bodies never get here, so CDATA and UTF-16 sitemaps are left untouched.
+            # Not `recover=True`: after its first error, libxml2 drops every later `&amp;`, corrupting URLs.
+            try:
+                root = etree.fromstring(_BARE_AMPERSAND.sub(b"&amp;", body.lstrip()))
+            except etree.XMLSyntaxError as e:
+                self.logger.warning(f"Failed to parse sitemap XML: {e}")
+                return SitemapResult()
 
         root_name = self._get_type(root)
         if root_name == "sitemapindex":
