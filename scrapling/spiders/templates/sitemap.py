@@ -28,8 +28,14 @@ if TYPE_CHECKING:
 
 __all__ = ["SitemapSpider"]
 
-# A `&` that doesn't start an entity or character reference, like the raw query strings many sitemaps carry
-_BARE_AMPERSAND = re.compile(rb"&(?!(?:[A-Za-z][\w.-]*|#[0-9]+|#x[0-9A-Fa-f]+);)")
+# A CDATA section (group 1, kept as is since its content is literal), or a `&` that doesn't start an entity or
+# character reference, like the raw query strings many sitemaps carry
+_BARE_AMPERSAND = re.compile(rb"(<!\[CDATA\[.*?\]\]>)|&(?!(?:[A-Za-z][\w.-]*|#[0-9]+|#x[0-9A-Fa-f]+);)", re.DOTALL)
+
+
+def _escape_bare_ampersands(body: bytes) -> bytes:
+    """Escape every bare `&` in an ASCII-compatible XML body, leaving CDATA sections untouched."""
+    return _BARE_AMPERSAND.sub(lambda m: m[1] or b"&amp;", body)
 
 
 @dataclass
@@ -122,12 +128,15 @@ class SitemapSpider(Spider):
 
         try:
             root = etree.fromstring(body)
-        except etree.XMLSyntaxError:
+        except etree.XMLSyntaxError as e:
             # Retry once without a bare `&` or whitespace before the XML declaration, which would otherwise drop
-            # the whole sitemap. Valid bodies never get here, so CDATA and UTF-16 sitemaps are left untouched.
+            # the whole sitemap. The fixes work on bytes, so skip UTF-16/32 bodies (a NUL in the first 4 bytes).
             # Not `recover=True`: after its first error, libxml2 drops every later `&amp;`, corrupting URLs.
+            if b"\x00" in body[:4]:
+                self.logger.warning(f"Failed to parse sitemap XML: {e}")
+                return SitemapResult()
             try:
-                root = etree.fromstring(_BARE_AMPERSAND.sub(b"&amp;", body.lstrip()))
+                root = etree.fromstring(_escape_bare_ampersands(body.lstrip()))
             except etree.XMLSyntaxError as e:
                 self.logger.warning(f"Failed to parse sitemap XML: {e}")
                 return SitemapResult()

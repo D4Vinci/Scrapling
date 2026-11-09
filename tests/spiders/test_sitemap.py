@@ -215,6 +215,46 @@ class TestSitemapSpiderFlow:
         assert [r.url for r in out] == ["https://example.com/search?q=a&page=2"]
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "body",
+        [
+            pytest.param(
+                b'\n  <?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                b"<url><loc><![CDATA[https://example.com/search?q=a&page=2]]></loc></url>"
+                b"<url><loc>https://example.com/other?x=1&amp;y=2</loc></url></urlset>",
+                id="cdata-with-whitespace-before-declaration",
+            ),
+            pytest.param(
+                b'<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                b"<url><loc><![CDATA[https://example.com/search?q=a&page=2]]></loc></url>"
+                b"<url><loc>https://example.com/other?x=1&y=2</loc></url></urlset>",
+                id="cdata-with-bare-ampersand-elsewhere",
+            ),
+        ],
+    )
+    async def test_retry_leaves_cdata_untouched(self, body: bytes):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        out = await _collect(S()._parse_sitemap(_make_response(body)))
+        assert [r.url for r in out] == ["https://example.com/search?q=a&page=2", "https://example.com/other?x=1&y=2"]
+
+    @pytest.mark.asyncio
+    async def test_retry_skips_utf16_body(self):
+        """The byte-level retry would corrupt UTF-16, so a broken UTF-16 sitemap is still dropped."""
+
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml"]
+
+        body = (
+            '<?xml version="1.0" encoding="UTF-16"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            "<url><loc>https://example.com/search?q=a&page=2</loc></url></urlset>".encode("utf-16")
+        )
+        assert await _collect(S()._parse_sitemap(_make_response(body))) == []
+
+    @pytest.mark.asyncio
     async def test_unescaped_ampersand_in_sitemapindex(self):
         class S(SitemapSpider):
             name = "s"
