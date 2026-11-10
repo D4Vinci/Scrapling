@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from inspect import signature
 from urllib.parse import urljoin
 from difflib import SequenceMatcher
@@ -555,6 +556,13 @@ class Selector(SelectorsGeneration):
         if score_table:
             highest_probability = max(score_table.keys())
             if score_table[highest_probability] and highest_probability >= percentage:
+                # A relocation is a guess made after the selector missed, so
+                # the score is always visible at INFO -- the previous DEBUG-only
+                # logging let low-confidence matches pass silently.
+                log.info(
+                    f"Adaptive relocation matched {len(score_table[highest_probability])} element(s) "
+                    f"at {highest_probability}% (threshold: {percentage}%)."
+                )
                 if log.getEffectiveLevel() < 20:
                     # No need to execute this part if the logging level is not debugging
                     log.debug(f"Highest probability was {highest_probability}%")
@@ -835,7 +843,21 @@ class Selector(SelectorsGeneration):
         checks += 1
 
         if original["text"]:
-            score += SequenceMatcher(None, original["text"], data.get("text") or "").ratio()
+            # Text anchor: when the saved element carries identifying text, a
+            # candidate sharing (almost) none of it cannot be the same element,
+            # no matter how similar the surrounding structure is. Without this,
+            # structural look-alikes clear the threshold on tag/path/parent/
+            # sibling matches alone -- e.g. a deleted product title relocates
+            # to the price spans sitting in the same cards (69% at the default
+            # 40% threshold), silently corrupting the scraped data. A
+            # reworded-but-related text still scores well above the floor
+            # (e.g. "Widget-01" vs "Widget-01 (2026)" is ~0.9), so only a
+            # near-total text replacement is vetoed; that case returns [] with
+            # a warning instead of confident garbage.
+            text_ratio = SequenceMatcher(None, original["text"], data.get("text") or "").ratio()
+            if text_ratio < 0.2:
+                return 0.0
+            score += text_ratio
             checks += 1
 
         # if both don't have attributes, it still counts for something!
