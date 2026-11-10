@@ -1,5 +1,4 @@
 from pathlib import Path
-
 from inspect import signature
 from urllib.parse import urljoin
 from difflib import SequenceMatcher
