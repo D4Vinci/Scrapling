@@ -54,6 +54,53 @@ These fields are not mandatory; override the `_process_product()` method in your
 - This template most likely won't work on stores behind extra protections or password-protected ones, and if it can work at all, it will need a lot of overrides from your side.
 - Everything from `Spider` still applies: concurrency settings, delays, robots.txt compliance, checkpoints, and the lifecycle hooks.
 
+## WooCommerceSpider
+
+`WooCommerceSpider` extracts every product from any WooCommerce-powered store through its public Store API, without touching the website's HTML.
+
+```python
+from scrapling.spiders import WooCommerceSpider
+
+class MyStore(WooCommerceSpider):
+    target_website = "example.com"
+
+result = MyStore().start()
+print(result.items[0])
+```
+
+Set `target_website` to the store's domain. When it's empty, the spider falls back to the first entry in `start_urls`, then `allowed_domains`, and raises `ValueError` if all three are empty. Full URLs are normalized to their domain automatically.
+
+### How it works
+
+1. Pages through `https://<store>/wp-json/wc/store/v1/products` (100 products per page) until a page comes back empty.
+2. For every product of type `variable`, fetches `/wp-json/wc/store/v1/products/<id>/variations` and yields one item per variation; simple products are yielded directly.
+3. Prices are converted from the Store API's minor-unit integers (e.g. cents) to a decimal string using each response's own `currency_minor_unit`.
+
+### Item fields
+
+| Field         | Source                                                                         |
+|---------------|---------------------------------------------------------------------------------|
+| `name`        | Product name, plus the variation's attribute values when it's a variation       |
+| `price`       | `prices.price`, converted from minor units to a decimal string                  |
+| `category`    | First category name, or `""`                                                    |
+| `brand`       | Not exposed by the Store API; always `""`                                       |
+| `identifier`  | Product id, or variation id for a variation                                     |
+| `sku`         | Product or variation SKU, or `""` when the store doesn't set one                |
+| `stock`       | `None` when in stock, `0` when `is_in_stock` is `false`                         |
+| `image_url`   | The variation's own image, falling back to the parent product's first image     |
+| `url`         | The product's `permalink`                                                       |
+| `description` | Product description with the HTML tags stripped                                |
+| `old_price`   | `prices.regular_price` when the product is on sale and differs from `price`, else `""` |
+| `barcode`     | Not exposed by the Store API; always `""`                                       |
+
+These fields are not mandatory; override the `_process_product()` method in your subclass to change the item structure or extract different fields from the product data.
+
+### Notes and limits
+
+- The Store API is enabled by default on WooCommerce sites using the block-based cart/checkout. Stores that disabled it return a 404/403 for every request this spider makes.
+- Only published, publicly visible products are returned; the spider doesn't authenticate, so it sees exactly what an anonymous shopper sees.
+- Everything from `Spider` still applies: concurrency settings, delays, robots.txt compliance, checkpoints, and the lifecycle hooks.
+
 ### What qualifies as a platform template
 
 Platform templates are accepted for platforms that expose a uniform, machine-readable structure across many independent websites, like Shopify does. Spiders for one specific website don't belong in the library, no matter how popular the website is.
