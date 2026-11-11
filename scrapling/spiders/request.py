@@ -1,5 +1,7 @@
 import hashlib
+import json
 from io import BytesIO
+from uuid import uuid4
 from functools import cached_property
 from urllib.parse import urlparse, urlencode
 
@@ -69,6 +71,11 @@ class Request:
     def domain(self) -> str:
         return urlparse(self.url).netloc
 
+    @cached_property
+    def _stream_token(self) -> str:
+        """Identify an opaque upload per request without reading or seeking its content."""
+        return uuid4().hex
+
     def update_fingerprint(
         self,
         include_kwargs: bool = False,
@@ -83,10 +90,23 @@ class Request:
             return self._fp
 
         post_data = self._session_kwargs.get("data", {})
+        json_data = self._session_kwargs.get("json")
+        content = self._session_kwargs.get("content")
+        multipart = self._session_kwargs.get("multipart")
+        streamed_content = not multipart and content is not None and not isinstance(content, str | bytes | bytearray)
+        ordinary_body = not multipart and not streamed_content
         body = b""
-        if post_data:
+        if streamed_content:
+            # Its bytes are unknown without consuming it; isolate it from ordinary bodies below.
+            body = b""
+        elif ordinary_body and json_data is not None:
+            body = json.dumps(json_data, separators=(",", ":")).encode()
+        elif ordinary_body and content is not None:
+            body = content.encode() if isinstance(content, str) else bytes(content)
+        elif post_data:
             if isinstance(post_data, dict | list | tuple):
-                body = urlencode(post_data).encode()
+                # HTTP sessions expand dict values; curl_cffi encodes pair sequences directly.
+                body = urlencode(post_data, doseq=ordinary_body and isinstance(post_data, dict)).encode()
             elif isinstance(post_data, str):
                 body = post_data.encode()
             elif isinstance(post_data, BytesIO):
@@ -94,8 +114,7 @@ class Request:
             elif isinstance(post_data, bytes):
                 body = post_data
         else:
-            post_data = self._session_kwargs.get("json")
-            body = orjson.dumps(post_data) if post_data is not None else b""
+            body = orjson.dumps(json_data) if json_data is not None else b""
 
         params = self._session_kwargs.get("params")
         url = update_url_params(self.url, params) if params else self.url
@@ -106,6 +125,9 @@ class Request:
             "method": self._session_kwargs.get("method", "GET"),
             "url": canonicalize_url(url, keep_fragments=keep_fragments),
         }
+
+        if streamed_content:
+            data["stream"] = self._stream_token
 
         if include_kwargs:
             filtered_kwargs = {
