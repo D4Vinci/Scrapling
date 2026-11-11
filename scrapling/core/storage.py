@@ -85,6 +85,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         super().__init__(url)
         self.storage_file = storage_file
         self.lock = RLock()  # Better than Lock for reentrancy
+        self._closed = False
         # >SQLite default mode in the earlier version is 1 not 2 (1=thread-safe 2=serialized)
         # `check_same_thread=False` to allow it to be used across different threads.
         self.connection = db_connect(self.storage_file, check_same_thread=False)
@@ -106,6 +107,22 @@ class SQLiteStorageSystem(StorageSystemMixin):
         """)
         self.connection.commit()
 
+    def _ensure_open(self) -> None:
+        """Reopen the database connection if this instance was closed before.
+
+        The class-level lru_cache makes this object a singleton per constructor
+        arguments, so calling ``SQLiteStorageSystem(...)`` again after ``close()``
+        returns this same instance. Without reconnecting, every operation fails
+        with ``sqlite3.ProgrammingError``. Caller must hold ``self.lock``.
+        """
+        if getattr(self, "_closed", False):
+            self.connection = db_connect(self.storage_file, check_same_thread=False)
+            # WAL (Write-Ahead Logging) allows for better concurrency.
+            self.connection.execute("PRAGMA journal_mode=WAL")
+            self.cursor = self.connection.cursor()
+            self._setup_database()
+            self._closed = False
+
     def save(self, element: HtmlElement, identifier: str) -> None:
         """Saves the elements unique properties to the storage for retrieval and relocation later
 
@@ -116,6 +133,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         url = self._get_base_url()
         element_data = _StorageTools.element_to_dict(element)
         with self.lock:
+            self._ensure_open()
             self.cursor.execute(
                 """
                 INSERT OR REPLACE INTO storage (url, identifier, element_data)
@@ -134,6 +152,7 @@ class SQLiteStorageSystem(StorageSystemMixin):
         """
         url = self._get_base_url()
         with self.lock:
+            self._ensure_open()
             self.cursor.execute(
                 "SELECT element_data FROM storage WHERE url = ? AND identifier = ?",
                 (url, identifier),
@@ -146,10 +165,18 @@ class SQLiteStorageSystem(StorageSystemMixin):
     def close(self):
         """Close all connections. It will be useful when with some things like scrapy Spider.closed() function/signal"""
         with self.lock:
+            if getattr(self, "_closed", True):
+                # Already closed (or a partially initialized instance), nothing to do
+                return
+            self._closed = True
             self.connection.commit()
             self.cursor.close()
             self.connection.close()
 
     def __del__(self):
         """To ensure all connections are closed when the object is destroyed."""
-        self.close()
+        try:
+            self.close()
+        except Exception:
+            # Partially initialized instance or interpreter shutdown
+            pass

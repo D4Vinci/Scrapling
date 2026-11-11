@@ -280,3 +280,53 @@ class TestStorageToolsGetElementPath:
         tree = fromstring("<div>Root</div>")
         path = _StorageTools._get_element_path(tree)
         assert path == ('html', 'body', 'div',)
+
+
+class TestCloseAndReopen:
+    """Regression tests for the lru_cache'd SQLiteStorageSystem singleton.
+
+    Closing the storage (e.g. from scrapy's ``Spider.closed()`` signal) used to leave
+    the closed instance in the class-level lru_cache, so the next instantiation with
+    the same arguments returned a closed, unusable object.
+    """
+
+    def setup_method(self):
+        SQLiteStorageSystem.cache_clear()
+
+    def teardown_method(self):
+        SQLiteStorageSystem.cache_clear()
+
+    def test_reopen_after_close_returns_usable_instance(self, tmp_path):
+        db_file = str(tmp_path / "elements.db")
+        elem = fromstring("<div id='x'>hi</div>")
+
+        first = SQLiteStorageSystem(storage_file=db_file, url="https://example.com")
+        first.save(elem, "div#x")
+        first.close()
+
+        second = SQLiteStorageSystem(storage_file=db_file, url="https://example.com")
+        # The class-level lru_cache still returns the same singleton...
+        assert second is first
+        # ...but it transparently reconnects instead of raising
+        # sqlite3.ProgrammingError: Cannot operate on a closed cursor
+        second.save(elem, "div#y")
+        assert second.retrieve("div#y") is not None
+        second.close()
+
+    def test_close_is_idempotent(self, tmp_path):
+        storage = SQLiteStorageSystem(storage_file=str(tmp_path / "elements.db"))
+        storage.close()
+        # A second close (e.g. an explicit close followed by __del__) must not raise
+        storage.close()
+
+    def test_saved_data_survives_close_and_reopen(self, tmp_path):
+        db_file = str(tmp_path / "elements.db")
+        elem = fromstring("<div id='x'>hi</div>")
+
+        first = SQLiteStorageSystem(storage_file=db_file, url="https://example.com")
+        first.save(elem, "div#x")
+        first.close()
+
+        second = SQLiteStorageSystem(storage_file=db_file, url="https://example.com")
+        assert second.retrieve("div#x") is not None
+        second.close()
