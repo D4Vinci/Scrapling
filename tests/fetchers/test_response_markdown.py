@@ -125,6 +125,17 @@ STYLED_BUT_VISIBLE_HTML = """
     <p style="display:&nbsp;none">Non-breaking space note.</p>
     <p style="display:no/**/ne">Split keyword note.</p>
     <p style="opacity:0/**/5">Split number note.</p>
+    <p style="display:none;display:block">Later display note.</p>
+    <p style="display:none;display:grid">Later display value note.</p>
+    <p style="visibility:hidden;visibility:visible">Later visibility note.</p>
+    <p style="opacity:0;opacity:1">Later opacity note.</p>
+    <p style="width:0;width:10px">Later width note.</p>
+    <p style="height:0;height:auto">Later height note.</p>
+    <p style="font-size:0;font-size:1rem">Later font size note.</p>
+    <p style="height:0;height:stretch">Later stretch height note.</p>
+    <p style="display:none;display:-webkit-box">Later prefixed display note.</p>
+    <p style="width:0;width:-webkit-fill-available">Later fill available note.</p>
+    <p style="display:none;display:block flow">Later flow display note.</p>
     <slot style="color:red">Styled slot note.</slot>
   </body>
 </html>
@@ -166,6 +177,23 @@ HIDDEN_HTML = """
     <p style='--note:"unfinished\f;display:none'>Hidden after form feed in string</p>
     <p style='background:url(&nbsp;"/*);display:none;--b:"*/"'>Hidden after non-breaking space in url</p>
     <p aria-hidden="true">Hidden by aria</p>
+    <p style="display:none!important;display:block">Hidden by an important display</p>
+    <p style="display:block;display:none!important">Hidden by a later important display</p>
+    <p style="opacity:0!important;opacity:1">Hidden by an important opacity</p>
+    <p style="width:0!important;width:10px">Hidden by an important width</p>
+    <p style="display:none;display:">Hidden after an empty display</p>
+    <p style="display:none;display:blah">Hidden after an invalid display</p>
+    <p style="visibility:hidden;visibility:">Hidden after an empty visibility</p>
+    <p style="opacity:0;opacity:">Hidden after an empty opacity</p>
+    <p style="width:0;width:blah">Hidden after an invalid width</p>
+    <p style="visibility:collapse">Hidden by collapse</p>
+    <p style="visibility:hidden;visibility:collapse">Hidden by a collapse override</p>
+    <p style="display:none;display:run-in">Hidden after an unsupported display keyword</p>
+    <p style="display:none;display:foo bar">Hidden after unknown display words</p>
+    <p style="width:0;width:10">Hidden after a unitless width</p>
+    <p style="width:0;width:10furlongs">Hidden after an unknown unit</p>
+    <p style="font-size:0;font-size:-1px">Hidden after a negative font size</p>
+    <p style="opacity:0;opacity:-0.5">Hidden by a negative opacity</p>
     <slot hidden>Hidden by slot</slot>
     <template><p>Hidden by template</p></template>
   </body>
@@ -194,6 +222,17 @@ class TestResponseMarkdownSanitizerPrecision:
             "Non-breaking space note.",
             "Split keyword note.",
             "Split number note.",
+            "Later display note.",
+            "Later display value note.",
+            "Later visibility note.",
+            "Later opacity note.",
+            "Later width note.",
+            "Later height note.",
+            "Later font size note.",
+            "Later stretch height note.",
+            "Later prefixed display note.",
+            "Later fill available note.",
+            "Later flow display note.",
             "Styled slot note.",
         ):
             assert expected in md
@@ -234,6 +273,23 @@ class TestResponseMarkdownSanitizerPrecision:
             "Hidden after form feed in string",
             "Hidden after non-breaking space in url",
             "Hidden by aria",
+            "Hidden by an important display",
+            "Hidden by a later important display",
+            "Hidden by an important opacity",
+            "Hidden by an important width",
+            "Hidden after an empty display",
+            "Hidden after an invalid display",
+            "Hidden after an empty visibility",
+            "Hidden after an empty opacity",
+            "Hidden after an invalid width",
+            "Hidden by collapse",
+            "Hidden by a collapse override",
+            "Hidden after an unsupported display keyword",
+            "Hidden after unknown display words",
+            "Hidden after a unitless width",
+            "Hidden after an unknown unit",
+            "Hidden after a negative font size",
+            "Hidden by a negative opacity",
             "Hidden by slot",
             "Hidden by template",
         ):
