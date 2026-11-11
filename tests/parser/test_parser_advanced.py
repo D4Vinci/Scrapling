@@ -398,3 +398,150 @@ class TestSelectorsAdvanced:
         assert paragraphs.first.text == "1"
         assert paragraphs.last.text == "3"
         assert paragraphs.length == 3
+
+
+class TestBaseHrefResolution:
+    """Relative URLs must resolve against the document's first <base href>."""
+
+    def test_absolute_base(self):
+        page = Selector(
+            '<html><head><base href="https://cdn.example/assets/"></head><body></body></html>',
+            url="https://example.com/posts/1",
+        )
+        assert page.urljoin("img.png") == "https://cdn.example/assets/img.png"
+        assert page.urljoin("/root") == "https://cdn.example/root"
+
+    def test_relative_base_resolves_against_document(self):
+        page = Selector(
+            '<base href="../static/">',
+            url="https://example.com/a/b/page",
+        )
+        assert page.urljoin("app.js") == "https://example.com/a/static/app.js"
+
+    def test_root_relative_and_protocol_relative_base(self):
+        root_relative = Selector('<base href="/assets/">', url="https://example.com/deep/page")
+        assert root_relative.urljoin("x.css") == "https://example.com/assets/x.css"
+
+        protocol_relative = Selector('<base href="//cdn.example/v1/">', url="https://example.com/")
+        assert protocol_relative.urljoin("x.css") == "https://cdn.example/v1/x.css"
+
+    def test_empty_and_whitespace_base_fall_back_to_document_url(self):
+        for href in ("", "   "):
+            page = Selector(f'<base href="{href}">', url="https://example.com/dir/page")
+            assert page.urljoin("x") == "https://example.com/dir/x"
+
+    def test_first_base_with_href_wins(self):
+        page = Selector(
+            '<base target="_blank"><base href="https://first.example/"><base href="https://second.example/">',
+            url="https://example.com/",
+        )
+        assert page.urljoin("a") == "https://first.example/a"
+
+    def test_invalid_and_script_bases_are_ignored(self):
+        for href in ("http://[broken", "javascript:alert(1)", "data:text/html,x"):
+            page = Selector(f'<base href="{href}">', url="https://example.com/dir/page")
+            assert page.urljoin("x") == "https://example.com/dir/x"
+
+    def test_absolute_links_are_unaffected(self):
+        page = Selector('<base href="https://cdn.example/">', url="https://example.com/")
+        assert page.urljoin("https://other.example/abs") == "https://other.example/abs"
+
+    def test_descendant_selectors_use_document_base(self):
+        page = Selector(
+            '<html><head><base href="https://cdn.example/"></head><body><a href="x">x</a></body></html>',
+            url="https://example.com/page",
+        )
+        link = page.css("a")[0]
+        assert link.urljoin("x") == "https://cdn.example/x"
+
+    def test_documents_with_same_url_do_not_share_a_base(self):
+        first = Selector('<base href="https://one.example/">', url="https://example.com/")
+        second = Selector('<base href="https://two.example/">', url="https://example.com/")
+        assert first.urljoin("a") == "https://one.example/a"
+        assert second.urljoin("a") == "https://two.example/a"
+
+    def test_no_base_keeps_existing_behaviour(self):
+        page = Selector("<html></html>", url="https://example.com/page")
+        assert page.urljoin("relative") == "https://example.com/relative"
+        assert page.urljoin("/absolute") == "https://example.com/absolute"
+
+    def test_base_works_without_document_url(self):
+        page = Selector('<base href="https://cdn.example/a/">')
+        assert page.urljoin("x") == "https://cdn.example/a/x"
+
+    def test_template_base_is_not_document_content(self):
+        page = Selector(
+            '<html><head><template><base href="https://wrong.example/"></template>'
+            '<base href="https://right.example/"></head></html>',
+            url="https://example.com/page",
+        )
+        assert page.urljoin("x") == "https://right.example/x"
+
+        only_template = Selector(
+            '<template><base href="https://wrong.example/"></template>',
+            url="https://example.com/dir/page",
+        )
+        assert only_template.urljoin("x") == "https://example.com/dir/x"
+
+    def test_invalid_port_falls_back_to_document_url(self):
+        page = Selector('<base href="http://cdn.example:99999/">', url="https://example.com/dir/page")
+        assert page.urljoin("x") == "https://example.com/dir/x"
+
+    def test_special_scheme_without_slashes_follows_whatwg(self):
+        # Different scheme from the document: absolute URL.
+        page = Selector('<base href="http:cdn.example/assets/">', url="https://example.com/dir/page")
+        assert page.urljoin("x") == "http://cdn.example/assets/x"
+
+        # Same scheme as the document: relative reference, not a new origin.
+        same = Selector('<base href="https:cdn.example/assets/">', url="https://example.com/dir/page")
+        assert same.urljoin("x") == "https://example.com/dir/cdn.example/assets/x"
+
+        # One slash and backslashes count as slashes for special schemes.
+        one_slash = Selector('<base href="http:/cdn.example/assets/">', url="https://example.com/dir/page")
+        assert one_slash.urljoin("x") == "http://cdn.example/assets/x"
+
+        backslashes = Selector('<base href="http:\\cdn.example\\assets\\">', url="https://example.com/dir/page")
+        assert backslashes.urljoin("x") == "http://cdn.example/assets/x"
+
+        # Extra slashes still introduce the authority for special schemes.
+        triple = Selector('<base href="https:///cdn.example/assets/">', url="https://example.com/dir/page")
+        assert triple.urljoin("x") == "https://cdn.example/assets/x"
+
+        many_backslashes = Selector('<base href="https:\\\\\\cdn.example\\\\assets\\\\">', url="https://example.com/dir/page")
+        assert many_backslashes.urljoin("x") == "https://cdn.example/assets/x"
+
+        # file: is special too; backslashes become path separators.
+        file_url = Selector('<base href="file:\\cdn.example\\assets\\">', url="https://example.com/dir/page")
+        assert file_url.urljoin("x") == "file:///cdn.example/assets/x"
+
+        # UNC form keeps its host.
+        unc = Selector('<base href="file://server/share/">', url="https://example.com/dir/page")
+        assert unc.urljoin("x") == "file://server/share/x"
+
+        # A special scheme without a host cannot become a base.
+        no_host = Selector('<base href="http:">', url="https://example.com/dir/page")
+        assert no_host.urljoin("x") == "https://example.com/dir/x"
+
+    def test_nbsp_is_not_html_whitespace(self):
+        page = Selector('<base href="\u00a0https://cdn.example/a/\u00a0">', url="https://example.com/dir/page")
+        joined = page.urljoin("x")
+        assert joined.startswith("https://example.com/dir/")
+        assert "cdn.example" in joined
+
+    def test_base_scan_happens_once_per_document(self, monkeypatch):
+        page = Selector(
+            '<base href="https://cdn.example/"><a href="1">1</a><a href="2">2</a>',
+            url="https://example.com/",
+        )
+        calls = []
+        original = Selector._document_root
+
+        def counting(selector):
+            calls.append(1)
+            return original(selector)
+
+        monkeypatch.setattr(Selector, "_document_root", counting)
+        links = page.css("a")
+        assert links[0].urljoin("x") == "https://cdn.example/x"
+        assert links[1].urljoin("y") == "https://cdn.example/y"
+        assert len(calls) == 1
