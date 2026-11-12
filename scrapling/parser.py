@@ -354,7 +354,12 @@ class Selector(SelectorsGeneration):
             return TextHandler(str(self._root))
         content = tostring(self._root, encoding=self.encoding, method="html", with_tail=False)
         if isinstance(content, bytes):
-            content = content.strip().decode(self.encoding)
+            # A page can decode into bytes that its own declared encoding rejects
+            # (invalid sequences, unknown charset labels); never raise on serialize.
+            try:
+                content = content.strip().decode(self.encoding, errors="replace")
+            except (LookupError, TypeError):
+                content = content.strip().decode("utf-8", errors="replace")
         return TextHandler(content)
 
     @property
