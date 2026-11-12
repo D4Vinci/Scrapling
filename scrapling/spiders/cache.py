@@ -52,6 +52,24 @@ class ResponseCacheManager:
             log.warning(f"Failed to read cached response for {fingerprint.hex()}: {e}")
             return None
 
+    @staticmethod
+    async def _atomic_replace(source: AsyncPath, target: AsyncPath, attempts: int = 5) -> None:
+        """Replace ``target`` with ``source``, retrying briefly on sharing violations.
+
+        ``os.replace`` raises ``PermissionError`` on Windows while another writer still
+        holds the destination open, which happens when two requests for the same URL
+        finish at the same time. A short retry lets the losing writer win once the
+        winner has closed its handle.
+        """
+        for attempt in range(1, attempts + 1):
+            try:
+                await source.replace(target)
+                return
+            except PermissionError:
+                if attempt == attempts:
+                    raise
+                await anyio.sleep(0.01 * attempt)
+
     async def put(self, fingerprint: bytes, response: Response, method: str = "GET") -> None:
         await self._cache_dir.mkdir(parents=True, exist_ok=True)
         temp_path = self._cache_dir / f"{fingerprint.hex()}.{uuid4().hex}.tmp"
@@ -79,7 +97,7 @@ class ResponseCacheManager:
             async with await anyio.open_file(temp_path, "wb") as f:
                 await f.write(serialized)
 
-            await temp_path.replace(self._cache_path(fingerprint))
+            await self._atomic_replace(temp_path, self._cache_path(fingerprint))
         except Exception as e:
             if await temp_path.exists():
                 await temp_path.unlink()
