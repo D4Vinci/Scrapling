@@ -138,8 +138,14 @@ class SitemapSpider(Spider):
         self.logger.warning(f"Unknown sitemap root element: {root_name!r}")
         return SitemapResult()
 
+    @staticmethod
+    def _is_robots_txt_url(url: str) -> bool:
+        """True for a robots.txt URL, including a trailing slash after the file name."""
+        path = urlsplit(url).path.rstrip("/")
+        return path.endswith("/robots.txt") or path == "robots.txt"
+
     async def _parse_sitemap(self, response: "Response") -> AsyncGenerator[Union[Dict[str, Any], Request, None], None]:
-        if urlsplit(response.url).path.endswith("/robots.txt"):
+        if self._is_robots_txt_url(response.url):
             sitemaps = self._robots_body(response)
             if not sitemaps:
                 self.logger.warning(f"No Sitemaps found in {response.url}")
