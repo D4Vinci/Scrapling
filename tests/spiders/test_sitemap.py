@@ -81,6 +81,25 @@ async def _collect(agen: AsyncGenerator) -> list:
 
 class TestSitemapSpiderFlow:
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("canonicalize", [False, True])
+    async def test_malformed_url_does_not_drop_later_entries(self, canonicalize: bool) -> None:
+        """坏 URL 应被规则过滤，同时保留前后有效条目。"""
+
+        class S(SitemapSpider):
+            name = "s"
+
+            def rules(self):
+                return [CrawlRule(LinkExtractor(canonicalize=canonicalize))]
+
+        body = b"""<urlset>
+            <url><loc>https://example.com/first</loc></url>
+            <url><loc>https://[invalid/page</loc></url>
+            <url><loc>https://example.com/last</loc></url>
+        </urlset>"""
+        requests = await _collect(S()._parse_sitemap(_make_response(body)))
+        assert [request.url for request in requests] == ["https://example.com/first", "https://example.com/last"]
+
+    @pytest.mark.asyncio
     async def test_urlset_dispatched_through_rules(self):
         class S(SitemapSpider):
             name = "s"
