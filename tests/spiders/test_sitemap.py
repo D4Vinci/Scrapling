@@ -307,6 +307,33 @@ class TestRobotsTxt:
         assert out == []
         assert any("No Sitemaps" in r.getMessage() for r in records if r.levelno == logging.WARNING)
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "https://example.com/robots.txt/",
+            "https://example.com/robots.txt?cache=1",
+            "https://example.com:8080/robots.txt/",
+        ],
+    )
+    async def test_parse_sitemap_robots_with_trailing_slash_or_query(self, url):
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = [url]
+
+        spider = S()
+        body = b"User-agent: *\nSitemap: https://example.com/sitemap.xml\n"
+        resp = _make_response(body, url=url)
+        out = await _collect(spider._parse_sitemap(resp))
+        assert [req.url for req in out] == ["https://example.com/sitemap.xml"]
+        assert out[0].callback == spider._parse_sitemap
+
+    def test_is_robots_txt_url_rejects_lookalikes(self):
+        assert not SitemapSpider._is_robots_txt_url("https://example.com/sitemap.xml")
+        assert not SitemapSpider._is_robots_txt_url("https://example.com/not-robots.txt")
+        assert not SitemapSpider._is_robots_txt_url("https://example.com/robots.txt.bak")
+        assert SitemapSpider._is_robots_txt_url("https://example.com/robots.txt")
+
 
 class TestSitemapSpiderPickle:
     @pytest.mark.asyncio
