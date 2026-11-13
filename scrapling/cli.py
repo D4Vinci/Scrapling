@@ -120,14 +120,14 @@ def __BuildRequest(headers: List[str], cookies: str, params: str, json: Optional
 def install(force):  # pragma: no cover
     if force or not __PACKAGE_DIR__.joinpath(".scrapling_dependencies_installed").exists():
         __Execute(
-            [python_executable, "-m", "playwright", "install", "chromium"],
+            [python_executable, "-m", "patchright", "install", "chromium"],
             "Installing browsers",
         )
         __Execute(
             [
                 python_executable,
                 "-m",
-                "playwright",
+                "patchright",
                 "install-deps",
                 "chromium",
             ],
