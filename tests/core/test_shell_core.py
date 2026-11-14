@@ -51,6 +51,20 @@ class TestCookieParser:
         cookies = dict(_CookieParser('session-token="a+b/c=="; x=1'))
         assert cookies == {"session-token": '"a+b/c=="', "x": "1"}
 
+    def test_semicolon_inside_quoted_value(self):
+        """A `;` inside a double-quoted value doesn't end the cookie"""
+        assert dict(_CookieParser('a="x;y"; b=2')) == {"a": '"x;y"', "b": "2"}
+        assert dict(_CookieParser('session="a;b"; x=1')) == {"session": '"a;b"', "x": "1"}
+        assert dict(_CookieParser('a="x\\";y"; b=2')) == {"a": '"x\\";y"', "b": "2"}
+
+    def test_unclosed_quoted_value_does_not_swallow_later_cookies(self):
+        """Without a closing quote the value ends at the next `;`, as before"""
+        assert dict(_CookieParser('a="x; b=2; c=3')) == {"a": '"x', "b": "2", "c": "3"}
+
+    def test_quotes_inside_a_value_are_not_quoting(self):
+        """Only a quote that starts the value opens a quoted value"""
+        assert dict(_CookieParser('a=x"y; b=2; c=z"w')) == {"a": 'x"y', "b": "2", "c": 'z"w'}
+
     def test_cookie_named_partitioned_is_kept(self):
         """`partitioned` is a valid cookie name, only the bare `Partitioned` flag is an attribute"""
         assert dict(_CookieParser("partitioned=blue; sid=abc123")) == {

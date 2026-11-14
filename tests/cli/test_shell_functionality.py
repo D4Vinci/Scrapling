@@ -94,6 +94,14 @@ class TestCurlParser:
 
         assert request.cookies == {"partitioned": "blue", "sid": "abc123", "lang": "en"}
 
+    def test_curl_with_semicolon_in_quoted_cookie_value(self, parser):
+        """Test that a `;` inside a quoted cookie value doesn't split the cookie"""
+        curl_cmd = """curl https://example.com -H 'Cookie: session="a;b"; x=1'"""
+
+        request = parser.parse(curl_cmd)
+
+        assert request.cookies == {"session": '"a;b"', "x": "1"}
+
     def test_curl_with_proxy(self, parser):
         """Test parsing curl with proxy"""
         curl_cmd = "curl https://example.com -x http://proxy:8080 -U user:pass"

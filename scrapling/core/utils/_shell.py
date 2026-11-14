@@ -13,13 +13,44 @@ _COOKIE_ATTRIBUTES = frozenset(
 )
 
 
+def _split_cookie_pairs(cookie_string: str) -> List[str]:
+    """Split a cookie string on `;`, except inside a double-quoted value like `a="x;y"`.
+
+    A quote only opens a quoted value when it starts the value, and `\\"` doesn't close it, so quotes in the middle of
+    a value (e.g. JSON) are left alone. If the closing quote is missing, the value ends at the next `;` as usual, so one
+    malformed value can't swallow the cookies after it.
+    """
+    pairs = []
+    start, length = 0, len(cookie_string)
+    while start < length:
+        end = cookie_string.find(";", start)
+        if end == -1:
+            end = length
+        equals = cookie_string.find("=", start, end)
+        if equals != -1:
+            value_start = equals + 1
+            while value_start < end and cookie_string[value_start] in " \t":
+                value_start += 1
+            if value_start < end and cookie_string[value_start] == '"':
+                position = value_start + 1
+                while position < length and cookie_string[position] != '"':
+                    position += 2 if cookie_string[position] == "\\" else 1
+                if position < length:
+                    end = cookie_string.find(";", position + 1)
+                    if end == -1:
+                        end = length
+        pairs.append(cookie_string[start:end])
+        start = end + 1
+    return pairs
+
+
 def _CookieParser(cookie_string: str) -> Generator[Tuple[str, str], None, None]:
     """Split a cookie string like `a=1; b=2` into (name, value) pairs, keeping each value as it was sent.
 
     `http.cookies.SimpleCookie` isn't used here because it stops at the first value it considers invalid (a space,
     a double quote, etc.) and silently drops that cookie and every one after it, while browsers send such values.
     """
-    for pair in cookie_string.split(";"):
+    for pair in _split_cookie_pairs(cookie_string):
         name, separator, value = pair.partition("=")
         name = name.strip()
         if not separator or not name or name.lower() in _COOKIE_ATTRIBUTES:
