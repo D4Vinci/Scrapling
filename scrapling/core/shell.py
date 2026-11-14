@@ -71,8 +71,119 @@ Request = namedtuple(
 
 # Precompiled for the prompt injection sanitizer
 _HIDDEN_XPATH = XPath(".//*[@style] | .//*[@aria-hidden='true'] | .//slot[@hidden] | .//template")
-_HIDING_DECLARATIONS = frozenset({("display", "none"), ("visibility", "hidden")})
+_HIDING_DECLARATIONS = frozenset({("display", "none"), ("visibility", "hidden"), ("visibility", "collapse")})
 _ZERO_HIDING_PROPERTIES = frozenset({"opacity", "font-size", "height", "width", "max-height", "max-width"})
+_HIDING_PROPERTIES = frozenset({"display", "visibility"}) | _ZERO_HIDING_PROPERTIES
+# Values a browser resolves on its own, so they take part in the cascade. Empty, invalid, `var()`/`calc()`
+# and global keywords are dropped by the browser and must not override an earlier declaration we can judge.
+_DISPLAY_KEYWORDS = frozenset(
+    {
+        "none",
+        "contents",
+        "block",
+        "inline",
+        "inline-block",
+        "flex",
+        "inline-flex",
+        "grid",
+        "inline-grid",
+        "table",
+        "inline-table",
+        "table-row",
+        "table-cell",
+        "table-column",
+        "table-row-group",
+        "table-header-group",
+        "table-footer-group",
+        "table-column-group",
+        "table-caption",
+        "list-item",
+        "flow-root",
+        "flow",
+        "ruby",
+        "math",
+        # Legacy flexbox spellings Chromium still accepts
+        "-webkit-box",
+        "-webkit-inline-box",
+        "-webkit-flex",
+        "-webkit-inline-flex",
+    }
+)
+_VISIBILITY_KEYWORDS = frozenset({"visible", "hidden", "collapse"})
+_SIZE_KEYWORDS = {
+    "height": frozenset(
+        {"auto", "min-content", "max-content", "fit-content", "stretch", "-webkit-fill-available", "fill-available"}
+    ),
+    "width": frozenset(
+        {"auto", "min-content", "max-content", "fit-content", "stretch", "-webkit-fill-available", "fill-available"}
+    ),
+    "max-height": frozenset(
+        {"none", "min-content", "max-content", "fit-content", "stretch", "-webkit-fill-available", "fill-available"}
+    ),
+    "max-width": frozenset(
+        {"none", "min-content", "max-content", "fit-content", "stretch", "-webkit-fill-available", "fill-available"}
+    ),
+    "font-size": frozenset(
+        {"xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large", "xxx-large", "larger", "smaller"}
+    ),
+}
+# A non-zero length needs a unit the browser knows; a bare number is only valid when it's zero
+_LENGTH_UNITS = frozenset(
+    {
+        "px",
+        "cm",
+        "mm",
+        "q",
+        "in",
+        "pt",
+        "pc",
+        "em",
+        "rem",
+        "ex",
+        "rex",
+        "ch",
+        "rch",
+        "cap",
+        "rcap",
+        "ic",
+        "ric",
+        "lh",
+        "rlh",
+        "vw",
+        "vh",
+        "vi",
+        "vb",
+        "vmin",
+        "vmax",
+        "svw",
+        "svh",
+        "svi",
+        "svb",
+        "svmin",
+        "svmax",
+        "lvw",
+        "lvh",
+        "lvi",
+        "lvb",
+        "lvmin",
+        "lvmax",
+        "dvw",
+        "dvh",
+        "dvi",
+        "dvb",
+        "dvmin",
+        "dvmax",
+        "cqw",
+        "cqh",
+        "cqi",
+        "cqb",
+        "cqmin",
+        "cqmax",
+    }
+)
+_NUMBER_VALUE_PATTERN = re_compile(r"([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(%?)")
+# Sizes reject negative and unitless non-zero values, which the browser drops instead of applying
+_LENGTH_VALUE_PATTERN = re_compile(r"\+?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?([a-z]+|%)?")
 # CSS reads CRLF, CR and FF as a single LF, which ends an unfinished string
 _CSS_NEWLINE_PATTERN = re_compile(r"\r\n?|\f")
 # Escapes, strings and unquoted `url()` tokens are matched first so a `/*`, a quote or a `;` inside them is never
@@ -99,11 +210,48 @@ def _blank_style_token(match: Match[str]) -> str:
     return " " if match.group(2) else '""'
 
 
+def _is_effective_declaration(prop: str, value: str) -> bool:
+    """Whether the browser can resolve this value on its own, so it overrides an earlier declaration.
+
+    An empty or invalid value is dropped by the browser instead of overriding, and `var()`/`calc()`
+    or a global keyword can resolve to anything, so none of them decide the cascade for us.
+    """
+    if not value:
+        return False
+    if prop == "display":
+        # Multi-keyword values (`inline flex`) are valid when every word is a known keyword
+        return all(word in _DISPLAY_KEYWORDS for word in value.split())
+    if prop == "visibility":
+        return value in _VISIBILITY_KEYWORDS
+    if prop == "opacity":
+        return _NUMBER_VALUE_PATTERN.fullmatch(value) is not None
+    if prop in _ZERO_HIDING_PROPERTIES:
+        if value in _SIZE_KEYWORDS[prop]:
+            return True
+        match = _LENGTH_VALUE_PATTERN.fullmatch(value)
+        if match is None:
+            return False
+        unit = match.group(1)
+        if unit is None:
+            return float(value) == 0
+        return unit == "%" or unit in _LENGTH_UNITS
+    return False
+
+
+def _opacity_is_zero(value: str) -> bool:
+    """Opacity clamps to [0, 1], so zero and negative values all render as fully transparent."""
+    number = value[:-1] if value.endswith("%") else value
+    return float(number) <= 0
+
+
 def _is_hidden_element(element: Any) -> bool:
     """Check if an element selected by `_HIDDEN_XPATH` is hidden from the page's readers.
 
     Inline styles are compared declaration by declaration instead of by substring, so a value that
     only starts with a zero (`opacity:0.95`) or a longer property name (`line-height:0.9`) is kept.
+    A later declaration of the same property overrides an earlier one unless that earlier one is
+    `!important`, and only values we can resolve statically take part: empty, invalid,
+    `var()`/`calc()` and global keywords keep the earlier declaration instead of overriding it.
     """
     if element.tag == "template" or element.get("aria-hidden") == "true":
         return True
@@ -112,13 +260,33 @@ def _is_hidden_element(element: Any) -> bool:
 
     style = _CSS_NEWLINE_PATTERN.sub("\n", element.get("style") or "")
     style = _STYLE_TOKEN_PATTERN.sub(_blank_style_token, style)
+
+    effective: Dict[str, str] = {}
+    important: set[str] = set()
     for declaration in style.split(";"):
         prop, _, value = declaration.partition(":")
         prop = prop.strip(" \t\n").lower()
-        value = _IMPORTANT_SUFFIX_PATTERN.sub("", value.strip(" \t\n").lower()).rstrip(" \t\n")
+        if prop not in _HIDING_PROPERTIES:
+            continue
+        value = value.strip(" \t\n").lower()
+        is_important = _IMPORTANT_SUFFIX_PATTERN.search(value) is not None
+        if is_important:
+            value = _IMPORTANT_SUFFIX_PATTERN.sub("", value).rstrip(" \t\n")
+        if not _is_effective_declaration(prop, value):
+            continue
+        if is_important:
+            important.add(prop)
+        elif prop in important:
+            continue
+        effective[prop] = value
+
+    for prop, value in effective.items():
         if (prop, value) in _HIDING_DECLARATIONS:
             return True
-        if prop in _ZERO_HIDING_PROPERTIES and _ZERO_VALUE_PATTERN.fullmatch(value):
+        if prop == "opacity":
+            if _opacity_is_zero(value):
+                return True
+        elif prop in _ZERO_HIDING_PROPERTIES and _ZERO_VALUE_PATTERN.fullmatch(value):
             return True
 
     return False
