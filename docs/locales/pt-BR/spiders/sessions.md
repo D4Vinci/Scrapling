@@ -53,7 +53,7 @@ O método `manager.add()` aceita estes argumentos:
 
 !!! note "Notas"
 
-    1. Se uma solicitação não indicar qual sessão deve usar, será usada a padrão. Ela é escolhida de uma destas formas:
+    1. Solicitações com `sid` vazio usam a sessão padrão. Ela é escolhida de uma destas formas:
         1. A primeira sessão adicionada ao gerenciador se torna a padrão.
         2. Você pode escolher outra ao adicioná-la com `default=True`.
     2. Não é preciso iniciar as sessões antes de passá-las ao gerenciador. O spider verifica quais ainda não foram iniciadas e as inicia.
@@ -106,7 +106,7 @@ class ProductSpider(Spider):
 
 O exemplo mantém a instância do navegador e consulta seu histórico de respostas de API uma vez em `on_close()`, antes de fechar as sessões. O histórico inclui todas as páginas de produtos e continua legível depois do fechamento. Capturas pendentes não são aguardadas, e os limites do histórico continuam valendo.
 
-O parâmetro `sid` indica qual sessão o spider deve usar em cada solicitação. Se você chamar `response.follow()` sem `sid`, o ID da sessão será herdado da solicitação original.
+`sid` indica qual sessão usar em cada solicitação. Omitir esse argumento ou passar `sid=""` em `response.follow()` herda o ID da sessão da solicitação original associada. Passe outro `sid` para escolher uma sessão diferente.
 
 As sessões não precisam ser de classes diferentes. Você também pode usar várias instâncias da mesma classe com configurações distintas:
 
@@ -195,7 +195,7 @@ async def parse(self, response: Response):
 
 !!! warning "Atenção"
 
-    `response.follow()` herda os argumentos de sessão (**kwargs) da solicitação original, exceto `method`, `params`, `data`, `json`, `files` e `multipart`. Por isso, seguir um link depois de um POST envia um GET simples. Os argumentos novos têm prioridade sobre os herdados.
+    `response.follow()` não herda os argumentos de sessão (`**kwargs`) da solicitação original. Passe novamente os valores necessários para cada solicitação, como cabeçalhos, autenticação, proxy, timeout e opções do navegador. As configurações da sessão compartilhada e seus cookies continuam valendo. Seguir um link depois de um POST envia um GET, a menos que você informe outro valor de `method`.
 
 ```python
 from scrapling.spiders import Spider, Response

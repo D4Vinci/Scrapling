@@ -54,12 +54,13 @@ yield Request(
 
 ## Response.follow() {#responsefollow}
 
-콜백에서 다음 요청을 만들 때는 `response.follow()`를 권장합니다. `Request`를 직접 만드는 것보다 다음과 같은 장점이 있습니다.
+`response.follow()`는 상대 URL을 현재 페이지 URL과 결합하고 새 `Request`를 만듭니다. `sid`, `callback`, `priority`를 생략하면 연결된 `response.request`의 값을 상속합니다. 새 값을 전달하면 덮어쓸 수 있습니다.
 
-- **상대 URL**을 현재 페이지 URL 기준으로 자동 변환합니다.
-- **Referer 헤더**에 기본적으로 현재 페이지 URL을 설정합니다.
-- **세션 인수**는 원래 요청에서 상속합니다. 헤더와 프록시 설정 등이 해당합니다. 단, `method`, `params`, `data`, `json`, `files`, `multipart`는 제외하므로 링크는 일반 GET으로 가져옵니다.
-- **콜백, 세션 ID, 우선순위**를 지정하지 않으면 원래 요청의 값을 상속합니다.
+이전 요청의 헤더, 쿠키, 인증, 프록시 설정, 브라우저 설정, 기타 요청별 인수와 메타데이터를 복사하지 않습니다. 같은 사이트와 다른 사이트의 링크에 모두 적용됩니다.
+
+`sid=""`, `callback=None`, `priority=None`이면 연결된 원래 요청의 값을 상속합니다. `priority=0`을 직접 지정하면 원래 우선순위를 덮어씁니다. 메타데이터는 기본적으로 빈 값이며 중복 제거는 켜져 있습니다. 선택한 세션의 공유 설정과 쿠키 저장소는 계속 적용됩니다.
+
+POST 다음에 링크를 따라가면 다른 `method`를 지정하지 않는 한 GET을 보냅니다.
 
 ```python
 async def parse(self, response: Response):
@@ -70,6 +71,7 @@ async def parse(self, response: Response):
     yield response.follow(
         "/product/123",
         callback=self.parse_product,
+        sid="stealth",
         priority=10,
     )
 
@@ -82,23 +84,35 @@ async def parse(self, response: Response):
 ```
 
 | 인수 | 타입 | 기본값 | 설명 |
-|--------------------|------------|------------|------------------------------------------------------------|
+| --- | --- | --- | --- |
 | `url` | `str` | *필수* | 따라갈 절대 또는 상대 URL |
-| `sid` | `str` | `""` | 세션 ID입니다. 비어 있으면 원래 요청에서 상속합니다 |
-| `callback` | `callable` | `None` | 콜백 메서드입니다. `None`이면 원래 요청에서 상속합니다 |
-| `priority` | `int` | `None` | 우선순위입니다. `None`이면 원래 요청에서 상속합니다 |
+| `sid` | `str` | `""` | 비어 있으면 원래 요청의 세션 ID를 상속합니다 |
+| `callback` | `callable` | `None` | `None`이면 원래 요청의 콜백을 상속합니다 |
+| `priority` | `int` / `None` | `None` | `None`이면 원래 요청의 우선순위를 상속합니다. 직접 지정한 `0`도 기존 값을 덮어씁니다 |
 | `dont_filter` | `bool` | `False` | 중복 제거를 건너뜁니다 |
-| `meta` | `dict` | `None` | 현재 응답의 메타데이터와 합칠 메타데이터 |
-| **`referer_flow`** | `bool` | `True` | 현재 URL을 Referer 헤더로 설정합니다 |
-| `**kwargs` | | | 원래 요청의 세션 인수와 합칩니다 |
+| `meta` | `dict` | `None` | 이 요청에만 사용할 메타데이터 |
+| `referer_flow` | `bool` | `True` | 현재 페이지 URL을 Referer로 설정합니다 |
+| `**kwargs` |  |  | 세션의 가져오기 메서드에 직접 전달할 인수 |
 
 ### Referer 전달 끄기 {#disabling-referer-flow}
 
-기본적으로 `response.follow()`는 현재 페이지 URL을 `Referer` 헤더로 설정합니다. 끄려면 다음과 같이 사용하세요.
+기본적으로 `response.follow()`는 HTTP와 브라우저 요청의 `Referer`를 현재 페이지 URL로 설정합니다. 브라우저가 이 Referer를 사용하도록 `google_search=False`도 설정합니다. 이 동작을 끄려면 다음과 같이 사용하세요.
 
 ```python
 yield response.follow("/page", referer_flow=False)
 ```
+
+`referer_flow=False`이면 이 도우미는 Referer를 추가하거나 `google_search`를 바꾸지 않습니다. 직접 전달한 헤더와 세션 및 브라우저의 기본값은 계속 적용됩니다. HTTP 요청에 다른 Referer를 설정하려면 다음과 같이 사용하세요.
+
+```python
+yield response.follow(
+    "/page",
+    referer_flow=False,
+    headers={"Referer": "https://example.com/"},
+)
+```
+
+브라우저 요청에서는 `extra_headers`를 사용하고 필요하면 `google_search=False`를 설정하세요.
 
 ## 콜백 {#callbacks}
 
@@ -145,7 +159,7 @@ async def parse(self, response: Response):
         yield response.follow(next_page, callback=self.parse, priority=0)
 ```
 
-`response.follow()`에서는 새 값을 지정하지 않으면 원래 요청의 우선순위를 상속합니다.
+`response.follow()`의 `priority` 기본값은 `None`이며 원래 요청의 우선순위를 상속합니다. `priority=0`을 포함해 값을 직접 지정하면 상속할 우선순위를 덮어씁니다.
 
 ## 중복 제거 {#deduplication}
 
@@ -202,6 +216,6 @@ async def parse_product(self, response: Response):
     }
 ```
 
-`response.follow()`는 현재 응답의 메타데이터와 새 메타데이터를 합칩니다. 새 값이 우선합니다.
+`response.follow()`는 직접 전달한 `meta`만 사용합니다. 이전 값이 필요하면 필요한 키만 골라 전달하세요.
 
 스파이더 시스템은 일부 메타데이터도 자동으로 저장합니다. 예를 들어 프록시 순환을 사용하면 요청에 사용한 프록시를 `response.meta["proxy"]`에서 확인할 수 있습니다.

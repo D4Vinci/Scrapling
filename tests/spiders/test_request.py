@@ -108,9 +108,9 @@ class TestRequestProperties:
         assert json_request.update_fingerprint() != empty_request.update_fingerprint()
 
     def test_fingerprint_distinguishes_empty_json_values(self):
+        payloads: tuple[Any, ...] = ({}, [], False, 0, "")
         fingerprints = {
-            Request("https://example.com/api", method="POST", json=payload).update_fingerprint()
-            for payload in ({}, [], False, 0, "")
+            Request("https://example.com/api", method="POST", json=payload).update_fingerprint() for payload in payloads
         }
         assert len(fingerprints) == 5
 
@@ -358,7 +358,7 @@ class TestRequestPickling:
     def test_setstate_stores_callback_name(self):
         """Test that setstate correctly handles callback name."""
         request = Request("https://example.com")
-        state = {
+        state: dict[str, Any] = {
             "url": "https://example.com",
             "sid": "",
             "callback": None,
@@ -464,9 +464,9 @@ class TestRequestRestoreCallback:
 
 
 class TestResponseFollow:
-    def _response(self, request: Request) -> Response:
+    def _response(self, request: Request | None = None) -> Response:
         response = Response(
-            url=request.url,
+            url=request.url if request else "https://example.com/page",
             content=b"",
             status=200,
             reason="OK",
@@ -477,7 +477,8 @@ class TestResponseFollow:
         response.request = request
         return response
 
-    def test_follow_does_not_inherit_method_or_payload(self):
+    @pytest.mark.parametrize("url", ["/next", "https://other.example/next", "http://example.com/next"])
+    def test_follow_does_not_inherit_request_options(self, url: str) -> None:
         parent = Request(
             "https://example.com/login",
             method="POST",
@@ -486,14 +487,81 @@ class TestResponseFollow:
             params={"page": "1"},
             files={"file": b"content"},
             multipart="mime",
+            content=b"secret body",
+            headers={"Authorization": "Bearer secret", "Cookie": "session=secret", "Content-Length": "15"},
+            extra_headers={"Authorization": "Bearer browser-secret", "X-Api-Key": "secret"},
+            cookies={"session": "secret"},
+            auth=("admin", "secret"),
             proxy="http://proxy:8080",
             timeout=30,
+            page_action=lambda page: None,
+            future_option={"secret": "not copied"},
         )
 
-        followed = self._response(parent).follow("/page/2/?page=2", referer_flow=False)
+        followed = self._response(parent).follow(url, referer_flow=False)
 
-        assert followed.url == "https://example.com/page/2/?page=2"
-        assert followed._session_kwargs == {"proxy": "http://proxy:8080", "timeout": 30}
+        assert followed._session_kwargs == {}
+        assert parent._session_kwargs["headers"]["Authorization"] == "Bearer secret"
+        assert parent._session_kwargs["extra_headers"]["X-Api-Key"] == "secret"
+
+    @pytest.mark.parametrize("kwargs", [{}, {"sid": "", "callback": None, "priority": None}])
+    def test_follow_inherits_routing_with_fresh_metadata_and_options(self, kwargs: dict[str, Any]) -> None:
+        async def callback(response: Response) -> AsyncGenerator[Dict[str, Any], None]:
+            yield {"url": response.url}
+
+        parent = Request(
+            "https://example.com/page",
+            sid="private",
+            callback=callback,
+            priority=99,
+            dont_filter=True,
+            meta={"request_secret": "secret"},
+            _retry_count=2,
+        )
+        response = self._response(parent)
+        response.meta = {"response_secret": "secret"}
+
+        followed = response.follow("next?q=2", referer_flow=False, **kwargs)
+
+        assert followed.url == "https://example.com/next?q=2"
+        assert followed.sid == "private"
+        assert followed.callback is callback
+        assert followed.priority == 99
+        assert followed.dont_filter is False
+        assert followed.meta == {}
+        assert followed._retry_count == 0
+
+    @pytest.mark.parametrize("attached_request", [None, object()])
+    def test_follow_requires_an_attached_request(self, attached_request: Any) -> None:
+        response = self._response()
+        response.request = attached_request
+
+        with pytest.raises(TypeError, match=r"^This response has no request set yet\.$"):
+            response.follow("/next")
+
+    def test_follow_keeps_explicit_request_fields(self) -> None:
+        async def callback(response: Response) -> AsyncGenerator[Dict[str, Any], None]:
+            yield {"url": response.url}
+
+        async def parent_callback(response: Response) -> AsyncGenerator[Dict[str, Any], None]:
+            yield {"parent": response.url}
+
+        parent = Request(
+            "https://example.com/page", sid="private", callback=parent_callback, priority=99, meta={"old": "secret"}
+        )
+        meta = {"page": 2}
+
+        followed = self._response(parent).follow(
+            "/next", sid="public", callback=callback, priority=0, dont_filter=True, meta=meta
+        )
+
+        assert followed.sid == "public"
+        assert followed.callback is callback
+        assert followed.priority == 0
+        assert followed.dont_filter is True
+        assert followed.meta == meta == {"page": 2}
+        followed.meta["page"] = 3
+        assert meta == {"page": 2}
 
     def test_follow_to_another_host_is_a_plain_get(self):
         parent = Request(
@@ -508,7 +576,6 @@ class TestResponseFollow:
 
         assert followed.url == "https://httpbin.org/anything?page=2"
         assert followed._session_kwargs == {
-            "proxy": "http://proxy:8080",
             "headers": {"referer": "https://example.com/login"},
             "extra_headers": {"referer": "https://example.com/login"},
             "google_search": False,
@@ -522,6 +589,11 @@ class TestResponseFollow:
             {"params": {"q": "books"}},
             {"method": "POST", "files": {"file": b"content"}},
             {"method": "POST", "multipart": "mime"},
+            {"content": b"explicit body"},
+            {"headers": {"Authorization": "Bearer explicit", "referer": "https://explicit.example/"}},
+            {"extra_headers": {"Authorization": "Bearer explicit"}, "google_search": True},
+            {"cookies": {"session": "explicit"}, "auth": ("user", "explicit")},
+            {"proxy": "http://explicit:8080", "timeout": 5},
         ],
     )
     def test_follow_keeps_explicit_overrides(self, override):
@@ -531,7 +603,28 @@ class TestResponseFollow:
 
         assert followed._session_kwargs == override
 
-    def test_follow_drops_inherited_content_length(self):
+    @pytest.mark.parametrize("header_key", ["headers", "extra_headers"])
+    def test_follow_adds_referer_without_mutating_explicit_headers(self, header_key: str) -> None:
+        headers = {"X-Token": "explicit", "referer": "https://previous.example/"}
+        parent = Request("https://example.com/page", headers={"Authorization": "Bearer secret"})
+        kwargs: dict[str, Any] = {header_key: headers}
+
+        followed = self._response(parent).follow("/next", **kwargs)
+
+        assert followed._session_kwargs[header_key] == {"X-Token": "explicit", "referer": parent.url}
+        assert headers == {"X-Token": "explicit", "referer": "https://previous.example/"}
+        assert parent._session_kwargs["headers"] == {"Authorization": "Bearer secret"}
+
+    def test_follow_accepts_none_headers_with_referer_flow(self) -> None:
+        followed = self._response(Request("https://example.com/page")).follow("/next", headers=None, extra_headers=None)
+
+        assert followed._session_kwargs == {
+            "headers": {"referer": "https://example.com/page"},
+            "extra_headers": {"referer": "https://example.com/page"},
+            "google_search": False,
+        }
+
+    def test_follow_drops_all_inherited_headers(self):
         parent = Request(
             "https://example.com/login",
             method="POST",
@@ -542,7 +635,7 @@ class TestResponseFollow:
 
         followed = self._response(parent).follow("/search", referer_flow=False)
 
-        assert followed._session_kwargs == {"headers": {"X-Token": "abc"}, "extra_headers": {}}
+        assert followed._session_kwargs == {}
         assert parent._session_kwargs["headers"] == {"Content-Length": "15", "X-Token": "abc"}
 
     def test_follow_keeps_explicit_content_length(self):
