@@ -95,7 +95,7 @@ class QuotesSpider(Spider):
             yield response.follow(next_page, callback=self.parse)
 ```
 
-`response.follow()` 会自动将相对 URL 与当前页面的 URL 合并。默认情况下，它还会将当前页面的 URL 设为 `Referer` 请求头。
+`response.follow()` 将相对 URL 与当前页面 URL 合并，并创建新的 `Request`。未指定会话 ID、回调和优先级时，会继承原请求的值。元数据和单次请求选项不会继承。自动 Referer 传递仍默认启用，可通过 `referer_flow=False` 关闭。
 
 对于不同类型的页面，可以让后续请求使用不同的回调方法：
 

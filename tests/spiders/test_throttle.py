@@ -1,5 +1,8 @@
 """Tests for the AutoThrottle algorithm and its integration with the crawling engine."""
 
+from datetime import datetime, timezone
+from unittest.mock import patch
+
 import anyio
 import pytest
 
@@ -199,6 +202,27 @@ class TestParseRetryAfter:
     def test_past_http_date_is_zero(self):
         assert parse_retry_after({"Retry-After": "Wed, 21 Oct 2015 07:28:00 GMT"}) == 0.0
 
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "Sun, 06 Nov 1994 08:49:37 GMT",
+            "Sunday, 06-Nov-94 08:49:37 GMT",
+            "Sun Nov  6 08:49:37 1994",
+        ],
+    )
+    @pytest.mark.parametrize(
+        "now, expected",
+        [
+            (datetime(1994, 11, 6, 8, 48, 7, tzinfo=timezone.utc), 90.0),
+            (datetime(1994, 11, 6, 8, 50, 7, tzinfo=timezone.utc), 0.0),
+        ],
+    )
+    def test_all_http_date_formats(self, value: str, now: datetime, expected: float) -> None:
+        """Accept all three HTTP-date formats as UTC, including expired dates."""
+        with patch("scrapling.spiders.throttle.datetime") as clock:
+            clock.now.return_value = now
+            assert parse_retry_after({"Retry-After": value}) == expected
+
     def test_negative_seconds_are_clamped(self):
         assert parse_retry_after({"Retry-After": "-5"}) == 0.0
 
@@ -380,6 +404,19 @@ class TestAutoThrottleIntegration:
         engine, stats = await _crawl(spider, MockSession(latency=0.01, status=429, retry_after="3"))
 
         assert stats.autothrottle_delays["example.com"] == 3.0
+
+    @pytest.mark.anyio
+    async def test_asctime_retry_after_header_is_honored(self) -> None:
+        """Use an asctime Retry-After date for backoff instead of the default doubling."""
+        spider = MockSpider(start_delay=0.05, urls=1)
+        spider.autothrottle_max_delay = 120.0
+        session = MockSession(latency=0.01, status=429, retry_after="Sun Nov  6 08:49:37 1994")
+
+        with patch("scrapling.spiders.throttle.datetime") as clock:
+            clock.now.return_value = datetime(1994, 11, 6, 8, 48, 7, tzinfo=timezone.utc)
+            _, stats = await _crawl(spider, session)
+
+        assert stats.autothrottle_delays["example.com"] == 90.0
 
     @pytest.mark.anyio
     async def test_delays_are_included_in_the_stats_dump(self):

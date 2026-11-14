@@ -26,7 +26,7 @@ HTML = """
 
 
 def _make_response(url: str = "https://example.com/", html: str = HTML) -> Response:
-    """Build a Response with a Request attached so `response.follow()` works."""
+    """Build a Response with an attached Request."""
     resp = Response(
         url=url,
         content=html,
@@ -208,11 +208,8 @@ class TestCrawlSpider:
         assert all(r.callback == spider.parse_post for r in out)
 
     @pytest.mark.asyncio
-    async def test_rule_with_no_callback_leaves_request_callback_none(self):
-        # When CrawlRule.callback is None, response.follow() inherits the original
-        # request's callback. The original request was created with callback=None,
-        # so the resulting request's callback should also be None (engine then
-        # falls back to spider.parse).
+    @pytest.mark.parametrize("inherit_callback", [False, True])
+    async def test_rule_with_no_callback_inherits_request_callback(self, inherit_callback):
         class S(CrawlSpider):
             name = "s"
             start_urls = ["https://example.com/"]
@@ -221,8 +218,12 @@ class TestCrawlSpider:
                 return [CrawlRule(LinkExtractor(allow=r"/posts/"))]
 
         spider = S()
-        out = await _collect(spider.parse(_make_response()))
-        assert all(r.callback is None for r in out)
+        response = _make_response()
+        callback = _TestSpider().parse_post if inherit_callback else None
+        response.request = Request(response.url, callback=callback)
+        out = await _collect(spider.parse(response))
+        assert out
+        assert all(r.callback == callback for r in out)
 
     @pytest.mark.asyncio
     async def test_process_request_invoked(self):

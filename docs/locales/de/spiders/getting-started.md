@@ -95,7 +95,7 @@ class QuotesSpider(Spider):
             yield response.follow(next_page, callback=self.parse)
 ```
 
-`response.follow()` verarbeitet relative URLs automatisch und verbindet sie mit der URL der aktuellen Seite. Standardmäßig setzt es diese Seite auch als Wert des Headers `Referer`.
+`response.follow()` löst relative URLs anhand der aktuellen URL auf. Sitzungs-ID, Callback und Priorität der zugeordneten Anfrage werden übernommen, sofern Sie keine neuen Werte angeben. Metadaten und Abrufoptionen werden nicht kopiert. Standardmäßig wird die aktuelle Antwort-URL als Referer gesetzt. Mit `referer_flow=False` schalten Sie dieses Setzen des Headers aus.
 
 Für verschiedene Seitentypen können Sie Folgeanfragen an unterschiedliche Callback-Methoden senden:
 
