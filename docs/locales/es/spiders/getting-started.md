@@ -95,7 +95,7 @@ class QuotesSpider(Spider):
             yield response.follow(next_page, callback=self.parse)
 ```
 
-`response.follow()` resuelve las URL relativas con la URL de la página actual. También usa esa página como valor de la cabecera `Referer` de forma predeterminada.
+`response.follow()` resuelve las URL relativas con la URL actual. Conserva la sesión, el callback y la prioridad de la solicitud asociada, salvo que indiques otros valores. No copia los metadatos ni las opciones de obtención. Por defecto, añade la URL de la respuesta actual como Referer. Pasa `referer_flow=False` para desactivar este añadido.
 
 Puedes enviar las solicitudes a distintos callbacks según el tipo de página:
 

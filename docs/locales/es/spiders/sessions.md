@@ -53,7 +53,7 @@ El método `manager.add()` acepta estos argumentos:
 
 !!! note "Notas"
 
-    1. Si una solicitud no indica qué sesión debe usar, se usa la predeterminada. Se elige de una de estas formas:
+    1. Las solicitudes con un `sid` vacío usan la sesión predeterminada. Se elige de una de estas formas:
         1. La primera sesión que añades al gestor pasa a ser la predeterminada.
         2. Puedes elegir otra al añadirla con `default=True`.
     2. No necesitas iniciar las sesiones antes de pasarlas al gestor. El spider comprueba cuáles están sin iniciar y las inicia.
@@ -106,7 +106,7 @@ class ProductSpider(Spider):
 
 El ejemplo conserva la instancia del navegador y consulta una sola vez su historial de respuestas de API en `on_close()`, antes de cerrar las sesiones. El historial incluye todas las páginas de productos y se puede seguir leyendo después del cierre. No se espera a que terminen las capturas pendientes y se siguen aplicando los límites del historial.
 
-El parámetro `sid` indica al spider qué sesión debe usar para cada solicitud. Si llamas a `response.follow()` sin `sid`, se hereda el ID de sesión de la solicitud original.
+`sid` elige la sesión de cada solicitud. Si está vacío en `response.follow()`, se hereda la sesión de la solicitud asociada. Si el ID de sesión de la solicitud asociada está vacío, se usa la sesión predeterminada. Pasa un `sid` no vacío para elegir otra sesión.
 
 Las sesiones no tienen que ser de clases distintas. También puedes usar varias instancias de la misma clase con configuraciones diferentes:
 
@@ -195,7 +195,7 @@ async def parse(self, response: Response):
 
 !!! warning "Aviso"
 
-    `response.follow()` hereda los argumentos de sesión (**kwargs) de la solicitud original, salvo `method`, `params`, `data`, `json`, `files` y `multipart`. Por eso, al seguir un enlace después de un POST se envía un GET simple. Los argumentos nuevos tienen prioridad sobre los heredados.
+    `response.follow()` no copia las opciones de obtención de la solicitud anterior. Pasa las cabeceras, credenciales, proxy, tiempos de espera, opciones del navegador y datos que necesites. Se mantiene la herencia de `sid`, `callback` y `priority`, y siguen activos los ajustes de la sesión elegida. Seguir un enlace después de un POST envía un GET, salvo que indiques otro valor de `method`.
 
 ```python
 from scrapling.spiders import Spider, Response
