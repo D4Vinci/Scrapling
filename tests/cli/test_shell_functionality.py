@@ -51,6 +51,17 @@ class TestCurlParser:
         assert request.method == "post"
         assert request.data == "key=value&foo=bar"
 
+        # Repeated data options are joined like curl does
+        request = parser.parse("curl https://example.com -d a=1 -d b=2")
+        assert request.method == "post"
+        assert request.data == "a=1&b=2"
+
+        request = parser.parse("curl https://example.com --data-raw a=1 --data-raw b=2")
+        assert request.data == "a=1&b=2"
+
+        request = parser.parse("curl -G https://example.com -d a=1 -d b=2")
+        assert request.params == {"a": "1", "b": "2"}
+
         # JSON data
         curl_cmd = """curl https://example.com -X POST --data-raw '{"key": "value"}'"""
         request = parser.parse(curl_cmd)

@@ -157,9 +157,9 @@ class CurlParser:
         )  # Note: DevTools usually includes this in -H
 
         # Data arguments (prioritizing types common from DevTools)
-        _parser.add_argument("-d", "--data", default=None)
-        _parser.add_argument("--data-raw", default=None)  # Often used by browsers for JSON body
-        _parser.add_argument("--data-binary", default=None)
+        _parser.add_argument("-d", "--data", action="append", default=None)
+        _parser.add_argument("--data-raw", action="append", default=None)  # Often used by browsers for JSON body
+        _parser.add_argument("--data-binary", action="append", default=None)
         # Keep urlencode for completeness, though less common from browser copy/paste
         _parser.add_argument("--data-urlencode", action="append", default=[])
         _parser.add_argument("-G", "--get", action="store_true")  # Use GET and put data in URL
@@ -259,19 +259,19 @@ class CurlParser:
         # Precedence: --data-binary > --data-raw / -d > --data-urlencode
         if parsed_args.data_binary is not None:  # pragma: no cover
             try:
-                data_payload = parsed_args.data_binary.encode("utf-8")
+                data_payload = "&".join(parsed_args.data_binary).encode("utf-8")
                 log.debug("Using data from --data-binary as bytes.")
             except Exception as e:
                 log.warning(
                     f"Could not encode binary data '{parsed_args.data_binary}' as bytes: {e}. Using raw string."
                 )
-                data_payload = parsed_args.data_binary  # Fallback to string
+                data_payload = "&".join(parsed_args.data_binary)  # Fallback to string
 
         elif parsed_args.data_raw is not None:
-            data_payload = parsed_args.data_raw.lstrip("$")
+            data_payload = "&".join(parsed_args.data_raw).lstrip("$")
 
         elif parsed_args.data is not None:
-            data_payload = parsed_args.data
+            data_payload = "&".join(parsed_args.data)
 
         elif parsed_args.data_urlencode:  # pragma: no cover
             # Combine and parse urlencoded data
