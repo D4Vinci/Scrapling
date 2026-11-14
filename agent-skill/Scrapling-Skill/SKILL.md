@@ -14,6 +14,7 @@ metadata:
       anyBins:
         - pip
         - pip3
+        - uv
 ---
 
 # Scrapling
