@@ -112,7 +112,7 @@ Este exemplo imprime `10` e salva as citações e seus autores em `quotes.json`.
       </a>
     </td>
     <td>
-    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - o provedor de proxies mais eficiente para Web Scraping e automação, com a mais alta qualidade de IP do mercado. Use o código SCRAPLING35 para obter 35% de desconto.
+    <a href="https://go.nodemaven.com/scraplingoctober" target="_blank">NodeMaven</a> - o provedor de proxies mais eficiente para Web Scraping e automação, com a mais alta qualidade de IP do mercado. SCRAPLING2X - O dobro de tráfego na Black Friday
     </td>
   </tr>
   <tr>
@@ -245,6 +245,7 @@ Este exemplo imprime `10` e salva as citações e seus autores em `quotes.json`.
 <a href="https://www.webshare.io/?referral_code=48r2m2cd5uz1" target="_blank" title="The Most Reliable Proxy with Unparalleled Performance"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/webshare.png"></a>
 <a href="https://proxiware.com/?ref=scrapling" target="_blank" title="Collect Any Data. At Any Scale."><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxiware.png"></a>
 <a href="https://singaporemobileproxy.com/?utm_source=scrapling&utm_medium=sponsor&utm_campaign=paid_test_q4" target="_blank" title="Dedicated 4G/5G mobile proxies on real Singapore SIMs"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/SingaporeMobileProxy.png"></a>
+<a href="http://olostep.com/" target="_blank" title="Web Data Infrastructure for AI"><img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/olostep.png"></a>
 
 
 <!-- /sponsors -->
