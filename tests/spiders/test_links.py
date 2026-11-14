@@ -56,6 +56,11 @@ class TestExtractBasic:
         resp = _make_response('<a href="foo/bar">x</a>', url="https://example.com/sub/")
         assert LinkExtractor().extract(resp) == ["https://example.com/sub/foo/bar"]
 
+    def test_base_href_is_honoured(self):
+        html = '<base href="https://cdn.example/assets/"><a href="page">x</a>'
+        resp = _make_response(html, url="https://example.com/page")
+        assert LinkExtractor().extract(resp) == ["https://cdn.example/assets/page"]
+
     def test_empty_allow_means_match_all(self):
         resp = _make_response('<a href="/anything">x</a><a href="/else">y</a>')
         out = LinkExtractor().extract(resp)

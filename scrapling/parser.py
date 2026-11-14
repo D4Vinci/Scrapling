@@ -1,6 +1,7 @@
+import re
 from pathlib import Path
 from inspect import signature
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 from difflib import SequenceMatcher
 from re import Pattern as re_Pattern
 
@@ -87,6 +88,7 @@ class Selector(SelectorsGeneration):
         "__text",
         "__tag",
         "_raw_body",
+        "_base_cache",
     )
 
     def __init__(
@@ -101,6 +103,7 @@ class Selector(SelectorsGeneration):
         _storage: Optional[StorageSystemMixin] = None,
         storage: Any = SQLiteStorageSystem,
         storage_args: Optional[Dict] = None,
+        _base_cache: Optional[List[str]] = None,
         **_,
     ):
         """The main class that works as a wrapper for the HTML input data. Using this class, you can search for elements
@@ -129,6 +132,7 @@ class Selector(SelectorsGeneration):
             raise ValueError("Selector class needs HTML content, or root arguments to work")
 
         self.url = url
+        self._base_cache: List[str] = _base_cache if _base_cache is not None else []
         self._raw_body: str | bytes = ""
         self.encoding = encoding
         self.__huge_tree_enabled = huge_tree
@@ -224,6 +228,7 @@ class Selector(SelectorsGeneration):
             _storage=self._storage,
             keep_comments=self.__keep_comments,
             huge_tree=self.__huge_tree_enabled,
+            _base_cache=self._base_cache,
         )
 
     def __elements_convertor(self, elements: List[HtmlElement | _ElementUnicodeResult]) -> "Selectors":
@@ -234,6 +239,7 @@ class Selector(SelectorsGeneration):
         storage = self._storage
         comments = self.__keep_comments
         huge_tree = self.__huge_tree_enabled
+        base_cache = self._base_cache
 
         return Selectors(
             Selector(
@@ -244,6 +250,7 @@ class Selector(SelectorsGeneration):
                 _storage=storage,
                 keep_comments=comments,
                 huge_tree=huge_tree,
+                _base_cache=base_cache,
             )
             for el in elements
         )
@@ -334,9 +341,110 @@ class Selector(SelectorsGeneration):
 
         return cast(TextHandler, TextHandler(separator).join(_all_strings))
 
+    def _document_root(self) -> Optional[HtmlElement]:
+        """Return the root of the document this selector belongs to, if any."""
+        root = self._root
+        if self._is_text_node(root):
+            parent = root.getparent()
+            if parent is None:
+                return None
+            root = parent
+        try:
+            return root.getroottree().getroot()
+        except (AttributeError, ValueError):  # pragma: no cover - detached elements
+            return None
+
+    @staticmethod
+    def _inside_template(element: HtmlElement) -> bool:
+        """Whether the element lives inside a <template>, which is not document content."""
+        parent = element.getparent()
+        while parent is not None:
+            tag = parent.tag
+            if isinstance(tag, str) and tag.lower() == "template":
+                return True
+            parent = parent.getparent()
+        return False
+
+    def _normalise_special_scheme(self, href: str) -> str:
+        """Apply the WHATWG rule for special schemes written without a double slash.
+
+        ``https:host/path`` on an https document is a relative reference, while on a document
+        with another scheme it is an absolute URL. Backslashes count as slashes for these
+        schemes. urllib treats all of them as opaque, so normalise before joining.
+        """
+        match = re.match(r"^(https?|ftp|ws|wss|file):(.*)$", href, flags=re.IGNORECASE | re.DOTALL)
+        if not match:
+            return href
+        scheme, rest = match.group(1).lower(), match.group(2).replace("\\", "/")
+        if scheme == "file":
+            if rest.startswith("//"):
+                return f"file:{rest}"
+            return f"file:///{rest.lstrip('/')}"
+        if rest.startswith("//"):
+            # Two or more slashes always introduce the authority, even if there are extras.
+            return f"{scheme}://{rest.lstrip('/')}"
+        if scheme == urlsplit(self.url).scheme.lower():
+            return rest
+        return f"{scheme}://{rest.lstrip('/')}"
+
+    def _resolve_base_href(self, href: str) -> Optional[str]:
+        """Resolve a <base href> against the document URL, or return None if unusable."""
+        href = self._normalise_special_scheme(href)
+        try:
+            candidate = urljoin(self.url, href)
+            parts = urlsplit(candidate)
+            _ = parts.port  # raises ValueError on an invalid port
+        except ValueError:
+            return None
+        scheme = parts.scheme.lower()
+        if scheme in ("data", "javascript"):
+            return None
+        if scheme in ("http", "https", "ftp", "ws", "wss") and not parts.hostname:
+            return None
+        return candidate
+
+    def _effective_base_url(self) -> str:
+        """Return the URL that relative links must resolve against.
+
+        HTML documents can declare a base URL with the first ``<base href>`` element; browsers
+        and Scrapy resolve links against it instead of the document URL. The value is computed
+        once per document and shared with descendant selectors, which still reach the same tree
+        root through lxml.
+        """
+        if self._base_cache:
+            return self._base_cache[0]
+
+        effective = self.url
+        document_root = self._document_root()
+        if document_root is not None:
+            for element in document_root.iter():
+                tag = element.tag
+                if not isinstance(tag, str) or tag.lower() != "base":
+                    continue
+                if self._inside_template(element):
+                    continue
+                href = element.attrib.get("href")
+                if href is None:
+                    continue
+                # HTML trims ASCII whitespace only; NBSP is part of the URL.
+                href = href.strip("\t\n\f\r ")
+                if href:
+                    resolved = self._resolve_base_href(href)
+                    if resolved is not None:
+                        effective = resolved
+                # The first <base> with an href wins, even when its value is empty or invalid.
+                break
+
+        self._base_cache[:] = [effective]
+        return effective
+
     def urljoin(self, relative_url: str) -> str:
-        """Join this Selector's url with a relative url to form an absolute full URL."""
-        return urljoin(self.url, relative_url)
+        """Join this Selector's url with a relative url to form an absolute full URL.
+
+        The document's first ``<base href>`` is honoured when present, matching browser and
+        Scrapy behaviour.
+        """
+        return urljoin(self._effective_base_url(), relative_url)
 
     @property
     def attrib(self) -> AttributesHandler:
