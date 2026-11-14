@@ -219,6 +219,14 @@ class TestSitemapSpiderFlow:
         out = await _collect(spider._parse_sitemap(_make_response(body, url="https://example.com/sitemap.xml.gz")))
         assert len(out) == 3
 
+    @pytest.mark.parametrize("content_type", ["application/x-gzip", "application/gzip"])
+    def test_plain_sitemap_labeled_gzip_is_parsed(self, content_type: str) -> None:
+        class S(SitemapSpider):
+            name = "s"
+            sitemap_urls = ["https://example.com/sitemap.xml.gz"]
+
+        assert len(S()._sm_body(URLSET_XML, content_type=content_type).urls) == 3
+
     @pytest.mark.asyncio
     @pytest.mark.parametrize("damage", ["truncated", "deflate"])
     async def test_invalid_gzip_yields_nothing(self, damage: str) -> None:

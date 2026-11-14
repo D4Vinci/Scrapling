@@ -13,8 +13,12 @@ _GUNZIP_MAX_SIZE = 64 * 1024 * 1024  # 64 MiB cap, defends against gzip bombs
 
 
 def _decompress(body: bytes, content_type: Optional[str]) -> bytes:
-    """Gunzip `body` when the content-type or the magic bytes say it's gzipped, capped against gzip bombs."""
-    if (content_type and ("gzip" in content_type.lower())) or (body[:2] == _GZIP_MAGIC):
+    """Gunzip `body` when its magic bytes say it's gzipped, capped against gzip bombs.
+
+    The content-type isn't trusted: servers label plain XML as `application/x-gzip`, and the HTTP client already
+    undoes `Content-Encoding: gzip`, so only the bytes tell whether there is anything left to gunzip.
+    """
+    if body[:2] == _GZIP_MAGIC:
         out = bytearray()
         try:
             with GzipFile(fileobj=BytesIO(body)) as f:
