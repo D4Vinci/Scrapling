@@ -279,9 +279,12 @@ class LinkExtractor:
         Used by `SitemapSpider` to dispatch sitemap URLs through `CrawlRule`s without
         needing a `Response`.
         """
-        if self.canonicalize:
-            url = canonicalize_url(url, keep_fragments=self.keep_fragment)
-        return self._url_passes(url)
+        try:
+            if self.canonicalize:
+                url = canonicalize_url(url, keep_fragments=self.keep_fragment)
+            return self._url_passes(url)
+        except ValueError:
+            return False
 
     def _url_passes(self, url: str) -> bool:
         if url.split("://", 1)[0] not in valid_schemas:
