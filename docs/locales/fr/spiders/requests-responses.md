@@ -54,12 +54,13 @@ yield Request(
 
 ## Response.follow() {#responsefollow}
 
-`response.follow()` est la méthode recommandée pour créer de nouvelles requêtes dans un callback. Elle offre plusieurs avantages par rapport à la création directe d’objets `Request` :
+`response.follow()` crée un nouvel objet `Request` et résout les URL relatives à partir de l’URL de la réponse. Elle conserve la session, le callback et la priorité associés, sauf si vous fournissez de nouvelles valeurs.
 
-- Les **URL relatives** sont résolues à partir de l’URL de la page actuelle.
-- L’**en-tête Referer** utilise l’URL de la page actuelle par défaut.
-- Les **arguments de session** de la requête d’origine sont repris, comme les en-têtes et les réglages du proxy, sauf `method`, `params`, `data`, `json`, `files` et `multipart`. Les liens sont donc suivis avec de simples requêtes GET.
-- Le **callback, l’identifiant de session et la priorité** sont repris de la requête d’origine si vous ne les indiquez pas.
+`sid=""`, `callback=None` et `priority=None` reprennent les valeurs de la requête associée. `priority=0` remplace explicitement la priorité héritée. Les métadonnées sont vides par défaut. Les en-têtes, cookies, identifiants, réglages du proxy et options de récupération de la requête précédente ne sont pas copiés, même vers le même domaine.
+
+Les réglages et le stockage de cookies de la session choisie restent actifs. Pour éviter les réglages propres à une session, choisissez une autre session avec `sid`.
+
+Suivre un lien après un POST envoie un GET, sauf si vous indiquez une autre valeur pour `method`.
 
 ```python
 async def parse(self, response: Response):
@@ -70,6 +71,7 @@ async def parse(self, response: Response):
     yield response.follow(
         "/product/123",
         callback=self.parse_product,
+        sid="stealth",
         priority=10,
     )
 
@@ -82,23 +84,35 @@ async def parse(self, response: Response):
 ```
 
 | Argument | Type | Valeur par défaut | Description |
-|----------|------|-------------------|-------------|
-| `url` | `str` | *obligatoire* | URL à suivre, absolue ou relative |
-| `sid` | `str` | `""` | Identifiant de session. Repris de la requête d’origine s’il est vide |
-| `callback` | `callable` | `None` | Méthode callback. Reprise de la requête d’origine si la valeur est `None` |
-| `priority` | `int` | `None` | Priorité. Reprise de la requête d’origine si la valeur est `None` |
+| --- | --- | --- | --- |
+| `url` | `str` | *obligatoire* | URL absolue ou relative |
+| `sid` | `str` | `""` | Si vide, reprend la session de la requête associée |
+| `callback` | `callable` | `None` | Si `None`, reprend le callback de la requête associée |
+| `priority` | `int` ou `None` | `None` | Si `None`, reprend la priorité associée ; `0` la remplace explicitement |
 | `dont_filter` | `bool` | `False` | Autorise les requêtes en double |
-| `meta` | `dict` | `None` | Métadonnées combinées avec celles de la réponse |
-| **`referer_flow`** | `bool` | `True` | Utilise l’URL actuelle comme en-tête Referer |
-| `**kwargs` | | | Combinés avec les arguments de session de la requête d’origine |
+| `meta` | `dict` | `None` | Métadonnées de cette requête uniquement, vides par défaut |
+| `referer_flow` | `bool` | `True` | Ajoute l’URL de la réponse actuelle comme Referer |
+| `**kwargs` | |  | Options explicites transmises à la session |
 
 ### Désactiver l’envoi de Referer {#disabling-referer-flow}
 
-Par défaut, `response.follow()` utilise l’URL de la page actuelle comme en-tête `Referer`. Pour le désactiver :
+`referer_flow=True` reste la valeur par défaut. `follow()` ajoute l’URL actuelle comme Referer pour HTTP et le navigateur, et définit `google_search=False`. Elle ne copie pas les en-têtes de la requête précédente. Pour désactiver ces valeurs automatiques :
 
 ```python
 yield response.follow("/page", referer_flow=False)
 ```
+
+Avec `referer_flow=False`, la méthode n’ajoute pas de Referer et ne change pas `google_search`. Les en-têtes fournis et les réglages par défaut de la session ou du moteur restent actifs. Pour choisir un autre Referer pour HTTP :
+
+```python
+yield response.follow(
+    "/page",
+    referer_flow=False,
+    headers={"Referer": "https://example.com/"},
+)
+```
+
+Pour le navigateur, utilisez `extra_headers` et définissez `google_search=False` si nécessaire.
 
 ## Callbacks {#callbacks}
 
@@ -145,7 +159,7 @@ async def parse(self, response: Response):
         yield response.follow(next_page, callback=self.parse, priority=0)
 ```
 
-Avec `response.follow()`, la priorité est reprise de la requête d’origine, sauf si vous en définissez une autre.
+Sans `priority`, `response.follow()` reprend la priorité de la requête associée. Passez `priority=0` pour la remettre explicitement à zéro.
 
 ## Supprimer les doublons {#deduplication}
 
@@ -202,6 +216,6 @@ async def parse_product(self, response: Response):
     }
 ```
 
-Avec `response.follow()`, les métadonnées de la réponse actuelle sont combinées avec les nouvelles valeurs fournies. Les nouvelles valeurs ont priorité.
+`response.follow()` utilise uniquement les métadonnées fournies dans `meta`. Elle ne les combine pas avec celles de la réponse précédente. Transmettez les clés nécessaires à la nouvelle requête.
 
 Le système de spiders enregistre aussi certaines métadonnées automatiquement. Par exemple, quand la rotation des proxies est active, le proxy utilisé pour une requête est disponible dans `response.meta["proxy"]`.

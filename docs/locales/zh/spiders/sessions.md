@@ -55,7 +55,7 @@ class MySpider(Spider):
 
 !!! note "注意事项"
 
-    1. 如果请求没有指定会话，就会使用默认会话。默认会话通过以下两种方式之一确定：
+    1. `sid` 为空的请求使用默认会话。默认会话通过以下两种方式之一确定：
         1. 第一个加入管理器的会话会自动成为默认会话。
         2. 添加会话时传入 `default=True`。
     2. 不需要自行提前启动传入的会话实例。Spider 会检查所有会话，并启动尚未运行的会话。
@@ -108,7 +108,7 @@ class ProductSpider(Spider):
 
 示例保留了浏览器实例，并在会话关闭前，通过 `on_close()` 读取一次已保存的 API 历史记录。记录涵盖所有商品页面，关闭后仍可读取。尚未完成的记录不会被等待，记录数量限制仍然有效。
 
-关键是 `sid` 参数，它告诉 Spider 每个请求应该使用哪个会话。调用 `response.follow()` 时如果未指定 `sid`，就会继承原请求的会话 ID。
+`sid` 指定每个请求使用的会话。调用 `response.follow()` 时省略它或传入 `sid=""`，会继承关联的原请求的会话 ID。如需选择其他会话，请传入对应的 `sid`。
 
 会话不必来自不同的类。也可以使用同一个类的多个实例，并为它们设置不同的配置：
 
@@ -197,7 +197,7 @@ async def parse(self, response: Response):
 
 !!! warning
 
-    `response.follow()` 会继承原请求的会话参数（**kwargs），但不包括 `method`、`params`、`data`、`json`、`files` 和 `multipart`。因此，POST 请求之后跟随链接时，会发送普通 GET 请求。新传入的参数优先于继承的参数。
+    `response.follow()` 不会继承原请求的会话参数（`**kwargs`）。请重新传入此请求所需的请求头、认证、代理、超时和浏览器选项等值。共享会话的设置和 Cookie 存储仍然生效。 在 POST 之后跟随链接会发送 GET，除非传入不同的 `method`。
 
 ```python
 from scrapling.spiders import Spider, Response

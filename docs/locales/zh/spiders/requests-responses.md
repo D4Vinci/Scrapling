@@ -54,12 +54,13 @@ yield Request(
 
 ## Response.follow() {#responsefollow}
 
-建议在回调中使用 `response.follow()` 创建后续请求。相比直接创建 `Request` 对象，它有以下优点：
+`response.follow()` 将相对 URL 与当前页面 URL 合并，并创建新的 `Request`。未指定 `sid`、`callback` 或 `priority` 时，它会继承关联的 `response.request` 中的值。显式传入新值即可覆盖。
 
-- **相对 URL** 会自动根据当前页面 URL 解析。
-- **Referer 请求头**默认设为当前页面 URL。
-- **会话参数**会从原请求继承，包括请求头、代理设置等，但不包括 `method`、`params`、`data`、`json`、`files` 和 `multipart`。因此，跟随链接时会发送普通 GET 请求。
-- **回调、会话 ID 和优先级**如果未指定，会从原请求继承。
+它不会复制上一个请求的请求头、Cookie、认证信息、代理设置、浏览器选项、其他单次请求参数或元数据。同站点和跨站点链接都遵循此规则。
+
+`sid=""`、`callback=None` 和 `priority=None` 会继承关联的原请求的值。显式设置 `priority=0` 会覆盖原优先级。元数据默认为空，去重保持启用。所选会话的共享设置和 Cookie 存储仍然生效。
+
+在 POST 之后跟随链接会发送 GET，除非传入不同的 `method`。
 
 ```python
 async def parse(self, response: Response):
@@ -70,6 +71,7 @@ async def parse(self, response: Response):
     yield response.follow(
         "/product/123",
         callback=self.parse_product,
+        sid="stealth",
         priority=10,
     )
 
@@ -82,23 +84,35 @@ async def parse(self, response: Response):
 ```
 
 | 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
+| --- | --- | --- | --- |
 | `url` | `str` | *必填* | 要跟随的 URL，可为绝对或相对 URL |
-| `sid` | `str` | `""` | 会话 ID，为空时继承原请求的值 |
-| `callback` | `callable` | `None` | 回调方法，为 `None` 时继承原请求的值 |
-| `priority` | `int` | `None` | 优先级，为 `None` 时继承原请求的值 |
+| `sid` | `str` | `""` | 为空时继承原请求的会话 ID |
+| `callback` | `callable` | `None` | 为 `None` 时继承原请求的回调 |
+| `priority` | `int` / `None` | `None` | 为 `None` 时继承原优先级；显式传入 `0` 也会覆盖原值 |
 | `dont_filter` | `bool` | `False` | 跳过去重 |
-| `meta` | `dict` | `None` | 与响应现有元数据合并的元数据 |
-| **`referer_flow`** | `bool` | `True` | 将当前 URL 设为 Referer 请求头 |
-| `**kwargs` | | | 与原请求的会话参数合并 |
+| `meta` | `dict` | `None` | 仅用于此请求的元数据 |
+| `referer_flow` | `bool` | `True` | 将当前页面 URL 设为 Referer |
+| `**kwargs` |  |  | 显式传给会话获取方法的参数 |
 
 ### 关闭 Referer 传递 {#disabling-referer-flow}
 
-默认情况下，`response.follow()` 会将 `Referer` 请求头设为当前页面 URL。可以这样关闭：
+默认情况下，`response.follow()` 会将 HTTP 和浏览器请求的 `Referer` 设为当前页面 URL，同时设置 `google_search=False`，让浏览器使用此 Referer。可以这样关闭：
 
 ```python
 yield response.follow("/page", referer_flow=False)
 ```
+
+设置 `referer_flow=False` 后，此方法不会添加 Referer，也不会修改 `google_search`。显式传入的请求头以及会话和浏览器的默认设置仍然生效。为 HTTP 请求设置其他 Referer 的写法：
+
+```python
+yield response.follow(
+    "/page",
+    referer_flow=False,
+    headers={"Referer": "https://example.com/"},
+)
+```
+
+浏览器请求使用 `extra_headers`，并在需要时设置 `google_search=False`。
 
 ## 回调 {#callbacks}
 
@@ -145,7 +159,7 @@ async def parse(self, response: Response):
         yield response.follow(next_page, callback=self.parse, priority=0)
 ```
 
-使用 `response.follow()` 时，如果没有指定新的优先级，就会继承原请求的优先级。
+`response.follow()` 的 `priority` 默认为 `None`，会继承原请求的优先级。显式传入的值会覆盖继承的优先级，包括 `priority=0`。
 
 ## 去重 {#deduplication}
 
@@ -202,6 +216,6 @@ async def parse_product(self, response: Response):
     }
 ```
 
-使用 `response.follow()` 时，当前响应的元数据会与新传入的元数据合并，新值优先。
+`response.follow()` 只使用显式传入的 `meta`。如需复用之前的值，请选择并传入需要的键。
 
 Spider 系统也会自动保存一些元数据。例如，启用代理轮换后，可以通过 `response.meta["proxy"]` 获取该请求使用的代理。

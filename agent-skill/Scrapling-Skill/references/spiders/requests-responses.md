@@ -43,12 +43,13 @@ yield Request(
 
 ## Response.follow()
 
-`response.follow()` is the recommended way to create follow-up requests inside callbacks. It offers several advantages over constructing `Request` objects directly:
+`response.follow()` joins a relative URL with the current page URL and creates a new `Request`. When you leave `sid`, `callback`, or `priority` unset, it uses those values from the attached `response.request`. You can pass new values to override them.
 
-- **Relative URLs** are resolved automatically against the current page URL
-- **Referer header** is set to the current page URL by default
-- **Session kwargs** from the original request are inherited (headers, proxy settings, etc.), except `method`, `params`, `data`, `json`, `files`, and `multipart`, so followed links are plain GETs
-- **Callback, session ID, and priority** are inherited from the original request if not specified
+Headers, cookies, authentication, proxy settings, browser options, and metadata are not copied from the previous request. Pass the fetch options and metadata that the next request needs. This applies to both same-site and cross-site links.
+
+Metadata starts empty and duplicate filtering stays enabled. Shared session settings and cookie jars still apply. Referer flow remains enabled by default.
+
+Following a link after a POST sends a GET unless you pass a different `method`.
 
 ```python
 async def parse(self, response: Response):
@@ -59,6 +60,7 @@ async def parse(self, response: Response):
     yield response.follow(
         "/product/123",
         callback=self.parse_product,
+        sid="stealth",
         priority=10,
     )
 
@@ -70,24 +72,36 @@ async def parse(self, response: Response):
     )
 ```
 
-| Argument           | Type       | Default    | Description                                                |
-|--------------------|------------|------------|------------------------------------------------------------|
-| `url`              | `str`      | *required* | URL to follow (absolute or relative)                       |
-| `sid`              | `str`      | `""`       | Session ID (inherits from original request if empty)       |
-| `callback`         | `callable` | `None`     | Callback method (inherits from original request if `None`) |
-| `priority`         | `int`      | `None`     | Priority (inherits from original request if `None`)        |
-| `dont_filter`      | `bool`     | `False`    | Skip deduplication                                         |
-| `meta`             | `dict`     | `None`     | Metadata (merged with existing response meta)              |
-| **`referer_flow`** | `bool`     | `True`     | Set current URL as Referer header                          |
-| `**kwargs`         |            |            | Merged with original request's session kwargs              |
+| Argument      | Type       | Default    | Description                                                |
+|---------------|------------|------------|------------------------------------------------------------|
+| `url`         | `str`      | *required* | URL to follow (absolute or relative)                        |
+| `sid`         | `str`      | `""`       | Empty inherits the parent session ID                       |
+| `callback`    | `callable` | `None`     | `None` inherits the parent callback                        |
+| `priority`    | `int` or `None` | `None` | `None` inherits parent priority; explicit `0` overrides it |
+| `dont_filter` | `bool`     | `False`    | Skip deduplication                                         |
+| `meta`        | `dict`     | `None`     | Metadata for this request only                             |
+| `referer_flow` | `bool`     | `True`     | Set the current page URL as Referer                        |
+| `**kwargs`    |            |            | Explicit arguments passed to the session's fetch method    |
 
-### Disabling Referer Flow
+### Disabling Referer Flow {#disabling-referer-flow}
 
-By default, `response.follow()` sets the `Referer` header to the current page URL. To disable this:
+By default, `response.follow()` sets the current page URL as `Referer` for HTTP and browser requests. It also sets `google_search=False` so the browser uses this Referer. To disable this behavior:
 
 ```python
 yield response.follow("/page", referer_flow=False)
 ```
+
+With `referer_flow=False`, the helper does not add a Referer or change `google_search`. Headers you pass and session or browser defaults still apply. To set a different Referer for an HTTP request:
+
+```python
+yield response.follow(
+    "/page",
+    referer_flow=False,
+    headers={"Referer": "https://example.com/"},
+)
+```
+
+For a browser request, use `extra_headers` and set `google_search=False` if needed.
 
 ## Callbacks
 
@@ -134,7 +148,7 @@ async def parse(self, response: Response):
         yield response.follow(next_page, callback=self.parse, priority=0)
 ```
 
-When using `response.follow()`, the priority is inherited from the original request unless you specify a new one.
+`response.follow()` inherits priority from the attached request when `priority` is `None`. Pass a number, including `0`, to override it.
 
 ## Deduplication
 
@@ -191,6 +205,6 @@ async def parse_product(self, response: Response):
     }
 ```
 
-When using `response.follow()`, the meta from the current response is merged with the new meta you provide (new values take precedence).
+`response.follow()` only uses the `meta` you pass. To carry a value forward, select it explicitly, such as `meta={"category": response.meta["category"]}`.
 
 The spider system also automatically stores some metadata. For example, the proxy used for a request is available as `response.meta["proxy"]` when proxy rotation is enabled.

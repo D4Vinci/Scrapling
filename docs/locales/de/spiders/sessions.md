@@ -55,7 +55,7 @@ Die Methode `manager.add()` nimmt diese Argumente an:
 
 !!! note "Hinweise:"
 
-    1. Wenn Sie in einer Anfrage keine Sitzung angeben, wird die Standardsitzung verwendet. Sie wird auf eine von zwei Arten festgelegt:
+    1. Anfragen mit leerem `sid` verwenden die Standardsitzung. Sie wird auf eine von zwei Arten festgelegt:
         1. Die erste hinzugefügte Sitzung wird automatisch zur Standardsitzung.
         2. Beim Hinzufügen einer Sitzung setzen Sie `default=True`.
     2. Sie müssen die übergebenen Sitzungsinstanzen nicht selbst starten. Der Spider prüft alle Sitzungen und startet die, die noch nicht laufen.
@@ -108,7 +108,7 @@ class ProductSpider(Spider):
 
 Das Beispiel behält die Browser-Instanz und liest den gespeicherten API-Verlauf einmal in `on_close()`, bevor die Sitzungen geschlossen werden. Der Verlauf enthält alle Produktseiten und bleibt auch nach dem Schließen lesbar. Noch laufende Aufzeichnungen werden nicht abgewartet. Die Speichergrenzen gelten weiterhin.
 
-Entscheidend ist der Parameter `sid`. Er sagt dem Spider, welche Sitzung er für die jeweilige Anfrage verwenden soll. Wenn Sie `response.follow()` ohne `sid` aufrufen, wird die Sitzungs-ID der ursprünglichen Anfrage übernommen.
+`sid` wählt die Sitzung einer Anfrage. Ein leerer Wert in `response.follow()` übernimmt die Sitzung der zugeordneten Anfrage. Bei leerer Sitzungs-ID der zugeordneten Anfrage wird die Standardsitzung verwendet. Mit einem nicht leeren `sid` wählen Sie eine andere Sitzung.
 
 Sitzungen müssen nicht aus unterschiedlichen Klassen stammen. Sie können auch mehrere Instanzen derselben Klasse mit verschiedenen Einstellungen verwenden:
 
@@ -197,7 +197,7 @@ async def parse(self, response: Response):
 
 !!! warning
 
-    `response.follow()` übernimmt die Sitzungsargumente (**kwargs) der ursprünglichen Anfrage, außer `method`, `params`, `data`, `json`, `files` und `multipart`. Nach einer POST-Anfrage wird ein Link daher mit einem einfachen GET abgerufen. Neue Argumente haben Vorrang vor übernommenen Werten.
+    `response.follow()` kopiert keine Abrufoptionen der vorherigen Anfrage. Übergeben Sie benötigte Header, Zugangsdaten, Proxy-Einstellungen, Zeitlimits, Browseroptionen und Anfragedaten ausdrücklich. `sid`, `callback` und `priority` werden weiterhin übernommen. Die Einstellungen der gewählten Sitzung gelten weiterhin. Wenn Sie nach einem POST einem Link folgen, wird ein GET gesendet, sofern Sie keine andere `method` angeben.
 
 ```python
 from scrapling.spiders import Spider, Response

@@ -53,7 +53,7 @@ La méthode `manager.add()` accepte ces arguments :
 
 !!! note "Notes"
 
-    1. Si une requête ne précise pas la session à utiliser, la session par défaut est choisie. Elle est définie de deux façons :
+    1. Les requêtes dont le `sid` est vide utilisent la session par défaut. Elle est définie de deux façons :
         1. La première session ajoutée au gestionnaire devient celle par défaut.
         2. Vous pouvez en choisir une autre en l’ajoutant avec `default=True`.
     2. Vous n’avez pas besoin de démarrer les sessions avant de les fournir au gestionnaire. Le spider vérifie celles qui ne sont pas encore actives et les démarre.
@@ -106,7 +106,7 @@ class ProductSpider(Spider):
 
 L’exemple conserve l’instance du navigateur et consulte une seule fois son historique de réponses d’API dans `on_close()`, avant la fermeture des sessions. L’historique couvre toutes les pages de produits et reste lisible après la fermeture. Les captures en cours ne sont pas attendues, et les limites de conservation restent appliquées.
 
-Le paramètre `sid` indique au spider quelle session utiliser pour chaque requête. Si vous appelez `response.follow()` sans `sid`, l’identifiant de session de la requête d’origine est repris.
+`sid` choisit la session de chaque requête. Si sa valeur est vide dans `response.follow()`, la session de la requête associée est reprise. Si l’identifiant de session de la requête associée est vide, la session par défaut est utilisée. Fournissez un `sid` non vide pour choisir une autre session.
 
 Les sessions ne doivent pas forcément être de classes différentes. Vous pouvez aussi utiliser plusieurs instances de la même classe avec des réglages différents :
 
@@ -195,7 +195,7 @@ async def parse(self, response: Response):
 
 !!! warning "Attention"
 
-    `response.follow()` reprend les arguments de session (**kwargs) de la requête d’origine, sauf `method`, `params`, `data`, `json`, `files` et `multipart`. Suivre un lien après un POST envoie donc un simple GET. Les nouveaux arguments ont priorité sur ceux qui sont repris.
+    `response.follow()` ne copie pas les options de récupération de la requête précédente. Fournissez les en-têtes, identifiants, réglages du proxy, délais, options du navigateur et données nécessaires. L’héritage de `sid`, `callback` et `priority` reste actif, ainsi que les réglages de la session choisie. Suivre un lien après un POST envoie un GET, sauf si vous indiquez une autre valeur pour `method`.
 
 ```python
 from scrapling.spiders import Spider, Response

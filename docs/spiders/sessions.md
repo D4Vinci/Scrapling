@@ -55,7 +55,7 @@ The `manager.add()` method takes:
 
 !!! note "Notes:"
 
-    1. In all requests, if you don't specify which session to use, the default session is used. The default session is determined in one of two ways:
+    1. Requests with an empty `sid` use the default session. The default session is determined in one of two ways:
         1. The first session you add to the managed becomes the default automatically.
         2. The session that gets `default=True` while added to the manager.
     2. The instances you pass of each session don't have to be already started by you; the spider checks on all sessions if they are not already started and starts them.
@@ -108,7 +108,7 @@ class ProductSpider(Spider):
 
 The example keeps the browser instance and reads its retained API history once in `on_close()`, before the sessions close. The history covers all product pages and stays readable after closure. Pending captures are not awaited, and retention limits still apply.
 
-The key is the `sid` parameter - it tells the spider which session to use for each request. When you call `response.follow()` without `sid`, the session ID from the original request is inherited.
+The `sid` parameter selects the session for each request. When you call `response.follow()` without `sid`, it inherits the attached request's session ID. Pass a different `sid` to change sessions.
 
 Note that the sessions don't have to be from different classes only, but can be the same session, but different instances with different configurations, for example, like below:
 
@@ -197,7 +197,7 @@ async def parse(self, response: Response):
 
 !!! warning
 
-    Session arguments (**kwargs) passed from the original request are inherited by `response.follow()`, except `method`, `params`, `data`, `json`, `files`, and `multipart`, so following a link after a POST issues a plain GET. New kwargs take precedence over inherited ones.
+    `response.follow()` does not inherit fetch options or metadata. Pass headers, authentication, proxy settings, browser options, or request data again when needed. Session ID, callback, and priority still inherit from the attached request when omitted. Settings and cookie jars on the selected session still apply. Following a link after a POST sends a GET unless you pass a different `method`.
 
 ```python
 from scrapling.spiders import Spider, Response
