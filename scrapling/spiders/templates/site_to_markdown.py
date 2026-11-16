@@ -84,12 +84,15 @@ class ContentSpider(CrawlSpider):
         return item
 
     def _filename_for(self, url: str) -> str:
-        """Build a unique filesystem-safe name from the URL, suffixing a hash on collisions."""
+        """Build a unique filesystem-safe name from the URL, suffixing a hash on collisions.
+
+        Names are compared case-insensitively, as `/About` and `/about` are the same file on Windows and macOS.
+        """
         parsed = urlparse(url)
         name = re_sub(r"[^A-Za-z0-9._-]+", "-", f"{parsed.netloc}{parsed.path}".strip("/")).strip("-")[:150] or "index"
-        if name in self._used_names:
+        if name.casefold() in self._used_names:
             name = f"{name}-{sha1(url.encode(), usedforsecurity=False).hexdigest()[:8]}"
-        self._used_names.add(name)
+        self._used_names.add(name.casefold())
         return name
 
 
