@@ -148,6 +148,17 @@ class TestSiteToMarkdownOutputDir:
         suffixed = (names - {"example.com.md"}).pop()
         assert suffixed.startswith("example.com-") and suffixed.endswith(".md")
 
+    @pytest.mark.asyncio
+    async def test_names_differing_only_in_case_do_not_overwrite_each_other(self, tmp_path):
+        spider = _spider(output_dir=str(tmp_path))
+        for url, markdown in (("https://example.com/About", "upper"), ("https://example.com/about", "lower")):
+            await spider.on_scraped_item({"url": url, "title": "", "markdown": markdown})
+
+        # Compare case-insensitively: Windows and macOS would map both names to the same file
+        names = {f.name.casefold() for f in tmp_path.iterdir()}
+        assert len(names) == 2
+        assert {f.read_text(encoding="utf-8") for f in tmp_path.iterdir()} == {"upper", "lower"}
+
     def test_filenames_are_slugified_from_the_url(self):
         spider = _spider()
         assert spider._filename_for("https://example.com/") == "example.com"
