@@ -1,3 +1,4 @@
+import codecs
 from email.message import Message
 from email.utils import collapse_rfc2231_value
 from functools import lru_cache
@@ -49,6 +50,28 @@ SHADOW_SNAPSHOT_JS = r"""
 """
 
 
+def _normalize_encoding_label(label: Optional[str], default: str = "utf-8") -> str:
+    """Maps a charset label to a spelling that libxml2/iconv can resolve.
+
+    Servers (and therefore `curl_cffi`) frequently declare the Python codec
+    spelling, e.g. `euc_kr` or `shift_jis`, while libxml2 only knows the IANA
+    spelling (`euc-kr`, `shift-jis`). Passing the raw label to
+    `lxml.html.HTMLParser(encoding=...)` raises `LookupError: unknown encoding`
+    even though `codecs` decodes the very same bytes fine. Labels that libxml2
+    already accepts are returned untouched, so `iso-8859-1`-style spellings are
+    preserved. A label Python cannot resolve either is passed through as-is:
+    surfacing it stays the caller's decision, exactly like before.
+    """
+    candidate = (label or "").strip().strip("'\"")
+    if not candidate:
+        return default
+    try:
+        codecs.lookup(candidate)
+    except (LookupError, TypeError, ValueError):
+        return candidate
+    return candidate.replace("_", "-") if "_" in candidate else candidate
+
+
 class ResponseFactory:
     """
     Factory class for creating `Response` objects from various sources.
@@ -65,7 +88,8 @@ class ResponseFactory:
         """Read the Content-Type charset, or use the default."""
         message = Message()
         message["content-type"] = content_type or ""
-        return collapse_rfc2231_value(message.get_param("charset") or default).strip("'\"") or default
+        charset = collapse_rfc2231_value(message.get_param("charset") or default).strip("'\"")
+        return _normalize_encoding_label(charset, default)
 
     @staticmethod
     def _text_content(headers: Dict[str, str]) -> bool:
@@ -446,7 +470,7 @@ class ResponseFactory:
                 "content": response.content,
                 "status": response.status_code,
                 "reason": response.reason,
-                "encoding": response.encoding or "utf-8",
+                "encoding": _normalize_encoding_label(response.encoding),
                 "cookies": dict(response.cookies),
                 "headers": dict(response.headers),
                 "request_headers": dict(response.request.headers) if response.request else {},
