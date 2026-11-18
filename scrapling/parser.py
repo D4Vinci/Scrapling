@@ -392,6 +392,9 @@ class Selector(SelectorsGeneration):
     def parent(self) -> Optional["Selector"]:
         """Return the direct parent of the element or ``None`` otherwise"""
         _parent = self._root.getparent()
+        # lxml points tail text at the preceding node, whose parent contains the text.
+        if _parent is not None and isinstance(self._root, _ElementUnicodeResult) and self._root.is_tail:
+            _parent = _parent.getparent()
         return self.__element_convertor(_parent) if _parent is not None else None
 
     @property

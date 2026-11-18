@@ -288,6 +288,32 @@ class TestElementNavigation:
         children = table.children
         assert len(children) == 3
 
+    @pytest.mark.parametrize("method, query", [("css", "p::text"), ("xpath", "//p/text()")])
+    def test_tail_text_parent(self, method: str, query: str) -> None:
+        """Tail text belongs to the element containing the inline child."""
+        page = Selector("<p data-sku='A'><span>$</span>19.95</p>")
+        price = getattr(page, method)(query)[0]
+        assert price.get() == "19.95"
+        assert list(price.iterancestors()) == []
+        parent = price.parent
+        assert parent is not None
+        assert parent.tag == "p"
+        assert parent.attrib["data-sku"] == "A"
+
+    def test_parent_for_other_node_types(self) -> None:
+        """Leading text and attributes belong to their own element."""
+        page = Selector("<p><span id='currency'>$</span>19.95</p>")
+        for node in (page.css("span::text")[0], page.xpath("//span/@id")[0]):
+            parent = node.parent
+            assert parent is not None
+            assert parent.attrib["id"] == "currency"
+
+        element_parent = page.css("span")[0].parent
+        assert element_parent is not None
+        assert element_parent.tag == "p"
+        assert page.css("html")[0].parent is None
+        assert page.xpath("string(//span)")[0].parent is None
+
     def test_next_and_previous_navigation(self, page):
         """Test next and previous element navigation"""
         child = page.css(".product-list")[0].find({"data-id": "1"})
