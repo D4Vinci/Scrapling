@@ -1,6 +1,9 @@
 """Tests for `XMLFeedSpider` and `CSVFeedSpider`."""
 
 import gzip
+import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
 import logging
 
 import pytest
@@ -8,6 +11,7 @@ import pytest
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.spiders.request import Request
 from scrapling.spiders.templates.feed import CSVFeedSpider, XMLFeedSpider
+from scrapling.spiders import JSONFeedSpider
 from scrapling.core._types import AsyncGenerator
 
 
@@ -309,3 +313,108 @@ class TestCSVFeedSpider:
         assert len(results) == 2
         assert all(isinstance(r, Request) for r in results)
         assert results[0].url == "https://example.com/products/1"
+
+
+class _JSONSpider(JSONFeedSpider):
+    name = "json-feed"
+    start_urls = ["https://example.com/feed.json"]
+
+    async def parse_item(self, response, item):
+        yield item
+
+
+class TestJSONFeedSpider:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("compressed", [False, True])
+    async def test_preserves_items_and_follows_next_page(self, compressed):
+        items = [
+            {"id": "a", "content_html": "<p>News</p>", "_custom": {"score": 1}},
+            {"id": "b", "content_text": "Update"},
+        ]
+        body = json.dumps(
+            {"version": "https://jsonfeed.org/version/1.1", "items": items, "next_url": "?page=2"}
+        ).encode()
+        if compressed:
+            body = gzip.compress(body)
+        spider = _JSONSpider()
+        results = await _collect(spider.parse(_make_response(body, "https://example.com/feed.json")))
+        assert results[:2] == items
+        request = results[2]
+        assert isinstance(request, Request)
+        assert request.url == "https://example.com/feed.json?page=2"
+        assert request.callback == spider.parse
+        assert request.sid == "default"
+
+    @pytest.mark.asyncio
+    async def test_next_page_can_be_disabled(self):
+        spider = _JSONSpider()
+        spider.follow_next = False
+        body = json.dumps({"items": [{"id": "a"}], "next_url": "https://example.com/next.json"}).encode()
+        assert await _collect(spider.parse(_make_response(body))) == [{"id": "a"}]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("body", [b"{", b"[]", b'{"items":{}}', b"\x1f\x8bbroken"])
+    async def test_bad_feed_is_reported(self, body, caplog, monkeypatch):
+        spider = _JSONSpider()
+        monkeypatch.setattr(spider.logger, "propagate", True)
+        with caplog.at_level(logging.WARNING):
+            assert await _collect(spider.parse(_make_response(body))) == []
+        assert caplog.records
+
+    @pytest.mark.asyncio
+    async def test_bad_item_does_not_drop_remaining_items(self, caplog, monkeypatch):
+        spider = _JSONSpider()
+        monkeypatch.setattr(spider.logger, "propagate", True)
+        body = json.dumps({"items": [None, {"id": "a"}], "next_url": 42}).encode()
+        with caplog.at_level(logging.WARNING):
+            assert await _collect(spider.parse(_make_response(body))) == [{"id": "a"}]
+        assert "not an object" in caplog.text
+        assert "next_url" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_callback_can_follow_article(self):
+        class ArticleSpider(_JSONSpider):
+            async def parse_item(self, response, item):
+                yield response.follow(item["url"])
+
+        body = json.dumps({"items": [{"id": "a", "url": "/article"}]}).encode()
+        results = await _collect(ArticleSpider().parse(_make_response(body)))
+        assert results[0].url == "https://example.com/article"
+
+    @pytest.mark.asyncio
+    async def test_real_crawl_follows_pages_and_stops_at_repeated_url(self):
+        visited = []
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                visited.append(self.path)
+                data = {
+                    "version": "https://jsonfeed.org/version/1.1",
+                    "items": [{"id": self.path}],
+                    "next_url": "/second.json",
+                }
+                body = json.dumps(data).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/feed+json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *args):
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+
+            class NewsSpider(_JSONSpider):
+                start_urls = [f"http://127.0.0.1:{server.server_port}/first.json"]
+
+            items = [item async for item in NewsSpider().stream()]
+            assert [item["id"] for item in items] == ["/first.json", "/second.json"]
+            assert visited == ["/first.json", "/second.json"]
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)

@@ -1,6 +1,6 @@
 ---
 title: "Spider Templates for Links, Sitemaps, Feeds and Markdown"
-description: "Choose CrawlSpider, SitemapSpider, XMLFeedSpider, CSVFeedSpider or ContentSpider. Set rules to collect pages, feed rows or a Markdown corpus."
+description: "Choose CrawlSpider, SitemapSpider, XMLFeedSpider, CSVFeedSpider, JSONFeedSpider or ContentSpider. Set rules to collect pages, feed rows or a Markdown corpus."
 ---
 
 # Generic Spider Templates
@@ -213,6 +213,33 @@ class PriceSpider(CSVFeedSpider):
 Gzipped feeds are decompressed automatically here as well, as shown above for **XMLFeedSpider**.
 
 <a id="sitetomarkdownspider"></a>
+
+## JSONFeedSpider
+
+`JSONFeedSpider` processes the `items` array in a [JSON Feed](https://www.jsonfeed.org/version/1.1/).
+Override `parse_item()` to select the fields needed for a news archive or an Agent's research digest:
+
+```python
+from scrapling.spiders import JSONFeedSpider
+
+class NewsSpider(JSONFeedSpider):
+    name = "news"
+    start_urls = ["https://example.com/feed.json"]
+
+    async def parse_item(self, response, item):
+        yield {
+            "id": item["id"],
+            "title": item.get("title"),
+            "url": item.get("url"),
+            "published": item.get("date_published"),
+            "content": item.get("content_text") or item.get("content_html"),
+        }
+```
+
+Each item is passed through unchanged, including authors, attachments, and custom fields.
+The template follows `next_url` through the normal request scheduler, which filters duplicate requests.
+Set `follow_next = False` to read only the initial page. You can also yield `response.follow(...)`
+from `parse_item()` to fetch an article. Gzipped feeds are decompressed automatically.
 
 ## ContentSpider
 

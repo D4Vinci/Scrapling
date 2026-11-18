@@ -12,6 +12,7 @@ from .templates import (
     ShopifySpider,
     XMLFeedSpider,
     CSVFeedSpider,
+    JSONFeedSpider,
     ContentSpider,
     SiteToMarkdownSpider,
 )
@@ -33,6 +34,7 @@ __all__ = [
     "ShopifySpider",
     "XMLFeedSpider",
     "CSVFeedSpider",
+    "JSONFeedSpider",
     "ContentSpider",
     "SiteToMarkdownSpider",
 ]
