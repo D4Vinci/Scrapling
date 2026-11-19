@@ -199,6 +199,17 @@ class TestAdaptiveTextFloor:
         assert len(found) == 12
         assert found[0].text.strip() == "Widget-01"
 
+    def test_a_ratio_outside_zero_and_one_is_refused(self):
+        """A floor above 1 filters every candidate, which reads as a removed target"""
+        url = "https://shop.example.com/text-floor-range"
+        Selector(self.page(self.NAMES), url=url, adaptive=True).css(".product .ptitle", auto_save=True)
+
+        for ratio in (1.5, -0.1):
+            with pytest.raises(ValueError):
+                Selector(self.gone_page(len(self.NAMES)), url=url, adaptive=True).css(
+                    ".product .ptitle", adaptive=True, min_text_similarity=ratio
+                )
+
     def test_default_behaviour_is_unchanged(self):
         """Without the floor the structural score alone decides, and `percentage` stays the only threshold"""
         url = "https://shop.example.com/text-floor-default"

@@ -540,8 +540,14 @@ class Selector(SelectorsGeneration):
         :param min_text_similarity: A ratio from 0 to 1. When given, a candidate whose own text is less similar than
          this to the saved element's text is never considered, so a target removed from the page yields nothing
          instead of the closest unrelated elements. Defaults to None, keeping the structural score alone.
+         A value outside 0-1 raises `ValueError`: filtering everything and returning an empty list would look
+         exactly like a removed target.
         :return: List of pure HTML elements that got the highest matching score or 'Selectors' object
+        :raises ValueError: If `min_text_similarity` is not a ratio between 0 and 1
         """
+        if min_text_similarity is not None and not 0 <= min_text_similarity <= 1:
+            raise ValueError(f"min_text_similarity must be a ratio between 0 and 1, got {min_text_similarity!r}")
+
         score_table: Dict[float, List[Any]] = {}
         # Note: `element` will most likely always be a dictionary at this point.
         if isinstance(element, self.__class__):
