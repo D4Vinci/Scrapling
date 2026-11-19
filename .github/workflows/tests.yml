@@ -57,6 +57,10 @@ jobs:
           os: macos-latest
           env:
             TOXENV: py313
+        - python-version: "3.14"
+          os: macos-latest
+          env:
+            TOXENV: py314
 
     steps:
     - uses: actions/checkout@v6
