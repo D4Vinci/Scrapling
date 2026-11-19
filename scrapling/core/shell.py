@@ -4,7 +4,7 @@ from copy import deepcopy
 from functools import wraps
 from re import sub as re_sub, compile as re_compile, DOTALL, IGNORECASE
 from collections import namedtuple
-from shlex import split as shlex_split
+from shlex import split as shlex_split, quote as shlex_quote
 from inspect import signature, Parameter
 from tempfile import mkstemp as make_temp_file
 from argparse import ArgumentParser, SUPPRESS
@@ -188,6 +188,22 @@ class CurlParser:
         self.parser: NoExitArgumentParser = _parser
         self._supported_methods = ("get", "post", "put", "delete")
 
+    # bash ANSI-C quoting ($'...'), which DevTools "Copy as cURL" uses for values
+    # with a quote or newline; shlex only knows POSIX quoting
+    _ANSI_C_QUOTED = re_compile(r"\$'((?:[^'\\]|\\.)*)'", DOTALL)
+    _ANSI_C_ESCAPE = re_compile(r"\\(x[0-9a-fA-F]{1,2}|u[0-9a-fA-F]{4}|.)", DOTALL)
+    _ANSI_C_CHARS = {"n": "\n", "r": "\r", "t": "\t", "e": "\x1b", "a": "\a", "b": "\b", "f": "\f", "v": "\v"}
+
+    @classmethod
+    def _expand_ansi_c_quotes(cls, command: str) -> str:
+        def unescape(match) -> str:
+            code = match.group(1)
+            if code[0] in "xu" and len(code) > 1:
+                return chr(int(code[1:], 16))
+            return cls._ANSI_C_CHARS.get(code, code)
+
+        return cls._ANSI_C_QUOTED.sub(lambda m: shlex_quote(cls._ANSI_C_ESCAPE.sub(unescape, m.group(1))), command)
+
     # --- Main Parsing Logic ---
     def parse(self, curl_command: str) -> Optional[Request]:
         """Parses the curl command string into a structured context for Fetcher."""
@@ -195,7 +211,7 @@ class CurlParser:
         clean_command = curl_command.strip().lstrip("curl").strip().replace("\\\n", " ")
 
         try:
-            tokens = shlex_split(clean_command)  # Split the string using shell-like syntax
+            tokens = shlex_split(self._expand_ansi_c_quotes(clean_command))  # Split the string using shell-like syntax
         except ValueError as e:  # pragma: no cover
             log.error(f"Could not split command line: {e}")
             return None
