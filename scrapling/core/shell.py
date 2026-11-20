@@ -197,7 +197,7 @@ class CurlParser:
     @classmethod
     def _expand_ansi_c_quotes(cls, command: str) -> str:
         def unescape(match) -> str:
-            code = match.group(1)
+            code: str = match.group(1)
             if code[0] in "xu" and len(code) > 1:
                 return chr(int(code[1:], 16))
             return cls._ANSI_C_CHARS.get(code, code)
