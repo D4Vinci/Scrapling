@@ -189,8 +189,9 @@ class CurlParser:
         self._supported_methods = ("get", "post", "put", "delete")
 
     # bash ANSI-C quoting ($'...'), which DevTools "Copy as cURL" uses for values
-    # with a quote or newline; shlex only knows POSIX quoting
-    _ANSI_C_QUOTED = re_compile(r"\$'((?:[^'\\]|\\.)*)'", DOTALL)
+    # with a quote or newline; shlex only knows POSIX quoting. Quoted strings and
+    # escapes are matched too, so a $' inside them stays plain text
+    _ANSI_C_QUOTED = re_compile(r"""'[^']*'|"(?:[^"\\]|\\.)*"|\\.|\$'((?:[^'\\]|\\.)*)'""", DOTALL)
     _ANSI_C_ESCAPE = re_compile(r"\\(x[0-9a-fA-F]{1,2}|u[0-9a-fA-F]{4}|.)", DOTALL)
     _ANSI_C_CHARS = {"n": "\n", "r": "\r", "t": "\t", "e": "\x1b", "a": "\a", "b": "\b", "f": "\f", "v": "\v"}
 
@@ -202,7 +203,12 @@ class CurlParser:
                 return chr(int(code[1:], 16))
             return cls._ANSI_C_CHARS.get(code, code)
 
-        return cls._ANSI_C_QUOTED.sub(lambda m: shlex_quote(cls._ANSI_C_ESCAPE.sub(unescape, m.group(1))), command)
+        def expand(match) -> str:
+            if match.group(1) is None:
+                return match.group(0)
+            return shlex_quote(cls._ANSI_C_ESCAPE.sub(unescape, match.group(1)))
+
+        return cls._ANSI_C_QUOTED.sub(expand, command)
 
     # --- Main Parsing Logic ---
     def parse(self, curl_command: str) -> Optional[Request]:

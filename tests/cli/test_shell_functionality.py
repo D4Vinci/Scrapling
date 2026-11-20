@@ -66,6 +66,12 @@ class TestCurlParser:
         assert request.data == "name=it's\nnext"
         assert request.headers["x-note"] == "it's"
 
+    def test_curl_with_ansi_c_quote_inside_double_quotes(self, parser):
+        """A $'...' inside double quotes is plain text"""
+        request = parser.parse("""curl 'https://example.com/api' --data-raw "say $'hello' again\"""")
+
+        assert request.data == "say $'hello' again"
+
     def test_curl_with_cookies(self, parser):
         """Test parsing curl with cookies"""
         curl_cmd = '''curl https://example.com \
