@@ -42,6 +42,15 @@ class TestCurlParser:
         assert request.headers["User-Agent"] == "Mozilla/5.0"
         assert request.headers["Accept"] == "application/json"
 
+    def test_curl_with_crlf_line_continuations(self, parser):
+        curl_cmd = "curl 'https://example.com' \\\r\n  -H 'Accept: application/json' \\\r\n  -X POST"
+
+        request = parser.parse(curl_cmd)
+
+        assert request.url == "https://example.com"
+        assert request.method == "post"
+        assert request.headers["Accept"] == "application/json"
+
     def test_curl_with_data(self, parser):
         """Test parsing curl with data"""
         # Form data

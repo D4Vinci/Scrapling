@@ -192,7 +192,7 @@ class CurlParser:
     def parse(self, curl_command: str) -> Optional[Request]:
         """Parses the curl command string into a structured context for Fetcher."""
 
-        clean_command = curl_command.strip().lstrip("curl").strip().replace("\\\n", " ")
+        clean_command = curl_command.strip().lstrip("curl").strip().replace("\r\n", "\n").replace("\\\n", " ")
 
         try:
             tokens = shlex_split(clean_command)  # Split the string using shell-like syntax
