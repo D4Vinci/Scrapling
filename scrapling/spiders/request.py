@@ -1,10 +1,12 @@
 import hashlib
+from contextlib import closing
 from io import BytesIO
 from functools import cached_property
 from urllib.parse import urlparse, urlencode
 
 import orjson
-from curl_cffi.requests.utils import update_url_params
+from curl_cffi import Curl
+from curl_cffi.requests.utils import set_curl_options
 from w3lib.url import canonicalize_url
 
 from scrapling.engines.toolbelt.custom import Response
@@ -82,29 +84,52 @@ class Request:
         if self._fp is not None:
             return self._fp
 
-        post_data = self._session_kwargs.get("data", {})
-        body = b""
-        if post_data:
-            if isinstance(post_data, dict | list | tuple):
-                body = urlencode(post_data).encode()
-            elif isinstance(post_data, str):
-                body = post_data.encode()
+        kwargs = self._session_kwargs
+        post_data, content, json_data = kwargs.get("data"), kwargs.get("content"), kwargs.get("json")
+        body_types = (dict, list, tuple, str, bytes, BytesIO, type(None))
+        if (
+            kwargs.get("multipart")
+            or kwargs.get("files")
+            or (content is not None and not isinstance(content, (str, bytes, bytearray)))
+            or (content is None and not isinstance(post_data, body_types))
+        ):
+            # Keep the old body rules for streams and multipart uploads.
+            if not post_data:
+                post_data = orjson.dumps(json_data) if json_data is not None else b""
             elif isinstance(post_data, BytesIO):
-                body = post_data.getvalue()
-            elif isinstance(post_data, bytes):
-                body = post_data
-        else:
-            post_data = self._session_kwargs.get("json")
-            body = orjson.dumps(post_data) if post_data is not None else b""
-
-        params = self._session_kwargs.get("params")
-        url = update_url_params(self.url, params) if params else self.url
+                post_data = post_data.getvalue()
+            elif not isinstance(post_data, body_types):
+                post_data = b""
+            content = json_data = None
+        elif isinstance(post_data, dict) and json_data is None and content is None:
+            post_data = urlencode(post_data, doseq=True)
+        position = post_data.tell() if content is None and isinstance(post_data, BytesIO) else None
+        with closing(Curl()) as curl:
+            try:
+                request, *_ = set_curl_options(
+                    curl,
+                    kwargs.get("method", "GET"),
+                    self.url,
+                    params_list=[None, kwargs.get("params")],
+                    headers_list=[None, kwargs.get("headers")],
+                    cookies_list=[None, None],
+                    proxies_list=[None, None],
+                    verify_list=[True, None],
+                    data=list(post_data) if isinstance(post_data, tuple) else post_data,
+                    content=content,
+                    json=json_data,
+                    quote=kwargs.get("quote", ""),
+                    trust_env=False,
+                )
+            finally:
+                if isinstance(post_data, BytesIO) and position is not None:
+                    post_data.seek(position)
 
         data: Dict[str, str | Tuple] = {
             "sid": self.sid,
-            "body": body.hex(),
-            "method": self._session_kwargs.get("method", "GET"),
-            "url": canonicalize_url(url, keep_fragments=keep_fragments),
+            "body": (request.body or b"").hex(),
+            "method": request.method,
+            "url": canonicalize_url(request.url, keep_fragments=keep_fragments),
         }
 
         if include_kwargs:
