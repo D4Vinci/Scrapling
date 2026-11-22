@@ -65,7 +65,7 @@ dependencies = [
     "cssselect>=1.5.0",
     "orjson>=3.11.8",
     "tld>=0.13.2",
-    "w3lib>=2.4.1",
+    "w3lib>=2.5.0",
     "typing_extensions"
 ]
 
@@ -73,8 +73,8 @@ dependencies = [
 fetchers = [
     "click>=8.3.0",
     "curl_cffi>=0.17.0",
-    "playwright>=1.62.0",
-    "patchright>=1.62.1",
+    "playwright>=1.64.1",
+    "patchright>=1.64.4",
     "browserforge>=1.2.4",
     "apify-fingerprint-datapoints>=0.16.0",
     "msgspec>=0.21.1",
