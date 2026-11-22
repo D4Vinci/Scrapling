@@ -95,7 +95,7 @@ class QuotesSpider(Spider):
             yield response.follow(next_page, callback=self.parse)
 ```
 
-`response.follow()`는 상대 URL을 현재 페이지의 URL과 자동으로 결합합니다. 기본적으로 현재 페이지를 `Referer` 헤더에도 설정합니다.
+`response.follow()`는 상대 URL을 현재 페이지 URL과 결합하고 새 `Request`를 만듭니다. 세션 ID, 콜백, 우선순위를 생략하면 원래 요청의 값을 상속합니다. 메타데이터와 요청별 옵션은 상속하지 않습니다. 자동 Referer 전달은 기본적으로 켜져 있습니다. 끄려면 `referer_flow=False`를 전달하세요.
 
 페이지 종류에 따라 다른 콜백 메서드를 지정할 수 있습니다.
 

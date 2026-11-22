@@ -95,7 +95,7 @@ class QuotesSpider(Spider):
             yield response.follow(next_page, callback=self.parse)
 ```
 
-`response.follow()` は相対 URL を現在のページの URL と自動で結合します。また、デフォルトでは現在のページの URL を `Referer` ヘッダーに設定します。
+`response.follow()` は相対 URL を現在のページ URL と結合し、新しい `Request` を作成します。セッション ID、コールバック、優先度を省略すると、元のリクエストの値を引き継ぎます。メタデータとリクエスト単位の設定は引き継ぎません。Referer の自動設定はデフォルトで有効です。無効にする場合は `referer_flow=False` を渡してください。
 
 ページの種類に応じて、次のリクエストに異なるコールバックメソッドを指定できます。
 

@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 __all__ = ["LinkExtractor"]
-valid_schemas = {"http", "https", "file"}
+valid_schemas = {"http", "https"}
 
 
 IGNORED_EXTENSIONS = {

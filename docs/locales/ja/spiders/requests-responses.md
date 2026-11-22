@@ -54,12 +54,13 @@ yield Request(
 
 ## Response.follow() {#responsefollow}
 
-コールバック内で次のリクエストを作る場合は、`response.follow()` を推奨します。`Request` を直接作る場合と比べ、次の利点があります。
+`response.follow()` は相対 URL を現在のページ URL と結合し、新しい `Request` を作成します。`sid`、`callback`、`priority` を省略すると、紐づいた `response.request` の値を引き継ぎます。値を明示すると上書きできます。
 
-- **相対 URL** を現在のページの URL に基づいて自動で解決します。
-- **Referer ヘッダー**をデフォルトで現在のページの URL に設定します。
-- **セッション引数**を元のリクエストから引き継ぎます。ヘッダーやプロキシ設定などが対象ですが、`method`、`params`、`data`、`json`、`files`、`multipart` は除きます。そのため、リンクは通常の GET で取得します。
-- **コールバック、セッション ID、優先度**は、新しい値を指定しなければ元のリクエストから引き継ぎます。
+前のリクエストのヘッダー、Cookie、認証、プロキシ設定、ブラウザ設定、その他のリクエスト単位の引数、メタデータはコピーしません。同じサイトのリンクにも、別のサイトのリンクにも適用されます。
+
+`sid=""`、`callback=None`、`priority=None` の場合は、紐づいた元のリクエストの値を引き継ぎます。`priority=0` を明示すると、元の優先度を上書きします。メタデータはデフォルトで空、重複排除は有効です。選択したセッションの共有設定と Cookie jar は引き続き適用されます。
+
+POST の後でリンクをたどると、別の `method` を指定しない限り GET を送信します。
 
 ```python
 async def parse(self, response: Response):
@@ -70,6 +71,7 @@ async def parse(self, response: Response):
     yield response.follow(
         "/product/123",
         callback=self.parse_product,
+        sid="stealth",
         priority=10,
     )
 
@@ -82,23 +84,35 @@ async def parse(self, response: Response):
 ```
 
 | 引数 | 型 | デフォルト | 説明 |
-|------|----|------------|------|
+| --- | --- | --- | --- |
 | `url` | `str` | *必須* | たどる URL。絶対 URL、相対 URL の両方に対応 |
-| `sid` | `str` | `""` | セッション ID。空なら元のリクエストから継承 |
-| `callback` | `callable` | `None` | コールバックメソッド。`None` なら元のリクエストから継承 |
-| `priority` | `int` | `None` | 優先度。`None` なら元のリクエストから継承 |
+| `sid` | `str` | `""` | 空なら元のリクエストのセッション ID を継承 |
+| `callback` | `callable` | `None` | `None` なら元のリクエストのコールバックを継承 |
+| `priority` | `int` / `None` | `None` | `None` なら元のリクエストの優先度を継承。明示した `0` でも上書き可能 |
 | `dont_filter` | `bool` | `False` | 重複排除を省略 |
-| `meta` | `dict` | `None` | レスポンスの既存のメタデータと結合するデータ |
-| **`referer_flow`** | `bool` | `True` | 現在の URL を Referer ヘッダーに設定 |
-| `**kwargs` | | | 元のリクエストのセッション引数と結合 |
+| `meta` | `dict` | `None` | このリクエストだけのメタデータ |
+| `referer_flow` | `bool` | `True` | 現在のページ URL を Referer に設定 |
+| `**kwargs` |  |  | セッションの取得メソッドに渡す明示的な引数 |
 
 ### Referer の引き継ぎを無効にする {#disabling-referer-flow}
 
-`response.follow()` はデフォルトで `Referer` ヘッダーに現在のページの URL を設定します。次のように無効にできます。
+デフォルトでは、`response.follow()` は HTTP とブラウザのリクエストに現在のページ URL を `Referer` として設定します。ブラウザがこの Referer を使うように `google_search=False` も設定します。無効にするには、次のようにします。
 
 ```python
 yield response.follow("/page", referer_flow=False)
 ```
+
+`referer_flow=False` の場合、このヘルパーは Referer を追加せず、`google_search` も変更しません。明示的に渡したヘッダーや、セッションとブラウザのデフォルト設定は引き続き適用されます。HTTP リクエストに別の Referer を設定する場合：
+
+```python
+yield response.follow(
+    "/page",
+    referer_flow=False,
+    headers={"Referer": "https://example.com/"},
+)
+```
+
+ブラウザのリクエストでは `extra_headers` を使い、必要に応じて `google_search=False` を設定します。
 
 ## コールバック {#callbacks}
 
@@ -145,7 +159,7 @@ async def parse(self, response: Response):
         yield response.follow(next_page, callback=self.parse, priority=0)
 ```
 
-`response.follow()` では、新しく指定しなければ元のリクエストの優先度を引き継ぎます。
+`response.follow()` の `priority` はデフォルトで `None` で、元のリクエストの優先度を引き継ぎます。`priority=0` を含め、値を明示すると引き継ぐ優先度を上書きします。
 
 ## 重複排除 {#deduplication}
 
@@ -202,6 +216,6 @@ async def parse_product(self, response: Response):
     }
 ```
 
-`response.follow()` では、現在のレスポンスのメタデータと新しく渡したメタデータを結合します。新しい値が優先されます。
+`response.follow()` は明示的に渡した `meta` だけを使います。前の値が必要な場合は、必要なキーを選んで渡してください。
 
 Spider は一部のメタデータを自動でも保存します。たとえば、プロキシのローテーションが有効な場合、使用したプロキシを `response.meta["proxy"]` で取得できます。
