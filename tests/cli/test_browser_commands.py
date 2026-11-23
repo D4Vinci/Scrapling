@@ -122,7 +122,7 @@ def test_browser_command_help_and_removed_command() -> None:
 
 
 @pytest.mark.parametrize(("installed", "force"), [(False, False), (True, False), (True, True), (False, True)])
-def test_install_playwright_keeps_marker(
+def test_install_patchright_keeps_marker(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, installed: bool, force: bool
 ) -> None:
     marker = tmp_path / ".scrapling_dependencies_installed"
@@ -135,8 +135,8 @@ def test_install_playwright_keeps_marker(
     assert marker.exists()
     if force or not installed:
         assert execute.call_args_list == [
-            call([cli.python_executable, "-m", "playwright", "install", "chromium"], shell=False),
-            call([cli.python_executable, "-m", "playwright", "install-deps", "chromium"], shell=False),
+            call([cli.python_executable, "-m", "patchright", "install", "chromium"], shell=False),
+            call([cli.python_executable, "-m", "patchright", "install-deps", "chromium"], shell=False),
         ]
         update.assert_called_once_with(fail_silently=True)
         assert "Installing browsers" in result.output
