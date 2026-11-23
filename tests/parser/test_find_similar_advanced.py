@@ -117,3 +117,24 @@ class TestFindSimilarAdvanced:
         assert "Beta" not in texts
         # Gamma's extra attribute dilutes the score (4.0 / 5) - the intentional penalty
         assert "Gamma" not in texts
+
+    def test_find_similar_with_prefixed_tag_names(self):
+        """lxml keeps prefixed HTML tags like `fb:like` or `o:p` as the tag name; they must not be
+        read as XPath namespace prefixes when the element, its parent, or its grandparent has one."""
+        html = """
+        <html><body>
+            <ul>
+                <li><fb:like data-href="/a">A</fb:like></li>
+                <li><fb:like data-href="/b">B</fb:like></li>
+            </ul>
+            <o:p><st1:city><span class="c">X</span></st1:city><st1:city><span class="c">Y</span></st1:city></o:p>
+        </body></html>
+        """
+        page = Selector(html, adaptive=False)
+
+        prefixed = page.css("li")[0].children[0]
+        assert prefixed.tag == "fb:like"
+        assert [el.text for el in prefixed.find_similar()] == ["B"]
+
+        # Prefixed parent and grandparent
+        assert [el.text for el in page.css("span.c")[0].find_similar()] == ["Y"]
