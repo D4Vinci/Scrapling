@@ -1003,10 +1003,10 @@ class Selector(SelectorsGeneration):
         checks: int = 0
 
         if original_attributes:
-            score += sum(
-                SequenceMatcher(None, v, candidate_attributes.get(k, "")).ratio()
-                for k, v in original_attributes.items()
-            )
+            for k, v in original_attributes.items():
+                candidate_value = candidate_attributes.get(k, "")
+                # Identical values always have a ratio of 1.0, so skip building a matcher for them
+                score += 1 if v == candidate_value else SequenceMatcher(None, v, candidate_value).ratio()
             # Using `max` so candidates with extra attributes are penalized and candidates
             # with fewer attributes don't get inflated scores from a smaller denominator
             checks += max(len(original_attributes), len(candidate_attributes))
