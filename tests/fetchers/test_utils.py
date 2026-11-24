@@ -215,6 +215,20 @@ class TestConstructProxyDict:
         expected = {"server": "http://proxy.example.com:8080", "username": "user@mail.com", "password": "p@ss:w0rd/"}
         assert result == expected
 
+    def test_proxy_string_with_ipv6_host(self):
+        """Test that an IPv6 proxy host keeps its brackets"""
+        result = construct_proxy_dict("http://user:pass@[2001:db8::1]:8080")
+
+        expected = {"server": "http://[2001:db8::1]:8080", "username": "user", "password": "pass"}
+        assert result == expected
+
+    def test_proxy_string_with_ipv6_host_without_port(self):
+        """Test an IPv6 proxy string that has no port"""
+        result = construct_proxy_dict("socks5://[::1]")
+
+        expected = {"server": "socks5://[::1]", "username": "", "password": ""}
+        assert result == expected
+
     def test_proxy_dict_input(self):
         """Test proxy dictionary input"""
         input_dict = {"server": "http://proxy.example.com:8080", "username": "user", "password": "pass"}
