@@ -115,6 +115,16 @@ Cet exemple affiche `10` et enregistre les citations et leurs auteurs dans `quot
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a> : recherche web et récupération de pages pour les agents d’IA. 98,6 % de réussite sur 100 sites protégés contre les bots, première place parmi 17 API dans le benchmark réalisé par String elle-même.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>

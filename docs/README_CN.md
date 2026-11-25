@@ -115,6 +115,16 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a>：为 AI 智能体提供网页搜索和页面获取。在 100 个具有反机器人防护的网站上成功率达 98.6%，在 String 自行开展的基准测试中位列 17 个 API 之首。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>

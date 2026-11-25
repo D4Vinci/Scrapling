@@ -115,6 +115,16 @@ Imprime `10` y guarda las citas y sus autores en `quotes.json`.
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a>: búsqueda web y obtención de páginas para agentes de IA. 98,6% de éxito en 100 sitios protegidos contra bots, primer puesto entre 17 APIs en el benchmark realizado por la propia String.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>

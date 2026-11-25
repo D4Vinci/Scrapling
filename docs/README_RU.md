@@ -115,6 +115,16 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a>: веб-поиск и загрузка страниц для ИИ-агентов. Успешность 98,6% на 100 сайтах с защитой от ботов, первое место среди 17 API в собственном сравнительном тесте String.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
