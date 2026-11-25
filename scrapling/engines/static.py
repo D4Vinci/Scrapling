@@ -252,6 +252,11 @@ class _SyncSessionLogic(_ConfigurationLogic):
         static_proxy = kwargs.pop("proxy", None)
         # A per-request rotator takes precedence over the session's one
         proxy_rotator = kwargs.pop("proxy_rotator", None) or self._proxy_rotator
+        if proxy_rotator and static_proxy is None and self._get_param(kwargs, "proxies", self._default_proxies):
+            raise ValueError(
+                "Cannot use 'proxy_rotator' together with 'proxy' or 'proxies'. "
+                "Use either a static proxy or proxy rotation, not both."
+            )
 
         session = self._curl_session
         one_off_request = False
@@ -470,6 +475,11 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         static_proxy = kwargs.pop("proxy", None)
         # A per-request rotator takes precedence over the session's one
         proxy_rotator = kwargs.pop("proxy_rotator", None) or self._proxy_rotator
+        if proxy_rotator and static_proxy is None and self._get_param(kwargs, "proxies", self._default_proxies):
+            raise ValueError(
+                "Cannot use 'proxy_rotator' together with 'proxy' or 'proxies'. "
+                "Use either a static proxy or proxy rotation, not both."
+            )
 
         session = self._async_curl_session
         one_off_request = False

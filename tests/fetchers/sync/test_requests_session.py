@@ -103,6 +103,23 @@ class TestFetcherSession:
             proxies_used = [call.kwargs["proxy"] for call in mocked_request.call_args_list]
             assert proxies_used == ["http://p1:8080", "http://p2:8080"]
 
+    @pytest.mark.parametrize(
+        "session_kwargs, request_kwargs",
+        [
+            ({"proxies": {"http": "http://p1:8080"}}, {"proxy_rotator": ProxyRotator(["http://p2:8080"])}),
+            ({}, {"proxies": {"http": "http://p1:8080"}, "proxy_rotator": ProxyRotator(["http://p2:8080"])}),
+            ({"proxy_rotator": ProxyRotator(["http://p2:8080"])}, {"proxies": {"http": "http://p1:8080"}}),
+        ],
+    )
+    def test_proxy_rotator_with_proxies_raises_value_error(self, session_kwargs, request_kwargs):
+        """A rotator and a `proxies` dict on the same request must fail like the constructor check, not in curl_cffi"""
+        with FetcherSession(**session_kwargs) as session:
+            with patch.object(session._curl_session, "request") as mocked_request:
+                with pytest.raises(ValueError, match="Cannot use 'proxy_rotator' together with 'proxy' or 'proxies'"):
+                    session.get("http://example.com", **request_kwargs)
+
+            mocked_request.assert_not_called()
+
     def test_fetcher_client_accepts_per_request_proxy_rotator(self):
         """`Fetcher.get(url, proxy_rotator=...)` goes through FetcherClient and must not raise TypeError"""
         rotator = ProxyRotator(["http://p1:8080"])
