@@ -170,16 +170,6 @@ Este exemplo imprime `10` e salva as citações e seus autores em `quotes.json`.
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 90% menos CAPTCHAs nas suas execuções do Scrapling. 28 milhões de dispositivos residenciais P2P reais, 98,7% de IPs limpos, 195 países. Segmentação por cidade/ISP/CEP, sessões com IP fixo ou rotativo, tráfego que nunca expira. Experimente 350 MB por $1.95. Código <strong>SCRAPEANDTAKE</strong>: <em>25% de desconto</em>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
       </a>

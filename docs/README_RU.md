@@ -170,16 +170,6 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: На 90% меньше CAPTCHA при работе со Scrapling. 28 млн реальных домашних P2P-устройств, 98,7% чистых IP-адресов, 195 стран. Выбор города/ISP/почтового индекса, сессии с постоянным или сменяемым IP, трафик без срока действия. Попробуйте 350 МБ за $1.95. Код <strong>SCRAPEANDTAKE</strong>: <em>скидка 25%</em>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
       </a>
