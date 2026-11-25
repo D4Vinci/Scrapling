@@ -168,16 +168,6 @@ Das gibt `10` aus und speichert Zitate und Autoren in `quotes.json`.
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 90 % weniger CAPTCHAs bei Ihren Scrapling-Läufen. 28 Mio. echte P2P-Geräte in Privathaushalten, 98,7 % saubere IPs, 195 Länder. Gezielte Auswahl nach Stadt/ISP/Postleitzahl, Sitzungen mit fester oder rotierender IP, Datenvolumen ohne Ablaufdatum. Testen Sie 350 MB für $1.95. Code <strong>SCRAPEANDTAKE</strong>: <em>25 % Rabatt</em>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
       </a>

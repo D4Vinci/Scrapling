@@ -181,16 +181,6 @@ This prints `10` and saves the quotes and authors to `quotes.json`.
   </tr>
   <tr>
     <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 90% fewer CAPTCHAs on your Scrapling runs. 28M real P2P residential devices, 98.7% clean IPs, 195 countries. City/ISP/ZIP targeting, sticky/rotating sessions, traffic never expires. Try 350 MB for $1.95. Code <strong>SCRAPEANDTAKE</strong>: <em>25% off</em>.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
       <a href="https://www.lundproxy.com/unlimited-residential-bandwidth.html?utm_source=github&utm_medium=sponsorship&utm_campaign=scrapling&utm_content=banner" target="_blank" title="Unlimited residential traffic, sized only by bandwidth.">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/lundproxy.png">
       </a>
