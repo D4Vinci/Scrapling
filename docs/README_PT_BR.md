@@ -529,6 +529,27 @@ pip install scrapling
 > [!IMPORTANT]
 > Este comando instala apenas o parser e suas dependências, sem fetchers ou ferramentas de linha de comando. Se você instalar apenas isso, importar de `scrapling.fetchers` ou `scrapling.spiders`, como nos exemplos anteriores, gera `ModuleNotFoundError`. Para usar fetchers ou spiders, instale primeiro as dependências dos fetchers, como mostrado a seguir.
 
+### Configure o Scrapling com seu agente de IA
+
+Cole este prompt no Claude Code, Codex, Hermes, Openclaw ou em qualquer outro agente com acesso ao shell:
+
+```text
+Instale o pacote scrapling[ai] de https://pypi.org/project/scrapling/ no
+ambiente virtual deste projeto. Execute `scrapling install` para poder usar
+os navegadores.
+
+Baixe o arquivo ZIP oficial da Agent Skill e extraia o conteúdo na pasta
+de skills deste agente.
+https://github.com/D4Vinci/Scrapling/raw/refs/heads/main/agent-skill/Scrapling-Skill.zip
+
+Nas configurações de MCP deste agente, registre o caminho completo para o
+executável scrapling-mcp deste ambiente. Chame a ferramenta list_sessions
+do Scrapling para verificar a conexão. Informe o resultado ou avise se eu
+precisar reiniciar o aplicativo.
+```
+
+O agente instala o Scrapling, sua Agent Skill e seu servidor MCP.
+
 ### Dependências opcionais
 
 1. Para usar os fetchers, suas classes ou os recursos adicionais a seguir, instale as dependências dos fetchers e dos navegadores:

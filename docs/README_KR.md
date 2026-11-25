@@ -527,6 +527,25 @@ pip install scrapling
 > [!IMPORTANT]
 > 이 명령은 파서와 필요한 패키지만 설치합니다. Fetcher나 명령줄 도구는 포함되지 않습니다. 따라서 위 예제처럼 `scrapling.fetchers`나 `scrapling.spiders`에서 가져오면 `ModuleNotFoundError`가 발생합니다. Fetcher나 스파이더를 사용하려면 먼저 아래 방법으로 Fetcher에 필요한 패키지를 설치하세요.
 
+### AI 에이전트로 Scrapling 설정하기
+
+다음 프롬프트를 Claude Code, Codex, Hermes, Openclaw 또는 셸을 사용할 수 있는 에이전트에 붙여넣으세요.
+
+```text
+다음 주소에서 scrapling[ai]를 이 프로젝트의 가상 환경에 설치해 주세요.
+https://pypi.org/project/scrapling/
+브라우저를 사용할 수 있도록 `scrapling install`을 실행해 주세요.
+
+공식 스킬 ZIP 파일을 다운로드한 뒤 이 에이전트의 스킬 디렉터리에 압축을 풀어 주세요.
+https://github.com/D4Vinci/Scrapling/raw/refs/heads/main/agent-skill/Scrapling-Skill.zip
+
+이 가상 환경에 있는 scrapling-mcp의 전체 경로를 이 에이전트의 MCP 설정에 등록해 주세요.
+Scrapling의 list_sessions 도구를 호출해 연결을 확인해 주세요.
+확인 결과와 앱을 다시 시작해야 하는지 알려 주세요.
+```
+
+에이전트가 Scrapling과 함께 Agent Skill 및 MCP 서버를 설치합니다.
+
 ### 추가 패키지
 
 1. Fetcher, 관련 클래스, 아래 추가 기능을 사용하려면 Fetcher와 브라우저에 필요한 패키지를 설치하세요:

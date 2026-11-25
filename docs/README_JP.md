@@ -527,6 +527,25 @@ pip install scrapling
 > [!IMPORTANT]
 > このコマンドはパーサーとその依存パッケージだけをインストールします。Fetcher やコマンドラインツールは含まれません。この状態で上の例のように `scrapling.fetchers` や `scrapling.spiders` からインポートすると、`ModuleNotFoundError` が発生します。Fetcher や Spider を使う場合は、先に以下の手順で Fetcher の依存パッケージをインストールしてください。
 
+### AI エージェントで Scrapling をセットアップする
+
+次のプロンプトを Claude Code、Codex、Hermes、Openclaw、またはシェルを使えるエージェントに貼り付けてください。
+
+```text
+このプロジェクトの仮想環境に https://pypi.org/project/scrapling/ から
+scrapling[ai] をインストールしてください。
+ブラウザを使えるように `scrapling install` を実行してください。
+
+公式スキルの ZIP ファイルをダウンロードし、このエージェントのスキルディレクトリに展開してください。
+https://github.com/D4Vinci/Scrapling/raw/refs/heads/main/agent-skill/Scrapling-Skill.zip
+
+この仮想環境にある scrapling-mcp のフルパスを、このエージェントの MCP 設定に登録してください。
+Scrapling の list_sessions ツールを呼び出して接続を確認してください。
+確認結果を教えてください。アプリの再起動が必要なら、その旨を教えてください。
+```
+
+エージェントが Scrapling とその Agent Skill、MCP サーバーをインストールします。
+
 ### 追加の依存パッケージ
 
 1. Fetcher、関連するクラス、以下の追加機能を使う場合は、Fetcher とブラウザに必要なパッケージをインストールします。

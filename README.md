@@ -534,6 +534,24 @@ pip install scrapling
 > [!IMPORTANT]
 > This installation only includes the parser engine and its dependencies, without any fetchers or commandline dependencies. So importing anything from `scrapling.fetchers` or `scrapling.spiders`, like in the examples above, will raise `ModuleNotFoundError` with this installation alone. If you are going to use any of the fetchers or spiders, install the fetchers' dependencies first as shown below.
 
+### Set up Scrapling with your AI agent
+
+Paste this prompt into Claude Code, Codex, Hermes, Openclaw, or any agent with shell access:
+
+```text
+Install scrapling[ai] from https://pypi.org/project/scrapling/ in this project's
+virtual environment. Run `scrapling install` for browser support.
+
+Download the official skill ZIP and extract it into this agent's skills directory.
+https://github.com/D4Vinci/Scrapling/raw/refs/heads/main/agent-skill/Scrapling-Skill.zip
+
+Register the full path to this environment's scrapling-mcp in this agent's MCP
+settings. Call Scrapling's list_sessions tool to verify the connection. Tell me
+the result or if I need to restart the app.
+```
+
+The agent handles the installation of Scrapling, its Agent Skill, and its MCP server.
+
 ### Optional Dependencies
 
 1. If you are going to use any of the extra features below, the fetchers, or their classes, you will need to install fetchers' dependencies and their browser dependencies as follows:

@@ -527,6 +527,24 @@ pip install scrapling
 > [!IMPORTANT]
 > 这个命令只安装解析器及其依赖，不包含 Fetcher 或命令行工具。仅安装这些依赖后，像上面的示例那样从 `scrapling.fetchers` 或 `scrapling.spiders` 导入内容，会出现 `ModuleNotFoundError`。要使用 Fetcher 或 Spider，请先按下文安装 Fetcher 的依赖。
 
+### 使用 AI 智能体配置 Scrapling
+
+将以下提示词粘贴到 Claude Code、Codex、Hermes、Openclaw 或任何可以使用 Shell 的智能体中：
+
+```text
+请从 https://pypi.org/project/scrapling/ 将 scrapling[ai] 安装到当前项目的虚拟环境中。
+运行 `scrapling install` 以启用浏览器支持。
+
+下载官方技能 ZIP 文件，并将其解压到当前智能体的技能目录中。
+https://github.com/D4Vinci/Scrapling/raw/refs/heads/main/agent-skill/Scrapling-Skill.zip
+
+在当前智能体的 MCP 设置中填入此虚拟环境中 scrapling-mcp 的完整路径。
+调用 Scrapling 的 list_sessions 工具检查连接。请告诉我检查结果。
+如果需要重启应用，请提醒我。
+```
+
+智能体会安装 Scrapling 及其 Agent Skill 和 MCP 服务器。
+
 ### 可选依赖
 
 1. 要使用 Fetcher、相关类或下列扩展功能，请先安装 Fetcher 和浏览器的依赖：

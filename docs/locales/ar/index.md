@@ -174,6 +174,25 @@ pip install scrapling
 
     يثبّت هذا الأمر محلّل الصفحات ومتطلباته فقط، دون أدوات الجلب أو متطلبات سطر الأوامر. لذلك فإن استيراد أي شيء من `scrapling.fetchers` أو `scrapling.spiders`، كما في الأمثلة السابقة، سيؤدي إلى `ModuleNotFoundError` إذا اكتفيت بهذا التثبيت. لاستخدام أدوات الجلب أو Spiders، ثبّت متطلبات أدوات الجلب أولًا كما يلي.
 
+### إعداد Scrapling باستخدام وكيل الذكاء الاصطناعي {#set-up-scrapling-with-your-ai-agent}
+
+الصق هذه التعليمات في Claude Code أو Codex أو Hermes أو Openclaw أو أي وكيل يمكنه تشغيل أوامر الطرفية:
+
+```text
+ثبّت scrapling[ai] في البيئة الافتراضية لهذا المشروع من الرابط التالي.
+https://pypi.org/project/scrapling/
+شغّل `scrapling install` لتفعيل دعم المتصفح.
+
+نزّل ملف ZIP الرسمي للمهارة وفكّ ضغطه في مجلد مهارات هذا الوكيل.
+https://github.com/D4Vinci/Scrapling/raw/refs/heads/main/agent-skill/Scrapling-Skill.zip
+
+أضف المسار الكامل لملف scrapling-mcp من هذه البيئة إلى إعدادات MCP في هذا الوكيل.
+استدعِ أداة list_sessions من Scrapling للتحقق من الاتصال. أخبرني بالنتيجة،
+أو أخبرني إن كان عليّ إعادة تشغيل التطبيق.
+```
+
+يتولى الوكيل تثبيت Scrapling ومهارته (Agent Skill) وخادم MCP الخاص به.
+
 ### المتطلبات الاختيارية {#optional-dependencies}
 
 1. إذا أردت استخدام أي من الميزات الإضافية التالية أو أدوات الجلب أو فئاتها، ثبّت متطلبات أدوات الجلب والمتصفحات كما يلي:
