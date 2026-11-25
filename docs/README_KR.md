@@ -115,6 +115,16 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a>: AI 에이전트를 위한 웹 검색과 페이지 가져오기. 봇 차단 기능이 있는 사이트 100곳에서 성공률 98.6%를 기록했으며, String이 직접 실시한 벤치마크에서 API 17개 중 1위를 차지했습니다.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -164,16 +174,6 @@ result.items.to_json("quotes.json")
     </td>
     <td>
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a>은 윤리적으로 확보한 주거용, 모바일, ISP 및 데이터센터 프록시와 스크래핑 및 AI 자동화 도구를 제공합니다. 코드 SCRAPLING10을 사용하면 주거용 프록시를 10% 할인받을 수 있습니다.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: Scrapling 실행 시 CAPTCHA를 90% 줄입니다. 실제 P2P 주거용 기기 2,800만 대, 클린 IP 비율 98.7%, 195개 국가. 도시/ISP/우편번호(ZIP) 지정과 고정/순환 IP 세션을 지원하며 트래픽은 만료되지 않습니다. $1.95로 350 MB를 사용해 보세요. 코드 <strong>SCRAPEANDTAKE</strong>를 사용하면 <em>25% 할인</em>을 받을 수 있습니다.
     </td>
   </tr>
   <tr>

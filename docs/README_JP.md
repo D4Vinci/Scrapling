@@ -115,6 +115,16 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a>：AI エージェント向けのウェブ検索とページ取得。ボット対策を備えた 100 サイトで成功率 98.6% を達成し、String が実施したベンチマークで 17 の API 中 1 位。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -164,16 +174,6 @@ result.items.to_json("quotes.json")
     </td>
     <td>
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> は、倫理的に調達されたレジデンシャル、モバイル、ISP、データセンタープロキシに加え、スクレイピングと AI 自動化のツールを提供します。コード SCRAPLING10 でレジデンシャルプロキシが 10% オフになります。
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：Scrapling の実行時に CAPTCHA を 90% 削減。2,800 万台の実在する家庭用 P2P デバイスを提供し、IP の 98.7% がクリーンで、195 か国に対応。都市・ISP・郵便番号（ZIP）の指定、固定 IP・ローテーション IP のセッションに対応し、通信量に有効期限はありません。350 MB を $1.95 でお試しください。コード <strong>SCRAPEANDTAKE</strong> で<em>25% オフ</em>になります。
     </td>
   </tr>
   <tr>

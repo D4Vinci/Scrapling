@@ -115,6 +115,16 @@ Cet exemple affiche `10` et enregistre les citations et leurs auteurs dans `quot
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a> : recherche web et récupération de pages pour les agents d’IA. 98,6 % de réussite sur 100 sites protégés contre les bots, première place parmi 17 API dans le benchmark réalisé par String elle-même.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -164,16 +174,6 @@ Cet exemple affiche `10` et enregistre les citations et leurs auteurs dans `quot
     </td>
     <td>
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> fournit des proxys résidentiels, mobiles, ISP et de centres de données issus de sources éthiques, ainsi que des outils de scraping et d’automatisation par IA. Utilisez le code SCRAPLING10 pour obtenir 10 % de réduction sur les proxys résidentiels.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a> : 90 % de CAPTCHAs en moins lors de vos exécutions de Scrapling. 28 millions d’appareils P2P réels chez des particuliers, 98,7 % d’IP propres, 195 pays. Ciblage par ville/ISP/code postal, sessions à IP fixe ou rotative, trafic sans expiration. Essayez 350 MB pour $1.95. Code <strong>SCRAPEANDTAKE</strong> : <em>25 % de réduction</em>.
     </td>
   </tr>
   <tr>

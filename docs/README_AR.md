@@ -115,6 +115,16 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a>: البحث في الويب وجلب الصفحات لوكلاء الذكاء الاصطناعي. نسبة نجاح 98.6% على 100 موقع محمي ضد البوتات، والمركز الأول بين 17 واجهة API في اختبار المقارنة الخاص بـ String.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -164,16 +174,6 @@ result.items.to_json("quotes.json")
     </td>
     <td>
     توفر <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> بروكسيات سكنية ومحمولة وبروكسيات ISP ومراكز بيانات من مصادر أخلاقية، إلى جانب أدوات لاستخراج بيانات الويب وأتمتة الذكاء الاصطناعي. استخدم الكود SCRAPLING10 للحصول على خصم 10% على البروكسيات السكنية.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: اختبارات CAPTCHA أقل بنسبة 90% عند تشغيل Scrapling. 28 مليون جهاز منزلي حقيقي ضمن شبكة P2P، وعناوين IP نظيفة بنسبة 98.7%، و195 دولة. استهداف حسب المدينة/ISP/الرمز البريدي (ZIP)، وجلسات بعنوان IP ثابت أو متغير، ورصيد بيانات لا تنتهي صلاحيته. جرّب 350 MB مقابل $1.95. الكود <strong>SCRAPEANDTAKE</strong>: <em>خصم 25%</em>.
     </td>
   </tr>
   <tr>

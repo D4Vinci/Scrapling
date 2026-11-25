@@ -115,6 +115,16 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a>：为 AI 智能体提供网页搜索和页面获取。在 100 个具有反机器人防护的网站上成功率达 98.6%，在 String 自行开展的基准测试中位列 17 个 API 之首。
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -164,16 +174,6 @@ result.items.to_json("quotes.json")
     </td>
     <td>
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> 提供符合道德规范的住宅、移动、ISP 和数据中心代理，以及网页抓取和 AI 自动化工具。使用优惠码 SCRAPLING10，住宅代理可享 10% 折扣。
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>：Scrapling 运行中的 CAPTCHA 验证码减少 90%。2800 万台真实 P2P 住宅设备，干净 IP 占比 98.7%，覆盖 195 个国家。支持城市/ISP/邮政编码（ZIP）定向、固定/轮换 IP 会话，流量永不过期。花 $1.95 试用 350 MB。使用优惠码 <strong>SCRAPEANDTAKE</strong> 可享 <em>25% 折扣</em>。
     </td>
   </tr>
   <tr>

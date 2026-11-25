@@ -128,6 +128,16 @@ This prints `10` and saves the quotes and authors to `quotes.json`.
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a>: web search and fetch for AI agents. 98.6% success on 100 bot-protected sites, first of 17 APIs in our own benchmark.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -177,16 +187,6 @@ This prints `10` and saves the quotes and authors to `quotes.json`.
     </td>
     <td>
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> supplies ethical residential, mobile, ISP, and datacenter proxies, plus scraping and AI automation tools. Use code SCRAPLING10: 10% off residential proxies.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: 90% fewer CAPTCHAs on your Scrapling runs. 28M real P2P residential devices, 98.7% clean IPs, 195 countries. City/ISP/ZIP targeting, sticky/rotating sessions, traffic never expires. Try 350 MB for $1.95. Code <strong>SCRAPEANDTAKE</strong>: <em>25% off</em>.
     </td>
   </tr>
   <tr>

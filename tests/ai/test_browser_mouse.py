@@ -866,6 +866,7 @@ async def test_browser_mouse_click_live_timeout_releases_native_button() -> None
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         opened = await client.call_tool("browser_open", {"session_id": "browser"})
         assert not opened.is_error
+        task = None
         try:
             session = server._sessions["browser"].session
             await session.context.route("**/*", serve)
@@ -875,14 +876,23 @@ async def test_browser_mouse_click_live_timeout_releases_native_button() -> None
             assert not fetched.is_error
             page_info = session.page_pool.pages[0]
             page = page_info.page
-            failed = await client.call_tool(
-                "browser_actions",
-                {
-                    "session_id": "browser",
-                    "actions": [{"type": "click", "target": "#target", "delay": 1000, "timeout": 300}],
-                },
+            task = asyncio.create_task(
+                client.call_tool(
+                    "browser_actions",
+                    {
+                        "session_id": "browser",
+                        "actions": [{"type": "click", "target": "#target", "delay": 60000, "timeout": 5000}],
+                    },
+                )
             )
-            assert failed.is_error
+            await page.wait_for_function(
+                "JSON.parse(document.querySelector('#events').value).some(event => event.type === 'mousedown' && event.target === 'target' && event.buttons === 1 && event.trusted)",
+                timeout=5000,
+            )
+            assert not task.done() and page_info.state == "busy"
+            failed = await asyncio.wait_for(task, 10)
+            assert failed.is_error and isinstance(failed.content[0], TextContent)
+            assert "Timeout 5000ms exceeded" in failed.content[0].text
             events = loads(await page.locator("#events").input_value())
             assert next(event for event in events if event["type"] == "mousedown")["buttons"] == 1
             moved = await client.call_tool(
@@ -895,5 +905,9 @@ async def test_browser_mouse_click_live_timeout_releases_native_button() -> None
             assert all(event["trusted"] for event in events)
             assert session.page_pool.pages == [page_info] and page_info.state == "ready"
         finally:
+            if task is not None and not task.done():
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
             closed = await client.call_tool("close_session", {"session_id": "browser"})
             assert not closed.is_error

@@ -115,6 +115,16 @@ result.items.to_json("quotes.json")
   </tr>
   <tr>
     <td width="200">
+      <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank" title="Web access for everyone">
+        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/string.png" width="240" height="100">
+      </a>
+    </td>
+    <td>
+    <a href="https://usestring.ai/?utm_source=github-sponsor&utm_campaign=scrapling" target="_blank">String</a>: веб-поиск и загрузка страниц для ИИ-агентов. Успешность 98,6% на 100 сайтах с защитой от ботов, первое место среди 17 API в собственном сравнительном тесте String.
+    </td>
+  </tr>
+  <tr>
+    <td width="200">
       <a href="https://hypersolutions.co/?utm_source=github&utm_medium=readme&utm_campaign=scrapling" target="_blank" title="Bot Protection Bypass API for Akamai, DataDome, Incapsula & Kasada">
         <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/HyperSolutions.png">
       </a>
@@ -166,16 +176,6 @@ result.items.to_json("quotes.json")
     </td>
     <td>
     <a href="https://byteful.com/?utm_source=github&utm_medium=github-sponsor&utm_campaign=scrapling_github_sponsor" target="_blank">Byteful</a> предоставляет резидентные, мобильные, ISP- и дата-центровые прокси из этичных источников, а также инструменты для веб-скрапинга и автоматизации с AI. Используйте код SCRAPLING10 для получения скидки 10% на резидентные прокси.
-    </td>
-  </tr>
-  <tr>
-    <td width="200">
-      <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank" title="90% fewer CAPTCHAs on your Scrapling runs.">
-        <img src="https://raw.githubusercontent.com/D4Vinci/Scrapling/main/images/proxylane.png">
-      </a>
-    </td>
-    <td>
-    <a href="https://proxylane.dev/scrapling?utm_source=scrapling&utm_medium=affiliate&utm_campaign=scrapling_platinum_202609&utm_content=github_readme" target="_blank">ProxyLane</a>: На 90% меньше CAPTCHA при работе со Scrapling. 28 млн реальных домашних P2P-устройств, 98,7% чистых IP-адресов, 195 стран. Выбор города/ISP/почтового индекса, сессии с постоянным или сменяемым IP, трафик без срока действия. Попробуйте 350 МБ за $1.95. Код <strong>SCRAPEANDTAKE</strong>: <em>скидка 25%</em>.
     </td>
   </tr>
   <tr>
