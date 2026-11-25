@@ -1,6 +1,6 @@
 import pytest
 import random
-from threading import Thread
+from threading import Barrier
 from concurrent.futures import ThreadPoolExecutor
 
 from scrapling.engines.toolbelt import ProxyRotator, is_proxy_error, cyclic_rotation
@@ -222,36 +222,19 @@ class TestProxyRotatorThreadSafety:
     """Test ProxyRotator thread safety"""
 
     def test_concurrent_get_proxy(self):
-        """Test that concurrent get_proxy calls don't cause errors"""
         proxies = [f"http://p{i}:8080" for i in range(10)]
         rotator = ProxyRotator(proxies)
-        results = []
+        ready = Barrier(10)
 
-        def get_proxies(n):
-            for _ in range(n):
-                results.append(rotator.get_proxy())
+        def get_proxies(_):
+            ready.wait(timeout=10)
+            return [rotator.get_proxy() for _ in range(100)]
 
-        threads = [Thread(target=get_proxies, args=(100,)) for _ in range(10)]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            results = [proxy for batch in executor.map(get_proxies, range(10), timeout=10) for proxy in batch]
 
-        # All results should be valid proxies
         assert len(results) == 1000
-        assert all(p in proxies for p in results)
-
-    def test_thread_pool_concurrent_access(self):
-        """Test concurrent access using ThreadPoolExecutor"""
-        proxies = ["http://p1:8080", "http://p2:8080", "http://p3:8080"]
-        rotator = ProxyRotator(proxies)
-
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(rotator.get_proxy) for _ in range(100)]
-            results = [f.result() for f in futures]
-
-        assert len(results) == 100
-        assert all(p in proxies for p in results)
+        assert all(results.count(proxy) == 100 for proxy in proxies)
 
 
 class TestIsProxyError:

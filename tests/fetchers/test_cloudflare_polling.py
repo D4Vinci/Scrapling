@@ -58,6 +58,9 @@ def solve(session, page, asynchronous, attempts=0):
 )
 def test_initial_readiness(monkeypatch, asynchronous, script_at, frame_at, elapsed, clicks):
     session, page, frame, clock = setup(monkeypatch, asynchronous, script_at, frame_at)
+    session._wait_for_networkidle.side_effect = lambda *args, **kwargs: (
+        frame.locator.return_value.click.assert_called_once()
+    )
     solve(session, page, asynchronous)
     assert clock["elapsed"] == elapsed
     assert frame.locator.return_value.click.call_count == clicks

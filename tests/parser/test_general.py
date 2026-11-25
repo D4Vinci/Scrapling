@@ -1,12 +1,9 @@
 import pickle
-import time
-import logging
 
 import pytest
 from cssselect import SelectorError, SelectorSyntaxError
 
 from scrapling import Selector
-logging.getLogger("scrapling").setLevel(logging.DEBUG)
 
 
 @pytest.fixture
@@ -145,11 +142,6 @@ class TestTextMatching:
 
 # Similar Elements Tests
 class TestSimilarElements:
-    def test_finding_similar_products(self, page):
-        """Test finding similar product elements"""
-        first_product = page.css(".product").first
-        similar_products = first_product.find_similar()
-        assert len(similar_products) == 2
 
     def test_finding_similar_reviews(self, page):
         """Test finding similar review elements with additional filtering"""
@@ -297,15 +289,6 @@ class TestElementNavigation:
         prev_element = next_element.previous
         assert prev_element.tag == child.tag
 
-    def test_ancestor_finding(self, page):
-        """Test finding ancestors of elements"""
-        all_prices = page.css(".price")
-        products_with_prices = [
-            price.find_ancestor(lambda p: p.has_class("product"))
-            for price in all_prices
-        ]
-        assert len(products_with_prices) == 3
-
 
 # JSON and Attribute Tests
 class TestJSONAndAttributes:
@@ -343,27 +326,12 @@ class TestJSONAndAttributes:
         assert isinstance(page.css("#products")[0].attrib.json_string, bytes)
 
 
-# Performance Test
-def test_large_html_parsing_performance():
-    """Test parsing and selecting performance on large HTML"""
-    large_html = (
-        "<html><body>"
-        + '<div class="item">' * 5000
-        + "</div>" * 5000
-        + "</body></html>"
-    )
-
-    start_time = time.time()
+def test_large_html_parsing():
+    large_html = "<html><body>" + "".join(f'<div class="item">{i}</div>' for i in range(5000)) + "</body></html>"
     parsed = Selector(large_html, adaptive=False)
     elements = parsed.css(".item")
-    end_time = time.time()
-
-    # assert len(elements) == 5000  # GitHub actions don't like this line
-    # Converting 5000 elements to a class and doing operations on them will take time
-    # Based on my tests with 100 runs, 1 loop each Scrapling (given the extra work/features) takes 10.4ms on average
-    assert (
-        end_time - start_time < 0.5
-    )  # Locally I test on 0.1 but on GitHub actions with browsers and threading sometimes closing adds fractions of seconds
+    assert len(elements) == 5000
+    assert [element.text for element in elements] == [str(i) for i in range(5000)]
 
 
 # Selector Generation Test
@@ -426,9 +394,6 @@ def test_full_path_selector_mixed_id_and_no_id():
 
 
 # Miscellaneous Tests
-def test_getting_all_text(page):
-    """Test getting all text from the page"""
-    assert page.get_all_text() != ""
 
 
 def test_regex_on_text(page):

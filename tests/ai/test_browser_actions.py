@@ -31,6 +31,66 @@ def _server() -> tuple[ScraplingMCPServer, AsyncSession, Mock]:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "state, message",
+    [
+        ("missing", "not found"),
+        ("dead", "no longer alive"),
+        ("static", "'stealthy'"),
+        ("empty", "browser_fetch"),
+        ("busy", "busy"),
+        ("closed", "closed page"),
+    ],
+)
+async def test_browser_actions_session_errors_prevent_dispatch(
+    state: str, message: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    server, session, page = _server()
+    dispatch = AsyncMock()
+    monkeypatch.setattr("scrapling.core.ai.server._run_actions", dispatch)
+    if state == "missing":
+        server._sessions.clear()
+    elif state == "dead":
+        session._is_alive = False
+    elif state == "static":
+        server._sessions["browser"].session_type = "static"
+    elif state == "empty":
+        session.page_pool.clear()
+    elif state == "busy":
+        session.page_pool.pages[0].mark_busy()
+    elif state == "closed":
+        page.is_closed.return_value = True
+    async with Client(server._build_server("127.0.0.1", 8000)) as client:
+        result = await client.call_tool(
+            "browser_actions",
+            {
+                "session_id": "browser",
+                "actions": [
+                    {"type": "textbox", "target": "#name", "value": "unchanged"},
+                    {"type": "move", "x": 10, "y": 20},
+                    {"type": "click", "x": 10, "y": 20},
+                    {"type": "wheel", "delta_y": 120},
+                    {"type": "press_key", "key": "Enter"},
+                    {"type": "wait_time", "milliseconds": 0},
+                    {"type": "wait_element", "target": "#ready"},
+                    {"type": "wait_load", "state": "load"},
+                ],
+            },
+        )
+    assert result.is_error and isinstance(result.content[0], TextContent)
+    assert message in result.content[0].text
+    dispatch.assert_not_called()
+    page.locator.assert_not_called()
+    page.wait_for_timeout.assert_not_awaited()
+    page.wait_for_load_state.assert_not_awaited()
+    assert page.mouse.mock_calls == page.keyboard.mock_calls == []
+    if state in ("closed", "empty"):
+        assert session.page_pool.pages_count == 0
+    else:
+        assert session.page_pool.pages[0].state == ("busy" if state == "busy" else "ready")
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("slowly", [False, True])
 async def test_mixed_actions_keep_order_and_sample_each_delay(slowly: bool, monkeypatch: pytest.MonkeyPatch) -> None:
     server, session, page = _server()
@@ -244,10 +304,10 @@ async def test_live_targets_keep_explicit_refs_and_ref_shaped_selectors_distinct
             {
                 "session_id": "browser",
                 "actions": [
-                    {"type": "wait_element", "target": target, "timeout": 1000},
-                    {"type": "move", "target": target, "timeout": 1000},
-                    {"type": "textbox", "target": target, "value": "changed", "timeout": 1000},
-                    {"type": "click", "target": target, "timeout": 1000},
+                    {"type": "wait_element", "target": target},
+                    {"type": "move", "target": target},
+                    {"type": "textbox", "target": target, "value": "changed"},
+                    {"type": "click", "target": target},
                 ],
             },
         )

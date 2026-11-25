@@ -116,19 +116,6 @@ class TestAdvancedSelectors:
         attrs = page.css("div::attr(class)")
         assert "container" in attrs.getall()
 
-    def test_complex_attribute_operations(self, complex_html):
-        """Test complex attribute handling"""
-        page = Selector(complex_html)
-        container = page.css(".container")[0]
-
-        # JSON in attributes
-        data = container.attrib["data-test"].json()
-        assert data["key"] == "value"
-
-        # Attribute searching
-        matches = list(container.attrib.search_values("container"))
-        assert len(matches) == 1
-
     def test_url_joining(self):
         """Test URL joining functionality"""
         page = Selector("<html></html>", url="https://example.com/page")

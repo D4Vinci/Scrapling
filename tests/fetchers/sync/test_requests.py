@@ -4,8 +4,6 @@ import pytest_httpbin
 from scrapling import Fetcher
 from scrapling.fetchers import FetcherSession
 
-Fetcher.adaptive = True
-
 
 @pytest.fixture
 def _reset_fetcher_config():
@@ -20,9 +18,10 @@ def _reset_fetcher_config():
 
 @pytest_httpbin.use_class_based_httpbin
 class TestFetcher:
-    @pytest.fixture(scope="class")
-    def fetcher(self):
+    @pytest.fixture
+    def fetcher(self, monkeypatch):
         """Fixture to create a Fetcher instance for the entire test class"""
+        monkeypatch.setattr(Fetcher, "adaptive", True)
         return Fetcher
 
     @pytest.fixture(autouse=True)

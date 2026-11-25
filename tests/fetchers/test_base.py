@@ -6,6 +6,11 @@ from scrapling.engines.toolbelt.custom import BaseFetcher
 class TestBaseFetcher:
     """Test BaseFetcher configuration functionality"""
 
+    @pytest.fixture(autouse=True)
+    def restore_config(self, monkeypatch):
+        for name in BaseFetcher.parser_keywords:
+            monkeypatch.setattr(BaseFetcher, name, getattr(BaseFetcher, name))
+
     def test_default_configuration(self):
         """Test default configuration values"""
         config = BaseFetcher.display_config()
@@ -21,9 +26,6 @@ class TestBaseFetcher:
         config = BaseFetcher.display_config()
         assert config['adaptive'] is True
 
-        # Reset
-        BaseFetcher.configure(adaptive=False)
-
     def test_configure_multiple_parameters(self):
         """Test configuring multiple parameters"""
         BaseFetcher.configure(
@@ -37,13 +39,6 @@ class TestBaseFetcher:
         assert config['keep_comments'] is True
         assert config['adaptive'] is True
 
-        # Reset
-        BaseFetcher.configure(
-            huge_tree=True,
-            keep_comments=False,
-            adaptive=False
-        )
-
     def test_configure_invalid_parameter(self):
         """Test configuring invalid parameter"""
         with pytest.raises(ValueError):
@@ -54,11 +49,11 @@ class TestBaseFetcher:
         with pytest.raises(AttributeError):
             BaseFetcher.configure()
 
-    def test_configure_non_parser_keyword(self):
+    def test_configure_non_parser_keyword(self, monkeypatch):
         """Test configuring non-parser keyword"""
         with pytest.raises(AttributeError):
             # Assuming there's some attribute that's not in parser_keywords
-            BaseFetcher.some_other_attr = "test"
+            monkeypatch.setattr(BaseFetcher, "some_other_attr", "test", raising=False)
             BaseFetcher.configure(some_other_attr="new_value")
 
     def test_generate_parser_arguments(self):
@@ -74,10 +69,3 @@ class TestBaseFetcher:
         assert args['huge_tree'] is False
         assert args['adaptive'] is True
         assert args['adaptive_domain'] == "example.com"
-
-        # Reset
-        BaseFetcher.configure(
-            huge_tree=True,
-            adaptive=False
-        )
-        BaseFetcher.adaptive_domain = None

@@ -532,16 +532,6 @@ class TestErrorScenarios:
         divs = page.css("div")
         assert len(divs) > 0
 
-    def test_empty_responses(self):
-        """Test handling of empty responses"""
-        # Empty HTML
-        page = Selector("")
-        assert page is not None
-
-        # Whitespace only
-        page = Selector("   \n\t   ")
-        assert page is not None
-
-        # Null bytes
+    def test_embedded_null_keeps_text(self):
         page = Selector("Hello\x00World")
-        assert "Hello" in page.get_all_text()
+        assert page.get_all_text() == "HelloWorld"

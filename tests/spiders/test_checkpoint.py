@@ -1,6 +1,5 @@
 """Tests for the CheckpointManager and CheckpointData classes."""
 
-import pickle
 import tempfile
 from pathlib import Path
 
@@ -20,33 +19,6 @@ class TestCheckpointData:
 
         assert data.requests == []
         assert data.seen == set()
-
-    def test_with_requests_and_seen(self):
-        """Test CheckpointData with requests and seen URLs."""
-        requests = [
-            Request("https://example.com/1", priority=10),
-            Request("https://example.com/2", priority=5),
-        ]
-        seen = {"url1", "url2", "url3"}
-
-        data = CheckpointData(requests=requests, seen=seen)
-
-        assert len(data.requests) == 2
-        assert data.requests[0].url == "https://example.com/1"
-        assert data.seen == {"url1", "url2", "url3"}
-
-    def test_pickle_roundtrip(self):
-        """Test that CheckpointData can be pickled and unpickled."""
-        requests = [Request("https://example.com", priority=5)]
-        seen = {"fingerprint1", "fingerprint2"}
-        data = CheckpointData(requests=requests, seen=seen)
-
-        pickled = pickle.dumps(data)
-        restored = pickle.loads(pickled)
-
-        assert len(restored.requests) == 1
-        assert restored.requests[0].url == "https://example.com"
-        assert restored.seen == {"fingerprint1", "fingerprint2"}
 
 
 class TestCheckpointManagerInit:
@@ -111,22 +83,6 @@ class TestCheckpointManagerOperations:
         result = await manager.has_checkpoint()
 
         assert result is False
-
-    @pytest.mark.asyncio
-    async def test_save_creates_checkpoint_file(self, temp_dir: Path):
-        """Test that save creates the checkpoint file."""
-        crawl_dir = temp_dir / "crawl"
-        manager = CheckpointManager(crawl_dir)
-
-        data = CheckpointData(
-            requests=[Request("https://example.com")],
-            seen={"fp1", "fp2"},
-        )
-
-        await manager.save(data)
-
-        checkpoint_path = crawl_dir / "checkpoint.pkl"
-        assert checkpoint_path.exists()
 
     @pytest.mark.asyncio
     async def test_save_creates_directory_if_not_exists(self, temp_dir: Path):

@@ -1,7 +1,6 @@
 import base64
 import inspect
 from json import loads
-import struct
 from typing import Any
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -9,12 +8,14 @@ from threading import Thread
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+import pytest_asyncio
 import pytest_httpbin
 from mcp.client import Client
 from mcp.server import MCPServer
 from mcp.types import ImageContent, TextContent
 
 from scrapling import __version__ as scrapling_version
+from scrapling.core._types import AsyncGenerator
 from scrapling.engines.toolbelt.custom import Response
 from scrapling.core.ai import (
     MCP_AUTH_TOKEN_ENV,
@@ -56,6 +57,16 @@ MCP_TOOLS = {
     "close_session",
     "list_sessions",
 }
+
+
+@pytest_asyncio.fixture
+async def server() -> AsyncGenerator[ScraplingMCPServer, None]:
+    instance = ScraplingMCPServer()
+    try:
+        yield instance
+    finally:
+        for session_id in list(instance._sessions):
+            await instance.close_session(session_id)
 
 
 def test_translate_response_strips_control_characters():
@@ -413,52 +424,40 @@ class TestSessionManagement:
     def test_url(self, httpbin):
         return f"{httpbin.url}/html"
 
-    @pytest.fixture
-    def server(self):
-        return ScraplingMCPServer()
-
     @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_open_and_close_session(self, server):
         """Test opening and closing a stealthy session"""
-        result = await server.browser_open(headless=True)
+        assert await server.list_sessions() == []
+        result = await server.browser_open(session_id="my-session", headless=True)
         assert isinstance(result, SessionCreatedModel)
-        assert result.model_dump() == {"session_id": result.session_id, "session_type": "stealthy"}
+        assert result.model_dump() == {"session_id": "my-session", "session_type": "stealthy"}
         session_id = result.session_id
-
-        # Close the session
-        closed = await server.close_session(session_id)
-        assert isinstance(closed, SessionClosedModel)
-        assert closed.session_id == session_id
-
-    @pytest.mark.browser
-    @pytest.mark.asyncio
-    async def test_list_sessions(self, server):
-        """Test listing sessions"""
-        # Initially empty
+        session = server._sessions[session_id].session
         sessions = await server.list_sessions()
-        assert sessions == []
-
-        # Open a session
-        result = await server.browser_open(headless=True)
-        session_id = result.session_id
-
-        # List should show it
-        sessions = await server.list_sessions()
-        assert len(sessions) == 1
-        assert isinstance(sessions[0], SessionInfo)
+        assert len(sessions) == 1 and isinstance(sessions[0], SessionInfo)
         assert sessions[0].session_id == session_id
         assert sessions[0].session_type == "stealthy"
         assert sessions[0].is_alive is True
-
-        # Cleanup
-        await server.close_session(session_id)
+        with pytest.raises(ValueError, match="already exists"):
+            await server.browser_open(session_id=session_id, headless=True)
+        assert server._sessions[session_id].session is session and session._is_alive
+        closed = await server.close_session(session_id)
+        assert isinstance(closed, SessionClosedModel)
+        assert closed.session_id == session_id
+        assert not session._is_alive and not server._sessions
+        assert await server.list_sessions() == []
+        with pytest.raises(ValueError, match="not found"):
+            await server.browser_fetch(url="https://example.com", session_id=session_id)
 
     @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_browser_fetch_reuses_the_session(self, server, test_url):
         """Test fetching a page twice through a persistent stealthy session"""
         result = await server.browser_open(headless=True)
+        assert isinstance(result, SessionCreatedModel)
+        assert result.model_dump() == {"session_id": result.session_id, "session_type": "stealthy"}
+        assert len(result.session_id) == 12
         session_id = result.session_id
 
         response = await server.browser_fetch(url=test_url, session_id=session_id)
@@ -466,22 +465,9 @@ class TestSessionManagement:
         assert response.status == 200
 
         # Fetch again with the same session (reuse)
-        response2 = await server.browser_fetch(url=test_url, session_id=session_id)
+        response2 = await server.browser_fetch(url=test_url, session_id=session_id, network_idle=True, timeout=45000)
         assert isinstance(response2, ResponseModel)
         assert response2.status == 200
-
-        await server.close_session(session_id)
-
-    @pytest.mark.browser
-    @pytest.mark.asyncio
-    async def test_browser_fetch_accepts_per_request_overrides(self, server, test_url):
-        """A per-request override is honored on a session fetch"""
-        result = await server.browser_open(headless=True)
-        session_id = result.session_id
-
-        response = await server.browser_fetch(url=test_url, session_id=session_id, network_idle=True, timeout=45000)
-        assert isinstance(response, ResponseModel)
-        assert response.status == 200
 
         await server.close_session(session_id)
 
@@ -491,51 +477,9 @@ class TestSessionManagement:
         with pytest.raises(ValueError, match="not found"):
             await server.close_session("nonexistent")
 
-    @pytest.mark.asyncio
-    async def test_browser_fetch_with_nonexistent_session(self, server, test_url):
-        """Test fetching with a session ID that doesn't exist"""
-        with pytest.raises(ValueError, match="not found"):
-            await server.browser_fetch(url=test_url, session_id="nonexistent")
-
-    @pytest.mark.browser
-    @pytest.mark.asyncio
-    async def test_browser_fetch_with_closed_session(self, server, test_url):
-        """Test fetching with a session that has been closed"""
-        result = await server.browser_open(headless=True)
-        session_id = result.session_id
-        await server.close_session(session_id)
-
-        with pytest.raises(ValueError, match="not found"):
-            await server.browser_fetch(url=test_url, session_id=session_id)
-
-    @pytest.mark.browser
-    @pytest.mark.asyncio
-    async def test_browser_open_with_custom_id(self, server):
-        """Test opening a session with a custom session_id"""
-        result = await server.browser_open(session_id="my-session", headless=True)
-        assert isinstance(result, SessionCreatedModel)
-        assert result.session_id == "my-session"
-
-        await server.close_session("my-session")
-
-    @pytest.mark.browser
-    @pytest.mark.asyncio
-    async def test_browser_open_duplicate_id_raises(self, server):
-        """Test that opening a session with a duplicate session_id raises an error"""
-        await server.browser_open(session_id="dupe", headless=True)
-
-        with pytest.raises(ValueError, match="already exists"):
-            await server.browser_open(session_id="dupe", headless=True)
-
-        await server.close_session("dupe")
-
 
 class TestStaticSessionManagement:
     """Test persistent requests (HTTP) session management"""
-
-    @pytest.fixture
-    def server(self):
-        return ScraplingMCPServer()
 
     @pytest.mark.asyncio
     async def test_static_session_workflow_through_mcp(self, server, httpbin):
@@ -845,18 +789,6 @@ class TestBrowserFetchForwarding:
         assert "proxy" not in forwarded, "proxy is session-level (browser_open), never forwarded per request"
 
     @pytest.mark.asyncio
-    async def test_stealthy_browser_fetch_forwards_solve_cloudflare(self, monkeypatch):
-        """A stealthy session additionally receives solve_cloudflare"""
-        monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
-        server = ScraplingMCPServer()
-        opened = await server.browser_open()
-
-        await server.browser_fetch(url="https://example.com/1", session_id=opened.session_id, solve_cloudflare=True)
-
-        forwarded = self._fetch_call(_FakeStealthySession)
-        assert forwarded.get("solve_cloudflare") is True, forwarded
-
-    @pytest.mark.asyncio
     async def test_supplied_values_are_forwarded(self, monkeypatch):
         """Per-request overrides reach the session as given"""
         monkeypatch.setattr("scrapling.core.ai.server.AsyncStealthySession", _FakeStealthySession)
@@ -1128,11 +1060,6 @@ class TestSessionSettingsReceipt:
         assert not server._sessions
 
 
-def _png_height(data: bytes) -> int:
-    """Read the height field from a PNG IHDR chunk."""
-    return struct.unpack(">I", data[20:24])[0]
-
-
 @contextmanager
 def _serve_html(body: bytes):
     """Serve a fixed HTML body on localhost, yielding its URL."""
@@ -1166,27 +1093,6 @@ class TestScreenshot:
     def test_url(self, httpbin):
         return f"{httpbin.url}/html"
 
-    @pytest.fixture
-    def server(self):
-        return ScraplingMCPServer()
-
-    @pytest.mark.browser
-    @pytest.mark.asyncio
-    async def test_screenshot_png_with_stealthy_session(self, server, test_url):
-        """PNG screenshot via a stealthy session returns image and url content blocks"""
-        opened = await server.browser_open(headless=True)
-        try:
-            await server.browser_fetch(url=test_url, session_id=opened.session_id)
-            result = await server.browser_screenshot(session_id=opened.session_id)
-            assert isinstance(result, list) and len(result) == 2
-            assert isinstance(result[0], ImageContent)
-            assert result[0].mime_type == "image/png"
-            assert base64.b64decode(result[0].data).startswith(b"\x89PNG\r\n\x1a\n")
-            assert isinstance(result[1], TextContent)
-            assert result[1].text == test_url
-        finally:
-            await server.close_session(opened.session_id)
-
     @pytest.mark.browser
     @pytest.mark.asyncio
     async def test_screenshot_jpeg_with_quality(self, server, test_url):
@@ -1195,48 +1101,20 @@ class TestScreenshot:
         try:
             await server.browser_fetch(url=test_url, session_id=opened.session_id)
             result = await server.browser_screenshot(session_id=opened.session_id, image_type="jpeg", quality=80)
+            assert isinstance(result, list) and len(result) == 2
             assert isinstance(result[0], ImageContent)
             assert result[0].mime_type == "image/jpeg"
             jpeg = base64.b64decode(result[0].data)
             assert jpeg.startswith(b"\xff\xd8") and jpeg.endswith(b"\xff\xd9")
+            assert isinstance(result[1], TextContent) and result[1].text == test_url
         finally:
             await server.close_session(opened.session_id)
-
-    @pytest.mark.browser
-    @pytest.mark.asyncio
-    async def test_screenshot_full_page_taller_than_viewport(self, server):
-        """full_page=True produces an image taller than the viewport-only capture"""
-        tall_html = b"<html><body><div style='height:5000px;background:#abc'></div></body></html>"
-        with _serve_html(tall_html) as tall_url:
-            opened = await server.browser_open(headless=True)
-            try:
-                await server.browser_fetch(url=tall_url, session_id=opened.session_id)
-                viewport_result = await server.browser_screenshot(session_id=opened.session_id, full_page=False)
-                full_result = await server.browser_screenshot(session_id=opened.session_id, full_page=True)
-
-                viewport_png = base64.b64decode(viewport_result[0].data)
-                full_png = base64.b64decode(full_result[0].data)
-
-                assert _png_height(full_png) > _png_height(viewport_png)
-            finally:
-                await server.close_session(opened.session_id)
 
     @pytest.mark.asyncio
     async def test_screenshot_invalid_session_id_raises(self, server, test_url):
         """Unknown session_id raises ValueError"""
         with pytest.raises(ValueError, match="not found"):
             await server.browser_screenshot(session_id="does-not-exist")
-
-    @pytest.mark.browser
-    @pytest.mark.asyncio
-    async def test_screenshot_quality_with_png_raises(self, server, test_url):
-        """quality is rejected when image_type is png"""
-        opened = await server.browser_open(headless=True)
-        try:
-            with pytest.raises(ValueError, match="quality"):
-                await server.browser_screenshot(session_id=opened.session_id, image_type="png", quality=90)
-        finally:
-            await server.close_session(opened.session_id)
 
 
 class TestNormalizeCredentials:

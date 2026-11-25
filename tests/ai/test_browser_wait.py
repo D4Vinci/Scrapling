@@ -246,38 +246,6 @@ async def test_browser_wait_native_timeout_reaches_mcp_and_releases_page(values:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "state, message",
-    [
-        ("missing", "not found"),
-        ("static", "'stealthy'"),
-        ("dead", "no longer alive"),
-        ("empty", "browser_fetch"),
-        ("closed", "closed page"),
-    ],
-)
-async def test_browser_wait_session_errors(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "stealthy")
-    if state == "missing":
-        server._sessions.clear()
-    elif state == "dead":
-        session._is_alive = False
-    elif state == "empty":
-        session.page_pool.clear()
-    elif state == "closed":
-        page.is_closed.return_value = True
-    async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool(
-            "browser_actions", {"session_id": "browser", "actions": [{"type": "wait_time", "milliseconds": 0}]}
-        )
-    assert result.is_error and isinstance(result.content[0], TextContent)
-    assert message in result.content[0].text
-    page.wait_for_timeout.assert_not_awaited()
-    if state == "closed":
-        assert not session.page_pool.pages
-
-
-@pytest.mark.asyncio
 @pytest.mark.parametrize("cancel_mode", ["task", "scope"])
 async def test_browser_wait_reserves_page_until_cancelled(cancel_mode: str) -> None:
     server, session, page = _server()
@@ -382,7 +350,7 @@ async def test_browser_wait_live_pause_and_element_states() -> None:
                     "browser_actions",
                     {
                         "session_id": "browser",
-                        "actions": [{"type": "wait_element", "target": "#absent", "state": state, "timeout": 100}],
+                        "actions": [{"type": "wait_element", "target": "#absent", "state": state}],
                     },
                 )
             ).is_error
@@ -391,7 +359,7 @@ async def test_browser_wait_live_pause_and_element_states() -> None:
             "browser_actions",
             {
                 "session_id": "browser",
-                "actions": [{"type": "wait_element", "target": ".duplicate", "state": "attached", "timeout": 100}],
+                "actions": [{"type": "wait_element", "target": ".duplicate", "state": "attached"}],
             },
         )
         assert result.is_error and isinstance(result.content[0], TextContent)
@@ -401,9 +369,17 @@ async def test_browser_wait_live_pause_and_element_states() -> None:
 
 @pytest.mark.browser
 @pytest.mark.asyncio
-async def test_browser_wait_live_current_document_load_states() -> None:
+async def test_browser_wait_live_current_document_load_states(monkeypatch: pytest.MonkeyPatch) -> None:
     async with _browser() as (client, session, page):
         requested, release = asyncio.Event(), asyncio.Event()
+        entered = asyncio.Event()
+        native_wait = page.wait_for_load_state
+
+        async def wait_for_load_state(*args: Any, **kwargs: Any) -> None:
+            entered.set()
+            await native_wait(*args, **kwargs)
+
+        monkeypatch.setattr(page, "wait_for_load_state", wait_for_load_state)
 
         async def blocked(route: Any) -> None:
             requested.set()
@@ -428,9 +404,10 @@ async def test_browser_wait_live_current_document_load_states() -> None:
             await asyncio.wait_for(requested.wait(), 5)
             assert not (await wait({"state": "domcontentloaded", "timeout": 5000})).is_error
             assert await page.evaluate("document.readyState") == "interactive"
+            entered.clear()
             task = asyncio.create_task(wait({"state": "load", "timeout": 5000}))
-            await asyncio.sleep(0.05)
-            assert not task.done()
+            await asyncio.wait_for(entered.wait(), 5)
+            assert not task.done() and session.page_pool.pages[0].state == "busy"
             release.set()
             assert not (await asyncio.wait_for(task, 5)).is_error
             assert await page.evaluate("document.readyState") == "complete"
@@ -442,9 +419,10 @@ async def test_browser_wait_live_current_document_load_states() -> None:
             assert result.is_error and isinstance(result.content[0], TextContent)
             assert "Timeout" in result.content[0].text
             assert session.page_pool.pages[0].state == "ready"
+            entered.clear()
             task = asyncio.create_task(wait({"state": "networkidle", "timeout": 5000}))
-            await asyncio.sleep(0.05)
-            assert not task.done()
+            await asyncio.wait_for(entered.wait(), 5)
+            assert not task.done() and session.page_pool.pages[0].state == "busy"
             release.set()
             assert not (await asyncio.wait_for(task, 5)).is_error
             assert await page.evaluate("window.pending") == "done"
@@ -462,10 +440,14 @@ async def test_browser_wait_live_load_visible_hidden_chain() -> None:
     async with _browser() as (client, session, page):
         await page.evaluate("""() => {
             document.body.innerHTML = '<div id=target hidden>Ready</div>';
-            setTimeout(() => {
-                document.querySelector('#target').hidden = false;
-                setTimeout(() => document.querySelector('#target').hidden = true, 300);
-            }, 100);
+            const target = document.querySelector('#target');
+            document.onkeydown = event => {
+                if (event.key === 'Escape') {
+                    document.body.dataset.wasVisible = String(!target.hidden);
+                    target.hidden = true;
+                }
+            };
+            setTimeout(() => target.hidden = false, 100);
         }""")
         result = await client.call_tool(
             "browser_actions",
@@ -474,11 +456,13 @@ async def test_browser_wait_live_load_visible_hidden_chain() -> None:
                 "actions": [
                     {"type": "wait_load", "state": "load", "timeout": 5000},
                     {"type": "wait_element", "target": "#target", "state": "visible", "timeout": 5000},
+                    {"type": "press_key", "key": "Escape"},
                     {"type": "wait_element", "target": "#target", "state": "hidden", "timeout": 5000},
                 ],
             },
         )
         assert not result.is_error
         assert result.content == [TextContent(type="text", text="Actions completed.")]
+        assert await page.get_attribute("body", "data-was-visible") == "true"
         assert await page.locator("#target").is_hidden()
         assert session.page_pool.pages[0].state == "ready"

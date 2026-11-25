@@ -166,11 +166,15 @@ class TestXMLFeedSpider:
             def emit(self, record):
                 records.append(record.getMessage())
 
-        spider.logger.addHandler(Capture())
-        items = await _collect(spider.parse(_make_response(b"this is <<< not xml")))
-
-        assert items == []
-        assert any("Failed to parse XML feed" in message for message in records)
+        handler = Capture()
+        spider.logger.addHandler(handler)
+        try:
+            items = await _collect(spider.parse(_make_response(b"this is <<< not xml")))
+            assert items == []
+            assert any("Failed to parse XML feed" in message for message in records)
+        finally:
+            spider.logger.removeHandler(handler)
+            handler.close()
 
     @pytest.mark.asyncio
     async def test_requests_yielded_from_parse_node_flow_through(self):

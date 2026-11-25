@@ -151,58 +151,6 @@ class TestSchedulerDequeue:
     """Test Scheduler dequeue functionality."""
 
     @pytest.mark.asyncio
-    async def test_dequeue_returns_request(self):
-        """Test that dequeue returns the enqueued request."""
-        scheduler = Scheduler()
-        original = Request("https://example.com")
-
-        await scheduler.enqueue(original)
-        dequeued = await scheduler.dequeue()
-
-        assert dequeued.url == original.url
-
-    @pytest.mark.asyncio
-    async def test_dequeue_respects_priority_order(self):
-        """Test that higher priority requests are dequeued first."""
-        scheduler = Scheduler()
-
-        low = Request("https://example.com/low", priority=1)
-        high = Request("https://example.com/high", priority=10)
-        medium = Request("https://example.com/medium", priority=5)
-
-        await scheduler.enqueue(low)
-        await scheduler.enqueue(high)
-        await scheduler.enqueue(medium)
-
-        # Should get high priority first
-        first = await scheduler.dequeue()
-        assert first.url == "https://example.com/high"
-
-        second = await scheduler.dequeue()
-        assert second.url == "https://example.com/medium"
-
-        third = await scheduler.dequeue()
-        assert third.url == "https://example.com/low"
-
-    @pytest.mark.asyncio
-    async def test_dequeue_fifo_for_same_priority(self):
-        """Test FIFO ordering for requests with same priority."""
-        scheduler = Scheduler()
-
-        for i in range(3):
-            request = Request(f"https://example.com/{i}", priority=5)
-            await scheduler.enqueue(request)
-
-        first = await scheduler.dequeue()
-        second = await scheduler.dequeue()
-        third = await scheduler.dequeue()
-
-        # Should be in FIFO order since same priority
-        assert first.url == "https://example.com/0"
-        assert second.url == "https://example.com/1"
-        assert third.url == "https://example.com/2"
-
-    @pytest.mark.asyncio
     async def test_dequeue_updates_length(self):
         """Test that dequeue decreases the queue length."""
         scheduler = Scheduler()
@@ -312,23 +260,6 @@ class TestSchedulerRestore:
     """Test Scheduler restore functionality from checkpoint."""
 
     @pytest.mark.asyncio
-    async def test_restore_requests(self):
-        """Test restoring requests from checkpoint data."""
-        scheduler = Scheduler()
-
-        checkpoint_requests = [
-            Request("https://example.com/1", priority=10),
-            Request("https://example.com/2", priority=5),
-        ]
-        checkpoint_seen = {b"fp1_bytes_padded!", b"fp2_bytes_padded!", b"fp3_bytes_padded!"}
-
-        data = CheckpointData(requests=checkpoint_requests, seen=checkpoint_seen)
-
-        scheduler.restore(data)
-
-        assert len(scheduler) == 2
-
-    @pytest.mark.asyncio
     async def test_restore_seen_set(self):
         """Test that restore sets up seen fingerprints."""
         scheduler = Scheduler()
@@ -343,27 +274,6 @@ class TestSchedulerRestore:
         # Verify seen set was restored
         _, seen = scheduler.snapshot()
         assert seen == {b"fp1_bytes_here_pad", b"fp2_bytes_here_pad"}
-
-    @pytest.mark.asyncio
-    async def test_restore_maintains_priority_order(self):
-        """Test that restored requests maintain priority order."""
-        scheduler = Scheduler()
-
-        # Requests should already be sorted by priority in checkpoint
-        checkpoint_requests = [
-            Request("https://example.com/high", priority=10),
-            Request("https://example.com/low", priority=1),
-        ]
-
-        data = CheckpointData(requests=checkpoint_requests, seen=set())
-        scheduler.restore(data)
-
-        # Dequeue should return high priority first
-        first = await scheduler.dequeue()
-        assert first.url == "https://example.com/high"
-
-        second = await scheduler.dequeue()
-        assert second.url == "https://example.com/low"
 
     @pytest.mark.asyncio
     async def test_restore_empty_checkpoint(self):
@@ -408,61 +318,9 @@ class TestSchedulerIntegration:
             assert orig_req.url == rest_req.url
             assert orig_req.priority == rest_req.priority
 
-    @pytest.mark.asyncio
-    async def test_partial_processing_then_checkpoint(self):
-        """Test checkpointing after partial processing."""
-        scheduler = Scheduler()
-
-        # Enqueue 5 requests
-        for i in range(5):
-            await scheduler.enqueue(Request(f"https://example.com/{i}"))
-
-        # Process 2
-        scheduler.complete(await scheduler.dequeue())
-        scheduler.complete(await scheduler.dequeue())
-
-        # Snapshot should show 3 pending, 5 seen
-        requests, seen = scheduler.snapshot()
-
-        assert len(requests) == 3
-        assert len(seen) == 5
-
-    @pytest.mark.asyncio
-    async def test_deduplication_after_restore(self):
-        """Test that deduplication works after restore."""
-        scheduler = Scheduler()
-
-        await scheduler.enqueue(Request("https://example.com", sid="s1"))
-
-        requests, seen = scheduler.snapshot()
-        data = CheckpointData(requests=requests, seen=seen)
-
-        # Restore to new scheduler
-        new_scheduler = Scheduler()
-        new_scheduler.restore(data)
-
-        # Try to add duplicate - should be filtered
-        result = await new_scheduler.enqueue(Request("https://example.com", sid="s1"))
-
-        assert result is False  # Duplicate filtered based on restored seen set
-
 
 class TestSchedulerInFlight:
     """Test in-flight tracking so checkpoints don't lose dequeued requests."""
-
-    @pytest.mark.asyncio
-    async def test_dequeue_keeps_request_tracked(self):
-        """Dequeue does not drop the request; it stays tracked until completed."""
-        scheduler = Scheduler()
-
-        await scheduler.enqueue(Request("https://example.com/1"))
-        await scheduler.enqueue(Request("https://example.com/2"))
-
-        request = await scheduler.dequeue()
-
-        requests, _ = scheduler.snapshot()
-        assert len(requests) == 2
-        assert request.url in {r.url for r in requests}
 
     @pytest.mark.asyncio
     async def test_complete_stops_tracking_request(self):

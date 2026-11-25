@@ -117,7 +117,6 @@ async def test_browser_extract_content_empty_result_is_empty_text(kind: str, tar
         {"extraction_type": "json"},
         {"target": ""},
         {"target": 123},
-        *[{"extraction_type": kind, "search": ".*"} for kind in ("html", "markdown", "text")],
     ],
 )
 async def test_browser_extract_content_invalid_options_do_not_reserve_page(options: dict[str, Any]) -> None:
@@ -128,6 +127,7 @@ async def test_browser_extract_content_invalid_options_do_not_reserve_page(optio
     page.is_closed.assert_not_called()
     page.content.assert_not_awaited()
     page.locator.assert_not_called()
+    page.aria_snapshot.assert_not_called()
     assert session.page_pool.pages[0].state == "ready"
 
 
@@ -334,7 +334,6 @@ async def test_browser_extract_content_live_selectors_refs_and_snapshot_scope() 
 async def test_browser_extract_content_live_target_errors_allow_next_call() -> None:
     async with _browser() as (client, session, page):
         await page.set_content("<main><button id=old>Old button</button><button>Keep button</button></main>")
-        page.set_default_timeout(100)
         snapshot = await _extract(client)
         ref = search(r'button "Old button".*?\[ref=([^\]]+)\]', snapshot)
         assert ref is not None
@@ -345,6 +344,7 @@ async def test_browser_extract_content_live_target_errors_allow_next_call() -> N
             ("[", "selector"),
             (f"aria-ref={ref[1]}", "ref"),
         ):
+            page.set_default_timeout(100 if error in ("Timeout", "ref") else 30000)
             for kind in ("snapshot", "html", "markdown", "text"):
                 result = await client.call_tool(
                     "browser_extract", {"session_id": "browser", "extraction_type": kind, "target": target}
@@ -353,4 +353,5 @@ async def test_browser_extract_content_live_target_errors_allow_next_call() -> N
                 expected = "does not match any element" if kind == "snapshot" and target == "#missing" else error
                 assert expected.lower() in result.content[0].text.lower(), result.content
                 assert session.page_pool.pages[0].state == "ready"
+        page.set_default_timeout(30000)
         assert await _extract(client, extraction_type="text", target="button") == "Keep button"

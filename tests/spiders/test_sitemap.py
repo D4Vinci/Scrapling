@@ -307,13 +307,17 @@ class TestRobotsTxt:
             def emit(self, record: logging.LogRecord) -> None:
                 records.append(record)
 
-        spider.logger.addHandler(_Capture())
-
-        body = b"User-agent: *\nDisallow: /\n"
-        resp = _make_response(body, url="https://example.com/robots.txt")
-        out = await _collect(spider._parse_sitemap(resp))
-        assert out == []
-        assert any("No Sitemaps" in r.getMessage() for r in records if r.levelno == logging.WARNING)
+        handler = _Capture()
+        spider.logger.addHandler(handler)
+        try:
+            body = b"User-agent: *\nDisallow: /\n"
+            resp = _make_response(body, url="https://example.com/robots.txt")
+            out = await _collect(spider._parse_sitemap(resp))
+            assert out == []
+            assert any("No Sitemaps" in r.getMessage() for r in records if r.levelno == logging.WARNING)
+        finally:
+            spider.logger.removeHandler(handler)
+            handler.close()
 
 
 class TestSitemapSpiderPickle:

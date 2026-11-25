@@ -1,10 +1,11 @@
 """Tests for the AutoThrottle algorithm and its integration with the crawling engine."""
 
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import patch
 
-import anyio
 import pytest
+from anyio.lowlevel import checkpoint
 
 from scrapling.spiders.engine import CrawlerEngine
 from scrapling.spiders.request import Request
@@ -192,15 +193,14 @@ class TestParseRetryAfter:
         assert parse_retry_after({"RETRY-AFTER": " 120 "}) == 120.0
 
     def test_http_date(self):
-        from email.utils import format_datetime
-        from datetime import datetime, timedelta, timezone
-
-        future = datetime.now(timezone.utc) + timedelta(seconds=90)
-
-        assert parse_retry_after({"Retry-After": format_datetime(future)}) == pytest.approx(90.0, abs=5.0)
+        with patch("scrapling.spiders.throttle.datetime") as clock:
+            clock.now.return_value = datetime(2015, 10, 21, 7, 26, 30, tzinfo=timezone.utc)
+            assert parse_retry_after({"Retry-After": "Wed, 21 Oct 2015 07:28:00 GMT"}) == 90.0
 
     def test_past_http_date_is_zero(self):
-        assert parse_retry_after({"Retry-After": "Wed, 21 Oct 2015 07:28:00 GMT"}) == 0.0
+        with patch("scrapling.spiders.throttle.datetime") as clock:
+            clock.now.return_value = datetime(2015, 10, 21, 7, 29, tzinfo=timezone.utc)
+            assert parse_retry_after({"Retry-After": "Wed, 21 Oct 2015 07:28:00 GMT"}) == 0.0
 
     @pytest.mark.parametrize(
         "value",
@@ -243,6 +243,7 @@ class MockSession:
         self.status = status
         self.retry_after = retry_after
         self.fetch_count = 0
+        self.clock = 1.0
 
     async def __aenter__(self):
         self._is_alive = True
@@ -253,7 +254,7 @@ class MockSession:
 
     async def fetch(self, url: str, **kwargs):
         self.fetch_count += 1
-        await anyio.sleep(self.latency)
+        self.clock += self.latency
         return _make_response(url=url, status=self.status, retry_after=self.retry_after)
 
 
@@ -313,10 +314,16 @@ class MockSpider:
 
 
 async def _crawl(spider: MockSpider, session: MockSession):
+    async def advance(delay):
+        session.clock += delay
+        await checkpoint()
+
     manager = SessionManager()
     manager.add("default", session)
     engine = CrawlerEngine(spider, manager)
-    return engine, await engine.crawl()
+    clock = SimpleNamespace(current_time=lambda: session.clock, sleep=advance)
+    with patch("scrapling.spiders.engine.anyio", clock):
+        return engine, await engine.crawl()
 
 
 class TestAutoThrottleIntegration:

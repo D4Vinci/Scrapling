@@ -19,7 +19,7 @@ from scrapling.spiders.engine import CrawlerEngine
 from scrapling.spiders.request import Request
 from scrapling.spiders.session import SessionManager
 from scrapling.spiders.checkpoint import CheckpointManager, CheckpointData
-from scrapling.core._types import Any, Dict, Set, AsyncGenerator
+from scrapling.core._types import Any, Dict, AsyncGenerator
 
 
 # ---------------------------------------------------------------------------
@@ -40,9 +40,12 @@ class MockResponse:
 
 
 class MockSession:
-    def __init__(self, delay: float = 0.0):
+    def __init__(self, blocked: bool = False):
         self._is_alive = False
-        self._delay = delay
+        self.started = anyio.Event()
+        self.release = anyio.Event()
+        if not blocked:
+            self.release.set()
 
     async def __aenter__(self):
         self._is_alive = True
@@ -52,8 +55,8 @@ class MockSession:
         self._is_alive = False
 
     async def fetch(self, url: str, **kwargs):
-        if self._delay:
-            await anyio.sleep(self._delay)
+        self.started.set()
+        await self.release.wait()
         resp = MockResponse(url=url)
         return resp
 
@@ -123,6 +126,21 @@ def _make_engine(spider=None, session=None, crawldir=None, interval=300.0):
     return CrawlerEngine(spider, sm, crawldir=crawldir, interval=interval)
 
 
+async def _crawl_until_pause(engine: CrawlerEngine, session: MockSession, force: bool = False):
+    async def pause():
+        await session.started.wait()
+        engine.request_pause()
+        if force:
+            engine.request_pause()
+        else:
+            session.release.set()
+
+    with anyio.fail_after(10):
+        async with anyio.create_task_group() as group:
+            group.start_soon(pause)
+            await engine.crawl()
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -136,23 +154,12 @@ class TestForceStopCheckpointPreservation:
         """Core regression test: force-stop must save checkpoint, not delete it."""
         with tempfile.TemporaryDirectory() as tmpdir:
             spider = SlowSpider(num_urls=20)
-            # Use a slow session so tasks are in-flight when we force-stop
-            session = MockSession(delay=0.5)
+            session = MockSession(blocked=True)
             engine = _make_engine(spider, session, crawldir=tmpdir, interval=0)
 
             checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
 
-            async def force_stop_after_delay():
-                """Simulate two rapid Ctrl+C presses."""
-                # Wait for some tasks to start
-                await anyio.sleep(0.1)
-                engine.request_pause()  # First Ctrl+C
-                await anyio.sleep(0.05)
-                engine.request_pause()  # Second Ctrl+C (force stop)
-
-            async with anyio.create_task_group() as tg:
-                tg.start_soon(force_stop_after_delay)
-                await engine.crawl()
+            await _crawl_until_pause(engine, session, force=True)
 
             # The checkpoint file MUST exist after force-stop
             assert checkpoint_path.exists(), (
@@ -161,60 +168,32 @@ class TestForceStopCheckpointPreservation:
             )
             # Engine must report as paused
             assert engine.paused is True
+            data = await CheckpointManager(tmpdir).load()
+            assert data is not None, "Checkpoint data could not be loaded"
+            assert isinstance(data, CheckpointData)
+            assert len(data.seen) > 0
 
     @pytest.mark.anyio
     async def test_graceful_pause_still_saves_checkpoint(self):
         """Single Ctrl+C (graceful pause) should save checkpoint as before."""
         with tempfile.TemporaryDirectory() as tmpdir:
             spider = SlowSpider(num_urls=5)
-            session = MockSession(delay=0.3)
+            session = MockSession(blocked=True)
             engine = _make_engine(spider, session, crawldir=tmpdir, interval=0)
 
             checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
 
-            async def pause_after_delay():
-                await anyio.sleep(0.1)
-                engine.request_pause()
-
-            async with anyio.create_task_group() as tg:
-                tg.start_soon(pause_after_delay)
-                await engine.crawl()
+            await _crawl_until_pause(engine, session)
 
             assert checkpoint_path.exists(), "Checkpoint not saved on graceful pause"
             assert engine.paused is True
-
-    @pytest.mark.anyio
-    async def test_force_stop_checkpoint_is_loadable(self):
-        """Checkpoint saved during force-stop must be valid and loadable."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            spider = SlowSpider(num_urls=15)
-            session = MockSession(delay=0.4)
-            engine = _make_engine(spider, session, crawldir=tmpdir, interval=0)
-
-            async def force_stop():
-                await anyio.sleep(0.1)
-                engine.request_pause()
-                await anyio.sleep(0.05)
-                engine.request_pause()
-
-            async with anyio.create_task_group() as tg:
-                tg.start_soon(force_stop)
-                await engine.crawl()
-
-            # Load the checkpoint and verify it's valid
-            manager = CheckpointManager(tmpdir)
-            data = await manager.load()
-            assert data is not None, "Checkpoint data could not be loaded"
-            assert isinstance(data, CheckpointData)
-            # seen set should have some entries (requests were enqueued)
-            assert len(data.seen) > 0
 
     @pytest.mark.anyio
     async def test_normal_completion_cleans_up_checkpoint(self):
         """Normal completion (no pause) should still clean up checkpoint files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             spider = SlowSpider(num_urls=2)
-            session = MockSession(delay=0.0)
+            session = MockSession()
             engine = _make_engine(spider, session, crawldir=tmpdir, interval=0)
 
             await engine.crawl()
@@ -236,10 +215,20 @@ class TestForceStopCheckpointPreservation:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             spider = CrashingSpider(num_urls=20)
-            engine = _make_engine(spider, MockSession(delay=0.05), crawldir=tmpdir, interval=0.001)
+            session = MockSession(blocked=True)
+            engine = _make_engine(spider, session, crawldir=tmpdir, interval=0)
 
-            with pytest.raises(Exception):
-                await engine.crawl()
+            async def save_before_crash():
+                await session.started.wait()
+                await engine._save_checkpoint()
+                session.release.set()
+
+            with anyio.fail_after(10):
+                async with anyio.create_task_group() as group:
+                    group.start_soon(save_before_crash)
+                    with pytest.raises(Exception) as error:
+                        await engine.crawl()
+                    assert "boom" in repr(error.value)
 
             assert (Path(tmpdir) / "checkpoint.pkl").exists(), "Checkpoint was deleted after the crawl crashed"
             assert engine.paused is False
@@ -249,18 +238,10 @@ class TestForceStopCheckpointPreservation:
     async def test_force_stop_without_checkpoint_system(self):
         """Force-stop without crawldir should not crash."""
         spider = SlowSpider(num_urls=10)
-        session = MockSession(delay=0.3)
+        session = MockSession(blocked=True)
         engine = _make_engine(spider, session, crawldir=None)
 
-        async def force_stop():
-            await anyio.sleep(0.1)
-            engine.request_pause()
-            await anyio.sleep(0.05)
-            engine.request_pause()
-
-        async with anyio.create_task_group() as tg:
-            tg.start_soon(force_stop)
-            await engine.crawl()
+        await _crawl_until_pause(engine, session, force=True)
 
         # Should not crash and should not be marked as paused
         # (no checkpoint system = no pause state)
@@ -272,35 +253,20 @@ class TestForceStopCheckpointPreservation:
         with tempfile.TemporaryDirectory() as tmpdir:
             # First run: do a graceful pause to create a checkpoint
             spider1 = SlowSpider(num_urls=10)
-            session1 = MockSession(delay=0.2)
+            session1 = MockSession(blocked=True)
             engine1 = _make_engine(spider1, session1, crawldir=tmpdir, interval=0)
 
-            async def pause1():
-                await anyio.sleep(0.1)
-                engine1.request_pause()
-
-            async with anyio.create_task_group() as tg:
-                tg.start_soon(pause1)
-                await engine1.crawl()
+            await _crawl_until_pause(engine1, session1)
 
             checkpoint_path = Path(tmpdir) / "checkpoint.pkl"
             assert checkpoint_path.exists(), "First run should create checkpoint"
-            first_checkpoint_size = checkpoint_path.stat().st_size
 
             # Second run: force-stop (the fix ensures checkpoint is updated, not deleted)
             spider2 = SlowSpider(num_urls=10)
-            session2 = MockSession(delay=0.3)
+            session2 = MockSession(blocked=True)
             engine2 = _make_engine(spider2, session2, crawldir=tmpdir, interval=0)
 
-            async def force_stop2():
-                await anyio.sleep(0.1)
-                engine2.request_pause()
-                await anyio.sleep(0.05)
-                engine2.request_pause()
-
-            async with anyio.create_task_group() as tg:
-                tg.start_soon(force_stop2)
-                await engine2.crawl()
+            await _crawl_until_pause(engine2, session2, force=True)
 
             # Checkpoint must still exist (updated, not deleted)
             assert checkpoint_path.exists(), (

@@ -19,15 +19,10 @@ def _read_xml(path):
 class TestItemList:
     """Test ItemList functionality."""
 
-    def test_itemlist_is_list(self):
-        """Test that ItemList is a list subclass."""
-        items = ItemList()
-
-        assert isinstance(items, list)
-
     def test_itemlist_basic_operations(self):
         """Test basic list operations work."""
         items = ItemList()
+        assert isinstance(items, list)
 
         items.append({"id": 1})
         items.append({"id": 2})
@@ -259,26 +254,11 @@ class TestItemList:
             lines = path.read_text().strip().split("\n")
             assert len(lines) == 3
 
-            # Each line should be valid JSON
-            for line in lines:
-                parsed = json.loads(line)
-                assert "id" in parsed
-                assert "name" in parsed
-
-    def test_to_jsonl_one_object_per_line(self):
-        """Test that JSONL has one JSON object per line."""
-        items = ItemList()
-        items.append({"line": 1})
-        items.append({"line": 2})
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = Path(tmpdir) / "output.jsonl"
-            items.to_jsonl(path)
-
-            lines = path.read_text().strip().split("\n")
-
-            assert json.loads(lines[0])["line"] == 1
-            assert json.loads(lines[1])["line"] == 2
+            assert [json.loads(line) for line in lines] == [
+                {"id": 1, "name": "first"},
+                {"id": 2, "name": "second"},
+                {"id": 3, "name": "third"},
+            ]
 
 
 class TestCrawlStats:
@@ -462,41 +442,3 @@ class TestCrawlResult:
         assert result.stats.requests_count == 100
         assert result.stats.items_scraped == 50
         assert result.stats.requests_per_second == 10.0
-
-
-class TestCrawlResultIntegration:
-    """Integration tests for result classes."""
-
-    def test_full_workflow(self):
-        """Test realistic workflow with all result classes."""
-        # Simulate a crawl
-        stats = CrawlStats(start_time=1000.0)
-
-        # Simulate requests
-        for _ in range(10):
-            stats.increment_requests_count("default")
-            stats.increment_status(200)
-            stats.increment_response_bytes("example.com", 5000)
-
-        # Simulate some failures
-        stats.failed_requests_count = 2
-        stats.blocked_requests_count = 1
-
-        # Collect items
-        items = ItemList()
-        for i in range(8):
-            items.append({"product_id": i, "name": f"Product {i}"})
-            stats.items_scraped += 1
-
-        # Finish crawl
-        stats.end_time = 1005.0
-
-        # Create result
-        result = CrawlResult(stats=stats, items=items, paused=False)
-
-        # Verify
-        assert result.completed is True
-        assert len(result) == 8
-        assert result.stats.requests_count == 10
-        assert result.stats.requests_per_second == 2.0
-        assert result.stats.response_bytes == 50000

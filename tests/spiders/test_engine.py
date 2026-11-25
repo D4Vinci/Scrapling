@@ -214,9 +214,7 @@ class TestCrawlerEngineInit:
         assert engine.paused is False
         assert isinstance(engine.stats, CrawlStats)
         assert isinstance(engine.items, ItemList)
-
-    def test_checkpoint_system_disabled_by_default(self):
-        engine = _make_engine()
+        assert len(engine.items) == 0
         assert engine._checkpoint_system_enabled is False
 
     def test_checkpoint_system_enabled_with_crawldir(self):
@@ -365,17 +363,6 @@ class TestProcessRequest:
 
         assert engine.stats.failed_requests_count == 1
         assert len(spider.on_error_calls) == 1
-
-    @pytest.mark.asyncio
-    async def test_failed_fetch_does_not_increment_requests_count(self):
-        spider = MockSpider()
-        sm = SessionManager()
-        sm.add("default", ErrorSession())
-        engine = CrawlerEngine(spider, sm)
-
-        request = Request("https://example.com", sid="default")
-        await engine._process_request(request)
-
         assert engine.stats.requests_count == 0
 
     @pytest.mark.asyncio
@@ -662,28 +649,14 @@ class TestCrawl:
         assert isinstance(stats, CrawlStats)
         assert stats.requests_count >= 1
         assert stats.items_scraped >= 1
-
-    @pytest.mark.asyncio
-    async def test_crawl_calls_on_start_and_on_close(self):
-        spider = MockSpider()
-        engine = _make_engine(spider=spider)
-
-        await engine.crawl()
-
         assert len(spider.on_start_calls) == 1
         assert spider.on_start_calls[0]["resuming"] is False
         assert spider.on_close_calls == 1
-
-    @pytest.mark.asyncio
-    async def test_crawl_sets_stats_timing(self):
-        spider = MockSpider()
-        engine = _make_engine(spider=spider)
-
-        stats = await engine.crawl()
-
         assert stats.start_time > 0
         assert stats.end_time > 0
         assert stats.end_time >= stats.start_time
+        assert isinstance(stats.log_levels_counter, dict)
+        assert len(engine.items) >= 1
 
     @pytest.mark.asyncio
     async def test_crawl_sets_concurrency_stats(self):
@@ -783,15 +756,6 @@ class TestCrawl:
         assert len(spider.on_error_calls) == 1
 
     @pytest.mark.asyncio
-    async def test_crawl_log_levels_populated(self):
-        spider = MockSpider()
-        engine = _make_engine(spider=spider)
-
-        stats = await engine.crawl()
-
-        assert isinstance(stats.log_levels_counter, dict)
-
-    @pytest.mark.asyncio
     async def test_crawl_resets_state_on_each_run(self):
         spider = MockSpider()
         engine = _make_engine(spider=spider)
@@ -804,27 +768,6 @@ class TestCrawl:
         stats = await engine.crawl()
         # Items are cleared on each crawl
         assert engine.paused is False
-
-
-# ---------------------------------------------------------------------------
-# Tests: items property
-# ---------------------------------------------------------------------------
-
-
-class TestItemsProperty:
-    def test_items_returns_item_list(self):
-        engine = _make_engine()
-        assert isinstance(engine.items, ItemList)
-
-    def test_items_initially_empty(self):
-        engine = _make_engine()
-        assert len(engine.items) == 0
-
-    @pytest.mark.asyncio
-    async def test_items_populated_after_crawl(self):
-        engine = _make_engine()
-        await engine.crawl()
-        assert len(engine.items) >= 1
 
 
 # ---------------------------------------------------------------------------
@@ -844,6 +787,7 @@ class TestStreaming:
 
         assert len(items) >= 1
         assert isinstance(items[0], dict)
+        assert len(engine.items) == 0
 
     @pytest.mark.asyncio
     async def test_stream_processes_follow_up_requests(self):
@@ -866,20 +810,6 @@ class TestStreaming:
 
         assert len(items) == 2
 
-    @pytest.mark.asyncio
-    async def test_stream_items_not_stored_in_items_list(self):
-        """When streaming, items go to the stream, not to engine._items."""
-        spider = MockSpider()
-        engine = _make_engine(spider=spider)
-
-        items = []
-        async for item in engine:
-            items.append(item)
-
-        # Items were sent through stream, not appended to _items
-        assert len(items) >= 1
-        assert len(engine.items) == 0
-
 
 # ---------------------------------------------------------------------------
 # Tests: pause during crawl
@@ -894,20 +824,18 @@ class TestPauseDuringCrawl:
         async def slow_parse(response) -> AsyncGenerator:
             nonlocal processed
             processed += 1
-            # Yield more requests to keep the crawl going
-            if processed <= 2:
-                yield Request(f"https://example.com/p{processed + 1}", sid="default")
+            engine.request_pause()
+            yield Request(f"https://example.com/p{processed + 1}", sid="default")
             yield {"n": processed}
 
         spider = MockSpider()
         spider.parse = slow_parse  # type: ignore[assignment]
         engine = _make_engine(spider=spider)
 
-        # Request pause immediately - the engine will stop as soon as active tasks complete
-        engine._pause_requested = True
-
         stats = await engine.crawl()
-        # Should stop without processing everything
+        assert processed == 1
+        assert stats.requests_count == 1
+        assert len(engine.scheduler) == 1
         assert engine._running is False
 
     @pytest.mark.asyncio
@@ -934,14 +862,16 @@ class TestPauseDuringCrawl:
 
     @pytest.mark.asyncio
     async def test_pause_without_checkpoint_does_not_set_paused(self):
-        spider = MockSpider()
-        engine = _make_engine(spider=spider)
+        class PausingSpider(MockSpider):
+            async def on_start(self, resuming=False):
+                engine.request_pause()
 
-        engine._pause_requested = True
+        engine = _make_engine(spider=PausingSpider())
 
         await engine.crawl()
 
         assert engine.paused is False
+        assert engine._pause_requested is True
 
 
 # ---------------------------------------------------------------------------

@@ -22,8 +22,11 @@ SNAPSHOT = '- button "Save" [ref=e2]'
 HTML = """<!DOCTYPE html><html><body><main><label>Name<input value="initial"></label>
 <button onclick="document.querySelector('output').textContent = document.querySelector('input').value">Save</button>
 <output></output></main><button>Outside scope</button><script>
-setTimeout(() => { document.querySelector('output').textContent = 'Ready'; document.querySelector('output').id = 'ready'; }, 50);
-setTimeout(() => { document.querySelector('input').value = 'after wait'; }, 150);
+setTimeout(() => {
+    document.querySelector('input').value = 'after wait';
+    document.querySelector('output').textContent = 'Ready';
+    document.querySelector('output').id = 'ready';
+}, 150);
 </script></body></html>"""
 
 
@@ -112,18 +115,6 @@ async def test_browser_extract_snapshot_target_uses_the_native_locator(target: s
 
 
 @pytest.mark.asyncio
-async def test_browser_extract_rejects_empty_target_before_page_capture() -> None:
-    server, session, page = _server()
-    async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_extract", {"session_id": "browser", "target": ""})
-    assert result.is_error
-    page.is_closed.assert_not_called()
-    page.locator.assert_not_called()
-    page.aria_snapshot.assert_not_awaited()
-    assert session.page_pool.pages[0].state == "ready"
-
-
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state, message",
     [
@@ -174,9 +165,12 @@ async def test_browser_extract_releases_the_page_after_failure() -> None:
 @pytest.mark.browser
 @pytest.mark.asyncio
 @pytest.mark.parametrize("css_selector", [None, "main"])
-async def test_browser_extract_live_mcp_round_trip(css_selector: str | None) -> None:
+async def test_browser_extract_live_mcp_round_trip(css_selector: str | None, monkeypatch: pytest.MonkeyPatch) -> None:
     server = ScraplingMCPServer(executable_path=getenv("SCRAPLING_EXECUTABLE_PATH"))
     requests: list[str] = []
+
+    async def setup(page: Page) -> None:
+        monkeypatch.setattr(page, "wait_for_timeout", AsyncMock(wraps=page.wait_for_timeout))
 
     async def serve(route: Any) -> None:
         if route.request.is_navigation_request():
@@ -192,6 +186,7 @@ async def test_browser_extract_live_mcp_round_trip(css_selector: str | None) -> 
         assert not opened.is_error
         try:
             session = server._sessions["browser"].session
+            monkeypatch.setattr(session._config, "page_setup", setup)
             await session.context.route("**/*", serve)
             fetched = await client.call_tool(
                 "browser_fetch",
@@ -216,6 +211,8 @@ async def test_browser_extract_live_mcp_round_trip(css_selector: str | None) -> 
             assert requests == ["https://snapshot.test/"]
             page_info = session.page_pool.pages[0]
             page = page_info.page
+            cast(AsyncMock, page.wait_for_timeout).assert_awaited_once_with(250)
+            monkeypatch.setattr(session._config, "page_setup", None)
             match = search(r'button "Save".*?\[ref=([^\]]+)\]', fetched_snapshot)
             assert match is not None
             await page.locator(f"aria-ref={match[1]}").click()
@@ -514,6 +511,9 @@ async def test_browser_extract_search_rejects_invalid_input_before_page_capture(
     assert result.content and isinstance(result.content[0], TextContent)
     assert "search" in result.content[0].text.lower() or "regular expression" in result.content[0].text.lower()
     reserve.assert_not_called()
+    page.is_closed.assert_not_called()
+    page.content.assert_not_called()
+    page.locator.assert_not_called()
     page.aria_snapshot.assert_not_awaited()
     assert session.page_pool.pages[0].state == "ready"
 

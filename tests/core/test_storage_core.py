@@ -1,6 +1,8 @@
 import tempfile
 import os
-import threading
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack, closing
+from threading import Barrier
 
 from lxml.html import fromstring
 
@@ -66,11 +68,6 @@ class TestGetHash:
 
 class TestSQLiteStorageSystem:
     """Test SQLiteStorageSystem functionality"""
-
-    def test_sqlite_storage_creation(self):
-        """Test SQLite storage system creation"""
-        storage = SQLiteStorageSystem(storage_file=":memory:")
-        assert storage is not None
 
     def test_sqlite_storage_with_file(self):
         """Test SQLite storage with an actual file"""
@@ -149,18 +146,17 @@ class TestSaveRetrieveRoundTrip:
             db_path = tmp.name
 
         try:
-            storage_a = SQLiteStorageSystem(storage_file=db_path, url="https://site-a.com")
-            element = self._make_element()
-            storage_a.save(element, "shared-id")
+            with ExitStack() as stack:
+                storage_a = stack.enter_context(closing(SQLiteStorageSystem(storage_file=db_path, url="https://site-a.com")))
+                element = self._make_element()
+                storage_a.save(element, "shared-id")
 
-            SQLiteStorageSystem.cache_clear()
-            StorageSystemMixin._get_base_url.cache_clear()
+                SQLiteStorageSystem.cache_clear()
+                StorageSystemMixin._get_base_url.cache_clear()
 
-            storage_b = SQLiteStorageSystem(storage_file=db_path, url="https://site-b.com")
-            assert storage_b.retrieve("shared-id") is None
+                storage_b = stack.enter_context(closing(SQLiteStorageSystem(storage_file=db_path, url="https://site-b.com")))
+                assert storage_b.retrieve("shared-id") is None
         finally:
-            storage_a.close()
-            storage_b.close()
             if os.path.exists(db_path):
                 os.unlink(db_path)
 
@@ -194,41 +190,26 @@ class TestSaveRetrieveRoundTrip:
 class TestStorageThreadSafety:
     """Test that SQLiteStorageSystem is safe under concurrent access."""
 
-    def test_concurrent_saves(self):
+    def test_concurrent_saves(self, tmp_path):
         SQLiteStorageSystem.cache_clear()
         StorageSystemMixin._get_base_url.cache_clear()
 
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
-            db_path = tmp.name
+        with closing(SQLiteStorageSystem(storage_file=str(tmp_path / "storage.db"), url="https://example.com")) as storage:
+            ready = Barrier(20)
 
-        storage = SQLiteStorageSystem(storage_file=db_path, url="https://example.com")
-        errors = []
-
-        def save_element(idx):
-            try:
+            def save_element(idx):
                 html_str = f"<div><p id='elem-{idx}'>Text {idx}</p></div>"
                 tree = fromstring(html_str)
                 element = tree.cssselect("p")[0]
+                ready.wait(timeout=10)
                 storage.save(element, f"element-{idx}")
-            except Exception as e:
-                errors.append(e)
 
-        threads = [threading.Thread(target=save_element, args=(i,)) for i in range(20)]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+            with ThreadPoolExecutor(max_workers=20) as executor:
+                list(executor.map(save_element, range(20)))
 
-        assert len(errors) == 0, f"Thread safety errors: {errors}"
-
-        # Verify all elements were saved
-        for i in range(20):
-            result = storage.retrieve(f"element-{i}")
-            assert result is not None, f"element-{i} not found after concurrent save"
-
-        storage.close()
-        if os.path.exists(db_path):
-            os.unlink(db_path)
+            for i in range(20):
+                result = storage.retrieve(f"element-{i}")
+                assert result is not None, f"element-{i} not found after concurrent save"
 
 
 class TestStorageToolsElementToDict:

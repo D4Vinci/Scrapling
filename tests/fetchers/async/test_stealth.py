@@ -3,15 +3,14 @@ import pytest_httpbin
 
 from scrapling import StealthyFetcher
 
-StealthyFetcher.adaptive = True
-
 
 @pytest.mark.browser
 @pytest_httpbin.use_class_based_httpbin
 @pytest.mark.asyncio
 class TestStealthyFetcher:
-    @pytest.fixture(scope="class")
-    def fetcher(self):
+    @pytest.fixture
+    def fetcher(self, monkeypatch):
+        monkeypatch.setattr(StealthyFetcher, "adaptive", True)
         return StealthyFetcher
 
     @pytest.fixture(scope="class")

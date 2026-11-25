@@ -108,40 +108,6 @@ def test_browser_wheel_schema_rejects_nonfinite_deltas(value: float) -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "state, message",
-    [
-        ("missing", "not found"),
-        ("dead", "no longer alive"),
-        ("static", "'stealthy'"),
-        ("empty", "browser_fetch"),
-        ("busy", "busy"),
-        ("closed", "closed"),
-    ],
-)
-async def test_browser_wheel_session_errors_reach_mcp(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "stealthy")
-    if state == "missing":
-        server._sessions.clear()
-    elif state == "dead":
-        session._is_alive = False
-    elif state == "empty":
-        session.page_pool.clear()
-    elif state == "busy":
-        session.page_pool.pages[0].mark_busy()
-    elif state == "closed":
-        page.is_closed.return_value = True
-    async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool(
-            "browser_actions", {"session_id": "browser", "actions": [{"type": "wheel", "delta_y": 120}]}
-        )
-    assert result.is_error
-    assert result.content and isinstance(result.content[0], TextContent)
-    assert message in result.content[0].text
-    page.mouse.wheel.assert_not_awaited()
-
-
-@pytest.mark.asyncio
 async def test_browser_wheel_error_is_not_retried_and_releases_page() -> None:
     server, session, page = _server()
     page.mouse.wheel.side_effect = RuntimeError("wheel failed")

@@ -3,8 +3,6 @@ import pytest_httpbin
 
 from scrapling.fetchers import AsyncFetcher
 
-AsyncFetcher.adaptive = True
-
 
 @pytest.fixture
 def _reset_async_fetcher_config():
@@ -20,8 +18,9 @@ def _reset_async_fetcher_config():
 @pytest_httpbin.use_class_based_httpbin
 @pytest.mark.asyncio
 class TestAsyncFetcher:
-    @pytest.fixture(scope="class")
-    def fetcher(self):
+    @pytest.fixture
+    def fetcher(self, monkeypatch):
+        monkeypatch.setattr(AsyncFetcher, "adaptive", True)
         return AsyncFetcher
 
     @pytest.fixture(scope="class")

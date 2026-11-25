@@ -69,20 +69,21 @@ jobs:
         cache-dependency-path: |
           pyproject.toml
           tox.ini
+          tests/requirements.txt
 
     - name: Install all browsers dependencies
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install playwright==1.64.1 patchright==1.64.4
 
-    - name: Get Playwright version
-      id: playwright-version
+    - name: Get Patchright version
+      id: patchright-version
       run: |
-        PLAYWRIGHT_VERSION=$(python3 -c "import importlib.metadata; print(importlib.metadata.version('playwright'))")
-        echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
-        echo "Playwright version: $PLAYWRIGHT_VERSION"
+        PATCHRIGHT_VERSION=$(python3 -c "import importlib.metadata; print(importlib.metadata.version('patchright'))")
+        echo "version=$PATCHRIGHT_VERSION" >> $GITHUB_OUTPUT
+        echo "Patchright version: $PATCHRIGHT_VERSION"
 
-    - name: Retrieve Playwright browsers from cache if any
+    - name: Retrieve Patchright browsers from cache if any
       id: playwright-cache
       uses: actions/cache/restore@v5
       with:
@@ -90,19 +91,14 @@ jobs:
           ~/.cache/ms-playwright
           ~/Library/Caches/ms-playwright
           ~/.ms-playwright
-        key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-v1
+        key: ${{ runner.os }}-patchright-${{ steps.patchright-version.outputs.version }}-v1
         restore-keys: |
-          ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-
+          ${{ runner.os }}-patchright-
           ${{ runner.os }}-playwright-
 
-    - name: Install Playwright browsers
+    - name: Install Patchright browsers
       run: |
-        echo "Cache hit: ${{ steps.playwright-cache.outputs.cache-hit }}"
-        if [ "${{ steps.playwright-cache.outputs.cache-hit }}" != "true" ]; then
-          python3 -m patchright install chromium
-        else
-          echo "Skipping install - using cached Playwright browsers"
-        fi
+        python3 -m patchright install chromium
         python3 -m patchright install-deps chromium
 
     - name: Retrieve tox environments from cache if any
@@ -111,7 +107,7 @@ jobs:
       with:
         path: .tox
         # Include python version and os in the cache key
-        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}
+        key: tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'tox.ini', 'tests/requirements.txt') }}
         restore-keys: |
           tox-v1-${{ runner.os }}-py${{ matrix.python-version }}-
           tox-v1-${{ runner.os }}-
@@ -123,7 +119,7 @@ jobs:
       env: ${{ matrix.env }}
       run: tox
 
-    - name: Save Playwright browsers to cache
+    - name: Save Patchright browsers to cache
       if: github.ref == 'refs/heads/main' && steps.playwright-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v5
       with:

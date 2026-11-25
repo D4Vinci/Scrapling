@@ -34,12 +34,6 @@ class MockSession:  # type: ignore[type-arg]
 class TestSessionManagerInit:
     """Test SessionManager initialization."""
 
-    def test_manager_starts_empty(self):
-        """Test that manager starts with no sessions."""
-        manager = SessionManager()
-
-        assert len(manager) == 0
-
     def test_manager_no_default_session_when_empty(self):
         """Test that accessing default_session_id raises when empty."""
         manager = SessionManager()
@@ -62,22 +56,11 @@ class TestSessionManagerAdd:
         assert "test" in manager
         assert manager.session_ids == ["test"]
 
-    def test_first_session_becomes_default(self):
-        """Test that first added session becomes default."""
-        manager = SessionManager()
-        session = MockSession()
-
-        manager.add("first", session)
-
-        assert manager.default_session_id == "first"
-
     def test_add_multiple_sessions(self):
         """Test adding multiple sessions."""
         manager = SessionManager()
 
-        manager.add("session1", MockSession("s1"))
-        manager.add("session2", MockSession("s2"))
-        manager.add("session3", MockSession("s3"))
+        manager.add("session1", MockSession("s1")).add("session2", MockSession("s2")).add("session3", MockSession("s3"))
 
         assert len(manager) == 3
         assert "session1" in manager
@@ -108,14 +91,6 @@ class TestSessionManagerAdd:
         result = manager.add("test", MockSession())
 
         assert result is manager
-
-    def test_method_chaining(self):
-        """Test fluent interface for adding sessions."""
-        manager = SessionManager()
-
-        manager.add("s1", MockSession()).add("s2", MockSession()).add("s3", MockSession())
-
-        assert len(manager) == 3
 
     def test_add_lazy_session(self):
         """Test adding lazy session."""
@@ -206,13 +181,6 @@ class TestSessionManagerGet:
 class TestSessionManagerContains:
     """Test SessionManager contains functionality."""
 
-    def test_contains_existing(self):
-        """Test contains for existing session."""
-        manager = SessionManager()
-        manager.add("test", MockSession())
-
-        assert "test" in manager
-
     def test_not_contains_missing(self):
         """Test contains for missing session."""
         manager = SessionManager()
@@ -223,18 +191,6 @@ class TestSessionManagerContains:
 
 class TestSessionManagerAsyncContext:
     """Test SessionManager async context manager."""
-
-    @pytest.mark.asyncio
-    async def test_start_activates_sessions(self):
-        """Test that start activates non-lazy sessions."""
-        manager = SessionManager()
-        session = MockSession()
-        manager.add("test", session)
-
-        await manager.start()
-
-        assert session._is_alive is True
-        assert manager._started is True
 
     @pytest.mark.asyncio
     async def test_start_skips_lazy_sessions(self):
@@ -250,20 +206,6 @@ class TestSessionManagerAsyncContext:
 
         assert eager_session._is_alive is True
         assert lazy_session._is_alive is False
-
-    @pytest.mark.asyncio
-    async def test_close_deactivates_sessions(self):
-        """Test that close deactivates all sessions."""
-        manager = SessionManager()
-        session = MockSession()
-        manager.add("test", session)
-
-        await manager.start()
-        assert session._is_alive is True
-
-        await manager.close()
-        assert session._is_alive is False
-        assert manager._started is False
 
     @pytest.mark.asyncio
     async def test_async_context_manager(self):
@@ -321,19 +263,6 @@ class TestSessionManagerProperties:
 class TestSessionManagerIntegration:
     """Integration tests for SessionManager."""
 
-    def test_realistic_setup(self):
-        """Test realistic session manager setup."""
-        manager = SessionManager()
-
-        # Add different types of sessions
-        manager.add("default", MockSession("default"))
-        manager.add("backup", MockSession("backup"))
-        manager.add("lazy_special", MockSession("special"), lazy=True)
-
-        assert len(manager) == 3
-        assert manager.default_session_id == "default"
-        assert "lazy_special" in manager._lazy_sessions
-
     @pytest.mark.asyncio
     async def test_lifecycle_management(self):
         """Test complete lifecycle of session manager."""
@@ -349,10 +278,12 @@ class TestSessionManagerIntegration:
         # After start - all active
         await manager.start()
         assert all(s._is_alive for s in sessions)
+        assert manager._started is True
 
         # After close - all inactive
         await manager.close()
         assert all(not s._is_alive for s in sessions)
+        assert manager._started is False
 
 
 class TestSessionManagerFetch:

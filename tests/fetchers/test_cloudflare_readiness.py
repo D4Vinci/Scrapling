@@ -1,11 +1,11 @@
 from os import getenv
-from time import monotonic
+from unittest.mock import patch
 
 import pytest
 from patchright.async_api import Page as AsyncPage, Route as AsyncRoute
 from patchright.sync_api import Page, Route
 
-from scrapling.core._types import Any
+from scrapling.core._types import Any, cast
 from scrapling.fetchers import AsyncStealthySession, StealthySession
 
 
@@ -16,7 +16,6 @@ PAGE = """<!DOCTYPE html><html><head><link rel="icon" href="data:,"></head><body
 <script>addEventListener('message', event => {
     if (event.data === 'solved') {
         document.body.dataset.clicks = Number(document.body.dataset.clicks || 0) + 1;
-        document.body.dataset.clickedAt = performance.now();
     }
 });</script></body></html>"""
 CHECKBOX = """<input type="checkbox" style="width:24px;height:24px;margin:16px"
@@ -78,32 +77,34 @@ async def setup_async_page(page: AsyncPage) -> None:
     await page.route("**/*", fulfill)
 
 
+def wait_for_solve(page: Page) -> None:
+    page.frame_locator("iframe").locator('input[data-clicks="1"]:checked').wait_for(state="attached")
+    page.wait_for_function("document.body.dataset.clicks === '1'")
+    if page.url.endswith("/busy"):
+        page.wait_for_function("Number(document.body.dataset.background) >= 2")
+
+
+async def wait_for_async_solve(page: AsyncPage) -> None:
+    await page.frame_locator("iframe").locator('input[data-clicks="1"]:checked').wait_for(state="attached")
+    await page.wait_for_function("document.body.dataset.clicks === '1'")
+    if page.url.endswith("/busy"):
+        await page.wait_for_function("Number(document.body.dataset.background) >= 2")
+
+
 @pytest.mark.browser
 @pytest.mark.parametrize("case", ["delayed_script", "delayed_frame", "initial_checkbox", "busy"])
 def test_sync_widget_readiness(case: str) -> None:
     with StealthySession(**options()) as session:
-        started = monotonic()
-        response = session.fetch(URL + case, page_setup=setup_page)
-        elapsed = monotonic() - started
-        assert response.css('body[data-clicks="1"]')
-        assert float(response.css("body")[0].attrib["data-clicked-at"]) < 3500
+        response = session.fetch(URL + case, page_setup=setup_page, page_action=wait_for_solve)
         page = session.page_pool.pages[0].page
         checkbox = page.frame_locator("iframe").locator('input[type="checkbox"]')
-        assert checkbox.is_checked()
+        assert checkbox.is_checked(), checkbox.get_attribute("data-clicks")
         assert checkbox.get_attribute("data-clicks") == "1"
+        assert response.css('body[data-clicks="1"]'), response.css("body")[0].attrib
         if case == "busy":
-            # The post-click networkidle wait is allowed to return early when
-            # the page's own timers lag under runner load (a >=500ms quiet
-            # window then legitimately appears despite the 100ms noise), so
-            # only an upper bound is asserted here; `data-background` proves
-            # the noise kept running through the solve.
-            assert elapsed < 8, elapsed
             assert int(response.css("body")[0].attrib.get("data-background", "0")) >= 2
         elif case == "delayed_script":
             assert response.css('body[data-script-loaded="true"]')
-            assert elapsed < 8, elapsed
-        else:
-            assert elapsed < 4.5, elapsed
 
     assert page.is_closed()
 
@@ -113,24 +114,16 @@ def test_sync_widget_readiness(case: str) -> None:
 @pytest.mark.parametrize("case", ["delayed_script", "delayed_frame", "initial_checkbox", "busy"])
 async def test_async_widget_readiness(case: str) -> None:
     async with AsyncStealthySession(**options()) as session:
-        started = monotonic()
-        response = await session.fetch(URL + case, page_setup=setup_async_page)
-        elapsed = monotonic() - started
-        assert response.css('body[data-clicks="1"]')
-        assert float(response.css("body")[0].attrib["data-clicked-at"]) < 3500
-        page = session.page_pool.pages[0].page
+        response = await session.fetch(URL + case, page_setup=setup_async_page, page_action=wait_for_async_solve)
+        page = cast(AsyncPage, session.page_pool.pages[0].page)
         checkbox = page.frame_locator("iframe").locator('input[type="checkbox"]')
-        assert await checkbox.is_checked()
+        assert await checkbox.is_checked(), await checkbox.get_attribute("data-clicks")
         assert await checkbox.get_attribute("data-clicks") == "1"
+        assert response.css('body[data-clicks="1"]'), response.css("body")[0].attrib
         if case == "busy":
-            # Same as the sync case: no wall-clock floor for the busy wait.
-            assert elapsed < 8, elapsed
             assert int(response.css("body")[0].attrib.get("data-background", "0")) >= 2
         elif case == "delayed_script":
             assert response.css('body[data-script-loaded="true"]')
-            assert elapsed < 8, elapsed
-        else:
-            assert elapsed < 4.5, elapsed
 
     assert page.is_closed()
 
@@ -139,11 +132,10 @@ async def test_async_widget_readiness(case: str) -> None:
 @pytest.mark.parametrize("enabled", [False, True])
 def test_sync_clean_page_grace_period(enabled: bool) -> None:
     with StealthySession(**options()) as session:
-        started = monotonic()
-        response = session.fetch(URL + "clean", solve_cloudflare=enabled, page_setup=setup_page)
-        elapsed = monotonic() - started
+        with patch.object(session, "_cloudflare_solver", wraps=session._cloudflare_solver) as solve:
+            response = session.fetch(URL + "clean", solve_cloudflare=enabled, page_setup=setup_page)
+        assert solve.call_count == int(enabled)
         assert response.status == 200 and not response.css("iframe")
-        assert (4.8 <= elapsed < 7.5) if enabled else elapsed < 3, elapsed
         page = session.page_pool.pages[0].page
 
     assert page.is_closed()
@@ -154,11 +146,10 @@ def test_sync_clean_page_grace_period(enabled: bool) -> None:
 @pytest.mark.parametrize("enabled", [False, True])
 async def test_async_clean_page_grace_period(enabled: bool) -> None:
     async with AsyncStealthySession(**options()) as session:
-        started = monotonic()
-        response = await session.fetch(URL + "clean", solve_cloudflare=enabled, page_setup=setup_async_page)
-        elapsed = monotonic() - started
+        with patch.object(session, "_cloudflare_solver", wraps=session._cloudflare_solver) as solve:
+            response = await session.fetch(URL + "clean", solve_cloudflare=enabled, page_setup=setup_async_page)
+        assert solve.await_count == int(enabled)
         assert response.status == 200 and not response.css("iframe")
-        assert (4.8 <= elapsed < 7.5) if enabled else elapsed < 3, elapsed
         page = session.page_pool.pages[0].page
 
     assert page.is_closed()

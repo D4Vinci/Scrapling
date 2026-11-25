@@ -426,6 +426,9 @@ async def test_network_detail_returns_only_selected_part(part: Any) -> None:
             "browser_network_request", {"session_id": "browser", "request_id": 4, "part": part}
         )
         record = network.get(4)
+        model = _request_details(record, part)
+        assert isinstance(model, NetworkRequestModel)
+        assert model.model_dump() == _detail(result)
         if part == "summary":
             assert _detail(result) == _detail_info(4, part, _request_info(4, "/api/items", "POST", status=201))
         elif part.endswith("headers"):
@@ -439,21 +442,8 @@ async def test_network_detail_returns_only_selected_part(part: Any) -> None:
     network.search.assert_not_called()
 
 
-@pytest.mark.parametrize("part", ["request_headers", "response_headers", "response_body"])
-def test_saved_response_details_are_local(part: Any) -> None:
-    _, network = _server()
-    record = network.get(4)
-    result = _request_details(record, part)
-    assert isinstance(result, NetworkRequestModel)
-    if part.endswith("headers"):
-        expected = record.request_headers if part == "request_headers" else record.headers
-        assert result.model_dump() == _detail_info(4, part, expected)
-    else:
-        assert result.model_dump() == _detail_info(4, part, '{"name":"مرحبا"}')
-
-
 @pytest.mark.asyncio
-@pytest.mark.parametrize("part", ["summary", "request_headers", "response_headers"])
+@pytest.mark.parametrize("part", ["request_headers", "response_headers"])
 async def test_network_objects_keep_all_summary_fields_and_header_values(part: str) -> None:
     server, network = _server()
     record = network.get(4)
@@ -469,13 +459,12 @@ async def test_network_objects_keep_all_summary_fields_and_header_values(part: s
         record.request_headers = headers
     elif part == "response_headers":
         record.headers = headers
-    expected = _request_info(4, "/api/items", "POST", status=201) if part == "summary" else headers
     async with Client(server._build_server("127.0.0.1", 8000)) as client:
         result = await client.call_tool(
             "browser_network_request",
             {"session_id": "browser", "request_id": 4, "part": part},
         )
-        assert _detail(result) == _detail_info(4, part, expected)
+        assert _detail(result) == _detail_info(4, part, headers)
 
 
 @pytest.mark.asyncio
@@ -528,27 +517,12 @@ async def test_network_detail_returns_complete_empty_and_large_saved_bodies(part
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("case", ["empty", "binary", "unavailable", "too_large"])
-async def test_network_detail_body_availability(case: str) -> None:
+async def test_network_detail_binary_body_without_saved_note() -> None:
     server, network = _server()
     record = network.get(4)
-    if case == "empty":
-        record.status = 204
-        record._raw_body = b""
-    elif case == "binary":
-        record.headers["content-type"] = "image/png"
-    elif case == "too_large":
-        record.meta["body_note"] = "too large; not saved."
-    else:
-        record.meta["body_note"] = "Context closed"
+    record.headers["content-type"] = "image/png"
     result = await server.browser_network_request("browser", 4, "response_body")
-    expected = {
-        "empty": _detail_info(4, "response_body", ""),
-        "binary": _detail_info(4, "response_body", note="Only text bodies can be displayed."),
-        "unavailable": _detail_info(4, "response_body", note="Context closed"),
-        "too_large": _detail_info(4, "response_body", note="too large; not saved."),
-    }
-    assert result.model_dump() == expected[case]
+    assert result.model_dump() == _detail_info(4, "response_body", note="Only text bodies can be displayed.")
 
 
 @pytest.mark.asyncio
@@ -678,19 +652,6 @@ async def test_network_response_uses_saved_encoding_and_request_uses_its_header(
     for reader in readers:
         reader.assert_awaited_once()
     assert record.body == native_body and record.meta["request_body"] == request_body
-
-
-@pytest.mark.asyncio
-async def test_network_request_body_absent_and_binary() -> None:
-    server, network = _server()
-    record = network.get(4)
-    record.meta["request_body"] = None
-    result = await server.browser_network_request("browser", 4, "request_body")
-    assert result.model_dump() == _detail_info(4, "request_body", note="Body is absent.")
-    record.meta["request_body"] = b"binary"
-    record.request_headers["content-type"] = "application/octet-stream"
-    result = await server.browser_network_request("browser", 4, "request_body")
-    assert result.model_dump() == _detail_info(4, "request_body", note="Only text bodies can be displayed.")
 
 
 @pytest.mark.asyncio

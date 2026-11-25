@@ -111,26 +111,6 @@ async def test_browser_actions_keys_invalid_input_does_not_reserve_page(values: 
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "state, message", [("missing", "not found"), ("static", "'stealthy'"), ("empty", "browser_fetch")]
-)
-async def test_browser_actions_keys_session_errors_reach_mcp(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "stealthy")
-    if state == "missing":
-        server._sessions.clear()
-    elif state == "empty":
-        session.page_pool.clear()
-    async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool(
-            "browser_actions", {"session_id": "browser", "actions": [{"type": "press_key", "key": "Enter"}]}
-        )
-    assert result.is_error
-    assert result.content and isinstance(result.content[0], TextContent)
-    assert message in result.content[0].text
-    page.keyboard.press.assert_not_awaited()
-
-
-@pytest.mark.asyncio
 async def test_browser_actions_keys_error_stops_remaining_keys_and_releases_page() -> None:
     server, session, page = _server()
     page.keyboard.press.side_effect = [None, RuntimeError("key failed")]

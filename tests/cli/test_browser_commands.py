@@ -9,7 +9,7 @@ from scrapling import cli
 from scrapling.core.shell import CustomShell
 from scrapling.core._shell_signatures import Signatures_map
 from scrapling.engines._browsers._types import StealthSession
-from scrapling.fetchers import StealthyFetcher
+from scrapling.fetchers import AsyncRemoteSession, RemoteSession, StealthyFetcher
 from scrapling.parser import Selector
 
 
@@ -113,7 +113,13 @@ def test_browser_command_help_and_removed_command() -> None:
     result = runner.invoke(cli.main, ["extract", "fetch", "--help"])
     assert result.exit_code == 0
     assert "StealthyFetcher" in result.output
-    for option in ("--block-webrtc", "--solve-cloudflare", "--allow-webgl", "--hide-canvas"):
+    for option in (
+        "--block-webrtc",
+        "--solve-cloudflare",
+        "--allow-webgl",
+        "--hide-canvas",
+        "--pierce-shadow / --no-pierce-shadow",
+    ):
         assert option in result.output
     result = runner.invoke(cli.main, ["extract", "stealthy-fetch", "--help"])
     assert result.exit_code == 2
@@ -151,11 +157,16 @@ def test_shell_fetch_namespace_and_completion() -> None:
     namespace = shell.get_namespace()
     assert namespace["StealthyFetcher"] is StealthyFetcher
     assert {"StealthySession", "AsyncStealthySession", "fetch"} <= namespace.keys()
+    assert {"get", "post", "Fetcher", "view", "uncurl"} <= namespace.keys()
+    assert namespace["RemoteSession"] is RemoteSession
+    assert namespace["AsyncRemoteSession"] is AsyncRemoteSession
+    assert "RemoteFetcher" not in namespace
     assert (
         not {"DynamicFetcher", "DynamicSession", "AsyncDynamicSession", "PlayWrightFetcher", "stealthy_fetch"}
         & namespace.keys()
     )
     parameters = signature(namespace["fetch"]).parameters
+    assert "cdp_url" not in parameters
     assert set(parameters) == {"url", *StealthSession.__annotations__}
     assert all(parameters[name].kind is Parameter.KEYWORD_ONLY for name in StealthSession.__annotations__)
     assert Signatures_map["fetch"] == StealthSession.__annotations__

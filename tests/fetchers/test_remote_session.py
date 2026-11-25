@@ -340,11 +340,14 @@ def remote_browser(tmp_path: Path) -> Generator[tuple[str, str], None, None]:
                 )
                 port_file = tmp_path / "profile" / "DevToolsActivePort"
                 deadline = monotonic() + 20
-                while not port_file.exists():
+                while True:
                     if process.poll() is not None or monotonic() >= deadline:
                         pytest.fail("Disposable CDP browser did not start")
+                    lines = port_file.read_text().splitlines() if port_file.exists() else []
+                    if len(lines) == 2 and lines[0].isdigit() and lines[1].startswith("/devtools/browser/"):
+                        break
                     sleep(0.05)
-                endpoint = f"http://127.0.0.1:{port_file.read_text().splitlines()[0]}"
+                endpoint = f"http://127.0.0.1:{lines[0]}"
                 playwright.chromium.connect_over_cdp(endpoint, no_defaults=True, timeout=10000).close()
             yield endpoint, f"http://127.0.0.1:{server.server_port}"
         finally:

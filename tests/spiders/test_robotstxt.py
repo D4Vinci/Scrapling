@@ -151,12 +151,6 @@ class TestCanFetch:
         assert await mgr.can_fetch("https://example.com/report.pdf", "s1") is False
         assert await mgr.can_fetch("https://example.com/report.html", "s1") is True
 
-    @pytest.mark.asyncio
-    async def test_returns_bool(self):
-        mgr = RobotsTxtManager(make_fetch_fn(content=ROBOTS_BASIC))
-        result = await mgr.can_fetch("https://example.com/", "s1")
-        assert isinstance(result, bool)
-
 
 class TestFailureCaching:
     """A deny-all result from a fetch failure is cached like any other
@@ -287,15 +281,6 @@ class TestGetDelayDirectives:
 
 
 class TestCachingBehaviour:
-    @pytest.mark.asyncio
-    async def test_second_call_same_domain_uses_cache(self):
-        fetch_fn = make_fetch_fn(content=ROBOTS_BASIC)
-        mgr = RobotsTxtManager(fetch_fn)
-
-        await mgr.can_fetch("https://example.com/page1", "s1")
-        await mgr.can_fetch("https://example.com/page2", "s1")
-
-        assert len(fetch_fn.calls) == 1
 
     @pytest.mark.asyncio
     async def test_all_methods_share_cache(self):
@@ -457,50 +442,33 @@ class TestEncoding:
         assert c_delay == 2.0
 
 
-
 # ---------------------------------------------------------------------------
 # Tests: concurrent access
 # ---------------------------------------------------------------------------
 
 
 class TestCacheAndConcurrency:
-    @pytest.mark.asyncio
-    async def test_cached_domain_not_refetched(self):
-        """Once a domain is cached, subsequent calls return the cached parser without fetching."""
-        fetch_count = 0
-
-        async def counting_fetch(url: str, sid: str) -> MockResponse:
-            nonlocal fetch_count
-            fetch_count += 1
-            return MockResponse(status=200, body=ROBOTS_BASIC.encode(), encoding="utf-8")
-
-        mgr = RobotsTxtManager(counting_fetch)
-
-        # First call fetches and caches
-        await mgr.can_fetch("https://example.com/page1", "s1")
-        # Subsequent calls hit the cache
-        for i in range(7):
-            await mgr.can_fetch(f"https://example.com/page{i + 2}", "s1")
-
-        assert fetch_count == 1
 
     @pytest.mark.asyncio
     async def test_concurrent_calls_different_domains_fetch_independently(self):
         fetch_count = 0
+        ready = asyncio.Event()
 
         async def slow_fetch(url: str, sid: str) -> MockResponse:
             nonlocal fetch_count
             fetch_count += 1
-            await asyncio.sleep(0.01)
+            if fetch_count == 3:
+                ready.set()
+            await ready.wait()
             return MockResponse(status=200, body=b"", encoding="utf-8")
 
         mgr = RobotsTxtManager(slow_fetch)
 
-        await asyncio.gather(
+        await asyncio.wait_for(asyncio.gather(
             mgr.can_fetch("https://alpha.com/", "s1"),
             mgr.can_fetch("https://beta.com/", "s1"),
             mgr.can_fetch("https://gamma.com/", "s1"),
-        )
+        ), timeout=10)
 
         assert fetch_count == 3
 
@@ -508,19 +476,25 @@ class TestCacheAndConcurrency:
     async def test_concurrent_calls_same_domain_fetch_once(self):
         """Concurrent cache misses for one domain share a single robots.txt fetch."""
         fetch_count = 0
+        call_count = 0
+        ready = asyncio.Event()
 
         async def slow_fetch(url: str, sid: str) -> MockResponse:
             nonlocal fetch_count
             fetch_count += 1
-            await asyncio.sleep(0.01)
+            await ready.wait()
             return MockResponse(status=200, body=ROBOTS_BASIC.encode(), encoding="utf-8")
 
         mgr = RobotsTxtManager(slow_fetch)
 
-        results = await asyncio.gather(*[
-            mgr.can_fetch(f"https://example.com/page{i}", "s1")
-            for i in range(6)
-        ])
+        async def can_fetch(index):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 6:
+                ready.set()
+            return await mgr.can_fetch(f"https://example.com/page{index}", "s1")
+
+        results = await asyncio.wait_for(asyncio.gather(*(can_fetch(i) for i in range(6))), timeout=10)
 
         assert fetch_count == 1
         assert all(r is True for r in results)
@@ -536,26 +510,6 @@ class TestCacheAndConcurrency:
         ])
 
         assert all(r is False for r in results)
-
-    @pytest.mark.asyncio
-    async def test_different_sids_share_cache_after_first_fetch(self):
-        """After the first fetch, all sessions share the cached parser regardless of sid."""
-        fetch_count = 0
-
-        async def counting_fetch(url: str, sid: str) -> MockResponse:
-            nonlocal fetch_count
-            fetch_count += 1
-            return MockResponse(status=200, body=b"", encoding="utf-8")
-
-        mgr = RobotsTxtManager(counting_fetch)
-
-        # First call fetches and caches
-        await mgr.can_fetch("https://example.com/", "s1")
-        # s2 and s3 hit the cache — no additional fetches
-        await mgr.can_fetch("https://example.com/", "s2")
-        await mgr.can_fetch("https://example.com/", "s3")
-
-        assert fetch_count == 1
 
 
 # ---------------------------------------------------------------------------

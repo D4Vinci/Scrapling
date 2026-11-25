@@ -296,46 +296,6 @@ async def test_browser_mouse_requires_exactly_one_complete_target(tool: str, tar
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("tool", ["move", "click"])
-@pytest.mark.parametrize(
-    "state, message",
-    [
-        ("missing", "not found"),
-        ("dead", "no longer alive"),
-        ("static", "'stealthy'"),
-        ("empty", "browser_fetch"),
-        ("busy", "busy"),
-        ("closed", "closed"),
-    ],
-)
-async def test_browser_mouse_session_errors_reach_mcp(tool: str, state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "stealthy")
-    if state == "missing":
-        server._sessions.clear()
-    elif state == "dead":
-        session._is_alive = False
-    elif state == "empty":
-        session.page_pool.clear()
-    elif state == "busy":
-        session.page_pool.pages[0].mark_busy()
-    elif state == "closed":
-        page.is_closed.return_value = True
-    async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool(
-            "browser_actions", {"session_id": "browser", "actions": [{"type": tool, "x": 10, "y": 20}]}
-        )
-    assert result.is_error
-    assert result.content and isinstance(result.content[0], TextContent)
-    assert message in result.content[0].text
-    page.mouse.move.assert_not_awaited()
-    page.mouse.click.assert_not_awaited()
-    if state == "closed":
-        assert session.page_pool.pages_count == 0
-    elif state == "busy":
-        assert session.page_pool.pages[0].state == "busy"
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("tool", ["move", "click"])
 @pytest.mark.parametrize("closed", [False, True])
 @pytest.mark.parametrize("target", [{"x": 10, "y": 20}, {"target": "button"}, {"target": "aria-ref=e1"}])
 async def test_browser_mouse_failure_is_not_retried_and_releases_page(
@@ -834,7 +794,7 @@ async def test_browser_mouse_live_selectors_refs_and_scroll(tool: str) -> None:
                 with pytest.raises(RuntimeError, match=rf"Action 1 \({tool}\) failed:") as error:
                     await server.browser_actions(
                         "browser",
-                        [{"type": tool, **target, "timeout": 100}],
+                        [{"type": tool, **target, **({"timeout": 100} if target["target"] != "button, a" else {})}],
                     )
                 events = loads(await page.locator("#events").input_value())
                 if target.get("target") != "button, a":

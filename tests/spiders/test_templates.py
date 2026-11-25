@@ -326,8 +326,3 @@ class TestCrawlRule:
         assert rule.callback is None
         assert rule.priority is None
         assert rule.process_request is None
-
-    def test_callback_accepts_callable(self):
-        spider = _TestSpider()
-        rule = CrawlRule(LinkExtractor(), callback=spider.parse_post)
-        assert rule.callback == spider.parse_post

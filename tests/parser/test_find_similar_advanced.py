@@ -57,32 +57,33 @@ class TestFindSimilarAdvanced:
         assert len(similar) == 2  # Banana and Carrot, not Grape (section)
 
     def test_find_similar_high_threshold_filters_more(self, product_page):
-        """A higher similarity_threshold should return fewer (or equal) results"""
+        """A higher similarity_threshold should exclude weaker matches"""
         first = product_page.css("div.product")[0]
         low_threshold = first.find_similar(similarity_threshold=0.1)
         high_threshold = first.find_similar(similarity_threshold=0.9)
-        assert len(high_threshold) <= len(low_threshold)
+        assert low_threshold.css(".name::text").getall() == ["Banana", "Carrot"]
+        assert high_threshold == []
 
-    def test_find_similar_match_text_excludes_different_text(self, product_page):
+    def test_find_similar_match_text_excludes_different_text(self):
         """match_text=True should factor in text content during similarity scoring"""
-        first = product_page.css("div.product")[0]  # Apple
-        # With match_text=True and a high threshold, "Apple" vs "Banana"/"Carrot" text
-        # should reduce similarity scores - result count may drop
+        page = Selector(
+            '<div><p class="product">Apple</p><p class="product">Apple</p><p class="product">Banana</p></div>'
+        )
+        first = page.css("p")[0]
         with_text = first.find_similar(similarity_threshold=0.8, match_text=True)
         without_text = first.find_similar(similarity_threshold=0.8, match_text=False)
-        # match_text=True is stricter when text differs, so result should be <= without_text
-        assert len(with_text) <= len(without_text)
+        assert [element.text for element in with_text] == ["Apple"]
+        assert [element.text for element in without_text] == ["Apple", "Banana"]
 
     def test_find_similar_ignore_attributes_affects_matching(self, product_page):
-        """Ignoring data-price should make more elements qualify as similar"""
+        """Ignoring data attributes should make more elements qualify as similar"""
         first = product_page.css("div.product")[0]
-        # Ignore both data-price and data-category → only class matters → all 3 divs match
         ignore_all_data = first.find_similar(
-            similarity_threshold=0.2, ignore_attributes=["data-price", "data-category"]
+            similarity_threshold=0.9, ignore_attributes=["data-price", "data-category"]
         )
-        # Ignore nothing → data-category difference (fruit vs veggie) may reduce matches
         ignore_nothing = first.find_similar(similarity_threshold=0.9, ignore_attributes=[])
-        assert len(ignore_all_data) >= len(ignore_nothing)
+        assert ignore_all_data.css(".name::text").getall() == ["Banana", "Carrot"]
+        assert ignore_nothing == []
 
     def test_find_similar_on_text_node_returns_empty(self, product_page):
         """find_similar() on a text node should return empty Selectors without raising"""

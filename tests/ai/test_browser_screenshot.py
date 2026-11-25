@@ -4,7 +4,6 @@ from contextlib import suppress
 from os import getenv
 from re import search
 from struct import unpack
-from time import monotonic
 from unittest.mock import AsyncMock, Mock, call
 
 import pytest
@@ -543,11 +542,13 @@ async def test_browser_screenshot_live_preserves_actions_and_current_page() -> N
                 ({"selector": "#missing"}, "Timeout"),
                 ({"ref": ref[1]}, "Timeout"),
             ):
-                started = monotonic()
-                result = await client.call_tool(
-                    "browser_screenshot", {"session_id": "browser", "timeout": 100, **target}
+                result = await asyncio.wait_for(
+                    client.call_tool(
+                        "browser_screenshot",
+                        {"session_id": "browser", **target, **({"timeout": 100} if message == "Timeout" else {})},
+                    ),
+                    5,
                 )
-                assert monotonic() - started < 2
                 assert result.is_error and isinstance(result.content[0], TextContent)
                 assert message in result.content[0].text
                 assert await page.evaluate(read_state) == scrolled

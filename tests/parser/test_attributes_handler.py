@@ -2,7 +2,6 @@ import pytest
 import json
 
 from scrapling import Selector
-from scrapling.core.custom_types import AttributesHandler
 
 
 class TestAttributesHandler:
@@ -86,6 +85,8 @@ class TestAttributesHandler:
         items = dict(attributes.items())
         assert items["id"] == "main"
         assert items["class"] == "container active"
+        assert items == dict(attributes)
+        assert {"data-config", "data-items", "data-nested", "onclick"} <= items.keys()
 
         # Length
         assert len(attributes) > 0
@@ -132,6 +133,7 @@ class TestAttributesHandler:
 
     def test_search_values(self, attributes):
         """Test search_values method"""
+        assert list(attributes.search_values("container")) == []
         # Exact match
         results = list(attributes.search_values("main", partial=False))
         assert len(results) == 1
@@ -175,23 +177,14 @@ class TestAttributesHandler:
         assert main_elem.attrib["data-bool"] == "true"
 
     def test_attribute_modification(self, sample_html):
-        """Test that AttributesHandler is read-only (if applicable)"""
+        """Test that AttributesHandler is read-only"""
         page = Selector(sample_html)
         element = page.css("#main")[0]
         attrs = element.attrib
-
-        # Test if attributes can be modified
-        # This behavior depends on implementation
         original_id = attrs["id"]
-        try:
+        with pytest.raises(TypeError):
             attrs["id"] = "new-id"
-            # If modification is allowed
-            assert attrs["id"] == "new-id"
-            # Reset
-            attrs["id"] = original_id
-        except (TypeError, AttributeError):
-            # If modification is not allowed (read-only)
-            assert attrs["id"] == original_id
+        assert attrs["id"] == original_id
 
     def test_string_representation(self, attributes):
         """Test string representations"""
@@ -246,34 +239,6 @@ class TestAttributesHandler:
         elem1_again = page.css("#main")[0]
         assert elem1.attrib == elem1_again.attrib
 
-    def test_complex_search_patterns(self, attributes):
-        """Test complex search patterns"""
-        # Search for JSON-containing attributes
-        json_attrs = []
-        for key, value in attributes.items():
-            try:
-                if isinstance(value, str) and (value.startswith('{') or value.startswith('[')):
-                    json.loads(value)
-                    json_attrs.append(key)
-            except:
-                pass
-
-        assert "data-config" in json_attrs
-        assert "data-items" in json_attrs
-        assert "data-nested" in json_attrs
-
-    def test_attribute_filtering(self, attributes):
-        """Test filtering attributes by patterns"""
-        # Get all data-* attributes
-        data_attrs = {k: v for k, v in attributes.items() if k.startswith("data-")}
-        assert len(data_attrs) > 5
-        assert "data-config" in data_attrs
-        assert "data-items" in data_attrs
-
-        # Get all event handler attributes
-        event_attrs = {k: v for k, v in attributes.items() if k.startswith("on")}
-        assert "onclick" in event_attrs
-
     def test_performance_with_many_attributes(self):
         """Test performance with elements having many attributes"""
         # Create an element with many attributes
@@ -313,24 +278,3 @@ class TestAttributesHandler:
         # Search with Unicode
         results = list(attrs.search_values("你好", partial=True))
         assert len(results) == 1
-
-    def test_malformed_attributes(self):
-        """Test handling of malformed attributes"""
-        # Various malformed HTML scenarios
-        test_cases = [
-            '<div id="test" class=>Content</div>',  # Empty attribute value
-            '<div id="test" class>Content</div>',  # No attribute value
-            '<div id="test" data-"invalid"="value">Content</div>',  # Invalid attribute name
-            '<div id=test class=no-quotes>Content</div>',  # Unquoted values
-        ]
-
-        for html in test_cases:
-            try:
-                page = Selector(html)
-                if page.css("div"):
-                    attrs = page.css("div")[0].attrib
-                    # Should handle gracefully without crashing
-                    assert isinstance(attrs, AttributesHandler)
-            except:
-                # Some malformed HTML might not parse at all
-                pass

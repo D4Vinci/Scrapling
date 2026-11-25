@@ -26,17 +26,13 @@ class TestAncestorNavigation:
     def test_iterancestors_returns_all_ancestors(self, nested_page):
         """iterancestors() should yield every ancestor up to <html>"""
         target = nested_page.css("#target")[0]
-        ancestor_tags = [a.tag for a in target.iterancestors()]
+        ancestors = list(target.iterancestors())
+        ancestor_tags = [a.tag for a in ancestors]
+        assert ancestors[0].attrib.get("id") == "level4"
         # Expected order: p → article → section → div → body → html
         assert ancestor_tags[:4] == ["p", "article", "section", "div"]
         assert "body" in ancestor_tags
         assert "html" in ancestor_tags
-
-    def test_iterancestors_order_is_bottom_up(self, nested_page):
-        """iterancestors() should start from the immediate parent, not the root"""
-        target = nested_page.css("#target")[0]
-        first_ancestor = next(target.iterancestors())
-        assert first_ancestor.attrib.get("id") == "level4"
 
     def test_find_ancestor_returns_first_match(self, nested_page):
         """find_ancestor() should return the closest ancestor matching the predicate"""

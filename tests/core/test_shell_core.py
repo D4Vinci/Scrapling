@@ -147,21 +147,19 @@ class TestParseHeaders:
         ]
         headers, cookies = _ParseHeaders(header_lines)
         
-        # Should handle whitespace correctly
-        assert "Content-Type" in headers or "  Content-Type  " in headers
-        assert "text/html" in str(headers.values()) or "  text/html  " in str(headers.values())
+        assert headers == {"Content-Type": "text/html", "User-Agent": "TestAgent/1.0"}
+        assert cookies == {}
     
     def test_parse_cookies_disabled(self):
         """Test parsing with cookies disabled"""
         header_lines = [
             "Content-Type: text/html",
-            "Set-Cookie: session_id=abc123",
+            "Cookie: session_id=abc123",
         ]
         headers, cookies = _ParseHeaders(header_lines, parse_cookies=False)
         
-        assert headers["Content-Type"] == "text/html"
-        # Cookie parsing behavior when disabled
-        assert len(cookies) == 0 or "Set-Cookie" in headers
+        assert headers == {"Content-Type": "text/html", "Cookie": "session_id=abc123"}
+        assert cookies == {}
     
     def test_empty_header_lines(self):
         """Test parsing empty header lines"""
@@ -238,13 +236,6 @@ class TestRequestNamedTuple:
 class TestLoggingLevels:
     """Test logging level constants"""
     
-    def test_known_logging_levels(self):
-        """Test that all known logging levels are defined"""
-        expected_levels = ["debug", "info", "warning", "error", "critical", "fatal"]
-        
-        for level in expected_levels:
-            assert level in _known_logging_levels
-            assert isinstance(_known_logging_levels[level], int)
     
     def test_logging_level_values(self):
         """Test logging level values are correct"""
@@ -256,17 +247,4 @@ class TestLoggingLevels:
         assert _known_logging_levels["error"] == ERROR
         assert _known_logging_levels["critical"] == CRITICAL
         assert _known_logging_levels["fatal"] == FATAL
-    
-    def test_level_hierarchy(self):
-        """Test that logging levels have correct hierarchy"""
-        levels = [
-            _known_logging_levels["debug"],
-            _known_logging_levels["info"],
-            _known_logging_levels["warning"],
-            _known_logging_levels["error"],
-            _known_logging_levels["critical"],
-        ]
-        
-        # Levels should be in ascending order
-        for i in range(len(levels) - 1):
-            assert levels[i] < levels[i + 1]
+        assert all(isinstance(value, int) for value in _known_logging_levels.values())

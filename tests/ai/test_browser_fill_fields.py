@@ -334,42 +334,6 @@ def test_browser_actions_fields_rejects_nonfinite_timeout(timeout: float) -> Non
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "state, message",
-    [
-        ("missing", "not found"),
-        ("dead", "no longer alive"),
-        ("static", "'stealthy'"),
-        ("empty", "browser_fetch"),
-        ("busy", "busy"),
-        ("closed", "closed"),
-    ],
-)
-async def test_browser_actions_fields_session_errors_reach_mcp(state: str, message: str) -> None:
-    server, session, page = _server("static" if state == "static" else "stealthy")
-    if state == "missing":
-        server._sessions.clear()
-    elif state == "dead":
-        session._is_alive = False
-    elif state == "empty":
-        session.page_pool.clear()
-    elif state == "busy":
-        session.page_pool.pages[0].mark_busy()
-    elif state == "closed":
-        page.is_closed.return_value = True
-    async with Client(server._build_server("127.0.0.1", 8000)) as client:
-        result = await client.call_tool("browser_actions", {"session_id": "browser", "actions": [TEXT_FIELD]})
-    assert result.is_error
-    assert result.content and isinstance(result.content[0], TextContent)
-    assert message in result.content[0].text
-    page.locator.assert_not_called()
-    if state == "closed":
-        assert session.page_pool.pages_count == 0
-    elif state == "busy":
-        assert session.page_pool.pages[0].state == "busy"
-
-
-@pytest.mark.asyncio
 @pytest.mark.parametrize("clear, slowly", [(True, False), (False, False), (False, True)])
 async def test_browser_actions_fields_timeout_stops_and_releases_page(clear: bool, slowly: bool) -> None:
     server, session, page = _server()
@@ -698,7 +662,12 @@ async def test_browser_actions_fields_live_failed_field_preserves_prior_changes(
                     "session_id": "browser",
                     "actions": [
                         {**TEXT_FIELD, "value": "changed first"},
-                        {**TEXT_FIELD, "target": selector, "value": "fails", "timeout": 100},
+                        {
+                            **TEXT_FIELD,
+                            "target": selector,
+                            "value": "fails",
+                            **({"timeout": 100} if selector == "#missing" else {}),
+                        },
                         {**TEXT_FIELD, "target": "#notes", "value": "must not run"},
                     ],
                 },

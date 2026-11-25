@@ -27,92 +27,6 @@ class TestLogCounterHandler:
         assert counts["error"] == 0
         assert counts["critical"] == 0
 
-    def test_counts_debug_messages(self):
-        """Test counting debug level messages."""
-        handler = LogCounterHandler()
-        record = logging.LogRecord(
-            name="test",
-            level=logging.DEBUG,
-            pathname="",
-            lineno=0,
-            msg="test",
-            args=(),
-            exc_info=None,
-        )
-
-        handler.emit(record)
-        handler.emit(record)
-
-        assert handler.get_counts()["debug"] == 2
-
-    def test_counts_info_messages(self):
-        """Test counting info level messages."""
-        handler = LogCounterHandler()
-        record = logging.LogRecord(
-            name="test",
-            level=logging.INFO,
-            pathname="",
-            lineno=0,
-            msg="test",
-            args=(),
-            exc_info=None,
-        )
-
-        handler.emit(record)
-
-        assert handler.get_counts()["info"] == 1
-
-    def test_counts_warning_messages(self):
-        """Test counting warning level messages."""
-        handler = LogCounterHandler()
-        record = logging.LogRecord(
-            name="test",
-            level=logging.WARNING,
-            pathname="",
-            lineno=0,
-            msg="test",
-            args=(),
-            exc_info=None,
-        )
-
-        handler.emit(record)
-
-        assert handler.get_counts()["warning"] == 1
-
-    def test_counts_error_messages(self):
-        """Test counting error level messages."""
-        handler = LogCounterHandler()
-        record = logging.LogRecord(
-            name="test",
-            level=logging.ERROR,
-            pathname="",
-            lineno=0,
-            msg="test",
-            args=(),
-            exc_info=None,
-        )
-
-        handler.emit(record)
-
-        assert handler.get_counts()["error"] == 1
-
-    def test_counts_critical_messages(self):
-        """Test counting critical level messages."""
-        handler = LogCounterHandler()
-        record = logging.LogRecord(
-            name="test",
-            level=logging.CRITICAL,
-            pathname="",
-            lineno=0,
-            msg="test",
-            args=(),
-            exc_info=None,
-        )
-
-        handler.emit(record)
-
-        assert handler.get_counts()["critical"] == 1
-
     def test_counts_multiple_levels(self):
         """Test counting messages at different levels."""
         handler = LogCounterHandler()
@@ -541,15 +455,15 @@ class TestSpiderLogging:
 
             spider = FileLogSpider()
 
-            # Should have a file handler
             file_handlers = [
                 h for h in spider.logger.handlers if isinstance(h, logging.FileHandler)
             ]
-            assert len(file_handlers) == 1
-
-            # Clean up
-            for h in file_handlers:
-                h.close()
+            try:
+                assert len(file_handlers) == 1
+            finally:
+                for handler in file_handlers:
+                    spider.logger.removeHandler(handler)
+                    handler.close()
 
     def test_logger_does_not_propagate(self):
         """Test that spider logger does not propagate to parent."""
@@ -566,9 +480,3 @@ class TestSessionConfigurationError:
         error = SessionConfigurationError("Custom error message")
 
         assert str(error) == "Custom error message"
-
-    def test_exception_is_exception(self):
-        """Test that it's a proper exception."""
-        error = SessionConfigurationError("test")
-
-        assert isinstance(error, Exception)

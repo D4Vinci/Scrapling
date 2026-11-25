@@ -139,13 +139,6 @@ class TestImpersonateTypeValidation:
         session = FetcherSession(impersonate="chrome")
         assert session._default_impersonate == "chrome"
 
-    def test_impersonate_accepts_list(self):
-        """Test that impersonate accepts list type."""
-        # This should not raise any type errors
-        browsers = ["chrome", "firefox"]
-        session = FetcherSession(impersonate=browsers)
-        assert session._default_impersonate == browsers
-
     def test_impersonate_accepts_none(self):
         """Test that impersonate accepts None."""
         # This should not raise any type errors

@@ -3,15 +3,14 @@ import pytest_httpbin
 
 from scrapling import StealthyFetcher
 
-StealthyFetcher.adaptive = True
-
 
 @pytest.mark.browser
 @pytest_httpbin.use_class_based_httpbin
 class TestStealthyFetcher:
-    @pytest.fixture(scope="class")
-    def fetcher(self):
+    @pytest.fixture
+    def fetcher(self, monkeypatch):
         """Fixture to create a StealthyFetcher instance for the entire test class"""
+        monkeypatch.setattr(StealthyFetcher, "adaptive", True)
         return StealthyFetcher
 
     @pytest.fixture(autouse=True)
