@@ -25,9 +25,6 @@ if TYPE_CHECKING:
     from scrapling.spiders import Request
 
 
-_NON_INHERITABLE_KWARGS = frozenset({"method", "data", "json", "params", "files", "multipart"})
-
-
 class Response(Selector):
     """This class is returned by all engines as a way to unify the response type between different libraries.
 
@@ -115,21 +112,21 @@ class Response(Selector):
         meta: dict[str, Any] | None = None,
         referer_flow: bool = True,
         **kwargs: Any,
-    ) -> Any:
+    ) -> "Request":
         """Create a Request to follow a URL.
 
-        This is a helper method for spiders to easily follow links found in pages.
+        The session id, callback and priority default to the parent request's values.
+        Metadata and session kwargs are not inherited.
+        Following a link after a POST sends a GET unless you pass a different method.
 
-        **IMPORTANT**: The below arguments if left empty, the corresponding value from the previous request will be used. The only exception is `dont_filter`.
-
-        The session kwargs of the previous request are inherited as well, except `method`, `params`, `data`, `json`, `files`, and `multipart`, so a followed link is a plain GET unless you pass them again.
+        Referer flow remains enabled by default. Session settings and stored cookies still apply.
 
         :param url: The URL to follow (can be relative, will be joined with current URL)
-        :param sid: The session id to use
-        :param callback: Spider callback method to use
-        :param priority: The priority number to use, the higher the number, the higher priority to be processed first.
+        :param sid: The session id to use, or the parent request's session id when empty.
+        :param callback: Spider callback method to use, or the parent request's callback when None.
+        :param priority: The priority number to use, or the parent request's priority when None. Higher numbers run first.
         :param dont_filter: If this request has been done before, disable the filter to allow it again.
-        :param meta: Additional meta data to included in the request
+        :param meta: Metadata for the new request only.
         :param referer_flow: Enabled by default, set the current response url as referer for the new request url.
         :param kwargs: Additional Request arguments
         :return: Request object ready to be yielded
@@ -139,25 +136,11 @@ class Response(Selector):
         if not self.request or not isinstance(self.request, Request):
             raise TypeError("This response has no request set yet.")
 
-        # Merge original session kwargs with new kwargs (new takes precedence)
-        inherited = {k: v for k, v in self.request._session_kwargs.items() if k not in _NON_INHERITABLE_KWARGS}
-        for key in ("headers", "extra_headers"):
-            if inherited.get(key):
-                inherited[key] = {k: v for k, v in inherited[key].items() if k.lower() != "content-length"}
-        session_kwargs = {**inherited, **kwargs}
-
         if referer_flow:
-            # For requests
-            headers = session_kwargs.get("headers", {})
-            headers["referer"] = self.url
-            session_kwargs["headers"] = headers
-
-            # For browsers
-            extra_headers = session_kwargs.get("extra_headers", {})
-            extra_headers["referer"] = self.url
-            session_kwargs["extra_headers"] = extra_headers
-
-            session_kwargs["google_search"] = False
+            for key in ("headers", "extra_headers"):
+                # The engines already filter the ones they are not using later
+                kwargs[key] = {**(kwargs.get(key) or {}), "referer": self.url}
+            kwargs["google_search"] = False
 
         return Request(
             url=self.urljoin(url),
@@ -165,8 +148,8 @@ class Response(Selector):
             callback=callback or self.request.callback,
             priority=priority if priority is not None else self.request.priority,
             dont_filter=dont_filter,
-            meta={**(self.meta or {}), **(meta or {})},
-            **session_kwargs,
+            meta=meta.copy() if meta is not None else None,
+            **kwargs,
         )
 
     def __str__(self) -> str:

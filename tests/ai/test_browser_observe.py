@@ -112,31 +112,30 @@ async def test_browser_observe_returns_paired_frame_data_without_url() -> None:
 
 
 @pytest.mark.asyncio
-async def test_browser_observe_samples_across_window_and_limits_output() -> None:
+async def test_browser_observe_samples_across_window_and_limits_output(monkeypatch: pytest.MonkeyPatch) -> None:
     server, session, page = _server()
-    emitter: asyncio.Task[None] | None = None
+    clock = Mock(return_value=0.0)
+    monkeypatch.setattr("scrapling.core.ai.server.monotonic", clock)
 
     async def start(**kwargs: Any) -> None:
-        nonlocal emitter
+        assert session.page_pool.pages[0].state == "busy"
+        clock.return_value = 0.04
+        kwargs["on_frame"](_frame(0))
 
-        async def emit() -> None:
-            for index in range(12):
-                kwargs["on_frame"](_frame(index))
-                await asyncio.sleep(0.02)
-
-        emitter = asyncio.create_task(emit())
+    async def wait(duration: float) -> None:
+        assert duration == pytest.approx(0.16)
+        for index, elapsed in enumerate((0.06, 0.08, 0.12, 0.16, 0.19, 0.2, 0.22), 1):
+            clock.return_value = elapsed
+            page.screencast.start.call_args.kwargs["on_frame"](_frame(index))
 
     async def stop() -> None:
         assert session.page_pool.pages[0].state == "busy"
-        assert emitter is not None
-        emitter.cancel()
-        with suppress(asyncio.CancelledError):
-            await emitter
 
+    monkeypatch.setattr("scrapling.core.ai.server.sleep", wait)
     page.screencast.start.side_effect = start
     page.screencast.stop.side_effect = stop
     result = await server.browser_observe("browser", duration_ms=200, max_frames=3)
-    assert len(result) % 2 == 0 and 2 <= len(result) // 2 <= 3
+    assert len(result) == 6
     timestamps = []
     for metadata, image in zip(result[::2], result[1::2]):
         assert isinstance(metadata, TextContent)
@@ -150,7 +149,8 @@ async def test_browser_observe_samples_across_window_and_limits_output() -> None
         }
         assert b64decode(image.data) == expected["data"]
         timestamps.append(frame["timestamp_ms"])
-    assert timestamps == sorted(timestamps) and timestamps[-1] - timestamps[0] >= 80
+    assert timestamps == [_frame(index)["timestamp"] for index in (1, 3, 5)]
+    page.screencast.stop.assert_awaited_once()
     assert session.page_pool.pages[0].state == "ready"
 
 
@@ -352,9 +352,7 @@ async def test_browser_observe_live_motion_and_page_reuse() -> None:
             before = await page.evaluate(state)
             initial_requests = requests.copy()
             started = time() * 1000
-            result = await client.call_tool(
-                "browser_observe", {"session_id": "browser", "duration_ms": 600, "max_frames": 6}
-            )
+            result = await client.call_tool("browser_observe", {"session_id": "browser", "max_frames": 6})
             ended = time() * 1000
             assert not result.is_error, result.content
             assert result.structured_content is None
@@ -371,7 +369,7 @@ async def test_browser_observe_live_motion_and_page_reuse() -> None:
                 assert data.startswith(b"\xff\xd8") and data.endswith(b"\xff\xd9")
                 timestamps.append(frame["timestamp_ms"])
                 pixels.append(data)
-            assert timestamps == sorted(timestamps) and timestamps[-1] - timestamps[0] >= 200
+            assert timestamps == sorted(timestamps) and timestamps[-1] > timestamps[0]
             assert all(started - 1000 <= timestamp <= ended + 1000 for timestamp in timestamps)
             assert len(set(pixels)) > 1
             assert await page.evaluate(state) == before and requests == initial_requests

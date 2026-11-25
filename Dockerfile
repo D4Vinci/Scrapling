@@ -25,8 +25,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
     apt-get update && \
-    uv run playwright install-deps chromium && \
-    uv run playwright install chromium && \
+    uv run patchright install-deps chromium && \
+    uv run patchright install chromium && \
     uv sync --all-extras --compile-bytecode && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

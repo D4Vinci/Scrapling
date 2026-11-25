@@ -73,7 +73,7 @@ jobs:
     - name: Install all browsers dependencies
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install playwright==1.62.0 patchright==1.62.1
+        python3 -m pip install playwright==1.64.1 patchright==1.64.4
 
     - name: Get Playwright version
       id: playwright-version
@@ -99,11 +99,11 @@ jobs:
       run: |
         echo "Cache hit: ${{ steps.playwright-cache.outputs.cache-hit }}"
         if [ "${{ steps.playwright-cache.outputs.cache-hit }}" != "true" ]; then
-          python3 -m playwright install chromium
+          python3 -m patchright install chromium
         else
           echo "Skipping install - using cached Playwright browsers"
         fi
-        python3 -m playwright install-deps chromium
+        python3 -m patchright install-deps chromium
 
     - name: Retrieve tox environments from cache if any
       id: tox-cache

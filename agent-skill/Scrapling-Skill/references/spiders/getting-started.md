@@ -84,7 +84,7 @@ class QuotesSpider(Spider):
             yield response.follow(next_page, callback=self.parse)
 ```
 
-`response.follow()` handles relative URLs automatically by joining them with the current page's URL. It also sets the current page as the `Referer` header by default.
+`response.follow()` joins relative URLs with the current page URL. Session ID, callback, and priority inherit from the attached request unless you override them. Fetch options and metadata are not copied. The helper sets the current page URL as `Referer` by default; pass `referer_flow=False` to disable this.
 
 You can point follow-up requests at different callback methods for different page types:
 
