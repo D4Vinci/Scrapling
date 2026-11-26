@@ -1,16 +1,17 @@
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 from patchright.sync_api import Error as PlaywrightError, TimeoutError as PlaywrightTimeoutError
 
+from scrapling.core._types import cast
 from scrapling.engines._browsers import _stealth
 
 
 EMBEDDED = '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>'
 
 
-def setup(monkeypatch, asynchronous, script_at=0, frame_at=0, content_cost=0):
+def setup(monkeypatch, asynchronous, script_at: int | None = 0, frame_at: int | None = 0, content_cost=0):
     mock = AsyncMock if asynchronous else MagicMock
     session_type = _stealth.AsyncStealthySession if asynchronous else _stealth.StealthySession
     monkeypatch.setattr(session_type, "_wait_for_networkidle", mock())
@@ -71,7 +72,7 @@ def test_initial_readiness(monkeypatch, asynchronous, script_at, frame_at, elaps
         session._wait_for_networkidle.assert_called_once_with(page, timeout=5000)
     else:
         session._wait_for_networkidle.assert_not_called()
-        session._wait_for_page_stability.assert_not_called()
+        cast(Mock, session._wait_for_page_stability).assert_not_called()
     page.mouse.click.assert_not_called()
 
 
@@ -107,16 +108,26 @@ def test_recursive_check_has_no_new_polling_window(monkeypatch, asynchronous):
 @pytest.mark.parametrize("asynchronous", [False, True])
 def test_attached_frame_keeps_separate_load_and_checkbox_waits(monkeypatch, asynchronous):
     session, page, frame, clock = setup(monkeypatch, asynchronous)
+    checkbox = frame.locator.return_value
+    mock = AsyncMock if asynchronous else MagicMock
+    ready_at = 17000
+    checkbox.is_visible = mock(side_effect=lambda: clock["elapsed"] >= ready_at)
+    checkbox.count = mock(side_effect=lambda: int(clock["elapsed"] >= ready_at))
 
     def wait(target, *args):
         if target is frame:
             clock["elapsed"] += 11000
 
-    session._wait_for_page_stability.side_effect = wait
-    frame.locator.return_value.click.side_effect = lambda **kwargs: clock.update(elapsed=clock["elapsed"] + 6000)
+    def click(*, timeout, delay):
+        assert clock["elapsed"] == 11000
+        assert ready_at - clock["elapsed"] <= timeout
+        clock["elapsed"] = ready_at
+
+    cast(Mock, session._wait_for_page_stability).side_effect = wait
+    checkbox.click.side_effect = click
     solve(session, page, asynchronous)
-    assert clock["elapsed"] == 17000
-    frame.locator.return_value.click.assert_called_once()
+    assert clock["elapsed"] == ready_at
+    checkbox.click.assert_called_once()
     page.wait_for_timeout.assert_not_called()
 
 
