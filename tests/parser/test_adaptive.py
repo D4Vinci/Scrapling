@@ -77,3 +77,34 @@ class TestParserAdaptive:
             "#target", identifier="target", adaptive=True, auto_save=True, percentage=95
         )
         assert list(result) == []
+
+    def test_relocation_keeps_text_projection(self):
+        """A `::text` selector must still return text after adaptive relocation"""
+        old_page = Selector(
+            '<html><body><h2 class="title">Hello</h2></body></html>', url="example.com", adaptive=True
+        )
+        new_page = Selector(
+            '<html><body><h3 class="title">Hello</h3></body></html>', url="example.com", adaptive=True
+        )
+
+        old_page.css("h2.title::text", auto_save=True)
+
+        # Before the fix this returned the relocated element's HTML
+        # ('<h3 class="title">Hello</h3>') instead of its text.
+        relocated = new_page.css("h2.title::text", adaptive=True)
+        assert relocated[0].get() == "Hello"
+
+    def test_relocation_keeps_attribute_projection(self):
+        """An `::attr()` selector must still return the attribute value after relocation"""
+        old_page = Selector(
+            '<html><body><a class="cta" href="/old">Go</a></body></html>', url="example.com", adaptive=True
+        )
+        # The class changed, so `a.cta` matches nothing and relocation takes over.
+        new_page = Selector(
+            '<html><body><a class="cta-button" href="/new">Go</a></body></html>', url="example.com", adaptive=True
+        )
+
+        old_page.css("a.cta::attr(href)", auto_save=True)
+
+        relocated = new_page.css("a.cta::attr(href)", adaptive=True)
+        assert relocated[0].get() == "/new"

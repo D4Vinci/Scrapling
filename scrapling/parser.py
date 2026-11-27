@@ -66,6 +66,27 @@ def _escape_css_string(value: str) -> str:
     return value.replace('"', r"\"").replace("\n", r"\A ").replace("\r", r"\D ").replace("\f", r"\C ")
 
 
+def _reappend_projection(selector: str, elements: List[HtmlElement]) -> List[Any]:
+    """Re-apply a selector's trailing ``/text()`` or ``/@attr`` step to relocated elements.
+
+    CSS ``::text`` and ``::attr(name)`` become a trailing XPath step that lxml applies
+    as part of evaluating the selector. Adaptive relocation replaces that evaluation
+    with a similarity search that returns elements only, so without replaying the step
+    the caller receives element HTML where the selector asked for a text or attribute
+    value.
+    """
+    _, _, step = selector.rpartition("/")
+    # `text()` is the only text projection the translator emits; attributes are `@name`.
+    # A step containing brackets, quotes or parentheses is a predicate, never a projection.
+    if step != "text()" and not (step.startswith("@") and not any(ch in step for ch in "[]'\"()")):
+        return elements
+
+    projected: List[Any] = []
+    for element in elements:
+        projected.extend(element.xpath(f"./{step}"))
+    return projected
+
+
 # Pre-compiled selectors for efficiency
 _find_all_elements = XPath(".//*")
 _find_all_elements_with_spaces = XPath(
@@ -683,6 +704,10 @@ class Selector(SelectorsGeneration):
                     element_data = self.retrieve(identifier or selector)
                     if element_data:
                         elements = self.relocate(element_data, percentage)
+                        if elements:
+                            # Relocation returns bare elements, so a `::text`/`::attr`
+                            # projection in the original selector has to be replayed here.
+                            elements = _reappend_projection(selector, elements)
                         if elements and auto_save:
                             self.save(elements[0], identifier or selector)
 
@@ -1097,7 +1122,7 @@ class Selector(SelectorsGeneration):
         partial: bool = ...,
         case_sensitive: bool = ...,
         clean_match: bool = ...,
-    ) -> "Selector": ...
+    ) -> Optional["Selector"]: ...
 
     @overload
     def find_by_text(
@@ -1116,13 +1141,15 @@ class Selector(SelectorsGeneration):
         partial: bool = False,
         case_sensitive: bool = False,
         clean_match: bool = True,
-    ) -> Union["Selectors", "Selector"]:
+    ) -> Optional[Union["Selectors", "Selector"]]:
         """Find elements that its text content fully/partially matches input.
         :param text: Text query to match
         :param first_match: Returns the first element that matches conditions, enabled by default
         :param partial: If enabled, the function returns elements that contain the input text
         :param case_sensitive: if enabled, the letters case will be taken into consideration
         :param clean_match: if enabled, this will ignore all whitespaces and consecutive spaces while matching
+
+        Returns ``None`` when ``first_match`` is enabled and no element matches.
         """
         if self._is_text_node(self._root):
             return Selectors()
@@ -1152,9 +1179,10 @@ class Selector(SelectorsGeneration):
                     # we got an element so we should stop
                     break
 
-            if first_match:
-                if results:
-                    return results[0]
+        # A `first_match` miss returns `None` like `find()` does; an empty `Selectors`
+        # would fail later with an AttributeError on `.text`/`.attrib`.
+        if first_match:
+            return results[0] if results else None
         return results
 
     @overload
@@ -1164,7 +1192,7 @@ class Selector(SelectorsGeneration):
         first_match: Literal[True] = ...,
         case_sensitive: bool = ...,
         clean_match: bool = ...,
-    ) -> "Selector": ...
+    ) -> Optional["Selector"]: ...
 
     @overload
     def find_by_regex(
@@ -1181,12 +1209,14 @@ class Selector(SelectorsGeneration):
         first_match: bool = True,
         case_sensitive: bool = False,
         clean_match: bool = True,
-    ) -> Union["Selectors", "Selector"]:
+    ) -> Optional[Union["Selectors", "Selector"]]:
         """Find elements that its text content matches the input regex pattern.
         :param query: Regex query/pattern to match
         :param first_match: Return the first element that matches conditions; enabled by default.
         :param case_sensitive: If enabled, the letters case will be taken into consideration in the regex.
         :param clean_match: If enabled, this will ignore all whitespaces and consecutive spaces while matching.
+
+        Returns ``None`` when ``first_match`` is enabled and no element matches.
         """
         if self._is_text_node(self._root):
             return Selectors()
@@ -1210,8 +1240,10 @@ class Selector(SelectorsGeneration):
                     # we got an element so we should stop
                     break
 
-            if results and first_match:
-                return results[0]
+        # A `first_match` miss returns `None` like `find()` does; an empty `Selectors`
+        # would fail later with an AttributeError on `.text`/`.attrib`.
+        if first_match:
+            return results[0] if results else None
         return results
 
 

@@ -139,6 +139,16 @@ class TestTextMatching:
         )
         assert len(out_of_stock) == 1
 
+    def test_text_first_match_miss_returns_none(self, page):
+        """A `first_match` miss returns `None`, matching `find()`"""
+        # Before the fix this returned an empty `Selectors`, so `.text` raised
+        # AttributeError instead of failing the same way `find()` does.
+        assert page.find_by_text("definitely not on this page") is None
+
+    def test_regex_first_match_miss_returns_none(self, page):
+        """A `first_match` miss returns `None`, matching `find()`"""
+        assert page.find_by_regex(r"definitely not on this page") is None
+
 
 # Similar Elements Tests
 class TestSimilarElements:
