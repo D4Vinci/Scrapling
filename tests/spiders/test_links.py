@@ -342,3 +342,44 @@ class TestIgnoredExtensions:
     def test_constant_includes_common_binary_types(self):
         for ext in ("pdf", "zip", "png", "mp4", "exe"):
             assert ext in IGNORED_EXTENSIONS
+
+
+class TestMalformedUrlInMatches:
+    """`matches()` backs sitemap dispatch, so one bad `<loc>` must not raise"""
+
+    def test_malformed_url_is_a_non_match_not_an_error(self):
+        # Before the fix this raised ValueError('Invalid IPv6 URL') out of the
+        # sitemap callback, aborting the dispatch of every later <loc>.
+        assert LinkExtractor().matches("http://[broken") is False
+
+    def test_malformed_url_without_canonicalization_is_a_non_match(self):
+        # `canonicalize=False` skips canonicalize_url, but `_url_passes` still
+        # parses the URL, so the guard has to cover both steps.
+        assert LinkExtractor(canonicalize=False).matches("http://[broken") is False
+
+    def test_well_formed_urls_are_unaffected(self):
+        assert LinkExtractor().matches("https://example.com/page") is True
+
+
+class TestBareStringArguments:
+    """A bare string is an iterable of characters; the constructor must not treat it as one"""
+
+    def test_string_tags_and_attrs_are_not_split_into_characters(self):
+        extractor = LinkExtractor(tags="link", attrs="href")
+        assert extractor.tags == ("link",)
+        assert extractor.attrs == ("href",)
+
+        resp = _make_response('<html><head><link rel="next" href="/page/2"></head><body></body></html>')
+        # Before the fix the XPath was `descendant-or-self::l/@h` and matched nothing.
+        assert extractor.extract(resp) == ["https://example.com/page/2"]
+
+    def test_string_deny_extensions_is_not_split_into_characters(self):
+        extractor = LinkExtractor(deny_extensions="pdf")
+        assert extractor.deny_extensions == {"pdf"}
+
+        resp = _make_response('<html><body><a href="/file.pdf">pdf</a><a href="/about">about</a></body></html>')
+        # Before the fix `deny_extensions` became {"p", "d", "f"} and the PDF was followed.
+        assert extractor.extract(resp) == ["https://example.com/about"]
+
+    def test_empty_deny_extensions_disables_filtering(self):
+        assert LinkExtractor(deny_extensions=()).deny_extensions == set()

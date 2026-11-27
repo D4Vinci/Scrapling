@@ -199,8 +199,8 @@ class LinkExtractor:
         deny_domains: StrOrIterable = (),
         restrict_css: StrOrIterable = (),
         restrict_xpath: StrOrIterable = (),
-        tags: Iterable[str] = ("a", "area"),
-        attrs: Iterable[str] = ("href",),
+        tags: StrOrIterable = ("a", "area"),
+        attrs: StrOrIterable = ("href",),
         canonicalize: bool = True,
         strip: bool = True,
         keep_fragment: bool = False,
@@ -213,14 +213,14 @@ class LinkExtractor:
         self.deny_domains: Tuple[str, ...] = tuple(d.lower() for d in _to_str_tuple(deny_domains))
         self.restrict_css: Tuple[str, ...] = _to_str_tuple(restrict_css)
         self.restrict_xpath: Tuple[str, ...] = _to_str_tuple(restrict_xpath)
-        self.tags: Tuple[str, ...] = tuple(tags)
-        self.attrs: Tuple[str, ...] = tuple(attrs)
+        self.tags: Tuple[str, ...] = _to_str_tuple(tags)
+        self.attrs: Tuple[str, ...] = _to_str_tuple(attrs)
         self.canonicalize = canonicalize
         self.strip = strip
         self.keep_fragment = keep_fragment
-        self.deny_extensions: Set[str] = set(
-            (ext.lower().lstrip(".") for ext in deny_extensions) if deny_extensions is not None else IGNORED_EXTENSIONS
-        )
+        # `None` keeps the defaults; an explicit empty value disables extension filtering.
+        extensions = IGNORED_EXTENSIONS if deny_extensions is None else _to_str_tuple(deny_extensions)
+        self.deny_extensions: Set[str] = {ext.lower().lstrip(".") for ext in extensions}
         self.process: Callable[[Any], Any] = process if callable(process) else _filler
 
     def extract(self, response: "Response") -> List[str]:
@@ -279,9 +279,16 @@ class LinkExtractor:
         Used by `SitemapSpider` to dispatch sitemap URLs through `CrawlRule`s without
         needing a `Response`.
         """
-        if self.canonicalize:
-            url = canonicalize_url(url, keep_fragments=self.keep_fragment)
-        return self._url_passes(url)
+        try:
+            if self.canonicalize:
+                url = canonicalize_url(url, keep_fragments=self.keep_fragment)
+            return self._url_passes(url)
+        except ValueError:
+            # A URL the fingerprint cannot parse (e.g. a malformed IPv6 host) is a
+            # non-match, not an error: mirroring `extract()` keeps one bad `<loc>`
+            # from aborting the whole sitemap dispatch.
+            log.debug(f"Skipping the match of bad URL {url!r}")
+            return False
 
     def _url_passes(self, url: str) -> bool:
         if url.split("://", 1)[0] not in valid_schemas:
