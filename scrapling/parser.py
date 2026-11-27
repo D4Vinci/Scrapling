@@ -539,7 +539,9 @@ class Selector(SelectorsGeneration):
         """
         score_table: Dict[float, List[Any]] = {}
         # Note: `element` will most likely always be a dictionary at this point.
-        if isinstance(element, self.__class__):
+        # Check against `Selector`, not `self.__class__`: on a subclass like `Response`,
+        # a plain `Selector` element would otherwise be skipped and never converted.
+        if isinstance(element, Selector):
             element = element._root
 
         if issubclass(type(element), HtmlElement):

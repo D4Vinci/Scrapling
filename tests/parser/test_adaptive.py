@@ -77,3 +77,24 @@ class TestParserAdaptive:
             "#target", identifier="target", adaptive=True, auto_save=True, percentage=95
         )
         assert list(result) == []
+
+    def test_relocate_accepts_selector_when_called_on_subclass(self):
+        """`relocate()` on a `Selector` subclass (like the fetchers' `Response`) must accept a
+        plain `Selector` as the element, not only an instance of the receiver's own class."""
+
+        class Page(Selector):
+            pass
+
+        html = "<html><body><div><h1>Title</h1><p>Body text</p></div></body></html>"
+        heading = Selector(html).css("h1")[0]
+
+        # Used to raise `KeyError: 'tag'` because the element was never converted to a dict.
+        relocated = Page(html).relocate(heading, selector_type=True)
+
+        assert len(relocated) == 1
+        assert relocated[0].tag == "h1"
+        assert relocated[0].text == "Title"
+
+        # The reverse direction (plain receiver, subclass element) keeps working.
+        relocated = Selector(html).relocate(Page(html).css("h1")[0], selector_type=True)
+        assert relocated[0].text == "Title"
