@@ -47,6 +47,29 @@ class TestCLI:
             assert result.exit_code == 0
             mock_instance.start.assert_called_once()
 
+    def test_shell_command_failure_exits_non_zero(self, runner):
+        """A failing `-c` script must fail the process, so scripts/CI can detect it"""
+        # Before the fix this exited 0 after printing the traceback.
+        result = runner.invoke(shell, ["-c", "1/0"])
+        assert result.exit_code == 1
+
+    def test_extract_zero_match_selector_keeps_the_previous_report(self, runner, tmp_path, html_url):
+        """A selector that matches nothing must fail the command and leave the old report"""
+        output_file = tmp_path / "output.md"
+        output_file.write_text("previous report", encoding="utf-8")
+
+        with patch("scrapling.fetchers.Fetcher.get") as mock_get:
+            mock_response = configure_selector_mock()
+            mock_response.status = 200
+            mock_response.css.return_value = []
+            mock_get.return_value = mock_response
+
+            result = runner.invoke(get, [html_url, str(output_file), "-s", ".does-not-exist"])
+
+        assert result.exit_code == 2
+        assert "No content was extracted" in result.output
+        assert output_file.read_text(encoding="utf-8") == "previous report"
+
     def test_mcp_command(self, runner):
         """Test MCP command"""
         with patch("scrapling.core.ai.ScraplingMCPServer") as mock_server:

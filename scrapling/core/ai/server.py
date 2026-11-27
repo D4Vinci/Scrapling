@@ -176,6 +176,10 @@ def _translate_response(
             main_content_only=main_content_only,
         )
     ]
+    # A selector that matches nothing must not look like a successful empty extraction.
+    # (An element that matched but is empty still yields its own chunk.)
+    if css_selector and not content:
+        raise ValueError(f"No content was extracted with the CSS selector {css_selector!r}")
     return ResponseModel(status=page.status, content=content, url=page.url)
 
 

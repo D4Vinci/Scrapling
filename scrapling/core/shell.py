@@ -606,9 +606,17 @@ Type 'exit' or press Ctrl+D to exit.
         if self.code:
             log.info(f"Executing provided code: {self.code}")
             try:
-                ipython_shell.run_cell(self.code, store_history=False)
+                result = ipython_shell.run_cell(self.code, store_history=False)
             except Exception as e:
                 log.error(f"Error executing initial code: {e}")
+                raise SystemExit(1) from e
+
+            # `run_cell` reports errors on the result instead of raising, which is right
+            # for a REPL but would make `scrapling shell -c '<failing code>'` exit 0.
+            error = getattr(result, "error_before_exec", None) or getattr(result, "error_in_exec", None)
+            if error is not None:
+                log.error(f"Error executing provided code: {error}")
+                raise SystemExit(1)
             return
 
         ipython_shell()
@@ -683,6 +691,11 @@ class Convertor:
                 page = cls._sanitize_for_ai(page)
 
             pages = [page] if not css_selector else cast(Selectors, page.css(css_selector))
+            # A selector that matches nothing yields no chunks at all, so callers can
+            # tell "matched nothing" from "matched an empty element" (which still gets
+            # its own chunk plus the trailing sentinel).
+            if not pages:
+                return
             for page in pages:
                 match extraction_type:
                     case "markdown":
@@ -717,12 +730,21 @@ class Convertor:
             raise ValueError("Unknown file type: filename must end with '.md', '.html', or '.txt'")
         else:
             extension = filename.split(".")[-1]
-            content = cls._extract_content(
-                page,
-                cls._extension_map[extension],
-                css_selector=css_selector,
-                main_content_only=main_content_only,
+            content = list(
+                cls._extract_content(
+                    page,
+                    cls._extension_map[extension],
+                    css_selector=css_selector,
+                    main_content_only=main_content_only,
+                )
             )
+            # A selector that matches nothing produces no chunks. Writing that would
+            # silently replace the destination file with an empty one, so refuse
+            # before the file is opened.
+            if css_selector and not content:
+                raise ValueError(
+                    f"No content was extracted with the CSS selector {css_selector!r}; '{filename}' was left untouched"
+                )
             # Build the whole text before opening the file so a failure can't leave an empty file behind
             text = ("\n\n" if extension == "md" else "").join(filter(None, content))
             # Markdown and text are produced by the converter, so they don't depend on the page charset

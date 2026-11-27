@@ -58,7 +58,12 @@ def __Request_and_Save(
     if ai_targeted:
         kwargs["block_ads"] = True
     response = fetcher_func(url, **kwargs)
-    Convertor.write_content_to_file(response, str(output_path), css_selector, main_content_only=ai_targeted)
+    try:
+        Convertor.write_content_to_file(response, str(output_path), css_selector, main_content_only=ai_targeted)
+    except ValueError as e:
+        # A user mistake (zero-match selector, wrong extension) reads as a usage error
+        # instead of a traceback, and says nothing was written.
+        raise UsageError(str(e)) from e
     log.info(f"Content successfully saved to '{output_path}'")
 
 

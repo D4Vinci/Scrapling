@@ -10,7 +10,8 @@ from mcp.types import TextContent
 from patchright.async_api import Error as PatchrightError
 
 from scrapling.core.ai import ScraplingMCPServer, SessionType
-from scrapling.core.ai.server import _SessionEntry
+from scrapling.core.ai.server import _SessionEntry, _translate_response
+from scrapling.engines.toolbelt.custom import Response
 from scrapling.core._types import Any, Literal
 from scrapling.engines._browsers._base import AsyncSession
 from tests.ai.test_browser_wait import _browser
@@ -355,3 +356,30 @@ async def test_browser_extract_content_live_target_errors_allow_next_call() -> N
                 assert session.page_pool.pages[0].state == "ready"
         page.set_default_timeout(30000)
         assert await _extract(client, extraction_type="text", target="button") == "Keep button"
+
+
+def _response(html: str) -> Response:
+    return Response(
+        url="https://extract.test/",
+        content=html,
+        status=200,
+        reason="OK",
+        cookies={},
+        headers={},
+        request_headers={},
+    )
+
+
+def test_translate_response_zero_match_selector_is_an_error() -> None:
+    """A CSS selector that matches nothing must not look like an empty success"""
+    # Before the fix this returned `content=[""]`, which the tool reported as success.
+    with pytest.raises(ValueError, match="No content was extracted"):
+        _translate_response(_response("<html><body><p>only</p></body></html>"), "markdown", ".does-not-exist", False)
+
+
+def test_translate_response_matched_empty_element_is_an_empty_success() -> None:
+    """A selector that matched an empty element is an empty result, not a failure"""
+    result = _translate_response(_response('<html><body><p id="empty"></p></body></html>'), "markdown", "#empty", False)
+
+    assert result.status == 200
+    assert not any(result.content)

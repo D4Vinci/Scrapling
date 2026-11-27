@@ -260,6 +260,36 @@ class TestConvertor:
                 Convertor.write_content_to_file(page, str(missing_file))
         assert not missing_file.exists()
 
+    def test_zero_match_selector_keeps_the_existing_file(self, tmp_path):
+        """A selector that matches nothing must not truncate the output file"""
+        page = Selector("<html><body><p>only</p></body></html>")
+        out_file = tmp_path / "output.md"
+        out_file.write_text("previous content", encoding="utf-8")
+
+        with pytest.raises(ValueError, match="No content was extracted"):
+            Convertor.write_content_to_file(page, str(out_file), css_selector=".does-not-exist")
+
+        assert out_file.read_text(encoding="utf-8") == "previous content"
+
+    def test_zero_match_selector_does_not_create_a_file(self, tmp_path):
+        """A selector that matches nothing must not create an empty file either"""
+        page = Selector("<html><body><p>only</p></body></html>")
+        out_file = tmp_path / "missing.txt"
+
+        with pytest.raises(ValueError, match="No content was extracted"):
+            Convertor.write_content_to_file(page, str(out_file), css_selector=".does-not-exist")
+
+        assert not out_file.exists()
+
+    def test_matched_empty_element_is_still_written(self, tmp_path):
+        """A selector that matched an empty element is an empty result, not a failure"""
+        page = Selector('<html><body><p id="empty"></p></body></html>')
+        out_file = tmp_path / "output.txt"
+
+        Convertor.write_content_to_file(page, str(out_file), css_selector="#empty")
+
+        assert out_file.read_text(encoding="utf-8") == ""
+
     def test_invalid_operations(self, sample_html):
         """Test error handling in convertor"""
         page = Selector(sample_html)
@@ -287,3 +317,40 @@ class TestCustomShell:
         assert shell.log_level == 10  # DEBUG level
         assert shell.page is None
         assert len(shell.pages) == 0
+
+
+class _FakeCellResult:
+    """Stand-in for IPython's `ExecutionResult`, which reports errors instead of raising"""
+
+    def __init__(self, error_in_exec=None):
+        self.error_before_exec = None
+        self.error_in_exec = error_in_exec
+
+
+class _FakeEmbeddedShell:
+    def __init__(self, result):
+        self._result = result
+
+    def run_cell(self, *args, **kwargs):
+        return self._result
+
+
+class TestShellCodeExit:
+    """`scrapling shell -c` must fail like a script, not like a REPL"""
+
+    def test_failing_code_exits_non_zero(self):
+        shell = CustomShell(code="1/0", log_level="debug")
+        shell._CustomShell__InteractiveShellEmbed = lambda **kwargs: _FakeEmbeddedShell(
+            _FakeCellResult(error_in_exec=ZeroDivisionError("division by zero"))
+        )
+
+        # Before the fix `start()` returned normally and the CLI exited 0.
+        with pytest.raises(SystemExit) as exc_info:
+            shell.start()
+        assert exc_info.value.code == 1
+
+    def test_successful_code_returns_normally(self):
+        shell = CustomShell(code="1 + 1", log_level="debug")
+        shell._CustomShell__InteractiveShellEmbed = lambda **kwargs: _FakeEmbeddedShell(_FakeCellResult())
+
+        shell.start()  # no exception
