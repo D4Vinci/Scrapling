@@ -107,8 +107,10 @@ def construct_proxy_dict(proxy_string: str | Dict[str, str] | Tuple) -> Dict:
             raise ValueError("Invalid proxy string!")
 
         try:
+            # `hostname` drops the brackets of an IPv6 address, and without them the port can't be told apart from it
+            hostname = f"[{proxy.hostname}]" if ":" in proxy.hostname else proxy.hostname
             result = {
-                "server": f"{proxy.scheme}://{proxy.hostname}",
+                "server": f"{proxy.scheme}://{hostname}",
                 # Credentials in a URL are percent-encoded (e.g. `@` as `%40`), but Playwright expects them decoded
                 "username": unquote(proxy.username or ""),
                 "password": unquote(proxy.password or ""),
