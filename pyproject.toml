@@ -61,7 +61,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "lxml>=6.1.1",
+    "lxml>=6.2.0",
     "cssselect>=1.5.0",
     "orjson>=3.11.8",
     "tld>=0.13.2",
@@ -77,22 +77,22 @@ fetchers = [
     "patchright>=1.64.4",
     "browserforge>=1.2.4",
     "apify-fingerprint-datapoints>=0.16.0",
-    "msgspec>=0.21.1",
+    "msgspec>=0.22.0",
     "anyio>=4.14.0",
     "protego>=0.7.0",
 ]
 rag = [
-    "markdownify>=1.2.0",
+    "markdownify>=1.2.4",
     "scrapling[fetchers]",
 ]
 ai = [
     "mcp>=2.0.0",
-    "markdownify>=1.2.0",
+    "markdownify>=1.2.4",
     "scrapling[fetchers]",
 ]
 shell = [
     "IPython>=8.37",  # The last version that supports Python 3.10
-    "markdownify>=1.2.0",
+    "markdownify>=1.2.4",
     "scrapling[fetchers]",
 ]
 all = [
