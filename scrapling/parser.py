@@ -527,6 +527,8 @@ class Selector(SelectorsGeneration):
         element: Union[Dict, HtmlElement, "Selector"],
         percentage: int = 40,
         selector_type: bool = False,
+        *,
+        min_text_similarity: Optional[float] = None,
     ) -> Union[List[HtmlElement], "Selectors"]:
         """This function will search again for the element in the page tree, used automatically on page structure change
 
@@ -535,8 +537,17 @@ class Selector(SelectorsGeneration):
          calculation depends solely on the page structure, so don't play with this number unless you must know
          what you are doing!
         :param selector_type: If True, the return result will be converted to `Selectors` object
+        :param min_text_similarity: A ratio from 0 to 1. When given, a candidate whose own text is less similar than
+         this to the saved element's text is never considered, so a target removed from the page yields nothing
+         instead of the closest unrelated elements. Defaults to None, keeping the structural score alone.
+         A value outside 0-1 raises `ValueError`: filtering everything and returning an empty list would look
+         exactly like a removed target.
         :return: List of pure HTML elements that got the highest matching score or 'Selectors' object
+        :raises ValueError: If `min_text_similarity` is not a ratio between 0 and 1
         """
+        if min_text_similarity is not None and not 0 <= min_text_similarity <= 1:
+            raise ValueError(f"min_text_similarity must be a ratio between 0 and 1, got {min_text_similarity!r}")
+
         score_table: Dict[float, List[Any]] = {}
         # Note: `element` will most likely always be a dictionary at this point.
         if isinstance(element, self.__class__):
@@ -549,12 +560,27 @@ class Selector(SelectorsGeneration):
             # Collect all elements in the page, then for each element get the matching score of it against the node.
             # Hence: the code doesn't stop even if the score was 100%
             # because there might be another element(s) left in page with the same score
+            if min_text_similarity is not None and (
+                self.__text_similarity_score(cast(Dict, element), node) < min_text_similarity
+            ):
+                continue
             score = self.__calculate_similarity_score(cast(Dict, element), node)
             score_table.setdefault(score, []).append(node)
 
         if score_table:
             highest_probability = max(score_table.keys())
             if score_table[highest_probability] and highest_probability >= percentage:
+                if min_text_similarity is not None:
+                    # Only the opt-in path is this loud; the default one keeps the single debug block it had.
+                    runner_up = max(
+                        (percent for percent in score_table if percent != highest_probability), default=None
+                    )
+                    log.info(
+                        f"Adaptive relocation accepted {len(score_table[highest_probability])} element(s) at "
+                        f"{highest_probability}% with a minimum text similarity of {min_text_similarity} "
+                        f"(runner-up: {'none' if runner_up is None else f'{runner_up}%'}, "
+                        f"threshold: {percentage}%)"
+                    )
                 if log.getEffectiveLevel() < 20:
                     # No need to execute this part if the logging level is not debugging
                     log.debug(f"Highest probability was {highest_probability}%")
@@ -571,6 +597,21 @@ class Selector(SelectorsGeneration):
             )
         return []
 
+    @staticmethod
+    def __text_similarity_score(original: Dict, candidate: HtmlElement) -> float:
+        """How similar the saved element's own text is to a candidate's, as a ratio from 0 to 1
+
+        A saved element without own text carries no text to be wrong about, so it is never filtered.
+
+        :param original: The original element in the form of the dictionary generated from `element_to_dict`
+        :param candidate: The element to compare with the original element.
+        :return: The similarity ratio of the two texts
+        """
+        original_text = original.get("text")
+        if not original_text:
+            return 1.0
+        return SequenceMatcher(None, original_text, candidate.text.strip() if candidate.text else "").ratio()
+
     def css(
         self,
         selector: str,
@@ -578,6 +619,8 @@ class Selector(SelectorsGeneration):
         adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 40,
+        *,
+        min_text_similarity: Optional[float] = None,
     ) -> "Selectors":
         """Search the current tree with CSS3 selectors
 
@@ -593,6 +636,7 @@ class Selector(SelectorsGeneration):
         :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
+        :param min_text_similarity: Forwarded to `relocate` while `adaptive` is working. See its docstring.
 
         :return: `Selectors` class.
         """
@@ -609,6 +653,7 @@ class Selector(SelectorsGeneration):
                     adaptive,
                     auto_save,
                     percentage,
+                    min_text_similarity=min_text_similarity,
                 )
 
             results = Selectors()
@@ -622,6 +667,7 @@ class Selector(SelectorsGeneration):
                     adaptive,
                     auto_save,
                     percentage,
+                    min_text_similarity=min_text_similarity,
                 )
 
             return Selectors(results)
@@ -638,6 +684,7 @@ class Selector(SelectorsGeneration):
         adaptive: bool = False,
         auto_save: bool = False,
         percentage: int = 40,
+        min_text_similarity: Optional[float] = None,
         **kwargs: Any,
     ) -> "Selectors":
         """Search the current tree with XPath selectors
@@ -656,6 +703,7 @@ class Selector(SelectorsGeneration):
         :param percentage: The minimum percentage to accept while `adaptive` is working and not going lower than that.
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
+        :param min_text_similarity: Forwarded to `relocate` while `adaptive` is working. See its docstring.
 
         :return: `Selectors` class.
         """
@@ -682,7 +730,7 @@ class Selector(SelectorsGeneration):
                 if adaptive:
                     element_data = self.retrieve(identifier or selector)
                     if element_data:
-                        elements = self.relocate(element_data, percentage)
+                        elements = self.relocate(element_data, percentage, min_text_similarity=min_text_similarity)
                         if elements and auto_save:
                             self.save(elements[0], identifier or selector)
 
@@ -1243,6 +1291,7 @@ class Selectors(List[Selector]):
         identifier: str = "",
         auto_save: bool = False,
         percentage: int = 40,
+        min_text_similarity: Optional[float] = None,
         **kwargs: Any,
     ) -> "Selectors":
         """
@@ -1263,9 +1312,21 @@ class Selectors(List[Selector]):
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
+        :param min_text_similarity: Forwarded to `relocate` while `adaptive` is working. See its docstring.
         :return: `Selectors` class.
         """
-        results = [n.xpath(selector, identifier or selector, False, auto_save, percentage, **kwargs) for n in self]
+        results = [
+            n.xpath(
+                selector,
+                identifier or selector,
+                False,
+                auto_save,
+                percentage,
+                min_text_similarity=min_text_similarity,
+                **kwargs,
+            )
+            for n in self
+        ]
         return self.__class__(flatten(results))
 
     def css(
@@ -1274,6 +1335,7 @@ class Selectors(List[Selector]):
         identifier: str = "",
         auto_save: bool = False,
         percentage: int = 40,
+        min_text_similarity: Optional[float] = None,
     ) -> "Selectors":
         """
         Call the ``.css()`` method for each element in this list and return
@@ -1291,9 +1353,21 @@ class Selectors(List[Selector]):
          Be aware that the percentage calculation depends solely on the page structure, so don't play with this
          number unless you must know what you are doing!
 
+        :param min_text_similarity: Forwarded to `relocate` while `adaptive` is working. See its docstring.
+
         :return: `Selectors` class.
         """
-        results = [n.css(selector, identifier or selector, False, auto_save, percentage) for n in self]
+        results = [
+            n.css(
+                selector,
+                identifier or selector,
+                False,
+                auto_save,
+                percentage,
+                min_text_similarity=min_text_similarity,
+            )
+            for n in self
+        ]
         return self.__class__(flatten(results))
 
     def re(
