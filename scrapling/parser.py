@@ -1067,11 +1067,15 @@ class Selector(SelectorsGeneration):
         current_depth = len(list(root.iterancestors()))
         target_attrs = self.__get_attributes(root, ignore_attributes) if ignore_attributes else root.attrib
 
-        path_parts = [self.tag]
+        def _step(tag: str) -> str:
+            # lxml keeps prefixed HTML tags (`fb:like`, `o:p`) as-is, and XPath would read the prefix as a namespace
+            return f"*[name()='{tag}']" if ":" in tag else tag
+
+        path_parts = [_step(self.tag)]
         if (parent := root.getparent()) is not None:
-            path_parts.insert(0, parent.tag)
+            path_parts.insert(0, _step(parent.tag))
             if (grandparent := parent.getparent()) is not None:
-                path_parts.insert(0, grandparent.tag)
+                path_parts.insert(0, _step(grandparent.tag))
 
         xpath_path = "//{}".format("/".join(path_parts))
         potential_matches = root.xpath(f"{xpath_path}[count(ancestor::*) = {current_depth}]")
