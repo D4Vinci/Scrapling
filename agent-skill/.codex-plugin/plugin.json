@@ -1,0 +1,45 @@
+{
+  "name": "scrapling",
+  "version": "0.5.1",
+  "description": "The official Scrapling agent skill and MCP server for scraping, crawling and extracting data with HTTP fetchers, stealth browsers, spiders and adaptive parsing.",
+  "author": {
+    "name": "Karim Shoair",
+    "url": "https://scrapling.readthedocs.io/en/latest/"
+  },
+  "homepage": "https://scrapling.readthedocs.io/en/latest/",
+  "repository": "https://github.com/D4Vinci/Scrapling",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "scrapling",
+    "web-scraping",
+    "crawler",
+    "spider",
+    "stealth-browser",
+    "playwright",
+    "mcp",
+    "agent-skills"
+  ],
+  "skills": "./",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Scrapling",
+    "shortDescription": "Adaptive web scraping",
+    "longDescription": "Packages the official scrapling-official agent skill (guides and examples for Fetcher, DynamicFetcher and StealthyFetcher sessions, adaptive parsing, spiders and RAG workflows) together with the Scrapling MCP server, which gives agents stealth HTTP requests, persistent browser sessions, browser actions, screenshots and page extraction. Requires Python 3.10+.",
+    "developerName": "Karim Shoair",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://scrapling.readthedocs.io/en/latest/",
+    "defaultPrompt": [
+      "Scrape this page with Scrapling and extract the product titles",
+      "Write a Scrapling spider that crawls this site",
+      "Use the Scrapling MCP server to log in and capture the results page"
+    ],
+    "brandColor": "#B0F020",
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png"
+  }
+}

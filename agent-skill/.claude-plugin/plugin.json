@@ -1,0 +1,24 @@
+{
+  "name": "scrapling",
+  "version": "0.5.1",
+  "description": "The official Scrapling agent skill and MCP server for scraping, crawling and extracting data with HTTP fetchers, stealth browsers, spiders and adaptive parsing.",
+  "author": {
+    "name": "Karim Shoair",
+    "url": "https://scrapling.readthedocs.io/en/latest/"
+  },
+  "homepage": "https://scrapling.readthedocs.io/en/latest/",
+  "repository": "https://github.com/D4Vinci/Scrapling",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "scrapling",
+    "web-scraping",
+    "crawler",
+    "spider",
+    "stealth-browser",
+    "playwright",
+    "mcp",
+    "agent-skills"
+  ],
+  "skills": "./",
+  "mcpServers": "./.mcp.json"
+}
