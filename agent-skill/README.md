@@ -23,3 +23,12 @@ npx skills add D4Vinci/Scrapling --skill scrapling-official
 ```
 
 The CLI will detect the agents you have installed and add the skill to them.
+
+### Plugin marketplace
+
+This repository also exposes the skill through an agent-agnostic plugin marketplace at
+[`.agents/plugins/marketplace.json`](../.agents/plugins/marketplace.json). It registers this
+`agent-skill` directory as the `scrapling` plugin, bundling the `scrapling-official` skill with the
+Scrapling MCP server (`scrapling-mcp`, from `pip install "scrapling[ai]"`). Agents that read `.agents`
+marketplaces can install it from this repository; Codex and Claude Code manifests live in
+`agent-skill/.codex-plugin/` and `agent-skill/.claude-plugin/`.
