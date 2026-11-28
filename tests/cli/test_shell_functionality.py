@@ -55,6 +55,21 @@ class TestCurlParser:
 
         assert request.json_data == {"key": "value"}
 
+    def test_curl_with_ansi_c_quoted_values(self, parser):
+        """DevTools "Copy as cURL" writes values with ' or newlines as $'...'"""
+        request = parser.parse(
+            """curl 'https://example.com/api' -H $'x-note: it\\'s' --data-raw $'name=it\\'s\\nnext'"""
+        )
+
+        assert request.data == "name=it's\nnext"
+        assert request.headers["x-note"] == "it's"
+
+    def test_curl_with_ansi_c_quote_inside_double_quotes(self, parser):
+        """A $'...' inside double quotes is plain text"""
+        request = parser.parse("""curl 'https://example.com/api' --data-raw "say $'hello' again\"""")
+
+        assert request.data == "say $'hello' again"
+
     def test_curl_with_cookies(self, parser):
         """Test parsing curl with cookies"""
         curl_cmd = '''curl https://example.com \
