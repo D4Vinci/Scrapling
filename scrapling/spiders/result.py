@@ -16,7 +16,13 @@ from scrapling.core._types import Any, Iterable, Iterator, Dict, List, Optional,
 
 # Anything outside these ranges can't be represented in XML, and scraped pages are full of control characters
 _XML_FORBIDDEN_CHARS = re.compile(r"[^\x09\x0a\x0d\x20-퟿-�\U00010000-\U0010ffff]")
-_XML_FORBIDDEN_TAG_CHARS = re.compile(r"[^\w.-]", re.UNICODE)
+_XML_NAME_START_CHARS = (
+    r"A-Z_a-z\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u02ff\u0370-\u037d"
+    r"\u037f-\u1fff\u200c-\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff"
+    r"\uf900-\ufdcf\ufdf0-\ufffd\U00010000-\U000effff"
+)
+_XML_NAME_START = re.compile(f"[{_XML_NAME_START_CHARS}]")
+_XML_FORBIDDEN_TAG_CHARS = re.compile(f"[^{_XML_NAME_START_CHARS}" r"0-9.\-\u00b7\u0300-\u036f\u203f-\u2040]")
 
 
 def _stringify(value: Any) -> str:
@@ -31,7 +37,7 @@ def _stringify(value: Any) -> str:
 def _xml_tag(key: Any) -> str:
     """Turn an item's key into a usable XML tag name."""
     tag = _XML_FORBIDDEN_TAG_CHARS.sub("_", str(key))
-    return tag if tag and (tag[0].isalpha() or tag[0] == "_") else f"_{tag}"
+    return tag if _XML_NAME_START.match(tag) else f"_{tag}"
 
 
 class ItemList(list):
