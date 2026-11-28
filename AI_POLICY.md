@@ -5,7 +5,7 @@
 > If you are using **any kind of AI assistance** to contribute to Scrapling,
 > it must be disclosed in the pull request or issue.
 
-We welcome and encourage the use of AI tools to help improve Scrapling. Many valuable
+We welcome and encourage using AI tools to help improve Scrapling. Many valuable
 contributions have been enhanced with AI assistance for code generation, issue detection, and
 feature definition.
 
@@ -48,6 +48,10 @@ When submitting AI-assisted contributions, please ensure they include:
 - **Concrete evidence** - Include test cases, scenarios, or examples that demonstrate the
   improvement
 - **Your own analysis** - Share your thoughts on the end-to-end experience
+
+> Your contribution must be a real-world case with examples, not a made-up issue/PR with exaggerated claims. Your contribution shouldn't take control from the user that we intended to keep, unless in extreme cases.
+> If it is an edge case that the user can handle but fixing it would take control from the rest of the users, then the priority will be to keep control with the rest of the users.
+> 
 
 ## What we'll close
 
