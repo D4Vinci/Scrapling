@@ -530,7 +530,7 @@ class Selector(SelectorsGeneration):
     ) -> Union[List[HtmlElement], "Selectors"]:
         """This function will search again for the element in the page tree, used automatically on page structure change
 
-        :param element: The element we want to relocate in the tree
+        :param element: The element from the old page to find in this page.
         :param percentage: The minimum percentage to accept and not going lower than that. Be aware that the percentage
          calculation depends solely on the page structure, so don't play with this number unless you must know
          what you are doing!
@@ -539,7 +539,7 @@ class Selector(SelectorsGeneration):
         """
         score_table: Dict[float, List[Any]] = {}
         # Note: `element` will most likely always be a dictionary at this point.
-        if isinstance(element, self.__class__):
+        if isinstance(element, Selector):
             element = element._root
 
         if issubclass(type(element), HtmlElement):
@@ -894,7 +894,7 @@ class Selector(SelectorsGeneration):
         score += SequenceMatcher(None, tuple(dict1.values()), tuple(dict2.values())).ratio() * 0.5
         return score
 
-    def save(self, element: HtmlElement, identifier: str) -> None:
+    def save(self, element: Union[HtmlElement, "Selector"], identifier: str) -> None:
         """Saves the element's unique properties to the storage for retrieval and relocation later
 
         :param element: The element itself that we want to save to storage, it can be a ` Selector ` or pure ` HtmlElement `
@@ -902,9 +902,7 @@ class Selector(SelectorsGeneration):
             the docs for more info.
         """
         if self.__adaptive_enabled and self._storage:
-            target_element: Any = element
-            if isinstance(target_element, self.__class__):
-                target_element = target_element._root
+            target_element = element._root if isinstance(element, Selector) else element
 
             if self._is_text_node(target_element):
                 target_element = target_element.getparent()

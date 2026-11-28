@@ -42,6 +42,18 @@ class TestFetcher:
         assert fetcher.get(self.status_404).status == 404
         assert fetcher.get(self.status_501).status == 501
 
+    def test_relocate_selected_element(self, fetcher):
+        page = fetcher.get(self.html_url)
+        heading = page.css("h1")[0]
+        assert page.relocate(heading, percentage=40, selector_type=True).getall() == [heading.get()]
+
+    def test_save_selected_element(self, fetcher):
+        page = fetcher.get(self.html_url)
+        heading = page.css("h1")[0]
+        page.save(heading, "heading")
+        saved = page.retrieve("heading")
+        assert saved is not None and saved["tag"] == "h1" and saved["text"] == heading.text
+
     def test_get_properties(self, fetcher):
         """Test if different arguments with the GET request break the code or not"""
         assert fetcher.get(self.status_200, stealthy_headers=True).status == 200
