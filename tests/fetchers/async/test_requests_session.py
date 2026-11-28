@@ -62,6 +62,41 @@ class TestFetcherSession:
             assert proxies_used == ["http://p1:8080", "http://p2:8080"]
 
     @pytest.mark.asyncio
+    async def test_per_request_proxy_rotator_is_used(self):
+        """A per-request proxy_rotator must pick the proxy instead of being forwarded to curl_cffi"""
+        rotator = ProxyRotator(["http://p1:8080", "http://p2:8080"])
+
+        async with AsyncFetcherSession(retries=2, retry_delay=0) as session:
+            with (
+                patch.object(session._async_curl_session, "request", new=AsyncMock()) as mocked_request,
+                patch("scrapling.engines.static.ResponseFactory.from_http_request", return_value=MagicMock()),
+            ):
+                mocked_request.side_effect = [CurlError("transient"), MagicMock()]
+                await session.get("http://example.com", proxy_rotator=rotator)
+
+            assert all("proxy_rotator" not in call.kwargs for call in mocked_request.call_args_list)
+            proxies_used = [call.kwargs["proxy"] for call in mocked_request.call_args_list]
+            assert proxies_used == ["http://p1:8080", "http://p2:8080"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "session_kwargs, request_kwargs",
+        [
+            ({"proxies": {"http": "http://p1:8080"}}, {"proxy_rotator": ProxyRotator(["http://p2:8080"])}),
+            ({}, {"proxies": {"http": "http://p1:8080"}, "proxy_rotator": ProxyRotator(["http://p2:8080"])}),
+            ({"proxy_rotator": ProxyRotator(["http://p2:8080"])}, {"proxies": {"http": "http://p1:8080"}}),
+        ],
+    )
+    async def test_proxy_rotator_with_proxies_raises_value_error(self, session_kwargs, request_kwargs):
+        """A rotator and a `proxies` dict on the same request must fail like the constructor check, not in curl_cffi"""
+        async with AsyncFetcherSession(**session_kwargs) as session:
+            with patch.object(session._async_curl_session, "request", new=AsyncMock()) as mocked_request:
+                with pytest.raises(ValueError, match="Cannot use 'proxy_rotator' together with 'proxy' or 'proxies'"):
+                    await session.get("http://example.com", **request_kwargs)
+
+            mocked_request.assert_not_called()
+
+    @pytest.mark.asyncio
     @pytest.mark.parametrize("retries", [0, -1, None])
     async def test_retries_below_one_still_sends_the_request(self, retries):
         """A session-level retries below 1 must still send the request once instead of skipping it"""

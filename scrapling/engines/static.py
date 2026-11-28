@@ -140,6 +140,7 @@ class _ConfigurationLogic(ABC):
             "proxies",
             "proxy",
             "proxy_auth",
+            "proxy_rotator",
             "timeout",
             "follow_redirects",
             "max_redirects",
@@ -249,6 +250,13 @@ class _SyncSessionLogic(_ConfigurationLogic):
         max_retries = max(1, self._get_param(kwargs, "retries", self._default_retries) or 1)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
         static_proxy = kwargs.pop("proxy", None)
+        # A per-request rotator takes precedence over the session's one
+        proxy_rotator = kwargs.pop("proxy_rotator", None) or self._proxy_rotator
+        if proxy_rotator and static_proxy is None and self._get_param(kwargs, "proxies", self._default_proxies):
+            raise ValueError(
+                "Cannot use 'proxy_rotator' together with 'proxy' or 'proxies'. "
+                "Use either a static proxy or proxy rotation, not both."
+            )
 
         session = self._curl_session
         one_off_request = False
@@ -264,8 +272,8 @@ class _SyncSessionLogic(_ConfigurationLogic):
         try:
             for attempt in range(max_retries):
                 proxy: Optional[ProxyType]
-                if self._proxy_rotator and static_proxy is None:
-                    proxy = self._proxy_rotator.get_proxy()
+                if proxy_rotator and static_proxy is None:
+                    proxy = proxy_rotator.get_proxy()
                 else:
                     proxy = static_proxy or self._default_proxy
 
@@ -465,6 +473,13 @@ class _ASyncSessionLogic(_ConfigurationLogic):
         max_retries = max(1, self._get_param(kwargs, "retries", self._default_retries) or 1)
         retry_delay = self._get_param(kwargs, "retry_delay", self._default_retry_delay)
         static_proxy = kwargs.pop("proxy", None)
+        # A per-request rotator takes precedence over the session's one
+        proxy_rotator = kwargs.pop("proxy_rotator", None) or self._proxy_rotator
+        if proxy_rotator and static_proxy is None and self._get_param(kwargs, "proxies", self._default_proxies):
+            raise ValueError(
+                "Cannot use 'proxy_rotator' together with 'proxy' or 'proxies'. "
+                "Use either a static proxy or proxy rotation, not both."
+            )
 
         session = self._async_curl_session
         one_off_request = False
@@ -483,8 +498,8 @@ class _ASyncSessionLogic(_ConfigurationLogic):
             # Determine if we should use proxy rotation
             for attempt in range(max_retries):
                 proxy: Optional[ProxyType]
-                if self._proxy_rotator and static_proxy is None:
-                    proxy = self._proxy_rotator.get_proxy()
+                if proxy_rotator and static_proxy is None:
+                    proxy = proxy_rotator.get_proxy()
                 else:
                     proxy = static_proxy or self._default_proxy
 
